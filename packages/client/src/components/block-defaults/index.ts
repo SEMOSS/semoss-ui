@@ -1,7 +1,7 @@
 import { Registry } from '@/stores';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
-import { config as CellBlockConfig, QueryBlockDef } from './query-block';
+import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
 import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
@@ -54,7 +54,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [CellBlockConfig.widget]: CellBlockConfig,
+    [QueryBlockConfig.widget]: QueryBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
