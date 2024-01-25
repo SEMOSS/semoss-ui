@@ -193,7 +193,7 @@ export function getQueryForPrompt(
 
     // filter out custom input types
     const customInputTypes = Object.fromEntries(
-        Object.entries(inputTypes).filter(
+        Object.entries(inputTypes ?? {}).filter(
             ([_, value]) =>
                 value?.type === INPUT_TYPE_VECTOR ||
                 value?.type === INPUT_TYPE_CUSTOM_QUERY ||
@@ -587,5 +587,5 @@ export async function setBlocksAndOpenUIBuilder(
     const app = pixelReturn[0].output;
 
     // navigate to the app
-    navigate(`../${app.project_id}`);
+    navigate(`/app/${app.project_id}`);
 }

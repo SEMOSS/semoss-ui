@@ -109,8 +109,6 @@ export const InputModalSettings = observer(
             }, 300);
         };
 
-        console.log(id, path, value);
-
         return (
             <>
                 <BaseSettingSection label={label}>
