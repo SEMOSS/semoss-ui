@@ -304,8 +304,23 @@ export class StepState<D extends CellDef = CellDef> {
                 }
 
                 this._store.operation = operationType;
-                if (Array.isArray(output) && output != undefined) {
-                    this._store.output = output[0].output;
+
+                // if we are dealing with a python code cell, modify output
+                if (
+                    this._store.widget === 'code' &&
+                    this._store.parameters?.type === 'py'
+                ) {
+                    if (
+                        operationType.includes('CODE_EXECUTION') &&
+                        output != undefined
+                    ) {
+                        this._store.output =
+                            Array.isArray(output) && output.length > 0
+                                ? output[0].output
+                                : output;
+                    } else {
+                        this._store.output = output;
+                    }
                 } else {
                     this._store.output = output;
                 }
