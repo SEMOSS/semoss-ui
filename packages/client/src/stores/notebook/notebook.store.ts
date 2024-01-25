@@ -88,6 +88,11 @@ export class NotebookStore {
     selectQuery(queryId: string) {
         // set the id
         this._store.selectedQueryId = queryId;
+        // automatically select last step of query
+        let querySteps = this._state.queries[queryId].list;
+        if (querySteps.length) {
+            this.selectStep(queryId, querySteps[querySteps.length - 1]);
+        }
     }
 
     /**
