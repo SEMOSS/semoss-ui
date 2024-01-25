@@ -125,7 +125,7 @@ export const NotebookMenu = observer((): JSX.Element => {
                     queryId: newQueryId,
                     config: {
                         mode: json.mode,
-                        steps: json.steps,
+                        cells: json.cells,
                     },
                 },
             });

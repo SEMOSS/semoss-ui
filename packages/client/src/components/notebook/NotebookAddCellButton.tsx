@@ -2,8 +2,8 @@ import { observer } from 'mobx-react-lite';
 import { styled, Button } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
-import { ActionMessages, NewStepAction, QueryState } from '@/stores';
-import { DefaultCells } from '@/components/cell-defaults';
+import { ActionMessages, NewCellAction, QueryState } from '@/stores';
+import { DefaultCellTypes } from '@/components/cell-defaults';
 import { Add } from '@mui/icons-material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -12,30 +12,30 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 export const NotebookAddCellButton = observer(
-    (props: { query: QueryState; previousStepId?: string }): JSX.Element => {
-        const { query, previousStepId = '' } = props;
+    (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
+        const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
         /**
          * Append a new step after the current step
          * @param config - config to add
          */
-        const appendStep = (config: NewStepAction['payload']['config']) => {
+        const appendCell = (config: NewCellAction['payload']['config']) => {
             try {
-                const newStepId = `${Math.floor(
+                const newCellId = `${Math.floor(
                     Math.random() * 1000000000000,
                 )}`;
                 // copy and add the step to the end
                 state.dispatch({
-                    message: ActionMessages.NEW_STEP,
+                    message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: query.id,
-                        stepId: newStepId,
-                        previousStepId: previousStepId,
+                        cellId: newCellId,
+                        previousCellId: previousCellId,
                         config: config,
                     },
                 });
-                notebook.selectStep(query.id, newStepId);
+                notebook.selectCell(query.id, newCellId);
             } catch (e) {
                 console.error(e);
             }
@@ -48,9 +48,9 @@ export const NotebookAddCellButton = observer(
                 size="small"
                 disabled={query.isLoading}
                 onClick={() => {
-                    appendStep({
-                        widget: DefaultCells['code'].widget,
-                        parameters: DefaultCells['code'].parameters,
+                    appendCell({
+                        widget: DefaultCellTypes['code'].widget,
+                        parameters: DefaultCellTypes['code'].parameters,
                     });
                 }}
                 startIcon={<Add />}

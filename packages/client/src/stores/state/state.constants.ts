@@ -87,7 +87,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                 ['ask-model']: {
                     id: 'ask-model',
                     mode: 'manual',
-                    steps: [
+                    cells: [
                         {
                             id: 'file-read',
                             widget: 'code',

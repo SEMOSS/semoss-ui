@@ -31,7 +31,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
-    const { step } = props;
+    const { cell } = props;
     const { state, notebook } = useBlocks();
 
     const handleMount = (editor, monaco) => {
@@ -49,20 +49,20 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
                 // update with the new code
                 state.dispatch({
-                    message: ActionMessages.UPDATE_STEP,
+                    message: ActionMessages.UPDATE_CELL,
                     payload: {
-                        queryId: step.query.id,
-                        stepId: step.id,
+                        queryId: cell.query.id,
+                        cellId: cell.id,
                         path: 'parameters.code',
                         value: newValue,
                     },
                 });
 
                 state.dispatch({
-                    message: ActionMessages.RUN_STEP,
+                    message: ActionMessages.RUN_CELL,
                     payload: {
-                        queryId: step.query.id,
-                        stepId: step.id,
+                        queryId: cell.query.id,
+                        cellId: cell.id,
                     },
                 });
             },
@@ -92,8 +92,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 }
             });
             notebook.queriesList.forEach((query: QueryState) => {
-                // don't push the query that the step belongs to
-                if (query.id !== step.query.id) {
+                // don't push the query that the cell belongs to
+                if (query.id !== cell.query.id) {
                     suggestions.push({
                         label: {
                             label: `{{${query.id}.data}}`,
@@ -191,15 +191,15 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             (editorRef.current.getModel().getLineCount() + 2) *
                 EditorLineHeight,
         );
-        if (step.isLoading) {
+        if (cell.isLoading) {
             return;
         }
 
         state.dispatch({
-            message: ActionMessages.UPDATE_STEP,
+            message: ActionMessages.UPDATE_CELL,
             payload: {
-                queryId: step.query.id,
-                stepId: step.id,
+                queryId: cell.query.id,
+                cellId: cell.id,
                 path: 'parameters.code',
                 value: newValue,
             },
@@ -211,8 +211,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             <Editor
                 width="100%"
                 height={editorHeight}
-                value={step.parameters.code}
-                language={EditorLanguages[step.parameters.type]}
+                value={cell.parameters.code}
+                language={EditorLanguages[cell.parameters.type]}
                 options={{
                     lineNumbers: 'on',
                     readOnly: false,
