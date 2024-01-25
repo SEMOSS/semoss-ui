@@ -68,6 +68,29 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             },
         });
 
+        const exposedQueryParameterDescription = (
+            exposedParameter: string,
+            queryId: string,
+        ): string => {
+            switch (exposedParameter) {
+                case 'id':
+                case 'mode':
+                    return `Returns the ${exposedParameter} of query ${queryId}`;
+                case 'isExecuted':
+                    return `Returns whether query ${queryId} has executed`;
+                case 'isLoading':
+                    return `Returns the loading state for query ${queryId}`;
+                case 'isError':
+                    return `Returns whether query ${queryId} has an error`;
+                case 'error':
+                    return `Returns the error for query ${queryId} if it exists`;
+                case 'list':
+                    return `Returns an ordered list of cell IDs for query ${queryId}`;
+                default:
+                    return `Reference the ${exposedParameter} parameter of query ${queryId}`;
+            }
+        };
+
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
             let suggestions = [];
@@ -79,14 +102,14 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 if (inputBlockWidgets.includes(block.widget)) {
                     suggestions.push({
                         label: {
-                            label: `{{${block.id}.value}}`,
+                            label: `{{block.${block.id}.value}}`,
                             description: block.data?.value
                                 ? JSON.stringify(block.data?.value)
                                 : '',
                         },
                         kind: monaco.languages.CompletionItemKind.Variable,
-                        documentation: `Reference the value of block ${block.id}`,
-                        insertText: `{{${block.id}.value}}`,
+                        documentation: `Returns the value of block ${block.id}`,
+                        insertText: `{{block.${block.id}.value}}`,
                         range: range,
                     });
                 }
@@ -94,19 +117,32 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             notebook.queriesList.forEach((query: QueryState) => {
                 // don't push the query that the step belongs to
                 if (query.id !== step.query.id) {
-                    suggestions.push({
-                        label: {
-                            label: `{{${query.id}.data}}`,
-                            description: query.output
-                                ? JSON.stringify(query.output)
-                                : '',
+                    // push all exposed values
+                    Object.keys(query._exposed).forEach(
+                        (exposedParameter: string) => {
+                            suggestions.push({
+                                label: {
+                                    label: `{{query.${query.id}.${exposedParameter}}}`,
+                                    description: query._exposed[
+                                        exposedParameter
+                                    ]
+                                        ? JSON.stringify(
+                                              query._exposed[exposedParameter],
+                                          )
+                                        : '',
+                                },
+                                kind: monaco.languages.CompletionItemKind
+                                    .Variable,
+                                documentation: exposedQueryParameterDescription(
+                                    exposedParameter,
+                                    query.id,
+                                ),
+                                insertText: `{{query.${query.id}.${exposedParameter}}}`,
+                                range: range,
+                                detail: query.id,
+                            });
                         },
-                        kind: monaco.languages.CompletionItemKind.Variable,
-                        documentation: `Reference the output of query ${query.id}`,
-                        insertText: `{{${query.id}.data}}`,
-                        range: range,
-                        detail: query.id,
-                    });
+                    );
                 }
             });
 
