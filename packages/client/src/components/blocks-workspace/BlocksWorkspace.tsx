@@ -12,6 +12,7 @@ import { Workspace, SettingsView } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
 import { BlocksView } from './BlocksView';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
+import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 
 const ACTIVE = 'page-1';
 
@@ -83,6 +84,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 workspace={workspace}
                 actions={<BlocksWorkspaceActions />}
             >
+                {process.env.NODE_ENV == 'development' && (
+                    <BlocksWorkspaceDev />
+                )}
                 {!workspace.isEditMode ? (
                     <Renderer id={ACTIVE} />
                 ) : (
