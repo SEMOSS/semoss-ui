@@ -243,17 +243,31 @@ export class StepState<D extends CellDef = CellDef> {
      */
     _sync(
         /** operation associated with the step */
-        operation?: string[],
+        operation: string[],
 
         /** Output associated with the step */
-        output?: unknown,
+        output: unknown,
+
+        resetExecutionTracking?: boolean,
     ) {
         this._store.operation = operation;
-        this._store.output = output;
 
-        // syncing from query - we dont' have granular information about execution
-        this._store.executionStart = undefined;
-        this._store.executionDurationMilliseconds = undefined;
+        // if we are dealing with a CODE_EXECUTION operation, modify output
+        if (operation.includes('CODE_EXECUTION') && output != undefined) {
+            this._store.output = Array.isArray(output)
+                ? output.length > 0
+                    ? output[0].output
+                    : null
+                : output;
+        } else {
+            this._store.output = output;
+        }
+
+        // syncing from query - we don't have granular information about execution
+        if (resetExecutionTracking) {
+            this._store.executionStart = undefined;
+            this._store.executionDurationMilliseconds = undefined;
+        }
     }
 
     /**
@@ -303,28 +317,7 @@ export class StepState<D extends CellDef = CellDef> {
                     this._store.parameters = merged;
                 }
 
-                this._store.operation = operationType;
-
-                // if we are dealing with a python code cell, modify output
-                if (
-                    this._store.widget === 'code' &&
-                    this._store.parameters?.type === 'py'
-                ) {
-                    if (
-                        operationType.includes('CODE_EXECUTION') &&
-                        output != undefined
-                    ) {
-                        this._store.output = Array.isArray(output)
-                            ? output.length > 0
-                                ? output[0].output
-                                : null
-                            : output;
-                    } else {
-                        this._store.output = output;
-                    }
-                } else {
-                    this._store.output = output;
-                }
+                this._sync(operationType, output);
             });
         } finally {
             const end = new Date();

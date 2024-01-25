@@ -287,27 +287,7 @@ export class QueryState {
                     const { operationType, output } = pixelReturn[stepIdx];
 
                     // sync step information
-                    // if we are dealing with a python code cell, modify output
-                    if (
-                        step.widget === 'code' &&
-                        step.parameters?.type === 'py'
-                    ) {
-                        if (
-                            operationType.includes('CODE_EXECUTION') &&
-                            output != undefined
-                        ) {
-                            const modifiedOutput = Array.isArray(output)
-                                ? output.length > 0
-                                    ? output[0].output
-                                    : null
-                                : output;
-                            step._sync(operationType, modifiedOutput);
-                        } else {
-                            step._sync(operationType, output);
-                        }
-                    } else {
-                        step._sync(operationType, output);
-                    }
+                    step._sync(operationType, output, true);
                 }
 
                 // clear the error
