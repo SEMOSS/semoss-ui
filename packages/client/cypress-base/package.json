@@ -1,0 +1,13 @@
+{
+    "name": "cypress-base",
+    "version": "1.0.0",
+    "description": "run cypress against CFG",
+    "scripts": {
+        "open": "cypress open"
+    },
+    "author": "CFG",
+    "license": "SEE LICENSE IN client",
+    "devDependencies": {
+        "cypress": "^13.6.3"
+    }
+}
