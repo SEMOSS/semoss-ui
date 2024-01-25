@@ -225,7 +225,6 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     },
                     data: {
                         label: 'Upload',
-                        type: 'file',
                         required: true,
                     },
                     listeners: {

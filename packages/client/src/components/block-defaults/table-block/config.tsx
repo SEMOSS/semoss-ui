@@ -73,6 +73,7 @@ export const config: BlockConfig<TableBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },

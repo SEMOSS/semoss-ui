@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { useMemo, CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -27,10 +27,16 @@ export interface SelectBlockDef extends BlockDef<'select'> {
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
 
+    const stringifiedOptions: string[] = useMemo(() => {
+        return (!Array.isArray(data?.options) ? [] : data.options).map(
+            (option) => JSON.stringify(option),
+        );
+    }, [data.options]);
+
     return (
         <Autocomplete
             disableClearable
-            options={data.options}
+            options={stringifiedOptions}
             value={data.value}
             disabled={data?.disabled || data?.loading}
             sx={{
