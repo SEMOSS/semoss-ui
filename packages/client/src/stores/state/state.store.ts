@@ -119,7 +119,7 @@ export class StateStore {
         );
 
         // set the initial state after reactive to invoke it
-        this.loadState(config.state);
+        this.setState(config.state);
     }
 
     /**
@@ -202,9 +202,9 @@ export class StateStore {
         try {
             // apply the action
             if (ActionMessages.SET_STATE === action.message) {
-                const { blocks, queries } = action.payload;
+                const { state } = action.payload;
 
-                this.setState(blocks, queries);
+                this.setState(state);
             } else if (ActionMessages.ADD_BLOCK === action.message) {
                 const { json, position } = action.payload;
 
@@ -376,22 +376,6 @@ export class StateStore {
     /**
      * Helpers
      */
-
-    /**
-     * Load the state
-     * @param state - state to load into the store
-     */
-    private loadState = (state: SerializedState) => {
-        // store the block information
-        this._store.blocks = state.blocks;
-
-        // load the queries
-        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
-            acc[val] = new QueryState(state.queries[val], this);
-            return acc;
-        }, {});
-    };
-
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -544,17 +528,19 @@ export class StateStore {
      * Actions
      */
     /**
-     * Run a pixel string
+     * Set the state information
      *
-     * @param pixel - pixel to execute
+     * @param state - pixel to execute
      */
-    private setState = (
-        blocks?: StateStoreInterface['blocks'],
-        queries?: StateStoreInterface['queries'],
-    ) => {
-        // add the blocks and queries
-        this._store.blocks = blocks || {};
-        this._store.queries = queries || {};
+    private setState = (state: SerializedState) => {
+        // store the block information
+        this._store.blocks = state.blocks;
+
+        // load the queries
+        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
+            acc[val] = new QueryState(state.queries[val], this);
+            return acc;
+        }, {});
     };
 
     /**
