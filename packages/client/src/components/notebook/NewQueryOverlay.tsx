@@ -76,7 +76,7 @@ export const NewQueryOverlay = observer(
                     queryId: data.ID,
                     config: {
                         mode: 'manual',
-                        steps: [],
+                        cells: [],
                     },
                 },
             });

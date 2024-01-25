@@ -1,5 +1,5 @@
 import { BlockJSON, ListenerActions, SerializedState } from './state.types';
-import { StepStateConfig } from './step.state';
+import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
 
 export enum ActionMessages {
@@ -15,10 +15,10 @@ export enum ActionMessages {
     DELETE_QUERY = 'DELETE_QUERY',
     UPDATE_QUERY = 'UPDATE_QUERY',
     RUN_QUERY = 'RUN_QUERY',
-    NEW_STEP = 'NEW_STEP',
-    DELETE_STEP = 'DELETE_STEP',
-    UPDATE_STEP = 'UPDATE_STEP',
-    RUN_STEP = 'RUN_STEP',
+    NEW_CELL = 'NEW_CELL',
+    DELETE_CELL = 'DELETE_CELL',
+    UPDATE_CELL = 'UPDATE_CELL',
+    RUN_CELL = 'RUN_CELL',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
 }
 
@@ -34,10 +34,10 @@ export type Actions =
     | DeleteQueryAction
     | UpdateQueryAction
     | RunQueryAction
-    | NewStepAction
-    | DeleteStepAction
-    | UpdateStepAction
-    | RunStepAction
+    | NewCellAction
+    | DeleteCellAction
+    | UpdateCellAction
+    | RunCellAction
     | DispatchEventAction;
 
 export interface Action {
@@ -161,39 +161,39 @@ export interface RunQueryAction extends Action {
     };
 }
 
-export interface NewStepAction extends Action {
-    message: ActionMessages.NEW_STEP;
+export interface NewCellAction extends Action {
+    message: ActionMessages.NEW_CELL;
     payload: {
         queryId: string;
-        stepId: string;
-        previousStepId: string;
-        config: Omit<StepStateConfig, 'id'>;
+        cellId: string;
+        previousCellId: string;
+        config: Omit<CellStateConfig, 'id'>;
     };
 }
 
-export interface DeleteStepAction extends Action {
-    message: ActionMessages.DELETE_STEP;
+export interface DeleteCellAction extends Action {
+    message: ActionMessages.DELETE_CELL;
     payload: {
         queryId: string;
-        stepId: string;
+        cellId: string;
     };
 }
 
-export interface UpdateStepAction extends Action {
-    message: ActionMessages.UPDATE_STEP;
+export interface UpdateCellAction extends Action {
+    message: ActionMessages.UPDATE_CELL;
     payload: {
         queryId: string;
-        stepId: string;
+        cellId: string;
         path: string | null;
         value: unknown;
     };
 }
 
-export interface RunStepAction extends Action {
-    message: ActionMessages.RUN_STEP;
+export interface RunCellAction extends Action {
+    message: ActionMessages.RUN_CELL;
     payload: {
         queryId: string;
-        stepId: string;
+        cellId: string;
     };
 }
 

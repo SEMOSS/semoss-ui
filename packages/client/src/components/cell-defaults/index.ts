@@ -1,8 +1,8 @@
-import { CellRegistry } from '@/stores';
+import { CellTypeRegistry } from '@/stores';
 import { CodeCell, CodeCellDef } from './code-cell';
 
 export type DefaultCellDefinitions = CodeCellDef;
 
-export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
+export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [CodeCell.widget]: CodeCell,
 };

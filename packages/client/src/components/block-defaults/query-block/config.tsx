@@ -12,7 +12,7 @@ export const config: BlockConfig<QueryBlockDef> = {
     data: {
         style: {},
         queryId: '',
-        stepId: '',
+        cellId: '',
     },
     listeners: {},
     slots: {},
@@ -36,7 +36,7 @@ export const config: BlockConfig<QueryBlockDef> = {
                 {
                     description: 'Step Id',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Step Id" path="stepId" />
+                        <InputSettings id={id} label="Step Id" path="cellId" />
                     ),
                 },
             ],

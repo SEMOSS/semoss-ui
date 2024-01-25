@@ -59,7 +59,7 @@ const CodeCellOptions = {
 };
 
 export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
-    const { step } = props;
+    const { cell } = props;
     const { state } = useBlocks();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -73,15 +73,15 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 aria-expanded={open ? 'true' : undefined}
                 variant="outlined"
                 disableElevation
-                disabled={step.isLoading}
+                disabled={cell.isLoading}
                 size="small"
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
                     setAnchorEl(event.currentTarget);
                 }}
                 startIcon={
-                    step.parameters.type === 'py' ? (
+                    cell.parameters.type === 'py' ? (
                         <PythonIcon color="inherit" fontSize="small" />
-                    ) : step.parameters.type === 'r' ? (
+                    ) : cell.parameters.type === 'r' ? (
                         <RIcon color="inherit" fontSize="small" />
                     ) : (
                         <CodeOff color="inherit" fontSize="small" />
@@ -90,7 +90,7 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 endIcon={<KeyboardArrowDown />}
             >
                 <StyledButtonLabel>
-                    {CodeCellOptions[step.parameters.type].display}
+                    {CodeCellOptions[cell.parameters.type].display}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
@@ -100,15 +100,15 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                         (codeCellOption) => (
                             <List.Item
                                 disablePadding
-                                key={`${step.id}-${codeCellOption.value}`}
+                                key={`${cell.id}-${codeCellOption.value}`}
                             >
                                 <List.ItemButton
                                     onClick={() => {
                                         state.dispatch({
-                                            message: ActionMessages.UPDATE_STEP,
+                                            message: ActionMessages.UPDATE_CELL,
                                             payload: {
-                                                queryId: step.query.id,
-                                                stepId: step.id,
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
                                                 path: 'parameters.type',
                                                 value: codeCellOption.value,
                                             },
