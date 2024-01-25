@@ -1,5 +1,4 @@
-import { BlockJSON, ListenerActions } from './state.types';
-import { StateStore } from './state.store';
+import { BlockJSON, ListenerActions, SerializedState } from './state.types';
 import { StepStateConfig } from './step.state';
 import { QueryStateConfig } from './query.state';
 
@@ -49,8 +48,7 @@ export interface Action {
 export interface SetStateAction extends Action {
     message: ActionMessages.SET_STATE;
     payload: {
-        blocks?: StateStore['blocks'];
-        queries?: StateStore['queries'];
+        state?: SerializedState;
     };
 }
 
