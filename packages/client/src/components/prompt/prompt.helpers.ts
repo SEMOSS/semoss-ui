@@ -44,7 +44,7 @@ function getTextFieldInputBlock(
 ) {
     return {
         id: getIdForInput(inputType, index),
-        widget: 'text-field',
+        widget: 'input',
         parent: {
             id: PROMPT_CONTAINER_BLOCK_ID,
             slot: 'children',
