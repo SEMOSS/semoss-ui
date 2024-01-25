@@ -6,10 +6,6 @@ import {
 
 import { UploadBlockDef, UploadBlock } from './UploadBlock';
 import { Upload } from '@mui/icons-material';
-import {
-    buildDimensionsSection,
-    buildSpacingSection,
-} from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
@@ -78,5 +74,5 @@ export const config: BlockConfig<UploadBlockDef> = {
             ],
         },
     ],
-    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
+    styleMenu: [],
 };

@@ -8,14 +8,16 @@ import {
     Divider,
     TextField,
     Collapse,
+    useNotification,
+    Tooltip,
 } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
-import { Search, SearchOff } from '@mui/icons-material';
+import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
 
-const StyledTypography = styled(Typography)(() => ({
+const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
     fontWeight: 'bold',
 }));
@@ -51,6 +53,7 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 export const SelectedMenu = observer(() => {
     const { designer } = useDesigner();
     const { state, registry } = useBlocks();
+    const notification = useNotification();
 
     const [contentAccordion, setContentAccordion] = useState<
         Record<string, boolean>
@@ -82,7 +85,7 @@ export const SelectedMenu = observer(() => {
         setContentAccordion(acc);
 
         // set the menu with search filter
-        if (!!search) {
+        if (search) {
             // filter section headers that match search
             const filteredSectionMenu = m.filter((menuItem) => {
                 if (menuItem.name.toLowerCase().includes(search)) {
@@ -123,7 +126,7 @@ export const SelectedMenu = observer(() => {
         setStyleAccordion(acc);
 
         // set the menu with search filter
-        if (!!search) {
+        if (search) {
             // filter section headers that match search
             const filteredSectionMenu = m.filter((menuItem) => {
                 if (menuItem.name.toLowerCase().includes(search)) {
@@ -145,6 +148,26 @@ export const SelectedMenu = observer(() => {
         }
         return m;
     }, [registry, block ? block.widget : '', search]);
+
+    /**
+     * Copy text and add it to the clipboard
+     * @param text - text to copy
+     */
+    const copy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+
+            notification.add({
+                color: 'success',
+                message: 'Successfully copied id',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to copy id',
+            });
+        }
+    };
 
     // clear search on blocks no longer selected
     useMemo(() => {
@@ -172,9 +195,19 @@ export const SelectedMenu = observer(() => {
             <StyledMenuHeader>
                 <Stack flex={1} spacing={2} direction="row" alignItems="center">
                     <BlockAvatar icon={getIconForBlock(block.widget)} />
-                    <StyledTypography variant="h6">
-                        {blockDisplay}
-                    </StyledTypography>
+                    <Stack direction={'row'} spacing={0.5} alignItems="center">
+                        <StyledTitle variant="h6">{blockDisplay}</StyledTitle>
+                        <IconButton
+                            aria-label="copy"
+                            color="default"
+                            size="small"
+                            title={`{{${block.id}}}`}
+                            onClick={() => copy(`{{${block.id}}}`)}
+                        >
+                            <ContentCopy fontSize="small" />
+                        </IconButton>
+                    </Stack>
+
                     <Stack
                         flex={1}
                         spacing={1}
@@ -192,6 +225,7 @@ export const SelectedMenu = observer(() => {
                             />
                         </Collapse>
                         <IconButton
+                            aria-label="toggle-search"
                             color="default"
                             size="small"
                             onClick={() => {
