@@ -158,30 +158,24 @@ export function getInputFormatPrompt(
 }
 
 function getVectorQuery() {
-    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:\r\n`;
-
-    vectorQueryFunctionString += `\tfrom gaas_gpt_vector import VectorEngine\r\n`;
-    vectorQueryFunctionString += `\tvector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}')\r\n`;
-    vectorQueryFunctionString += `\tmatches = vector.nearestNeighbor(search_statement = search_statement, limit = limit)\r\n`;
-
-    vectorQueryFunctionString += `\treturn ' '.join([matchItem['Content'] for matchItem in matches])`;
-
-    return vectorQueryFunctionString;
+    return `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:
+    from gaas_gpt_vector import VectorEngine
+    vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}')
+    matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit)
+    return ' '.join([matchItem['Content'] for matchItem in matches])`;
 }
 
 function getCustomQuery(index: number) {
-    return `def runCustom_${index}(search_statement:str) -> str:\r\n\treturn search_statement`;
+    return `def runCustom_${index}(search_statement:str) -> str:
+    return search_statement`;
 }
 
 function getDatabaseQuery() {
-    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str) -> str:\r\n`;
-
-    databaseQueryFunctionString += `\tfrom gaas_gpt_database import DatabaseEngine\r\n`;
-    databaseQueryFunctionString += `\tdatabaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');\r\n`;
-    databaseQueryFunctionString += `\tresult_df = databaseEngine.execQuery(query = query)\r\n`;
-    databaseQueryFunctionString += `\treturn f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"\r\n`;
-
-    return databaseQueryFunctionString;
+    return `def runDatabaseQuery(query:str, database_engine_id:str) -> str:
+    from gaas_gpt_database import DatabaseEngine
+    databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}')
+    result_df = databaseEngine.execQuery(query = query)
+    return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
 export function getQueryForPrompt(
@@ -201,53 +195,41 @@ export function getQueryForPrompt(
         ),
     );
 
-    const queryDefinition = () => {
-        let promptQueryFunctionString = `def promptQuery(search_statement:str, ${Object.keys(
-            customInputTypes,
-        )
-            .map((customInputTokenIndex, index: number) => {
-                return `${
-                    customInputTypes[customInputTokenIndex]?.type
-                }_${index}_${
-                    customInputTypes[customInputTokenIndex]?.type ===
-                    INPUT_TYPE_DATABASE
-                        ? 'query'
-                        : 'statement'
-                }:str`;
-            })
-            .join(', ')}${
-            Object.keys(customInputTypes).length ? ', ' : ''
-        }limit = 5) -> str:\r\n`;
-
-        promptQueryFunctionString +=
-            `\timport json\r\n` +
-            `\tfrom gaas_gpt_model import ModelEngine\r\n` +
-            `\tmodel = ModelEngine(engine_id = "${model}", insight_id = '\${i}')\r\n`;
-
+    const buildQueryDefinitionFunctionCalls = (): string => {
+        let functionCalls = '';
         Object.keys(customInputTypes).forEach(
             (customInputTokenIndex, index: number) => {
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_VECTOR
                 ) {
-                    promptQueryFunctionString += `\t${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit)\r\n`;
+                    functionCalls += `
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit)
+`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_CUSTOM_QUERY
                 ) {
-                    promptQueryFunctionString += `\t${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement)\r\n`;
+                    functionCalls += `
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement)
+`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_DATABASE
                 ) {
-                    promptQueryFunctionString += `\t${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}")\r\n`;
+                    functionCalls += `
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}")
+`;
                 }
             },
         );
+        return functionCalls;
+    };
 
-        promptQueryFunctionString += `\tprompt = search_statement`;
+    const buildQueryDefinitionPromptStatement = (): string => {
+        let promptQueryFunctionString = `prompt = search_statement`;
         if (
             Object.values(customInputTypes).some(
                 (inputType) =>
@@ -286,14 +268,32 @@ export function getQueryForPrompt(
                 })
                 .join(` + `)}`;
         }
-        promptQueryFunctionString += ` + ' Format the result as markdown.'\r\n`;
-
-        promptQueryFunctionString +=
-            `\tresponse = model.ask(question = prompt)\r\n` +
-            `\treturn json.dumps(response[0]['response'])\r\n`;
-
+        promptQueryFunctionString += ` + ' Format the result as markdown.'`;
         return promptQueryFunctionString;
     };
+
+    const queryDefinition = `def promptQuery(search_statement:str, ${Object.keys(
+        customInputTypes,
+    )
+        .map((customInputTokenIndex, index: number) => {
+            return `${customInputTypes[customInputTokenIndex]?.type}_${index}_${
+                customInputTypes[customInputTokenIndex]?.type ===
+                INPUT_TYPE_DATABASE
+                    ? 'query'
+                    : 'statement'
+            }:str`;
+        })
+        .join(', ')}${
+        Object.keys(customInputTypes).length ? ', ' : ''
+    }limit = 5) -> str:
+    import json
+    from gaas_gpt_model import ModelEngine
+    model = ModelEngine(engine_id = "${model}", insight_id = '\${i}')
+    ${buildQueryDefinitionFunctionCalls()}
+    ${buildQueryDefinitionPromptStatement()}
+    response = model.ask(question = prompt)
+    return json.dumps(response[0]['response'])
+`;
 
     const query = `promptQuery("${prompt}"${
         Object.keys(customInputTypes).length ? ', ' : ''
@@ -312,7 +312,7 @@ export function getQueryForPrompt(
             widget: 'code',
             parameters: {
                 type: 'py',
-                code: queryDefinition(),
+                code: queryDefinition,
             },
         },
     ];
