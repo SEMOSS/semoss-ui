@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
-import { Clear, SaveOutlined } from '@mui/icons-material';
+import { Clear, Language, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@semoss/ui';
 
 import Editor from '@monaco-editor/react';
+import { TextEditorPreview } from './TextEditorPreview';
 
 import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel';
@@ -27,6 +28,16 @@ import parserCss from 'prettier/parser-postcss';
 
 import { runPixel } from '@/api';
 import { LoadingScreen } from '@/components/ui';
+
+const StyledKeepButton = styled(Button)(({ theme }) => ({
+    margin: '12px',
+}));
+
+const StyledLLMWrapper = styled('div')(({ theme }) => ({
+    border: '1px solid lightgray',
+    borderRadius: '5px',
+    marginBottom: '20px',
+}));
 
 const StyledLabel = styled('strong')(({ theme }) => ({
     marginRight: '10px',
@@ -222,8 +233,10 @@ export const TextEditor = (props: TextEditorProps) => {
     } = props;
 
     const [LLMStarterModalOpen, setLLMStarterModalOpen] = useState(false);
+    const [LLMPreviewContents, setLLMPreviewContents] = useState('');
     const [LLMLoading, setLLMLoading] = useState(false);
     const [showLLMStarter, setShowLLMStarter] = useState(true);
+    const [renderStyledLLMWrapper, setRenderStyledLLMWrapper] = useState(true);
     const [LLMPromptInput, setLLMPromptInput] = useState('');
 
     /**
@@ -454,8 +467,17 @@ export const TextEditor = (props: TextEditorProps) => {
             promptString += 'Finish everything you start.';
             promptString += 'There is not character limit.';
         } else {
-            promptString += `Create starter code for a file titled ${activeFile.name} based on the following description. '${LLMPromptInput}'`;
+            promptString += `Create starter code for a file titled ${activeFile.type} based on the following description. '${LLMPromptInput}'`;
         }
+
+        // Notes from Neel
+        // focus on comment based prompting
+        // user highlights what they want the prompt to be in their code editor
+        // they second click to select 'use AI Code Generator' maybe 'prompt AI Code Generator with selected text'
+        // then pass prompt unedited with the filetype as a param ideally - need backend folks to address
+        // then paste code uncommented below comment and leave comment
+        // maybe highlight all pasted code or indicate where code stops at some point
+        // maybe mimic merge conflict interface with an 'accept incoming changes' link above highlighted new text
 
         let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${promptString}", paramValues = [ {} ] );`;
         console.log('Prompting LLM', { activeFile, promptString, pixel });
@@ -469,8 +491,10 @@ export const TextEditor = (props: TextEditorProps) => {
             trimmedStarterCode = trimmedStarterCode.substring(
                 trimmedStarterCode.indexOf('\n') + 1,
             );
-            activeFile.content = trimmedStarterCode;
+            //  %%% updates the actual editor contents
+            // activeFile.content = trimmedStarterCode;
             setLLMLoading(false);
+            setLLMPreviewContents(trimmedStarterCode);
 
             // return LLMResponse;
             console.log({ res, LLMResponse });
@@ -490,9 +514,10 @@ export const TextEditor = (props: TextEditorProps) => {
     const activeFile = useMemo<ControlledFile | null>(() => {
         const af = controlledFiles[activeIndex];
         if (af && af.content.length < 1 && showLLMStarter) {
+            // commented out code responsible for previous LLM starter modal
             // open LLM starter modal
-            setLLMStarterModalOpen(true);
-            setLLMPromptInput('');
+            // setLLMStarterModalOpen(true);
+            // setLLMPromptInput('');
             // setLLMPromptInput(`Create a file with the name "${af.name}" including explanatory comments.`);
         }
         if (af) return af;
@@ -678,53 +703,86 @@ export const TextEditor = (props: TextEditorProps) => {
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
 
-                    <div
-                        style={{
-                            backgroundColor: '#D9D9D914',
-                            padding: '12px 16px 12px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <StyledLabel>Generate</StyledLabel>
+                    {renderStyledLLMWrapper && (
+                        <StyledLLMWrapper>
+                            <div
+                                style={{
+                                    backgroundColor: '#D9D9D914',
+                                    padding: '12px 16px 12px 16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <StyledLabel>Generate</StyledLabel>
 
-                        <TextField
-                            size="small"
-                            style={{ flexGrow: 1 }}
-                            placeholder="Enter prompt to generate the code"
-                            value={LLMPromptInput}
-                            onChange={(e) => {
-                                setLLMPromptInput(e.target.value);
-                            }}
-                            onKeyUp={(e) => {
-                                if (e.key == 'Enter') {
-                                    alert(LLMPromptInput);
-                                }
-                            }}
-                        />
+                                <TextField
+                                    size="small"
+                                    style={{ flexGrow: 1 }}
+                                    placeholder="Enter prompt to generate the code"
+                                    value={LLMPromptInput}
+                                    onChange={(e) => {
+                                        setLLMPromptInput(e.target.value);
+                                    }}
+                                    onKeyUp={(e) => {
+                                        if (e.key == 'Enter') {
+                                            setLLMLoading(true);
+                                            createStarterCode();
+                                        }
+                                    }}
+                                />
 
-                        <StyledCloseTab
-                            size={'small'}
-                            onClick={async (e) => {
-                                alert('hello!');
-                            }}
-                        >
-                            <StyledClear />
-                        </StyledCloseTab>
-                    </div>
+                                {/*  */}
+                                <StyledCloseTab
+                                    size={'small'}
+                                    onClick={async (e) => {
+                                        // alert('hello!');
+                                        setRenderStyledLLMWrapper(false);
+                                    }}
+                                >
+                                    <StyledClear />
+                                </StyledCloseTab>
+                            </div>
+
+                            {LLMPreviewContents && (
+                                <>
+                                    <TextEditorPreview
+                                        language={fileLanguage}
+                                        contents={LLMPreviewContents}
+                                    />
+                                    <StyledKeepButton
+                                        variant={'contained'}
+                                        color={'primary'}
+                                        onClick={() => {
+                                            activeFile.content =
+                                                LLMPreviewContents;
+                                            setLLMPreviewContents('');
+                                        }}
+                                    >
+                                        Keep
+                                    </StyledKeepButton>
+
+                                    <StyledKeepButton
+                                        variant={'outlined'}
+                                        color={'info'}
+                                        onClick={() => {
+                                            // activeFile.content = LLMPreviewContents;
+                                            setLLMPreviewContents('');
+                                        }}
+                                    >
+                                        Cancel
+                                    </StyledKeepButton>
+                                </>
+                            )}
+                        </StyledLLMWrapper>
+                    )}
+
                     <Editor
-                        // theme={'vs-dark'}
                         width={'100%'}
                         height={'100%'}
-                        // %mark
                         value={activeFile.content}
                         language={fileLanguage}
                         onChange={(newValue, e) => {
-                            // Set new value of file in state, keep old contents
                             editFile(newValue);
-
-                            // onSave for App Renderer
-                            // onChange(newValue);
                         }}
                     ></Editor>
 
