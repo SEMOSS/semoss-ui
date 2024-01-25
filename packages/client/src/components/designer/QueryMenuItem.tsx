@@ -163,7 +163,7 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
                         <Typography variant="caption" noWrap={true}>
                             {query.isLoading ? (
                                 <em>Loading...</em>
-                            ) : query.data ? (
+                            ) : query.output ? (
                                 query.isSuccessful ? (
                                     <StyledSuccessChip
                                         label="Success"

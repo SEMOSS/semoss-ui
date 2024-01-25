@@ -7,10 +7,9 @@ import {
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
 import { ViewList } from '@mui/icons-material';
 
-import { buildSpacingSection } from '../block-defaults.shared';
+import { buildListener } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
-import { SelectInputOptionsSettings } from '@/components/block-settings/custom/SelectInputOptionsSettings';
 
 // export the config for the block
 export const config: BlockConfig<SelectBlockDef> = {
@@ -37,6 +36,7 @@ export const config: BlockConfig<SelectBlockDef> = {
     },
     render: SelectBlock,
     icon: ViewList,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -63,9 +63,11 @@ export const config: BlockConfig<SelectBlockDef> = {
                     description: 'Options',
                     render: ({ id }) => {
                         return (
-                            <SelectInputOptionsSettings
+                            <QuerySelectionSettings
                                 id={id}
+                                label="Options"
                                 path="options"
+                                queryPath="output"
                             />
                         );
                     },
@@ -77,11 +79,16 @@ export const config: BlockConfig<SelectBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
             ],
         },
+        {
+            name: 'onChange',
+            children: [...buildListener('onChange')],
+        },
     ],
-    styleMenu: [buildSpacingSection()],
+    styleMenu: [],
 };

@@ -209,14 +209,11 @@ export class StepState<D extends CellDef = CellDef> {
     };
 
     /**
-     * Helpers
-     */
-    /**
      * Convert the parameters to pixel
      *
      * @param parameters - Convert the step with these parameters
      */
-    _toPixel(
+    toPixel(
         parameters: Record<string, unknown> = this._store.parameters,
     ): string {
         const cell = this.cell;
@@ -232,6 +229,10 @@ export class StepState<D extends CellDef = CellDef> {
             })
             .join(', ');
     }
+
+    /**
+     * Helpers
+     */
     /**
      * Process State
      */
@@ -282,11 +283,10 @@ export class StepState<D extends CellDef = CellDef> {
             };
 
             // convert the steps to the raw pixel
-            const raw = this._toPixel();
+            const raw = this.toPixel();
 
-            // QUESTION(JOHN): Do we run the pixel if {{}} bracket is still not fulfilled
             // fill the braces {{ }} to create the final pixel
-            const filled = this._state.flattenParameter(raw);
+            const filled = this._state.flattenVariable(raw);
 
             // run the pixel
             const { pixelReturn } = await this._state._runPixel(filled);
@@ -336,5 +336,21 @@ export class StepState<D extends CellDef = CellDef> {
 
         // update the parameters
         setValueByPath(this._store, path, value);
+    }
+
+    /**
+     * Get the exposed value that can be accesed by a variable
+     */
+    get _exposed() {
+        return {
+            id: this._store.id,
+            isExecuted: this.isExecuted,
+            isLoading: this.isLoading,
+            isError: this.isError,
+            isSuccessful: this.isSuccessful,
+            error: this.error,
+            output: this.output,
+            operation: this.operation,
+        };
     }
 }

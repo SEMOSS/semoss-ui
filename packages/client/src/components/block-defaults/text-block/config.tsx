@@ -26,6 +26,7 @@ export const config: BlockConfig<TextBlockDef> = {
     },
     render: TextBlock,
     icon: TextFields,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -39,12 +40,5 @@ export const config: BlockConfig<TextBlockDef> = {
             ],
         },
     ],
-    styleMenu: [
-        buildTypographySection(),
-        buildTextAlignSection(),
-        buildColorSection(),
-        buildBorderSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-    ],
+    styleMenu: [buildTypographySection(), buildTextAlignSection()],
 };

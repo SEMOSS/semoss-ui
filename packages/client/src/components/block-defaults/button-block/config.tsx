@@ -2,15 +2,12 @@ import { BlockConfig } from '@/stores';
 import {
     QuerySelectionSettings,
     InputSettings,
+    SelectInputSettings,
 } from '@/components/block-settings';
 
 import {
-    buildLayoutSection,
-    buildSpacingSection,
     buildDimensionsSection,
-    buildColorSection,
     buildListener,
-    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
@@ -26,6 +23,8 @@ export const config: BlockConfig<ButtonBlockDef> = {
         label: 'Submit',
         loading: false,
         disabled: false,
+        variant: 'contained',
+        color: 'primary',
     },
     listeners: {
         onClick: [],
@@ -33,6 +32,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
     slots: {},
     render: ButtonBlock,
     icon: SmartButton,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -50,6 +50,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
@@ -61,10 +62,68 @@ export const config: BlockConfig<ButtonBlockDef> = {
         },
     ],
     styleMenu: [
-        buildColorSection(),
-        buildBorderSection(),
-        buildLayoutSection(),
-        buildSpacingSection(),
+        {
+            name: 'Style',
+            children: [
+                {
+                    description: 'Variant',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Variant"
+                            path="variant"
+                            options={[
+                                {
+                                    value: 'contained',
+                                    display: 'contained',
+                                },
+                                {
+                                    value: 'outlined',
+                                    display: 'outlined',
+                                },
+                                {
+                                    value: 'text',
+                                    display: 'text',
+                                },
+                            ]}
+                            resizeOnSet
+                        />
+                    ),
+                },
+                {
+                    description: 'Color',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Color"
+                            path="color"
+                            options={[
+                                {
+                                    value: 'primary',
+                                    display: 'primary',
+                                },
+                                {
+                                    value: 'secondary',
+                                    display: 'secondary',
+                                },
+                                {
+                                    value: 'success',
+                                    display: 'success',
+                                },
+                                {
+                                    value: 'warning',
+                                    display: 'warning',
+                                },
+                                {
+                                    value: 'error',
+                                    display: 'error',
+                                },
+                            ]}
+                        />
+                    ),
+                },
+            ],
+        },
         buildDimensionsSection(),
     ],
 };

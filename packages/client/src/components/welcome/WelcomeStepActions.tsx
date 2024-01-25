@@ -69,7 +69,7 @@ export const WelcomeStepActions = (props: {
                     color="primary"
                     onClick={props.nextStepAction}
                 >
-                    {props?.isLastStep ? 'Finish' : 'Next'}
+                    {props?.isLastStep ? 'Begin Tour' : 'Next'}
                 </Button>
             </StyledDiv>
         </Stack>

@@ -7,7 +7,7 @@ import {
     Stack,
     ButtonGroup,
 } from '@semoss/ui';
-import { Code, Download, Share, Settings } from '@mui/icons-material';
+import { Code, Share, Settings, Save } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
 import { ShareOverlay } from '@/components/workspace';
@@ -188,7 +188,7 @@ export const BlocksWorkspaceActions = observer(() => {
                         size={'small'}
                         color={'secondary'}
                         variant={'outlined'}
-                        startIcon={<Download />}
+                        startIcon={<Save />}
                         onClick={() => {
                             saveApp();
                         }}

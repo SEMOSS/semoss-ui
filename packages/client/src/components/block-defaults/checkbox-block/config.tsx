@@ -1,14 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
-
 import {
-    buildLayoutSection,
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildColorSection,
-    buildListener,
-    buildBorderSection,
-} from '../block-defaults.shared';
+    InputSettings,
+    SelectInputSettings,
+} from '@/components/block-settings';
 
 import { CheckboxBlockDef, CheckboxBlock } from './CheckboxBlock';
 import { CheckBox } from '@mui/icons-material';
@@ -31,6 +25,7 @@ export const config: BlockConfig<CheckboxBlockDef> = {
     slots: {},
     render: CheckboxBlock,
     icon: CheckBox,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -44,11 +39,5 @@ export const config: BlockConfig<CheckboxBlockDef> = {
             ],
         },
     ],
-    styleMenu: [
-        buildColorSection(),
-        buildBorderSection(),
-        buildLayoutSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-    ],
+    styleMenu: [],
 };

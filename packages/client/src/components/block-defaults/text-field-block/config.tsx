@@ -42,6 +42,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     },
     render: TextFieldBlock,
     icon: FormatShapes,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -112,11 +113,12 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
             ],
         },
     ],
-    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
+    styleMenu: [],
 };

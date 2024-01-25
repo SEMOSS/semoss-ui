@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-import { AppMetadata, AppTileCard, AddApp } from '@/components/app';
+import { AppMetadata, AppTileCard, AddAppModal } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -88,7 +88,12 @@ export const HomePage = observer((): JSX.Element => {
                             alignItems={'center'}
                             spacing={2}
                         >
-                            <Typography variant={'h4'}>App Library</Typography>
+                            <Typography
+                                data-tour="app-library-title"
+                                variant={'h4'}
+                            >
+                                App Library
+                            </Typography>
                             <Search
                                 size={'small'}
                                 onChange={(e) => {
@@ -205,9 +210,9 @@ export const HomePage = observer((): JSX.Element => {
                     </Grid>
                 ) : null}
             </StyledContainer>
-            <AddApp
+            <AddAppModal
                 open={addAppModal}
-                onClose={(appId) => closeAddAppModal(appId)}
+                handleClose={(appId) => closeAddAppModal(appId)}
             />
             <WelcomeModal />
         </Page>

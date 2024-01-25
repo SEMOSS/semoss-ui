@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
@@ -28,6 +29,8 @@ export const NewQueryOverlay = observer(
 
         // create a new form
         const {
+            getValues,
+            watch,
             control,
             handleSubmit,
             clearErrors,
@@ -38,6 +41,12 @@ export const NewQueryOverlay = observer(
                 ID: '',
             },
         });
+
+        const watchAll = watch();
+
+        const isFormValid = useMemo(() => {
+            return !!getValues('ID');
+        }, [watchAll]);
 
         /**
          * Allow the user to login
@@ -112,7 +121,7 @@ export const NewQueryOverlay = observer(
                     <Button
                         variant="contained"
                         color="primary"
-                        disabled={!!errors?.ID?.message}
+                        disabled={!!errors?.ID?.message || !isFormValid}
                         onClick={() => onSubmit()}
                     >
                         Submit
