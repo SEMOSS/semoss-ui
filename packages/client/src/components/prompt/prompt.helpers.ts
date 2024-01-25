@@ -250,7 +250,7 @@ export function getQueryForPrompt(
                 .map((customInputTokenIndex, index: number) => {
                     return `${customInputTypes[customInputTokenIndex].type}_${index}`;
                 })
-                .join(` + ' and ' + `)}.`;
+                .join(` + ' and ' + `)} + '.'`;
         }
         if (
             Object.values(customInputTypes).some(
