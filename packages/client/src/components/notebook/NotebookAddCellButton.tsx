@@ -1,10 +1,10 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Button } from '@semoss/ui';
 
-import { useBlocks } from '@/hooks';
-import { ActionMessages, NewCellAction, QueryState } from '@/stores';
-import { DefaultCellTypes } from '@/components/cell-defaults';
+import { useBlocks, useWorkspace } from '@/hooks';
+import { QueryState } from '@/stores';
 import { Add } from '@mui/icons-material';
+import { NewCellOverlay } from './NewCellOverlay';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -14,31 +14,28 @@ const StyledButton = styled(Button)(({ theme }) => ({
 export const NotebookAddCellButton = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const { query, previousCellId = '' } = props;
-        const { state, notebook } = useBlocks();
+        const { notebook } = useBlocks();
+        const { workspace } = useWorkspace();
 
         /**
-         * Append a new cell after the current cell
-         * @param config - config to add
+         * Create a new cell
          */
-        const appendCell = (config: NewCellAction['payload']['config']) => {
-            try {
-                const newCellId = `${Math.floor(
-                    Math.random() * 1000000000000,
-                )}`;
-                // copy and add the cell to the end
-                state.dispatch({
-                    message: ActionMessages.NEW_CELL,
-                    payload: {
-                        queryId: query.id,
-                        cellId: newCellId,
-                        previousCellId: previousCellId,
-                        config: config,
-                    },
-                });
-                notebook.selectCell(query.id, newCellId);
-            } catch (e) {
-                console.error(e);
-            }
+        const openCellOverlay = () => {
+            workspace.openOverlay(() => {
+                return (
+                    <NewCellOverlay
+                        queryId={query.id}
+                        previousCellId={previousCellId}
+                        onClose={(newCellId) => {
+                            workspace.closeOverlay();
+
+                            if (newCellId) {
+                                notebook.selectCell(query.id, newCellId);
+                            }
+                        }}
+                    />
+                );
+            });
         };
 
         return (
@@ -47,25 +44,7 @@ export const NotebookAddCellButton = observer(
                 variant="contained"
                 size="small"
                 disabled={query.isLoading}
-                onClick={() => {
-                    if (previousCellId) {
-                        const previousCellType =
-                            state.queries[query.id].cells[previousCellId]
-                                .parameters?.type ?? 'pixel';
-                        appendCell({
-                            widget: DefaultCellTypes['code'].widget,
-                            parameters: {
-                                ...DefaultCellTypes['code'].parameters,
-                                type: previousCellType,
-                            },
-                        });
-                    } else {
-                        appendCell({
-                            widget: DefaultCellTypes['code'].widget,
-                            parameters: DefaultCellTypes['code'].parameters,
-                        });
-                    }
-                }}
+                onClick={openCellOverlay}
                 startIcon={<Add />}
             >
                 Add Cell

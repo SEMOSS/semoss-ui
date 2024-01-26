@@ -793,7 +793,7 @@ export class StateStore {
         if (!config.cells.length) {
             this.newCell(
                 queryId,
-                `${Math.floor(Math.random() * 1000000000000)}`,
+                `${queryId}-cell`,
                 {
                     parameters: {
                         code: '',

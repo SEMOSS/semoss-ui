@@ -118,12 +118,12 @@ export const NotebookCell = observer(
         const query = state.getQuery(queryId);
         const cell = query.getCell(cellId);
 
-        // get the view
+        // get the type
         const cellType = cell.cellType;
 
         // render the title
         const renderedTitle = useMemo(() => {
-            if (!cellType) {
+            if (!cell) {
                 return;
             }
 
@@ -138,18 +138,18 @@ export const NotebookCell = observer(
             return createElement(observer(cellType.view.title), {
                 cell: cell,
             });
-        }, [cellType ? cellType.view.title : null]);
+        }, [cell ? cellType.view.title : null]);
 
         // render the title
         const renderedInput = useMemo(() => {
-            if (!cellType) {
+            if (!cell) {
                 return;
             }
 
             return createElement(observer(cellType.view.input), {
                 cell: cell,
             });
-        }, [cellType ? cellType.view.input : null]);
+        }, [cell ? cellType.view.input : null]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
