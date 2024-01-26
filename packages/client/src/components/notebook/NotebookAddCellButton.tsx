@@ -48,10 +48,23 @@ export const NotebookAddCellButton = observer(
                 size="small"
                 disabled={query.isLoading}
                 onClick={() => {
-                    appendStep({
-                        widget: DefaultCells['code'].widget,
-                        parameters: DefaultCells['code'].parameters,
-                    });
+                    if (previousStepId) {
+                        const previousStepType =
+                            state.queries[query.id].steps[previousStepId]
+                                .parameters?.type ?? 'pixel';
+                        appendStep({
+                            widget: DefaultCells['code'].widget,
+                            parameters: {
+                                ...DefaultCells['code'].parameters,
+                                type: previousStepType,
+                            },
+                        });
+                    } else {
+                        appendStep({
+                            widget: DefaultCells['code'].widget,
+                            parameters: DefaultCells['code'].parameters,
+                        });
+                    }
                 }}
                 startIcon={<Add />}
             >
