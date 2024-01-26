@@ -10,6 +10,7 @@ import {
     Chip,
     Divider,
     Collapse,
+    useNotification,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -57,6 +58,11 @@ const StyledStatusChip = styled(Chip, {
     },
 }));
 
+const StyledIdChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: theme.palette.grey[300],
+    height: theme.spacing(3.5),
+}));
+
 const StyledContent = styled('div')(({ theme }) => ({
     width: '100%',
     overflow: 'hidden',
@@ -91,6 +97,7 @@ export const NotebookCell = observer(
         const { state, notebook } = useBlocks();
 
         const { workspace } = useWorkspace();
+        const notification = useNotification();
 
         /**
          * Create a new cell
@@ -222,73 +229,101 @@ export const NotebookCell = observer(
                                 justifyContent="space-between"
                                 direction="row"
                             >
+                                {renderedTitle}
                                 <Stack
                                     direction="row"
-                                    spacing={2}
+                                    spacing={1}
                                     alignItems="center"
                                 >
-                                    {renderedTitle}
-                                    <Typography variant="subtitle1">
-                                        {cell.id}
-                                    </Typography>
-                                </Stack>
-                                <ButtonGroup variant="outlined">
-                                    <StyledButtonGroupButton
-                                        title="Run cell"
-                                        disabled={cell.isLoading}
-                                        size="small"
-                                        onClick={() =>
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.RUN_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                },
-                                            })
+                                    <StyledIdChip
+                                        label={
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.5}
+                                                alignItems="center"
+                                            >
+                                                <span>{`${cell.id}`}</span>
+                                                <ContentCopy fontSize="inherit" />
+                                            </Stack>
                                         }
-                                    >
-                                        <StyledButtonLabel>
-                                            <PlayArrowRounded fontSize="small" />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                    <StyledButtonGroupButton
-                                        title="Duplicate cell"
-                                        size="small"
-                                        disabled={cell.isLoading}
-                                        onClick={(e) => {
-                                            // stop propogation to card parent so newly created cell will be selected
-                                            e.stopPropagation();
-                                            openCopyCellOverlay();
-                                        }}
-                                    >
-                                        <StyledButtonLabel>
-                                            <ContentCopy
-                                                fontSize="small"
-                                                sx={{ padding: '2px' }}
-                                            />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                    <StyledButtonGroupButton
-                                        title="Delete cell"
-                                        disabled={cell.isLoading}
-                                        size="small"
+                                        title="Copy cell id"
                                         onClick={() => {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.DELETE_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                },
-                                            });
+                                            try {
+                                                navigator.clipboard.writeText(
+                                                    cell.id,
+                                                );
+
+                                                notification.add({
+                                                    color: 'success',
+                                                    message:
+                                                        'Succesfully copied to clipboard',
+                                                });
+                                            } catch (e) {
+                                                notification.add({
+                                                    color: 'error',
+                                                    message: e.message,
+                                                });
+                                            }
                                         }}
-                                    >
-                                        <StyledButtonLabel>
-                                            <DeleteOutlined fontSize="small" />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                </ButtonGroup>
+                                    />
+                                    <ButtonGroup variant="outlined">
+                                        <StyledButtonGroupButton
+                                            title="Run cell"
+                                            disabled={cell.isLoading}
+                                            size="small"
+                                            onClick={() =>
+                                                state.dispatch({
+                                                    message:
+                                                        ActionMessages.RUN_CELL,
+                                                    payload: {
+                                                        queryId: cell.query.id,
+                                                        cellId: cell.id,
+                                                    },
+                                                })
+                                            }
+                                        >
+                                            <StyledButtonLabel>
+                                                <PlayArrowRounded fontSize="small" />
+                                            </StyledButtonLabel>
+                                        </StyledButtonGroupButton>
+                                        <StyledButtonGroupButton
+                                            title="Duplicate cell"
+                                            size="small"
+                                            disabled={cell.isLoading}
+                                            onClick={(e) => {
+                                                // stop propogation to card parent so newly created cell will be selected
+                                                e.stopPropagation();
+                                                openCopyCellOverlay();
+                                            }}
+                                        >
+                                            <StyledButtonLabel>
+                                                <ContentCopy
+                                                    fontSize="small"
+                                                    sx={{ padding: '2px' }}
+                                                />
+                                            </StyledButtonLabel>
+                                        </StyledButtonGroupButton>
+                                        <StyledButtonGroupButton
+                                            title="Delete cell"
+                                            disabled={cell.isLoading}
+                                            size="small"
+                                            onClick={() => {
+                                                state.dispatch({
+                                                    message:
+                                                        ActionMessages.DELETE_CELL,
+                                                    payload: {
+                                                        queryId: cell.query.id,
+                                                        cellId: cell.id,
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            <StyledButtonLabel>
+                                                <DeleteOutlined fontSize="small" />
+                                            </StyledButtonLabel>
+                                        </StyledButtonGroupButton>
+                                    </ButtonGroup>
+                                </Stack>
                             </Stack>
                         }
                     />
