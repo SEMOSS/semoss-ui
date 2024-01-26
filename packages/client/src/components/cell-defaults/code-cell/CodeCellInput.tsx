@@ -170,6 +170,14 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             // getWordUntilPosition doesn't track when words are led by special characters
                             // we need to chack for wrapping curly brackets manually to know what to replace
 
+                            // word is not empty, completion was triggered by a non-special character
+                            if (word.word !== '') {
+                                // return empty suggestions to trigger built in typeahead
+                                return {
+                                    suggestions: [],
+                                };
+                            }
+
                             // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
                             var specialCharacterStartRange = {
                                 startLineNumber: position.lineNumber,
