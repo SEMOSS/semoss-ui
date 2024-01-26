@@ -44,7 +44,6 @@ export const PromptLibraryDialogButton = (props: {
                 <Button
                     color="primary"
                     onClick={() => setPromptLibraryOpen(true)}
-                    size="small"
                     endIcon={<ArrowOutward />}
                     variant="text"
                     disableElevation
