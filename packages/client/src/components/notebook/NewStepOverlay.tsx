@@ -4,26 +4,36 @@ import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useBlocks } from '@/hooks';
-import { ActionMessages } from '@/stores';
+import {
+    ActionMessages,
+    CellDef,
+    NewStepAction,
+    StepStateConfig,
+} from '@/stores';
+import { DefaultCells } from '../cell-defaults';
 
-type NewQueryForm = {
+type NewStepForm = {
     ID: string;
 };
 
-interface NewQueryOverlayProps {
+interface NewStepOverlayProps {
+    queryId: string;
+
     /**
      * Method called to close overlay
-     * @param newQueryId - new query id if successful
+     * @param newStepId - new step id if successful
      */
-    onClose: (newQueryId?: string) => void;
+    onClose: (newStepId?: string) => void;
+
+    previousStepId?: string;
 }
 
 /**
- * Edit or create a new query
+ * Edit or create a new step
  */
-export const NewQueryOverlay = observer(
-    (props: NewQueryOverlayProps): JSX.Element => {
-        const { onClose = () => null } = props;
+export const NewStepOverlay = observer(
+    (props: NewStepOverlayProps): JSX.Element => {
+        const { onClose = () => null, previousStepId = '', queryId } = props;
 
         const { state } = useBlocks();
 
@@ -36,7 +46,7 @@ export const NewQueryOverlay = observer(
             clearErrors,
             setError,
             formState: { errors },
-        } = useForm<NewQueryForm>({
+        } = useForm<NewStepForm>({
             defaultValues: {
                 ID: '',
             },
@@ -51,33 +61,54 @@ export const NewQueryOverlay = observer(
         /**
          * Allow the user to login
          */
-        const onSubmit = handleSubmit((data: NewQueryForm) => {
+        const onSubmit = handleSubmit((data: NewStepForm) => {
             clearErrors();
             if (!data.ID) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id is required`,
+                    message: `Step Id is required`,
                 });
                 return;
             }
 
-            // validate the name if it is new
-            if (state.queries[data.ID] || state.blocks[data.ID]) {
+            // validate that the name is new
+            if (state.queries[queryId].steps[data.ID]) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id ${data.ID} already exists`,
+                    message: `Step Id ${data.ID} already exists`,
                 });
                 return;
+            }
+
+            let config: NewStepAction['payload']['config'] = {
+                widget: DefaultCells['code'].widget,
+                parameters: DefaultCells['code'].parameters,
+            };
+
+            if (
+                previousStepId &&
+                state.queries[queryId].steps[previousStepId].cell.widget ===
+                    'code'
+            ) {
+                const previousStepType =
+                    state.queries[queryId].steps[previousStepId].parameters
+                        ?.type ?? 'pixel';
+                config = {
+                    widget: DefaultCells['code'].widget,
+                    parameters: {
+                        ...DefaultCells['code'].parameters,
+                        type: previousStepType,
+                    },
+                };
             }
 
             state.dispatch({
-                message: ActionMessages.NEW_QUERY,
+                message: ActionMessages.NEW_STEP,
                 payload: {
-                    queryId: data.ID,
-                    config: {
-                        mode: 'manual',
-                        steps: [],
-                    },
+                    queryId: queryId,
+                    stepId: data.ID,
+                    previousStepId: previousStepId,
+                    config: config,
                 },
             });
 
@@ -87,7 +118,7 @@ export const NewQueryOverlay = observer(
 
         return (
             <>
-                <Modal.Title>New Query</Modal.Title>
+                <Modal.Title>New Step</Modal.Title>
                 <Modal.Content>
                     <Stack marginTop={1}>
                         <Controller

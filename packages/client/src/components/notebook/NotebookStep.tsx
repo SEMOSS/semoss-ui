@@ -195,7 +195,16 @@ export const NotebookStep = observer(
                                 justifyContent="space-between"
                                 direction="row"
                             >
-                                {renderedTitle}
+                                <Stack
+                                    direction="row"
+                                    spacing={2}
+                                    alignItems="center"
+                                >
+                                    {renderedTitle}
+                                    <Typography variant="subtitle1">
+                                        {step.id}
+                                    </Typography>
+                                </Stack>
                                 <ButtonGroup variant="outlined">
                                     <StyledButtonGroupButton
                                         title="Run step"

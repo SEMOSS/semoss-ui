@@ -106,7 +106,7 @@ export const QueryMenu = observer((): JSX.Element => {
     }, [blocks, blockSearch]);
 
     /**
-     * Edit or create a query
+     * Create a new query
      */
     const openQueryOverlay = () => {
         workspace.openOverlay(() => {
