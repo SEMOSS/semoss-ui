@@ -27,7 +27,7 @@ export const PromptBuilderContextStep = (props: {
     const filter = createFilterOptions<string>();
     // LLM is required before selecting a template
     const isPromptLibraryDisabled =
-        !props.builder.model.value || !props.builder.title;
+        !props.builder.model.value || !props.builder.title.value;
 
     const myModels = usePixel<
         { app_id: string; app_name: string; tag: string }[]
