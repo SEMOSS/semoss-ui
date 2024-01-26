@@ -418,7 +418,7 @@ export const NotebookMenu = observer((): JSX.Element => {
                     sx={{ padding: 2 }}
                     type="text"
                     size="small"
-                    placeholder="Search Input Blocks"
+                    placeholder="Search User Input Blocks"
                     value={blockSearch}
                     onChange={(e) => setBlockSearch(e.target.value)}
                     fullWidth
