@@ -111,21 +111,29 @@ export const NewQueryOverlay = observer(
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button
-                        variant="text"
-                        color="primary"
-                        onClick={() => onClose()}
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        paddingX={2}
+                        paddingBottom={2}
+                        justifyContent="end"
                     >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={!!errors?.ID?.message || !isFormValid}
-                        onClick={() => onSubmit()}
-                    >
-                        Submit
-                    </Button>
+                        <Button
+                            variant="text"
+                            color="primary"
+                            onClick={() => onClose()}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={!!errors?.ID?.message || !isFormValid}
+                            onClick={() => onSubmit()}
+                        >
+                            Submit
+                        </Button>
+                    </Stack>
                 </Modal.Actions>
             </>
         );
