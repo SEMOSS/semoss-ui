@@ -17,7 +17,7 @@ import {
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_DATABASE,
 } from '../prompt.constants';
-import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
+import { styled, Box, Button, Grid, Paper, useNotification } from '@semoss/ui';
 import { PromptBuilderSummary } from './summary';
 import { useRootStore } from '@/hooks';
 import { PromptBuilderStep } from './step';
@@ -43,7 +43,7 @@ const initialBuilder: Builder = {
         step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
         required: true,
-        display: 'Title',
+        display: 'Name',
     },
     tags: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
@@ -89,6 +89,7 @@ export const PromptBuilder = () => {
     const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
     const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);
     const navigate = useNavigate();
+    const notification = useNotification();
 
     const setBuilderValue = (
         builderStepKey: string,
@@ -107,11 +108,23 @@ export const PromptBuilder = () => {
             ? 'Preview'
             : 'Create App';
 
-    const nextButtonAction = () => {
+    const nextButtonAction = async () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             setCreateAppLoading(true);
             // prompt flow finished, move on
-            setBlocksAndOpenUIBuilder(builder, monolithStore, navigate);
+            try {
+                await setBlocksAndOpenUIBuilder(
+                    builder,
+                    monolithStore,
+                    navigate,
+                );
+            } catch (e) {
+                notification.add({
+                    color: 'error',
+                    message: e.message,
+                });
+                setCreateAppLoading(false);
+            }
         } else if (currentBuilderStep === PROMPT_BUILDER_INPUTS_STEP) {
             // skip input types step if no inputs configured
             const hasInputs = (builder.inputs.value as Token[]).some(
