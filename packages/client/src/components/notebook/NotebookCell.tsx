@@ -222,17 +222,19 @@ export const NotebookCell = observer(
                                         title="Duplicate cell"
                                         size="small"
                                         disabled={cell.isLoading}
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            // stop propogation to card parent so newly created cell will be selected
+                                            e.stopPropagation();
+                                            const newCellId = `${Math.floor(
+                                                Math.random() * 1000000000000,
+                                            )}`;
                                             // copy and add the cell to the end
                                             state.dispatch({
                                                 message:
                                                     ActionMessages.NEW_CELL,
                                                 payload: {
                                                     queryId: cell.query.id,
-                                                    cellId: `${Math.floor(
-                                                        Math.random() *
-                                                            1000000000000,
-                                                    )}`,
+                                                    cellId: newCellId,
                                                     previousCellId: cell
                                                         ? cell.id
                                                         : '',
@@ -244,6 +246,10 @@ export const NotebookCell = observer(
                                                     },
                                                 },
                                             });
+                                            notebook.selectCell(
+                                                cell.query.id,
+                                                newCellId,
+                                            );
                                         }}
                                     >
                                         <StyledButtonLabel>

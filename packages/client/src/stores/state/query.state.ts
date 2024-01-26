@@ -286,8 +286,8 @@ export class QueryState {
 
                     const { operationType, output } = pixelReturn[cellIdx];
 
-                    // sync cell information
-                    cell._sync(operationType, output);
+                    // sync step information
+                    cell._sync(operationType, output, true);
                 }
 
                 // clear the error

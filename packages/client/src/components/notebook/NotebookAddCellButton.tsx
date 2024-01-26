@@ -17,7 +17,7 @@ export const NotebookAddCellButton = observer(
         const { state, notebook } = useBlocks();
 
         /**
-         * Append a new step after the current step
+         * Append a new cell after the current cell
          * @param config - config to add
          */
         const appendCell = (config: NewCellAction['payload']['config']) => {
@@ -25,7 +25,7 @@ export const NotebookAddCellButton = observer(
                 const newCellId = `${Math.floor(
                     Math.random() * 1000000000000,
                 )}`;
-                // copy and add the step to the end
+                // copy and add the cell to the end
                 state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
@@ -48,10 +48,23 @@ export const NotebookAddCellButton = observer(
                 size="small"
                 disabled={query.isLoading}
                 onClick={() => {
-                    appendCell({
-                        widget: DefaultCellTypes['code'].widget,
-                        parameters: DefaultCellTypes['code'].parameters,
-                    });
+                    if (previousCellId) {
+                        const previousCellType =
+                            state.queries[query.id].cells[previousCellId]
+                                .parameters?.type ?? 'pixel';
+                        appendCell({
+                            widget: DefaultCellTypes['code'].widget,
+                            parameters: {
+                                ...DefaultCellTypes['code'].parameters,
+                                type: previousCellType,
+                            },
+                        });
+                    } else {
+                        appendCell({
+                            widget: DefaultCellTypes['code'].widget,
+                            parameters: DefaultCellTypes['code'].parameters,
+                        });
+                    }
                 }}
                 startIcon={<Add />}
             >
