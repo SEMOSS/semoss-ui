@@ -240,11 +240,11 @@ export const NotebookStep = observer(
                                                 spacing={0.5}
                                                 alignItems="center"
                                             >
-                                                <span>{`ID: ${step.id}`}</span>
+                                                <span>{`${step.id}`}</span>
                                                 <ContentCopy fontSize="inherit" />
                                             </Stack>
                                         }
-                                        title="Copy cell ID"
+                                        title="Copy cell id"
                                         onClick={() => {
                                             try {
                                                 navigator.clipboard.writeText(
