@@ -287,7 +287,7 @@ export class QueryState {
                     const { operationType, output } = pixelReturn[stepIdx];
 
                     // sync step information
-                    step._sync(operationType, output);
+                    step._sync(operationType, output, true);
                 }
 
                 // clear the error

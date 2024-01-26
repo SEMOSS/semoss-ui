@@ -11,8 +11,8 @@ const StyledTextField = styled(TextField)({
         left: 'auto',
     },
 });
-export interface TextFieldBlockDef extends BlockDef<'text-field'> {
-    widget: 'text-field';
+export interface InputBlockDef extends BlockDef<'input'> {
+    widget: 'input';
     data: {
         style: CSSProperties;
         label: string;
@@ -27,8 +27,8 @@ export interface TextFieldBlockDef extends BlockDef<'text-field'> {
     };
 }
 
-export const TextFieldBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<TextFieldBlockDef>(id);
+export const InputBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, setData } = useBlock<InputBlockDef>(id);
 
     return (
         <StyledTextField

@@ -229,17 +229,19 @@ export const NotebookStep = observer(
                                         title="Duplicate step"
                                         size="small"
                                         disabled={step.isLoading}
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            // stop propogation to card parent so newly created step will be selected
+                                            e.stopPropagation();
+                                            const newStepId = `${Math.floor(
+                                                Math.random() * 1000000000000,
+                                            )}`;
                                             // copy and add the step to the end
                                             state.dispatch({
                                                 message:
                                                     ActionMessages.NEW_STEP,
                                                 payload: {
                                                     queryId: step.query.id,
-                                                    stepId: `${Math.floor(
-                                                        Math.random() *
-                                                            1000000000000,
-                                                    )}`,
+                                                    stepId: newStepId,
                                                     previousStepId: step
                                                         ? step.id
                                                         : '',
@@ -251,6 +253,10 @@ export const NotebookStep = observer(
                                                     },
                                                 },
                                             });
+                                            notebook.selectStep(
+                                                step.query.id,
+                                                newStepId,
+                                            );
                                         }}
                                     >
                                         <StyledButtonLabel>

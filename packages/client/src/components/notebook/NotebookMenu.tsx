@@ -120,7 +120,14 @@ export const NotebookMenu = observer((): JSX.Element => {
      */
     const openQueryOverlay = () => {
         workspace.openOverlay(() => (
-            <NewQueryOverlay onClose={() => workspace.closeOverlay()} />
+            <NewQueryOverlay
+                onClose={(newQueryId?: string) => {
+                    if (newQueryId) {
+                        notebook.selectQuery(newQueryId);
+                    }
+                    workspace.closeOverlay();
+                }}
+            />
         ));
     };
 
