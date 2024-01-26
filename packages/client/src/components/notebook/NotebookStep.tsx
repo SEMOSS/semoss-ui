@@ -20,8 +20,9 @@ import {
     Pending,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
-import { useBlocks } from '@/hooks';
+import { useBlocks, useWorkspace } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
+import { NewStepOverlay } from './NewStepOverlay';
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'isCardStepSelected',
@@ -88,6 +89,30 @@ export const NotebookStep = observer(
         const { queryId, stepId } = props;
 
         const { state, notebook } = useBlocks();
+
+        const { workspace } = useWorkspace();
+
+        /**
+         * Create a new step
+         */
+        const openCopyStepOverlay = () => {
+            workspace.openOverlay(() => {
+                return (
+                    <NewStepOverlay
+                        copyParameters
+                        queryId={queryId}
+                        previousStepId={stepId}
+                        onClose={(newStepId) => {
+                            workspace.closeOverlay();
+
+                            if (newStepId) {
+                                notebook.selectStep(queryId, newStepId);
+                            }
+                        }}
+                    />
+                );
+            });
+        };
 
         // get the step
         const query = state.getQuery(queryId);
@@ -232,31 +257,7 @@ export const NotebookStep = observer(
                                         onClick={(e) => {
                                             // stop propogation to card parent so newly created step will be selected
                                             e.stopPropagation();
-                                            const newStepId = `${Math.floor(
-                                                Math.random() * 1000000000000,
-                                            )}`;
-                                            // copy and add the step to the end
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.NEW_STEP,
-                                                payload: {
-                                                    queryId: step.query.id,
-                                                    stepId: newStepId,
-                                                    previousStepId: step
-                                                        ? step.id
-                                                        : '',
-                                                    config: {
-                                                        widget: step.widget,
-                                                        parameters: {
-                                                            ...step.parameters,
-                                                        },
-                                                    },
-                                                },
-                                            });
-                                            notebook.selectStep(
-                                                step.query.id,
-                                                newStepId,
-                                            );
+                                            openCopyStepOverlay();
                                         }}
                                     >
                                         <StyledButtonLabel>
