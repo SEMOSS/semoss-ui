@@ -26,6 +26,8 @@ interface NewStepOverlayProps {
     onClose: (newStepId?: string) => void;
 
     previousStepId?: string;
+
+    copyParameters?: boolean;
 }
 
 /**
@@ -33,7 +35,12 @@ interface NewStepOverlayProps {
  */
 export const NewStepOverlay = observer(
     (props: NewStepOverlayProps): JSX.Element => {
-        const { onClose = () => null, previousStepId = '', queryId } = props;
+        const {
+            onClose = () => null,
+            previousStepId = '',
+            queryId,
+            copyParameters = false,
+        } = props;
 
         const { state } = useBlocks();
 
@@ -85,21 +92,30 @@ export const NewStepOverlay = observer(
                 parameters: DefaultCells['code'].parameters,
             };
 
-            if (
-                previousStepId &&
-                state.queries[queryId].steps[previousStepId].cell.widget ===
+            if (previousStepId) {
+                if (copyParameters) {
+                    config = {
+                        ...config,
+                        parameters: {
+                            ...state.queries[queryId].steps[previousStepId]
+                                .parameters,
+                        },
+                    };
+                } else if (
+                    state.queries[queryId].steps[previousStepId].cell.widget ===
                     'code'
-            ) {
-                const previousStepType =
-                    state.queries[queryId].steps[previousStepId].parameters
-                        ?.type ?? 'pixel';
-                config = {
-                    widget: DefaultCells['code'].widget,
-                    parameters: {
-                        ...DefaultCells['code'].parameters,
-                        type: previousStepType,
-                    },
-                };
+                ) {
+                    const previousStepType =
+                        state.queries[queryId].steps[previousStepId].parameters
+                            ?.type ?? 'pixel';
+                    config = {
+                        widget: DefaultCells['code'].widget,
+                        parameters: {
+                            ...DefaultCells['code'].parameters,
+                            type: previousStepType,
+                        },
+                    };
+                }
             }
 
             state.dispatch({
@@ -118,7 +134,9 @@ export const NewStepOverlay = observer(
 
         return (
             <>
-                <Modal.Title>New Step</Modal.Title>
+                <Modal.Title>
+                    {copyParameters ? 'Copy' : 'New'} Step
+                </Modal.Title>
                 <Modal.Content>
                     <Stack marginTop={1}>
                         <Controller

@@ -793,7 +793,7 @@ export class StateStore {
         if (!config.steps.length) {
             this.newStep(
                 queryId,
-                `${Math.floor(Math.random() * 1000000000000)}`,
+                `${queryId}-cell`,
                 {
                     parameters: {
                         code: '',
