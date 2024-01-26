@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Grid, IconButton, Modal } from '@semoss/ui';
+import { Grid, IconButton, Modal, useNotification } from '@semoss/ui';
 import { PromptLibraryCards } from './PromptLibraryCards';
 import { PromptLibraryList } from './PromptLibraryList';
 import { PromptExamples } from './examples';
@@ -16,6 +16,7 @@ export const PromptLibraryDialog = (props: {
 }) => {
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
+    const notification = useNotification();
     const [filter, setFilter] = useState('all');
 
     const filteredPrompts = () => {
@@ -38,7 +39,7 @@ export const PromptLibraryDialog = (props: {
         });
     };
 
-    function openUIBuilderForTemplate(
+    async function openUIBuilderForTemplate(
         title: string,
         inputs: Token[],
         inputTypes: object,
@@ -49,7 +50,18 @@ export const PromptLibraryDialog = (props: {
         templateBuilder.title.value = templateBuilder.title.value ?? title;
         templateBuilder.inputs.value = inputs;
         templateBuilder.inputTypes.value = inputTypes;
-        setBlocksAndOpenUIBuilder(templateBuilder, monolithStore, navigate);
+        try {
+            await setBlocksAndOpenUIBuilder(
+                templateBuilder,
+                monolithStore,
+                navigate,
+            );
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
     }
 
     return (

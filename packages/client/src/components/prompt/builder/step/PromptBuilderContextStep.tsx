@@ -26,7 +26,8 @@ export const PromptBuilderContextStep = (props: {
     );
     const filter = createFilterOptions<string>();
     // LLM is required before selecting a template
-    const isPromptLibraryDisabled = !props.builder.model.value;
+    const isPromptLibraryDisabled =
+        !props.builder.model.value || !props.builder.title;
 
     const myModels = usePixel<
         { app_id: string; app_name: string; tag: string }[]
@@ -74,7 +75,7 @@ export const PromptBuilderContextStep = (props: {
                 <Grid item xs={8}>
                     <Stack direction="column" spacing={2}>
                         <TextField
-                            label="Title"
+                            label="Name"
                             variant="outlined"
                             value={props.builder.title.value ?? ''}
                             onChange={(e) =>

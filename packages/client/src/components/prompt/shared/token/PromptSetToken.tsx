@@ -3,7 +3,7 @@ import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { Token } from '../../prompt.types';
 import { StyledTooltip } from '../../prompt.styled';
 import { styled, Button, List } from '@semoss/ui';
-import { SaveAlt, Sync } from '@mui/icons-material';
+import { Input, Sync } from '@mui/icons-material';
 import { PromptTokenChip } from './PromptTokenChip';
 import { PromptTokenTextButton } from './PromptTokenTextButton';
 
@@ -76,7 +76,7 @@ export const PromptSetToken = (props: {
                                 <StyledTooltipContentButton
                                     fullWidth
                                     variant="text"
-                                    startIcon={<SaveAlt />}
+                                    startIcon={<Input />}
                                     onClick={() =>
                                         props.setSelectedTokensAsInputs()
                                     }
