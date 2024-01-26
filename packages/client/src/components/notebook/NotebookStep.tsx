@@ -10,14 +10,15 @@ import {
     Chip,
     Divider,
     Collapse,
+    useNotification,
 } from '@semoss/ui';
 import {
-    ContentCopy,
     DeleteOutlined,
     PlayArrowRounded,
     CheckCircle,
     Error,
     Pending,
+    ContentCopy,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks, useWorkspace } from '@/hooks';
@@ -57,6 +58,11 @@ const StyledStatusChip = styled(Chip, {
     },
 }));
 
+const StyledIdChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: theme.palette.grey[300],
+    height: theme.spacing(3.5),
+}));
+
 const StyledContent = styled('div')(({ theme }) => ({
     width: '100%',
     overflow: 'hidden',
@@ -91,6 +97,7 @@ export const NotebookStep = observer(
         const { state, notebook } = useBlocks();
 
         const { workspace } = useWorkspace();
+        const notification = useNotification();
 
         /**
          * Create a new step
@@ -220,73 +227,101 @@ export const NotebookStep = observer(
                                 justifyContent="space-between"
                                 direction="row"
                             >
+                                {renderedTitle}
                                 <Stack
                                     direction="row"
-                                    spacing={2}
+                                    spacing={1}
                                     alignItems="center"
                                 >
-                                    {renderedTitle}
-                                    <Typography variant="subtitle1">
-                                        {step.id}
-                                    </Typography>
-                                </Stack>
-                                <ButtonGroup variant="outlined">
-                                    <StyledButtonGroupButton
-                                        title="Run step"
-                                        disabled={step.isLoading}
-                                        size="small"
-                                        onClick={() =>
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.RUN_STEP,
-                                                payload: {
-                                                    queryId: step.query.id,
-                                                    stepId: step.id,
-                                                },
-                                            })
+                                    <StyledIdChip
+                                        label={
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.5}
+                                                alignItems="center"
+                                            >
+                                                <span>{`ID: ${step.id}`}</span>
+                                                <ContentCopy fontSize="inherit" />
+                                            </Stack>
                                         }
-                                    >
-                                        <StyledButtonLabel>
-                                            <PlayArrowRounded fontSize="small" />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                    <StyledButtonGroupButton
-                                        title="Duplicate step"
-                                        size="small"
-                                        disabled={step.isLoading}
-                                        onClick={(e) => {
-                                            // stop propogation to card parent so newly created step will be selected
-                                            e.stopPropagation();
-                                            openCopyStepOverlay();
-                                        }}
-                                    >
-                                        <StyledButtonLabel>
-                                            <ContentCopy
-                                                fontSize="small"
-                                                sx={{ padding: '2px' }}
-                                            />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                    <StyledButtonGroupButton
-                                        title="Delete step"
-                                        disabled={step.isLoading}
-                                        size="small"
+                                        title="Copy cell ID"
                                         onClick={() => {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.DELETE_STEP,
-                                                payload: {
-                                                    queryId: step.query.id,
-                                                    stepId: step.id,
-                                                },
-                                            });
+                                            try {
+                                                navigator.clipboard.writeText(
+                                                    step.id,
+                                                );
+
+                                                notification.add({
+                                                    color: 'success',
+                                                    message:
+                                                        'Succesfully copied to clipboard',
+                                                });
+                                            } catch (e) {
+                                                notification.add({
+                                                    color: 'error',
+                                                    message: e.message,
+                                                });
+                                            }
                                         }}
-                                    >
-                                        <StyledButtonLabel>
-                                            <DeleteOutlined fontSize="small" />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                </ButtonGroup>
+                                    />
+                                    <ButtonGroup variant="outlined">
+                                        <StyledButtonGroupButton
+                                            title="Run step"
+                                            disabled={step.isLoading}
+                                            size="small"
+                                            onClick={() =>
+                                                state.dispatch({
+                                                    message:
+                                                        ActionMessages.RUN_STEP,
+                                                    payload: {
+                                                        queryId: step.query.id,
+                                                        stepId: step.id,
+                                                    },
+                                                })
+                                            }
+                                        >
+                                            <StyledButtonLabel>
+                                                <PlayArrowRounded fontSize="small" />
+                                            </StyledButtonLabel>
+                                        </StyledButtonGroupButton>
+                                        <StyledButtonGroupButton
+                                            title="Duplicate step"
+                                            size="small"
+                                            disabled={step.isLoading}
+                                            onClick={(e) => {
+                                                // stop propogation to card parent so newly created step will be selected
+                                                e.stopPropagation();
+                                                openCopyStepOverlay();
+                                            }}
+                                        >
+                                            <StyledButtonLabel>
+                                                <ContentCopy
+                                                    fontSize="small"
+                                                    sx={{ padding: '2px' }}
+                                                />
+                                            </StyledButtonLabel>
+                                        </StyledButtonGroupButton>
+                                        <StyledButtonGroupButton
+                                            title="Delete step"
+                                            disabled={step.isLoading}
+                                            size="small"
+                                            onClick={() => {
+                                                state.dispatch({
+                                                    message:
+                                                        ActionMessages.DELETE_STEP,
+                                                    payload: {
+                                                        queryId: step.query.id,
+                                                        stepId: step.id,
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            <StyledButtonLabel>
+                                                <DeleteOutlined fontSize="small" />
+                                            </StyledButtonLabel>
+                                        </StyledButtonGroupButton>
+                                    </ButtonGroup>
+                                </Stack>
                             </Stack>
                         }
                     />

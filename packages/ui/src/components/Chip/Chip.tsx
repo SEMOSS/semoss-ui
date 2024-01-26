@@ -77,6 +77,8 @@ export interface ChipProps {
      * @default 'filled'
      */
     variant?: "filled" | "outlined";
+
+    title: string;
 }
 
 export const Chip = (props: ChipProps) => {
