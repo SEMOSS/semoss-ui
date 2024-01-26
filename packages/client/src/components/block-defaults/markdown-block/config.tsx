@@ -8,7 +8,7 @@ import {
     buildBorderSection,
 } from '../block-defaults.shared';
 
-import { MarkdownBlockDef, MarkdownBlock } from './Markdown';
+import { MarkdownBlockDef, MarkdownBlock } from './MarkdownBlock';
 import { FormatListBulleted } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';

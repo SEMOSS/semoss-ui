@@ -18,7 +18,7 @@ export const config: BlockConfig<QueryBlockDef> = {
     slots: {},
     render: QueryBlock,
     icon: HighlightAlt,
-    isBlocksMenuEnabled: false,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

@@ -103,6 +103,8 @@ export const BlocksWorkspaceDev = observer(() => {
     const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
         // dev mode is ctrl + d
         if (event.key === 'd' && event.ctrlKey) {
+            // ignore the default action
+            event.preventDefault();
             setIsOpen(true);
         }
     }, []);
@@ -143,7 +145,7 @@ export const BlocksWorkspaceDev = observer(() => {
             maxWidth={'sm'}
             open={isOpen}
             onClose={() => {
-                setIsOpen(false);
+                setIsOpen(true);
             }}
         >
             <Modal.Title>Dev</Modal.Title>

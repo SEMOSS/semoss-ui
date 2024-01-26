@@ -1,7 +1,7 @@
 import { Registry } from '@/stores';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
-import { config as CellBlockConfig, QueryBlockDef } from './query-block';
+import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
 import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
@@ -23,10 +23,7 @@ import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
 import { config as TableBlockConfig, TableBlockDef } from './table-block';
 import { config as TextBlockConfig, TextBlockDef } from './text-block';
-import {
-    config as TextFieldBlockConfig,
-    TextFieldBlockDef,
-} from './text-field-block';
+import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 
@@ -46,7 +43,7 @@ export type DefaultBlockDefinitions =
     | SelectBlockDef
     | TableBlockDef
     | TextBlockDef
-    | TextFieldBlockDef
+    | InputBlockDef
     | SectionBlockDef
     | UploadBlockDef;
 
@@ -54,12 +51,12 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [CellBlockConfig.widget]: CellBlockConfig,
+    [QueryBlockConfig.widget]: QueryBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
-    [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 

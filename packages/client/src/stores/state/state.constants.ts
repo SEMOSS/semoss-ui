@@ -234,7 +234,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                 },
                 ['question']: {
                     id: 'question',
-                    widget: 'text-field',
+                    widget: 'input',
                     parent: {
                         id: 'form',
                         slot: 'children',

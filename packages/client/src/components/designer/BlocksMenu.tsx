@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { DefaultBlocks } from '../block-defaults';
-import { BLOCK_TYPES } from '../block-defaults/block-defaults.constants';
+import {
+    BLOCK_TYPES,
+    BLOCK_TYPE_INPUT,
+} from '../block-defaults/block-defaults.constants';
 import { styled, Stack, TextField } from '@semoss/ui';
 import { Search } from '@mui/icons-material';
 import { BlocksMenuBlockTypeSection } from './BlocksMenuBlockTypeSection';
@@ -47,6 +50,15 @@ export const BlocksMenu = observer(() => {
         }
     };
 
+    const getTitleForBlockType = (blockType: string) => {
+        switch (blockType) {
+            case BLOCK_TYPE_INPUT:
+                return 'User Input';
+            default:
+                return blockType;
+        }
+    };
+
     return (
         <Stack height="100%" pt={2}>
             <StyledTextFieldContainer>
@@ -70,7 +82,7 @@ export const BlocksMenu = observer(() => {
                         return (
                             <BlocksMenuBlockTypeSection
                                 key={`${blockType}-${i}`}
-                                title={blockType}
+                                title={getTitleForBlockType(blockType)}
                                 blocks={getBlocksForType(blockType)}
                             />
                         );
