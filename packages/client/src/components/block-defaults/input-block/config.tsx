@@ -3,21 +3,16 @@ import {
     InputSettings,
     QuerySelectionSettings,
 } from '@/components/block-settings';
-import { useBlock } from '@/hooks';
 
-import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
+import { InputBlockDef, InputBlock } from './InputBlock';
 import { FormatShapes } from '@mui/icons-material';
-import {
-    buildDimensionsSection,
-    buildSpacingSection,
-} from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
 // export the config for the block
-export const config: BlockConfig<TextFieldBlockDef> = {
-    widget: 'text-field',
+export const config: BlockConfig<InputBlockDef> = {
+    widget: 'input',
     type: BLOCK_TYPE_INPUT,
     data: {
         style: {
@@ -40,7 +35,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     slots: {
         content: [],
     },
-    render: TextFieldBlock,
+    render: InputBlock,
     icon: FormatShapes,
     isBlocksMenuEnabled: true,
     contentMenu: [
