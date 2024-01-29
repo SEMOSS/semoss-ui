@@ -16,7 +16,7 @@ export const config: BlockConfig<UploadBlockDef> = {
     data: {
         style: {
             width: '100%',
-            padding: '8px',
+            padding: '4px',
         },
         value: '',
         label: 'Example Input',

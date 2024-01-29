@@ -17,7 +17,12 @@ export const config: BlockConfig<TextBlockDef> = {
     widget: 'text',
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: {},
+        style: {
+            padding: '4px',
+            whiteSpace: 'pre-line',
+            textOverflow: 'ellipsis',
+            overflow: 'auto',
+        },
         text: 'Hello world',
     },
     listeners: {},

@@ -5,6 +5,10 @@ export const BASE_PAGE_BLOCKS = {
         parent: null,
         data: {
             style: {
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '24px',
+                gap: '8px',
                 fontFamily: 'roboto',
             },
         },
@@ -25,8 +29,12 @@ export const BASE_PAGE_BLOCKS = {
         },
         data: {
             style: {
-                padding: '32px',
-                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                flexWrap: 'wrap',
+                padding: '4px',
+                gap: '8px',
+                overflow: 'hidden',
             },
         },
         listeners: {},
@@ -46,7 +54,10 @@ export const BASE_PAGE_BLOCKS = {
         },
         data: {
             style: {
-                textAlign: 'center',
+                padding: '4px',
+                whiteSpace: 'pre-line',
+                textOverflow: 'ellipsis',
+                overflow: 'auto',
             },
             text: 'Welcome to the UI Builder! Drag and drop blocks to use in your app.',
         },

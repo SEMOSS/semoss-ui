@@ -6,10 +6,12 @@ import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
-const StyledCard = styled(Card)(() => ({
+const StyledCard = styled(Card)(({ theme }) => ({
     borderRadius: '8px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     cursor: 'grab',
+    width: theme.spacing(11),
+    height: theme.spacing(11),
 }));
 
 export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {

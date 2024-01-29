@@ -4239,76 +4239,6 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         rules: { required: true },
                     },
-                    // {
-                    //     fieldName: 'ENCODER_NAME',
-                    //     label: 'Encoder Name',
-                    //     defaultValue: '',
-                    //     options: {
-                    //         component: 'text-field',
-                    //     },
-                    //     disabled: false,
-                    //     rules: { required: true },
-                    // },
-                    // {
-                    //     fieldName: 'ENCODER_TYPE',
-                    //     label: 'Encoder Type',
-                    //     defaultValue: '',
-                    //     options: {
-                    //         component: 'text-field',
-                    //     },
-                    //     disabled: false,
-                    //     rules: { required: true },
-                    // },
-                    // {
-                    //     fieldName: 'ENCODER_API_KEY',
-                    //     label: 'Encoder API Key',
-                    //     defaultValue: '',
-                    //     options: {
-                    //         component: 'text-field',
-                    //     },
-                    //     disabled: false,
-                    //     rules: { required: true },
-                    // },
-                    // {
-                    //     fieldName: 'TEST_FIELD',
-                    //     label: 'TEST FIELD WITH OPTION REACTOR PARAMS',
-                    //     defaultValue: '',
-                    //     options: {
-                    //         component: 'select',
-                    //         options: [],
-                    //         pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "<NAME>" }] , engineTypes = [ 'MODEL' ] ) ;`,
-                    //     },
-                    //     disabled: false,
-                    //     rules: { required: true },
-                    //     helperText: 'Test',
-                    // },
-                    // {
-                    //     fieldName: 'RAM',
-                    //     label: 'TEST ADVANCED FIELD WITH OPTION PARAMS',
-                    //     defaultValue: '',
-                    //     options: {
-                    //         component: 'select',
-                    //         options: [],
-                    //         pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "<EMBEDDER_ENGINE_ID>" }] , engineTypes = [ 'MODEL' ] ) ;`,
-                    //     },
-                    //     advanced: true,
-                    //     disabled: false,
-                    //     rules: { required: true },
-                    //     helperText: 'Test',
-                    // },
-                    {
-                        fieldName: 'EMBEDDER_ENGINE_NAME',
-                        label: 'Embedder',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [],
-                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                        // pixel: '<EMBEDDER_ENGINE_ID>'
-                    },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
@@ -4317,6 +4247,8 @@ export const CONNECTION_OPTIONS = {
                             component: 'select',
                             options: [],
                             pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
                         },
                         disabled: false,
                         rules: { required: true },
@@ -4352,7 +4284,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'DISTANCE_METHOD',
                         label: 'Distance Method',
-                        defaultValue: 'cosine similarity',
+                        defaultValue: 'Squared Euclidean (L2) distance',
                         options: {
                             component: 'select',
                             options: [
@@ -4603,7 +4535,6 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -4777,7 +4708,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -5089,7 +5020,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -5273,7 +5204,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -5467,7 +5398,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -5738,7 +5669,7 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
-                    }, // ADVANCED
+                    },
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -5913,7 +5844,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -6206,7 +6137,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -6381,7 +6312,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -6556,7 +6487,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -6730,7 +6661,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -6904,7 +6835,6 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -7196,7 +7126,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -7370,7 +7300,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -7554,7 +7484,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -7738,7 +7668,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -7912,7 +7842,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -8126,7 +8056,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -8331,7 +8261,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -8515,7 +8445,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -8680,7 +8610,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -8844,7 +8774,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -9018,7 +8948,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -9202,7 +9132,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-                    // ADVANCED
+
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
