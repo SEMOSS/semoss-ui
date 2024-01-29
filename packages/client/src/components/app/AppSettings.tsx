@@ -10,6 +10,8 @@ import {
     Typography,
     Divider,
     TextField,
+    Stack,
+    FileDropzone,
 } from '@semoss/ui';
 
 import {
@@ -20,8 +22,8 @@ import {
     InsertLink,
     Publish,
 } from '@mui/icons-material';
-
-import { usePixel, useRootStore } from '@/hooks';
+import { Controller, useForm } from 'react-hook-form';
+import { usePixel, useRootStore, useWorkspace } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { Java } from '@/assets/img/Java';
@@ -213,10 +215,21 @@ interface AppSettingsProps {
     condensed?: boolean;
 }
 
+type EditAppForm = {
+    PROJECT_UPLOAD: File;
+};
+
 export const AppSettings = (props: AppSettingsProps) => {
     const { id, condensed = false } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+    const { workspace } = useWorkspace();
+
+    const { handleSubmit, control } = useForm<EditAppForm>({
+        defaultValues: {
+            PROJECT_UPLOAD: null,
+        },
+    });
 
     const admin = configStore.store.user.admin;
 
@@ -439,6 +452,69 @@ export const AppSettings = (props: AppSettingsProps) => {
                 });
             });
     };
+
+    /**
+     * @name editApp
+     */
+    const editApp = handleSubmit(async (data: EditAppForm) => {
+        // turn on loading
+        workspace.setLoading(true);
+
+        try {
+            const path = 'version/assets/';
+
+            // unzip the file in the new app
+            await monolithStore.runQuery(
+                `DeleteAsset(filePath=["${path}"], space=["${workspace.appId}"]);`,
+            );
+
+            // upload the file
+            const upload = await monolithStore.uploadFile(
+                [data.PROJECT_UPLOAD],
+                configStore.store.insightID,
+                workspace.appId,
+                path,
+            );
+
+            // upnzip the file in the new app
+            await monolithStore.runQuery(
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${
+                    workspace.appId
+                }"]);`,
+            );
+
+            // Load the insight classes
+            await monolithStore.runQuery(
+                `ReloadInsightClasses('${workspace.appId}');`,
+            );
+
+            // set the app portal
+            await monolithStore.setProjectPortal(
+                false,
+                workspace.appId,
+                true,
+                'public',
+            );
+
+            // Publish the app the insight classes
+            await monolithStore.runQuery(
+                `PublishProject('${workspace.appId}', release=true);`,
+            );
+
+            // close it
+            // refreshApp();
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            // turn of loading
+            workspace.setLoading(false);
+        }
+    });
 
     if (condensed) {
         return (
@@ -725,6 +801,46 @@ export const AppSettings = (props: AppSettingsProps) => {
                         </StyledCardDiv>
                     </StyledCardContainer>
                 ) : null}
+                <StyledCardContainer>
+                    <StyledCardDiv>
+                        <StyledCardLeft>
+                            <StyledListItemHeader>
+                                <Typography variant="h6">
+                                    Update Project
+                                </Typography>
+                            </StyledListItemHeader>
+                        </StyledCardLeft>
+                        <StyledCardRight>
+                            <Controller
+                                name={'PROJECT_UPLOAD'}
+                                control={control}
+                                rules={{}}
+                                render={({ field }) => {
+                                    return (
+                                        <FileDropzone
+                                            multiple={false}
+                                            value={field.value}
+                                            disabled={workspace.isLoading}
+                                            onChange={(newValues) => {
+                                                field.onChange(newValues);
+                                            }}
+                                        />
+                                    );
+                                }}
+                            />
+                            <Stack alignItems={'center'}>
+                                <Button
+                                    type="submit"
+                                    variant={'contained'}
+                                    disabled={workspace.isLoading}
+                                    onClick={editApp}
+                                >
+                                    Update
+                                </Button>
+                            </Stack>
+                        </StyledCardRight>
+                    </StyledCardDiv>
+                </StyledCardContainer>
             </StyledAppSettings>
         );
     }
