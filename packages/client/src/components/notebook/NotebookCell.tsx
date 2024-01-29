@@ -13,22 +13,22 @@ import {
     useNotification,
 } from '@semoss/ui';
 import {
+    ContentCopy,
     DeleteOutlined,
     PlayArrowRounded,
     CheckCircle,
     Error,
     Pending,
-    ContentCopy,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks, useWorkspace } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
-import { NewStepOverlay } from './NewStepOverlay';
+import { NewCellOverlay } from './NewCellOverlay';
 
 const StyledCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'isCardStepSelected',
-})<{ isCardStepSelected: boolean }>(({ theme, isCardStepSelected }) => ({
-    border: isCardStepSelected
+    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
+})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => ({
+    border: isCardCellSelected
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
     overflow: 'visible',
@@ -79,20 +79,20 @@ const StyledJson = styled('pre')(({ theme }) => ({
     overflowY: 'scroll',
 }));
 
-interface NotebookStepProps {
+interface NotebookCellProps {
     /** Id of the  the query */
     queryId: string;
 
-    /** Id of the step of the query */
-    stepId: string;
+    /** Id of the cell of the query */
+    cellId: string;
 }
 
 /**
- * Render the content of a step in the notebook
+ * Render the content of a cell in the notebook
  */
-export const NotebookStep = observer(
-    (props: NotebookStepProps): JSX.Element => {
-        const { queryId, stepId } = props;
+export const NotebookCell = observer(
+    (props: NotebookCellProps): JSX.Element => {
+        const { queryId, cellId } = props;
 
         const { state, notebook } = useBlocks();
 
@@ -100,20 +100,20 @@ export const NotebookStep = observer(
         const notification = useNotification();
 
         /**
-         * Create a new step
+         * Create a new cell
          */
-        const openCopyStepOverlay = () => {
+        const openCopyCellOverlay = () => {
             workspace.openOverlay(() => {
                 return (
-                    <NewStepOverlay
+                    <NewCellOverlay
                         copyParameters
                         queryId={queryId}
-                        previousStepId={stepId}
-                        onClose={(newStepId) => {
+                        previousCellId={cellId}
+                        onClose={(newCellId) => {
                             workspace.closeOverlay();
 
-                            if (newStepId) {
-                                notebook.selectStep(queryId, newStepId);
+                            if (newCellId) {
+                                notebook.selectCell(queryId, newCellId);
                             }
                         }}
                     />
@@ -121,40 +121,42 @@ export const NotebookStep = observer(
             });
         };
 
-        // get the step
+        // get the cell
         const query = state.getQuery(queryId);
-        const step = query.getStep(stepId);
+        const cell = query.getCell(cellId);
 
         // get the view
-        const cell = step.cell;
+        const cellType = cell.cellType;
 
         // render the title
         const renderedTitle = useMemo(() => {
-            if (!cell) {
+            if (!cellType) {
                 return;
             }
 
-            if (typeof cell.view.title === 'string') {
+            if (typeof cellType.view.title === 'string') {
                 return (
-                    <Typography variant="body2">{cell.view.title}</Typography>
+                    <Typography variant="body2">
+                        {cellType.view.title}
+                    </Typography>
                 );
             }
 
-            return createElement(observer(cell.view.title), {
-                step: step,
+            return createElement(observer(cellType.view.title), {
+                cell: cell,
             });
-        }, [cell ? cell.view.title : null]);
+        }, [cellType ? cellType.view.title : null]);
 
         // render the title
         const renderedInput = useMemo(() => {
-            if (!cell) {
+            if (!cellType) {
                 return;
             }
 
-            return createElement(observer(cell.view.input), {
-                step: step,
+            return createElement(observer(cellType.view.input), {
+                cell: cell,
             });
-        }, [cell ? cell.view.input : null]);
+        }, [cellType ? cellType.view.input : null]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
@@ -173,39 +175,39 @@ export const NotebookStep = observer(
             }
         };
 
-        // if we are able to get more granular step loading info when running the full query, we can remove the step.query.isLoading checks
-        const getStepChipStatus = () => {
-            if (step.isLoading || step.query.isLoading) {
+        // if we are able to get more granular cell loading info when running the full query, we can remove the cell.query.isLoading checks
+        const getCellChipStatus = () => {
+            if (cell.isLoading || cell.query.isLoading) {
                 return `disabled`;
-            } else if (step.isSuccessful) {
+            } else if (cell.isSuccessful) {
                 return 'success';
-            } else if (step.isError) {
+            } else if (cell.isError) {
                 return 'error';
             } else {
                 return 'disabled';
             }
         };
-        const getStepChipLabel = () => {
-            if (step.isLoading) {
+        const getCellChipLabel = () => {
+            if (cell.isLoading) {
                 return 'Loading';
-            } else if (step.query.isLoading) {
+            } else if (cell.query.isLoading) {
                 return 'Query Loading';
-            } else if (step.isSuccessful) {
+            } else if (cell.isSuccessful) {
                 return 'Success';
-            } else if (step.isError) {
+            } else if (cell.isError) {
                 return 'Error';
             } else {
                 return 'Pending Execution';
             }
         };
-        const getStepChipIcon = () => {
-            if (step.isLoading) {
+        const getCellChipIcon = () => {
+            if (cell.isLoading) {
                 return <CircularProgress size="0.75rem" />;
-            } else if (step.query.isLoading) {
+            } else if (cell.query.isLoading) {
                 return <Pending color="inherit" />;
-            } else if (step.isSuccessful) {
+            } else if (cell.isSuccessful) {
                 return <CheckCircle color="inherit" />;
-            } else if (step.isError) {
+            } else if (cell.isError) {
                 return <Error color="inherit" />;
             } else {
                 return <Pending color="inherit" />;
@@ -215,10 +217,10 @@ export const NotebookStep = observer(
         return (
             <>
                 <StyledCard
-                    isCardStepSelected={
-                        (notebook?.selectedStep?.id ?? '') == step.id
+                    isCardCellSelected={
+                        (notebook?.selectedCell?.id ?? '') == cell.id
                     }
-                    onClick={() => notebook.selectStep(step.query.id, step.id)}
+                    onClick={() => notebook.selectCell(cell.query.id, cell.id)}
                 >
                     <Card.Header
                         title={
@@ -240,7 +242,7 @@ export const NotebookStep = observer(
                                                 spacing={0.5}
                                                 alignItems="center"
                                             >
-                                                <span>{`${step.id}`}</span>
+                                                <span>{`${cell.id}`}</span>
                                                 <ContentCopy fontSize="inherit" />
                                             </Stack>
                                         }
@@ -248,7 +250,7 @@ export const NotebookStep = observer(
                                         onClick={() => {
                                             try {
                                                 navigator.clipboard.writeText(
-                                                    step.id,
+                                                    cell.id,
                                                 );
 
                                                 notification.add({
@@ -266,16 +268,16 @@ export const NotebookStep = observer(
                                     />
                                     <ButtonGroup variant="outlined">
                                         <StyledButtonGroupButton
-                                            title="Run step"
-                                            disabled={step.isLoading}
+                                            title="Run cell"
+                                            disabled={cell.isLoading}
                                             size="small"
                                             onClick={() =>
                                                 state.dispatch({
                                                     message:
-                                                        ActionMessages.RUN_STEP,
+                                                        ActionMessages.RUN_CELL,
                                                     payload: {
-                                                        queryId: step.query.id,
-                                                        stepId: step.id,
+                                                        queryId: cell.query.id,
+                                                        cellId: cell.id,
                                                     },
                                                 })
                                             }
@@ -285,13 +287,13 @@ export const NotebookStep = observer(
                                             </StyledButtonLabel>
                                         </StyledButtonGroupButton>
                                         <StyledButtonGroupButton
-                                            title="Duplicate step"
+                                            title="Duplicate cell"
                                             size="small"
-                                            disabled={step.isLoading}
+                                            disabled={cell.isLoading}
                                             onClick={(e) => {
-                                                // stop propogation to card parent so newly created step will be selected
+                                                // stop propogation to card parent so newly created cell will be selected
                                                 e.stopPropagation();
-                                                openCopyStepOverlay();
+                                                openCopyCellOverlay();
                                             }}
                                         >
                                             <StyledButtonLabel>
@@ -302,16 +304,16 @@ export const NotebookStep = observer(
                                             </StyledButtonLabel>
                                         </StyledButtonGroupButton>
                                         <StyledButtonGroupButton
-                                            title="Delete step"
-                                            disabled={step.isLoading}
+                                            title="Delete cell"
+                                            disabled={cell.isLoading}
                                             size="small"
                                             onClick={() => {
                                                 state.dispatch({
                                                     message:
-                                                        ActionMessages.DELETE_STEP,
+                                                        ActionMessages.DELETE_CELL,
                                                     payload: {
-                                                        queryId: step.query.id,
-                                                        stepId: step.id,
+                                                        queryId: cell.query.id,
+                                                        cellId: cell.id,
                                                     },
                                                 });
                                             }}
@@ -336,54 +338,54 @@ export const NotebookStep = observer(
                             >
                                 <StyledStatusChip
                                     size="small"
-                                    avatar={getStepChipIcon()}
-                                    label={getStepChipLabel()}
-                                    status={getStepChipStatus()}
+                                    avatar={getCellChipIcon()}
+                                    label={getCellChipLabel()}
+                                    status={getCellChipStatus()}
                                 />
-                                {step.executionDurationMilliseconds ? (
+                                {cell.executionDurationMilliseconds ? (
                                     <Typography variant="caption">
                                         {getExecutionTimeString(
-                                            step.executionDurationMilliseconds,
+                                            cell.executionDurationMilliseconds,
                                         )}
                                     </Typography>
                                 ) : (
                                     <></>
                                 )}
-                                {step.executionDurationMilliseconds &&
-                                step.executionStart ? (
+                                {cell.executionDurationMilliseconds &&
+                                cell.executionStart ? (
                                     <Typography variant="caption">|</Typography>
                                 ) : (
                                     <></>
                                 )}
-                                {step.executionStart ? (
+                                {cell.executionStart ? (
                                     <Typography variant="caption">
-                                        {step.executionStart}
+                                        {cell.executionStart}
                                     </Typography>
                                 ) : (
                                     <></>
                                 )}
                             </Stack>
-                            {step.isError ? (
+                            {cell.isError ? (
                                 <StyledContent>
                                     <Typography
                                         variant="caption"
                                         sx={{ padding: '16px', color: 'red' }}
                                     >
-                                        {step.error}
+                                        {cell.error}
                                     </Typography>
                                 </StyledContent>
                             ) : null}
-                            {step.isSuccessful ? (
+                            {cell.isSuccessful ? (
                                 <StyledContent id="output-content">
                                     <StyledJson>
-                                        {JSON.stringify(step.output, null, 4)}
+                                        {JSON.stringify(cell.output, null, 4)}
                                     </StyledJson>
                                 </StyledContent>
                             ) : null}
                         </Stack>
                     </Card.Actions>
                 </StyledCard>
-                <Collapse in={(notebook?.selectedStep?.id ?? '') === step.id}>
+                <Collapse in={(notebook?.selectedCell?.id ?? '') === cell.id}>
                     <Stack
                         direction="row"
                         spacing={1}
@@ -391,8 +393,8 @@ export const NotebookStep = observer(
                         marginTop={2}
                     >
                         <NotebookAddCellButton
-                            query={step.query}
-                            previousStepId={step.id}
+                            query={cell.query}
+                            previousCellId={cell.id}
                         />
                     </Stack>
                 </Collapse>

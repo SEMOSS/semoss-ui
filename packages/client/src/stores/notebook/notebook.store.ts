@@ -6,8 +6,8 @@ export interface NotebookStoreInterface {
     /** Current selected query */
     selectedQueryId: string;
 
-    /** Store the previously selected query -> step */
-    selectedSteps: Record<string, string>;
+    /** Store the previously selected query -> cell */
+    selectedCells: Record<string, string>;
 }
 
 /**
@@ -17,7 +17,7 @@ export class NotebookStore {
     private _state: StateStore;
     private _store: NotebookStoreInterface = {
         selectedQueryId: '',
-        selectedSteps: {},
+        selectedCells: {},
     };
 
     constructor(state: StateStore) {
@@ -58,24 +58,24 @@ export class NotebookStore {
     }
 
     /**
-     * Get the selected step
+     * Get the selected cell
      */
-    get selectedStep() {
+    get selectedCell() {
         const selectedQuery = this.selectedQuery;
         if (!selectedQuery) {
             return null;
         }
 
-        const selectedStepId = this._store.selectedSteps[selectedQuery.id];
-        if (!selectedStepId) {
+        const selectedCellId = this._store.selectedCells[selectedQuery.id];
+        if (!selectedCellId) {
             return null;
         }
-        const selectedStep = this.selectedQuery.getStep(selectedStepId);
-        if (!selectedStep) {
+        const selectedCell = this.selectedQuery.getCell(selectedCellId);
+        if (!selectedCell) {
             return null;
         }
 
-        return selectedStep;
+        return selectedCell;
     }
 
     /**
@@ -88,19 +88,19 @@ export class NotebookStore {
     selectQuery(queryId: string) {
         // set the id
         this._store.selectedQueryId = queryId;
-        // automatically select last step of query
-        let querySteps = this._state.queries[queryId].list;
-        if (querySteps.length) {
-            this.selectStep(queryId, querySteps[querySteps.length - 1]);
+        // automatically select last cell of query
+        let queryCells = this._state.queries[queryId].list;
+        if (queryCells.length) {
+            this.selectCell(queryId, queryCells[queryCells.length - 1]);
         }
     }
 
     /**
-     * Set the selected step
+     * Set the selected cell
      * @param queryId - id of the block that is selected
      */
-    selectStep(queryId: string, stepId: string) {
-        // select the step
-        this._store.selectedSteps[queryId] = stepId;
+    selectCell(queryId: string, cellId: string) {
+        // select the cell
+        this._store.selectedCells[queryId] = cellId;
     }
 }

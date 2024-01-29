@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { StepState, StepStateConfig } from './step.state';
+import { CellState, CellStateConfig } from './cell.state';
 import { StateStore } from './state.store';
 import { setValueByPath } from '@/utility';
 
@@ -8,7 +8,7 @@ export interface QueryStateStoreInterface {
     /** Id of the query */
     id: string;
 
-    /** Track if the step is loading */
+    /** Track if the cell is loading */
     isLoading: boolean;
 
     /** Is the query automatically run or manully */
@@ -17,10 +17,10 @@ export interface QueryStateStoreInterface {
     /** Error associated with the Query */
     error: Error | null;
 
-    /** Pixel Steps in the query */
-    steps: Record<string, StepState>;
+    /** Pixel Cells in the query */
+    cells: Record<string, CellState>;
 
-    /** Ordered list of the steps in the query */
+    /** Ordered list of the cells in the query */
     list: string[];
 }
 
@@ -31,8 +31,8 @@ export interface QueryStateConfig {
     /** Is the query automatically run or manully */
     mode: 'automatic' | 'manual';
 
-    /** Steps in the query */
-    steps: StepStateConfig[];
+    /** Cells in the query */
+    cells: CellStateConfig[];
 }
 
 /**
@@ -45,7 +45,7 @@ export class QueryState {
         isLoading: false,
         mode: 'manual',
         error: null,
-        steps: {},
+        cells: {},
         list: [],
     };
 
@@ -57,21 +57,21 @@ export class QueryState {
         this._store.id = config.id;
         this._store.mode = config.mode;
 
-        // create the steps
-        const { steps, list } = config.steps.reduce(
+        // create the cells
+        const { cells, list } = config.cells.reduce(
             (acc, val) => {
-                acc.steps[val.id] = new StepState(val, this, this._state);
+                acc.cells[val.id] = new CellState(val, this, this._state);
                 acc.list.push(val.id);
 
                 return acc;
             },
             {
-                steps: {},
+                cells: {},
                 list: [],
             },
         );
 
-        this._store.steps = steps;
+        this._store.cells = cells;
         this._store.list = list;
 
         // make it observable
@@ -93,8 +93,8 @@ export class QueryState {
      */
     get isExecuted() {
         for (const s of this._store.list) {
-            const step = this._store.steps[s];
-            if (!step.isExecuted) {
+            const cell = this._store.cells[s];
+            if (!cell.isExecuted) {
                 return false;
             }
         }
@@ -111,8 +111,8 @@ export class QueryState {
         }
 
         for (const s of this._store.list) {
-            const step = this._store.steps[s];
-            if (step.isLoading) {
+            const cell = this._store.cells[s];
+            if (cell.isLoading) {
                 return true;
             }
         }
@@ -129,8 +129,8 @@ export class QueryState {
         }
 
         for (const s of this._store.list) {
-            const step = this._store.steps[s];
-            if (step.isError) {
+            const cell = this._store.cells[s];
+            if (cell.isError) {
                 return true;
             }
         }
@@ -143,8 +143,8 @@ export class QueryState {
      */
     get isSuccessful() {
         for (const s of this._store.list) {
-            const step = this._store.steps[s];
-            if (!step.isExecuted || step.isError) {
+            const cell = this._store.cells[s];
+            if (!cell.isExecuted || cell.isError) {
                 return false;
             }
         }
@@ -168,12 +168,12 @@ export class QueryState {
             return this._store.error.message;
         }
 
-        // collect the step errors
+        // collect the cell errors
         const messages = [];
         for (const s of this._store.list) {
-            const step = this._store.steps[s];
-            if (step.isError) {
-                messages.push(step.error);
+            const cell = this._store.cells[s];
+            if (cell.isError) {
+                messages.push(cell.error);
             }
         }
 
@@ -188,36 +188,36 @@ export class QueryState {
      * Output associated with the query
      */
     get output() {
-        const stepLen = this._store.list.length;
-        if (stepLen > 0) {
-            // get the last step
-            const sId = this._store.list[stepLen - 1];
-            return this._store.steps[sId].output;
+        const cellLen = this._store.list.length;
+        if (cellLen > 0) {
+            // get the last cell
+            const cellId = this._store.list[cellLen - 1];
+            return this._store.cells[cellId].output;
         }
 
         return undefined;
     }
 
     /**
-     * Get list of the steps of the query
+     * Get list of the cells of the query
      */
     get list() {
         return this._store.list;
     }
 
     /**
-     * Get the steps of the query
+     * Get the cells of the query
      */
-    get steps() {
-        return this._store.steps;
+    get cells() {
+        return this._store.cells;
     }
 
     /**
-     * Get a step from the query
-     * @param id - id of the step to get
+     * Get a cell from the query
+     * @param id - id of the cell to get
      */
-    getStep = (id: string): StepState => {
-        return this._store.steps[id];
+    getCell = (id: string): CellState => {
+        return this._store.cells[id];
     };
 
     /**
@@ -230,7 +230,7 @@ export class QueryState {
         return {
             id: this._store.id,
             mode: this._store.mode,
-            steps: this._store.list.map((s) => this._store.steps[s].toJSON()),
+            cells: this._store.list.map((s) => this._store.cells[s].toJSON()),
         };
     };
 
@@ -239,7 +239,7 @@ export class QueryState {
      */
     toPixel = () => {
         return this._store.list
-            .map((s) => this._store.steps[s].toPixel())
+            .map((s) => this._store.cells[s].toPixel())
             .join(';');
     };
 
@@ -259,7 +259,7 @@ export class QueryState {
             // start the loading screen
             this._store.isLoading = true;
 
-            // convert the steps to the raw pixel
+            // convert the cells to the raw pixel
             const raw = this.toPixel();
 
             // fill the braces {{ }} to create the final pixel
@@ -268,35 +268,35 @@ export class QueryState {
             // run as a single pixel block;
             const { pixelReturn } = await this._state._runPixel(filled);
 
-            const stepLen = this._store.list.length;
-            if (pixelReturn.length !== stepLen) {
+            const cellLen = this._store.list.length;
+            if (pixelReturn.length !== cellLen) {
                 throw new Error(
-                    'Error processing pixel. Steps do not equal pixelReturn',
+                    'Error processing pixel. Cells do not equal pixelReturn',
                 );
             }
 
             runInAction(() => {
-                // update the existing steps with the pixel blocks
+                // update the existing cells with the pixel blocks
                 // let data = undefined;
-                for (let stepIdx = 0; stepIdx < stepLen; stepIdx++) {
-                    const sId = this._store.list[stepIdx];
+                for (let cellIdx = 0; cellIdx < cellLen; cellIdx++) {
+                    const cellId = this._store.list[cellIdx];
 
-                    // get the step
-                    const step = this._store.steps[sId];
+                    // get the cell
+                    const cell = this._store.cells[cellId];
 
-                    const { operationType, output } = pixelReturn[stepIdx];
+                    const { operationType, output } = pixelReturn[cellIdx];
 
                     // sync step information
-                    step._sync(operationType, output, true);
+                    cell._sync(operationType, output, true);
                 }
 
                 // clear the error
                 this._store.error = null;
             });
         } catch (e) {
-            // TODO - because we use _sync steps instead of _processRun on them individually
-            // if a step errors out of the runPixel and causes a break/catch here,
-            // we're unable to get granular information about which step caused the error.
+            // TODO - because we use _sync cells instead of _processRun on them individually
+            // if a cell errors out of the runPixel and causes a break/catch here,
+            // we're unable to get granular information about which cell caused the error.
             runInAction(() => {
                 this._store.error = e;
             });
@@ -325,61 +325,61 @@ export class QueryState {
     };
 
     /**
-     * Process adding a new step to the query
-     * @param step - new step being added
-     * @param previousStepId - id of the previous step
+     * Process adding a new cell to the query
+     * @param cell - new cell being added
+     * @param previousCellId - id of the previous cell
      */
-    _processNewStep = (
-        stepId: string,
-        config: Omit<StepStateConfig, 'id'>,
-        previousStepId: string,
+    _processNewCell = (
+        cellId: string,
+        config: Omit<CellStateConfig, 'id'>,
+        previousCellId: string,
     ) => {
-        // create the new step
-        const step = new StepState(
+        // create the new cell
+        const cell = new CellState(
             {
                 ...config,
-                id: stepId,
+                id: cellId,
             },
             this,
             this._state,
         );
 
-        // save the step
-        this._store.steps[stepId] = step;
+        // save the cell
+        this._store.cells[cellId] = cell;
 
         // get the index of the previous one
-        let previousStepIdx = -1;
-        if (previousStepId) {
-            previousStepIdx = this._store.list.indexOf(previousStepId);
+        let previousCellIdx = -1;
+        if (previousCellId) {
+            previousCellIdx = this._store.list.indexOf(previousCellId);
         }
 
-        // add to end if there is no previous step
-        if (previousStepIdx === -1) {
-            this._store.list.push(stepId);
+        // add to end if there is no previous cell
+        if (previousCellIdx === -1) {
+            this._store.list.push(cellId);
             return;
         }
 
         // add it
-        this._store.list.splice(previousStepIdx + 1, 0, stepId);
+        this._store.list.splice(previousCellIdx + 1, 0, cellId);
     };
 
     /**
-     * Process deleting a step from the query
-     * @param id - id of the step to delete
+     * Process deleting a cell from the query
+     * @param id - id of the cell to delete
      */
-    _processDeleteStep = (id: string) => {
+    _processDeleteCell = (id: string) => {
         // find the index to delete at
-        const deleteStepIdx = this._store.list.indexOf(id);
-        if (deleteStepIdx === -1) {
-            throw new Error(`Unable to find step ${id}. This was not deleted`);
+        const deleteCellIdx = this._store.list.indexOf(id);
+        if (deleteCellIdx === -1) {
+            throw new Error(`Unable to find cell ${id}. This was not deleted`);
         }
 
         // remove it by index
-        this._store.list.splice(deleteStepIdx, 1);
+        this._store.list.splice(deleteCellIdx, 1);
 
         // remove it by id
-        if (this._store.steps[id]) {
-            delete this._store.steps[id];
+        if (this._store.cells[id]) {
+            delete this._store.cells[id];
         }
     };
 

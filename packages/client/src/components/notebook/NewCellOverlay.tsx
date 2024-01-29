@@ -4,40 +4,35 @@ import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useBlocks } from '@/hooks';
-import {
-    ActionMessages,
-    CellDef,
-    NewStepAction,
-    StepStateConfig,
-} from '@/stores';
-import { DefaultCells } from '../cell-defaults';
+import { ActionMessages, NewCellAction } from '@/stores';
+import { DefaultCellTypes } from '../cell-defaults';
 
-type NewStepForm = {
+type NewCellForm = {
     ID: string;
 };
 
-interface NewStepOverlayProps {
+interface NewCellOverlayProps {
     queryId: string;
 
     /**
      * Method called to close overlay
-     * @param newStepId - new step id if successful
+     * @param newCellId - new cell id if successful
      */
-    onClose: (newStepId?: string) => void;
+    onClose: (newCellId?: string) => void;
 
-    previousStepId?: string;
+    previousCellId?: string;
 
     copyParameters?: boolean;
 }
 
 /**
- * Edit or create a new step
+ * Edit or create a new cell
  */
-export const NewStepOverlay = observer(
-    (props: NewStepOverlayProps): JSX.Element => {
+export const NewCellOverlay = observer(
+    (props: NewCellOverlayProps): JSX.Element => {
         const {
             onClose = () => null,
-            previousStepId = '',
+            previousCellId = '',
             queryId,
             copyParameters = false,
         } = props;
@@ -53,7 +48,7 @@ export const NewStepOverlay = observer(
             clearErrors,
             setError,
             formState: { errors },
-        } = useForm<NewStepForm>({
+        } = useForm<NewCellForm>({
             defaultValues: {
                 ID: '',
             },
@@ -68,62 +63,62 @@ export const NewStepOverlay = observer(
         /**
          * Allow the user to login
          */
-        const onSubmit = handleSubmit((data: NewStepForm) => {
+        const onSubmit = handleSubmit((data: NewCellForm) => {
             clearErrors();
             if (!data.ID) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Step Id is required`,
+                    message: `Cell Id is required`,
                 });
                 return;
             }
 
             // validate that the name is new
-            if (state.queries[queryId].steps[data.ID]) {
+            if (state.queries[queryId].cells[data.ID]) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Step Id ${data.ID} already exists`,
+                    message: `Cell Id ${data.ID} already exists`,
                 });
                 return;
             }
 
-            let config: NewStepAction['payload']['config'] = {
-                widget: DefaultCells['code'].widget,
-                parameters: DefaultCells['code'].parameters,
+            let config: NewCellAction['payload']['config'] = {
+                widget: DefaultCellTypes['code'].widget,
+                parameters: DefaultCellTypes['code'].parameters,
             };
 
-            if (previousStepId) {
+            if (previousCellId) {
                 if (copyParameters) {
                     config = {
                         ...config,
                         parameters: {
-                            ...state.queries[queryId].steps[previousStepId]
+                            ...state.queries[queryId].cells[previousCellId]
                                 .parameters,
                         },
                     };
                 } else if (
-                    state.queries[queryId].steps[previousStepId].cell.widget ===
-                    'code'
+                    state.queries[queryId].cells[previousCellId].cellType
+                        .widget === 'code'
                 ) {
-                    const previousStepType =
-                        state.queries[queryId].steps[previousStepId].parameters
+                    const previousCellType =
+                        state.queries[queryId].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
                     config = {
-                        widget: DefaultCells['code'].widget,
+                        widget: DefaultCellTypes['code'].widget,
                         parameters: {
-                            ...DefaultCells['code'].parameters,
-                            type: previousStepType,
+                            ...DefaultCellTypes['code'].parameters,
+                            type: previousCellType,
                         },
                     };
                 }
             }
 
             state.dispatch({
-                message: ActionMessages.NEW_STEP,
+                message: ActionMessages.NEW_CELL,
                 payload: {
                     queryId: queryId,
-                    stepId: data.ID,
-                    previousStepId: previousStepId,
+                    cellId: data.ID,
+                    previousCellId: previousCellId,
                     config: config,
                 },
             });
@@ -135,7 +130,7 @@ export const NewStepOverlay = observer(
         return (
             <>
                 <Modal.Title>
-                    {copyParameters ? 'Copy' : 'New'} Step
+                    {copyParameters ? 'Copy' : 'New'} Cell
                 </Modal.Title>
                 <Modal.Content>
                     <Stack marginTop={1}>

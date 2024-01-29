@@ -4,7 +4,7 @@ import { styled, Button } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
 import { QueryState } from '@/stores';
 import { Add } from '@mui/icons-material';
-import { NewStepOverlay } from './NewStepOverlay';
+import { NewCellOverlay } from './NewCellOverlay';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -12,25 +12,25 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 export const NotebookAddCellButton = observer(
-    (props: { query: QueryState; previousStepId?: string }): JSX.Element => {
-        const { query, previousStepId = '' } = props;
+    (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
+        const { query, previousCellId = '' } = props;
         const { notebook } = useBlocks();
         const { workspace } = useWorkspace();
 
         /**
-         * Create a new step
+         * Create a new cell
          */
-        const openStepOverlay = () => {
+        const openCellOverlay = () => {
             workspace.openOverlay(() => {
                 return (
-                    <NewStepOverlay
+                    <NewCellOverlay
                         queryId={query.id}
-                        previousStepId={previousStepId}
-                        onClose={(newStepId) => {
+                        previousCellId={previousCellId}
+                        onClose={(newCellId) => {
                             workspace.closeOverlay();
 
-                            if (newStepId) {
-                                notebook.selectStep(query.id, newStepId);
+                            if (newCellId) {
+                                notebook.selectCell(query.id, newCellId);
                             }
                         }}
                     />
@@ -44,7 +44,7 @@ export const NotebookAddCellButton = observer(
                 variant="contained"
                 size="small"
                 disabled={query.isLoading}
-                onClick={openStepOverlay}
+                onClick={openCellOverlay}
                 startIcon={<Add />}
             >
                 Add Cell
