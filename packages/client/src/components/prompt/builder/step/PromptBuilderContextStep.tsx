@@ -2,9 +2,18 @@ import { useMemo, useState } from 'react';
 import { Builder } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
 import { createFilterOptions, Autocomplete } from '@mui/material';
-import { Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
+import {
+    Box,
+    Grid,
+    IconButton,
+    Stack,
+    TextField,
+    Typography,
+} from '@semoss/ui';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
 import { usePixel } from '@/hooks';
+import { Try } from '@mui/icons-material';
+import { PromptBuilderContextTestDialogButton } from './PromptBuilderContextTestDialogButton';
 
 type CfgLibraryEngineState = {
     loading: boolean;
@@ -25,9 +34,12 @@ export const PromptBuilderContextStep = (props: {
         InitialCfgLibraryEngineState,
     );
     const filter = createFilterOptions<string>();
-    // LLM is required before selecting a template
+
     const isPromptLibraryDisabled =
         !props.builder.model.value || !props.builder.title.value;
+
+    const isPromptContextTestDisabled =
+        !props.builder.model.value || !props.builder.context.value;
 
     const myModels = usePixel<
         { app_id: string; app_name: string; tag: string }[]
@@ -138,8 +150,12 @@ export const PromptBuilderContextStep = (props: {
                     </Stack>
                 </Grid>
             </Grid>
-            <Stack spacing={2} mt={2}>
-                <Stack direction="row" justifyContent="space-between">
+            <Stack spacing={1} mt={2}>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    paddingBottom={1}
+                >
                     <Typography variant="subtitle1">Prompt Context</Typography>
                     <PromptLibraryDialogButton
                         disabled={isPromptLibraryDisabled}
@@ -157,6 +173,13 @@ export const PromptBuilderContextStep = (props: {
                         props.setBuilderValue('context', e.target.value)
                     }
                 />
+                <Stack direction="row">
+                    <PromptBuilderContextTestDialogButton
+                        disabled={isPromptContextTestDisabled}
+                        llm={props.builder.model.value as string}
+                        context={props.builder.context.value as string}
+                    />
+                </Stack>
             </Stack>
         </StyledStepPaper>
     );

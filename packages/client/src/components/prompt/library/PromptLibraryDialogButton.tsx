@@ -22,7 +22,7 @@ export const PromptLibraryDialogButton = (props: {
                     title={
                         <Typography
                             variant="body1"
-                            sx={{ marginX: 1, width: '100%' }}
+                            sx={{ padding: 1, width: '100%' }}
                         >
                             Add a name and select an LLM to browse
                         </Typography>
