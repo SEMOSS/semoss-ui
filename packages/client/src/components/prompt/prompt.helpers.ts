@@ -53,7 +53,10 @@ function getTextFieldInputBlock(
             label: label,
             value: '',
             type: inputType,
-            style: {},
+            style: {
+                width: '100%',
+                padding: '4px',
+            },
         },
         listeners: {},
         slots: {},
@@ -72,7 +75,10 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             label: label,
             value: '',
             options: [],
-            style: {},
+            style: {
+                width: '100%',
+                padding: '8px',
+            },
         },
         listeners: {},
         slots: {},
@@ -425,13 +431,11 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        background: 'white',
+                        display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        padding: '32px',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',
+                        flexWrap: 'wrap',
+                        padding: '24px',
+                        gap: '8px',
                     },
                 },
                 listeners: {},
@@ -453,6 +457,7 @@ export async function setBlocksAndOpenUIBuilder(
                     style: {
                         fontSize: '2.5rem',
                         textAlign: 'center',
+                        padding: '4px',
                     },
                     text: 'My App',
                 },
@@ -469,6 +474,7 @@ export async function setBlocksAndOpenUIBuilder(
                 data: {
                     style: {
                         textAlign: 'center',
+                        padding: '4px',
                     },
                     text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
@@ -484,13 +490,11 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        background: 'white',
+                        display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        padding: '32px',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',
+                        flexWrap: 'wrap',
+                        padding: '24px',
+                        gap: '8px',
                     },
                 },
                 listeners: {},
@@ -512,13 +516,10 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {
-                        color: 'white',
-                        backgroundColor: 'blue',
-                        width: '125px',
-                    },
+                    style: {},
                     label: 'Submit',
                     loading: `{{query.${PROMPT_QUERY_ID}.isLoading}}`,
+                    variant: 'contained',
                 },
                 listeners: {
                     onClick: [
@@ -540,7 +541,9 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {},
+                    style: {
+                        padding: '4px',
+                    },
                     markdown: `{{query.${PROMPT_QUERY_ID}.output}}`,
                 },
                 listeners: {},
