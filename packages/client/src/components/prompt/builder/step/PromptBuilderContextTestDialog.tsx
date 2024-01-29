@@ -63,7 +63,7 @@ export const PromptBuilderContextTestDialog = (props: {
             >
                 <Close />
             </IconButton>
-            <Modal.Content sx={{ height: '40vh' }}>
+            <Modal.Content sx={{ height: '35vh' }}>
                 {loading ? (
                     <Stack
                         width="100%"

@@ -30,6 +30,7 @@ export const PromptBuilderContextTestDialogButton = (props: {
                 >
                     <span>
                         <Button
+                            color="inherit"
                             variant="text"
                             size="small"
                             disabled
@@ -41,6 +42,7 @@ export const PromptBuilderContextTestDialogButton = (props: {
                 </StyledTooltip>
             ) : (
                 <Button
+                    color="inherit"
                     variant="text"
                     size="small"
                     startIcon={<PlayArrow />}
