@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
     Button,
     CircularProgress,
-    Grid,
     IconButton,
     Modal,
     Stack,
@@ -30,7 +29,7 @@ export const PromptBuilderContextTestDialog = (props: {
 
         const { output: LLMOutput } = LLMresponse.pixelReturn[0];
 
-        setResponse(LLMOutput?.response ?? '');
+        setResponse(LLMOutput?.response ?? LLMOutput ?? '');
         setLoading(false);
     };
 
