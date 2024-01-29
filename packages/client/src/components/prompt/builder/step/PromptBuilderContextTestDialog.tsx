@@ -51,7 +51,7 @@ export const PromptBuilderContextTestDialog = (props: {
             maxWidth="md"
             open={props.open}
         >
-            <Modal.Title>Test Context</Modal.Title>
+            <Modal.Title>Test Prompt</Modal.Title>
             <IconButton
                 aria-label="close"
                 onClick={() => props.close()}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { IconButton, Typography } from '@semoss/ui';
-import { Try } from '@mui/icons-material';
+import { Button, IconButton, Typography } from '@semoss/ui';
+import { PlayArrow, Try } from '@mui/icons-material';
 import { PromptBuilderContextTestDialog } from './PromptBuilderContextTestDialog';
 import { StyledTooltip } from '../../prompt.styled';
 
@@ -29,19 +29,25 @@ export const PromptBuilderContextTestDialogButton = (props: {
                     }
                 >
                     <span>
-                        <IconButton disabled>
-                            <Try color="disabled" />
-                        </IconButton>
+                        <Button
+                            variant="text"
+                            size="small"
+                            disabled
+                            startIcon={<PlayArrow />}
+                        >
+                            Test Prompt
+                        </Button>
                     </span>
                 </StyledTooltip>
             ) : (
-                <IconButton
-                    title="Test prompt"
-                    color="primary"
+                <Button
+                    variant="text"
+                    size="small"
+                    startIcon={<PlayArrow />}
                     onClick={() => setPromptContextTestOpen(true)}
                 >
-                    <Try />
-                </IconButton>
+                    Test Prompt
+                </Button>
             )}
             <PromptBuilderContextTestDialog
                 llm={props.llm}

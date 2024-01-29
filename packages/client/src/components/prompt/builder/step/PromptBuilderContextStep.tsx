@@ -150,18 +150,13 @@ export const PromptBuilderContextStep = (props: {
                     </Stack>
                 </Grid>
             </Grid>
-            <Stack spacing={2} mt={2}>
-                <Stack direction="row" justifyContent="space-between">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="subtitle1">
-                            Prompt Context
-                        </Typography>
-                        <PromptBuilderContextTestDialogButton
-                            disabled={isPromptContextTestDisabled}
-                            llm={props.builder.model.value as string}
-                            context={props.builder.context.value as string}
-                        />
-                    </Stack>
+            <Stack spacing={1} mt={2}>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    paddingBottom={1}
+                >
+                    <Typography variant="subtitle1">Prompt Context</Typography>
                     <PromptLibraryDialogButton
                         disabled={isPromptLibraryDisabled}
                         builder={props.builder}
@@ -178,6 +173,13 @@ export const PromptBuilderContextStep = (props: {
                         props.setBuilderValue('context', e.target.value)
                     }
                 />
+                <Stack direction="row">
+                    <PromptBuilderContextTestDialogButton
+                        disabled={isPromptContextTestDisabled}
+                        llm={props.builder.model.value as string}
+                        context={props.builder.context.value as string}
+                    />
+                </Stack>
             </Stack>
         </StyledStepPaper>
     );
