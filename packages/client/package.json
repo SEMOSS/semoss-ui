@@ -25,6 +25,7 @@
         "marked": "^4.0.18",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
+        "monaco-editor": "^0.45.0",
         "react": "^17.0.2",
         "react-beautiful-dnd": "^13.1.1",
         "react-dom": "^17.0.2",

@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, SyntheticEvent } from 'react';
+import { useMemo, useEffect, useState, SyntheticEvent, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, Language, SaveOutlined } from '@mui/icons-material';
@@ -18,7 +18,13 @@ import {
 } from '@semoss/ui';
 
 import Editor from '@monaco-editor/react';
+// import MonacoEditor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+
 import { TextEditorPreview } from './TextEditorPreview';
+// import { TextEditorNew } from './TextEditorNew';
+
+// console.log({monaco})
 
 import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel';
@@ -238,6 +244,110 @@ export const TextEditor = (props: TextEditorProps) => {
     const [showLLMStarter, setShowLLMStarter] = useState(true);
     const [renderStyledLLMWrapper, setRenderStyledLLMWrapper] = useState(true);
     const [LLMPromptInput, setLLMPromptInput] = useState('');
+
+    useEffect(() => {
+        const executeAction: monaco.editor.IActionDescriptor = {
+            id: 'run-code',
+            label: 'Run Code',
+            contextMenuOrder: 2,
+            contextMenuGroupId: '1_modification',
+            keybindings: [
+                // KeyMod.CtrlCmd | KeyCode.Enter,
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
+            ],
+            // run: runTinker,
+            run: function (ed) {
+                alert("i'm running => " + ed.getPosition());
+            },
+        };
+
+        monaco.editor.addEditorAction(executeAction);
+
+        // Access the editor instance after it's mounted
+        // // const editor = monaco.editor.getModels()[0];
+        // // const editor = monaco.editor;
+
+        // // Listen to the contextmenu event
+
+        // console.log({ editor });
+
+        // var editor = monaco.editor.create(document.getElementById("test-container"), {
+        //     value: [
+        //         "",
+        //         "class Example {",
+        //         "\tprivate m:number;",
+        //         "",
+        //         "\tpublic met(): string {",
+        //         '\t\treturn "Hello world!";',
+        //         "\t}",
+        //         "}",
+        //     ].join("\n"),
+        //     language: "typescript",
+        // });
+
+        // editor.addAction({
+        //     // An unique identifier of the contributed action.
+        //     id: "my-unique-id",
+
+        //     // A label of the action that will be presented to the user.
+        //     label: "My Label!!!",
+
+        //     // An optional array of keybindings for the action.
+        //     keybindings: [
+        //         monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
+        //         // chord
+        //         monaco.KeyMod.chord(
+        //             monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
+        //             monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM
+        //         ),
+        //     ],
+
+        //     // A precondition for this action.
+        //     precondition: null,
+
+        //     // A rule to evaluate on top of the precondition in order to dispatch the keybindings.
+        //     keybindingContext: null,
+
+        //     contextMenuGroupId: "navigation",
+
+        //     contextMenuOrder: 1.5,
+
+        //     // Method that will be executed when the action is triggered.
+        //     // @param editor The editor instance is passed in as a convenience
+        //     run: function (ed) {
+        //         alert("i'm running => " + ed.getPosition());
+        //     },
+        // });
+
+        // const contextMenuListener = editor.onContextMenu((event) => {
+        // Prevent the default context menu
+
+        // event.preventDefault();
+
+        // // Get the position of the right-click
+        // const position = { x: event.event.x, y: event.event.y };
+
+        // // Add your custom menu item
+        // const customMenuItem = {
+        //     label: 'Custom Option',
+        //     // Handler for the custom option
+        //     click: () => {
+        //     // Implement the logic for the custom option
+        //     console.log('Custom Option Clicked!');
+        //     },
+        // };
+
+        // // Show the custom context menu
+        // monaco.editor.showContextMenu({ getActions: () => [customMenuItem], getAnchor: () => position });
+        // });
+
+        // // Cleanup the listener when the component unmounts
+        // return () => {
+        // contextMenuListener.dispose();
+        // };
+        // console.log({ monaco });
+    }, []);
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -556,6 +666,107 @@ export const TextEditor = (props: TextEditorProps) => {
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
 
+    // test return
+    // return <TextEditorNew />
+
+    const ModifiedEditor = (props) => {
+        return (
+            <Editor
+                width={props.width}
+                height={props.height}
+                value={props.value}
+                language={props.language}
+                onChange={props.onChange}
+                // width={'100%'}
+                // height={'100%'}
+                // value={activeFile.content}
+                // language={fileLanguage}
+                // onChange={(newValue, e) => {
+                //     editFile(newValue);
+                // }}
+            ></Editor>
+        );
+    };
+
+    const TextEditorNew = (props) => {
+        const editorRef = useRef(null);
+
+        useEffect(() => {
+            if (!editorRef.current) return;
+
+            const editor = monaco.editor.create(editorRef.current, {
+                // value: [
+                //   "",
+                //   "class Example {",
+                //   "\tprivate m:number;",
+                //   "",
+                //   "\tpublic met(): string {",
+                //   '\t\treturn "Hello world!";',
+                //   "\t}",
+                //   "}",
+                // ].join("\n"),
+                // width: '100%',
+                // height: '100%',
+                value: activeFile.content,
+                language: fileLanguage,
+                // onChange: (newValue, e) => {
+                //     editFile(newValue);
+                // }
+
+                // language: "typescript",
+            });
+
+            editorRef.current.editorInstance = editor;
+
+            const actionDisposable = editor.addAction({
+                id: 'my-unique-id',
+                label: 'Prompt AI Code Generator with selected text.',
+                keybindings: [
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
+                    monaco.KeyMod.chord(
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
+                    ),
+                ],
+                precondition: null,
+                keybindingContext: null,
+                contextMenuGroupId: 'navigation',
+                contextMenuOrder: 1.5,
+
+                run: (ed) => {
+                    const selection = ed.getSelection();
+                    const selectedText = ed
+                        .getModel()
+                        .getValueInRange(selection);
+                    alert(`Prompt: "${selectedText}"`);
+                },
+            });
+
+            return () => {
+                actionDisposable.dispose();
+                editor.dispose();
+            };
+        }, []);
+
+        return <div ref={editorRef} style={{ height: 400 }} />;
+
+        // <Editor
+        //     ref={editorRef}
+        //     width={props.width}
+        //     height={props.height}
+        //     value={props.value}
+        //     language={props.language}
+        //     onChange={props.onChange}
+        //     // width={'100%'}
+        //     // height={'100%'}
+        //     // value={activeFile.content}
+        //     // language={fileLanguage}
+        //     // onChange={(newValue, e) => {
+        //     //     editFile(newValue);
+        //     // }}
+        // ></Editor>
+    };
+
     if (LLMLoading) {
         return <LoadingScreen.Trigger description="Generating code..." />;
     }
@@ -776,7 +987,19 @@ export const TextEditor = (props: TextEditorProps) => {
                         </StyledLLMWrapper>
                     )}
 
-                    <Editor
+                    {/* <ModifiedEditor /> */}
+
+                    {/* <ModifiedEditor 
+                            width={'100%'}
+                            height={'100%'}
+                            value={activeFile.content}
+                            language={fileLanguage}
+                            onChange={(newValue, e) => {
+                                editFile(newValue);
+                            }}
+                        />                     */}
+
+                    <TextEditorNew
                         width={'100%'}
                         height={'100%'}
                         value={activeFile.content}
@@ -784,7 +1007,17 @@ export const TextEditor = (props: TextEditorProps) => {
                         onChange={(newValue, e) => {
                             editFile(newValue);
                         }}
-                    ></Editor>
+                    />
+
+                    {/* <Editor
+                            width={'100%'}
+                            height={'100%'}
+                            value={activeFile.content}
+                            language={fileLanguage}
+                            onChange={(newValue, e) => {
+                                editFile(newValue);
+                            }}
+                        ></Editor>   */}
 
                     <Modal open={LLMStarterModalOpen}>
                         <Modal.Title>Generate Starter Code?</Modal.Title>
