@@ -13,7 +13,9 @@ export const config: BlockConfig<CheckboxBlockDef> = {
     widget: 'checkbox',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            padding: 'none',
+        },
         label: 'Example Checkbox',
         required: false,
         disabled: false,
@@ -26,18 +28,6 @@ export const config: BlockConfig<CheckboxBlockDef> = {
     render: CheckboxBlock,
     icon: CheckBox,
     isBlocksMenuEnabled: true,
-    contentMenu: [
-        {
-            name: 'General',
-            children: [
-                {
-                    description: 'Label',
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
-                    ),
-                },
-            ],
-        },
-    ],
+    contentMenu: [],
     styleMenu: [],
 };

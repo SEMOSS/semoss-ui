@@ -2,17 +2,28 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { DefaultBlocks } from '../block-defaults';
+
+import {
+    styled,
+    Collapse,
+    IconButton,
+    Stack,
+    TextField,
+    Typography,
+} from '@semoss/ui';
+import { Search, SearchOff } from '@mui/icons-material';
 import {
     BLOCK_TYPES,
     BLOCK_TYPE_INPUT,
 } from '../block-defaults/block-defaults.constants';
-import { styled, Stack, TextField } from '@semoss/ui';
-import { Search } from '@mui/icons-material';
 import { BlocksMenuBlockTypeSection } from './BlocksMenuBlockTypeSection';
 
-const StyledTextFieldContainer = styled('div')(({ theme }) => ({
-    margin: theme.spacing(2),
+const StyledMenuHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: `0 ${theme.spacing(2)}`,
+    gap: theme.spacing(1),
 }));
 
 const StyledBlockSectionContainer = styled('div')(({ theme }) => ({
@@ -21,14 +32,13 @@ const StyledBlockSectionContainer = styled('div')(({ theme }) => ({
     padding: `0 ${theme.spacing(2)}`,
 }));
 
-const StyledSearchIcon = styled(Search)(({ theme }) => ({
-    color: theme.palette.divider,
-    height: '1em',
-    width: '1em',
+const StyledHeader = styled('div')(({ theme }) => ({
+    minWidth: '118px',
 }));
 
 export const BlocksMenu = observer(() => {
     const [search, setSearch] = useState('');
+    const [showSearch, setShowSearch] = useState<boolean>(false);
 
     const menuBlocks = Object.values(DefaultBlocks).filter(
         (block) => block.isBlocksMenuEnabled,
@@ -61,19 +71,46 @@ export const BlocksMenu = observer(() => {
 
     return (
         <Stack height="100%" pt={2}>
-            <StyledTextFieldContainer>
-                <TextField
-                    fullWidth
-                    label="Search"
-                    size="small"
-                    value={search}
-                    variant="outlined"
-                    InputProps={{
-                        endAdornment: <StyledSearchIcon />,
-                    }}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-            </StyledTextFieldContainer>
+            <StyledMenuHeader>
+                <StyledHeader>
+                    <Typography variant={'h6'}>Build Blocks</Typography>
+                </StyledHeader>
+                <Stack
+                    flex={1}
+                    spacing={1}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="end"
+                >
+                    <Collapse orientation="horizontal" in={showSearch}>
+                        <TextField
+                            placeholder="Search"
+                            size="small"
+                            sx={{
+                                width: '200px',
+                            }}
+                            value={search}
+                            variant="outlined"
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </Collapse>
+                    <IconButton
+                        color="default"
+                        size="small"
+                        onClick={() => {
+                            setShowSearch(!showSearch);
+                            setSearch('');
+                        }}
+                    >
+                        {showSearch ? (
+                            <SearchOff fontSize="medium" />
+                        ) : (
+                            <Search fontSize="medium" />
+                        )}
+                    </IconButton>
+                </Stack>
+            </StyledMenuHeader>
+
             <StyledBlockSectionContainer>
                 {!!search ? (
                     <BlocksMenuBlockTypeSection blocks={getBlocksForSearch()} />

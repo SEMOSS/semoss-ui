@@ -17,8 +17,7 @@ export const config: BlockConfig<SelectBlockDef> = {
     type: BLOCK_TYPE_INPUT,
     data: {
         style: {
-            width: '100%',
-            padding: '8px',
+            padding: '4px',
         },
         value: '',
         label: 'Example Select Input',

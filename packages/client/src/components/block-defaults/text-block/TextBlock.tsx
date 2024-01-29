@@ -18,9 +18,6 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
     return (
         <span
             style={{
-                overflow: 'auto',
-                textOverflow: 'ellipsis',
-                padding: '16px',
                 ...data.style,
             }}
             {...attrs}
