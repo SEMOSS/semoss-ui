@@ -24,7 +24,7 @@ export const PromptLibraryDialogButton = (props: {
                             variant="body1"
                             sx={{ marginX: 1, width: '100%' }}
                         >
-                            Select an LLM to browse
+                            Add a name and select an LLM to browse
                         </Typography>
                     }
                 >
@@ -32,7 +32,6 @@ export const PromptLibraryDialogButton = (props: {
                         <Button
                             color="primary"
                             disabled
-                            size="small"
                             endIcon={<ArrowOutward />}
                             variant="text"
                             disableElevation
@@ -45,7 +44,6 @@ export const PromptLibraryDialogButton = (props: {
                 <Button
                     color="primary"
                     onClick={() => setPromptLibraryOpen(true)}
-                    size="small"
                     endIcon={<ArrowOutward />}
                     variant="text"
                     disableElevation

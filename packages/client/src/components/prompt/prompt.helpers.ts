@@ -582,10 +582,14 @@ export async function setBlocksAndOpenUIBuilder(
     }" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
     // create the app
-    const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(pixel);
+    const { errors, pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
+        pixel,
+    );
 
-    const app = pixelReturn[0].output;
+    if (errors.length > 0) {
+        throw new Error(errors.join(','));
+    }
 
-    // navigate to the app
-    navigate(`/app/${app.project_id}`);
+    const appId = pixelReturn[0].output.project_id;
+    navigate(`/app/${appId}`);
 }
