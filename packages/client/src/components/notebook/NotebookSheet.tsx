@@ -2,7 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { styled, Stack, Container, Button, CircularProgress } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
-import { NotebookStep } from './NotebookStep';
+import { NotebookCell } from './NotebookCell';
 import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
 import { NotebookQueryModeButton } from './NotebookQueryModeButton';
@@ -24,7 +24,7 @@ const StyledContainer = styled(Container)(({ theme }) => ({
     overflow: 'auto',
 }));
 
-const StyledStep = styled('div')(({ theme }) => ({
+const StyledCell = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
@@ -123,13 +123,13 @@ export const NotebookSheet = observer((): JSX.Element => {
                 </Stack>
             </Stack>
             <StyledContainer maxWidth={'xl'}>
-                {notebook.selectedQuery.list.map((sId) => (
-                    <StyledStep key={sId}>
-                        <NotebookStep
+                {notebook.selectedQuery.list.map((cellId) => (
+                    <StyledCell key={cellId}>
+                        <NotebookCell
                             queryId={notebook.selectedQuery.id}
-                            stepId={sId}
-                        ></NotebookStep>
-                    </StyledStep>
+                            cellId={cellId}
+                        ></NotebookCell>
+                    </StyledCell>
                 ))}
             </StyledContainer>
         </StyledSheet>

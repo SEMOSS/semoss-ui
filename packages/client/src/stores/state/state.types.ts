@@ -1,6 +1,6 @@
 import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
-import { StepState } from './step.state';
+import { CellState } from './cell.state';
 import { QueryStateConfig } from './query.state';
 /**
  * Block
@@ -206,7 +206,7 @@ export interface Cell<D extends CellDef = CellDef> {
 /**
  * Cell Registry
  */
-export type CellRegistry<D extends CellDef = CellDef> = D extends CellDef
+export type CellTypeRegistry<D extends CellDef = CellDef> = D extends CellDef
     ? Record<D['widget'], Cell<D>>
     : never;
 /**
@@ -214,8 +214,8 @@ export type CellRegistry<D extends CellDef = CellDef> = D extends CellDef
  */
 export type CellComponent<D extends CellDef = CellDef> =
     React.FunctionComponent<{
-        /** Step that is controlling the cell */
-        step: StepState<D>;
+        /** Cell that is controlling the cell */
+        cell: CellState<D>;
     }>;
 
 export type SerializedState = {

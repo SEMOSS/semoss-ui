@@ -306,7 +306,7 @@ export function getQueryForPrompt(
         })
         .join(', ')})`;
 
-    let queryDefinitionSteps = [
+    let queryDefinitionCells = [
         {
             id: 'py-prompt-query-definition',
             widget: 'code',
@@ -322,7 +322,7 @@ export function getQueryForPrompt(
                 customInputTypes[customInputTokenIndex]?.type ===
                 INPUT_TYPE_CUSTOM_QUERY
             ) {
-                queryDefinitionSteps.unshift({
+                queryDefinitionCells.unshift({
                     id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
                     widget: 'code',
                     parameters: {
@@ -338,7 +338,7 @@ export function getQueryForPrompt(
             (inputType) => inputType?.type === INPUT_TYPE_VECTOR,
         )
     ) {
-        queryDefinitionSteps.unshift({
+        queryDefinitionCells.unshift({
             id: 'py-vector-search-query-definition',
             widget: 'code',
             parameters: {
@@ -352,7 +352,7 @@ export function getQueryForPrompt(
             (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
         )
     ) {
-        queryDefinitionSteps.unshift({
+        queryDefinitionCells.unshift({
             id: 'py-database-query-definition',
             widget: 'code',
             parameters: {
@@ -366,12 +366,12 @@ export function getQueryForPrompt(
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
             mode: 'automatic',
-            steps: queryDefinitionSteps,
+            cells: queryDefinitionCells,
         },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
             mode: 'manual',
-            steps: [
+            cells: [
                 {
                     id: 'py-query',
                     widget: 'code',
