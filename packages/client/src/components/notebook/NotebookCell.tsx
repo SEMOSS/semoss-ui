@@ -156,22 +156,6 @@ export const NotebookCell = observer(
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
-                let config: NewCellAction['payload']['config'] = {
-                    widget: DefaultCellTypes['code'].widget,
-                    parameters: DefaultCellTypes['code'].parameters,
-                };
-
-                if (cell.cellType.widget === 'code') {
-                    const previousCellType = cell.parameters?.type ?? 'pixel';
-                    config = {
-                        widget: DefaultCellTypes['code'].widget,
-                        parameters: {
-                            ...DefaultCellTypes['code'].parameters,
-                            type: previousCellType,
-                        },
-                    } as NewCellAction['payload']['config'];
-                }
-
                 // copy and add the step to the end
                 state.dispatch({
                     message: ActionMessages.NEW_CELL,
