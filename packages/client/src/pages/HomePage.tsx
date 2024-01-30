@@ -21,7 +21,12 @@ import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-import { AppMetadata, AppTileCard, AddAppModal } from '@/components/app';
+import {
+    AppMetadata,
+    AppTileCard,
+    AddAppModal,
+    AppLandscapeCard,
+} from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
 import {
     ExpandLess,
@@ -33,6 +38,9 @@ import {
 } from '@mui/icons-material';
 
 import { Filterbox } from '@/components/ui';
+
+import BUSINESS_INTELLIGENCE from '@/assets/img/Business_Intelligence.jpg';
+import TERMINAL from '@/assets/img/Terminal.jpg';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -87,40 +95,17 @@ export const HomePage = observer((): JSX.Element => {
         return k.metakey;
     });
 
+    let pixel = mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
+
+    pixel += `(metaKeys = ${JSON.stringify([
+        ...metaKeys,
+        'description',
+    ])}, metaFilters=[${JSON.stringify(
+        metaFilters,
+    )}], filterWord=["${search}"], onlyPortals=[true]);`;
+
     // get the projects
-    const myApps = usePixel<AppMetadata[]>(
-        `MyProjects(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, metaFilters=[${JSON.stringify(
-            metaFilters,
-        )}], filterWord=["${search}"], onlyPortals=[true]);`,
-    );
-
-    // MyEngines(
-    // metaKeys = ["tag","domain","description"] ,
-    // metaFilters = [ {"tag":["GPT"],"domain":["chat.openai","generic"]} ] ,
-    // filterWord=[""],
-    // userT = [true],
-    // engineTypes=['MODEL'],
-    // offset=[0],
-    // limit=[15]) ;
-
-    /**
-     * Close the add app modeal
-     *
-     * appId - app id if it is set
-     */
-    const closeAddAppModal = (appId?: string) => {
-        // close the modal
-        setAddAppModal(false);
-
-        // refresh the list or navigate to the app
-        if (!appId) {
-            myApps.refresh();
-        } else {
-            navigate(`app/${appId}`);
-        }
-    };
+    const myApps = usePixel<AppMetadata[]>(pixel);
 
     return (
         <Page
@@ -149,15 +134,11 @@ export const HomePage = observer((): JSX.Element => {
                             size={'large'}
                             variant={'contained'}
                             onClick={() => {
-                                if (process.env.NODE_ENV == 'development') {
-                                    navigate('/app/new');
-                                } else {
-                                    setAddAppModal(true);
-                                }
+                                navigate('/app/new');
                             }}
                             aria-label={`Open the App Model`}
                         >
-                            Add App
+                            Create New App
                         </Button>
                     </Stack>
                 </Stack>
@@ -180,6 +161,7 @@ export const HomePage = observer((): JSX.Element => {
                     >
                         <ToggleTabsGroup
                             value={mode}
+                            color={'primary'}
                             onChange={(e, v) => setMode(v as MODE)}
                             aria-label="basic tabs example"
                         >
@@ -189,7 +171,6 @@ export const HomePage = observer((): JSX.Element => {
                             />
                             <ToggleTabsGroup.Item
                                 label="Discoverable apps"
-                                disabled={true}
                                 value={'Discoverable'}
                             />
                         </ToggleTabsGroup>
@@ -250,8 +231,15 @@ export const HomePage = observer((): JSX.Element => {
                         </Stack>
                     </Stack>
                     <Grid container columnSpacing={3} rowSpacing={3}>
-                        <Grid item sm={12} md={4} lg={3} xl={2}>
+                        <Grid
+                            item
+                            sm={view === 'list' ? 12 : 12}
+                            md={view === 'list' ? 12 : 6}
+                            lg={view === 'list' ? 12 : 4}
+                            xl={view === 'list' ? 12 : 4}
+                        >
                             <AppTileCard
+                                image={BUSINESS_INTELLIGENCE}
                                 app={{
                                     project_id: '',
                                     project_name: 'BI',
@@ -281,8 +269,15 @@ export const HomePage = observer((): JSX.Element => {
                                 href="../../../"
                             />
                         </Grid>
-                        <Grid item sm={12} md={4} lg={3} xl={2}>
+                        <Grid
+                            item
+                            sm={view === 'list' ? 12 : 12}
+                            md={view === 'list' ? 12 : 6}
+                            lg={view === 'list' ? 12 : 4}
+                            xl={view === 'list' ? 12 : 4}
+                        >
                             <AppTileCard
+                                image={TERMINAL}
                                 app={{
                                     project_id: '',
                                     project_name: 'Terminal',
@@ -314,6 +309,7 @@ export const HomePage = observer((): JSX.Element => {
                         </Grid>
                     </Grid>
 
+                    <Divider light />
                     {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
                         <Grid container columnSpacing={3} rowSpacing={3}>
                             {myApps.data.map((app) => {
@@ -321,15 +317,22 @@ export const HomePage = observer((): JSX.Element => {
                                     <Grid
                                         item
                                         key={app.project_id}
-                                        sm={12}
-                                        md={4}
-                                        lg={3}
-                                        xl={2}
+                                        sm={view === 'list' ? 12 : 12}
+                                        md={view === 'list' ? 12 : 6}
+                                        lg={view === 'list' ? 12 : 4}
+                                        xl={view === 'list' ? 12 : 4}
                                     >
-                                        <AppTileCard
-                                            app={app}
-                                            href={`#/app/${app.project_id}`}
-                                        />
+                                        {view === 'list' ? (
+                                            <AppLandscapeCard
+                                                app={app}
+                                                href={`#/app/${app.project_id}`}
+                                            />
+                                        ) : (
+                                            <AppTileCard
+                                                app={app}
+                                                href={`#/app/${app.project_id}`}
+                                            />
+                                        )}
                                     </Grid>
                                 );
                             })}
@@ -337,10 +340,6 @@ export const HomePage = observer((): JSX.Element => {
                     ) : null}
                 </StyledContentContainer>
             </StyledContainer>
-            <AddAppModal
-                open={addAppModal}
-                handleClose={(appId) => closeAddAppModal(appId)}
-            />
             <WelcomeModal />
         </Page>
     );

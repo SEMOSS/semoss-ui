@@ -247,12 +247,23 @@ export const Filterbox = (props: FilterboxProps) => {
                 constructedFilters[obj[0]] = obj[1].value;
             }
         });
-        debugger;
         // Pass filters to parent
         onChange(constructedFilters);
     };
 
-    console.log('filterbox component');
+    /**
+     * @name formatName
+     * @param str
+     * @returns format string
+     */
+    const formatName = (str: string) => {
+        let i;
+        const frags = str.split('_');
+        for (i = 0; i < frags.length; i++) {
+            frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+        }
+        return frags.join(' ');
+    };
 
     return (
         <StyledFilter>
@@ -311,7 +322,7 @@ export const Filterbox = (props: FilterboxProps) => {
                                         disableTypography
                                         primary={
                                             <Typography variant={'h6'}>
-                                                {entries[0]}
+                                                {formatName(entries[0])}
                                             </Typography>
                                         }
                                     />
