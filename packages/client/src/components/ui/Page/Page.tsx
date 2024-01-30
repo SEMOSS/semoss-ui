@@ -29,6 +29,25 @@ const StyledPageHeader = styled('div', {
     backgroundColor: theme.palette.background.paper,
 }));
 
+const StyledContainer = styled(Container)(({ theme }) => ({
+    width: '1264px',
+    border: 'solid yellow',
+    padding: '0px',
+
+    '&.MuiContainer-root': {
+        padding: 'none',
+    },
+    /* Media query for screens with a minimum width of 600px */
+    '@media (min-width: 600px)': {
+        '&.MuiContainer-root': {
+            paddingLeft: '0px',
+            paddingRight: '0px',
+        },
+        // paddingLeft: '0px',
+        // paddingRight: '0px',
+    },
+}));
+
 export interface PageProps {
     /** Content to include in the header */
     header?: React.ReactNode;
@@ -69,15 +88,17 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth={'xl'}>{header}</Container>
+                    <StyledContainer maxWidth={false}>
+                        k{header}
+                    </StyledContainer>
                 </StyledPageHeader>
             )}
-            <Container
-                maxWidth={'xl'}
-                sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            <StyledContainer
+                maxWidth={false}
+                sx={{ width: '1264px', border: 'solid yellow', padding: '0px' }}
             >
                 {children}
-            </Container>
+            </StyledContainer>
         </StyledPage>
     );
 };

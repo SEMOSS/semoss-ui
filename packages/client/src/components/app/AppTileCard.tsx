@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import dayjs from 'dayjs';
 import {
+    Button,
     Card,
     Chip,
     Typography,
@@ -11,12 +12,15 @@ import {
     Link,
 } from '@semoss/ui';
 import {
+    AccessTime,
     BookmarkBorderOutlined,
+    MoreVert,
     OpenInNewOutlined,
     Person,
 } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { Env } from '@/env';
+import { useNavigate } from 'react-router-dom';
 
 const StyledCard = styled(Card)(() => ({
     borderRadius: '12px',
@@ -73,7 +77,8 @@ const StyledActionButton = styled(IconButton)(({ theme }) => ({
 
 // --- NEW STYLES ------------------------------
 const StyledTileCard = styled(Card)({
-    minWidth: '280px',
+    width: '280px',
+    height: '412px',
     '&:hover': {
         cursor: 'pointer',
     },
@@ -150,6 +155,10 @@ const StyledPersonIcon = styled(Person)({
     alignItems: 'flex-start',
 });
 
+const StyledAccessTimeIcon = styled(AccessTime)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+}));
+
 const StyledCardDescription = styled(Typography)({
     display: 'block',
     minHeight: '60px',
@@ -167,6 +176,15 @@ const StyledChipDiv = styled('div')({
     width: '80px',
     alignItems: 'center',
     gap: 2,
+});
+
+const StyledCardActions = styled(Card.Actions)({
+    display: 'flex',
+    padding: '0px 8px 0px 8px',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '4px',
+    alignSelf: 'stretch',
 });
 
 interface AppTileCardProps {
@@ -220,14 +238,16 @@ export const AppTileCard = (props: AppTileCardProps) => {
         href,
     } = props;
 
+    const navigate = useNavigate();
+
     // pretty format the data
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
-            return '';
+            return 'N/A';
         }
 
-        return d.format('MMMM D, YYYY');
+        return `Created on ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
 
     return (
@@ -252,9 +272,9 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         />
                     )}
                     <StyledOverlayContent>
-                        <StyledAvatar variant={'circular'}>
-                            <BookmarkBorderOutlined />
-                        </StyledAvatar>
+                        {/* <StyledAvatar variant={'circular'}>
+                                <BookmarkBorderOutlined />
+                            </StyledAvatar> */}
                     </StyledOverlayContent>
                 </StyledContainer>
                 <Card.Header
@@ -299,7 +319,19 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 />
                             ))}
                     </StyledChipDiv>
+                    <StyledPublishedByContainer>
+                        <StyledAccessTimeIcon />
+                        <StyledPublishedByLabel variant={'body2'}>
+                            {createdDate}
+                        </StyledPublishedByLabel>
+                    </StyledPublishedByContainer>
                 </Card.Content>
+                <StyledCardActions>
+                    <Button>Open</Button>
+                    <IconButton disabled={true}>
+                        <MoreVert />
+                    </IconButton>
+                </StyledCardActions>
             </Link>
         </StyledTileCard>
     );
@@ -307,15 +339,16 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 export const AppLandscapeCard = (props: AppTileCardProps) => {
     const { app, background = '#DAC9F5', onAction = () => null, href } = props;
+    const navigate = useNavigate();
 
     // pretty format the data
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
-            return '';
+            return 'N/A';
         }
 
-        return d.format('MMMM D, YYYY');
+        return `Created on ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
 
     return (

@@ -45,9 +45,8 @@ import TERMINAL from '@/assets/img/Terminal.jpg';
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
+    width: '100%',
     gap: theme.spacing(3),
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
 }));
 
 const StyledContentContainer = styled('div')(({ theme }) => ({
@@ -70,7 +69,7 @@ export const HomePage = observer((): JSX.Element => {
     const navigate = useNavigate();
 
     const [search, setSearch] = useState<string>('');
-    const [showSearch, setShowSearch] = useState<boolean>(false);
+    const [showSearch, setShowSearch] = useState<boolean>(true);
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
     const [view, setView] = useState<VIEW>('tile');
@@ -111,7 +110,6 @@ export const HomePage = observer((): JSX.Element => {
         <Page
             header={
                 <Stack>
-                    <div style={{ height: '24px' }}></div>
                     <Stack
                         direction="row"
                         alignItems={'center'}
@@ -230,87 +228,123 @@ export const HomePage = observer((): JSX.Element => {
                             </ToggleButtonGroup>
                         </Stack>
                     </Stack>
-                    <Grid container columnSpacing={3} rowSpacing={3}>
-                        <Grid
-                            item
-                            sm={view === 'list' ? 12 : 12}
-                            md={view === 'list' ? 12 : 6}
-                            lg={view === 'list' ? 12 : 4}
-                            xl={view === 'list' ? 12 : 4}
-                        >
-                            <AppTileCard
-                                image={BUSINESS_INTELLIGENCE}
-                                app={{
-                                    project_id: '',
-                                    project_name: 'BI',
-                                    project_type: '',
-                                    project_cost: '',
-                                    project_global: '',
-                                    project_catalog_name: '',
-                                    project_created_by: 'SYSTEM',
-                                    project_created_by_type: '',
-                                    project_date_created: '',
-                                    project_has_portal: false,
-                                    project_portal_name: '',
-                                    project_portal_published_date: '',
-                                    project_published_user: '',
-                                    project_published_user_type: '',
-                                    project_reactors_compiled_date: '',
-                                    project_reactors_compiled_user: '',
-                                    project_reactors_compiled_user_type: '',
-                                    project_favorite: '',
-                                    user_permission: '',
-                                    group_permission: '',
-                                    tag: [],
-                                    description:
-                                        'Develop dashboards and visualizations to view data',
-                                }}
-                                background="#BADEFF"
-                                href="../../../"
-                            />
-                        </Grid>
-                        <Grid
-                            item
-                            sm={view === 'list' ? 12 : 12}
-                            md={view === 'list' ? 12 : 6}
-                            lg={view === 'list' ? 12 : 4}
-                            xl={view === 'list' ? 12 : 4}
-                        >
-                            <AppTileCard
-                                image={TERMINAL}
-                                app={{
-                                    project_id: '',
-                                    project_name: 'Terminal',
-                                    project_type: '',
-                                    project_cost: '',
-                                    project_global: '',
-                                    project_catalog_name: '',
-                                    project_created_by: 'SYSTEM',
-                                    project_created_by_type: '',
-                                    project_date_created: '',
-                                    project_has_portal: false,
-                                    project_portal_name: '',
-                                    project_portal_published_date: '',
-                                    project_published_user: '',
-                                    project_published_user_type: '',
-                                    project_reactors_compiled_date: '',
-                                    project_reactors_compiled_user: '',
-                                    project_reactors_compiled_user_type: '',
-                                    project_favorite: '',
-                                    user_permission: '',
-                                    group_permission: '',
-                                    tag: [],
-                                    description:
-                                        'Execute commands and see a response',
-                                }}
-                                background="#BADEFF"
-                                href="../../../#!/embed-terminal"
-                            />
-                        </Grid>
-                    </Grid>
+                    {/* <Grid container columnSpacing={3} rowSpacing={3}>
+                        {'bi'.includes(search.toLowerCase()) && (
+                            <Grid
+                                item
+                                sm={view === 'list' ? 12 : 12}
+                                md={view === 'list' ? 12 : 6}
+                                lg={view === 'list' ? 12 : 4}
+                                xl={view === 'list' ? 12 : 4}
+                            >
+                                <AppTileCard
+                                    image={BUSINESS_INTELLIGENCE}
+                                    app={{
+                                        project_id: '',
+                                        project_name: 'BI',
+                                        project_type: '',
+                                        project_cost: '',
+                                        project_global: '',
+                                        project_catalog_name: '',
+                                        project_created_by: 'SYSTEM',
+                                        project_created_by_type: '',
+                                        project_date_created: '',
+                                        project_has_portal: false,
+                                        project_portal_name: '',
+                                        project_portal_published_date: '',
+                                        project_published_user: '',
+                                        project_published_user_type: '',
+                                        project_reactors_compiled_date: '',
+                                        project_reactors_compiled_user: '',
+                                        project_reactors_compiled_user_type: '',
+                                        project_favorite: '',
+                                        user_permission: '',
+                                        group_permission: '',
+                                        tag: [],
+                                        description:
+                                            'Develop dashboards and visualizations to view data',
+                                    }}
+                                    background="#BADEFF"
+                                    href="../../../"
+                                />
+                            </Grid>
+                        )}
+                        {'terminal'.includes(search.toLowerCase()) && (
+                            <Grid
+                                item
+                                sm={view === 'list' ? 12 : 12}
+                                md={view === 'list' ? 12 : 6}
+                                lg={view === 'list' ? 12 : 4}
+                                xl={view === 'list' ? 12 : 4}
+                            >
+                                <AppTileCard
+                                    image={TERMINAL}
+                                    app={{
+                                        project_id: '',
+                                        project_name: 'Terminal',
+                                        project_type: '',
+                                        project_cost: '',
+                                        project_global: '',
+                                        project_catalog_name: '',
+                                        project_created_by: 'SYSTEM',
+                                        project_created_by_type: '',
+                                        project_date_created: '',
+                                        project_has_portal: false,
+                                        project_portal_name: '',
+                                        project_portal_published_date: '',
+                                        project_published_user: '',
+                                        project_published_user_type: '',
+                                        project_reactors_compiled_date: '',
+                                        project_reactors_compiled_user: '',
+                                        project_reactors_compiled_user_type: '',
+                                        project_favorite: '',
+                                        user_permission: '',
+                                        group_permission: '',
+                                        tag: [],
+                                        description:
+                                            'Execute commands and see a response',
+                                    }}
+                                    background="#BADEFF"
+                                    href="../../../#!/embed-terminal"
+                                />
+                            </Grid>
+                        )}
+                    </Grid> */}
 
                     <Divider light />
-                    {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
+
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                            gap: '24px',
+                        }}
+                    >
+                        {myApps.status === 'SUCCESS' && myApps.data.length > 0
+                            ? myApps.data.map((app, i) => {
+                                  if (view === 'list') {
+                                      return (
+                                          <AppLandscapeCard
+                                              key={i}
+                                              app={app}
+                                              href={`#/app/${app.project_id}`}
+                                          />
+                                      );
+                                  } else {
+                                      return (
+                                          <AppTileCard
+                                              key={i}
+                                              app={app}
+                                              href={`#/app/${app.project_id}`}
+                                          />
+                                      );
+                                  }
+                              })
+                            : null}
+                    </div>
+
+                    {/* {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
                         <Grid container columnSpacing={3} rowSpacing={3}>
                             {myApps.data.map((app) => {
                                 return (
@@ -337,7 +371,7 @@ export const HomePage = observer((): JSX.Element => {
                                 );
                             })}
                         </Grid>
-                    ) : null}
+                    ) : null} */}
                 </StyledContentContainer>
             </StyledContainer>
             <WelcomeModal />

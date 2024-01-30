@@ -28,7 +28,7 @@ const StyledFilter = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: 'fit-content',
-    width: '355px',
+    width: '352px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     background: theme.palette.background.paper,
 }));
