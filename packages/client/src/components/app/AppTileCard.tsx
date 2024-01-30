@@ -73,6 +73,7 @@ const StyledActionButton = styled(IconButton)(({ theme }) => ({
 
 // --- NEW STYLES ------------------------------
 const StyledTileCard = styled(Card)({
+    minWidth: '280px',
     '&:hover': {
         cursor: 'pointer',
     },

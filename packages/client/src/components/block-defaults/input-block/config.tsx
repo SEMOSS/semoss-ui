@@ -1,3 +1,4 @@
+import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
 import {
     InputSettings,
@@ -10,15 +11,17 @@ import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
+export const DefaultStyles: CSSProperties = {
+    width: '100%',
+    padding: '4px',
+};
+
 // export the config for the block
 export const config: BlockConfig<InputBlockDef> = {
     widget: 'input',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {
-            width: '100%',
-            padding: '4px',
-        },
+        style: DefaultStyles,
         value: '',
         label: 'Example Input',
         hint: '',

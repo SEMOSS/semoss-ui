@@ -1,3 +1,4 @@
+import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
 import { FileCopyOutlined } from '@mui/icons-material';
 
@@ -12,18 +13,20 @@ import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
 import { BorderSettings, SizeSettings } from '@/components/block-settings';
 
+export const DefaultStyles: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '24px',
+    gap: '8px',
+    fontFamily: 'roboto',
+};
+
 // export the config for the block
 export const config: BlockConfig<PageBlockDef> = {
     widget: 'page',
     type: BLOCK_TYPE_LAYOUT,
     data: {
-        style: {
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '24px',
-            gap: '8px',
-            fontFamily: 'roboto',
-        },
+        style: DefaultStyles,
     },
     listeners: {},
     slots: {
