@@ -53,7 +53,10 @@ function getTextFieldInputBlock(
             label: label,
             value: '',
             type: inputType,
-            style: {},
+            style: {
+                width: '100%',
+                padding: '4px',
+            },
         },
         listeners: {},
         slots: {},
@@ -72,7 +75,10 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             label: label,
             value: '',
             options: [],
-            style: {},
+            style: {
+                width: '100%',
+                padding: '8px',
+            },
         },
         listeners: {},
         slots: {},
@@ -306,7 +312,7 @@ export function getQueryForPrompt(
         })
         .join(', ')})`;
 
-    let queryDefinitionSteps = [
+    let queryDefinitionCells = [
         {
             id: 'py-prompt-query-definition',
             widget: 'code',
@@ -322,7 +328,7 @@ export function getQueryForPrompt(
                 customInputTypes[customInputTokenIndex]?.type ===
                 INPUT_TYPE_CUSTOM_QUERY
             ) {
-                queryDefinitionSteps.unshift({
+                queryDefinitionCells.unshift({
                     id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
                     widget: 'code',
                     parameters: {
@@ -338,7 +344,7 @@ export function getQueryForPrompt(
             (inputType) => inputType?.type === INPUT_TYPE_VECTOR,
         )
     ) {
-        queryDefinitionSteps.unshift({
+        queryDefinitionCells.unshift({
             id: 'py-vector-search-query-definition',
             widget: 'code',
             parameters: {
@@ -352,7 +358,7 @@ export function getQueryForPrompt(
             (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
         )
     ) {
-        queryDefinitionSteps.unshift({
+        queryDefinitionCells.unshift({
             id: 'py-database-query-definition',
             widget: 'code',
             parameters: {
@@ -366,12 +372,12 @@ export function getQueryForPrompt(
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
             mode: 'automatic',
-            steps: queryDefinitionSteps,
+            cells: queryDefinitionCells,
         },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
             mode: 'manual',
-            steps: [
+            cells: [
                 {
                     id: 'py-query',
                     widget: 'code',
@@ -425,13 +431,11 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        background: 'white',
+                        display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        padding: '32px',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',
+                        flexWrap: 'wrap',
+                        padding: '24px',
+                        gap: '8px',
                     },
                 },
                 listeners: {},
@@ -453,6 +457,7 @@ export async function setBlocksAndOpenUIBuilder(
                     style: {
                         fontSize: '2.5rem',
                         textAlign: 'center',
+                        padding: '4px',
                     },
                     text: 'My App',
                 },
@@ -469,6 +474,7 @@ export async function setBlocksAndOpenUIBuilder(
                 data: {
                     style: {
                         textAlign: 'center',
+                        padding: '4px',
                     },
                     text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
@@ -484,13 +490,11 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        background: 'white',
+                        display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        padding: '32px',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',
+                        flexWrap: 'wrap',
+                        padding: '24px',
+                        gap: '8px',
                     },
                 },
                 listeners: {},
@@ -512,13 +516,10 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {
-                        color: 'white',
-                        backgroundColor: 'blue',
-                        width: '125px',
-                    },
+                    style: {},
                     label: 'Submit',
                     loading: `{{query.${PROMPT_QUERY_ID}.isLoading}}`,
+                    variant: 'contained',
                 },
                 listeners: {
                     onClick: [
@@ -540,7 +541,9 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {},
+                    style: {
+                        padding: '4px',
+                    },
                     markdown: `{{query.${PROMPT_QUERY_ID}.output}}`,
                 },
                 listeners: {},
@@ -582,10 +585,14 @@ export async function setBlocksAndOpenUIBuilder(
     }" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
     // create the app
-    const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(pixel);
+    const { errors, pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
+        pixel,
+    );
 
-    const app = pixelReturn[0].output;
+    if (errors.length > 0) {
+        throw new Error(errors.join(','));
+    }
 
-    // navigate to the app
-    navigate(`/app/${app.project_id}`);
+    const appId = pixelReturn[0].output.project_id;
+    navigate(`/app/${appId}`);
 }

@@ -32,7 +32,7 @@ pnpm_build_dev:
         - apt-get update
         - apt-get install -y maven
         # - npm install webpack --save-dev
-        - npm install -g pnpm@6
+        - npm install -g pnpm@8
         - pnpm install
         - pnpm -v
         - pnpm run build
@@ -67,7 +67,7 @@ pnpm_build_deploy:
         - echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
         - gpg2 --refresh-key
         # - npm install webpack --save-dev
-        - npm install -g pnpm@6
+        - npm install -g pnpm@8
         - pnpm install
         - pnpm -v
         - pnpm run build
@@ -77,7 +77,6 @@ pnpm_build_deploy:
     artifacts:
         paths:
             - target/semossweb-${VERSION}-SNAPSHOT.war
-
 # # Releases to maven central
 # pnpm_build_release:
 #     stage: pnpm_build

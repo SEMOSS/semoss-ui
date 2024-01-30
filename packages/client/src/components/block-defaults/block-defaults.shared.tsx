@@ -9,6 +9,8 @@ import {
     AlignHorizontalCenter,
     AlignHorizontalLeft,
     AlignHorizontalRight,
+    ArrowDownward,
+    ArrowForward,
     FormatAlignCenter,
     FormatAlignJustify,
     FormatAlignLeft,
@@ -83,6 +85,30 @@ export const buildLayoutSection = () => ({
                             value: 'right',
                             icon: AlignHorizontalRight,
                             title: 'Right',
+                            isDefault: false,
+                        },
+                    ]}
+                />
+            ),
+        },
+        {
+            description: 'Direction',
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.flexDirection"
+                    label="Direction"
+                    options={[
+                        {
+                            value: 'column',
+                            icon: ArrowDownward,
+                            title: 'Column',
+                            isDefault: true,
+                        },
+                        {
+                            value: 'row',
+                            icon: ArrowForward,
+                            title: 'Row',
                             isDefault: false,
                         },
                     ]}

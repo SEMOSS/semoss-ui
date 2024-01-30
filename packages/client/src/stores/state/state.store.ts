@@ -13,12 +13,12 @@ import {
 import {
     Block,
     BlockJSON,
-    CellRegistry,
+    CellTypeRegistry,
     ListenerActions,
     SerializedState,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
-import { StepStateConfig } from './step.state';
+import { CellStateConfig } from './cell.state';
 
 interface StateStoreInterface {
     /** insightID to load */
@@ -31,7 +31,7 @@ interface StateStoreInterface {
     blocks: Record<string, Block>;
 
     /** Cells registered to the insight */
-    cellRegistry: CellRegistry;
+    cellTypeRegistry: CellTypeRegistry;
 }
 
 export class StateStoreConfig {
@@ -42,7 +42,7 @@ export class StateStoreConfig {
     state: SerializedState;
 
     /** Cells registered to the insight */
-    cellRegistry: CellRegistry;
+    cellTypeRegistry: CellTypeRegistry;
 }
 
 /**
@@ -53,7 +53,7 @@ export class StateStore {
         insightId: '',
         queries: {},
         blocks: {},
-        cellRegistry: {},
+        cellTypeRegistry: {},
     };
 
     /**
@@ -76,7 +76,7 @@ export class StateStore {
         this._store.insightId = config.insightId;
 
         // register the cells
-        this._store.cellRegistry = config.cellRegistry || {};
+        this._store.cellTypeRegistry = config.cellTypeRegistry || {};
 
         // make it observable
         makeAutoObservable(this);
@@ -150,11 +150,11 @@ export class StateStore {
     }
 
     /**
-     * Get the cell registry
-     * @returns the cell registry
+     * Get the cell type registry
+     * @returns the cell type registry
      */
-    get cellRegistry() {
-        return this._store.cellRegistry;
+    get cellTypeRegistry() {
+        return this._store.cellTypeRegistry;
     }
 
     /**
@@ -245,23 +245,23 @@ export class StateStore {
                 const { queryId } = action.payload;
 
                 this.runQuery(queryId);
-            } else if (ActionMessages.NEW_STEP === action.message) {
-                const { queryId, stepId, config, previousStepId } =
+            } else if (ActionMessages.NEW_CELL === action.message) {
+                const { queryId, cellId, config, previousCellId } =
                     action.payload;
 
-                this.newStep(queryId, stepId, config, previousStepId);
-            } else if (ActionMessages.DELETE_STEP === action.message) {
-                const { queryId, stepId } = action.payload;
+                this.newCell(queryId, cellId, config, previousCellId);
+            } else if (ActionMessages.DELETE_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
 
-                this.deleteStep(queryId, stepId);
-            } else if (ActionMessages.UPDATE_STEP === action.message) {
-                const { queryId, stepId, path, value } = action.payload;
+                this.deleteCell(queryId, cellId);
+            } else if (ActionMessages.UPDATE_CELL === action.message) {
+                const { queryId, cellId, path, value } = action.payload;
 
-                this.updateStep(queryId, stepId, path, value);
-            } else if (ActionMessages.RUN_STEP === action.message) {
-                const { queryId, stepId } = action.payload;
+                this.updateCell(queryId, cellId, path, value);
+            } else if (ActionMessages.RUN_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
 
-                this.runStep(queryId, stepId);
+                this.runCell(queryId, cellId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -289,24 +289,24 @@ export class StateStore {
         // get the keys in the path
         const path = cleaned.split('.');
 
-        if (path[0] === 'query' && path[2] === 'step') {
+        if (path[0] === 'query' && path[2] === 'cell') {
             // check if the id is there
             const queryId = path[1];
-            const stepId = path[3];
+            const cellId = path[3];
 
             // get the query
             const query = this._store.queries[queryId];
-            const step = query ? query.getStep(stepId) : null;
-            if (step) {
-                // if the key is a step, calculate as a step
+            const cell = query ? query.getCell(cellId) : null;
+            if (cell) {
+                // if the key is a cell, calculate as a cell
                 const key = path[4];
-                if (key in step._exposed) {
+                if (key in cell._exposed) {
                     // get the search path
                     const s = path.slice(4).join('.');
-                    return getValueByPath(step._exposed, s);
+                    return getValueByPath(cell._exposed, s);
                 }
             }
-        } else if (path[0] === 'query' && path[2] !== 'step') {
+        } else if (path[0] === 'query' && path[2] !== 'cell') {
             // check if the id is there
             const queryId = path[1];
 
@@ -790,17 +790,17 @@ export class StateStore {
             this,
         );
 
-        if (!config.steps.length) {
-            this.newStep(
+        if (!config.cells.length) {
+            this.newCell(
                 queryId,
-                `${Math.floor(Math.random() * 1000000000000)}`,
+                `${queryId}-cell`,
                 {
                     parameters: {
                         code: '',
                         type: 'pixel',
                     },
                     widget: 'code',
-                } as Omit<StepStateConfig, 'id'>,
+                } as Omit<CellStateConfig, 'id'>,
                 '',
             );
         }
@@ -865,75 +865,75 @@ export class StateStore {
     };
 
     /**
-     * Create a new step
+     * Create a new cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the new step
+     * @param cellId - id of the new cell
      * @param config - config of the
-     * @param previousStepId: id of the previous step,
+     * @param previousCellId: id of the previous cell,
      */
-    private newStep = (
+    private newCell = (
         queryId: string,
-        stepId: string,
-        config: Omit<StepStateConfig, 'id'>,
-        previousStepId: string,
+        cellId: string,
+        config: Omit<CellStateConfig, 'id'>,
+        previousCellId: string,
     ): void => {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the step
-        q._processNewStep(stepId, config, previousStepId);
+        // add the cell
+        q._processNewCell(cellId, config, previousCellId);
     };
 
     /**
-     * Delete a step
+     * Delete a cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the deleted step
+     * @param cellId - id of the deleted cell
      */
-    private deleteStep = (queryId: string, stepId: string): void => {
+    private deleteCell = (queryId: string, cellId: string): void => {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the step
-        q._processDeleteStep(stepId);
+        // add the cell
+        q._processDeleteCell(cellId);
     };
 
     /**
-     * Update the store in the step
+     * Update the store in the cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the updated step
+     * @param cellId - id of the updated cell
      * @param path - path of the data to set
      * @param value - value of the data
      */
-    private updateStep = (
+    private updateCell = (
         queryId: string,
-        stepId: string,
+        cellId: string,
         path: string | null,
         value: unknown,
     ): void => {
         const q = this._store.queries[queryId];
-        const s = q.getStep(stepId);
+        const s = q.getCell(cellId);
 
         // set the value
         s._processUpdate(path, value);
     };
 
     /**
-     * Run the step
+     * Run the cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the deleted step
+     * @param cellId - id of the deleted cell
      */
-    private runStep = (queryId: string, stepId: string): void => {
+    private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
-        const s = q.getStep(stepId);
+        const s = q.getCell(cellId);
 
-        const key = `step--${stepId} (query--${queryId});`;
+        const key = `cell--${cellId} (query--${queryId});`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
         const p = cancellablePromise(async () => {
-            // run the step
+            // run the cell
             await s._processRun();
 
             // turn it off

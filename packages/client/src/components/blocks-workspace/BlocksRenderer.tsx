@@ -4,7 +4,7 @@ import { useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore } from '@/stores';
-import { DefaultCells } from '@/components/cell-defaults';
+import { DefaultCellTypes } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
@@ -47,7 +47,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                 const s = new StateStore({
                     insightId: insightId,
                     state: output,
-                    cellRegistry: DefaultCells,
+                    cellTypeRegistry: DefaultCellTypes,
                 });
 
                 // set it

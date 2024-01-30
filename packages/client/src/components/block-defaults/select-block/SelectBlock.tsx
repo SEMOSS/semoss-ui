@@ -35,6 +35,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <Autocomplete
+            fullWidth
             disableClearable
             options={stringifiedOptions}
             value={data.value}

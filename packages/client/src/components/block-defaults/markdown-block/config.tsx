@@ -18,7 +18,9 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     widget: 'markdown',
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: {},
+        style: {
+            padding: '4px',
+        },
         markdown: '**Hello world**',
     },
     listeners: {},

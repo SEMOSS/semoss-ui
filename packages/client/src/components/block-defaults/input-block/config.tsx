@@ -17,7 +17,7 @@ export const config: BlockConfig<InputBlockDef> = {
     data: {
         style: {
             width: '100%',
-            padding: '8px',
+            padding: '4px',
         },
         value: '',
         label: 'Example Input',

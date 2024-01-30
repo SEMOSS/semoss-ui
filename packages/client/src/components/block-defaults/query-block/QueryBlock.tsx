@@ -9,7 +9,7 @@ export interface QueryBlockDef extends BlockDef<'query'> {
     data: {
         style: CSSProperties;
         queryId: string;
-        stepId: string;
+        cellId: string;
     };
     slots: never;
 }
@@ -19,9 +19,9 @@ export const QueryBlock: BlockComponent = observer(({ id }) => {
 
     const { state } = useBlocks();
 
-    // get the step
+    // get the cell
     const query = state.getQuery(data.queryId);
-    const step = query && data.stepId ? query.getStep(data.stepId) : null;
+    const cell = query && data.cellId ? query.getCell(data.cellId) : null;
 
     if (!query) {
         return (
@@ -45,8 +45,8 @@ export const QueryBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            {step
-                ? JSON.stringify(step.output, null, 4)
+            {cell
+                ? JSON.stringify(cell.output, null, 4)
                 : JSON.stringify(query.output, null, 4)}
         </div>
     );

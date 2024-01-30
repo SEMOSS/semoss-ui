@@ -31,7 +31,7 @@ export function BlocksMenuBlockTypeSection(props: {
             <Grid container spacing={2}>
                 {Array.from(props.blocks, (block) => {
                     return (
-                        <Grid item key={block.widget} xs={4}>
+                        <Grid item key={block.widget} xs={'auto'}>
                             <BlocksMenuCard block={block} />
                         </Grid>
                     );

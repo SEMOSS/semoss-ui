@@ -4,26 +4,38 @@ import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useBlocks } from '@/hooks';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, NewCellAction } from '@/stores';
+import { DefaultCellTypes } from '../cell-defaults';
 
-type NewQueryForm = {
+type NewCellForm = {
     ID: string;
 };
 
-interface NewQueryOverlayProps {
+interface NewCellOverlayProps {
+    queryId: string;
+
     /**
      * Method called to close overlay
-     * @param newQueryId - new query id if successful
+     * @param newCellId - new cell id if successful
      */
-    onClose: (newQueryId?: string) => void;
+    onClose: (newCellId?: string) => void;
+
+    previousCellId?: string;
+
+    copyParameters?: boolean;
 }
 
 /**
- * Edit or create a new query
+ * Edit or create a new cell
  */
-export const NewQueryOverlay = observer(
-    (props: NewQueryOverlayProps): JSX.Element => {
-        const { onClose = () => null } = props;
+export const NewCellOverlay = observer(
+    (props: NewCellOverlayProps): JSX.Element => {
+        const {
+            onClose = () => null,
+            previousCellId = '',
+            queryId,
+            copyParameters = false,
+        } = props;
 
         const { state } = useBlocks();
 
@@ -36,7 +48,7 @@ export const NewQueryOverlay = observer(
             clearErrors,
             setError,
             formState: { errors },
-        } = useForm<NewQueryForm>({
+        } = useForm<NewCellForm>({
             defaultValues: {
                 ID: '',
             },
@@ -51,33 +63,63 @@ export const NewQueryOverlay = observer(
         /**
          * Allow the user to login
          */
-        const onSubmit = handleSubmit((data: NewQueryForm) => {
+        const onSubmit = handleSubmit((data: NewCellForm) => {
             clearErrors();
             if (!data.ID) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id is required`,
+                    message: `Cell Id is required`,
                 });
                 return;
             }
 
-            // validate the name if it is new
-            if (state.queries[data.ID] || state.blocks[data.ID]) {
+            // validate that the name is new
+            if (state.queries[queryId].cells[data.ID]) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query Id ${data.ID} already exists`,
+                    message: `Cell Id ${data.ID} already exists`,
                 });
                 return;
+            }
+
+            let config: NewCellAction['payload']['config'] = {
+                widget: DefaultCellTypes['code'].widget,
+                parameters: DefaultCellTypes['code'].parameters,
+            };
+
+            if (previousCellId) {
+                if (copyParameters) {
+                    config = {
+                        ...config,
+                        parameters: {
+                            ...state.queries[queryId].cells[previousCellId]
+                                .parameters,
+                        },
+                    };
+                } else if (
+                    state.queries[queryId].cells[previousCellId].cellType
+                        .widget === 'code'
+                ) {
+                    const previousCellType =
+                        state.queries[queryId].cells[previousCellId].parameters
+                            ?.type ?? 'pixel';
+                    config = {
+                        widget: DefaultCellTypes['code'].widget,
+                        parameters: {
+                            ...DefaultCellTypes['code'].parameters,
+                            type: previousCellType,
+                        },
+                    };
+                }
             }
 
             state.dispatch({
-                message: ActionMessages.NEW_QUERY,
+                message: ActionMessages.NEW_CELL,
                 payload: {
-                    queryId: data.ID,
-                    config: {
-                        mode: 'manual',
-                        cells: [],
-                    },
+                    queryId: queryId,
+                    cellId: data.ID,
+                    previousCellId: previousCellId,
+                    config: config,
                 },
             });
 
@@ -87,7 +129,9 @@ export const NewQueryOverlay = observer(
 
         return (
             <>
-                <Modal.Title>New Query</Modal.Title>
+                <Modal.Title>
+                    {copyParameters ? 'Copy' : 'New'} Cell
+                </Modal.Title>
                 <Modal.Content>
                     <Stack marginTop={1}>
                         <Controller

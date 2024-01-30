@@ -19,8 +19,10 @@ export const config: BlockConfig<PageBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '2rem',
-            alignItems: 'start',
+            flexDirection: 'column',
+            padding: '24px',
+            gap: '8px',
+            fontFamily: 'roboto',
         },
     },
     listeners: {},
