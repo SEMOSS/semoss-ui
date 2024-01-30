@@ -216,6 +216,8 @@ export type CellComponent<D extends CellDef = CellDef> =
     React.FunctionComponent<{
         /** Cell that is controlling the cell */
         cell: CellState<D>;
+        /** Whether the content is expanded */
+        isExpanded?: boolean;
     }>;
 
 export type SerializedState = {
