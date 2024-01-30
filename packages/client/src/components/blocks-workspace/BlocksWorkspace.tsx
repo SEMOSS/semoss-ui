@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
+import {
+    useNotification,
+    styled,
+    Typography,
+    Stack,
+    Link,
+    Icon,
+} from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore, WorkspaceStore } from '@/stores';
@@ -13,6 +20,36 @@ import { LoadingScreen } from '@/components/ui';
 import { BlocksView } from './BlocksView';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+import { ConstructionOutlined } from '@mui/icons-material';
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+    overflow: 'hidden',
+}));
+
+const StyledMain = styled('div')(({ theme }) => ({
+    flex: 1,
+    height: '100%',
+    width: '100%',
+    overflow: 'hidden',
+}));
+
+const StyledFooter = styled('div')(({ theme }) => ({
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing(1),
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    height: theme.spacing(4),
+    width: '100%',
+    background: 'rgba(253, 237, 225, 1)',
+}));
 
 const ACTIVE = 'page-1';
 
@@ -67,6 +104,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     color: 'error',
                     message: e.message,
                 });
+
+                console.error(e);
             })
             .finally(() => {
                 // close the loading screen
@@ -90,13 +129,41 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 {!workspace.isEditMode ? (
                     <Renderer id={ACTIVE} />
                 ) : (
-                    <>
-                        {workspace.view === 'design' ? <BlocksView /> : null}
-                        {workspace.view === 'data' ? <Notebook /> : null}
-                        {workspace.view === 'settings' ? (
-                            <SettingsView />
-                        ) : null}
-                    </>
+                    <StyledContainer>
+                        <StyledMain>
+                            {workspace.view === 'design' ? (
+                                <BlocksView />
+                            ) : null}
+                            {workspace.view === 'data' ? <Notebook /> : null}
+                            {workspace.view === 'settings' ? (
+                                <SettingsView />
+                            ) : null}
+                        </StyledMain>
+                        <StyledFooter>
+                            <Stack
+                                direction="row"
+                                padding={0}
+                                spacing={0.5}
+                                alignItems={'center'}
+                            >
+                                <Icon fontSize="small" color="warning">
+                                    <ConstructionOutlined
+                                        fontSize="inherit"
+                                        color={'inherit'}
+                                    />
+                                </Icon>
+                                <Typography
+                                    variant={'caption'}
+                                    fontWeight="bold"
+                                >
+                                    Note:
+                                </Typography>
+                                <Typography variant={'caption'}>
+                                    This feature is currently in beta.
+                                </Typography>
+                            </Stack>
+                        </StyledFooter>
+                    </StyledContainer>
                 )}
             </Workspace>
         </Blocks>
