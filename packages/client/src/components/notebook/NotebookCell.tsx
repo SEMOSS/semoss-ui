@@ -1,4 +1,4 @@
-import { createElement, useMemo } from 'react';
+import { useState, createElement, useMemo, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -8,24 +8,25 @@ import {
     CircularProgress,
     Card,
     Chip,
-    Divider,
     Collapse,
     useNotification,
-    Button,
     IconButton,
 } from '@semoss/ui';
 import {
     ContentCopy,
     DeleteOutlined,
-    PlayArrowRounded,
+    PlayCircle,
     CheckCircle,
     Error,
-    Pending,
+    PendingOutlined,
+    KeyboardArrowRight,
 } from '@mui/icons-material';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, NewCellAction } from '@/stores';
 import { useBlocks, useWorkspace } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
 import { NewCellOverlay } from './NewCellOverlay';
+import ReactMarkdown from 'react-markdown';
+import { DefaultCellTypes } from '../cell-defaults';
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
@@ -34,7 +35,7 @@ const StyledCard = styled(Card, {
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
     overflow: 'visible',
-    width: '100%',
+    flexGrow: 1,
 }));
 
 const StyledButtonLabel = styled('div')(() => ({
@@ -52,10 +53,13 @@ const StyledStatusChip = styled(Chip, {
 })<{ status?: 'success' | 'error' | 'disabled' }>(({ theme, status }) => ({
     backgroundColor: status
         ? status === 'disabled'
-            ? theme.palette.grey[400]
+            ? theme.palette.grey[300]
             : theme.palette[status].main
         : 'unset',
-    color: status ? theme.palette.background.paper : 'unset',
+    color:
+        status && status !== 'disabled'
+            ? theme.palette.background.paper
+            : 'unset',
     '.MuiChip-avatar': {
         color: 'unset',
     },
@@ -66,20 +70,15 @@ const StyledIdChip = styled(Chip)(({ theme }) => ({
     height: theme.spacing(3.5),
 }));
 
-const StyledContent = styled('div')(({ theme }) => ({
-    width: '100%',
-    overflow: 'hidden',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    background: theme.palette.background.paper,
-    borderRadius: theme.shape.borderRadius,
-}));
-
 const StyledJson = styled('pre')(({ theme }) => ({
     ...theme.typography.body2,
     textWrap: 'wrap',
-    padding: theme.spacing(2),
     maxHeight: '200px',
     overflowY: 'scroll',
+}));
+
+const StyledSidebarStack = styled(Stack)(() => ({
+    cursor: 'pointer',
 }));
 
 const StyledStatusSidebar = styled('div', {
@@ -92,9 +91,14 @@ const StyledStatusSidebar = styled('div', {
             status === 'disabled'
                 ? theme.palette.grey[400]
                 : theme.palette[status].main,
-        borderRadius: theme.spacing(1),
     }),
 );
+
+const StyledExpandArrow = styled(KeyboardArrowRight)(() => ({
+    '&.rotate': {
+        transform: 'rotate(90deg)',
+    },
+}));
 
 interface NotebookCellProps {
     /** Id of the  the query */
@@ -116,31 +120,73 @@ export const NotebookCell = observer(
         const { workspace } = useWorkspace();
         const notification = useNotification();
 
-        /**
-         * Create a new cell
-         */
-        const openCopyCellOverlay = () => {
-            workspace.openOverlay(() => {
-                return (
-                    <NewCellOverlay
-                        copyParameters
-                        queryId={queryId}
-                        previousCellId={cellId}
-                        onClose={(newCellId) => {
-                            workspace.closeOverlay();
-
-                            if (newCellId) {
-                                notebook.selectCell(queryId, newCellId);
-                            }
-                        }}
-                    />
-                );
-            });
-        };
+        const [contentExpanded, setContentExpanded] = useState(true);
+        const [actionsExpanded, setActionsExpanded] = useState(true);
+        const [actionsHeight, setActionsHeight] = useState(44);
 
         // get the cell
         const query = state.getQuery(queryId);
         const cell = query.getCell(cellId);
+
+        // const contentElement = document.getElementById(`notebook-cell-actions-${queryId}-${cellId}`);
+
+        // calculate the height of the main card content so we know where to place the side expansions
+        useEffect(() => {
+            if (!actionsExpanded) {
+                setActionsHeight(44);
+            }
+            const actionsElement = document.getElementById(
+                `notebook-cell-actions-${queryId}-${cellId}`,
+            );
+            if (actionsElement) {
+                const actionsElementHeight =
+                    actionsElement.getBoundingClientRect().height + 20;
+                setActionsHeight(
+                    actionsElementHeight + 20 < 50 ? 50 : actionsElementHeight,
+                );
+            } else {
+                setActionsHeight(50);
+            }
+        }, [cell.output, actionsExpanded]);
+
+        /**
+         * Create a duplicate cell
+         */
+        const duplicateCell = () => {
+            try {
+                const newCellId = `${Math.floor(Math.random() * 100000)}`;
+
+                let config: NewCellAction['payload']['config'] = {
+                    widget: DefaultCellTypes['code'].widget,
+                    parameters: DefaultCellTypes['code'].parameters,
+                };
+
+                if (cell.cellType.widget === 'code') {
+                    const previousCellType = cell.parameters?.type ?? 'pixel';
+                    config = {
+                        widget: DefaultCellTypes['code'].widget,
+                        parameters: {
+                            ...DefaultCellTypes['code'].parameters,
+                            type: previousCellType,
+                        },
+                    } as NewCellAction['payload']['config'];
+                }
+
+                // copy and add the step to the end
+                state.dispatch({
+                    message: ActionMessages.NEW_CELL,
+                    payload: {
+                        queryId: queryId,
+                        cellId: newCellId,
+                        previousCellId: cellId,
+                        config: config,
+                    },
+                });
+                notebook.selectCell(queryId, newCellId);
+            } catch (e) {
+                console.error(e);
+            }
+        };
 
         // get the view
         const cellType = cell.cellType;
@@ -172,8 +218,9 @@ export const NotebookCell = observer(
 
             return createElement(observer(cellType.view.input), {
                 cell: cell,
+                isExpanded: contentExpanded,
             });
-        }, [cellType ? cellType.view.input : null]);
+        }, [cellType ? cellType.view.input : null, contentExpanded]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
@@ -221,13 +268,13 @@ export const NotebookCell = observer(
             if (cell.isLoading) {
                 return <CircularProgress size="0.75rem" />;
             } else if (cell.query.isLoading) {
-                return <Pending color="inherit" />;
+                return <PendingOutlined color="inherit" />;
             } else if (cell.isSuccessful) {
                 return <CheckCircle color="inherit" />;
             } else if (cell.isError) {
                 return <Error color="inherit" />;
             } else {
-                return <Pending color="inherit" />;
+                return <PendingOutlined color="inherit" />;
             }
         };
         const getSidebarStatus = () => {
@@ -246,8 +293,36 @@ export const NotebookCell = observer(
 
         return (
             <>
-                <Stack direction="row">
-                    <StyledStatusSidebar status={getSidebarStatus()} />
+                <Stack direction="row" width="100%">
+                    <StyledSidebarStack margin={0}>
+                        <Stack
+                            direction="row"
+                            flex={1}
+                            alignItems="start"
+                            onClick={() => {
+                                setContentExpanded(!contentExpanded);
+                            }}
+                        >
+                            <StyledStatusSidebar status={getSidebarStatus()} />
+                            <StyledExpandArrow
+                                className={contentExpanded ? 'rotate' : ''}
+                            />
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            height={actionsExpanded ? actionsHeight : 50}
+                            marginTop="0!important"
+                            alignItems="start"
+                            onClick={() => {
+                                setActionsExpanded(!actionsExpanded);
+                            }}
+                        >
+                            <StyledStatusSidebar status={getSidebarStatus()} />
+                            <StyledExpandArrow
+                                className={actionsExpanded ? 'rotate' : ''}
+                            />
+                        </Stack>
+                    </StyledSidebarStack>
                     <StyledCard
                         isCardCellSelected={
                             (notebook?.selectedCell?.id ?? '') == cell.id
@@ -258,6 +333,7 @@ export const NotebookCell = observer(
                     >
                         <Card.Content>
                             <Stack
+                                id={`notebook-cell-content-${queryId}-${cellId}`}
                                 direction="row"
                                 alignContent="start"
                                 paddingTop={0.5}
@@ -278,14 +354,18 @@ export const NotebookCell = observer(
                                             })
                                         }
                                     >
-                                        <PlayArrowRounded fontSize="small" />
+                                        <PlayCircle fontSize="small" />
                                     </IconButton>
                                 </Stack>
                                 {renderedInput}
                             </Stack>
                         </Card.Content>
                         <Card.Actions>
-                            <Stack spacing={2} width="100%">
+                            <Stack
+                                spacing={2}
+                                width="100%"
+                                id={`notebook-cell-actions-${queryId}-${cellId}`}
+                            >
                                 <Stack
                                     direction="row"
                                     alignItems="center"
@@ -307,14 +387,6 @@ export const NotebookCell = observer(
                                                 {getExecutionTimeString(
                                                     cell.executionDurationMilliseconds,
                                                 )}
-                                            </Typography>
-                                        ) : (
-                                            <></>
-                                        )}
-                                        {cell.executionDurationMilliseconds &&
-                                        cell.executionStart ? (
-                                            <Typography variant="caption">
-                                                |
                                             </Typography>
                                         ) : (
                                             <></>
@@ -365,7 +437,7 @@ export const NotebookCell = observer(
                                                 onClick={(e) => {
                                                     // stop propogation to card parent so newly created cell will be selected
                                                     e.stopPropagation();
-                                                    openCopyCellOverlay();
+                                                    duplicateCell();
                                                 }}
                                             >
                                                 <StyledButtonLabel>
@@ -398,30 +470,36 @@ export const NotebookCell = observer(
                                         </ButtonGroup>
                                     </Stack>
                                 </Stack>
-                                {cell.isError ? (
-                                    <StyledContent>
-                                        <Typography
-                                            variant="caption"
-                                            sx={{
-                                                padding: '16px',
-                                                color: 'red',
-                                            }}
-                                        >
-                                            {cell.error}
-                                        </Typography>
-                                    </StyledContent>
-                                ) : null}
-                                {cell.isSuccessful ? (
-                                    <StyledContent id="output-content">
-                                        <StyledJson>
-                                            {JSON.stringify(
-                                                cell.output,
-                                                null,
-                                                4,
-                                            )}
-                                        </StyledJson>
-                                    </StyledContent>
-                                ) : null}
+                                {actionsExpanded && (
+                                    <>
+                                        {cell.isError ? (
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    padding: '16px',
+                                                    color: 'red',
+                                                }}
+                                            >
+                                                {cell.error}
+                                            </Typography>
+                                        ) : null}
+                                        {cell.isSuccessful ? (
+                                            typeof cell.output === 'string' ? (
+                                                <StyledJson>
+                                                    {cell.output}
+                                                </StyledJson>
+                                            ) : (
+                                                <StyledJson>
+                                                    {JSON.stringify(
+                                                        cell.output,
+                                                        null,
+                                                        4,
+                                                    )}
+                                                </StyledJson>
+                                            )
+                                        ) : null}
+                                    </>
+                                )}
                             </Stack>
                         </Card.Actions>
                     </StyledCard>

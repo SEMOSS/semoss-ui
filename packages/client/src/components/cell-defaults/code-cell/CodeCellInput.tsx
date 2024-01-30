@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { styled } from '@semoss/ui';
 
@@ -34,7 +34,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
-    const { cell } = props;
+    const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
 
     const handleMount = (editor, monaco) => {
@@ -191,8 +191,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const handleChange = (newValue: string) => {
         // pad an extra line so autocomplete is visible
         setEditorHeight(
-            (editorRef.current.getModel().getLineCount() + 2) *
-                EditorLineHeight,
+            editorRef.current.getModel().getLineCount() * EditorLineHeight,
         );
         if (cell.isLoading) {
             return;
@@ -209,20 +208,28 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         });
     };
 
+    useEffect(() => {
+        console.log(isExpanded);
+    }, [isExpanded]);
+
     return (
         <StyledContent>
             <Editor
                 width="100%"
-                height={editorHeight}
+                height={isExpanded ? editorHeight : EditorLineHeight}
                 value={cell.parameters.code}
                 language={EditorLanguages[cell.parameters.type]}
                 options={{
                     lineNumbers: 'on',
-                    readOnly: false,
+                    readOnly: !isExpanded,
                     minimap: { enabled: false },
                     automaticLayout: true,
                     scrollBeyondLastLine: false,
                     lineHeight: EditorLineHeight,
+                    overviewRulerBorder: false,
+                    readOnlyMessage: {
+                        value: 'Expand the code input to edit',
+                    },
                 }}
                 onChange={handleChange}
                 onMount={handleMount}
