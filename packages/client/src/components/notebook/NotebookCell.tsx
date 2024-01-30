@@ -34,6 +34,7 @@ const StyledCard = styled(Card, {
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
     overflow: 'visible',
+    width: '100%',
 }));
 
 const StyledButtonLabel = styled('div')(() => ({
@@ -81,9 +82,19 @@ const StyledJson = styled('pre')(({ theme }) => ({
     overflowY: 'scroll',
 }));
 
-const StyledSpacer = styled('div')(() => ({
-    flex: 1,
-}));
+const StyledStatusSidebar = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'status',
+})<{ status: 'success' | 'error' | 'primary' | 'disabled' }>(
+    ({ theme, status }) => ({
+        height: '100%',
+        width: theme.spacing(0.5),
+        backgroundColor:
+            status === 'disabled'
+                ? theme.palette.grey[400]
+                : theme.palette[status].main,
+        borderRadius: theme.spacing(1),
+    }),
+);
 
 interface NotebookCellProps {
     /** Id of the  the query */
@@ -219,168 +230,202 @@ export const NotebookCell = observer(
                 return <Pending color="inherit" />;
             }
         };
+        const getSidebarStatus = () => {
+            if (cell.isLoading) {
+                return 'primary';
+            } else if (cell.isSuccessful) {
+                return 'success';
+            } else if (cell.isError) {
+                return 'error';
+            } else if ((notebook?.selectedCell?.id ?? '') === cell.id) {
+                return 'primary';
+            } else {
+                return 'disabled';
+            }
+        };
 
         return (
             <>
-                <StyledCard
-                    isCardCellSelected={
-                        (notebook?.selectedCell?.id ?? '') == cell.id
-                    }
-                    onClick={() => notebook.selectCell(cell.query.id, cell.id)}
-                >
-                    <Card.Content>
-                        <Stack
-                            direction="row"
-                            alignContent="start"
-                            paddingTop={0.5}
-                        >
-                            <Stack>
-                                <IconButton
-                                    title="Run cell"
-                                    disabled={cell.isLoading}
-                                    size="small"
-                                    onClick={() =>
-                                        state.dispatch({
-                                            message: ActionMessages.RUN_CELL,
-                                            payload: {
-                                                queryId: cell.query.id,
-                                                cellId: cell.id,
-                                            },
-                                        })
-                                    }
-                                >
-                                    <PlayArrowRounded fontSize="small" />
-                                </IconButton>
-                            </Stack>
-                            {renderedInput}
-                        </Stack>
-                    </Card.Content>
-                    <Card.Actions>
-                        <Stack spacing={2} width="100%">
+                <Stack direction="row">
+                    <StyledStatusSidebar status={getSidebarStatus()} />
+                    <StyledCard
+                        isCardCellSelected={
+                            (notebook?.selectedCell?.id ?? '') == cell.id
+                        }
+                        onClick={() =>
+                            notebook.selectCell(cell.query.id, cell.id)
+                        }
+                    >
+                        <Card.Content>
                             <Stack
                                 direction="row"
-                                spacing={2}
-                                alignItems="center"
+                                alignContent="start"
+                                paddingTop={0.5}
                             >
-                                <StyledStatusChip
-                                    size="small"
-                                    avatar={getCellChipIcon()}
-                                    label={getCellChipLabel()}
-                                    status={getCellChipStatus()}
-                                />
-                                {cell.executionDurationMilliseconds ? (
-                                    <Typography variant="caption">
-                                        {getExecutionTimeString(
-                                            cell.executionDurationMilliseconds,
-                                        )}
-                                    </Typography>
-                                ) : (
-                                    <></>
-                                )}
-                                {cell.executionDurationMilliseconds &&
-                                cell.executionStart ? (
-                                    <Typography variant="caption">|</Typography>
-                                ) : (
-                                    <></>
-                                )}
-                                <StyledSpacer />
+                                <Stack>
+                                    <IconButton
+                                        title="Run cell"
+                                        disabled={cell.isLoading}
+                                        size="small"
+                                        onClick={() =>
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.RUN_CELL,
+                                                payload: {
+                                                    queryId: cell.query.id,
+                                                    cellId: cell.id,
+                                                },
+                                            })
+                                        }
+                                    >
+                                        <PlayArrowRounded fontSize="small" />
+                                    </IconButton>
+                                </Stack>
+                                {renderedInput}
+                            </Stack>
+                        </Card.Content>
+                        <Card.Actions>
+                            <Stack spacing={2} width="100%">
                                 <Stack
                                     direction="row"
-                                    spacing={1}
                                     alignItems="center"
+                                    justifyContent="space-between"
                                 >
-                                    <StyledIdChip
-                                        label={
-                                            <Stack
-                                                direction="row"
-                                                spacing={0.5}
-                                                alignItems="center"
-                                            >
-                                                <span>{`${cell.id}`}</span>
-                                                <ContentCopy fontSize="inherit" />
-                                            </Stack>
-                                        }
-                                        title="Copy cell id"
-                                        onClick={() => {
-                                            try {
-                                                navigator.clipboard.writeText(
-                                                    cell.id,
-                                                );
-
-                                                notification.add({
-                                                    color: 'success',
-                                                    message:
-                                                        'Succesfully copied to clipboard',
-                                                });
-                                            } catch (e) {
-                                                notification.add({
-                                                    color: 'error',
-                                                    message: e.message,
-                                                });
-                                            }
-                                        }}
-                                    />
-                                    {renderedTitle}
-                                    <ButtonGroup variant="outlined">
-                                        <StyledButtonGroupButton
-                                            title="Duplicate cell"
-                                            size="small"
-                                            disabled={cell.isLoading}
-                                            onClick={(e) => {
-                                                // stop propogation to card parent so newly created cell will be selected
-                                                e.stopPropagation();
-                                                openCopyCellOverlay();
-                                            }}
-                                        >
-                                            <StyledButtonLabel>
-                                                <ContentCopy
-                                                    fontSize="small"
-                                                    sx={{ padding: '2px' }}
-                                                />
-                                            </StyledButtonLabel>
-                                        </StyledButtonGroupButton>
-                                        <StyledButtonGroupButton
-                                            title="Delete cell"
-                                            disabled={cell.isLoading}
-                                            size="small"
-                                            onClick={() => {
-                                                state.dispatch({
-                                                    message:
-                                                        ActionMessages.DELETE_CELL,
-                                                    payload: {
-                                                        queryId: cell.query.id,
-                                                        cellId: cell.id,
-                                                    },
-                                                });
-                                            }}
-                                        >
-                                            <StyledButtonLabel>
-                                                <DeleteOutlined fontSize="small" />
-                                            </StyledButtonLabel>
-                                        </StyledButtonGroupButton>
-                                    </ButtonGroup>
-                                </Stack>
-                            </Stack>
-                            {cell.isError ? (
-                                <StyledContent>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ padding: '16px', color: 'red' }}
+                                    <Stack
+                                        direction="row"
+                                        spacing={2}
+                                        alignItems="center"
                                     >
-                                        {cell.error}
-                                    </Typography>
-                                </StyledContent>
-                            ) : null}
-                            {cell.isSuccessful ? (
-                                <StyledContent id="output-content">
-                                    <StyledJson>
-                                        {JSON.stringify(cell.output, null, 4)}
-                                    </StyledJson>
-                                </StyledContent>
-                            ) : null}
-                        </Stack>
-                    </Card.Actions>
-                </StyledCard>
+                                        <StyledStatusChip
+                                            size="small"
+                                            avatar={getCellChipIcon()}
+                                            label={getCellChipLabel()}
+                                            status={getCellChipStatus()}
+                                        />
+                                        {cell.executionDurationMilliseconds ? (
+                                            <Typography variant="caption">
+                                                {getExecutionTimeString(
+                                                    cell.executionDurationMilliseconds,
+                                                )}
+                                            </Typography>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        {cell.executionDurationMilliseconds &&
+                                        cell.executionStart ? (
+                                            <Typography variant="caption">
+                                                |
+                                            </Typography>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </Stack>
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                    >
+                                        <StyledIdChip
+                                            label={
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={0.5}
+                                                    alignItems="center"
+                                                >
+                                                    <span>{`${cell.id}`}</span>
+                                                    <ContentCopy fontSize="inherit" />
+                                                </Stack>
+                                            }
+                                            title="Copy cell id"
+                                            onClick={() => {
+                                                try {
+                                                    navigator.clipboard.writeText(
+                                                        cell.id,
+                                                    );
+
+                                                    notification.add({
+                                                        color: 'success',
+                                                        message:
+                                                            'Succesfully copied to clipboard',
+                                                    });
+                                                } catch (e) {
+                                                    notification.add({
+                                                        color: 'error',
+                                                        message: e.message,
+                                                    });
+                                                }
+                                            }}
+                                        />
+                                        {renderedTitle}
+                                        <ButtonGroup variant="outlined">
+                                            <StyledButtonGroupButton
+                                                title="Duplicate cell"
+                                                size="small"
+                                                disabled={cell.isLoading}
+                                                onClick={(e) => {
+                                                    // stop propogation to card parent so newly created cell will be selected
+                                                    e.stopPropagation();
+                                                    openCopyCellOverlay();
+                                                }}
+                                            >
+                                                <StyledButtonLabel>
+                                                    <ContentCopy
+                                                        fontSize="small"
+                                                        sx={{ padding: '2px' }}
+                                                    />
+                                                </StyledButtonLabel>
+                                            </StyledButtonGroupButton>
+                                            <StyledButtonGroupButton
+                                                title="Delete cell"
+                                                disabled={cell.isLoading}
+                                                size="small"
+                                                onClick={() => {
+                                                    state.dispatch({
+                                                        message:
+                                                            ActionMessages.DELETE_CELL,
+                                                        payload: {
+                                                            queryId:
+                                                                cell.query.id,
+                                                            cellId: cell.id,
+                                                        },
+                                                    });
+                                                }}
+                                            >
+                                                <StyledButtonLabel>
+                                                    <DeleteOutlined fontSize="small" />
+                                                </StyledButtonLabel>
+                                            </StyledButtonGroupButton>
+                                        </ButtonGroup>
+                                    </Stack>
+                                </Stack>
+                                {cell.isError ? (
+                                    <StyledContent>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                padding: '16px',
+                                                color: 'red',
+                                            }}
+                                        >
+                                            {cell.error}
+                                        </Typography>
+                                    </StyledContent>
+                                ) : null}
+                                {cell.isSuccessful ? (
+                                    <StyledContent id="output-content">
+                                        <StyledJson>
+                                            {JSON.stringify(
+                                                cell.output,
+                                                null,
+                                                4,
+                                            )}
+                                        </StyledJson>
+                                    </StyledContent>
+                                ) : null}
+                            </Stack>
+                        </Card.Actions>
+                    </StyledCard>
+                </Stack>
                 <Collapse in={(notebook?.selectedCell?.id ?? '') === cell.id}>
                     <Stack
                         direction="row"
