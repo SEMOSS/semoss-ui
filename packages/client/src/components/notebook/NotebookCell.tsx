@@ -11,6 +11,7 @@ import {
     Collapse,
     useNotification,
     IconButton,
+    Divider,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -21,12 +22,9 @@ import {
     PendingOutlined,
     KeyboardArrowRight,
 } from '@mui/icons-material';
-import { ActionMessages, NewCellAction } from '@/stores';
+import { ActionMessages } from '@/stores';
 import { useBlocks, useWorkspace } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
-import { NewCellOverlay } from './NewCellOverlay';
-import ReactMarkdown from 'react-markdown';
-import { DefaultCellTypes } from '../cell-defaults';
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
@@ -36,6 +34,14 @@ const StyledCard = styled(Card, {
         : 'unset',
     overflow: 'visible',
     flexGrow: 1,
+}));
+
+const StyleCardContent = styled(Card.Content)(() => ({
+    margin: '0!important',
+}));
+
+const StyledDivider = styled(Divider)(({ theme }) => ({
+    margin: `${theme.spacing(1)} 0`,
 }));
 
 const StyledButtonLabel = styled('div')(() => ({
@@ -94,7 +100,8 @@ const StyledStatusSidebar = styled('div', {
     }),
 );
 
-const StyledExpandArrow = styled(KeyboardArrowRight)(() => ({
+const StyledExpandArrow = styled(KeyboardArrowRight)(({ theme }) => ({
+    color: theme.palette.grey[600],
     '&.rotate': {
         transform: 'rotate(90deg)',
     },
@@ -117,7 +124,6 @@ export const NotebookCell = observer(
 
         const { state, notebook } = useBlocks();
 
-        const { workspace } = useWorkspace();
         const notification = useNotification();
 
         const [contentExpanded, setContentExpanded] = useState(true);
@@ -294,6 +300,7 @@ export const NotebookCell = observer(
                         >
                             <StyledStatusSidebar status={getSidebarStatus()} />
                             <StyledExpandArrow
+                                fontSize="small"
                                 className={contentExpanded ? 'rotate' : ''}
                             />
                         </Stack>
@@ -308,6 +315,7 @@ export const NotebookCell = observer(
                         >
                             <StyledStatusSidebar status={getSidebarStatus()} />
                             <StyledExpandArrow
+                                fontSize="small"
                                 className={actionsExpanded ? 'rotate' : ''}
                             />
                         </Stack>
@@ -320,7 +328,7 @@ export const NotebookCell = observer(
                             notebook.selectCell(cell.query.id, cell.id)
                         }
                     >
-                        <Card.Content>
+                        <StyleCardContent>
                             <Stack
                                 id={`notebook-cell-content-${queryId}-${cellId}`}
                                 direction="row"
@@ -348,7 +356,8 @@ export const NotebookCell = observer(
                                 </Stack>
                                 {renderedInput}
                             </Stack>
-                        </Card.Content>
+                        </StyleCardContent>
+                        <StyledDivider />
                         <Card.Actions>
                             <Stack
                                 spacing={2}

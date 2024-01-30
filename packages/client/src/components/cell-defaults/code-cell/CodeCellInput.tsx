@@ -10,7 +10,9 @@ import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.con
 
 const EditorLineHeight = 19;
 
-const StyledContent = styled('div')(({ theme }) => ({
+const StyledContent = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled: boolean }>(({ theme, disabled }) => ({
     paddingTop: theme.spacing(0.75),
     margin: '0!important',
     width: '100%',
@@ -19,6 +21,7 @@ const StyledContent = styled('div')(({ theme }) => ({
     '.monaco-editor': {
         overflow: 'visible',
     },
+    pointerEvents: disabled ? 'none' : 'unset',
 }));
 
 const EditorLanguages = {
@@ -208,12 +211,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         });
     };
 
-    useEffect(() => {
-        console.log(isExpanded);
-    }, [isExpanded]);
-
     return (
-        <StyledContent>
+        <StyledContent disabled={!isExpanded}>
             <Editor
                 width="100%"
                 height={isExpanded ? editorHeight : EditorLineHeight}
@@ -221,15 +220,12 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 language={EditorLanguages[cell.parameters.type]}
                 options={{
                     lineNumbers: 'on',
-                    readOnly: !isExpanded,
+                    readOnly: false,
                     minimap: { enabled: false },
                     automaticLayout: true,
                     scrollBeyondLastLine: false,
                     lineHeight: EditorLineHeight,
                     overviewRulerBorder: false,
-                    readOnlyMessage: {
-                        value: 'Expand the code input to edit',
-                    },
                 }}
                 onChange={handleChange}
                 onMount={handleMount}
