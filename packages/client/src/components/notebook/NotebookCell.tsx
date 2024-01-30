@@ -179,7 +179,12 @@ export const NotebookCell = observer(
                         queryId: queryId,
                         cellId: newCellId,
                         previousCellId: cellId,
-                        config: config,
+                        config: {
+                            widget: cell.widget,
+                            parameters: {
+                                ...cell.parameters,
+                            },
+                        },
                     },
                 });
                 notebook.selectCell(queryId, newCellId);
