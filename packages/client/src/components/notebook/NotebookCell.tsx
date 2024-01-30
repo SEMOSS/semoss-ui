@@ -11,6 +11,8 @@ import {
     Divider,
     Collapse,
     useNotification,
+    Button,
+    IconButton,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -77,6 +79,10 @@ const StyledJson = styled('pre')(({ theme }) => ({
     padding: theme.spacing(2),
     maxHeight: '200px',
     overflowY: 'scroll',
+}));
+
+const StyledSpacer = styled('div')(() => ({
+    flex: 1,
 }));
 
 interface NotebookCellProps {
@@ -222,14 +228,62 @@ export const NotebookCell = observer(
                     }
                     onClick={() => notebook.selectCell(cell.query.id, cell.id)}
                 >
-                    <Card.Header
-                        title={
+                    <Card.Content>
+                        <Stack
+                            direction="row"
+                            alignContent="start"
+                            paddingTop={0.5}
+                        >
+                            <Stack>
+                                <IconButton
+                                    title="Run cell"
+                                    disabled={cell.isLoading}
+                                    size="small"
+                                    onClick={() =>
+                                        state.dispatch({
+                                            message: ActionMessages.RUN_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                            },
+                                        })
+                                    }
+                                >
+                                    <PlayArrowRounded fontSize="small" />
+                                </IconButton>
+                            </Stack>
+                            {renderedInput}
+                        </Stack>
+                    </Card.Content>
+                    <Card.Actions>
+                        <Stack spacing={2} width="100%">
                             <Stack
-                                alignItems="center"
-                                justifyContent="space-between"
                                 direction="row"
+                                spacing={2}
+                                alignItems="center"
                             >
-                                {renderedTitle}
+                                <StyledStatusChip
+                                    size="small"
+                                    avatar={getCellChipIcon()}
+                                    label={getCellChipLabel()}
+                                    status={getCellChipStatus()}
+                                />
+                                {cell.executionDurationMilliseconds ? (
+                                    <Typography variant="caption">
+                                        {getExecutionTimeString(
+                                            cell.executionDurationMilliseconds,
+                                        )}
+                                    </Typography>
+                                ) : (
+                                    <></>
+                                )}
+                                {cell.executionDurationMilliseconds &&
+                                cell.executionStart ? (
+                                    <Typography variant="caption">|</Typography>
+                                ) : (
+                                    <></>
+                                )}
+                                <StyledSpacer />
                                 <Stack
                                     direction="row"
                                     spacing={1}
@@ -266,26 +320,8 @@ export const NotebookCell = observer(
                                             }
                                         }}
                                     />
+                                    {renderedTitle}
                                     <ButtonGroup variant="outlined">
-                                        <StyledButtonGroupButton
-                                            title="Run cell"
-                                            disabled={cell.isLoading}
-                                            size="small"
-                                            onClick={() =>
-                                                state.dispatch({
-                                                    message:
-                                                        ActionMessages.RUN_CELL,
-                                                    payload: {
-                                                        queryId: cell.query.id,
-                                                        cellId: cell.id,
-                                                    },
-                                                })
-                                            }
-                                        >
-                                            <StyledButtonLabel>
-                                                <PlayArrowRounded fontSize="small" />
-                                            </StyledButtonLabel>
-                                        </StyledButtonGroupButton>
                                         <StyledButtonGroupButton
                                             title="Duplicate cell"
                                             size="small"
@@ -324,46 +360,6 @@ export const NotebookCell = observer(
                                         </StyledButtonGroupButton>
                                     </ButtonGroup>
                                 </Stack>
-                            </Stack>
-                        }
-                    />
-                    <Divider />
-                    <Card.Content>{renderedInput}</Card.Content>
-                    <Card.Actions>
-                        <Stack spacing={2}>
-                            <Stack
-                                direction="row"
-                                spacing={2}
-                                alignItems="center"
-                            >
-                                <StyledStatusChip
-                                    size="small"
-                                    avatar={getCellChipIcon()}
-                                    label={getCellChipLabel()}
-                                    status={getCellChipStatus()}
-                                />
-                                {cell.executionDurationMilliseconds ? (
-                                    <Typography variant="caption">
-                                        {getExecutionTimeString(
-                                            cell.executionDurationMilliseconds,
-                                        )}
-                                    </Typography>
-                                ) : (
-                                    <></>
-                                )}
-                                {cell.executionDurationMilliseconds &&
-                                cell.executionStart ? (
-                                    <Typography variant="caption">|</Typography>
-                                ) : (
-                                    <></>
-                                )}
-                                {cell.executionStart ? (
-                                    <Typography variant="caption">
-                                        {cell.executionStart}
-                                    </Typography>
-                                ) : (
-                                    <></>
-                                )}
                             </Stack>
                             {cell.isError ? (
                                 <StyledContent>

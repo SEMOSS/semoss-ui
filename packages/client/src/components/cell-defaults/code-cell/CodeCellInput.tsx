@@ -10,7 +10,10 @@ import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.con
 
 const EditorLineHeight = 19;
 
-const StyledContent = styled('div')(() => ({
+const StyledContent = styled('div')(({ theme }) => ({
+    paddingTop: theme.spacing(0.75),
+    margin: '0!important',
+    width: '100%',
     position: 'relative',
     display: 'flex',
     '.monaco-editor': {
