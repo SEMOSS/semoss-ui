@@ -1,17 +1,13 @@
 import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
 import {
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildColorSection,
     buildTypographySection,
     buildTextAlignSection,
-    buildBorderSection,
 } from '../block-defaults.shared';
 import { TextBlockDef, TextBlock } from './TextBlock';
 import { TextFields } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
+import { QueryInputSettings } from '@/components/block-settings';
 
 export const DefaultStyles: CSSProperties = {
     padding: '4px',
@@ -42,7 +38,7 @@ export const config: BlockConfig<TextBlockDef> = {
                 {
                     description: 'Text',
                     render: ({ id }) => (
-                        <InputModalSettings id={id} label="Text" path="text" />
+                        <QueryInputSettings id={id} label="Text" path="text" />
                     ),
                 },
             ],
