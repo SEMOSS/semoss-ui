@@ -113,6 +113,10 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     useEffect(
         () =>
             autorun(() => {
+                if (!state) {
+                    return;
+                }
+
                 if (workspace.isEditMode) {
                     state.updateMode('static');
                 } else {
