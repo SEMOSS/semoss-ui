@@ -36,16 +36,15 @@ const StyledContent = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     userSelect: off ? 'none' : 'auto',
-    width: '100%',
-    height: '100%',
 }));
 
 const StyledContentOuter = styled('div')(({ theme }) => ({
     padding: theme.spacing(1),
     display: 'flex',
     flex: 1,
-    width: '100%',
+    minWidth: '100%',
     height: '100%',
+    overflow: 'hidden',
 }));
 
 const StyledContentInner = styled('div', {
@@ -54,7 +53,7 @@ const StyledContentInner = styled('div', {
     ({ isHoveredOverSelectedBlock }) => ({
         flex: 1,
         position: 'relative',
-        width: '100%',
+        minWidth: '100%',
         height: '100%',
         cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
         // iframes should not get pointer events in design mode
