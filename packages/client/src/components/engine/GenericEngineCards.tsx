@@ -244,7 +244,7 @@ const StyledCardContainer = styled('div')({
 
 const StyledCardImage = styled('img')({
     display: 'flex',
-    height: '118px',
+    height: '134px',
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
@@ -400,7 +400,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                     gap: '8px',
                                 }}
                             >
-                                <span>{formatDBName(name)}</span>
+                                <Typography variant={'body1'}>
+                                    {formatDBName(name)}
+                                </Typography>
                                 {sub_type === 'EMBEDDED' ? (
                                     <StyledCardImg src={GOOGLE}></StyledCardImg>
                                 ) : null}
@@ -566,7 +568,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
                 src={`${Env.MODULE}/api/e-${id}/image/download`}
-                sx={{ height: '118px' }}
+                sx={{ height: '134px' }}
             />
             <Card.Header
                 title={
@@ -578,7 +580,9 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                                 gap: '8px',
                             }}
                         >
-                            <span>{formatDBName(name)}</span>
+                            <Typography variant={'body1'}>
+                                {formatDBName(name)}
+                            </Typography>
                             {sub_type === 'VERTEX' ? (
                                 <StyledCardImg src={GOOGLE}></StyledCardImg>
                             ) : null}
@@ -764,7 +768,7 @@ export const PlainEngineCard = (props) => {
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
                 src={`${Env.MODULE}/api/e-${id}/image/download`}
-                sx={{ height: '118px' }}
+                sx={{ height: '134px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>
                 <StyledDbName variant={'body1'}>

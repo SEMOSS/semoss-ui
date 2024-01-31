@@ -3,6 +3,13 @@ import { Template } from './state.types';
 
 import SEMOSS from '@/assets/img/SEMOSS_BLUE_LOGO.svg';
 
+import { DefaultStyles as PageBlockStyles } from '@/components/block-defaults/page-block';
+import { DefaultStyles as ContainerBlockStyles } from '@/components/block-defaults/container-block';
+import { DefaultStyles as TextBlockStyles } from '@/components/block-defaults/text-block';
+import { DefaultStyles as ButtonBlockStyles } from '@/components/block-defaults/button-block';
+import { DefaultStyles as InputBlockStyles } from '@/components/block-defaults/input-block';
+import { DefaultStyles as UploadBlockStyles } from '@/components/block-defaults/upload-block';
+
 export const ACTIONS_DISPLAY = {
     [ActionMessages.RUN_QUERY]: 'Run Query',
     [ActionMessages.DISPATCH_EVENT]: 'Dispatch Event',
@@ -23,7 +30,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     id: 'page-1',
                     widget: 'page',
                     parent: null,
-                    data: {},
+                    data: {
+                        style: PageBlockStyles,
+                    },
                     listeners: {},
                     slots: {
                         content: {
@@ -40,16 +49,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'content',
                     },
                     data: {
-                        style: {
-                            background: 'white',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            gap: '16px',
-                            padding: '32px',
-                            width: '100%',
-                            maxWidth: '900px',
-                            margin: '0 auto',
-                        },
+                        style: ContainerBlockStyles,
                     },
                     listeners: {},
                     slots: {
@@ -67,6 +67,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
+                        style: TextBlockStyles,
                         text: 'Hello World',
                     },
                     listeners: {},
@@ -113,12 +114,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     widget: 'page',
                     parent: null,
                     data: {
-                        style: {
-                            fontFamily: 'roboto',
-                            background: 'rgba(250, 250, 250, 1)',
-                            padding: '16px',
-                            overflow: 'auto',
-                        },
+                        style: PageBlockStyles,
                     },
                     listeners: {},
                     slots: {
@@ -136,17 +132,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'content',
                     },
                     data: {
-                        style: {
-                            background: 'white',
-                            flexDirection: 'column',
-                            gap: '16px',
-                            padding: '32px',
-                            width: '100%',
-                            maxWidth: '900px',
-                            margin: '0 auto',
-                            boxShadow:
-                                'rgba(0, 0, 0, 0.2) 0px 3px 1px -2px, rgba(0, 0, 0, 0.14) 0px 2px 2px 0px, rgba(0, 0, 0, 0.12) 0px 1px 5px 0px',
-                        },
+                        style: ContainerBlockStyles,
                     },
                     listeners: {},
                     slots: {
@@ -171,6 +157,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.5rem',
+                            ...TextBlockStyles,
                         },
                         text: 'CSV Query',
                     },
@@ -187,6 +174,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.25rem',
+                            ...TextBlockStyles,
                         },
                         text: 'Upload a csv file and ask a question',
                     },
@@ -201,12 +189,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: {
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '16px',
-                            width: '100%',
-                        },
+                        style: ContainerBlockStyles,
                     },
                     listeners: {},
                     slots: {
@@ -224,6 +207,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
+                        style: UploadBlockStyles,
                         label: 'Upload',
                         required: true,
                     },
@@ -240,6 +224,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
+                        style: InputBlockStyles,
                         label: 'Question',
                         rows: 3,
                         type: 'text',
@@ -258,9 +243,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: {
-                            width: '100%',
-                        },
+                        style: ButtonBlockStyles,
                         label: 'Ask',
                         loading: '{{query.ask-model.isLoading}}',
                     },
@@ -284,6 +267,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
+                        style: TextBlockStyles,
                         text: '{{query.ask-model.output.0.output.Query}}',
                     },
                     listeners: {},

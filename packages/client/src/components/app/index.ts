@@ -4,6 +4,7 @@ export * from './save-app';
 export * from './AppCards';
 export * from './AppEditor';
 export * from './AppFilter';
+export * from './AppLandscapeCard';
 export * from './AppSettings';
 export * from './AppTileCard';
 export * from './NewAppStep';

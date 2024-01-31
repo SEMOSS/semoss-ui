@@ -3,11 +3,12 @@ import { styled, Theme, SxProps } from "@mui/material";
 import { Tabs, TabsProps } from "../Tabs";
 import { Box } from "../Box";
 
+type COLORS = "default" | "primary";
 export interface ToggleTabsProps extends TabsProps<string | number> {
+    color?: COLORS;
     // * Props applied to the tab indicator element.
     children?: ReactNode;
 
-    // width?: "full" | "fit-content";
     TabIndicatorProps?: React.HTMLAttributes<HTMLDivElement>;
 
     boxSx?: SxProps;
@@ -15,16 +16,35 @@ export interface ToggleTabsProps extends TabsProps<string | number> {
     sx?: SxProps<Theme>;
 }
 
-const StyledBox = styled(Box)(({ theme }) => ({
-    backgroundColor:
-        theme.palette.mode === "dark" ? "#0000000A" : "rgba(0, 0, 0, 0.04)",
-    border: theme.palette.mode === "dark" ? "1px" : 0,
-    borderRadius: "12px",
-    width: "fit-content",
-    borderColor: "rgba(4, 113, 240, 0.5)",
-}));
+const StyledBox = styled(Box, {
+    shouldForwardProp: (prop) => prop !== "color",
+})<{
+    color: COLORS;
+}>(({ theme, color }) => {
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
 
-const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
+    return {
+        backgroundColor:
+            theme.palette.mode === "dark"
+                ? "#0000000A"
+                : color === "primary"
+                ? "rgba(4, 113, 240, 0.04)"
+                : "rgba(0, 0, 0, 0.04)",
+        border: theme.palette.mode === "dark" ? "1px" : "0",
+        borderRadius: "12px",
+        width: "fit-content",
+        borderColor: "rgba(4, 113, 240, 0.5)",
+    };
+});
+
+const StyledToggleGroup = styled(Tabs, {
+    shouldForwardProp: (prop) => prop !== "color",
+})<{
+    color: COLORS;
+}>(({ theme, color }) => ({
     "& .MuiTab-root": {
         margin: "8px 5px 8px 5px",
         borderRadius: "6px",
@@ -34,6 +54,8 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
         color:
             theme.palette.mode === "dark"
                 ? "#8BCAFF"
+                : color === "primary"
+                ? theme.palette.primary.main
                 : theme.palette.text.disabled,
         fontWeight: 700,
     },
@@ -43,16 +65,19 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
                 ? "rgba(4, 113, 240, 0.16)"
                 : "#FFFFFF",
         fontWeight: 700,
-        color: theme.palette.text.secondary,
+        color:
+            color === "primary"
+                ? theme.palette.primary.dark
+                : theme.palette.text.secondary,
     },
 }));
 
 export const ToggleTabsGroup = (props: ToggleTabsProps) => {
-    const { sx, boxSx, ...otherProps } = props;
-    console.log(otherProps);
+    const { color = "default", sx, boxSx, ...otherProps } = props;
     return (
-        <StyledBox sx={boxSx}>
+        <StyledBox color={color} sx={boxSx}>
             <StyledToggleGroup
+                color={color}
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={sx}
                 {...otherProps}
