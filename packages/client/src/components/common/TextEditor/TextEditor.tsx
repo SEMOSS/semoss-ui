@@ -783,9 +783,58 @@ export const TextEditor = (props: TextEditorProps) => {
     //     // }}
     // ></Editor>
 
+    // working paste in static text
+    const executeAction: monaco.editor.IActionDescriptor = {
+        id: 'run-code',
+        label: 'Run Code',
+        contextMenuOrder: 2,
+        contextMenuGroupId: '1_modification',
+        keybindings: [
+            monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
+            monaco.KeyMod.chord(
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
+            ),
+        ],
+        run: function (editor) {
+            const selection = editor.getSelection();
+            const selectedText = editor.getModel().getValueInRange(selection);
+
+            if (selectedText.trim() !== '') {
+                const insertPosition = {
+                    lineNumber: selection.endLineNumber + 1,
+                    column: 1, // insert at the beginning of the line
+                };
+
+                editor.executeEdits('custom-action', [
+                    {
+                        range: new monaco.Range(
+                            insertPosition.lineNumber,
+                            insertPosition.column,
+                            insertPosition.lineNumber,
+                            insertPosition.column,
+                        ),
+                        text: '\n\n(insert LLM response here)\n\n', // Add a newline before and after the pasted text
+                        forceMoveMarkers: true,
+                    },
+                ]);
+
+                // Move the cursor to the end of the pasted text
+                editor.setSelection(
+                    new monaco.Range(
+                        insertPosition.lineNumber + 1,
+                        1,
+                        insertPosition.lineNumber + 1,
+                        1,
+                    ),
+                );
+            }
+        },
+    };
+
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
-    const executeAction: monaco.editor.IActionDescriptor = {
+    const _executeAction: monaco.editor.IActionDescriptor = {
         id: 'run-code',
         label: 'Prompt AI Code Generator with selected text',
         contextMenuOrder: 2,
