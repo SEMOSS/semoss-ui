@@ -7,6 +7,8 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflow: 'scroll',
     backgroundColor: theme.palette.background.paper,
     paddingBottom: theme.spacing(2.5),
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
@@ -27,9 +29,11 @@ const StyledPageHeader = styled('div', {
     borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
     // Set this in Theme
     backgroundColor: theme.palette.background.paper,
+    minWidth: '100%',
+    width: 'fit-content',
 }));
 
-const StyledContainer = styled(Container)(({ theme }) => ({
+const StyledContainer = styled(Container)(() => ({
     width: '1264px',
     padding: '0px',
     /* Media query for screens with a minimum width of 600px */

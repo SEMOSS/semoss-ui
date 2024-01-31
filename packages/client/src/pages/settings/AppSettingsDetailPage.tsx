@@ -93,7 +93,6 @@ export const AppSettingsDetailPage = () => {
                 <ToggleTabsGroup
                     value={view}
                     onChange={(e, v) => setView(v as VIEW)}
-                    aria-label="basic tabs example"
                 >
                     <ToggleTabsGroup.Item label="Member" value={'CURRENT'} />
                     <ToggleTabsGroup.Item
