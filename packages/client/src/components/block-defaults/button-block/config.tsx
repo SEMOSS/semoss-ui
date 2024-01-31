@@ -1,3 +1,4 @@
+import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
 import {
     QuerySelectionSettings,
@@ -14,12 +15,14 @@ import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
 import { SmartButton } from '@mui/icons-material';
 import { BLOCK_TYPE_ACTION } from '../block-defaults.constants';
 
+export const DefaultStyles: CSSProperties = {};
+
 // export the config for the block
 export const config: BlockConfig<ButtonBlockDef> = {
     widget: 'button',
     type: BLOCK_TYPE_ACTION,
     data: {
-        style: {},
+        style: DefaultStyles,
         label: 'Submit',
         loading: false,
         disabled: false,
