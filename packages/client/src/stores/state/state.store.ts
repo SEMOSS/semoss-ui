@@ -277,6 +277,10 @@ export class StateStore {
                 const { queryId, cellId } = action.payload;
 
                 this.runCell(queryId, cellId);
+            } else if (ActionMessages.CANCEL_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
+
+                this.cancelCell(queryId, cellId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -956,11 +960,17 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the cell
+            console.log('about to run');
             await s._processRun();
+            console.log('run');
 
             // turn it off
             return true;
         });
+
+        // save the promise
+        this._utils.queryPromises[key] = p;
+        console.log('promise saved');
 
         p.promise
             .then(() => {
@@ -969,9 +979,38 @@ export class StateStore {
             .catch((e) => {
                 console.error('ERROR:', e);
             });
+    };
 
-        // save the promise
-        this._utils.queryPromises[key] = p;
+    /**
+     * Cancel the running cell
+     * @param queryId - id of the updated query
+     * @param cellId - id of the deleted cell
+     */
+    private cancelCell = (queryId: string, cellId: string): void => {
+        const q = this._store.queries[queryId];
+        const c = q.getCell(cellId);
+
+        const key = `cell--${cellId} (query--${queryId});`;
+
+        // cancel a previous command
+        this._utils.queryPromises[key]?.cancel();
+        console.log('cancelled');
+
+        const p = async () => {
+            // run the cell
+            await c._cancelProcessRun();
+
+            // turn it off
+            return true;
+        };
+
+        p()
+            .then(() => {
+                // noop
+            })
+            .catch((e) => {
+                console.error('ERROR:', e);
+            });
     };
 
     /**

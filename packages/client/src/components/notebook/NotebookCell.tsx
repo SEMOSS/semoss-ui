@@ -17,6 +17,7 @@ import {
     ContentCopy,
     DeleteOutlined,
     PlayCircle,
+    StopCircle,
     CheckCircle,
     Error,
     PendingOutlined,
@@ -338,20 +339,34 @@ export const NotebookCell = observer(
                                 <Stack>
                                     <IconButton
                                         title="Run cell"
-                                        disabled={cell.isLoading}
                                         size="small"
-                                        onClick={() =>
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.RUN_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                },
-                                            })
-                                        }
+                                        onClick={() => {
+                                            if (cell.isLoading) {
+                                                state.dispatch({
+                                                    message:
+                                                        ActionMessages.CANCEL_CELL,
+                                                    payload: {
+                                                        queryId: cell.query.id,
+                                                        cellId: cell.id,
+                                                    },
+                                                });
+                                            } else {
+                                                state.dispatch({
+                                                    message:
+                                                        ActionMessages.RUN_CELL,
+                                                    payload: {
+                                                        queryId: cell.query.id,
+                                                        cellId: cell.id,
+                                                    },
+                                                });
+                                            }
+                                        }}
                                     >
-                                        <PlayCircle fontSize="small" />
+                                        {cell.isLoading ? (
+                                            <StopCircle fontSize="small" />
+                                        ) : (
+                                            <PlayCircle fontSize="small" />
+                                        )}
                                     </IconButton>
                                 </Stack>
                                 {renderedInput}

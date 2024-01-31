@@ -19,6 +19,7 @@ export enum ActionMessages {
     DELETE_CELL = 'DELETE_CELL',
     UPDATE_CELL = 'UPDATE_CELL',
     RUN_CELL = 'RUN_CELL',
+    CANCEL_CELL = 'CANCEL_CELL',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
 }
 
@@ -38,6 +39,7 @@ export type Actions =
     | DeleteCellAction
     | UpdateCellAction
     | RunCellAction
+    | CancelCellAction
     | DispatchEventAction;
 
 export interface Action {
@@ -191,6 +193,14 @@ export interface UpdateCellAction extends Action {
 
 export interface RunCellAction extends Action {
     message: ActionMessages.RUN_CELL;
+    payload: {
+        queryId: string;
+        cellId: string;
+    };
+}
+
+export interface CancelCellAction extends Action {
+    message: ActionMessages.CANCEL_CELL;
     payload: {
         queryId: string;
         cellId: string;

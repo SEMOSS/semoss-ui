@@ -311,6 +311,7 @@ export class CellState<D extends CellDef = CellDef> {
 
             // assume there is 1 pixelReturn + cell
             const { output, operationType } = pixelReturn[0];
+            console.log('pixel returned, about to set store');
             runInAction(() => {
                 // update the parameters
                 if (operationType.indexOf('ERROR') > -1) {
@@ -324,6 +325,26 @@ export class CellState<D extends CellDef = CellDef> {
             const start = new Date(this._store.executionStart);
             this._store.executionDurationMilliseconds =
                 end.getTime() - start.getTime();
+            // stop the loading screen
+            runInAction(() => {
+                this._store.isLoading = false;
+            });
+        }
+    }
+
+    /**
+     * Cancell running process of the cell
+     *
+     */
+    async _cancelProcessRun(parameters: Partial<Record<string, unknown>> = {}) {
+        try {
+            // check the loading state
+            if (!this._store.isLoading) {
+                throw new Error('Cell is not running');
+            }
+
+            // TODO what needs to happen on BE?
+        } finally {
             // stop the loading screen
             runInAction(() => {
                 this._store.isLoading = false;

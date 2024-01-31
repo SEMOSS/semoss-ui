@@ -17,25 +17,31 @@ export const cancellablePromise = <R>(
 
     return {
         promise: new Promise<R>((resolve, reject) => {
+            console.log('starting timeout');
             // wrap in a timeout to execute after the current thread is done
-            timeout = setTimeout(async () => {
-                try {
-                    const response = await executor();
+            if (!cancelled) {
+                timeout = setTimeout(async () => {
+                    try {
+                        const response = await executor();
 
-                    // ignore if cancelled
-                    if (cancelled) {
-                        return;
+                        console.log(`cancelled: ` + cancelled);
+                        // ignore if cancelled
+                        if (cancelled) {
+                            return;
+                        }
+
+                        return resolve(response);
+                    } catch (err) {
+                        return reject(err);
                     }
-
-                    return resolve(response);
-                } catch (err) {
-                    return reject(err);
-                }
-            }, 0);
+                }, 0);
+            }
         }),
         cancel: () => {
+            console.log('in cancel');
             // clear the timeout if it's there
             if (timeout) {
+                console.log('clearing timeout');
                 clearTimeout(timeout);
             }
 
