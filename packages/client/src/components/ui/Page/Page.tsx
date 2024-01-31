@@ -31,20 +31,13 @@ const StyledPageHeader = styled('div', {
 
 const StyledContainer = styled(Container)(({ theme }) => ({
     width: '1264px',
-    border: 'solid yellow',
     padding: '0px',
-
-    '&.MuiContainer-root': {
-        padding: 'none',
-    },
     /* Media query for screens with a minimum width of 600px */
     '@media (min-width: 600px)': {
         '&.MuiContainer-root': {
             paddingLeft: '0px',
             paddingRight: '0px',
         },
-        // paddingLeft: '0px',
-        // paddingRight: '0px',
     },
 }));
 
@@ -88,17 +81,10 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <StyledContainer maxWidth={false}>
-                        k{header}
-                    </StyledContainer>
+                    <StyledContainer maxWidth={false}>{header}</StyledContainer>
                 </StyledPageHeader>
             )}
-            <StyledContainer
-                maxWidth={false}
-                sx={{ width: '1264px', border: 'solid yellow', padding: '0px' }}
-            >
-                {children}
-            </StyledContainer>
+            <StyledContainer maxWidth={false}>{children}</StyledContainer>
         </StyledPage>
     );
 };
