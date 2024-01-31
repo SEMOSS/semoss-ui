@@ -6,15 +6,8 @@ import {
     styled,
     Stack,
     ButtonGroup,
-    ThemeProvider,
 } from '@semoss/ui';
-import {
-    Code,
-    Share,
-    Settings,
-    Save,
-    PlayCircleRounded,
-} from '@mui/icons-material';
+import { Code, Share, Settings, Save, Preview } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
 import { ShareOverlay } from '@/components/workspace';
@@ -260,20 +253,17 @@ export const BlocksWorkspaceActions = observer(() => {
             <Stack flex={1}>&nbsp;</Stack>
             {workspace.isEditMode && (
                 <>
-                    <ThemeProvider type={'dark'} reset={false}>
-                        <IconButton
-                            color="default"
-                            size="medium"
-                            onClick={() => {
-                                previewApp();
-                            }}
-                        >
-                            <PlayCircleRounded
-                                fontSize="inherit"
-                                color={'inherit'}
-                            />
-                        </IconButton>
-                    </ThemeProvider>
+                    <Button
+                        color="secondary"
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Preview />}
+                        onClick={() => {
+                            previewApp();
+                        }}
+                    >
+                        Preview
+                    </Button>
                     <Button
                         size={'small'}
                         color={'secondary'}
@@ -308,6 +298,9 @@ export const BlocksWorkspaceActions = observer(() => {
             {workspace.role === 'OWNER' || workspace.role === 'EDIT' ? (
                 <>
                     <StyledTrack
+                        title={`Enter ${
+                            workspace.isEditMode ? 'preview' : 'edit'
+                        } mode`}
                         active={workspace.isEditMode}
                         onClick={() => {
                             workspace.setEditMode(!workspace.isEditMode);
