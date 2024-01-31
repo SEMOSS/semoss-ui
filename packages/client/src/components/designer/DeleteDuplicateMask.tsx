@@ -1,10 +1,17 @@
 import { useLayoutEffect, useState } from 'react';
+import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { styled, ButtonGroup, Button } from '@semoss/ui';
-
-import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
-import { useBlock, useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Delete } from '@mui/icons-material';
+
+import {
+    ActionMessages,
+    getRelativeSize,
+    getRootElement,
+    getBlockElement,
+    BlockJSON,
+} from '@/stores';
+import { useBlocks, useDesigner } from '@/hooks';
 
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
 const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
@@ -44,9 +51,6 @@ export const DeleteDuplicateMask = observer(() => {
     // get the store
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
-    const { clearBlock, deleteBlock, duplicateBlock } = useBlock(
-        designer.selected,
-    );
 
     // get the block
     const block = state.getBlock(designer.selected);
@@ -135,18 +139,82 @@ export const DeleteDuplicateMask = observer(() => {
     };
 
     const onClear = () => {
+        // dispatch the event
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: designer.selected,
+                keep: true,
+            },
+        });
+
+        // clear the selected value
         designer.setSelected('');
-        clearBlock();
     };
 
+    /**
+     * Delete the block
+     */
     const onDelete = () => {
+        // dispatch the event
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: designer.selected,
+                keep: false,
+            },
+        });
+
+        // clear the selected value
         designer.setSelected('');
-        deleteBlock();
     };
 
     const onDuplicate = () => {
+        // get the json for the block to add
+        const getJsonForBlock = (id: string) => {
+            const block = state.blocks[id];
+
+            const blockJson = {
+                widget: toJS(block.widget),
+                data: toJS(block.data),
+                listeners: toJS(block.listeners),
+                slots: {},
+            };
+
+            // generate the slots
+            for (const slot in block.slots) {
+                if (block.slots[slot]) {
+                    blockJson.slots[slot] = block.slots[slot].children.map(
+                        (childId) => {
+                            return getJsonForBlock(childId);
+                        },
+                    );
+                }
+            }
+
+            // return it
+            return blockJson;
+        };
+
+        const position = block?.parent?.id
+            ? {
+                  parent: block.parent.id,
+                  slot: block.parent.slot,
+                  sibling: block.id,
+                  type: 'after',
+              }
+            : undefined;
+
+        state.dispatch({
+            message: ActionMessages.ADD_BLOCK,
+            payload: {
+                json: getJsonForBlock(block.id) as BlockJSON,
+                position: position,
+            },
+        });
+
+        // clear the selected value
         designer.setSelected('');
-        duplicateBlock();
     };
 
     // TODO: revisit these actions for the base page once multiple pages/routing is enabled

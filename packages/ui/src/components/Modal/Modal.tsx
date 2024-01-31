@@ -1,6 +1,6 @@
 import {
     Dialog as MuiModal,
-    ModalProps as MuiModalProps,
+    DialogProps as MuiModalProps,
     SxProps,
 } from "@mui/material";
 
@@ -40,7 +40,7 @@ export interface ModalProps {
      * Set to `false` to disable `maxWidth`.
      * @default 'sm'
      */
-    maxWidth?: "sm" | "md" | "lg" | "xl";
+    maxWidth?: MuiModalProps["maxWidth"];
 
     /**
      * Callback fired when the component requests to be closed.

@@ -4,11 +4,10 @@ import { observer } from 'mobx-react-lite';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
-import { useBlock, useBlockSettings } from '@/hooks';
+import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
-import { getValueByPath } from '@/utility';
+import { copy, getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
-import { SelectBlockDef } from '@/components/block-defaults/select-block';
 
 /**
  * Used to set the values setting on a select block
@@ -33,7 +32,22 @@ export const SelectInputValueSettings = observer(
         path,
     }: SelectInputValueSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        const { data: parsedData } = useBlock<SelectBlockDef>(id);
+        const { state } = useBlocks();
+
+        // get the block
+        const block = state.getBlock(id);
+
+        // get the parsedData
+        const parsedData = computed(() => {
+            return copy(block.data, (instance) => {
+                if (typeof instance === 'string') {
+                    // try to extract the variable
+                    return state.parseVariable(instance);
+                }
+
+                return instance;
+            });
+        }).get();
 
         // track the value
         const [value, setValue] = useState(null);

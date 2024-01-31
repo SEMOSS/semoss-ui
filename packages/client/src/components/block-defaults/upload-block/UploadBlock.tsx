@@ -1,8 +1,7 @@
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { upload } from '@/api';
-import { useBlocks, useBlock } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
 const StyledTextField = styled(TextField)({
@@ -25,15 +24,14 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
 }
 
 export const UploadBlock: BlockComponent = observer(({ id }) => {
-    const { state } = useBlocks();
-    const { attrs, data, setData } = useBlock<UploadBlockDef>(id);
+    const { attrs, data, setData, uploadFile } = useBlock<UploadBlockDef>(id);
 
     /**
      * Upload a file to the server
      * @param file - file to upload to the server
      * @returns
      */
-    const uploadFile = async (file: File) => {
+    const upload = async (file: File) => {
         if (!file) {
             // clear the value
             setData('value', '');
@@ -45,14 +43,19 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             setData('loading', true);
 
             // upload the file
-            const uploadedFiles = await upload([file], state.insightId, '', '');
+            const uploadedFiles = await uploadFile(file);
+
+            // ignore if false is returned
+            if (!uploadedFiles) {
+                return;
+            }
 
             // get the location.
             const { fileLocation } = uploadedFiles[0];
-
             if (!fileLocation) {
                 throw new Error('Missing File Location');
             }
+
             // save it as the value
             setData('value', fileLocation);
         } catch (e) {
@@ -86,7 +89,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 const files = (e.target as HTMLInputElement).files;
 
                 // upload the new file on change
-                uploadFile(files[0]);
+                upload(files[0]);
             }}
             {...attrs}
         />

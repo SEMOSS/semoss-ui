@@ -246,6 +246,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         style: ButtonBlockStyles,
                         label: 'Ask',
                         loading: '{{query.ask-model.isLoading}}',
+                        variant: 'contained',
                     },
                     listeners: {
                         onClick: [

@@ -49,6 +49,16 @@ export interface WorkspaceStoreInterface {
         open: boolean;
 
         /**
+         * Options associated with the overlay
+         */
+        options: {
+            /**
+             * Set the maxWidth of the overlay
+             */
+            maxWidth: 'sm' | 'md' | 'lg' | 'xl' | false;
+        };
+
+        /**
          * Content to display in the overlay
          */
         content: () => JSX.Element;
@@ -102,6 +112,9 @@ export class WorkspaceStore {
         },
         overlay: {
             open: false,
+            options: {
+                maxWidth: 'sm',
+            },
             content: () => null,
         },
     };
@@ -228,12 +241,18 @@ export class WorkspaceStore {
     /**
      * Open the overlay
      */
-    openOverlay = (content: WorkspaceStoreInterface['overlay']['content']) => {
+    openOverlay = (
+        content: WorkspaceStoreInterface['overlay']['content'],
+        options: WorkspaceStoreInterface['overlay']['options'] = {
+            maxWidth: 'sm',
+        },
+    ) => {
         // open the overlay
         this._store.overlay.open = true;
 
         // set the content
         this._store.overlay.content = content;
+        this._store.overlay.options = options;
     };
 
     /**

@@ -6,11 +6,19 @@ import {
     styled,
     Stack,
     ButtonGroup,
+    ThemeProvider,
 } from '@semoss/ui';
-import { Code, Share, Settings, Save } from '@mui/icons-material';
+import {
+    Code,
+    Share,
+    Settings,
+    Save,
+    PlayCircleRounded,
+} from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
 import { ShareOverlay } from '@/components/workspace';
+import { PreviewOverlay } from '../workspace/PreviewOverlay';
 
 const StyledNavItem = styled(ButtonGroup.Item, {
     shouldForwardProp: (prop) => prop !== 'selected',
@@ -85,6 +93,37 @@ export const BlocksWorkspaceActions = observer(() => {
     const { workspace } = useWorkspace();
 
     /**
+     * Preview the current App
+     */
+    const previewApp = () => {
+        try {
+            // get the current state
+            const json = state.toJSON();
+
+            workspace.openOverlay(
+                () => (
+                    <PreviewOverlay
+                        state={json}
+                        onClose={() => {
+                            workspace.closeOverlay();
+                        }}
+                    />
+                ),
+                {
+                    maxWidth: 'lg',
+                },
+            );
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
+
+    /**
      * Save the current app
      */
     const saveApp = async () => {
@@ -110,6 +149,53 @@ export const BlocksWorkspaceActions = observer(() => {
                 color: 'success',
                 message: 'Success',
             });
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            // turn of loading
+            workspace.setLoading(false);
+        }
+    };
+
+    /**
+     * Share the current App
+     */
+    const shareApp = async () => {
+        // turn on loading
+        workspace.setLoading(true);
+
+        try {
+            let isChanged = false;
+
+            // only get the json if the user can edit
+            if (workspace.role === 'OWNER' || workspace.role === 'EDIT') {
+                const { pixelReturn, errors } = await monolithStore.runQuery<
+                    [true]
+                >(`GetAppBlocksJson ( project=['${workspace.appId}']);`);
+
+                if (errors.length > 0) {
+                    throw new Error(errors.join(''));
+                }
+
+                const { output } = pixelReturn[0];
+
+                // TODO: Do we want a better way to check if it is changed
+                isChanged =
+                    JSON.stringify(output) !== JSON.stringify(state.toJSON());
+            }
+
+            workspace.openOverlay(() => (
+                <ShareOverlay
+                    diffs={isChanged}
+                    appId={workspace.appId}
+                    onClose={() => workspace.closeOverlay()}
+                />
+            ));
         } catch (e) {
             console.error(e);
 
@@ -172,6 +258,53 @@ export const BlocksWorkspaceActions = observer(() => {
                 <></>
             )}
             <Stack flex={1}>&nbsp;</Stack>
+            {workspace.isEditMode && (
+                <>
+                    <ThemeProvider type={'dark'} reset={false}>
+                        <IconButton
+                            color="default"
+                            size="medium"
+                            onClick={() => {
+                                previewApp();
+                            }}
+                        >
+                            <PlayCircleRounded
+                                fontSize="inherit"
+                                color={'inherit'}
+                            />
+                        </IconButton>
+                    </ThemeProvider>
+                    <Button
+                        size={'small'}
+                        color={'secondary'}
+                        variant={'outlined'}
+                        startIcon={<Share />}
+                        onClick={() => {
+                            shareApp();
+                        }}
+                    >
+                        Share
+                    </Button>
+
+                    {workspace.role === 'OWNER' || workspace.role === 'EDIT' ? (
+                        <>
+                            <Button
+                                size={'small'}
+                                color={'secondary'}
+                                variant={'outlined'}
+                                startIcon={<Save />}
+                                onClick={() => {
+                                    saveApp();
+                                }}
+                            >
+                                Save
+                            </Button>
+                        </>
+                    ) : (
+                        <></>
+                    )}
+                </>
+            )}
             {workspace.role === 'OWNER' || workspace.role === 'EDIT' ? (
                 <>
                     <StyledTrack
@@ -184,54 +317,10 @@ export const BlocksWorkspaceActions = observer(() => {
                             <Code />
                         </StyledHandle>
                     </StyledTrack>
-                    <Button
-                        size={'small'}
-                        color={'secondary'}
-                        variant={'outlined'}
-                        startIcon={<Save />}
-                        onClick={() => {
-                            saveApp();
-                        }}
-                    >
-                        Save
-                    </Button>
                 </>
             ) : (
                 <></>
             )}
-            <Button
-                size={'small'}
-                color={'secondary'}
-                variant={'outlined'}
-                startIcon={<Share />}
-                onClick={async () => {
-                    const pixelString = `GetAppBlocksJson ( project=['${workspace.appId}']);`;
-
-                    const response = await monolithStore.runQuery(pixelString);
-                    let output = undefined;
-                    let type = undefined;
-                    let diffs = false;
-
-                    output = response.pixelReturn[0].output;
-                    type = response.pixelReturn[0].operationType[0];
-
-                    const saved = JSON.stringify(output);
-                    const current = JSON.stringify(state.toJSON());
-
-                    // Track if there are differences
-                    diffs = saved !== current;
-
-                    workspace.openOverlay(() => (
-                        <ShareOverlay
-                            diffs={diffs}
-                            appId={workspace.appId}
-                            onClose={() => workspace.closeOverlay()}
-                        />
-                    ));
-                }}
-            >
-                Share
-            </Button>
         </Stack>
     );
 });
