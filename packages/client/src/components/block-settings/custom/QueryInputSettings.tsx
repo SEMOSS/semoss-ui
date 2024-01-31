@@ -18,8 +18,6 @@ import {
 } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { Close, DataObject, Layers, OpenInNew } from '@mui/icons-material';
-import { DefaultBlocks } from '@/components/block-defaults';
-import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
 interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -36,6 +34,29 @@ interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
      * Settings label
      */
     label: string;
+}
+
+interface Option {
+    /**
+     * Id of the block that is being worked with
+     */
+    id: string;
+    /**
+     * node path
+     */
+    path: string;
+    /**
+     * node value type
+     */
+    type: string;
+    /**
+     * option display
+     */
+    display: string;
+    /**
+     * type of block
+     */
+    blockType: 'block' | 'query' | 'cell' | 'cell-prop';
 }
 
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
@@ -115,14 +136,18 @@ export const QueryInputSettings = observer(
             }, 300);
         };
 
-        const optionMap = useMemo(() => {
+        const optionMap = useMemo<Record<string, Option>>(() => {
             const pathMap = {};
 
             Object.values(state.blocks).forEach((block: Block) => {
                 // only input block types will have values
-                const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
-                    (block) => DefaultBlocks[block].type === BLOCK_TYPE_INPUT,
-                );
+                // FixMe: Error importing default blocks here, hardcoding for now
+                const inputBlockWidgets = [
+                    'input',
+                    'checkbox',
+                    'select',
+                    'upload',
+                ];
                 if (inputBlockWidgets.includes(block.widget)) {
                     pathMap[`block.${block.id}.value`] = {
                         id: block.id,
@@ -134,7 +159,7 @@ export const QueryInputSettings = observer(
                 }
             });
             notebook.queriesList.forEach((query: QueryState) => {
-                pathMap[`query.${query.id}.output`] = {
+                pathMap[`query.${query.id}`] = {
                     id: query.id,
                     path: `query.${query.id}.output`,
                     type: typeof query.output,
@@ -143,16 +168,23 @@ export const QueryInputSettings = observer(
                 };
                 query.list.forEach((subQ: string) => {
                     const cell: CellState = query.cells[subQ];
-                    const output = cell.output;
-                    const path = cell.id;
+                    pathMap[`query.${query.id}.${cell.id}`] = {
+                        id: cell.id,
+                        path: `query.${query.id}.cell.${cell.id}`,
+                        query: `${query.id}`,
+                        type: typeof cell._exposed,
+                        display: `${cell.id}`,
+                        blockType: 'cell',
+                    };
 
                     for (const f in cell._exposed) {
                         pathMap[`query.${query.id}.${cell.id}.${f}`] = {
-                            id: f + cell.id,
-                            path: `query.${query.id}.${cell.id}.${f}`,
+                            id: cell.id + f,
+                            path: `query.${query.id}.cell.${cell.id}.${f}`,
+                            query: `${query.id}`,
                             type: typeof cell._exposed[f],
                             display: `${cell.id}-${f}`,
-                            blockType: 'cell',
+                            blockType: 'cell-prop',
                         };
                     }
                 });
@@ -178,6 +210,19 @@ export const QueryInputSettings = observer(
             }
         };
 
+        const getIndent = (type: Option['blockType']) => {
+            switch (type) {
+                case 'cell-prop':
+                    return 2;
+                case 'cell':
+                    return 1;
+                case 'query':
+                    return 0;
+                default:
+                    return 0;
+            }
+        };
+
         return (
             <>
                 <BaseSettingSection label={label}>
@@ -187,7 +232,6 @@ export const QueryInputSettings = observer(
                         size="small"
                         freeSolo
                         value={value}
-                        ref={inputRef}
                         inputValue={inputValue}
                         onInputChange={handleInputChange}
                         options={Object.keys(optionMap).sort()}
@@ -220,7 +264,7 @@ export const QueryInputSettings = observer(
                             }
                         }}
                         filterOptions={(options) => {
-                            return options;
+                            return options.sort();
                         }}
                         renderOption={(props, o) => {
                             const option = optionMap[o];
@@ -231,9 +275,10 @@ export const QueryInputSettings = observer(
                                         justifyContent="space-between"
                                         sx={{
                                             width: '100%',
-                                            paddingTop: '2px',
-                                            paddingLeft: '16px',
-                                            paddingRight: '16px',
+                                            pl: getIndent(option.blockType),
+                                            // paddingTop: '2px',
+                                            // paddingLeft: '16px',
+                                            // paddingRight: '16px',
                                         }}
                                     >
                                         <Typography variant="body2">
@@ -255,6 +300,7 @@ export const QueryInputSettings = observer(
                         renderInput={(params) => (
                             <TextField
                                 {...params}
+                                inputRef={inputRef}
                                 fullWidth
                                 placeholder="Query"
                                 onChange={(e) => {
