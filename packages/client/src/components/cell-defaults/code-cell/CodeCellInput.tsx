@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { styled } from '@semoss/ui';
 
@@ -10,12 +10,18 @@ import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.con
 
 const EditorLineHeight = 19;
 
-const StyledContent = styled('div')(() => ({
+const StyledContent = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled: boolean }>(({ theme, disabled }) => ({
+    paddingTop: theme.spacing(0.75),
+    margin: '0!important',
+    width: '100%',
     position: 'relative',
     display: 'flex',
     '.monaco-editor': {
         overflow: 'visible',
     },
+    pointerEvents: disabled ? 'none' : 'unset',
 }));
 
 const EditorLanguages = {
@@ -31,7 +37,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
-    const { cell } = props;
+    const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
 
     const handleMount = (editor, monaco) => {
@@ -68,6 +74,29 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             },
         });
 
+        const exposedQueryParameterDescription = (
+            exposedParameter: string,
+            queryId: string,
+        ): string => {
+            switch (exposedParameter) {
+                case 'id':
+                case 'mode':
+                    return `Returns the ${exposedParameter} of query ${queryId}`;
+                case 'isExecuted':
+                    return `Returns whether query ${queryId} has executed`;
+                case 'isLoading':
+                    return `Returns the loading state for query ${queryId}`;
+                case 'isError':
+                    return `Returns whether query ${queryId} has an error`;
+                case 'error':
+                    return `Returns the error for query ${queryId} if it exists`;
+                case 'list':
+                    return `Returns an ordered list of cell IDs for query ${queryId}`;
+                default:
+                    return `Reference the ${exposedParameter} parameter of query ${queryId}`;
+            }
+        };
+
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
             let suggestions = [];
@@ -79,14 +108,14 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 if (inputBlockWidgets.includes(block.widget)) {
                     suggestions.push({
                         label: {
-                            label: `{{${block.id}.value}}`,
+                            label: `{{block.${block.id}.value}}`,
                             description: block.data?.value
                                 ? JSON.stringify(block.data?.value)
                                 : '',
                         },
                         kind: monaco.languages.CompletionItemKind.Variable,
-                        documentation: `Reference the value of block ${block.id}`,
-                        insertText: `{{${block.id}.value}}`,
+                        documentation: `Returns the value of block ${block.id}`,
+                        insertText: `{{block.${block.id}.value}}`,
                         range: range,
                     });
                 }
@@ -94,19 +123,32 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             notebook.queriesList.forEach((query: QueryState) => {
                 // don't push the query that the cell belongs to
                 if (query.id !== cell.query.id) {
-                    suggestions.push({
-                        label: {
-                            label: `{{${query.id}.data}}`,
-                            description: query.output
-                                ? JSON.stringify(query.output)
-                                : '',
+                    // push all exposed values
+                    Object.keys(query._exposed).forEach(
+                        (exposedParameter: string) => {
+                            suggestions.push({
+                                label: {
+                                    label: `{{query.${query.id}.${exposedParameter}}}`,
+                                    description: query._exposed[
+                                        exposedParameter
+                                    ]
+                                        ? JSON.stringify(
+                                              query._exposed[exposedParameter],
+                                          )
+                                        : '',
+                                },
+                                kind: monaco.languages.CompletionItemKind
+                                    .Variable,
+                                documentation: exposedQueryParameterDescription(
+                                    exposedParameter,
+                                    query.id,
+                                ),
+                                insertText: `{{query.${query.id}.${exposedParameter}}}`,
+                                range: range,
+                                detail: query.id,
+                            });
                         },
-                        kind: monaco.languages.CompletionItemKind.Variable,
-                        documentation: `Reference the output of query ${query.id}`,
-                        insertText: `{{${query.id}.data}}`,
-                        range: range,
-                        detail: query.id,
-                    });
+                    );
                 }
             });
 
@@ -133,6 +175,14 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             const word = model.getWordUntilPosition(position);
                             // getWordUntilPosition doesn't track when words are led by special characters
                             // we need to chack for wrapping curly brackets manually to know what to replace
+
+                            // word is not empty, completion was triggered by a non-special character
+                            if (word.word !== '') {
+                                // return empty suggestions to trigger built in typeahead
+                                return {
+                                    suggestions: [],
+                                };
+                            }
 
                             // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
                             var specialCharacterStartRange = {
@@ -188,8 +238,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const handleChange = (newValue: string) => {
         // pad an extra line so autocomplete is visible
         setEditorHeight(
-            (editorRef.current.getModel().getLineCount() + 2) *
-                EditorLineHeight,
+            editorRef.current.getModel().getLineCount() * EditorLineHeight,
         );
         if (cell.isLoading) {
             return;
@@ -207,10 +256,10 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     return (
-        <StyledContent>
+        <StyledContent disabled={!isExpanded}>
             <Editor
                 width="100%"
-                height={editorHeight}
+                height={isExpanded ? editorHeight : EditorLineHeight}
                 value={cell.parameters.code}
                 language={EditorLanguages[cell.parameters.type]}
                 options={{
@@ -220,6 +269,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     automaticLayout: true,
                     scrollBeyondLastLine: false,
                     lineHeight: EditorLineHeight,
+                    overviewRulerBorder: false,
                 }}
                 onChange={handleChange}
                 onMount={handleMount}

@@ -17,13 +17,13 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<MarkdownBlockDef>(id);
 
     return (
-        <span
+        <div
             style={{
                 ...data.style,
             }}
             {...attrs}
         >
             <ReactMarkdown>{data.markdown}</ReactMarkdown>
-        </span>
+        </div>
     );
 });
