@@ -7,7 +7,6 @@ import { Block, BlockDef, CellState, QueryState } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 import {
-    Autocomplete,
     Stack,
     Typography,
     TextField,
@@ -17,7 +16,7 @@ import {
     Divider,
     styled,
 } from '@semoss/ui';
-
+import { Autocomplete } from '@mui/material';
 import { Close, DataObject, Layers, OpenInNew } from '@mui/icons-material';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
@@ -226,34 +225,39 @@ export const QueryInputSettings = observer(
                         renderOption={(props, o) => {
                             const option = optionMap[o];
                             return (
-                                <Stack
-                                    {...props}
-                                    sx={{ width: '100%' }}
-                                    key={option.path}
-                                    direction="row"
-                                    fullWidth
-                                    justifyContent={'space-between'}
-                                >
-                                    <Typography variant="body2">
-                                        {option.display}
-                                    </Typography>
-                                    {option.blockType === 'block' ? (
-                                        <Icon>
-                                            <Layers fontSize="small" />
-                                        </Icon>
-                                    ) : (
-                                        <Icon>
-                                            <DataObject fontSize="small" />
-                                        </Icon>
-                                    )}
-                                </Stack>
+                                <li {...props} key={option.path}>
+                                    <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        sx={{
+                                            width: '100%',
+                                            paddingTop: '2px',
+                                            paddingLeft: '16px',
+                                            paddingRight: '16px',
+                                        }}
+                                    >
+                                        <Typography variant="body2">
+                                            {option.display}
+                                        </Typography>
+                                        {option.blockType === 'block' ? (
+                                            <Icon>
+                                                <Layers fontSize="small" />
+                                            </Icon>
+                                        ) : (
+                                            <Icon>
+                                                <DataObject fontSize="small" />
+                                            </Icon>
+                                        )}
+                                    </Stack>
+                                </li>
                             );
                         }}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
+                                fullWidth
                                 placeholder="Query"
-                                onChange={(e, ...args) => {
+                                onChange={(e) => {
                                     const newValue = e.target.value;
                                     setInputValue(newValue);
                                     onChange(newValue);
