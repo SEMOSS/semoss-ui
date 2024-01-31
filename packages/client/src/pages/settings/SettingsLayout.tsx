@@ -149,35 +149,33 @@ export const SettingsLayout = observer(() => {
                                     </StyledAdminContainer>
                                 ) : null}
                             </StyledHeader>
-                        ) : (
+                        ) : configStore.store.user.admin ? (
                             <StyledAdminHeader>
-                                {configStore.store.user.admin ? (
-                                    <StyledAdminContainer>
-                                        <Tooltip
-                                            title={
-                                                !adminMode
-                                                    ? 'Enable Admin Mode'
-                                                    : 'Disable Admin Mode'
-                                            }
-                                        >
-                                            <div>
-                                                <ToggleButton
-                                                    size="small"
-                                                    color={'primary'}
-                                                    value={'adminMode'}
-                                                    selected={adminMode}
-                                                    onClick={() =>
-                                                        setAdminMode(!adminMode)
-                                                    }
-                                                >
-                                                    <AdminPanelSettingsOutlined />
-                                                </ToggleButton>
-                                            </div>
-                                        </Tooltip>
-                                    </StyledAdminContainer>
-                                ) : null}
+                                <StyledAdminContainer>
+                                    <Tooltip
+                                        title={
+                                            !adminMode
+                                                ? 'Enable Admin Mode'
+                                                : 'Disable Admin Mode'
+                                        }
+                                    >
+                                        <div>
+                                            <ToggleButton
+                                                size="small"
+                                                color={'primary'}
+                                                value={'adminMode'}
+                                                selected={adminMode}
+                                                onClick={() =>
+                                                    setAdminMode(!adminMode)
+                                                }
+                                            >
+                                                <AdminPanelSettingsOutlined />
+                                            </ToggleButton>
+                                        </div>
+                                    </Tooltip>
+                                </StyledAdminContainer>
                             </StyledAdminHeader>
-                        )}
+                        ) : null}
                         <Typography variant="h4">
                             {matchedRoute.history.length < 2
                                 ? matchedRoute.title
