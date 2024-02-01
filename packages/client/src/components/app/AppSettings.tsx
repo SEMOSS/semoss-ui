@@ -225,11 +225,13 @@ export const AppSettings = (props: AppSettingsProps) => {
     const notification = useNotification();
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    const { handleSubmit, control } = useForm<EditAppForm>({
+    const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
         defaultValues: {
             PROJECT_UPLOAD: null,
         },
     });
+
+    const uploadFile = watch('PROJECT_UPLOAD');
 
     const admin = configStore.store.user.admin;
 
@@ -492,8 +494,12 @@ export const AppSettings = (props: AppSettingsProps) => {
                 `PublishProject('${id}', release=true);`,
             );
 
-            // close it
-            // refreshApp();
+            notification.add({
+                color: 'success',
+                message: 'Succesfully Updated Project',
+            });
+
+            reset();
         } catch (e) {
             console.error(e);
 
@@ -823,7 +829,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 <Button
                                     type="submit"
                                     variant={'contained'}
-                                    disabled={isLoading}
+                                    disabled={isLoading || !uploadFile}
                                     onClick={editApp}
                                 >
                                     Update
