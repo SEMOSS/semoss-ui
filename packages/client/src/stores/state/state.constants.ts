@@ -109,7 +109,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     widget: 'page',
                     parent: null,
                     data: {
-                        style: PageBlockStyles,
+                        style: PageBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -127,7 +127,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'content',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -152,7 +152,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.5rem',
-                            ...TextBlockStyles,
+                            ...TextBlockConfig.data.style,
                         },
                         text: 'Ask LLM',
                     },
@@ -169,7 +169,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.25rem',
-                            ...TextBlockStyles,
+                            ...TextBlockConfig.data.style,
                         },
                         text: 'Ask an LLM a question',
                     },
@@ -184,7 +184,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -202,7 +202,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: InputBlockStyles,
+                        style: InputBlockConfig.data.style,
                         label: 'Question',
                         rows: 3,
                         type: 'text',
@@ -221,7 +221,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: ButtonBlockStyles,
+                        style: ButtonBlockConfig.data.style,
                         label: 'Ask',
                         loading: '{{query.ask-llm.isLoading}}',
                         variant: 'contained',
@@ -246,7 +246,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: TextBlockStyles,
+                        style: TextBlockConfig.data.style,
                         text: '{{query.ask-llm.output.response}}',
                     },
                     listeners: {},
