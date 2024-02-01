@@ -63,6 +63,14 @@ const StyledBoxHeader = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
+const StyledButton = styled(Button)(({ theme }) => ({
+    backgroundColor: 'white',
+    color: theme.palette.grey[900],
+    '&:hover': {
+        backgroundColor: theme.palette.grey[100],
+    },
+}));
+
 const StyledBoxImage = styled('img', {
     shouldForwardProp: (prop) => !(prop === 'top' || prop === 'left'),
 })<{
@@ -85,7 +93,6 @@ const StyledBoxImage = styled('img', {
 export const NewAppPage = () => {
     const navigate = useNavigate();
 
-    const [isLoading, setIsLoading] = useState(false);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [newAppOptions, setNewAppOptions] = useState<
         React.ComponentProps<typeof NewAppModal>['options'] | null
@@ -110,7 +117,6 @@ export const NewAppPage = () => {
         <NewAppStep
             title={'Create New App'}
             previous={{ title: 'App Library', onClick: () => navigate('/') }}
-            isLoading={isLoading}
         >
             {isUploadOpen ? (
                 <AddAppModal
@@ -153,15 +159,15 @@ export const NewAppPage = () => {
                         <Typography variant={'h5'} fontWeight="medium">
                             Start from our tools
                         </Typography>
-                        <Button
-                            color={'secondary'}
-                            size={'large'}
-                            variant={'contained'}
+                        <StyledButton
+                            size="large"
+                            variant="contained"
                             startIcon={<FileUploadOutlined />}
                             onClick={() => setIsUploadOpen(true)}
+                            disableRipple={true}
                         >
                             Upload App
-                        </Button>
+                        </StyledButton>
                     </Stack>
                     <Stack
                         direction={'row'}
@@ -181,21 +187,19 @@ export const NewAppPage = () => {
                                         and preview your live application!
                                     </Typography>
                                 </StyledBoxHeader>
-                                <Button
-                                    size="large"
-                                    color="secondary"
-                                    variant={'contained'}
-                                    sx={{
-                                        width: 'fit-content',
-                                    }}
-                                    onClick={() =>
-                                        setNewAppOptions({
-                                            type: 'code',
-                                        })
-                                    }
-                                >
-                                    Get Started
-                                </Button>
+                                <Stack direction="row">
+                                    <StyledButton
+                                        size="large"
+                                        variant="contained"
+                                        onClick={() =>
+                                            setNewAppOptions({
+                                                type: 'code',
+                                            })
+                                        }
+                                    >
+                                        Get Started
+                                    </StyledButton>
+                                </Stack>
                             </StyledBoxContent>
                             <StyledBoxImage
                                 src={CodeSprite}
@@ -215,25 +219,23 @@ export const NewAppPage = () => {
                                         of your app in this no-code environment.
                                     </Typography>
                                 </StyledBoxHeader>
-                                <Button
-                                    size="large"
-                                    color="secondary"
-                                    variant={'contained'}
-                                    sx={{
-                                        width: 'fit-content',
-                                    }}
-                                    onClick={() =>
-                                        setNewAppOptions({
-                                            type: 'blocks',
-                                            state: {
-                                                queries: {},
-                                                blocks: BASE_PAGE_BLOCKS,
-                                            },
-                                        })
-                                    }
-                                >
-                                    Get Started
-                                </Button>
+                                <Stack direction="row">
+                                    <StyledButton
+                                        size="large"
+                                        variant="contained"
+                                        onClick={() =>
+                                            setNewAppOptions({
+                                                type: 'blocks',
+                                                state: {
+                                                    queries: {},
+                                                    blocks: BASE_PAGE_BLOCKS,
+                                                },
+                                            })
+                                        }
+                                    >
+                                        Get Started
+                                    </StyledButton>
+                                </Stack>
                             </StyledBoxContent>
                             <StyledBoxImage
                                 src={BlocksSprite}
@@ -254,17 +256,17 @@ export const NewAppPage = () => {
                                         response.
                                     </Typography>
                                 </StyledBoxHeader>
-                                <Button
-                                    size="large"
-                                    color="secondary"
-                                    variant={'contained'}
-                                    sx={{
-                                        width: 'fit-content',
-                                    }}
-                                    onClick={() => navigate('./prompt')}
-                                >
-                                    Get Started
-                                </Button>
+                                <Stack direction="row">
+                                    <StyledButton
+                                        size="large"
+                                        variant="contained"
+                                        onClick={() =>
+                                            navigate('/app/new/prompt')
+                                        }
+                                    >
+                                        Get Started
+                                    </StyledButton>
+                                </Stack>
                             </StyledBoxContent>
                             <StyledBoxImage
                                 src={PromptSprite}
