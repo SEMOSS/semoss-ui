@@ -244,7 +244,7 @@ export const NotebookStep = observer(
                                                 <ContentCopy fontSize="inherit" />
                                             </Stack>
                                         }
-                                        title="Copy cell id"
+                                        // title="Copy cell id"
                                         onClick={() => {
                                             try {
                                                 navigator.clipboard.writeText(
