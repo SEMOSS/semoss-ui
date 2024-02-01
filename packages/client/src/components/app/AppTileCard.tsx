@@ -22,13 +22,15 @@ const StyledName = styled(Typography)(() => ({
     textOverflow: 'ellipsis',
 }));
 
-const StyledTileCard = styled(Card)({
+const StyledTileCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled: boolean }>(({ disabled }) => ({
     width: '280px',
     height: '412px',
     '&:hover': {
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
     },
-});
+}));
 
 const StyledContainer = styled('div')({
     position: 'relative',
@@ -198,7 +200,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
     // pretty format the data
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_portal_published_date);
-        console.log(app);
         if (!d.isValid()) {
             return `Published ${dayjs().format('MMMM D, YYYY')}`;
         }
@@ -207,7 +208,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     }, [app.project_date_created]);
 
     return (
-        <StyledTileCard>
+        <StyledTileCard disabled={!href}>
             <Link
                 href={href}
                 rel="noopener noreferrer"
@@ -301,7 +302,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledPublishedByContainer>
                 </Card.Content>
                 <StyledCardActions>
-                    <Button onClick={onAction}>Open</Button>
+                    <Button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onAction();
+                        }}
+                    >
+                        Open
+                    </Button>
                     {app.project_created_by !== 'SYSTEM' ? (
                         <IconButton
                             onClick={(e) => {

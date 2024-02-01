@@ -345,7 +345,7 @@ export const HomePage = observer((): JSX.Element => {
                                               href={`#/app/${app.project_id}`}
                                               onAction={() =>
                                                   navigate(
-                                                      `#/app/${app.project_id}`,
+                                                      `/app/${app.project_id}`,
                                                   )
                                               }
                                           />
