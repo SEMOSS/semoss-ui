@@ -13,14 +13,17 @@ import {
 import {
     Block,
     BlockJSON,
-    CellRegistry,
+    CellTypeRegistry,
     ListenerActions,
     SerializedState,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
-import { StepStateConfig } from './step.state';
+import { CellStateConfig } from './cell.state';
 
 interface StateStoreInterface {
+    /** Mode */
+    mode: 'interactive' | 'static';
+
     /** insightID to load */
     insightId: string;
 
@@ -31,10 +34,13 @@ interface StateStoreInterface {
     blocks: Record<string, Block>;
 
     /** Cells registered to the insight */
-    cellRegistry: CellRegistry;
+    cellTypeRegistry: CellTypeRegistry;
 }
 
 export class StateStoreConfig {
+    /** Mode */
+    mode: 'interactive' | 'static';
+
     /** insightID to load */
     insightId: string;
 
@@ -42,7 +48,7 @@ export class StateStoreConfig {
     state: SerializedState;
 
     /** Cells registered to the insight */
-    cellRegistry: CellRegistry;
+    cellTypeRegistry: CellTypeRegistry;
 }
 
 /**
@@ -50,10 +56,11 @@ export class StateStoreConfig {
  */
 export class StateStore {
     private _store: StateStoreInterface = {
+        mode: 'interactive',
         insightId: '',
         queries: {},
         blocks: {},
-        cellRegistry: {},
+        cellTypeRegistry: {},
     };
 
     /**
@@ -76,7 +83,7 @@ export class StateStore {
         this._store.insightId = config.insightId;
 
         // register the cells
-        this._store.cellRegistry = config.cellRegistry || {};
+        this._store.cellTypeRegistry = config.cellTypeRegistry || {};
 
         // make it observable
         makeAutoObservable(this);
@@ -90,7 +97,7 @@ export class StateStore {
                     const q = this._store.queries[val];
 
                     // map id -> actual
-                    acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
+                    acc[q.id] = `${this.flattenVariable(q.toPixel())}--${
                         q.mode
                     }`;
 
@@ -119,12 +126,20 @@ export class StateStore {
         );
 
         // set the initial state after reactive to invoke it
-        this.loadState(config.state);
+        this.setState(config.state);
     }
 
     /**
      * Getters
      */
+    /**
+     * Get the mode
+     * @returns the mode
+     */
+    get mode() {
+        return this._store.mode;
+    }
+
     /**
      * Get the Insight ID
      * @returns the Insight ID
@@ -150,11 +165,11 @@ export class StateStore {
     }
 
     /**
-     * Get the cell registry
-     * @returns the cell registry
+     * Get the cell type registry
+     * @returns the cell type registry
      */
-    get cellRegistry() {
-        return this._store.cellRegistry;
+    get cellTypeRegistry() {
+        return this._store.cellTypeRegistry;
     }
 
     /**
@@ -202,9 +217,9 @@ export class StateStore {
         try {
             // apply the action
             if (ActionMessages.SET_STATE === action.message) {
-                const { blocks, queries } = action.payload;
+                const { state } = action.payload;
 
-                this.setState(blocks, queries);
+                this.setState(state);
             } else if (ActionMessages.ADD_BLOCK === action.message) {
                 const { json, position } = action.payload;
 
@@ -245,23 +260,23 @@ export class StateStore {
                 const { queryId } = action.payload;
 
                 this.runQuery(queryId);
-            } else if (ActionMessages.NEW_STEP === action.message) {
-                const { queryId, stepId, config, previousStepId } =
+            } else if (ActionMessages.NEW_CELL === action.message) {
+                const { queryId, cellId, config, previousCellId } =
                     action.payload;
 
-                this.newStep(queryId, stepId, config, previousStepId);
-            } else if (ActionMessages.DELETE_STEP === action.message) {
-                const { queryId, stepId } = action.payload;
+                this.newCell(queryId, cellId, config, previousCellId);
+            } else if (ActionMessages.DELETE_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
 
-                this.deleteStep(queryId, stepId);
-            } else if (ActionMessages.UPDATE_STEP === action.message) {
-                const { queryId, stepId, path, value } = action.payload;
+                this.deleteCell(queryId, cellId);
+            } else if (ActionMessages.UPDATE_CELL === action.message) {
+                const { queryId, cellId, path, value } = action.payload;
 
-                this.updateStep(queryId, stepId, path, value);
-            } else if (ActionMessages.RUN_STEP === action.message) {
-                const { queryId, stepId } = action.payload;
+                this.updateCell(queryId, cellId, path, value);
+            } else if (ActionMessages.RUN_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
 
-                this.runStep(queryId, stepId);
+                this.runCell(queryId, cellId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -272,58 +287,88 @@ export class StateStore {
         }
     };
 
+    /** Variable Methods */
     /**
-     * Calculate the value of a parameter
-     * @param parameter - string with mustach syntax for inputs
-     * @returns the specific block information
+     * Parse a variable and return the value if it exists (otherwise return the expression)
      */
-    calculateParameter(parameter: string): unknown {
-        // check if there is actually a parameter (we only handle 1 for now)
-        let cleaned = parameter.trim();
-        if (!cleaned.startsWith('{{') || !cleaned.endsWith('}}')) {
-            return parameter;
+    parseVariable = (expression: string): unknown => {
+        // trim the whitespace
+        let cleaned = expression.trim();
+        if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
+            return expression;
         }
 
         // remove the brackets
         cleaned = cleaned.slice(2, -2);
 
-        // extract the id and path
-        const split = cleaned.split('.');
+        // get the keys in the path
+        const path = cleaned.split('.');
 
-        // only continue loop if here is something meaninful to be split
-        // ex don't continue for something like {{query1}} or {{query1.}}
-        if (split.length > 1 && split[1]) {
-            const id = split.shift();
-            const path = split.join('.');
+        if (path[0] === 'query' && path[2] === 'cell') {
+            // check if the id is there
+            const queryId = path[1];
+            const cellId = path[3];
 
-            // check if it is in the block's data
-            if (id && this._store.blocks[id]) {
-                return getValueByPath(this._store.blocks[id].data, path);
+            // get the query
+            const query = this._store.queries[queryId];
+            const cell = query ? query.getCell(cellId) : null;
+            if (cell) {
+                // if the key is a cell, calculate as a cell
+                const key = path[4];
+                if (key in cell._exposed) {
+                    // get the search path
+                    const s = path.slice(4).join('.');
+                    return getValueByPath(cell._exposed, s);
+                }
             }
+        } else if (path[0] === 'query' && path[2] !== 'cell') {
+            // check if the id is there
+            const queryId = path[1];
 
-            // check if it is in a query
-            if (id && this._store.queries[id]) {
-                return getValueByPath(this._store.queries[id], path);
+            // get the attribute key
+            const key = path[2];
+
+            // get the query
+            const query = this._store.queries[queryId];
+            if (query) {
+                if (key in query._exposed) {
+                    // get the search path
+                    const s = path.slice(2).join('.');
+                    return getValueByPath(query._exposed, s);
+                }
+            }
+        } else if (path[0] === 'block') {
+            // check if the id is there
+            const blockId = path[1];
+
+            // get the block
+            const block = this._store.blocks[blockId];
+            if (block) {
+                // get the search path
+                const s = path.slice(2).join('.');
+                return getValueByPath(block.data, s);
             }
         }
 
-        return parameter;
-    }
+        return expression;
+    };
 
     /**
-     * Flatten a parameter into a string
-     * @param parameter - parameter to flatten
+     * Flatten a string containing multiple variables
+     * @param expression - expression to flatten
      * @returns the flatten parameter
      */
-    flattenParameter = (parameter: string): string => {
-        return parameter.replace(/{{(.*?)}}/g, (match) => {
-            const v = this.calculateParameter(match);
+    flattenVariable = (expression: string): string => {
+        return expression.replace(/{{(.*?)}}/g, (match) => {
+            // try to extract the variable
+            const v = this.parseVariable(match);
 
-            if (typeof v === 'string') {
-                return v?.replace(/"/g, '\\"').replace(/'/g, "\\'");
+            // if it is not a string, convert to a string
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
             }
 
-            return JSON.stringify(v)?.replace(/"/g, '\\"').replace(/'/g, "\\'");
+            return v;
         });
     };
 
@@ -341,27 +386,18 @@ export class StateStore {
     }
 
     /**
+     * Update the mode of the state
+     */
+    updateMode(mode: 'interactive' | 'static') {
+        this._store.mode = mode;
+    }
+
+    /**
      * Internal
      */
     /**
      * Helpers
      */
-
-    /**
-     * Load the state
-     * @param state - state to load into the store
-     */
-    private loadState = (state: SerializedState) => {
-        // store the block information
-        this._store.blocks = state.blocks;
-
-        // load the queries
-        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
-            acc[val] = new QueryState(state.queries[val], this);
-            return acc;
-        }, {});
-    };
-
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -514,17 +550,19 @@ export class StateStore {
      * Actions
      */
     /**
-     * Run a pixel string
+     * Set the state information
      *
-     * @param pixel - pixel to execute
+     * @param state - pixel to execute
      */
-    private setState = (
-        blocks?: StateStoreInterface['blocks'],
-        queries?: StateStoreInterface['queries'],
-    ) => {
-        // add the blocks and queries
-        this._store.blocks = blocks || {};
-        this._store.queries = queries || {};
+    private setState = (state: SerializedState) => {
+        // store the block information
+        this._store.blocks = state.blocks;
+
+        // load the queries
+        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
+            acc[val] = new QueryState(state.queries[val], this);
+            return acc;
+        }, {});
     };
 
     /**
@@ -774,17 +812,17 @@ export class StateStore {
             this,
         );
 
-        if (!config.steps.length) {
-            this.newStep(
+        if (!config.cells.length) {
+            this.newCell(
                 queryId,
-                `${Math.floor(Math.random() * 1000000000000)}`,
+                `${queryId}-cell`,
                 {
                     parameters: {
                         code: '',
                         type: 'pixel',
                     },
                     widget: 'code',
-                } as Omit<StepStateConfig, 'id'>,
+                } as Omit<CellStateConfig, 'id'>,
                 '',
             );
         }
@@ -849,75 +887,75 @@ export class StateStore {
     };
 
     /**
-     * Create a new step
+     * Create a new cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the new step
+     * @param cellId - id of the new cell
      * @param config - config of the
-     * @param previousStepId: id of the previous step,
+     * @param previousCellId: id of the previous cell,
      */
-    private newStep = (
+    private newCell = (
         queryId: string,
-        stepId: string,
-        config: Omit<StepStateConfig, 'id'>,
-        previousStepId: string,
+        cellId: string,
+        config: Omit<CellStateConfig, 'id'>,
+        previousCellId: string,
     ): void => {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the step
-        q._processNewStep(stepId, config, previousStepId);
+        // add the cell
+        q._processNewCell(cellId, config, previousCellId);
     };
 
     /**
-     * Delete a step
+     * Delete a cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the deleted step
+     * @param cellId - id of the deleted cell
      */
-    private deleteStep = (queryId: string, stepId: string): void => {
+    private deleteCell = (queryId: string, cellId: string): void => {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the step
-        q._processDeleteStep(stepId);
+        // add the cell
+        q._processDeleteCell(cellId);
     };
 
     /**
-     * Update the store in the step
+     * Update the store in the cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the updated step
+     * @param cellId - id of the updated cell
      * @param path - path of the data to set
      * @param value - value of the data
      */
-    private updateStep = (
+    private updateCell = (
         queryId: string,
-        stepId: string,
+        cellId: string,
         path: string | null,
         value: unknown,
     ): void => {
         const q = this._store.queries[queryId];
-        const s = q.getStep(stepId);
+        const s = q.getCell(cellId);
 
         // set the value
         s._processUpdate(path, value);
     };
 
     /**
-     * Run the step
+     * Run the cell
      * @param queryId - id of the updated query
-     * @param stepId - id of the deleted step
+     * @param cellId - id of the deleted cell
      */
-    private runStep = (queryId: string, stepId: string): void => {
+    private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
-        const s = q.getStep(stepId);
+        const s = q.getCell(cellId);
 
-        const key = `step--${stepId} (query--${queryId});`;
+        const key = `cell--${cellId} (query--${queryId});`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
         const p = cancellablePromise(async () => {
-            // run the step
+            // run the cell
             await s._processRun();
 
             // turn it off

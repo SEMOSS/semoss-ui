@@ -1,6 +1,6 @@
 import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
-import { StepState } from './step.state';
+import { CellState } from './cell.state';
 import { QueryStateConfig } from './query.state';
 /**
  * Block
@@ -82,6 +82,9 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
 
     /** Icon to render in the builder sidebar */
     icon: React.FunctionComponent;
+
+    /** Whether the widget should appear in the blocks menu */
+    isBlocksMenuEnabled: boolean;
 
     /** Content Menu */
     contentMenu: {
@@ -203,7 +206,7 @@ export interface Cell<D extends CellDef = CellDef> {
 /**
  * Cell Registry
  */
-export type CellRegistry<D extends CellDef = CellDef> = D extends CellDef
+export type CellTypeRegistry<D extends CellDef = CellDef> = D extends CellDef
     ? Record<D['widget'], Cell<D>>
     : never;
 /**
@@ -211,8 +214,10 @@ export type CellRegistry<D extends CellDef = CellDef> = D extends CellDef
  */
 export type CellComponent<D extends CellDef = CellDef> =
     React.FunctionComponent<{
-        /** Step that is controlling the cell */
-        step: StepState<D>;
+        /** Cell that is controlling the cell */
+        cell: CellState<D>;
+        /** Whether the content is expanded */
+        isExpanded?: boolean;
     }>;
 
 export type SerializedState = {
@@ -221,4 +226,27 @@ export type SerializedState = {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+};
+
+export type Template = {
+    /** Name of the template */
+    name: string;
+
+    /** Description associated with the template */
+    description: string;
+
+    /** State associated with the template */
+    state: SerializedState;
+
+    /** Image for the template */
+    image: string;
+
+    /** Author for the template */
+    author: string;
+
+    /** Date updated template */
+    lastUpdatedDate: string;
+
+    /** Tags associated with the template */
+    tags: string[];
 };

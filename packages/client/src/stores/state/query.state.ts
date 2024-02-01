@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { StepState, StepStateConfig } from './step.state';
+import { CellState, CellStateConfig } from './cell.state';
 import { StateStore } from './state.store';
 import { setValueByPath } from '@/utility';
 
@@ -8,10 +8,7 @@ export interface QueryStateStoreInterface {
     /** Id of the query */
     id: string;
 
-    /** Track if the query is initialized */
-    isInitialized: boolean;
-
-    /** Track if the step is loading */
+    /** Track if the cell is loading */
     isLoading: boolean;
 
     /** Is the query automatically run or manully */
@@ -20,8 +17,11 @@ export interface QueryStateStoreInterface {
     /** Error associated with the Query */
     error: Error | null;
 
-    /** Pixel Steps in the query */
-    steps: StepState[];
+    /** Pixel Cells in the query */
+    cells: Record<string, CellState>;
+
+    /** Ordered list of the cells in the query */
+    list: string[];
 }
 
 export interface QueryStateConfig {
@@ -31,8 +31,8 @@ export interface QueryStateConfig {
     /** Is the query automatically run or manully */
     mode: 'automatic' | 'manual';
 
-    /** Steps in the query */
-    steps: StepStateConfig[];
+    /** Cells in the query */
+    cells: CellStateConfig[];
 }
 
 /**
@@ -42,11 +42,11 @@ export class QueryState {
     private _state: StateStore;
     private _store: QueryStateStoreInterface = {
         id: '',
-        isInitialized: false,
         isLoading: false,
         mode: 'manual',
         error: null,
-        steps: [],
+        cells: {},
+        list: [],
     };
 
     constructor(config: QueryStateConfig, state: StateStore) {
@@ -57,10 +57,22 @@ export class QueryState {
         this._store.id = config.id;
         this._store.mode = config.mode;
 
-        // create the steps
-        this._store.steps = config.steps.map((s) => {
-            return new StepState(s, this, this._state);
-        }, {});
+        // create the cells
+        const { cells, list } = config.cells.reduce(
+            (acc, val) => {
+                acc.cells[val.id] = new CellState(val, this, this._state);
+                acc.list.push(val.id);
+
+                return acc;
+            },
+            {
+                cells: {},
+                list: [],
+            },
+        );
+
+        this._store.cells = cells;
+        this._store.list = list;
 
         // make it observable
         makeAutoObservable(this);
@@ -77,11 +89,12 @@ export class QueryState {
     }
 
     /**
-     * Track if the query is initialized
+     * Track if the query is executed
      */
-    get isInitialized() {
-        for (const step of this._store.steps) {
-            if (!step.isExecuted) {
+    get isExecuted() {
+        for (const s of this._store.list) {
+            const cell = this._store.cells[s];
+            if (!cell.isExecuted) {
                 return false;
             }
         }
@@ -97,8 +110,9 @@ export class QueryState {
             return true;
         }
 
-        for (const step of this._store.steps) {
-            if (step.isLoading) {
+        for (const s of this._store.list) {
+            const cell = this._store.cells[s];
+            if (cell.isLoading) {
                 return true;
             }
         }
@@ -114,8 +128,9 @@ export class QueryState {
             return true;
         }
 
-        for (const step of this._store.steps) {
-            if (step.isError) {
+        for (const s of this._store.list) {
+            const cell = this._store.cells[s];
+            if (cell.isError) {
                 return true;
             }
         }
@@ -127,8 +142,9 @@ export class QueryState {
      * Track if the query successfully ran
      */
     get isSuccessful() {
-        for (const step of this._store.steps) {
-            if (step.output === undefined) {
+        for (const s of this._store.list) {
+            const cell = this._store.cells[s];
+            if (!cell.isExecuted || cell.isError) {
                 return false;
             }
         }
@@ -152,13 +168,15 @@ export class QueryState {
             return this._store.error.message;
         }
 
-        // collect the step errors
+        // collect the cell errors
         const messages = [];
-        for (const step of this._store.steps) {
-            if (step.isError) {
-                messages.push(step.error);
+        for (const s of this._store.list) {
+            const cell = this._store.cells[s];
+            if (cell.isError) {
+                messages.push(cell.error);
             }
         }
+
         if (messages.length > 0) {
             return messages.join('\r\n');
         }
@@ -167,51 +185,39 @@ export class QueryState {
     }
 
     /**
-     * Data associated with the query
+     * Output associated with the query
      */
-    get data() {
-        const stepLen = this._store.steps.length;
-        if (stepLen > 0) {
-            return this._store.steps[stepLen - 1].output;
+    get output() {
+        const cellLen = this._store.list.length;
+        if (cellLen > 0) {
+            // get the last cell
+            const cellId = this._store.list[cellLen - 1];
+            return this._store.cells[cellId].output;
         }
 
         return undefined;
     }
 
     /**
-     * Get the steps of the query
+     * Get list of the cells of the query
      */
-    get steps() {
-        return this._store.steps;
+    get list() {
+        return this._store.list;
     }
 
     /**
-     * Get the index of a step
-     * @param id - id of the step to get index for
+     * Get the cells of the query
      */
-    getStepIdx = (id: string): number => {
-        for (
-            let stepIdx = 0, stepLen = this._store.steps.length;
-            stepIdx < stepLen;
-            stepIdx++
-        ) {
-            if (this._store.steps[stepIdx].id === id) {
-                return stepIdx;
-            }
-        }
-
-        return -1;
-    };
+    get cells() {
+        return this._store.cells;
+    }
 
     /**
-     * Get a step from the query
-     * @param id - id of the step to get index for
+     * Get a cell from the query
+     * @param id - id of the cell to get
      */
-    getStep = (id: string): StepState => {
-        // get the index
-        const stepIdx = this.getStepIdx(id);
-
-        return this._store.steps[stepIdx];
+    getCell = (id: string): CellState => {
+        return this._store.cells[id];
     };
 
     /**
@@ -224,25 +230,24 @@ export class QueryState {
         return {
             id: this._store.id,
             mode: this._store.mode,
-            steps: this._store.steps.map((s) => s.toJSON()),
+            cells: this._store.list.map((s) => this._store.cells[s].toJSON()),
         };
+    };
+
+    /**
+     * Convert the query to pixel
+     */
+    toPixel = () => {
+        return this._store.list
+            .map((s) => this._store.cells[s].toPixel())
+            .join(';');
     };
 
     /**
      * Helpers
      */
     /**
-     * Convert the query to pixel
-     */
-    _toPixel = () => {
-        return this._store.steps.map((s) => s._toPixel()).join(';');
-    };
-
-    /**
      * Process running of a pixel
-     */
-    /**
-     * Process running of the query
      */
     _processRun = async () => {
         try {
@@ -254,45 +259,44 @@ export class QueryState {
             // start the loading screen
             this._store.isLoading = true;
 
-            // convert the steps to the raw pixel
-            const raw = this._toPixel();
+            // convert the cells to the raw pixel
+            const raw = this.toPixel();
 
             // fill the braces {{ }} to create the final pixel
-            const filled = this._state.flattenParameter(raw);
+            const filled = this._state.flattenVariable(raw);
 
             // run as a single pixel block;
             const { pixelReturn } = await this._state._runPixel(filled);
 
-            const stepLen = this._store.steps.length;
-            if (pixelReturn.length !== stepLen) {
+            const cellLen = this._store.list.length;
+            if (pixelReturn.length !== cellLen) {
                 throw new Error(
-                    'Error processing pixel. Steps do not equal pixelReturn',
+                    'Error processing pixel. Cells do not equal pixelReturn',
                 );
             }
 
-            // update the existing steps with the pixel blocks
-            // let data = undefined;
-            for (let stepIdx = 0; stepIdx < stepLen; stepIdx++) {
-                const step = this._store.steps[stepIdx];
-
-                const { operationType, output } = pixelReturn[stepIdx];
-
-                // // save the last successful data
-                // if (operationType.indexOf('ERROR') === -1) {
-                //     data = output;
-                // }
-
-                // sync the new operation type and output
-                step._sync(operationType, output);
-            }
-
             runInAction(() => {
-                // // save the data as the last step of the output
-                // const { output } = pixelReturn[stepLen - 1];
-                // // update the data
-                // this._store.data = output;
+                // update the existing cells with the pixel blocks
+                // let data = undefined;
+                for (let cellIdx = 0; cellIdx < cellLen; cellIdx++) {
+                    const cellId = this._store.list[cellIdx];
+
+                    // get the cell
+                    const cell = this._store.cells[cellId];
+
+                    const { operationType, output } = pixelReturn[cellIdx];
+
+                    // sync step information
+                    cell._sync(operationType, output, true);
+                }
+
+                // clear the error
+                this._store.error = null;
             });
         } catch (e) {
+            // TODO - because we use _sync cells instead of _processRun on them individually
+            // if a cell errors out of the runPixel and causes a break/catch here,
+            // we're unable to get granular information about which cell caused the error.
             runInAction(() => {
                 this._store.error = e;
             });
@@ -321,49 +325,78 @@ export class QueryState {
     };
 
     /**
-     * Process adding a new step to the query
-     * @param step - new step being added
-     * @param previousStepId - id of the previous step
+     * Process adding a new cell to the query
+     * @param cell - new cell being added
+     * @param previousCellId - id of the previous cell
      */
-    _processNewStep = (
-        stepId: string,
-        config: Omit<StepStateConfig, 'id'>,
-        previousStepId: string,
+    _processNewCell = (
+        cellId: string,
+        config: Omit<CellStateConfig, 'id'>,
+        previousCellId: string,
     ) => {
-        // create the new step
-        const step = new StepState(
+        // create the new cell
+        const cell = new CellState(
             {
                 ...config,
-                id: stepId,
+                id: cellId,
             },
             this,
             this._state,
         );
 
-        if (!previousStepId) {
-            this._store.steps.push(step);
+        // save the cell
+        this._store.cells[cellId] = cell;
+
+        // get the index of the previous one
+        let previousCellIdx = -1;
+        if (previousCellId) {
+            previousCellIdx = this._store.list.indexOf(previousCellId);
+        }
+
+        // add to end if there is no previous cell
+        if (previousCellIdx === -1) {
+            this._store.list.push(cellId);
             return;
         }
 
-        // get the index of the previous one
-        const addStepIdx = this.getStepIdx(previousStepId);
-
         // add it
-        this._store.steps.splice(addStepIdx + 1, 0, step);
+        this._store.list.splice(previousCellIdx + 1, 0, cellId);
     };
 
     /**
-     * Process deleting a step from the query
-     * @param id - id of the step to delete
+     * Process deleting a cell from the query
+     * @param id - id of the cell to delete
      */
-    _processDeleteStep = (id: string) => {
+    _processDeleteCell = (id: string) => {
         // find the index to delete at
-        const deleteStepIdx = this.getStepIdx(id);
-        if (deleteStepIdx === -1) {
-            throw new Error(`Unable to find step ${id}. This was not deleted`);
+        const deleteCellIdx = this._store.list.indexOf(id);
+        if (deleteCellIdx === -1) {
+            throw new Error(`Unable to find cell ${id}. This was not deleted`);
         }
 
-        // remove it
-        this._store.steps.splice(deleteStepIdx, 1);
+        // remove it by index
+        this._store.list.splice(deleteCellIdx, 1);
+
+        // remove it by id
+        if (this._store.cells[id]) {
+            delete this._store.cells[id];
+        }
     };
+
+    /**
+     * Get the exposed value that can be accesed by a variable
+     */
+    get _exposed() {
+        return {
+            id: this._store.id,
+            isExecuted: this.isExecuted,
+            isLoading: this.isLoading,
+            isError: this.isError,
+            isSuccessful: this.isSuccessful,
+            error: this.error,
+            mode: this.mode,
+            output: this.output,
+            list: this.list,
+        };
+    }
 }

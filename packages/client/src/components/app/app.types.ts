@@ -20,7 +20,7 @@ export interface AppMetadata {
     project_reactors_compiled_user?: string;
     project_reactors_compiled_user_type?: string;
     project_favorite?: string;
-    user_permission?: string;
+    user_permission?: number;
     group_permission?: string;
     tag?: string | string[];
     description?: string;

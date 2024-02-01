@@ -56,6 +56,8 @@ export interface IconButtonProps
      */
     sx?: SxProps;
     title?: string;
+
+    disableRipple?: boolean;
 }
 
 export const IconButton = (props: IconButtonProps) => {

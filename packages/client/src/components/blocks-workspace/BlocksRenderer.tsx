@@ -4,7 +4,7 @@ import { useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore } from '@/stores';
-import { DefaultCells } from '@/components/cell-defaults';
+import { DefaultCellTypes } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
@@ -13,64 +13,94 @@ const ACTIVE = 'page-1';
 
 interface BlocksRendererProps {
     /** App to render */
-    appId: string;
+    appId?: string;
+
+    /** State to render */
+    state?: SerializedState;
 }
 
 /**
  * Render a block app
  */
 export const BlocksRenderer = observer((props: BlocksRendererProps) => {
-    const { appId } = props;
+    const { appId, state } = props;
     const notification = useNotification();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [state, setState] = useState<StateStore>();
+    const [stateStore, setStateStore] = useState<StateStore | null>();
 
     useEffect(() => {
         // start the loading
         setIsLoading(true);
 
+        // initialize a new insight
+        let pixel = '';
+        if (appId) {
+            pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
+        } else if (state) {
+            pixel = `true`;
+        } else {
+            console.error('Missing appId or state');
+        }
+
+        // ignore if there is not pixel
+        if (!pixel) {
+            return;
+        }
+
         // load the app
-        runPixel<[SerializedState]>(
-            `GetAppBlocksJson ( project=["${appId}"]);`,
-            'new',
-        )
+        runPixel<[SerializedState]>(pixel, 'new')
             .then(({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
                     throw new Error(errors.join(''));
                 }
 
-                // get the output (SerializedState)
-                const { output } = pixelReturn[0];
+                // set the state
+                let s: SerializedState;
+                if (appId) {
+                    s = pixelReturn[0].output;
+                } else if (state) {
+                    s = state;
+                } else {
+                    return;
+                }
+
+                // ignore if there is state
+                if (!s) {
+                    return;
+                }
 
                 // create a new state store
-                const s = new StateStore({
+                const store = new StateStore({
+                    mode: 'interactive',
                     insightId: insightId,
-                    state: output,
-                    cellRegistry: DefaultCells,
+                    state: s,
+                    cellTypeRegistry: DefaultCellTypes,
                 });
 
                 // set it
-                setState(s);
+                setStateStore(store);
             })
             .catch((e) => {
                 notification.add({
                     color: 'error',
                     message: e.message,
                 });
+
+                console.log(e);
             })
             .finally(() => {
                 // close the loading screen
                 setIsLoading(false);
             });
-    }, [appId]);
+    }, [state, appId]);
 
-    if (!state || isLoading) {
+    if (!stateStore || isLoading) {
         return <LoadingScreen.Trigger />;
     }
 
     return (
-        <Blocks state={state} registry={DefaultBlocks}>
+        <Blocks state={stateStore} registry={DefaultBlocks}>
             <Renderer id={ACTIVE} />
         </Blocks>
     );

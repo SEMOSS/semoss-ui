@@ -19,9 +19,6 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
     return (
         <div
             style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                overflow: 'scroll',
                 ...data.style,
             }}
             {...attrs}

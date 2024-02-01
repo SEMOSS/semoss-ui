@@ -8,7 +8,7 @@ import {
     buildBorderSection,
 } from '../block-defaults.shared';
 
-import { MarkdownBlockDef, MarkdownBlock } from './Markdown';
+import { MarkdownBlockDef, MarkdownBlock } from './MarkdownBlock';
 import { FormatListBulleted } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
@@ -18,7 +18,9 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     widget: 'markdown',
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: {},
+        style: {
+            padding: '4px',
+        },
         markdown: '**Hello world**',
     },
     listeners: {},
@@ -27,6 +29,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     },
     render: MarkdownBlock,
     icon: FormatListBulleted,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -44,12 +47,5 @@ export const config: BlockConfig<MarkdownBlockDef> = {
             ],
         },
     ],
-    styleMenu: [
-        buildTypographySection(),
-        buildTextAlignSection(),
-        buildColorSection(),
-        buildBorderSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-    ],
+    styleMenu: [buildTypographySection(), buildTextAlignSection()],
 };

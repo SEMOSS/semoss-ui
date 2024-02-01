@@ -652,7 +652,6 @@ export const EngineCatalogPage = observer(
             <Page
                 header={
                     <Stack>
-                        <div style={{ height: '24px' }}></div>
                         <Stack
                             direction="row"
                             alignItems={'center'}

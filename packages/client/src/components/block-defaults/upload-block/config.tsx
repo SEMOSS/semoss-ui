@@ -1,3 +1,4 @@
+import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
 import {
     InputSettings,
@@ -5,23 +6,21 @@ import {
 } from '@/components/block-settings';
 
 import { UploadBlockDef, UploadBlock } from './UploadBlock';
-import { FormatShapes } from '@mui/icons-material';
-import {
-    buildDimensionsSection,
-    buildSpacingSection,
-} from '../block-defaults.shared';
+import { Upload } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
+
+export const DefaultStyles: CSSProperties = {
+    width: '100%',
+    padding: '4px',
+};
 
 // export the config for the block
 export const config: BlockConfig<UploadBlockDef> = {
     widget: 'upload',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {
-            width: '100%',
-            padding: '8px',
-        },
+        style: DefaultStyles,
         value: '',
         label: 'Example Input',
         hint: '',
@@ -36,7 +35,8 @@ export const config: BlockConfig<UploadBlockDef> = {
         content: [],
     },
     render: UploadBlock,
-    icon: FormatShapes,
+    icon: Upload,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -70,11 +70,12 @@ export const config: BlockConfig<UploadBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
             ],
         },
     ],
-    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
+    styleMenu: [],
 };

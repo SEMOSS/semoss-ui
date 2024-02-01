@@ -222,23 +222,21 @@ export const ImportForm = (props) => {
                 }
 
                 if (finalFieldState.pixel && !finalFieldState.options.pixel) {
-                    console.log(
-                        `Populating default value for ${finalFieldState.fieldName}`,
-                    );
+                    // Populating default value for field
                     defaultVals[finalFieldState.fieldName] = output;
                 } else if (
                     !finalFieldState.pixel &&
                     finalFieldState.options.pixel
                 ) {
-                    console.log(
-                        `Populating options for ${finalFieldState.fieldName}`,
-                    );
+                    // Populating dropdown options for field
                     const opts = [];
-
                     output.forEach((opt) => {
                         opts.push({
-                            display: opt.database_name,
-                            value: opt.database_id,
+                            display:
+                                opt[`${finalFieldState.options.optionDisplay}`],
+                            value: opt[
+                                `${finalFieldState.options.optionValue}`
+                            ],
                         });
                     });
 
@@ -247,9 +245,7 @@ export const ImportForm = (props) => {
                         options: opts,
                     };
                 } else {
-                    console.log(
-                        `Populating default value and options for ${finalFieldState.fieldName}`,
-                    );
+                    // Populating default value and options for field
                     defaultVals[finalFieldState.fieldName] = output;
 
                     output = result.pixelReturn[1].output;

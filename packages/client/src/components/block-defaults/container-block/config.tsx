@@ -1,12 +1,10 @@
+import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
 
 import {
     buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildColorSection,
-    buildTypographySection,
     buildBorderSection,
 } from '../block-defaults.shared';
 
@@ -21,8 +19,11 @@ export const config: BlockConfig<ContainerBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '2rem',
-            overflow: 'scroll',
+            flexDirection: 'column',
+            flexWrap: 'wrap',
+            padding: '4px',
+            gap: '8px',
+            overflow: 'hidden',
         },
     },
     listeners: {},
@@ -31,13 +32,12 @@ export const config: BlockConfig<ContainerBlockDef> = {
     },
     render: ContainerBlock,
     icon: HighlightAlt,
+    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildColorSection(),
         buildBorderSection(),
-        buildTypographySection(),
     ],
 };

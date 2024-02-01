@@ -9,6 +9,8 @@ import {
     AlignHorizontalCenter,
     AlignHorizontalLeft,
     AlignHorizontalRight,
+    ArrowDownward,
+    ArrowForward,
     FormatAlignCenter,
     FormatAlignJustify,
     FormatAlignLeft,
@@ -90,34 +92,33 @@ export const buildLayoutSection = () => ({
             ),
         },
         {
-            description: 'Gap',
+            description: 'Direction',
             render: ({ id }) => (
-                <SelectInputSettings
+                <ButtonGroupSettings
                     id={id}
-                    path="style.gap"
-                    label="Gap"
-                    resizeOnSet
-                    allowUnset
-                    allowCustomInput
+                    path="style.flexDirection"
+                    label="Direction"
                     options={[
                         {
-                            value: '1rem',
-                            display: 'Small',
+                            value: 'column',
+                            icon: ArrowDownward,
+                            title: 'Column',
+                            isDefault: true,
                         },
                         {
-                            value: '2rem',
-                            display: 'Medium',
-                        },
-                        {
-                            value: '3rem',
-                            display: 'Large',
-                        },
-                        {
-                            value: '4rem',
-                            display: 'X-Large',
+                            value: 'row',
+                            icon: ArrowForward,
+                            title: 'Row',
+                            isDefault: false,
                         },
                     ]}
                 />
+            ),
+        },
+        {
+            description: 'Gap',
+            render: ({ id }) => (
+                <SizeSettings id={id} label="Gap" path="style.gap" />
             ),
         },
     ],
@@ -175,67 +176,13 @@ export const buildSpacingSection = () => ({
         {
             description: 'Margin',
             render: ({ id }) => (
-                <SelectInputSettings
-                    id={id}
-                    path="style.margin"
-                    label="Margin"
-                    resizeOnSet
-                    allowUnset
-                    allowCustomInput
-                    options={[
-                        {
-                            value: 'auto',
-                            display: 'Auto',
-                        },
-                        {
-                            value: '1rem',
-                            display: 'Small',
-                        },
-                        {
-                            value: '2rem',
-                            display: 'Medium',
-                        },
-                        {
-                            value: '3rem',
-                            display: 'Large',
-                        },
-                        {
-                            value: '4rem',
-                            display: 'X-Large',
-                        },
-                    ]}
-                />
+                <SizeSettings id={id} label="Margin" path="style.margin" />
             ),
         },
         {
             description: 'Padding',
             render: ({ id }) => (
-                <SelectInputSettings
-                    id={id}
-                    path="style.padding"
-                    label="Padding"
-                    resizeOnSet
-                    allowUnset
-                    allowCustomInput
-                    options={[
-                        {
-                            value: '1rem',
-                            display: 'Small',
-                        },
-                        {
-                            value: '2rem',
-                            display: 'Medium',
-                        },
-                        {
-                            value: '3rem',
-                            display: 'Large',
-                        },
-                        {
-                            value: '4rem',
-                            display: 'X-Large',
-                        },
-                    ]}
-                />
+                <SizeSettings id={id} label="Padding" path="style.padding" />
             ),
         },
     ],
@@ -294,12 +241,6 @@ export const buildColorSection = () => ({
                     label="Background Color"
                     path="style.backgroundColor"
                 />
-            ),
-        },
-        {
-            description: 'Color',
-            render: ({ id }) => (
-                <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
     ],
@@ -410,6 +351,12 @@ export const buildTypographySection = () => ({
                     sizePath="style.fontSize"
                     weightPath="style.fontWeight"
                 />
+            ),
+        },
+        {
+            description: 'Color',
+            render: ({ id }) => (
+                <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
     ],

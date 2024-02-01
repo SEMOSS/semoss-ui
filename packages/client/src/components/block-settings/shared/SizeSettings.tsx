@@ -3,7 +3,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { TextField, ToggleButton, ToggleButtonGroup } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, useDesigner } from '@/hooks';
+import { useBlockSettings, useBlocks } from '@/hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
@@ -30,7 +30,7 @@ interface SizeSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
-const SIZE_VALUE_TYPES = ['em', 'px', '%'];
+const SIZE_VALUE_TYPES = ['em', 'px', '%'] as const;
 
 export const SizeSettings = observer(
     <D extends BlockDef = BlockDef>({
@@ -38,14 +38,17 @@ export const SizeSettings = observer(
         label = '',
         path,
     }: SizeSettingsProps<D>) => {
+        const { state } = useBlocks();
         const { data, setData } = useBlockSettings<D>(id);
-        const { designer } = useDesigner();
 
         // track the value
-        const [value, setValue] = useState('');
-
-        // track the unit of the value, ex % or px
-        const [valueType, setValueType] = useState(null);
+        const [parsed, setParsed] = useState<{
+            unit: '%' | 'px' | 'em' | '';
+            amount: string;
+        }>({
+            unit: '',
+            amount: '',
+        });
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -70,40 +73,42 @@ export const SizeSettings = observer(
 
         // update the value whenever the computed one changes
         useEffect(() => {
+            const p: typeof parsed = {
+                unit: '',
+                amount: '',
+            };
+
+            // get the unit
             if (computedValue.includes('%')) {
-                setValueType('%');
+                p.unit = '%';
             } else if (computedValue.includes('px')) {
-                setValueType('px');
+                p.unit = 'px';
             } else if (computedValue.includes('em')) {
-                setValueType('em');
+                p.unit = 'em';
             }
-            setValue(computedValue);
+
+            // get the value
+            if (p.unit) {
+                p.amount = computedValue.replace(/\D+/g, '');
+            } else {
+                p.amount = computedValue;
+            }
+
+            setParsed(p);
         }, [computedValue]);
-
-        // numeric value for the text field
-        const numericValue = useMemo(() => {
-            return value.replace(/\D+/g, '');
-        }, [value]);
-
-        // default value type % if one is not set when the value is set
-        // remove type when value is unset
-        useMemo(() => {
-            if (numericValue && !valueType) {
-                setValueType('em');
-            } else if (!numericValue) {
-                setValueType('');
-            }
-        }, [numericValue]);
 
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
-            // set the value - this is a number string
-            setValue(value);
+        const onChange = (amount: string, unit: '%' | 'px' | 'em' | '') => {
+            // updated the parsted value
+            setParsed({
+                amount: amount,
+                unit: unit,
+            });
 
             // get value with unit for setting data
-            const valueWithUnit = value ? value + valueType : value;
+            const v = unit ? amount + unit : amount;
 
             // clear the old timeout
             if (timeoutRef.current) {
@@ -114,12 +119,9 @@ export const SizeSettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     // set the value
-                    setData(
-                        path,
-                        valueWithUnit as PathValue<D['data'], typeof path>,
-                    );
+                    setData(path, v as PathValue<D['data'], typeof path>);
                     // emit event to resize the block on the screen
-                    designer.blocks.dispatch({
+                    state.dispatch({
                         message: ActionMessages.DISPATCH_EVENT,
                         payload: {
                             name: 'blockResized',
@@ -131,42 +133,33 @@ export const SizeSettings = observer(
             }, 300);
         };
 
-        // update data when unit changes
-        useMemo(() => {
-            if (numericValue) {
-                onChange(numericValue);
-            }
-        }, [valueType]);
-
-        const getColorForButtonValue = (
-            buttonValue: string,
-        ): 'primary' | undefined => {
-            return valueType === buttonValue ? 'primary' : undefined;
-        };
-
         return (
             <BaseSettingSection label={label} wide>
                 <TextField
                     fullWidth
-                    value={numericValue}
+                    value={parsed.amount}
                     onChange={(e) => {
                         // sync the data on change
-                        onChange(e.target.value);
+                        onChange(e.target.value, parsed.unit);
                     }}
                     size="small"
                     variant="outlined"
                     autoComplete="off"
                 />
-                <ToggleButtonGroup value={valueType} exclusive size="small">
-                    {Array.from(SIZE_VALUE_TYPES, (buttonValueType: string) => {
+                <ToggleButtonGroup value={parsed.unit} exclusive size="small">
+                    {SIZE_VALUE_TYPES.map((unit) => {
                         return (
                             <ToggleButton
-                                key={buttonValueType}
-                                value={buttonValueType}
-                                color={getColorForButtonValue(buttonValueType)}
-                                onClick={() => setValueType(buttonValueType)}
+                                key={unit}
+                                value={unit}
+                                color={
+                                    parsed.unit === unit ? 'primary' : undefined
+                                }
+                                onClick={() => {
+                                    onChange(parsed.amount, unit);
+                                }}
                             >
-                                {buttonValueType}
+                                {unit}
                             </ToggleButton>
                         );
                     })}

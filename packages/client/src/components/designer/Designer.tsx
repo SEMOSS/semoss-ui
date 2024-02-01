@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
 import { DataObject, Layers, Widgets } from '@mui/icons-material';
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
@@ -19,6 +19,7 @@ const StyledLeftMenu = styled('div', {
     height: '100%',
     flexDirection: 'row',
     width: `calc(${width}% + ${theme.spacing(7)});`,
+    flexShrink: '0',
 }));
 
 const StyledSidebar = styled('div')(({ theme }) => ({
@@ -113,6 +114,7 @@ const StyledRightMenu = styled(Paper, {
     width: `${width}%`,
     flexDirection: 'row',
     borderRadius: '0',
+    flexShrink: '0',
 }));
 
 const StyledDragger = styled('div', {

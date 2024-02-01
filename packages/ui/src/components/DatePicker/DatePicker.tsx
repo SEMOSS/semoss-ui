@@ -54,7 +54,7 @@ export const DatePicker = (props: DatePickerProps) => {
                 {...props}
                 value={memoValue}
                 onChange={(d, c) => onChange(d.toISOString(), c)}
-                slots={{ day: DayPicker }}
+                slots={{ day: (props) => <DayPicker {...props} /> }}
                 renderLoading={() => <DayCalendarSkeleton />}
             />
         </LocalizationProvider>

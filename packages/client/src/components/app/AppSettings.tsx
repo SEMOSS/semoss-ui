@@ -10,6 +10,8 @@ import {
     Typography,
     Divider,
     TextField,
+    Stack,
+    FileDropzone,
 } from '@semoss/ui';
 
 import {
@@ -20,7 +22,7 @@ import {
     InsertLink,
     Publish,
 } from '@mui/icons-material';
-
+import { Controller, useForm } from 'react-hook-form';
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
@@ -213,10 +215,23 @@ interface AppSettingsProps {
     condensed?: boolean;
 }
 
+type EditAppForm = {
+    PROJECT_UPLOAD: File;
+};
+
 export const AppSettings = (props: AppSettingsProps) => {
     const { id, condensed = false } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
+        defaultValues: {
+            PROJECT_UPLOAD: null,
+        },
+    });
+
+    const uploadFile = watch('PROJECT_UPLOAD');
 
     const admin = configStore.store.user.admin;
 
@@ -439,6 +454,64 @@ export const AppSettings = (props: AppSettingsProps) => {
                 });
             });
     };
+
+    /**
+     * @name editApp
+     */
+    const editApp = handleSubmit(async (data: EditAppForm) => {
+        // turn on loading
+        setIsLoading(true);
+
+        try {
+            const path = 'version/assets/';
+
+            // unzip the file in the new app
+            await monolithStore.runQuery(
+                `DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
+            );
+
+            // upload the file
+            const upload = await monolithStore.uploadFile(
+                [data.PROJECT_UPLOAD],
+                configStore.store.insightID,
+                id,
+                path,
+            );
+
+            // upnzip the file in the new app
+            await monolithStore.runQuery(
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
+            );
+
+            // Load the insight classes
+            await monolithStore.runQuery(`ReloadInsightClasses('${id}');`);
+
+            // set the app portal
+            await monolithStore.setProjectPortal(false, id, true, 'public');
+
+            // Publish the app the insight classes
+            await monolithStore.runQuery(
+                `PublishProject('${id}', release=true);`,
+            );
+
+            notification.add({
+                color: 'success',
+                message: 'Succesfully Updated Project',
+            });
+
+            reset();
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            // turn of loading
+            setIsLoading(false);
+        }
+    });
 
     if (condensed) {
         return (
@@ -725,6 +798,46 @@ export const AppSettings = (props: AppSettingsProps) => {
                         </StyledCardDiv>
                     </StyledCardContainer>
                 ) : null}
+                <StyledCardContainer>
+                    <StyledCardDiv>
+                        <StyledCardLeft>
+                            <StyledListItemHeader>
+                                <Typography variant="h6">
+                                    Update Project
+                                </Typography>
+                            </StyledListItemHeader>
+                        </StyledCardLeft>
+                        <StyledCardRight>
+                            <Controller
+                                name={'PROJECT_UPLOAD'}
+                                control={control}
+                                rules={{}}
+                                render={({ field }) => {
+                                    return (
+                                        <FileDropzone
+                                            multiple={false}
+                                            value={field.value}
+                                            disabled={isLoading}
+                                            onChange={(newValues) => {
+                                                field.onChange(newValues);
+                                            }}
+                                        />
+                                    );
+                                }}
+                            />
+                            <Stack alignItems={'center'}>
+                                <Button
+                                    type="submit"
+                                    variant={'contained'}
+                                    disabled={isLoading || !uploadFile}
+                                    onClick={editApp}
+                                >
+                                    Update
+                                </Button>
+                            </Stack>
+                        </StyledCardRight>
+                    </StyledCardDiv>
+                </StyledCardContainer>
             </StyledAppSettings>
         );
     }

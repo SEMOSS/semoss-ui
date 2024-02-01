@@ -44,7 +44,7 @@ function getTextFieldInputBlock(
 ) {
     return {
         id: getIdForInput(inputType, index),
-        widget: 'text-field',
+        widget: 'input',
         parent: {
             id: PROMPT_CONTAINER_BLOCK_ID,
             slot: 'children',
@@ -53,7 +53,10 @@ function getTextFieldInputBlock(
             label: label,
             value: '',
             type: inputType,
-            style: {},
+            style: {
+                width: '100%',
+                padding: '4px',
+            },
         },
         listeners: {},
         slots: {},
@@ -72,7 +75,10 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             label: label,
             value: '',
             options: [],
-            style: {},
+            style: {
+                width: '100%',
+                padding: '8px',
+            },
         },
         listeners: {},
         slots: {},
@@ -132,7 +138,7 @@ export function getInputFormatPrompt(
                 tokenStrings.push(token.display);
             } else {
                 const keyIndex = inputTokenParts.indexOf(token.key);
-                inputTokenParts[keyIndex] = `{{${getIdForInput(
+                inputTokenParts[keyIndex] = `{{block.${getIdForInput(
                     token.linkedInputToken !== undefined
                         ? inputTypes[token.linkedInputToken].type
                         : inputTypes[token.index].type,
@@ -158,30 +164,24 @@ export function getInputFormatPrompt(
 }
 
 function getVectorQuery() {
-    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:`;
-
-    vectorQueryFunctionString += `from gaas_gpt_vector import VectorEngine;`;
-    vectorQueryFunctionString += `vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}');`;
-    vectorQueryFunctionString += `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`;
-
-    vectorQueryFunctionString += `return ' '.join([matchItem['Content'] for matchItem in matches]);`;
-
-    return vectorQueryFunctionString;
+    return `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:
+    from gaas_gpt_vector import VectorEngine
+    vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}')
+    matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit)
+    return ' '.join([matchItem['Content'] for matchItem in matches])`;
 }
 
 function getCustomQuery(index: number) {
-    return `def runCustom_${index}(search_statement:str) -> str: return search_statement;`;
+    return `def runCustom_${index}(search_statement:str) -> str:
+    return search_statement`;
 }
 
 function getDatabaseQuery() {
-    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str) -> str:`;
-
-    databaseQueryFunctionString += `from gaas_gpt_database import DatabaseEngine;`;
-    databaseQueryFunctionString += `databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');`;
-    databaseQueryFunctionString += `result_df = databaseEngine.execQuery(query = query);`;
-    databaseQueryFunctionString += `return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}";`;
-
-    return databaseQueryFunctionString;
+    return `def runDatabaseQuery(query:str, database_engine_id:str) -> str:
+    from gaas_gpt_database import DatabaseEngine
+    databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}')
+    result_df = databaseEngine.execQuery(query = query)
+    return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
 export function getQueryForPrompt(
@@ -193,7 +193,7 @@ export function getQueryForPrompt(
 
     // filter out custom input types
     const customInputTypes = Object.fromEntries(
-        Object.entries(inputTypes).filter(
+        Object.entries(inputTypes ?? {}).filter(
             ([_, value]) =>
                 value?.type === INPUT_TYPE_VECTOR ||
                 value?.type === INPUT_TYPE_CUSTOM_QUERY ||
@@ -201,53 +201,41 @@ export function getQueryForPrompt(
         ),
     );
 
-    const queryDefinition = () => {
-        let promptQueryFunctionString = `def promptQuery(search_statement:str, ${Object.keys(
-            customInputTypes,
-        )
-            .map((customInputTokenIndex, index: number) => {
-                return `${
-                    customInputTypes[customInputTokenIndex]?.type
-                }_${index}_${
-                    customInputTypes[customInputTokenIndex]?.type ===
-                    INPUT_TYPE_DATABASE
-                        ? 'query'
-                        : 'statement'
-                }:str`;
-            })
-            .join(', ')}${
-            Object.keys(customInputTypes).length ? ', ' : ''
-        }limit = 5) -> str:`;
-
-        promptQueryFunctionString +=
-            `import json;` +
-            `from gaas_gpt_model import ModelEngine;` +
-            `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');`;
-
+    const buildQueryDefinitionFunctionCalls = (): string => {
+        let functionCalls = '';
         Object.keys(customInputTypes).forEach(
             (customInputTokenIndex, index: number) => {
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_VECTOR
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit);`;
+                    functionCalls += `
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit)
+`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_CUSTOM_QUERY
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement);`;
+                    functionCalls += `
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement)
+`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_DATABASE
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}");`;
+                    functionCalls += `
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}")
+`;
                 }
             },
         );
+        return functionCalls;
+    };
 
-        promptQueryFunctionString += `prompt = search_statement`;
+    const buildQueryDefinitionPromptStatement = (): string => {
+        let promptQueryFunctionString = `prompt = search_statement`;
         if (
             Object.values(customInputTypes).some(
                 (inputType) =>
@@ -268,7 +256,7 @@ export function getQueryForPrompt(
                 .map((customInputTokenIndex, index: number) => {
                     return `${customInputTypes[customInputTokenIndex].type}_${index}`;
                 })
-                .join(` + ' and ' + `)}.`;
+                .join(` + ' and ' + `)} + '.'`;
         }
         if (
             Object.values(customInputTypes).some(
@@ -286,33 +274,51 @@ export function getQueryForPrompt(
                 })
                 .join(` + `)}`;
         }
-        promptQueryFunctionString += ` + ' Format the result as markdown.';`;
-
-        promptQueryFunctionString +=
-            `response = model.ask(question = prompt);` +
-            `return json.dumps(response[0]['response']);`;
-
+        promptQueryFunctionString += ` + ' Format the result as markdown.'`;
         return promptQueryFunctionString;
     };
+
+    const queryDefinition = `def promptQuery(search_statement:str, ${Object.keys(
+        customInputTypes,
+    )
+        .map((customInputTokenIndex, index: number) => {
+            return `${customInputTypes[customInputTokenIndex]?.type}_${index}_${
+                customInputTypes[customInputTokenIndex]?.type ===
+                INPUT_TYPE_DATABASE
+                    ? 'query'
+                    : 'statement'
+            }:str`;
+        })
+        .join(', ')}${
+        Object.keys(customInputTypes).length ? ', ' : ''
+    }limit = 5) -> str:
+    import json
+    from gaas_gpt_model import ModelEngine
+    model = ModelEngine(engine_id = "${model}", insight_id = '\${i}')
+    ${buildQueryDefinitionFunctionCalls()}
+    ${buildQueryDefinitionPromptStatement()}
+    response = model.ask(question = prompt)
+    return json.dumps(response[0]['response'])
+`;
 
     const query = `promptQuery("${prompt}"${
         Object.keys(customInputTypes).length ? ', ' : ''
     }${Object.keys(customInputTypes)
         .map((customInputTokenIndex) => {
-            return `"{{${getIdForInput(
+            return `"{{block.${getIdForInput(
                 customInputTypes[customInputTokenIndex].type,
                 parseInt(customInputTokenIndex),
             )}.value}}"`;
         })
         .join(', ')})`;
 
-    let queryDefinitionSteps = [
+    let queryDefinitionCells = [
         {
             id: 'py-prompt-query-definition',
             widget: 'code',
             parameters: {
                 type: 'py',
-                code: queryDefinition(),
+                code: queryDefinition,
             },
         },
     ];
@@ -322,7 +328,7 @@ export function getQueryForPrompt(
                 customInputTypes[customInputTokenIndex]?.type ===
                 INPUT_TYPE_CUSTOM_QUERY
             ) {
-                queryDefinitionSteps.unshift({
+                queryDefinitionCells.unshift({
                     id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
                     widget: 'code',
                     parameters: {
@@ -338,7 +344,7 @@ export function getQueryForPrompt(
             (inputType) => inputType?.type === INPUT_TYPE_VECTOR,
         )
     ) {
-        queryDefinitionSteps.unshift({
+        queryDefinitionCells.unshift({
             id: 'py-vector-search-query-definition',
             widget: 'code',
             parameters: {
@@ -352,7 +358,7 @@ export function getQueryForPrompt(
             (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
         )
     ) {
-        queryDefinitionSteps.unshift({
+        queryDefinitionCells.unshift({
             id: 'py-database-query-definition',
             widget: 'code',
             parameters: {
@@ -366,12 +372,12 @@ export function getQueryForPrompt(
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
             mode: 'automatic',
-            steps: queryDefinitionSteps,
+            cells: queryDefinitionCells,
         },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
             mode: 'manual',
-            steps: [
+            cells: [
                 {
                     id: 'py-query',
                     widget: 'code',
@@ -425,13 +431,11 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        background: 'white',
+                        display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        padding: '32px',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',
+                        flexWrap: 'wrap',
+                        padding: '24px',
+                        gap: '8px',
                     },
                 },
                 listeners: {},
@@ -453,6 +457,7 @@ export async function setBlocksAndOpenUIBuilder(
                     style: {
                         fontSize: '2.5rem',
                         textAlign: 'center',
+                        padding: '4px',
                     },
                     text: 'My App',
                 },
@@ -469,6 +474,7 @@ export async function setBlocksAndOpenUIBuilder(
                 data: {
                     style: {
                         textAlign: 'center',
+                        padding: '4px',
                     },
                     text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
@@ -484,13 +490,11 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        background: 'white',
+                        display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px',
-                        padding: '32px',
-                        width: '100%',
-                        maxWidth: '900px',
-                        margin: '0 auto',
+                        flexWrap: 'wrap',
+                        padding: '24px',
+                        gap: '8px',
                     },
                 },
                 listeners: {},
@@ -512,13 +516,10 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {
-                        color: 'white',
-                        backgroundColor: 'blue',
-                        width: '125px',
-                    },
+                    style: {},
                     label: 'Submit',
-                    loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
+                    loading: `{{query.${PROMPT_QUERY_ID}.isLoading}}`,
+                    variant: 'contained',
                 },
                 listeners: {
                     onClick: [
@@ -540,8 +541,10 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {},
-                    markdown: `{{${PROMPT_QUERY_ID}.data.0.output}}`,
+                    style: {
+                        padding: '4px',
+                    },
+                    markdown: `{{query.${PROMPT_QUERY_ID}.output}}`,
                 },
                 listeners: {},
                 slots: {},
@@ -579,13 +582,17 @@ export async function setBlocksAndOpenUIBuilder(
 
     const pixel = `CreateAppFromBlocks ( project = [ "${
         builder.title.value
-    }" ] , json =[${JSON.stringify(state)}]  ) ;`;
+    }" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
     // create the app
-    const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(pixel);
+    const { errors, pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
+        pixel,
+    );
 
-    const app = pixelReturn[0].output;
+    if (errors.length > 0) {
+        throw new Error(errors.join(','));
+    }
 
-    // navigate to the app
-    navigate(`../${app.project_id}`);
+    const appId = pixelReturn[0].output.project_id;
+    navigate(`/app/${appId}`);
 }

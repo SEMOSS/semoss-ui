@@ -1,16 +1,24 @@
 import { useLayoutEffect, useState } from 'react';
+import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { styled, ButtonGroup, Button } from '@semoss/ui';
-
-import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
-import { useBlock, useDesigner } from '@/hooks';
 import { ContentCopy, Delete } from '@mui/icons-material';
+
+import {
+    ActionMessages,
+    getRelativeSize,
+    getRootElement,
+    getBlockElement,
+    BlockJSON,
+} from '@/stores';
+import { useBlocks, useDesigner } from '@/hooks';
 
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
 const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
 
-const StyledContainer = styled('div')(() => ({
+const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
+    padding: theme.spacing(2),
     top: '0',
     right: '0',
     bottom: '0',
@@ -41,13 +49,22 @@ export const DeleteDuplicateMask = observer(() => {
     } | null>(null);
 
     // get the store
+    const { registry, state } = useBlocks();
     const { designer } = useDesigner();
-    const { clearBlock, deleteBlock, duplicateBlock } = useBlock(
-        designer.selected,
-    );
+
+    // get the block
+    const block = state.getBlock(designer.selected);
+
+    // check if it is visible
+    const isVisible =
+        block && registry[block.widget] && block.widget !== 'page';
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
+        if (!isVisible) {
+            return;
+        }
+
         // get the root element
         const rootEle = getRootElement();
 
@@ -78,9 +95,9 @@ export const DeleteDuplicateMask = observer(() => {
         repositionMask();
 
         return () => observer.disconnect();
-    }, [designer.selected]);
+    }, [designer.selected, isVisible]);
 
-    if (!size) {
+    if (!size || !isVisible) {
         return <></>;
     }
 
@@ -99,12 +116,6 @@ export const DeleteDuplicateMask = observer(() => {
         const hasRightOverflow =
             rootElementSize.right === selectedElementSize.right &&
             selectedElementSize.width < STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
-        const positionBelow =
-            selectedElementSize.top <=
-            rootElementSize.top + rootElementSize.height / 3;
-        const hasBottomOverflow =
-            rootElementSize.bottom === selectedElementSize.bottom &&
-            positionBelow;
 
         const leftValue =
             size.left + size.width / 2 - STYLED_BUTTON_GROUP_BUTTON_WIDTH;
@@ -122,32 +133,88 @@ export const DeleteDuplicateMask = observer(() => {
             left = `${leftValue}px`;
         }
 
-        const topValue = positionBelow
-            ? size.top + size.height + 10
-            : size.top - 60;
-        let top: string;
-        if (hasBottomOverflow) {
-            top = `${topValue - 60}px`;
-        } else {
-            top = `${topValue}px`;
-        }
+        const top = size.top + size.height;
 
         return { top, left };
     };
 
     const onClear = () => {
+        // dispatch the event
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: designer.selected,
+                keep: true,
+            },
+        });
+
+        // clear the selected value
         designer.setSelected('');
-        clearBlock();
     };
 
+    /**
+     * Delete the block
+     */
     const onDelete = () => {
+        // dispatch the event
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: designer.selected,
+                keep: false,
+            },
+        });
+
+        // clear the selected value
         designer.setSelected('');
-        deleteBlock();
     };
 
     const onDuplicate = () => {
+        // get the json for the block to add
+        const getJsonForBlock = (id: string) => {
+            const block = state.blocks[id];
+
+            const blockJson = {
+                widget: toJS(block.widget),
+                data: toJS(block.data),
+                listeners: toJS(block.listeners),
+                slots: {},
+            };
+
+            // generate the slots
+            for (const slot in block.slots) {
+                if (block.slots[slot]) {
+                    blockJson.slots[slot] = block.slots[slot].children.map(
+                        (childId) => {
+                            return getJsonForBlock(childId);
+                        },
+                    );
+                }
+            }
+
+            // return it
+            return blockJson;
+        };
+
+        const position = block?.parent?.id
+            ? {
+                  parent: block.parent.id,
+                  slot: block.parent.slot,
+                  sibling: block.id,
+                  type: 'after',
+              }
+            : undefined;
+
+        state.dispatch({
+            message: ActionMessages.ADD_BLOCK,
+            payload: {
+                json: getJsonForBlock(block.id) as BlockJSON,
+                position: position,
+            },
+        });
+
+        // clear the selected value
         designer.setSelected('');
-        duplicateBlock();
     };
 
     // TODO: revisit these actions for the base page once multiple pages/routing is enabled

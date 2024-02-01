@@ -46,6 +46,8 @@ export interface TypographyProps {
         | "info"
         | "warning";
     noWrap?: MuiTypographyProps["noWrap"];
+    title?: MuiTypographyProps["title"];
+    id?: string;
 }
 
 export const Typography = (props: TypographyProps) => {

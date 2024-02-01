@@ -4,6 +4,7 @@ import {
     Card,
     Chip,
     IconButton,
+    Stack,
     Typography,
     styled,
 } from '@semoss/ui';
@@ -244,7 +245,7 @@ const StyledCardContainer = styled('div')({
 
 const StyledCardImage = styled('img')({
     display: 'flex',
-    height: '118px',
+    height: '134px',
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
@@ -289,17 +290,12 @@ const StyledCardDescription = styled(Typography)({
     textOverflow: 'ellipsis',
 });
 
-const StyledChipDiv = styled('div')({
-    display: 'flex',
-    flexDirection: 'row',
-    minHeight: '32px',
-    width: '80px',
-    alignItems: 'center',
-    gap: 2,
-});
-
-const StyledStatisticCaption = styled(Typography)(({ theme }) => ({
-    color: theme.palette.secondary.main,
+const StyledTagChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'maxWidth',
+})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+    maxWidth: maxWidth,
+    textOverflow: 'ellipsis',
+    backgroundColor: theme.palette.grey[200],
 }));
 
 const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
@@ -400,7 +396,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                     gap: '8px',
                                 }}
                             >
-                                <span>{formatDBName(name)}</span>
+                                <Typography variant={'body1'}>
+                                    {formatDBName(name)}
+                                </Typography>
                                 {sub_type === 'EMBEDDED' ? (
                                     <StyledCardImg src={GOOGLE}></StyledCardImg>
                                 ) : null}
@@ -445,26 +443,48 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                     ? description
                                     : 'No description available'}
                             </StyledLandscapeCardDescription>
-                            <StyledChipDiv>
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={0.5}
+                                minHeight="32px"
+                            >
                                 {tag !== undefined &&
-                                    (typeof tag === 'object' ? (
-                                        tag.map((t, i) => {
-                                            return (
-                                                <Chip
-                                                    key={id + i}
-                                                    variant={'outlined'}
-                                                    label={t}
-                                                />
-                                            );
-                                        })
+                                    (Array.isArray(tag) ? (
+                                        <>
+                                            {tag.map((t, i) => {
+                                                if (i <= 2) {
+                                                    return (
+                                                        <StyledTagChip
+                                                            maxWidth={
+                                                                tag.length === 2
+                                                                    ? '100px'
+                                                                    : tag.length ===
+                                                                      1
+                                                                    ? '200px'
+                                                                    : '75px'
+                                                            }
+                                                            key={`${id}${i}`}
+                                                            label={t}
+                                                        />
+                                                    );
+                                                }
+                                            })}
+                                            {tag.length > 3 ? (
+                                                <Typography variant="caption">
+                                                    +{tag.length - 3}
+                                                </Typography>
+                                            ) : (
+                                                <></>
+                                            )}
+                                        </>
                                     ) : (
-                                        <Chip
-                                            key={id + tag}
-                                            variant={'outlined'}
+                                        <StyledTagChip
+                                            key={`${id}0`}
                                             label={tag}
                                         />
                                     ))}
-                            </StyledChipDiv>
+                            </Stack>
                         </StyledLandscapeCardRowDiv>
                     </StyledLandscapeCardRowContainer>
                 </StyledLandscapeCardRow>
@@ -566,7 +586,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
                 src={`${Env.MODULE}/api/e-${id}/image/download`}
-                sx={{ height: '118px' }}
+                sx={{ height: '134px' }}
             />
             <Card.Header
                 title={
@@ -578,7 +598,9 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                                 gap: '8px',
                             }}
                         >
-                            <span>{formatDBName(name)}</span>
+                            <Typography variant={'body1'}>
+                                {formatDBName(name)}
+                            </Typography>
                             {sub_type === 'VERTEX' ? (
                                 <StyledCardImg src={GOOGLE}></StyledCardImg>
                             ) : null}
@@ -622,59 +644,44 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                 <StyledCardDescription variant={'body2'}>
                     {description ? description : 'No description available'}
                 </StyledCardDescription>
-                <StyledChipDiv>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={0.5}
+                    minHeight="32px"
+                >
                     {tag !== undefined &&
-                        (typeof tag === 'object' ? (
+                        (Array.isArray(tag) ? (
                             <>
                                 {tag.map((t, i) => {
                                     if (i <= 2) {
                                         return (
-                                            <Chip
-                                                key={id + i}
-                                                variant={'outlined'}
+                                            <StyledTagChip
+                                                maxWidth={
+                                                    tag.length === 2
+                                                        ? '100px'
+                                                        : tag.length === 1
+                                                        ? '200px'
+                                                        : '75px'
+                                                }
+                                                key={`${id}${i}`}
                                                 label={t}
                                             />
                                         );
                                     }
                                 })}
                                 {tag.length > 3 ? (
-                                    <div
-                                        style={{
-                                            marginLeft: 1,
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                        }}
-                                    >
-                                        <StyledPublishedByLabel
-                                            sx={{
-                                                color: 'rgba(0, 0, 0, 0.6)',
-                                                marginLeft: 1,
-                                            }}
-                                            variant={'caption'}
-                                        >
-                                            +
-                                        </StyledPublishedByLabel>
-                                        <StyledPublishedByLabel
-                                            sx={{
-                                                color: 'rgba(0, 0, 0, 0.6)',
-                                                display: 'flex',
-                                                flexDirection: 'row',
-                                            }}
-                                            variant={'caption'}
-                                        >
-                                            {tag.length - 3}
-                                        </StyledPublishedByLabel>
-                                    </div>
-                                ) : null}
+                                    <Typography variant="caption">
+                                        +{tag.length - 3}
+                                    </Typography>
+                                ) : (
+                                    <></>
+                                )}
                             </>
                         ) : (
-                            <Chip
-                                key={id + tag}
-                                variant={'outlined'}
-                                label={tag}
-                            />
+                            <StyledTagChip key={`${id}0`} label={tag} />
                         ))}
-                </StyledChipDiv>
+                </Stack>
             </Card.Content>
             <Card.Actions>
                 <StyledLeftActions>
@@ -764,7 +771,7 @@ export const PlainEngineCard = (props) => {
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
                 src={`${Env.MODULE}/api/e-${id}/image/download`}
-                sx={{ height: '118px' }}
+                sx={{ height: '134px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>
                 <StyledDbName variant={'body1'}>

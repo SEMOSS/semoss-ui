@@ -1,28 +1,36 @@
+import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
-
 import {
-    buildLayoutSection,
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildColorSection,
-    buildTypographySection,
-    buildBorderSection,
-} from '../block-defaults.shared';
+    InputSettings,
+    QuerySelectionSettings,
+} from '@/components/block-settings';
 
 import { InputBlockDef, InputBlock } from './InputBlock';
-import { SettingsInputComponent } from '@mui/icons-material';
+import { FormatShapes } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
+import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
+
+export const DefaultStyles: CSSProperties = {
+    width: '100%',
+    padding: '4px',
+};
 
 // export the config for the block
 export const config: BlockConfig<InputBlockDef> = {
     widget: 'input',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: DefaultStyles,
+        value: '',
+        label: 'Example Input',
+        hint: '',
+        type: 'text',
+        rows: 1,
+        multiline: false,
         disabled: false,
         required: false,
-        value: '',
+        loading: false,
     },
     listeners: {
         onChange: [],
@@ -31,7 +39,8 @@ export const config: BlockConfig<InputBlockDef> = {
         content: [],
     },
     render: InputBlock,
-    icon: SettingsInputComponent,
+    icon: FormatShapes,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -39,38 +48,75 @@ export const config: BlockConfig<InputBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="value" />
-                    ),
-                },
-                {
-                    description: 'Disabled',
-                    render: ({ id }) => (
-                        <InputSettings
+                        <InputModalSettings
                             id={id}
-                            label="Disabled"
-                            path="disabled"
+                            label="Value"
+                            path="value"
                         />
                     ),
                 },
                 {
-                    description: 'Required',
+                    description: 'Label',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
+                {
+                    description: 'Hint',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Hint" path="hint" />
+                    ),
+                },
+                {
+                    description: 'Input Type',
+                    render: ({ id }) => {
+                        return (
+                            <SelectInputSettings
+                                id={id}
+                                path="type"
+                                label="Type"
+                                options={[
+                                    {
+                                        value: 'text',
+                                        display: 'Text',
+                                    },
+                                    {
+                                        value: 'number',
+                                        display: 'Number',
+                                    },
+                                    {
+                                        value: 'date',
+                                        display: 'Date',
+                                    },
+                                ]}
+                            />
+                        );
+                    },
+                },
+                {
+                    description: 'Rows',
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="Required"
-                            path="required"
+                            label="Rows"
+                            path="rows"
+                            type="number"
+                        />
+                    ),
+                },
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
             ],
         },
     ],
-    styleMenu: [
-        buildLayoutSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-        buildColorSection(),
-        buildBorderSection(),
-        buildTypographySection(),
-    ],
+    styleMenu: [],
 };

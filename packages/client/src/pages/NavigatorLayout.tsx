@@ -2,18 +2,10 @@ import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
-import {
-    Functions,
-    Inventory2Outlined,
-    LibraryBooksOutlined,
-    Polyline,
-    Settings,
-} from '@mui/icons-material';
+import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';
-import { Database } from '@/assets/img/Database';
 
-import { ModelBrain } from '@/assets/img/ModelBrain';
 import { ENGINE_ROUTES } from '@/pages/engine';
 
 const NAV_HEIGHT = '48px';
@@ -81,7 +73,7 @@ const StyledContent = styled('div')(() => ({
 /**
  * Wrap the routes with a side navigation
  */
-export const NavigatorLayout = observer((props) => {
+export const NavigatorLayout = observer(() => {
     const { pathname } = useLocation();
 
     return (
@@ -90,6 +82,7 @@ export const NavigatorLayout = observer((props) => {
             <StyledSidebar>
                 <Tooltip title={`Open App Library`} placement="right">
                     <StyledSidebarItem
+                        data-tour="nav-app-library"
                         to={'/'}
                         selected={!!matchPath('', pathname)}
                         aria-label={'Navigate to app library'}
@@ -107,6 +100,7 @@ export const NavigatorLayout = observer((props) => {
                         placement="right"
                     >
                         <StyledSidebarItem
+                            data-tour={`nav-engine-${r.path}`}
                             to={`/engine/${r.path}`}
                             selected={
                                 !!matchPath(`engine/${r.path}/*`, pathname)
@@ -131,9 +125,7 @@ export const NavigatorLayout = observer((props) => {
                 </Tooltip>
             </StyledSidebar>
             <StyledContent>
-                {/* TODO - Review this: */}
-                {/* I would like to wrap AddAppPage in NavigatorLayout and use the Outlet, quick fix using children if children */}
-                {props.children ? props.children : <Outlet />}
+                <Outlet />
             </StyledContent>
         </>
     );

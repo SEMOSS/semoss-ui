@@ -1,55 +1,20 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import {
+    Button,
     Card,
     Chip,
     Typography,
     styled,
-    Stack,
-    Avatar,
     IconButton,
     Link,
+    Stack,
+    Menu,
+    useNotification,
 } from '@semoss/ui';
-import { BookmarkBorderOutlined, OpenInNewOutlined } from '@mui/icons-material';
+import { AccessTime, MoreVert, Person } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
-
-const StyledCard = styled(Card)(() => ({
-    borderRadius: '12px',
-}));
-
-const StyledContent = styled(Card.Content)(({ theme }) => ({
-    // ...theme.typography.body1,
-    // color: theme.palette.text.primary,
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1.5),
-}));
-
-const StyledActions = styled(Card.Actions)(({ theme }) => ({
-    alignItems: 'end',
-    paddingTop: theme.spacing(2),
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1.5),
-}));
-
-const StyledBackdrop = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(1),
-    padding: theme.spacing(1),
-    borderRadius: '12px',
-}));
-
-const StyledChip = styled(Chip)(({ theme }) => ({
-    background: theme.palette.background.paper,
-}));
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    background: theme.palette.background.paper,
-    height: '32px',
-    width: '32px',
-    color: theme.palette.text.secondary,
-}));
+import { Env } from '@/env';
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -57,21 +22,108 @@ const StyledName = styled(Typography)(() => ({
     textOverflow: 'ellipsis',
 }));
 
-const StyledDescription = styled(Typography)(() => ({
-    height: '40px',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-}));
-
-const StyledActionButton = styled(IconButton)(({ theme }) => ({
-    background: theme.palette.text.primary,
-    color: theme.palette.primary.contrastText,
+const StyledTileCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled: boolean }>(({ disabled }) => ({
+    width: '280px',
+    height: '412px',
     '&:hover': {
-        background: theme.palette.text.secondary,
+        cursor: disabled ? 'default' : 'pointer',
     },
 }));
+
+const StyledContainer = styled('div')({
+    position: 'relative',
+});
+
+const StyledOverlayContent = styled('div')(({ theme }) => ({
+    width: '100%',
+    height: '134px',
+    position: 'absolute',
+    top: '0',
+    right: '0',
+    display: 'flex',
+    paddingTop: theme.spacing(1),
+    paddingRight: theme.spacing(1),
+    justifyContent: 'flex-end',
+    //   alignItems: 'center',
+}));
+
+const StyledTileCardMedia = styled(Card.Media)({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    width: '100%',
+    height: '134px',
+});
+
+const StyledTileCardImage = styled('img')({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    width: '100%',
+    height: '134px',
+    // aspectRatio: '1/1'
+});
+
+const StyledPublishedByContainer = styled('div')({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
+
+const StyledPublishedByLabel = styled(Typography)({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    flex: '1 0 0',
+});
+
+const StyledPersonIcon = styled(Person)({
+    display: 'flex',
+    alignItems: 'flex-start',
+});
+
+const StyledAccessTimeIcon = styled(AccessTime)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+}));
+
+const StyledCardDescription = styled(Typography)({
+    display: 'block',
+    minHeight: '60px',
+    maxHeight: '60px',
+    maxWidth: '350px',
+    whiteSpace: 'pre-wrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+});
+
+const StyledTagChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'maxWidth',
+})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+    maxWidth: maxWidth,
+    textOverflow: 'ellipsis',
+    backgroundColor: theme.palette.grey[200],
+}));
+
+const StyledCardActions = styled(Card.Actions)({
+    display: 'flex',
+    padding: '0px 8px 0px 8px',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
 
 interface AppTileCardProps {
     /**
@@ -85,113 +137,219 @@ interface AppTileCardProps {
     background?: string;
 
     /**
+     *
+     */
+    image?: string;
+
+    /**
      * Action that is triggered when clicked
      * aop - current selected app
      */
-    onAction?: (app: AppMetadata) => void;
+    onAction?: () => void;
 
     /**
      * Link to navigate to
      */
-    href: string;
+    href?: string;
 }
 
+/**
+ * @name formatName
+ * @param str
+ * @returns format string
+ */
+const formatName = (str: string) => {
+    let i;
+    const frags = str.split('_');
+    for (i = 0; i < frags.length; i++) {
+        frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+    }
+    return frags.join(' ');
+};
+
 export const AppTileCard = (props: AppTileCardProps) => {
-    const { app, background = '#DAC9F5', onAction = () => null, href } = props;
+    const {
+        app,
+        image,
+        background = '#DAC9F5',
+        onAction = () => null,
+        href = null,
+    } = props;
+
+    const notification = useNotification();
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const copyProjectId = (projectId: string) => {
+        try {
+            navigator.clipboard.writeText(projectId);
+
+            notification.add({
+                color: 'success',
+                message: 'Succesfully copied to clipboard',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
 
     // pretty format the data
     const createdDate = useMemo(() => {
-        const d = dayjs(app.project_date_created);
+        const d = dayjs(app.project_portal_published_date);
         if (!d.isValid()) {
-            return '';
+            return `Published ${dayjs().format('MMMM D, YYYY')}`;
         }
 
-        return d.format('MMMM D, YYYY');
+        return `Published ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
 
     return (
-        <StyledCard>
+        <StyledTileCard disabled={!href}>
             <Link
                 href={href}
                 rel="noopener noreferrer"
                 color="inherit"
                 underline="none"
             >
-                <Card.ActionsArea>
-                    <StyledContent>
-                        <StyledBackdrop sx={{ backgroundColor: background }}>
-                            <Stack
-                                direction={'row'}
-                                alignItems={'center'}
-                                justifyContent={'space-between'}
-                                spacing={1}
-                            >
-                                {/* <StyledChip size={'small'} label={'LLaMa'}></StyledChip> */}
-                                <StyledName variant={'h6'}>
-                                    {app.project_name}
-                                </StyledName>
-                                <StyledAvatar variant={'circular'}>
-                                    <BookmarkBorderOutlined />
-                                </StyledAvatar>
-                            </Stack>
-
-                            <StyledDescription variant={'body2'}>
-                                {app.description || ''}
-                            </StyledDescription>
-                            <Stack
-                                direction={'row'}
-                                spacing={1.25}
-                                flexWrap={'nowrap'}
-                                overflow={'auto'}
-                                height={'32px'}
-                            >
-                                {app.tag ? (
-                                    typeof app.tag === 'string' ? (
-                                        <Chip
-                                            variant={'outlined'}
-                                            label={app.tag}
-                                        />
-                                    ) : (
-                                        app.tag.map((t, idx) => {
+                <StyledContainer>
+                    {image ? (
+                        <StyledTileCardMedia image={image} />
+                    ) : (
+                        <StyledTileCardImage
+                            src={`${Env.MODULE}/api/project-${app.project_id}/projectImage/download`}
+                        />
+                    )}
+                    <StyledOverlayContent>
+                        {/* <StyledAvatar variant={'circular'}>
+                                <BookmarkBorderOutlined />
+                            </StyledAvatar> */}
+                    </StyledOverlayContent>
+                </StyledContainer>
+                <Card.Header
+                    title={
+                        <StyledName variant={'body1'}>
+                            {formatName(app.project_name)}
+                        </StyledName>
+                    }
+                    subheader={
+                        <StyledPublishedByContainer>
+                            <StyledPersonIcon />
+                            <StyledPublishedByLabel variant={'body2'}>
+                                Published by:{' '}
+                                {app.project_created_by || <>N/A</>}
+                            </StyledPublishedByLabel>
+                        </StyledPublishedByContainer>
+                    }
+                />
+                <Card.Content>
+                    <StyledCardDescription variant={'body2'}>
+                        {app.description
+                            ? app.description
+                            : 'No description available'}
+                    </StyledCardDescription>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        minHeight="32px"
+                    >
+                        {app.tag !== undefined &&
+                            (Array.isArray(app.tag) ? (
+                                <>
+                                    {app.tag.map((tag, i) => {
+                                        if (i <= 2) {
                                             return (
-                                                <Chip
-                                                    key={idx}
-                                                    variant={'outlined'}
-                                                    label={t}
+                                                <StyledTagChip
+                                                    key={`${app.project_id}${i}`}
+                                                    maxWidth={
+                                                        app.tag.length === 2
+                                                            ? '100px'
+                                                            : app.tag.length ===
+                                                              1
+                                                            ? '200px'
+                                                            : '75px'
+                                                    }
+                                                    label={tag}
                                                 />
                                             );
-                                        })
-                                    )
-                                ) : (
-                                    <>&nbsp;</>
-                                )}
-                            </Stack>
-                        </StyledBackdrop>
-                    </StyledContent>
-                </Card.ActionsArea>
-            </Link>
-            <StyledActions>
-                <Stack flexDirection={'column'} flex={1} spacing={0.5}>
-                    <Typography variant={'caption'} fontWeight="bold">
-                        {app.project_created_by || <>N/A</>}
-                    </Typography>
-                    <Typography variant={'caption'}>{createdDate}</Typography>
-                </Stack>
-                <Link
-                    href={href}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    color="inherit"
-                    underline="none"
-                >
-                    <StyledActionButton
-                        size={'small'}
-                        onClick={() => onAction(app)}
+                                        }
+                                    })}
+                                    {app.tag.length > 3 ? (
+                                        <Typography variant="caption">
+                                            +{app.tag.length - 3}
+                                        </Typography>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </>
+                            ) : (
+                                <StyledTagChip
+                                    key={`${app.project_id}0`}
+                                    variant="outlined"
+                                    label={app.tag}
+                                />
+                            ))}
+                    </Stack>
+                    <StyledPublishedByContainer>
+                        <StyledAccessTimeIcon />
+                        <StyledPublishedByLabel variant={'body2'}>
+                            {createdDate}
+                        </StyledPublishedByLabel>
+                    </StyledPublishedByContainer>
+                </Card.Content>
+                <StyledCardActions>
+                    <Button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onAction();
+                        }}
                     >
-                        <OpenInNewOutlined />
-                    </StyledActionButton>
-                </Link>
-            </StyledActions>
-        </StyledCard>
+                        Open
+                    </Button>
+                    {app.project_created_by !== 'SYSTEM' ? (
+                        <IconButton
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setAnchorEl(e.currentTarget);
+                            }}
+                        >
+                            <MoreVert />
+                        </IconButton>
+                    ) : (
+                        <></>
+                    )}
+                </StyledCardActions>
+            </Link>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={() => {
+                    setAnchorEl(null);
+                }}
+            >
+                <Menu.Item
+                    value="copy"
+                    onClick={() => {
+                        copyProjectId(app.project_id);
+                        setAnchorEl(null);
+                    }}
+                >
+                    Copy App ID
+                </Menu.Item>
+                {/* {
+                    app?.user_permission && app.user_permission <= 2 ?
+                    (
+                        <Menu.Item value="copy" onClick={() => {}}>
+                            Edit App Details
+                        </Menu.Item>
+                    ) :
+                    <></>
+                } */}
+            </Menu>
+        </StyledTileCard>
     );
 };

@@ -35,38 +35,43 @@ export interface ButtonBlockDef extends BlockDef<'button'> {
         label: string;
         loading?: boolean;
         disabled?: boolean;
-        // Will add other properties in later PRs
-        // size?: string;
+        variant: 'contained' | 'outlined' | 'text';
+        color: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
     };
     listeners: {
         onClick: true;
     };
 }
 
+const StyledContainer = styled('div')(({ theme }) => ({
+    padding: '4px',
+}));
+
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
     return (
-        <StyledButton
-            size="medium"
-            color={'primary'}
-            variant={'contained'}
-            loading={data?.loading}
-            disabled={data?.disabled || data?.loading}
-            sx={{
-                ...data.style,
-            }}
-            onClick={() => {
-                listeners.onClick();
-            }}
-            {...attrs}
-        >
-            <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
-            {data.loading ? (
-                <StyledCircularProgress color="inherit" size="2em" />
-            ) : (
-                <></>
-            )}
-        </StyledButton>
+        <StyledContainer {...attrs}>
+            <StyledButton
+                size="medium"
+                color={data.color}
+                variant={data.variant}
+                loading={data?.loading}
+                disabled={data?.disabled || data?.loading}
+                sx={{
+                    ...data.style,
+                }}
+                onClick={() => {
+                    listeners.onClick();
+                }}
+            >
+                <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
+                {data.loading ? (
+                    <StyledCircularProgress color="inherit" size="2em" />
+                ) : (
+                    <></>
+                )}
+            </StyledButton>
+        </StyledContainer>
     );
 });

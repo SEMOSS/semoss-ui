@@ -7,11 +7,17 @@ import { Workspace, SettingsView } from '@/components/workspace';
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
 import { CodeEditor } from './CodeEditor';
 import { CodeRenderer } from './CodeRenderer';
+import { styled, Container } from '@semoss/ui';
 
 interface CodeWorkspaceProps {
     /** Workspace to render */
     workspace: WorkspaceStore;
 }
+
+const StyledContainer = styled('div')(() => ({
+    height: '100%',
+    overflow: 'scroll',
+}));
 
 /**
  * Render the code workspace
@@ -35,7 +41,9 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
                     <>
                         {workspace.view === 'code' ? <CodeEditor /> : null}
                         {workspace.view === 'settings' ? (
-                            <SettingsView />
+                            <StyledContainer>
+                                <SettingsView />
+                            </StyledContainer>
                         ) : null}
                     </>
                 )}

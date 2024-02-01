@@ -4,9 +4,9 @@ import { observer } from 'mobx-react-lite';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings } from '@/hooks';
+import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
-import { getValueByPath } from '@/utility';
+import { copy, getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
 /**
@@ -32,6 +32,22 @@ export const SelectInputValueSettings = observer(
         path,
     }: SelectInputValueSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
+        const { state } = useBlocks();
+
+        // get the block
+        const block = state.getBlock(id);
+
+        // get the parsedData
+        const parsedData = computed(() => {
+            return copy(block.data, (instance) => {
+                if (typeof instance === 'string') {
+                    // try to extract the variable
+                    return state.parseVariable(instance);
+                }
+
+                return instance;
+            });
+        }).get();
 
         // track the value
         const [value, setValue] = useState(null);
@@ -85,10 +101,17 @@ export const SelectInputValueSettings = observer(
             }, 300);
         };
 
+        const stringifiedOptions: string[] = useMemo(() => {
+            return (
+                !Array.isArray(parsedData?.options) ? [] : parsedData.options
+            ).map((option) => JSON.stringify(option));
+        }, [parsedData.options]);
+
         return (
             <BaseSettingSection label="Value">
                 <Autocomplete
-                    options={data.options as string[]}
+                    fullWidth
+                    options={stringifiedOptions}
                     value={value}
                     onChange={(_, newValue: string) => {
                         // sync the data on change
@@ -99,7 +122,6 @@ export const SelectInputValueSettings = observer(
                             {...params}
                             size="small"
                             variant="outlined"
-                            fullWidth={true}
                         />
                     )}
                 />

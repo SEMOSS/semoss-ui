@@ -7,6 +7,8 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflow: 'scroll',
     backgroundColor: theme.palette.background.paper,
     paddingBottom: theme.spacing(2.5),
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
@@ -27,6 +29,20 @@ const StyledPageHeader = styled('div', {
     borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
     // Set this in Theme
     backgroundColor: theme.palette.background.paper,
+    minWidth: '100%',
+    width: 'fit-content',
+}));
+
+const StyledContainer = styled(Container)(() => ({
+    width: '1264px',
+    padding: '0px',
+    /* Media query for screens with a minimum width of 600px */
+    '@media (min-width: 600px)': {
+        '&.MuiContainer-root': {
+            paddingLeft: '0px',
+            paddingRight: '0px',
+        },
+    },
 }));
 
 export interface PageProps {
@@ -69,15 +85,10 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth={'xl'}>{header}</Container>
+                    <StyledContainer maxWidth={false}>{header}</StyledContainer>
                 </StyledPageHeader>
             )}
-            <Container
-                maxWidth={'xl'}
-                sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
-            >
-                {children}
-            </Container>
+            <StyledContainer maxWidth={false}>{children}</StyledContainer>
         </StyledPage>
     );
 };

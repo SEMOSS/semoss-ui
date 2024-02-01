@@ -1,14 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import { computed, toJS } from 'mobx';
+import { computed } from 'mobx';
 
+import { upload } from '@/api';
 import { Paths, PathValue } from '@/types';
-import {
-    ActionMessages,
-    Block,
-    BlockDef,
-    BlockJSON,
-    ListenerActions,
-} from '@/stores';
+import { ActionMessages, Block, BlockDef, ListenerActions } from '@/stores';
 import { copy } from '@/utility';
 
 import { useBlocks } from './useBlocks';
@@ -54,23 +49,20 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
     deleteData: <P extends Paths<Block<D>['data'], 4>>(path: P) => void;
 
     /**
-     * Dispatch a message to delete the block
+     * Upload a file to the insight
+     * @param file - file(s) to upload to the insight
      */
-    deleteBlock: () => void;
-
-    /**
-     * Dispatch a message to clear the block
-     */
-    clearBlock: () => void;
-
-    /**
-     * Dispatch a message to duplicate the block
-     */
-    duplicateBlock: () => void;
+    uploadFile: (file: File | File[]) => Promise<
+        | {
+              fileName: string;
+              fileLocation: string;
+          }[]
+        | false
+    >;
 }
 
 /**
- * Access methods for the block
+ * Access methods for the block. This should only be used by blocks.
  */
 export const useBlock = <D extends BlockDef = BlockDef>(
     id: string,
@@ -96,6 +88,11 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             path: P | null,
             value: PathValue<Block<D>['data'], P>,
         ): void => {
+            // ignore if static
+            if (state.mode === 'static') {
+                return;
+            }
+
             state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
                 payload: {
@@ -114,6 +111,11 @@ export const useBlock = <D extends BlockDef = BlockDef>(
      */
     const deleteData = useCallback(
         <P extends Paths<Block<D>['data'], 4>>(path: P | null): void => {
+            // ignore if static
+            if (state.mode === 'static') {
+                return;
+            }
+
             state.dispatch({
                 message: ActionMessages.DELETE_BLOCK_DATA,
                 payload: {
@@ -125,70 +127,33 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         [],
     );
 
-    const deleteBlock = useCallback((): void => {
-        state.dispatch({
-            message: ActionMessages.REMOVE_BLOCK,
-            payload: {
-                id: id,
-                keep: false,
-            },
-        });
-    }, []);
-
-    const clearBlock = useCallback((): void => {
-        state.dispatch({
-            message: ActionMessages.REMOVE_BLOCK,
-            payload: {
-                id: id,
-                keep: true,
-            },
-        });
-    }, []);
-
-    const duplicateBlock = useCallback((): void => {
-        // get the json for the block to add
-        const getJsonForBlock = (id: string) => {
-            const block = state.blocks[id];
-
-            const blockJson = {
-                widget: toJS(block.widget),
-                data: toJS(block.data),
-                listeners: toJS(block.listeners),
-                slots: {},
-            };
-
-            // generate the slots
-            for (const slot in block.slots) {
-                if (block.slots[slot]) {
-                    blockJson.slots[slot] = block.slots[slot].children.map(
-                        (childId) => {
-                            return getJsonForBlock(childId);
-                        },
-                    );
-                }
+    // TODO: Dispatch as an action?
+    /**
+     * Upload a file to the insight
+     * @param file - file(s) to upload to the insight
+     */
+    const uploadFile = useCallback(
+        async (
+            file: File | File[],
+        ): Promise<
+            | {
+                  fileName: string;
+                  fileLocation: string;
+              }[]
+            | false
+        > => {
+            // ignore if static
+            if (state.mode === 'static') {
+                return false;
             }
 
-            // return it
-            return blockJson;
-        };
+            const f = Array.isArray(file) ? file : [file];
 
-        const position = block?.parent?.id
-            ? {
-                  parent: block.parent.id,
-                  slot: block.parent.slot,
-                  sibling: block.id,
-                  type: 'after',
-              }
-            : undefined;
-
-        state.dispatch({
-            message: ActionMessages.ADD_BLOCK,
-            payload: {
-                json: getJsonForBlock(block.id) as BlockJSON,
-                position: position,
-            },
-        });
-    }, []);
+            // upload the file
+            return await upload(f, state.insightId, '', '');
+        },
+        [],
+    );
 
     // construct the listeners to add to the widget
     const listeners = useMemo(() => {
@@ -201,6 +166,11 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             actions: ListenerActions[],
             intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
+            // ignore if static
+            if (state.mode === 'static') {
+                return;
+            }
+
             // go through each one and trigger it
             actions.forEach((a) => {
                 // convert back to a normal action
@@ -234,7 +204,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     const data = computed(() => {
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
-                return state.calculateParameter(instance);
+                // try to extract the variable
+                return state.parseVariable(instance);
             }
 
             return instance;
@@ -250,8 +221,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         },
         setData: setData,
         deleteData: deleteData,
-        deleteBlock: deleteBlock,
-        clearBlock: clearBlock,
-        duplicateBlock: duplicateBlock,
+        uploadFile: uploadFile,
     };
 };

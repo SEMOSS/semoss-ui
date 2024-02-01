@@ -199,7 +199,7 @@ export const TextEditorCodeGeneration = () => {
                             fullWidth={true}
                             label="Prompt"
                             helperText={
-                                'Example prompt: "Write me a html form that intakes patient information"'
+                                'Example prompt: "Write me an HTML form that takes in patient information"'
                             }
                             onKeyDown={(e) => {
                                 if (e.code === 'Enter') {

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
@@ -28,6 +29,8 @@ export const NewQueryOverlay = observer(
 
         // create a new form
         const {
+            getValues,
+            watch,
             control,
             handleSubmit,
             clearErrors,
@@ -39,6 +42,12 @@ export const NewQueryOverlay = observer(
             },
         });
 
+        const watchAll = watch();
+
+        const isFormValid = useMemo(() => {
+            return !!getValues('ID');
+        }, [watchAll]);
+
         /**
          * Allow the user to login
          */
@@ -47,7 +56,7 @@ export const NewQueryOverlay = observer(
             if (!data.ID) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query ID is required`,
+                    message: `Query Id is required`,
                 });
                 return;
             }
@@ -56,7 +65,7 @@ export const NewQueryOverlay = observer(
             if (state.queries[data.ID] || state.blocks[data.ID]) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query ID ${data.ID} already exists`,
+                    message: `Query Id ${data.ID} already exists`,
                 });
                 return;
             }
@@ -67,7 +76,7 @@ export const NewQueryOverlay = observer(
                     queryId: data.ID,
                     config: {
                         mode: 'manual',
-                        steps: [],
+                        cells: [],
                     },
                 },
             });
@@ -102,21 +111,29 @@ export const NewQueryOverlay = observer(
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button
-                        variant="text"
-                        color="primary"
-                        onClick={() => onClose()}
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        paddingX={2}
+                        paddingBottom={2}
+                        justifyContent="end"
                     >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={!!errors?.ID?.message}
-                        onClick={() => onSubmit()}
-                    >
-                        Submit
-                    </Button>
+                        <Button
+                            variant="text"
+                            color="primary"
+                            onClick={() => onClose()}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={!!errors?.ID?.message || !isFormValid}
+                            onClick={() => onSubmit()}
+                        >
+                            Submit
+                        </Button>
+                    </Stack>
                 </Modal.Actions>
             </>
         );

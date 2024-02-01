@@ -18,7 +18,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         style: {},
         src: '',
         title: '',
-        disabled: false,
+        enableFrameInteractions: true,
     },
     listeners: {},
     slots: {
@@ -26,6 +26,7 @@ export const config: BlockConfig<IframeBlockDef> = {
     },
     render: IframeBlock,
     icon: AspectRatio,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
@@ -48,12 +49,12 @@ export const config: BlockConfig<IframeBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Disable Frame Interaction',
+                    description: 'Frame Interaction',
                     render: ({ id }) => (
                         <SwitchSettings
                             id={id}
-                            label="Disable Frame Interaction"
-                            path="disabled"
+                            label="Frame Interaction"
+                            path="enableFrameInteractions"
                         />
                     ),
                 },
