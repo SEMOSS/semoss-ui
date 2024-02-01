@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import {
     Button,
@@ -9,6 +9,8 @@ import {
     IconButton,
     Link,
     Stack,
+    Menu,
+    useNotification,
 } from '@semoss/ui';
 import { AccessTime, MoreVert, Person } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
@@ -172,6 +174,27 @@ export const AppTileCard = (props: AppTileCardProps) => {
         href,
     } = props;
 
+    const notification = useNotification();
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const copyProjectId = (projectId: string) => {
+        try {
+            navigator.clipboard.writeText(projectId);
+
+            notification.add({
+                color: 'success',
+                message: 'Succesfully copied to clipboard',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
+
     // pretty format the data
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_portal_published_date);
@@ -279,11 +302,46 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </Card.Content>
                 <StyledCardActions>
                     <Button>Open</Button>
-                    <IconButton disabled={true}>
-                        <MoreVert />
-                    </IconButton>
+                    {app.project_created_by !== 'SYSTEM' ? (
+                        <IconButton
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setAnchorEl(e.currentTarget);
+                            }}
+                        >
+                            <MoreVert />
+                        </IconButton>
+                    ) : (
+                        <></>
+                    )}
                 </StyledCardActions>
             </Link>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={() => {
+                    setAnchorEl(null);
+                }}
+            >
+                <Menu.Item
+                    value="copy"
+                    onClick={() => {
+                        copyProjectId(app.project_id);
+                        setAnchorEl(null);
+                    }}
+                >
+                    Copy App ID
+                </Menu.Item>
+                {/* {
+                    app?.user_permission && app.user_permission <= 2 ?
+                    (
+                        <Menu.Item value="copy" onClick={() => {}}>
+                            Edit App Details
+                        </Menu.Item>
+                    ) :
+                    <></>
+                } */}
+            </Menu>
         </StyledTileCard>
     );
 };
