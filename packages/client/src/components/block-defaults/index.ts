@@ -63,3 +63,15 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 export function getIconForBlock(widget: string) {
     return DefaultBlocks[widget]?.icon;
 }
+
+export {
+    ButtonBlockConfig,
+    ContainerBlockConfig,
+    CheckboxBlockConfig,
+    MarkdownBlockConfig,
+    PageBlockConfig,
+    SelectBlockConfig,
+    TextBlockConfig,
+    InputBlockConfig,
+    UploadBlockConfig,
+};
