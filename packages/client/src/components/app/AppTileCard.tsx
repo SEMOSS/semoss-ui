@@ -6,52 +6,13 @@ import {
     Chip,
     Typography,
     styled,
-    Stack,
-    Avatar,
     IconButton,
     Link,
+    Stack,
 } from '@semoss/ui';
-import {
-    AccessTime,
-    BookmarkBorderOutlined,
-    MoreVert,
-    OpenInNewOutlined,
-    Person,
-} from '@mui/icons-material';
+import { AccessTime, MoreVert, Person } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { Env } from '@/env';
-import { useNavigate } from 'react-router-dom';
-
-const StyledCard = styled(Card)(() => ({
-    borderRadius: '12px',
-}));
-
-const StyledContent = styled(Card.Content)(({ theme }) => ({
-    // ...theme.typography.body1,
-    // color: theme.palette.text.primary,
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1.5),
-}));
-
-const StyledActions = styled(Card.Actions)(({ theme }) => ({
-    alignItems: 'end',
-    paddingTop: theme.spacing(2),
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1.5),
-}));
-
-const StyledBackdrop = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(1),
-    padding: theme.spacing(1),
-    borderRadius: '12px',
-}));
-
-const StyledChip = styled(Chip)(({ theme }) => ({
-    background: theme.palette.background.paper,
-}));
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -59,23 +20,6 @@ const StyledName = styled(Typography)(() => ({
     textOverflow: 'ellipsis',
 }));
 
-const StyledDescription = styled(Typography)(() => ({
-    height: '40px',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-}));
-
-const StyledActionButton = styled(IconButton)(({ theme }) => ({
-    background: theme.palette.text.primary,
-    color: theme.palette.primary.contrastText,
-    '&:hover': {
-        background: theme.palette.text.secondary,
-    },
-}));
-
-// --- NEW STYLES ------------------------------
 const StyledTileCard = styled(Card)({
     width: '280px',
     height: '412px',
@@ -101,19 +45,11 @@ const StyledOverlayContent = styled('div')(({ theme }) => ({
     //   alignItems: 'center',
 }));
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    background: theme.palette.background.paper,
-    height: '32px',
-    width: '32px',
-    color: theme.palette.text.secondary,
-}));
-
 const StyledTileCardMedia = styled(Card.Media)({
     display: 'flex',
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
-
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
@@ -126,7 +62,6 @@ const StyledTileCardImage = styled('img')({
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
-
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
@@ -169,14 +104,15 @@ const StyledCardDescription = styled(Typography)({
     textOverflow: 'ellipsis',
 });
 
-const StyledChipDiv = styled('div')({
-    display: 'flex',
-    flexDirection: 'row',
-    minHeight: '32px',
-    width: '80px',
-    alignItems: 'center',
-    gap: 2,
-});
+const StyledTagChip = styled(Chip)(({ theme }) => ({
+    maxWidth: '100px',
+    textOverflow: 'ellipsis',
+    backgroundColor: theme.palette.grey[200],
+}));
+
+const StyledTagOverflowChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
+}));
 
 const StyledCardActions = styled(Card.Actions)({
     display: 'flex',
@@ -259,12 +195,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
             >
                 <StyledContainer>
                     {image ? (
-                        <StyledTileCardMedia
-                            image={image}
-                            sx={{
-                                height: '140px',
-                            }}
-                        />
+                        <StyledTileCardMedia image={image} />
                     ) : (
                         <StyledTileCardImage
                             src={`${Env.MODULE}/api/project-${app.project_id}/projectImage/download`}
@@ -298,26 +229,42 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ? app.description
                             : 'No description available'}
                     </StyledCardDescription>
-                    <StyledChipDiv>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
                         {app.tag !== undefined &&
-                            (typeof app.tag === 'object' ? (
-                                app.tag.map((t, i) => {
-                                    return (
-                                        <Chip
-                                            key={app.project_id + i}
-                                            variant={'outlined'}
-                                            label={t}
+                            (Array.isArray(app.tag) ? (
+                                <>
+                                    {app.tag.length > 0 ? (
+                                        <StyledTagChip
+                                            key={`${app.project_id}0`}
+                                            label={app.tag[0]}
                                         />
-                                    );
-                                })
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {app.tag.length > 1 ? (
+                                        <StyledTagChip
+                                            key={`${app.project_id}1`}
+                                            label={app.tag[1]}
+                                        />
+                                    ) : (
+                                        <></>
+                                    )}
+                                    {app.tag.length > 2 ? (
+                                        <Typography variant="caption">
+                                            +{app.tag.length - 2}
+                                        </Typography>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </>
                             ) : (
-                                <Chip
-                                    key={app.project_id + app.tag}
-                                    variant={'outlined'}
+                                <StyledTagChip
+                                    key={`${app.project_id}0`}
+                                    variant="outlined"
                                     label={app.tag}
                                 />
                             ))}
-                    </StyledChipDiv>
+                    </Stack>
                     <StyledPublishedByContainer>
                         <StyledAccessTimeIcon />
                         <StyledPublishedByLabel variant={'body2'}>
