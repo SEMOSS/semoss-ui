@@ -25,6 +25,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     overflow: 'hidden',
 }));
 
+const StyledScrollContainer = styled('div')(({ theme }) => ({
+    height: '100%',
+    overflow: 'scroll',
+}));
+
 const StyledMain = styled('div')(({ theme }) => ({
     flex: 1,
     height: '100%',
@@ -149,7 +154,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                             ) : null}
                             {workspace.view === 'data' ? <Notebook /> : null}
                             {workspace.view === 'settings' ? (
-                                <SettingsView />
+                                <StyledScrollContainer>
+                                    <SettingsView />
+                                </StyledScrollContainer>
                             ) : null}
                         </StyledMain>
                         <StyledFooter>
