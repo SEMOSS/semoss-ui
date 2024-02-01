@@ -207,7 +207,6 @@ export const HomePage = observer((): JSX.Element => {
                             value={mode}
                             color={'primary'}
                             onChange={(e, v) => setMode(v as MODE)}
-                            aria-label="basic tabs example"
                         >
                             <ToggleTabsGroup.Item
                                 label="My apps"

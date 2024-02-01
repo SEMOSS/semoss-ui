@@ -1,21 +1,26 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Typography, IconButton, Button } from '@semoss/ui';
+import {
+    Typography,
+    IconButton,
+    Button,
+    List,
+    useNotification,
+} from '@semoss/ui';
 
-import { useBlockSettings, useWorkspace } from '@/hooks';
-import { ACTIONS_DISPLAY, BlockDef } from '@/stores';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { useBlockSettings, useBlocks, useWorkspace } from '@/hooks';
+import { ACTIONS_DISPLAY, BlockDef, ListenerActions } from '@/stores';
+import {
+    Add,
+    Delete,
+    Edit,
+    PlayCircleOutlineRounded,
+} from '@mui/icons-material';
 
 import { ListenerActionOverlay } from './ListenerActionOverlay';
-import { BaseSettingSection } from './BaseSettingSection';
-
-const Spacer = styled('div')(() => ({
-    flex: 1,
-}));
 
 /**
  * TODO: reorganize and update the styling once app/blocks is up and working
  */
-
 interface ListenerSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -33,8 +38,29 @@ export const ListenerSettings = observer(
         id,
         listener,
     }: ListenerSettingsProps<D>) => {
+        const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
         const { workspace } = useWorkspace();
+        const notification = useNotification();
+
+        /**
+         * Open the overlay to create a edit action
+         *
+         * @param action - index of the action to edit. Will create a new one if -1
+         */
+        const runAction = (action: ListenerActions) => {
+            try {
+                // dispatch it
+                state.dispatch(action);
+            } catch (e) {
+                notification.add({
+                    color: 'error',
+                    message: e.message,
+                });
+
+                console.error(e);
+            }
+        };
 
         /**
          * Open the overlay to create a edit action
@@ -70,47 +96,65 @@ export const ListenerSettings = observer(
         };
 
         return (
-            <Stack>
-                {listeners[listener].map((a, aIdx) => (
-                    <Stack
-                        key={aIdx}
-                        alignItems={'center'}
-                        flex={1}
-                        direction="row"
-                    >
-                        <Typography variant="body2">
-                            {ACTIONS_DISPLAY[a.message]}
-                        </Typography>
-                        <Spacer />
-                        <IconButton
-                            size="small"
-                            onClick={() => openActionOverlay(aIdx)}
+            <>
+                <List disablePadding={true}>
+                    {listeners[listener].map((a, aIdx) => (
+                        <List.Item
+                            dense={true}
+                            key={aIdx}
+                            secondaryAction={
+                                <>
+                                    <IconButton
+                                        size="small"
+                                        color="primary"
+                                        onClick={() => runAction(a)}
+                                    >
+                                        <PlayCircleOutlineRounded
+                                            fontSize="medium"
+                                            color={'inherit'}
+                                        />
+                                    </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => openActionOverlay(aIdx)}
+                                    >
+                                        <Edit />
+                                    </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => deleteListener(aIdx)}
+                                    >
+                                        <Delete />
+                                    </IconButton>
+                                </>
+                            }
                         >
-                            <Edit />
-                        </IconButton>
-                        <IconButton
-                            size="small"
-                            onClick={() => deleteListener(aIdx)}
-                        >
-                            <Delete />
-                        </IconButton>
-                    </Stack>
-                ))}
-                <Stack
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                    flex={'1'}
-                    direction="row"
+                            <List.ItemText
+                                disableTypography={true}
+                                primary={
+                                    <Typography
+                                        variant="body2"
+                                        noWrap={true}
+                                        title={ACTIONS_DISPLAY[a.message]}
+                                    >
+                                        {ACTIONS_DISPLAY[a.message]}
+                                    </Typography>
+                                }
+                            />
+                        </List.Item>
+                    ))}
+                </List>
+
+                <Button
+                    fullWidth={true}
+                    variant={'outlined'}
+                    size="small"
+                    onClick={() => openActionOverlay(-1)}
+                    startIcon={<Add />}
                 >
-                    <Button
-                        size="small"
-                        onClick={() => openActionOverlay(-1)}
-                        startIcon={<Add />}
-                    >
-                        New Action
-                    </Button>
-                </Stack>
-            </Stack>
+                    New Action
+                </Button>
+            </>
         );
     },
 );

@@ -21,6 +21,9 @@ import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 
 interface StateStoreInterface {
+    /** Mode */
+    mode: 'interactive' | 'static';
+
     /** insightID to load */
     insightId: string;
 
@@ -35,6 +38,9 @@ interface StateStoreInterface {
 }
 
 export class StateStoreConfig {
+    /** Mode */
+    mode: 'interactive' | 'static';
+
     /** insightID to load */
     insightId: string;
 
@@ -50,6 +56,7 @@ export class StateStoreConfig {
  */
 export class StateStore {
     private _store: StateStoreInterface = {
+        mode: 'interactive',
         insightId: '',
         queries: {},
         blocks: {},
@@ -125,6 +132,14 @@ export class StateStore {
     /**
      * Getters
      */
+    /**
+     * Get the mode
+     * @returns the mode
+     */
+    get mode() {
+        return this._store.mode;
+    }
+
     /**
      * Get the Insight ID
      * @returns the Insight ID
@@ -368,6 +383,13 @@ export class StateStore {
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
         };
+    }
+
+    /**
+     * Update the mode of the state
+     */
+    updateMode(mode: 'interactive' | 'static') {
+        this._store.mode = mode;
     }
 
     /**

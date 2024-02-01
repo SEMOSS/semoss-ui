@@ -21,17 +21,12 @@ const StyledBox = styled(Box, {
 })<{
     color: COLORS;
 }>(({ theme, color }) => {
-    const palette = theme.palette as unknown as {
-        primary: Record<string, string>;
-        primaryContrast: Record<string, string>;
-    };
-
     return {
         backgroundColor:
             theme.palette.mode === "dark"
                 ? "#0000000A"
                 : color === "primary"
-                ? "rgba(4, 113, 240, 0.04)"
+                ? `${theme.palette.primary.light}1D`
                 : "rgba(0, 0, 0, 0.04)",
         border: theme.palette.mode === "dark" ? "1px" : "0",
         borderRadius: "12px",
@@ -45,12 +40,12 @@ const StyledToggleGroup = styled(Tabs, {
 })<{
     color: COLORS;
 }>(({ theme, color }) => ({
+    minHeight: theme.spacing(4),
+    padding: theme.spacing(0.5),
     "& .MuiTab-root": {
-        margin: "8px 5px 8px 5px",
         borderRadius: "6px",
         lineHeight: 0,
         minHeight: "unset",
-        padding: "16px",
         color:
             theme.palette.mode === "dark"
                 ? "#8BCAFF"
@@ -62,7 +57,7 @@ const StyledToggleGroup = styled(Tabs, {
     "& .MuiTab-root.Mui-selected": {
         backgroundColor:
             theme.palette.mode === "dark"
-                ? "rgba(4, 113, 240, 0.16)"
+                ? `${theme.palette.primary.light}1D`
                 : "#FFFFFF",
         fontWeight: 700,
         color:

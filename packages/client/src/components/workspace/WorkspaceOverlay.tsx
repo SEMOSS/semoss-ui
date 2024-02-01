@@ -12,7 +12,7 @@ export const WorkspaceOverlay = observer((): JSX.Element => {
     return (
         <Modal
             fullWidth={true}
-            maxWidth={'sm'}
+            maxWidth={workspace.overlay.options.maxWidth}
             open={workspace.overlay.open}
             onClose={() => {
                 workspace.closeOverlay();

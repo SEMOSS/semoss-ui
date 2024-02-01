@@ -1,13 +1,7 @@
+import { autorun } from 'mobx';
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    useNotification,
-    styled,
-    Typography,
-    Stack,
-    Link,
-    Icon,
-} from '@semoss/ui';
+import { useNotification, styled, Typography, Stack, Icon } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore, WorkspaceStore } from '@/stores';
@@ -91,6 +85,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // create a new state store
                 const s = new StateStore({
+                    mode: 'interactive',
                     insightId: insightId,
                     state: output,
                     cellTypeRegistry: DefaultCellTypes,
@@ -112,6 +107,24 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 workspace.setLoading(false);
             });
     }, []);
+
+    // TODO: Convert to render context
+    // update based on the mode
+    useEffect(
+        () =>
+            autorun(() => {
+                if (!state) {
+                    return;
+                }
+
+                if (workspace.isEditMode) {
+                    state.updateMode('static');
+                } else {
+                    state.updateMode('interactive');
+                }
+            }),
+        [state],
+    );
 
     if (!state) {
         return <LoadingScreen.Trigger />;
@@ -159,7 +172,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                                     Note:
                                 </Typography>
                                 <Typography variant={'caption'}>
-                                    This feature is currently in beta.
+                                    This feature is currently in alpha.
                                 </Typography>
                             </Stack>
                         </StyledFooter>
