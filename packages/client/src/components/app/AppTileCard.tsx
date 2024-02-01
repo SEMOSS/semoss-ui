@@ -104,8 +104,10 @@ const StyledCardDescription = styled(Typography)({
     textOverflow: 'ellipsis',
 });
 
-const StyledTagChip = styled(Chip)(({ theme }) => ({
-    maxWidth: '75px',
+const StyledTagChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'maxWidth',
+})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+    maxWidth: maxWidth,
     textOverflow: 'ellipsis',
     backgroundColor: theme.palette.grey[200],
 }));
@@ -234,25 +236,27 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         {app.tag !== undefined &&
                             (Array.isArray(app.tag) ? (
                                 <>
-                                    {app.tag.length > 0 ? (
-                                        <StyledTagChip
-                                            key={`${app.project_id}0`}
-                                            label={app.tag[0]}
-                                        />
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {app.tag.length > 1 ? (
-                                        <StyledTagChip
-                                            key={`${app.project_id}1`}
-                                            label={app.tag[1]}
-                                        />
-                                    ) : (
-                                        <></>
-                                    )}
-                                    {app.tag.length > 2 ? (
+                                    {app.tag.map((tag, i) => {
+                                        if (i <= 2) {
+                                            return (
+                                                <StyledTagChip
+                                                    key={`${app.project_id}${i}`}
+                                                    maxWidth={
+                                                        app.tag.length === 2
+                                                            ? '100px'
+                                                            : app.tag.length ===
+                                                              1
+                                                            ? '200px'
+                                                            : '75px'
+                                                    }
+                                                    label={tag}
+                                                />
+                                            );
+                                        }
+                                    })}
+                                    {app.tag.length > 3 ? (
                                         <Typography variant="caption">
-                                            +{app.tag.length - 2}
+                                            +{app.tag.length - 3}
                                         </Typography>
                                     ) : (
                                         <></>

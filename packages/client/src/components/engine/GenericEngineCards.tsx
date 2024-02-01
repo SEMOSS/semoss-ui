@@ -290,8 +290,10 @@ const StyledCardDescription = styled(Typography)({
     textOverflow: 'ellipsis',
 });
 
-const StyledTagChip = styled(Chip)(({ theme }) => ({
-    maxWidth: '75px',
+const StyledTagChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'maxWidth',
+})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+    maxWidth: maxWidth,
     textOverflow: 'ellipsis',
     backgroundColor: theme.palette.grey[200],
 }));
@@ -450,25 +452,27 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                 {tag !== undefined &&
                                     (Array.isArray(tag) ? (
                                         <>
-                                            {tag.length > 0 ? (
-                                                <StyledTagChip
-                                                    key={`${id}0`}
-                                                    label={tag[0]}
-                                                />
-                                            ) : (
-                                                <></>
-                                            )}
-                                            {tag.length > 1 ? (
-                                                <StyledTagChip
-                                                    key={`${id}1`}
-                                                    label={tag[1]}
-                                                />
-                                            ) : (
-                                                <></>
-                                            )}
-                                            {tag.length > 2 ? (
+                                            {tag.map((t, i) => {
+                                                if (i <= 2) {
+                                                    return (
+                                                        <StyledTagChip
+                                                            maxWidth={
+                                                                tag.length === 2
+                                                                    ? '100px'
+                                                                    : tag.length ===
+                                                                      1
+                                                                    ? '200px'
+                                                                    : '75px'
+                                                            }
+                                                            key={`${id}${i}`}
+                                                            label={t}
+                                                        />
+                                                    );
+                                                }
+                                            })}
+                                            {tag.length > 3 ? (
                                                 <Typography variant="caption">
-                                                    +{tag.length - 2}
+                                                    +{tag.length - 3}
                                                 </Typography>
                                             ) : (
                                                 <></>
@@ -477,7 +481,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                     ) : (
                                         <StyledTagChip
                                             key={`${id}0`}
-                                            variant="outlined"
                                             label={tag}
                                         />
                                     ))}
@@ -641,59 +644,44 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                 <StyledCardDescription variant={'body2'}>
                     {description ? description : 'No description available'}
                 </StyledCardDescription>
-                <StyledChipDiv>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={0.5}
+                    minHeight="32px"
+                >
                     {tag !== undefined &&
-                        (typeof tag === 'object' ? (
+                        (Array.isArray(tag) ? (
                             <>
                                 {tag.map((t, i) => {
                                     if (i <= 2) {
                                         return (
-                                            <Chip
-                                                key={id + i}
-                                                variant={'outlined'}
+                                            <StyledTagChip
+                                                maxWidth={
+                                                    tag.length === 2
+                                                        ? '100px'
+                                                        : tag.length === 1
+                                                        ? '200px'
+                                                        : '75px'
+                                                }
+                                                key={`${id}${i}`}
                                                 label={t}
                                             />
                                         );
                                     }
                                 })}
                                 {tag.length > 3 ? (
-                                    <div
-                                        style={{
-                                            marginLeft: 1,
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                        }}
-                                    >
-                                        <StyledPublishedByLabel
-                                            sx={{
-                                                color: 'rgba(0, 0, 0, 0.6)',
-                                                marginLeft: 1,
-                                            }}
-                                            variant={'caption'}
-                                        >
-                                            +
-                                        </StyledPublishedByLabel>
-                                        <StyledPublishedByLabel
-                                            sx={{
-                                                color: 'rgba(0, 0, 0, 0.6)',
-                                                display: 'flex',
-                                                flexDirection: 'row',
-                                            }}
-                                            variant={'caption'}
-                                        >
-                                            {tag.length - 3}
-                                        </StyledPublishedByLabel>
-                                    </div>
-                                ) : null}
+                                    <Typography variant="caption">
+                                        +{tag.length - 3}
+                                    </Typography>
+                                ) : (
+                                    <></>
+                                )}
                             </>
                         ) : (
-                            <Chip
-                                key={id + tag}
-                                variant={'outlined'}
-                                label={tag}
-                            />
+                            <StyledTagChip key={`${id}0`} label={tag} />
                         ))}
-                </StyledChipDiv>
+                </Stack>
             </Card.Content>
             <Card.Actions>
                 <StyledLeftActions>
