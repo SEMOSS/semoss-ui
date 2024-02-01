@@ -1,10 +1,4 @@
-import React, {
-    useMemo,
-    useEffect,
-    useState,
-    SyntheticEvent,
-    useRef,
-} from 'react';
+import React, { useMemo, useEffect, useState, SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, Language, SaveOutlined } from '@mui/icons-material';
@@ -13,6 +7,7 @@ import { FILE_ICON_MAP } from './text-editor.constants';
 import {
     TextArea,
     TextField,
+    useNotification,
     IconButton,
     Typography,
     Container,
@@ -21,22 +16,15 @@ import {
     Button,
     Modal,
     Tabs,
-    useNotification,
 } from '@semoss/ui';
 
 import Editor, { OnMount } from '@monaco-editor/react';
-// import MonacoEditor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-
 import { TextEditorPreview } from './TextEditorPreview';
-// import { TextEditorNew } from './TextEditorNew';
-
-// console.log({monaco})
 
 import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel';
 import parserHtml from 'prettier/parser-html';
-// import parserTypescript from 'prettier/parser-typescript';
 import parserCss from 'prettier/parser-postcss';
 
 import { runPixel } from '@/api';
@@ -251,93 +239,9 @@ export const TextEditor = (props: TextEditorProps) => {
     const [showLLMStarter, setShowLLMStarter] = useState(true);
     const [renderStyledLLMWrapper, setRenderStyledLLMWrapper] = useState(true);
     const [LLMPromptInput, setLLMPromptInput] = useState('');
+    const [LLMActionAdded, setLLMActionAdded] = useState(false);
 
     const notification = useNotification();
-
-    useEffect(() => {
-        // const executeAction: monaco.editor.IActionDescriptor = {
-        //     id: 'run-code',
-        //     label: 'Run Code',
-        //     contextMenuOrder: 2,
-        //     contextMenuGroupId: '1_modification',
-        //     keybindings: [
-        //         // KeyMod.CtrlCmd | KeyCode.Enter,
-        //         monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
-        //         monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
-        //     ],
-        //     // run: runTinker,
-        //     run: function (ed) {
-        //         alert("i'm running => " + ed.getPosition());
-        //     },
-        // };
-        // monaco.editor.addEditorAction(executeAction);
-        // Access the editor instance after it's mounted
-        // // const editor = monaco.editor.getModels()[0];
-        // // const editor = monaco.editor;
-        // // Listen to the contextmenu event
-        // console.log({ editor });
-        // var editor = monaco.editor.create(document.getElementById("test-container"), {
-        //     value: [
-        //         "",
-        //         "class Example {",
-        //         "\tprivate m:number;",
-        //         "",
-        //         "\tpublic met(): string {",
-        //         '\t\treturn "Hello world!";',
-        //         "\t}",
-        //         "}",
-        //     ].join("\n"),
-        //     language: "typescript",
-        // });
-        // editor.addAction({
-        //     // An unique identifier of the contributed action.
-        //     id: "my-unique-id",
-        //     // A label of the action that will be presented to the user.
-        //     label: "My Label!!!",
-        //     // An optional array of keybindings for the action.
-        //     keybindings: [
-        //         monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
-        //         // chord
-        //         monaco.KeyMod.chord(
-        //             monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
-        //             monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM
-        //         ),
-        //     ],
-        //     // A precondition for this action.
-        //     precondition: null,
-        //     // A rule to evaluate on top of the precondition in order to dispatch the keybindings.
-        //     keybindingContext: null,
-        //     contextMenuGroupId: "navigation",
-        //     contextMenuOrder: 1.5,
-        //     // Method that will be executed when the action is triggered.
-        //     // @param editor The editor instance is passed in as a convenience
-        //     run: function (ed) {
-        //         alert("i'm running => " + ed.getPosition());
-        //     },
-        // });
-        // const contextMenuListener = editor.onContextMenu((event) => {
-        // Prevent the default context menu
-        // event.preventDefault();
-        // // Get the position of the right-click
-        // const position = { x: event.event.x, y: event.event.y };
-        // // Add your custom menu item
-        // const customMenuItem = {
-        //     label: 'Custom Option',
-        //     // Handler for the custom option
-        //     click: () => {
-        //     // Implement the logic for the custom option
-        //     console.log('Custom Option Clicked!');
-        //     },
-        // };
-        // // Show the custom context menu
-        // monaco.editor.showContextMenu({ getActions: () => [customMenuItem], getAnchor: () => position });
-        // });
-        // // Cleanup the listener when the component unmounts
-        // return () => {
-        // contextMenuListener.dispose();
-        // };
-        // console.log({ monaco });
-    }, []);
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -535,82 +439,78 @@ export const TextEditor = (props: TextEditorProps) => {
         );
     };
 
-    const createStarterCode = async (inputPrompt) => {
-        let promptString = '';
+    // old starter code generator - for reference can be deleted
+    // const createStarterCode = async (inputPrompt) => {
+    //     let promptString = '';
 
-        if (LLMPromptInput.length == 0) {
-            promptString += `Generate starter, boilerplate code for a file with the file name '${activeFile.name}'. `;
-            promptString += 'Include consise explanatory comments. ';
-            promptString +=
-                'Try to cover all possible interpretations of the file name. ';
-            promptString += 'Write accurate succinct code. ';
-            promptString += 'Use descriptive concise variable names. ';
-            promptString +=
-                'Make clear explanatory notes for dependencies or imports that will have to be installed or defined externally and include instructions on how to do this properly. ';
-            promptString +=
-                'Do not include the name of the file at the beginning of the file. ';
-            promptString += 'Do not make a file that is just notes. ';
-            promptString += 'You must include code. ';
-            promptString +=
-                'Include a reminder / warning about imports and dependencies but include the actual code for imports / dependencies. ';
-            promptString +=
-                'Use actual imports / dependencies, do not make them up. ';
-            promptString +=
-                'Do not use imports / dependencies that do not actually exist or that user cannot create themselves. ';
-            promptString +=
-                'When possible create arrays, lists or values rather than importing them. ';
-            promptString +=
-                'Make a complete and stand-alone application or file when possible. ';
-            promptString +=
-                'Close all open tags, functions, quotes and code blocks.';
-            promptString += 'Do not end or cut the file off pre-maturely.';
-            promptString += 'Finish everything you start.';
-            promptString += 'There is not character limit.';
-        } else {
-            promptString += `Create starter code for a file titled ${activeFile.type} based on the following description. '${LLMPromptInput}'`;
-        }
+    //     if (LLMPromptInput.length == 0) {
+    //         promptString += `Generate starter, boilerplate code for a file with the file name '${activeFile.name}'. `;
+    //         promptString += 'Include consise explanatory comments. ';
+    //         promptString +=
+    //             'Try to cover all possible interpretations of the file name. ';
+    //         promptString += 'Write accurate succinct code. ';
+    //         promptString += 'Use descriptive concise variable names. ';
+    //         promptString +=
+    //             'Make clear explanatory notes for dependencies or imports that will have to be installed or defined externally and include instructions on how to do this properly. ';
+    //         promptString +=
+    //             'Do not include the name of the file at the beginning of the file. ';
+    //         promptString += 'Do not make a file that is just notes. ';
+    //         promptString += 'You must include code. ';
+    //         promptString +=
+    //             'Include a reminder / warning about imports and dependencies but include the actual code for imports / dependencies. ';
+    //         promptString +=
+    //             'Use actual imports / dependencies, do not make them up. ';
+    //         promptString +=
+    //             'Do not use imports / dependencies that do not actually exist or that user cannot create themselves. ';
+    //         promptString +=
+    //             'When possible create arrays, lists or values rather than importing them. ';
+    //         promptString +=
+    //             'Make a complete and stand-alone application or file when possible. ';
+    //         promptString +=
+    //             'Close all open tags, functions, quotes and code blocks.';
+    //         promptString += 'Do not end or cut the file off pre-maturely.';
+    //         promptString += 'Finish everything you start.';
+    //         promptString += 'There is not character limit.';
+    //     } else {
+    //         promptString += `Create starter code for a file titled ${activeFile.type} based on the following description. '${LLMPromptInput}'`;
+    //     }
 
-        // Notes from Neel
-        // focus on comment based prompting
-        // user highlights what they want the prompt to be in their code editor
-        // they second click to select 'use AI Code Generator' maybe 'prompt AI Code Generator with selected text'
-        // then pass prompt unedited with the filetype as a param ideally - need backend folks to address
-        // then paste code uncommented below comment and leave comment
-        // maybe highlight all pasted code or indicate where code stops at some point
-        // maybe mimic merge conflict interface with an 'accept incoming changes' link above highlighted new text
+    //     // Notes from Neel
+    //     // focus on comment based prompting
+    //     // user highlights what they want the prompt to be in their code editor
+    //     // they second click to select 'use AI Code Generator' maybe 'prompt AI Code Generator with selected text'
+    //     // then pass prompt unedited with the filetype as a param ideally - need backend folks to address
+    //     // then paste code uncommented below comment and leave comment
+    //     // maybe highlight all pasted code or indicate where code stops at some point
+    //     // maybe mimic merge conflict interface with an 'accept incoming changes' link above highlighted new text
 
-        let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${
-            inputPrompt || promptString
-        }", paramValues = [ {} ] );`;
-        console.log('Prompting LLM', { activeFile, promptString, pixel });
+    //     let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${
+    //         inputPrompt || promptString
+    //     }", paramValues = [ {} ] );`;
+    //     console.log('Prompting LLM', { activeFile, promptString, pixel });
 
-        try {
-            const res = await runPixel(pixel);
-            const LLMResponse = res.pixelReturn[0].output['response'];
-            let trimmedStarterCode = LLMResponse;
-            trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
+    //     try {
+    //         const res = await runPixel(pixel);
+    //         const LLMResponse = res.pixelReturn[0].output['response'];
+    //         let trimmedStarterCode = LLMResponse;
+    //         trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
 
-            trimmedStarterCode = trimmedStarterCode.substring(
-                trimmedStarterCode.indexOf('\n') + 1,
-            );
-            //  %%% updates the actual editor contents
-            // activeFile.content = trimmedStarterCode;
-            setLLMLoading(false);
-            setLLMPreviewContents(trimmedStarterCode);
+    //         trimmedStarterCode = trimmedStarterCode.substring(
+    //             trimmedStarterCode.indexOf('\n') + 1,
+    //         );
+    //         setLLMLoading(false);
+    //         setLLMPreviewContents(trimmedStarterCode);
 
-            // return LLMResponse;
-            console.log({ res, LLMResponse });
-        } catch {
-            setLLMLoading(false);
-            alert('LLM error');
-        }
-    };
+    //         console.log({ res, LLMResponse });
+    //     } catch {
+    //         setLLMLoading(false);
+    //         alert('LLM error');
+    //     }
+    // };
 
     const promptLLM = async (inputPrompt) => {
         let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${inputPrompt}", paramValues = [ {} ] );`;
 
-        console.log({ inputPrompt, pixel });
-
         try {
             const res = await runPixel(pixel);
             const LLMResponse = res.pixelReturn[0].output['response'];
@@ -621,17 +521,13 @@ export const TextEditor = (props: TextEditorProps) => {
                 trimmedStarterCode.indexOf('\n') + 1,
             );
 
-            setLLMLoading(false);
-
-            notification.add({
-                color: 'success',
-                message: 'Successful response from AI Code Generator',
-            });
+            // notification.add({
+            //     color: 'success',
+            //     message: 'Successful response from AI Code Generator',
+            // });
 
             return trimmedStarterCode;
         } catch {
-            setLLMLoading(false);
-
             notification.add({
                 color: 'error',
                 message: 'Failed response from AI Code Generator',
@@ -649,13 +545,6 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const activeFile = useMemo<ControlledFile | null>(() => {
         const af = controlledFiles[activeIndex];
-        if (af && af.content.length < 1 && showLLMStarter) {
-            // commented out code responsible for previous LLM starter modal
-            // open LLM starter modal
-            // setLLMStarterModalOpen(true);
-            // setLLMPromptInput('');
-            // setLLMPromptInput(`Create a file with the name "${af.name}" including explanatory comments.`);
-        }
         if (af) return af;
         return null;
     }, [activeIndex, files.length, controlledFiles.length, counter]);
@@ -692,101 +581,9 @@ export const TextEditor = (props: TextEditorProps) => {
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
 
-    // test return
-    // return <TextEditorNew />
-
-    const ModifiedEditor = (props) => {
-        return (
-            <Editor
-                width={props.width}
-                height={props.height}
-                value={props.value}
-                language={props.language}
-                onChange={props.onChange}
-                editorDidMount={handleEditorDidMount}
-                // width={'100%'}
-                // height={'100%'}
-                // value={activeFile.content}
-                // language={fileLanguage}
-                // onChange={(newValue, e) => {
-                //     editFile(newValue);
-                // }}
-            ></Editor>
-        );
-    };
-
-    const TextEditorNew = (props) => {
-        const editorRef = useRef(null);
-
-        useEffect(() => {
-            if (!editorRef.current) return;
-
-            const editor = monaco.editor.create(editorRef.current, {
-                // width: '100%',
-                // height: '100%',
-                value: activeFile.content,
-                language: fileLanguage,
-                // onChange: (newValue, e) => {
-                //     editFile(newValue);
-                // }
-
-                // language: "typescript",
-            });
-
-            editorRef.current.editorInstance = editor;
-
-            const actionDisposable = editor.addAction({
-                id: 'my-unique-id',
-                label: 'Prompt AI Code Generator with selected text.',
-                keybindings: [
-                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
-                    monaco.KeyMod.chord(
-                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
-                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
-                    ),
-                ],
-                precondition: null,
-                keybindingContext: null,
-                contextMenuGroupId: 'navigation',
-                contextMenuOrder: 1.5,
-
-                run: (ed) => {
-                    const selection = ed.getSelection();
-                    const selectedText = ed
-                        .getModel()
-                        .getValueInRange(selection);
-                    alert(`Prompt: "${selectedText}"`);
-                },
-            });
-
-            return () => {
-                actionDisposable.dispose();
-                editor.dispose();
-            };
-        }, []);
-
-        return <div ref={editorRef} style={{ height: 400 }} />;
-    };
-    // <Editor
-    //     ref={editorRef}
-    //     width={props.width}
-    //     height={props.height}
-    //     value={props.value}
-    //     language={props.language}
-    //     onChange={props.onChange}
-    //     // width={'100%'}
-    //     // height={'100%'}
-    //     // value={activeFile.content}
-    //     // language={fileLanguage}
-    //     // onChange={(newValue, e) => {
-    //     //     editFile(newValue);
-    //     // }}
-    // ></Editor>
-
-    // working paste in static text
     const executeAction: monaco.editor.IActionDescriptor = {
-        id: 'run-code',
-        label: 'Run Code',
+        id: 'prompt-LLM',
+        label: 'Prompt AI Code Generator with Selected Text',
         contextMenuOrder: 2,
         contextMenuGroupId: '1_modification',
         keybindings: [
@@ -796,14 +593,25 @@ export const TextEditor = (props: TextEditorProps) => {
                 monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
             ),
         ],
-        run: function (editor) {
+        run: async (editor) => {
+            editor.updateOptions({ readOnly: true });
+            editor.getDomNode().style.transition = 'opacity .5s';
+            editor.getDomNode().style.opacity = '0.6';
+
             const selection = editor.getSelection();
             const selectedText = editor.getModel().getValueInRange(selection);
+
+            const LLMReturnText = await promptLLM(
+                `Create code for a file named ${activeFile.name} with the user prompt: ${selectedText}`,
+            );
+
+            editor.updateOptions({ readOnly: false });
+            editor.getDomNode().style.opacity = '1';
 
             if (selectedText.trim() !== '') {
                 const insertPosition = {
                     lineNumber: selection.endLineNumber + 1,
-                    column: 1, // insert at the beginning of the line
+                    column: 1,
                 };
 
                 editor.executeEdits('custom-action', [
@@ -814,93 +622,38 @@ export const TextEditor = (props: TextEditorProps) => {
                             insertPosition.lineNumber,
                             insertPosition.column,
                         ),
-                        text: '\n\n(insert LLM response here)\n\n', // Add a newline before and after the pasted text
+                        text: `\n\n${LLMReturnText}\n`,
                         forceMoveMarkers: true,
                     },
                 ]);
 
-                // Move the cursor to the end of the pasted text
                 editor.setSelection(
                     new monaco.Range(
                         insertPosition.lineNumber + 1,
                         1,
-                        insertPosition.lineNumber + 1,
+                        insertPosition.lineNumber +
+                            LLMReturnText.split('\n').length,
                         1,
                     ),
                 );
             }
         },
-    };
-
-    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-
-    const _executeAction: monaco.editor.IActionDescriptor = {
-        id: 'run-code',
-        label: 'Prompt AI Code Generator with selected text',
-        contextMenuOrder: 2,
-        contextMenuGroupId: '1_modification',
-        keybindings: [
-            monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
-            monaco.KeyMod.chord(
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
-            ),
-        ],
-        run: async function (editor) {
-            const selection = editor.getSelection();
-            const selectedText = editor.getModel().getValueInRange(selection);
-
-            setLLMLoading(true);
-            const LLMReturnText = await promptLLM(selectedText);
-            console.log({ selectedText, LLMReturnText });
-            setLLMLoading(false);
-
-            if (selectedText.trim() !== '') {
-                const insertPosition = {
-                    lineNumber: selection.endLineNumber + 1,
-                    column: 1, // insert at the beginning of the line
-                };
-
-                editor.executeEdits('custom-action', [
-                    {
-                        range: new monaco.Range(
-                            insertPosition.lineNumber,
-                            insertPosition.column,
-                            insertPosition.lineNumber,
-                            insertPosition.column,
-                        ),
-                        text: `\n\n${LLMReturnText}\n\n`, // Add a newline before and after the pasted text
-                        forceMoveMarkers: true,
-                    },
-                ]);
-
-                // Move the cursor to the end of the pasted text
-                editor.setSelection(
-                    new monaco.Range(
-                        insertPosition.lineNumber + 1,
-                        1,
-                        insertPosition.lineNumber + 1,
-                        1,
-                    ),
-                );
-            }
-        },
-    };
-
-    const handleEditorDidMount: OnMount = (editor, monacoInstance) => {
-        alert('mounted?');
-        editorRef.current = editor;
-
-        // Register custom action
-        monacoInstance.editor.addEditorAction(executeAction);
     };
 
     const editorOnMountHandler: OnMount = (editor, monacoInstance) => {
-        console.log({ editor, monacoInstance });
-        editorRef.current = editor;
+        // this is currently working but is locking to the first file name / filetype and prompt
+        // if the conditional wrapper is removed additional addActions will be added but they will work
+        // behavior seems inconsistent needs further debugging
 
-        // Register custom action
-        monacoInstance.editor.addEditorAction(executeAction);
+        // allowing the editor actions to accumulate seems to solve bugs
+
+        // there does not currently seem to be a way to remove actions after being added (?)
+        // https://microsoft.github.io/monaco-editor/typedoc/modules/editor.html
+
+        if (LLMActionAdded == false) {
+            monacoInstance.editor.addEditorAction(executeAction);
+            setLLMActionAdded(true);
+        }
     };
 
     if (LLMLoading) {
@@ -1050,7 +803,8 @@ export const TextEditor = (props: TextEditorProps) => {
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
 
-                    {renderStyledLLMWrapper && (
+                    {/* This is the old starter code generator div - for reference can be deleted */}
+                    {/* {renderStyledLLMWrapper && (
                         <StyledLLMWrapper>
                             <div
                                 style={{
@@ -1078,7 +832,6 @@ export const TextEditor = (props: TextEditorProps) => {
                                     }}
                                 />
 
-                                {/*  */}
                                 <StyledCloseTab
                                     size={'small'}
                                     onClick={async (e) => {
@@ -1121,35 +874,8 @@ export const TextEditor = (props: TextEditorProps) => {
                                 </>
                             )}
                         </StyledLLMWrapper>
-                    )}
+                    )} */}
 
-                    {/* <ModifiedEditor /> */}
-
-                    {/* <ModifiedEditor 
-                            width={'100%'}
-                            height={'100%'}
-                            value={activeFile.content}
-                            language={fileLanguage}
-                            onChange={(newValue, e) => {
-                                editFile(newValue);
-                            }}
-                        />                     */}
-
-                    {/* this one is working for getting the action added but having update and saving issues */}
-                    {/* <TextEditorNew
-                        // width={'100%'}
-                        // height={'100%'}
-                        // activeFile={activeFile}
-                        // fileLanguage={fileLanguage}
-                        onChange={(newValue) => {
-                            editFile(newValue);
-                        }}
-                        code={activeFile.content}
-                        language={fileLanguage}
-                        // editFile={editFile}
-                    /> */}
-
-                    {/* old working editor but no second click functionality */}
                     <Editor
                         width={'100%'}
                         height={'100%'}
@@ -1161,7 +887,8 @@ export const TextEditor = (props: TextEditorProps) => {
                         onMount={editorOnMountHandler}
                     ></Editor>
 
-                    <Modal open={LLMStarterModalOpen}>
+                    {/* this is the old starter code generation modal - for reference can be deleted */}
+                    {/* <Modal open={LLMStarterModalOpen}>
                         <Modal.Title>Generate Starter Code?</Modal.Title>
                         <StyledModalContent>
                             Would you like to populate this file it with starter
@@ -1207,7 +934,7 @@ export const TextEditor = (props: TextEditorProps) => {
                                 Close
                             </Button>
                         </Modal.Actions>
-                    </Modal>
+                    </Modal> */}
                 </StyledContainer>
             );
         } else {
