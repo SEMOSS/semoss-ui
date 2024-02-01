@@ -2,6 +2,7 @@ import { styled, Stack, Typography, Card, Button, Chip } from '@semoss/ui';
 import { Person, QueryBuilder } from '@mui/icons-material';
 import { DEFAULT_TEMPLATE, Template } from '@/stores';
 import { AppMetadata } from './app.types';
+import { AppTileCard } from './AppTileCard';
 
 // const StyledFilter = styled('div')(({ theme }) => ({
 //     display: 'flex',
@@ -108,77 +109,12 @@ export const AppTemplates = (props: AppTemplatesProps) => {
             <StyledContainer>
                 {DEFAULT_TEMPLATE.map((t, idx) => {
                     return (
-                        <StyledCard key={idx}>
-                            <Card.Media
-                                sx={{
-                                    height: '140px',
-                                }}
-                                image={t.image}
-                            ></Card.Media>
-                            <Card.Content>
-                                <Typography
-                                    variant="body1"
-                                    fontWeight="regular"
-                                    noWrap={true}
-                                >
-                                    {t.name}
-                                </Typography>
-                                <Stack
-                                    direction="row"
-                                    padding={0}
-                                    spacing={0.5}
-                                    alignItems={'center'}
-                                >
-                                    <Person fontSize="medium" />
-                                    <Typography
-                                        noWrap={true}
-                                        variant="body2"
-                                        fontWeight="regular"
-                                    >
-                                        {t.author}
-                                    </Typography>
-                                </Stack>
-                                <StyledDescription variant="body2">
-                                    {t.description}
-                                </StyledDescription>
-                                <StyledChipContainer title={t.tags.join(',')}>
-                                    {t.tags.map((t, idx) => (
-                                        <Chip
-                                            key={idx}
-                                            label={t}
-                                            size="small"
-                                            color="default"
-                                        ></Chip>
-                                    ))}
-                                </StyledChipContainer>
-                                <Stack
-                                    direction="row"
-                                    padding={0}
-                                    spacing={0.5}
-                                    alignItems={'center'}
-                                >
-                                    <QueryBuilder fontSize={'small'} />
-                                    <Typography variant={'caption'}>
-                                        {t.lastUpdatedDate}
-                                    </Typography>
-                                </Stack>
-                            </Card.Content>
-                            <Card.Actions
-                                sx={{
-                                    justifyContent: 'flex-end',
-                                }}
-                            >
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={() => {
-                                        onUse(t);
-                                    }}
-                                >
-                                    Use
-                                </Button>
-                            </Card.Actions>
-                        </StyledCard>
+                        <AppTileCard
+                            key={`default-template-${idx}`}
+                            app={getAppMetadataFromTemplate(t)}
+                            image={t.image}
+                            onAction={() => onUse(t)}
+                        />
                     );
                 })}
             </StyledContainer>

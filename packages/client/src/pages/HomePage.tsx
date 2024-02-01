@@ -291,6 +291,9 @@ export const HomePage = observer((): JSX.Element => {
                                             app={BUSINESS_INTELLIGENCE_APP}
                                             background="#BADEFF"
                                             href="../../../"
+                                            onAction={() =>
+                                                navigate('../../../')
+                                            }
                                         />
                                     ))}
 
@@ -307,6 +310,11 @@ export const HomePage = observer((): JSX.Element => {
                                             app={TERMINAL_APP}
                                             background="#BADEFF"
                                             href="../../../#!/embed-terminal"
+                                            onAction={() =>
+                                                navigate(
+                                                    '../../../#!/embed-terminal',
+                                                )
+                                            }
                                         />
                                     ))}
                             </StyledSection>
@@ -335,6 +343,11 @@ export const HomePage = observer((): JSX.Element => {
                                               key={i}
                                               app={app}
                                               href={`#/app/${app.project_id}`}
+                                              onAction={() =>
+                                                  navigate(
+                                                      `#/app/${app.project_id}`,
+                                                  )
+                                              }
                                           />
                                       );
                                   }

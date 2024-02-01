@@ -207,12 +207,12 @@ interface AppTileCardProps {
      * Action that is triggered when clicked
      * aop - current selected app
      */
-    onAction?: (app: AppMetadata) => void;
+    onAction?: () => void;
 
     /**
      * Link to navigate to
      */
-    href: string;
+    href?: string;
 }
 
 /**
@@ -235,7 +235,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
         image,
         background = '#DAC9F5',
         onAction = () => null,
-        href,
+        href = null,
     } = props;
 
     // pretty format the data
@@ -326,7 +326,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledPublishedByContainer>
                 </Card.Content>
                 <StyledCardActions>
-                    <Button>Open</Button>
+                    <Button onClick={onAction}>Open</Button>
                     <IconButton disabled={true}>
                         <MoreVert />
                     </IconButton>
