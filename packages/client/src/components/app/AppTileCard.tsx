@@ -105,13 +105,9 @@ const StyledCardDescription = styled(Typography)({
 });
 
 const StyledTagChip = styled(Chip)(({ theme }) => ({
-    maxWidth: '100px',
+    maxWidth: '75px',
     textOverflow: 'ellipsis',
     backgroundColor: theme.palette.grey[200],
-}));
-
-const StyledTagOverflowChip = styled(Chip)(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledCardActions = styled(Card.Actions)({
@@ -229,7 +225,12 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ? app.description
                             : 'No description available'}
                     </StyledCardDescription>
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        minHeight="32px"
+                    >
                         {app.tag !== undefined &&
                             (Array.isArray(app.tag) ? (
                                 <>

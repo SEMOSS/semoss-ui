@@ -4,6 +4,7 @@ import {
     Card,
     Chip,
     IconButton,
+    Stack,
     Typography,
     styled,
 } from '@semoss/ui';
@@ -289,17 +290,10 @@ const StyledCardDescription = styled(Typography)({
     textOverflow: 'ellipsis',
 });
 
-const StyledChipDiv = styled('div')({
-    display: 'flex',
-    flexDirection: 'row',
-    minHeight: '32px',
-    width: '80px',
-    alignItems: 'center',
-    gap: 2,
-});
-
-const StyledStatisticCaption = styled(Typography)(({ theme }) => ({
-    color: theme.palette.secondary.main,
+const StyledTagChip = styled(Chip)(({ theme }) => ({
+    maxWidth: '75px',
+    textOverflow: 'ellipsis',
+    backgroundColor: theme.palette.grey[200],
 }));
 
 const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
@@ -447,26 +441,47 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                                     ? description
                                     : 'No description available'}
                             </StyledLandscapeCardDescription>
-                            <StyledChipDiv>
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={0.5}
+                                minHeight="32px"
+                            >
                                 {tag !== undefined &&
-                                    (typeof tag === 'object' ? (
-                                        tag.map((t, i) => {
-                                            return (
-                                                <Chip
-                                                    key={id + i}
-                                                    variant={'outlined'}
-                                                    label={t}
+                                    (Array.isArray(tag) ? (
+                                        <>
+                                            {tag.length > 0 ? (
+                                                <StyledTagChip
+                                                    key={`${id}0`}
+                                                    label={tag[0]}
                                                 />
-                                            );
-                                        })
+                                            ) : (
+                                                <></>
+                                            )}
+                                            {tag.length > 1 ? (
+                                                <StyledTagChip
+                                                    key={`${id}1`}
+                                                    label={tag[1]}
+                                                />
+                                            ) : (
+                                                <></>
+                                            )}
+                                            {tag.length > 2 ? (
+                                                <Typography variant="caption">
+                                                    +{tag.length - 2}
+                                                </Typography>
+                                            ) : (
+                                                <></>
+                                            )}
+                                        </>
                                     ) : (
-                                        <Chip
-                                            key={id + tag}
-                                            variant={'outlined'}
+                                        <StyledTagChip
+                                            key={`${id}0`}
+                                            variant="outlined"
                                             label={tag}
                                         />
                                     ))}
-                            </StyledChipDiv>
+                            </Stack>
                         </StyledLandscapeCardRowDiv>
                     </StyledLandscapeCardRowContainer>
                 </StyledLandscapeCardRow>
