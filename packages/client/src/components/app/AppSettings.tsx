@@ -23,7 +23,7 @@ import {
     Publish,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
-import { usePixel, useRootStore, useWorkspace } from '@/hooks';
+import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { Java } from '@/assets/img/Java';
@@ -223,7 +223,7 @@ export const AppSettings = (props: AppSettingsProps) => {
     const { id, condensed = false } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
-    const { workspace } = useWorkspace();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const { handleSubmit, control } = useForm<EditAppForm>({
         defaultValues: {
@@ -458,47 +458,38 @@ export const AppSettings = (props: AppSettingsProps) => {
      */
     const editApp = handleSubmit(async (data: EditAppForm) => {
         // turn on loading
-        workspace.setLoading(true);
+        setIsLoading(true);
 
         try {
             const path = 'version/assets/';
 
             // unzip the file in the new app
             await monolithStore.runQuery(
-                `DeleteAsset(filePath=["${path}"], space=["${workspace.appId}"]);`,
+                `DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
             );
 
             // upload the file
             const upload = await monolithStore.uploadFile(
                 [data.PROJECT_UPLOAD],
                 configStore.store.insightID,
-                workspace.appId,
+                id,
                 path,
             );
 
             // upnzip the file in the new app
             await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${
-                    workspace.appId
-                }"]);`,
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
             );
 
             // Load the insight classes
-            await monolithStore.runQuery(
-                `ReloadInsightClasses('${workspace.appId}');`,
-            );
+            await monolithStore.runQuery(`ReloadInsightClasses('${id}');`);
 
             // set the app portal
-            await monolithStore.setProjectPortal(
-                false,
-                workspace.appId,
-                true,
-                'public',
-            );
+            await monolithStore.setProjectPortal(false, id, true, 'public');
 
             // Publish the app the insight classes
             await monolithStore.runQuery(
-                `PublishProject('${workspace.appId}', release=true);`,
+                `PublishProject('${id}', release=true);`,
             );
 
             // close it
@@ -512,7 +503,7 @@ export const AppSettings = (props: AppSettingsProps) => {
             });
         } finally {
             // turn of loading
-            workspace.setLoading(false);
+            setIsLoading(false);
         }
     });
 
@@ -820,7 +811,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         <FileDropzone
                                             multiple={false}
                                             value={field.value}
-                                            disabled={workspace.isLoading}
+                                            disabled={isLoading}
                                             onChange={(newValues) => {
                                                 field.onChange(newValues);
                                             }}
@@ -832,7 +823,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 <Button
                                     type="submit"
                                     variant={'contained'}
-                                    disabled={workspace.isLoading}
+                                    disabled={isLoading}
                                     onClick={editApp}
                                 >
                                     Update
