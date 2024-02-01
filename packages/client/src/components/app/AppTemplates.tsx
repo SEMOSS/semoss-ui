@@ -1,6 +1,7 @@
 import { styled, Stack, Typography, Card, Button, Chip } from '@semoss/ui';
 import { Person, QueryBuilder } from '@mui/icons-material';
 import { DEFAULT_TEMPLATE, Template } from '@/stores';
+import { AppMetadata } from './app.types';
 
 // const StyledFilter = styled('div')(({ theme }) => ({
 //     display: 'flex',
@@ -56,6 +57,23 @@ interface AppTemplatesProps {
 
 export const AppTemplates = (props: AppTemplatesProps) => {
     const { onUse = () => null } = props;
+
+    const getAppMetadataFromTemplate = (template: Template): AppMetadata => {
+        return {
+            project_id: template.name,
+            project_name: template.name,
+            project_type: 'BLOCKS',
+            project_cost: '',
+            project_global: '',
+            project_catalog_name: '',
+            project_created_by: 'SYSTEM',
+            project_created_by_type: '',
+            project_date_created: '',
+            project_has_portal: false,
+            tag: template.tags,
+            description: template.description,
+        };
+    };
 
     return (
         <Stack

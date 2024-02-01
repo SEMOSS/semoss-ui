@@ -66,6 +66,9 @@ const StyledBoxHeader = styled('div')(({ theme }) => ({
 const StyledButton = styled(Button)(({ theme }) => ({
     backgroundColor: 'white',
     color: theme.palette.grey[900],
+    '&:hover': {
+        backgroundColor: theme.palette.grey[100],
+    },
 }));
 
 const StyledBoxImage = styled('img', {
@@ -90,7 +93,6 @@ const StyledBoxImage = styled('img', {
 export const NewAppPage = () => {
     const navigate = useNavigate();
 
-    const [isLoading, setIsLoading] = useState(false);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [newAppOptions, setNewAppOptions] = useState<
         React.ComponentProps<typeof NewAppModal>['options'] | null
@@ -115,7 +117,6 @@ export const NewAppPage = () => {
         <NewAppStep
             title={'Create New App'}
             previous={{ title: 'App Library', onClick: () => navigate('/') }}
-            isLoading={isLoading}
         >
             {isUploadOpen ? (
                 <AddAppModal
@@ -163,7 +164,7 @@ export const NewAppPage = () => {
                             variant="contained"
                             startIcon={<FileUploadOutlined />}
                             onClick={() => setIsUploadOpen(true)}
-                            disableRipple
+                            disableRipple={true}
                         >
                             Upload App
                         </StyledButton>

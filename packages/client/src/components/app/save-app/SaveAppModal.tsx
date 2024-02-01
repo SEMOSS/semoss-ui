@@ -23,11 +23,12 @@ const StyledStepChip = styled(Chip, {
         paddingLeft: theme.spacing(0.5),
         paddingBottom: theme.spacing(0.125),
     },
-    '.MuiChip-label': {
-        color: isStepSelected
-            ? theme.palette.primary.main
-            : theme.palette.grey[400],
-    },
+    color: isStepSelected
+        ? theme.palette.primary.main
+        : theme.palette.grey[400],
+    borderColor: isStepSelected
+        ? `1px solid ${theme.palette.secondary.main}`
+        : `1px solid ${theme.palette.grey[400]}`,
 }));
 
 const StyledModalContent = styled(Modal.Content)(() => ({
