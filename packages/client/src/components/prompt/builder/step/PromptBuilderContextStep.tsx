@@ -72,13 +72,9 @@ export const PromptBuilderContextStep = (props: {
                     response.
                 </Typography>
             </Box>
-            <StyledContainerGrid
-                sx={{ justifyContent: 'space-between', marginTop: 2 }}
-                container
-                direction="row"
-            >
+            <StyledContainerGrid container direction="row">
                 <Grid item xs={4}>
-                    <Typography variant="subtitle1">Prompt Details</Typography>
+                    <Typography variant="body1">Prompt Details</Typography>
                 </Grid>
                 <Grid item xs={8}>
                     <Stack direction="column" spacing={2}>
@@ -152,7 +148,7 @@ export const PromptBuilderContextStep = (props: {
                     justifyContent="space-between"
                     paddingBottom={1}
                 >
-                    <Typography variant="subtitle1">Prompt Context</Typography>
+                    <Typography variant="body1">Prompt Context</Typography>
                     <PromptLibraryDialogButton
                         disabled={isPromptLibraryDisabled}
                         builder={props.builder}

@@ -132,7 +132,7 @@ export const PromptBuilderSummary = (props: {
                         <List.ItemText
                             disableTypography
                             primary={
-                                <StyledListItemTypography variant="subtitle1">
+                                <StyledListItemTypography variant="subtitle2">
                                     {step.title}
                                 </StyledListItemTypography>
                             }
