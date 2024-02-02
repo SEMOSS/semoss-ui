@@ -6,6 +6,8 @@ export type Role =
     | 'DISCOVERABLE'
     | 'EDITOR';
 
+export type Type = 'CODE' | 'BLOCKS';
+
 export interface PixelCommand {
     type: string;
     components: any[];

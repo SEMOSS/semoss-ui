@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { StateStore, Registry, NotebookStore } from '@/stores';
 import { BlocksContext } from '@/contexts';
 

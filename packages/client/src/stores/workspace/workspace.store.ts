@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 
-import { Role } from '@/types';
+import { Role, Type } from '@/types';
 import { RootStore } from '@/stores';
 
 import { AppMetadata } from '@/components/app';
@@ -39,7 +39,7 @@ export interface WorkspaceStoreInterface {
     /**
      * Type of the app
      */
-    type: 'BLOCKS' | 'CODE';
+    type: Type;
 
     /** overlay information */
     overlay: {
