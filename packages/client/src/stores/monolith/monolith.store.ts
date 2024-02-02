@@ -826,6 +826,28 @@ export class MonolithStore {
     }
 
     /**
+     * @name setProjectFavorite
+     * @param projectId
+     * @param favorite
+     */
+    async setProjectFavorite(projectId: string, favorite: boolean) {
+        let url = `${Env.MODULE}/api/auth/`,
+            postData = '';
+
+        url += 'project/setProjectFavorite';
+        postData += 'projectId=' + encodeURIComponent(projectId);
+        postData += '&isFavorite=' + encodeURIComponent(favorite);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
      * @name approveEngineUserAccessRequest
      * @param admin
      * @param engineId

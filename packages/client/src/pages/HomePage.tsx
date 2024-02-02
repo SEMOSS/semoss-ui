@@ -264,7 +264,7 @@ export const HomePage = observer((): JSX.Element => {
 
                                 <ToggleButton
                                     color="primary"
-                                    disabled
+                                    // disabled
                                     onClick={(e, v) => setView(v)}
                                     value={'list'}
                                     aria-label={'List View'}
