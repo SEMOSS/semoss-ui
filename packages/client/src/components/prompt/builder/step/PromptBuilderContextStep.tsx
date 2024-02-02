@@ -2,17 +2,9 @@ import { useMemo, useState } from 'react';
 import { Builder } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
 import { createFilterOptions, Autocomplete } from '@mui/material';
-import {
-    Box,
-    Grid,
-    IconButton,
-    Stack,
-    TextField,
-    Typography,
-} from '@semoss/ui';
+import { styled, Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
 import { usePixel } from '@/hooks';
-import { Try } from '@mui/icons-material';
 import { PromptBuilderContextTestDialogButton } from './PromptBuilderContextTestDialogButton';
 
 type CfgLibraryEngineState = {
@@ -25,6 +17,10 @@ const InitialCfgLibraryEngineState: CfgLibraryEngineState = {
     ids: [],
     display: {},
 };
+
+const StyledContainerGrid = styled(Grid)(({ theme }) => ({
+    marginTop: theme.spacing(3),
+}));
 
 export const PromptBuilderContextStep = (props: {
     builder: Builder;
@@ -76,7 +72,7 @@ export const PromptBuilderContextStep = (props: {
                     response.
                 </Typography>
             </Box>
-            <Grid
+            <StyledContainerGrid
                 sx={{ justifyContent: 'space-between', marginTop: 2 }}
                 container
                 direction="row"
@@ -149,7 +145,7 @@ export const PromptBuilderContextStep = (props: {
                         />
                     </Stack>
                 </Grid>
-            </Grid>
+            </StyledContainerGrid>
             <Stack spacing={1} mt={2}>
                 <Stack
                     direction="row"
