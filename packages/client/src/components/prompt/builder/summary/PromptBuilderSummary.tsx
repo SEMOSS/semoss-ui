@@ -3,17 +3,30 @@ import {
     SUMMARY_STEPS,
 } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
-import { grey } from '@mui/material/colors';
 import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
 
-const StyledListItem = styled(List.Item)(({ theme }) => ({
-    backgroundColor: grey[100],
-    color: grey[900],
-    borderRadius: theme.shape.borderRadius,
-    marginBottom: theme.spacing(1),
+const StyledListItem = styled(List.Item, {
+    shouldForwardProp: (prop) =>
+        prop !== 'disabled' && prop !== 'isStepComplete',
+})<{ disabled?: boolean; isStepComplete?: boolean }>(
+    ({ theme, disabled, isStepComplete }) => ({
+        backgroundColor: theme.palette.grey[100],
+        color: disabled
+            ? theme.palette.grey[400]
+            : isStepComplete
+            ? theme.palette.primary.main
+            : theme.palette.grey[900],
+        borderRadius: theme.shape.borderRadius,
+        marginBottom: theme.spacing(1),
+    }),
+);
+
+const StyledAvatar = styled(Avatar)(() => ({
+    backgroundColor: 'white',
+    color: 'inherit',
 }));
 
 const StyledCheckCircleOutlined = styled(CheckCircleOutlined)(({ theme }) => ({
@@ -21,10 +34,8 @@ const StyledCheckCircleOutlined = styled(CheckCircleOutlined)(({ theme }) => ({
     marginTop: '8px',
 }));
 
-const StyledListItemTypography = styled(Typography, {
-    shouldForwardProp: (prop) => prop !== 'isStepComplete',
-})<{ isStepComplete: boolean }>(({ theme, isStepComplete }) => ({
-    color: isStepComplete ? theme.palette.primary.main : grey[900],
+const StyledListItemTypography = styled(Typography)(() => ({
+    color: 'inherit',
     fontWeight: 'bold',
 }));
 
@@ -97,6 +108,11 @@ export const PromptBuilderSummary = (props: {
             {Array.from(SUMMARY_STEPS, (step: { title; icon }, i) => (
                 <span key={i + 1}>
                     <StyledListItem
+                        disabled={i + 1 > props.currentBuilderStep}
+                        isStepComplete={markBuilderStepComplete(
+                            i + 1,
+                            props.currentBuilderStep,
+                        )}
                         secondaryAction={
                             markBuilderStepComplete(
                                 i + 1,
@@ -109,30 +125,14 @@ export const PromptBuilderSummary = (props: {
                         }
                     >
                         <List.ItemAvatar>
-                            <Avatar
-                                sx={{
-                                    backgroundColor: 'white',
-                                    color: markBuilderStepComplete(
-                                        i + 1,
-                                        props.currentBuilderStep,
-                                    )
-                                        ? 'primary.main'
-                                        : grey[900],
-                                }}
-                            >
+                            <StyledAvatar>
                                 <step.icon />
-                            </Avatar>
+                            </StyledAvatar>
                         </List.ItemAvatar>
                         <List.ItemText
                             disableTypography
                             primary={
-                                <StyledListItemTypography
-                                    variant="subtitle1"
-                                    isStepComplete={markBuilderStepComplete(
-                                        i + 1,
-                                        props.currentBuilderStep,
-                                    )}
-                                >
+                                <StyledListItemTypography variant="subtitle1">
                                     {step.title}
                                 </StyledListItemTypography>
                             }
