@@ -179,7 +179,7 @@ export function PromptBuilderConstraintsStep(props: {
                 </Typography>
             </Box>
             <StyledStack direction="column">
-                <Typography variant="body1">Input Constraints</Typography>
+                <Typography variant="h6">Input Constraints</Typography>
                 {Array.from(
                     Object.values(inputConstraints),
                     (constraint: Constraint, i) => (
@@ -192,7 +192,7 @@ export function PromptBuilderConstraintsStep(props: {
                         />
                     ),
                 )}
-                <Typography variant="body1">Ouput Constraints</Typography>
+                <Typography variant="h6">Ouput Constraints</Typography>
                 {Array.from(
                     Object.values(outputConstraints),
                     (constraint: Constraint, i) => (
