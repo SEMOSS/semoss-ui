@@ -12,7 +12,7 @@ export const StyledTextPaper = styled(Paper)(({ theme }) => ({
     borderWidth: '2px',
     borderColor: theme.palette.grey[300],
     minHeight: '50%',
-    marginTop: theme.spacing(4),
+    marginTop: theme.spacing(3),
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),

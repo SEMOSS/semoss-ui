@@ -55,8 +55,8 @@ const initialConstraintSettings: ConstraintSettings = {
 };
 
 const StyledStack = styled(Stack)(({ theme }) => ({
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
+    paddingTop: theme.spacing(3),
+    paddingBottom: theme.spacing(3),
 }));
 
 const StyledBox = styled(Box)(({ theme }) => ({
