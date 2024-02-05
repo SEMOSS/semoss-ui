@@ -9,7 +9,8 @@
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
-        "type-check": "tsc --pretty --noEmit"
+        "type-check": "tsc --pretty --noEmit",
+        "rollup": "rollup -c rollup.config.js -w"
     },
     "dependencies": {
         "@emotion/react": "^11.11.1",
