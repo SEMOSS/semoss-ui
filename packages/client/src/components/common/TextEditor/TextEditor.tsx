@@ -1,4 +1,10 @@
-import React, { useMemo, useEffect, useState, SyntheticEvent } from 'react';
+import React, {
+    useMemo,
+    useEffect,
+    useState,
+    SyntheticEvent,
+    useRef,
+} from 'react';
 import { Link } from 'react-router-dom';
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, Language, SaveOutlined } from '@mui/icons-material';
@@ -243,6 +249,8 @@ export const TextEditor = (props: TextEditorProps) => {
 
     const notification = useNotification();
 
+    const fileTypeRef = useRef('');
+
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
      */
@@ -279,6 +287,10 @@ export const TextEditor = (props: TextEditorProps) => {
 
         setControlledFiles(newControlledFiles);
     }, [files.length, activeIndex, controlledFiles.length]);
+
+    useEffect(() => {
+        fileTypeRef.current = files[activeIndex]?.type;
+    }, [activeIndex]);
 
     /**
      * @name prettifyFile
@@ -377,6 +389,8 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const editFile = (newContent: string) => {
         // Update Controlled Value
+        fileTypeRef.current = files[activeIndex].type;
+
         const edittedFile = {
             ...controlledFiles[activeIndex],
             content: newContent,
@@ -602,7 +616,7 @@ export const TextEditor = (props: TextEditorProps) => {
             const selectedText = editor.getModel().getValueInRange(selection);
 
             const LLMReturnText = await promptLLM(
-                `Create code for a file named ${activeFile.name} with the user prompt: ${selectedText}`,
+                `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`,
             );
 
             editor.updateOptions({ readOnly: false });
@@ -610,7 +624,7 @@ export const TextEditor = (props: TextEditorProps) => {
 
             if (selectedText.trim() !== '') {
                 const insertPosition = {
-                    lineNumber: selection.endLineNumber + 1,
+                    lineNumber: selection.endLineNumber + 2,
                     column: 1,
                 };
 
