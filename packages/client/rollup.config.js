@@ -5,6 +5,8 @@ import typescript from '@rollup/plugin-typescript'; // Compile TypeScript
 import serve from 'rollup-plugin-serve'; // Used to serve bundle in a developmet capacity, works with live-reload
 import livereload from 'rollup-plugin-livereload'; // hot reload browser on changes
 import image from '@rollup/plugin-image'; // Compile Images
+import preserveDirectives from 'rollup-plugin-preserve-directives';
+
 // import postcss from 'rollup-plugin-postcss';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -13,9 +15,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 const config = {
     input: 'src/main.tsx',
     output: {
-        dir: "dist/index.esm.js", // Output directory
+        dir: 'dist/index.esm.js', // Output directory
         format: 'esm', // Use ES module format
         sourcemap: true,
+        preserveDirectives: true,
     },
     // output: {
     //     dir: 'dist/index.js', // Output directory
@@ -35,6 +38,7 @@ const config = {
         commonjs(),
         typescript({ tsconfig: './tsconfig.json' }),
         image(),
+        preserveDirectives(),
         // isProduction && terser(),
         // !isProduction &&
         //     serve({
