@@ -594,5 +594,14 @@ export async function setBlocksAndOpenUIBuilder(
     }
 
     const appId = pixelReturn[0].output.project_id;
+
+    if (builder.tags.value) {
+        await monolithStore.runQuery(
+            `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
+                tag: builder.tags.value,
+            })}])`,
+        );
+    }
+
     navigate(`/app/${appId}`);
 }

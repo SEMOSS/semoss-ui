@@ -41,6 +41,7 @@ export const PromptLibraryDialog = (props: {
 
     async function openUIBuilderForTemplate(
         title: string,
+        tags: string[],
         inputs: Token[],
         inputTypes: object,
     ) {
@@ -48,6 +49,7 @@ export const PromptLibraryDialog = (props: {
             JSON.stringify(props.builder),
         );
         templateBuilder.title.value = templateBuilder.title.value ?? title;
+        templateBuilder.tags.value = tags;
         templateBuilder.inputs.value = inputs;
         templateBuilder.inputTypes.value = inputTypes;
         try {
