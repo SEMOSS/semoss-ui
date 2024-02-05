@@ -523,10 +523,13 @@ export const TextEditor = (props: TextEditorProps) => {
     // };
 
     const promptLLM = async (inputPrompt) => {
+        setLLMLoading(true);
         let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${inputPrompt}", paramValues = [ {} ] );`;
 
         try {
             const res = await runPixel(pixel);
+            setLLMLoading(false);
+
             const LLMResponse = res.pixelReturn[0].output['response'];
             let trimmedStarterCode = LLMResponse;
             trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
@@ -542,6 +545,8 @@ export const TextEditor = (props: TextEditorProps) => {
 
             return trimmedStarterCode;
         } catch {
+            setLLMLoading(false);
+
             notification.add({
                 color: 'error',
                 message: 'Failed response from AI Code Generator',
@@ -598,7 +603,7 @@ export const TextEditor = (props: TextEditorProps) => {
     const executeAction: monaco.editor.IActionDescriptor = {
         id: 'prompt-LLM',
         label: 'Prompt AI Code Generator with Selected Text',
-        contextMenuOrder: 2,
+        contextMenuOrder: 1,
         contextMenuGroupId: '1_modification',
         keybindings: [
             monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
@@ -608,9 +613,9 @@ export const TextEditor = (props: TextEditorProps) => {
             ),
         ],
         run: async (editor) => {
-            editor.updateOptions({ readOnly: true });
-            editor.getDomNode().style.transition = 'opacity .5s';
-            editor.getDomNode().style.opacity = '0.6';
+            // editor.updateOptions({ readOnly: true });
+            // editor.getDomNode().style.transition = 'opacity .5s';
+            // editor.getDomNode().style.opacity = '0.6';
 
             const selection = editor.getSelection();
             const selectedText = editor.getModel().getValueInRange(selection);
@@ -670,9 +675,9 @@ export const TextEditor = (props: TextEditorProps) => {
         }
     };
 
-    if (LLMLoading) {
-        return <LoadingScreen.Trigger description="Generating code..." />;
-    }
+    // if (LLMLoading) {
+    //     return <LoadingScreen.Trigger description="Generating code..." />;
+    // }
 
     if (!files.length) {
         return (
@@ -889,6 +894,10 @@ export const TextEditor = (props: TextEditorProps) => {
                             )}
                         </StyledLLMWrapper>
                     )} */}
+
+                    {LLMLoading && (
+                        <LoadingScreen.Trigger description="Awaiting AI Code Generator..." />
+                    )}
 
                     <Editor
                         width={'100%'}
