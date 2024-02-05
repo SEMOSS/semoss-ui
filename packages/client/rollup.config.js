@@ -15,10 +15,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 const config = {
     input: 'src/main.tsx',
     output: {
-        dir: 'dist/index.esm.js', // Output directory
+        dir: 'dist/bundle.js', // Output directory
         format: 'esm', // Use ES module format
         sourcemap: true,
-        preserveDirectives: true,
+        preserveModules: true,
     },
     // output: {
     //     dir: 'dist/index.js', // Output directory
@@ -39,6 +39,12 @@ const config = {
         typescript({ tsconfig: './tsconfig.json' }),
         image(),
         preserveDirectives(),
+        serve({
+            open: true,
+            contentBase: ['dist'],
+            port: 9090,
+        }),
+        livereload('dist'),
         // isProduction && terser(),
         // !isProduction &&
         //     serve({

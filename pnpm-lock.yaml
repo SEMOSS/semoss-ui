@@ -190,6 +190,9 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
     devDependencies:
+      '@rollup/plugin-html':
+        specifier: ^1.0.3
+        version: 1.0.3(rollup@4.9.6)
       '@types/node':
         specifier: ^16.11.47
         version: 16.18.39
@@ -6988,6 +6991,18 @@ packages:
       magic-string: 0.30.3
       rollup: 4.9.6
     dev: false
+
+  /@rollup/plugin-html@1.0.3(rollup@4.9.6):
+    resolution: {integrity: sha512-bbjQciNXitHX+Bgk0xsW3/0wFWih/356/r7/kvmdz4wzWhAU/a0zYBWTczihrlzz/6Qpw/kZ0yXqOJwsETgg7A==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      rollup: 4.9.6
+    dev: true
 
   /@rollup/plugin-image@3.0.3(rollup@4.9.6):
     resolution: {integrity: sha512-qXWQwsXpvD4trSb8PeFPFajp8JLpRtqqOeNYRUKnEQNHm7e5UP7fuSRcbjQAJ7wDZBbnJvSdY5ujNBQd9B1iFg==}
