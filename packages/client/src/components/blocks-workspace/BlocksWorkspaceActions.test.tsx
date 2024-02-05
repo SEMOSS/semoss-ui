@@ -1,4 +1,5 @@
 import React from 'react';
+import '@testing-library/jest-dom';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { render, screen } from '@testing-library/react';
 import { DefaultBlocks } from '@/components/block-defaults';
@@ -14,30 +15,6 @@ const ACTIVE = 'page-1';
 const mockStore = configureMockStore();
 const store = mockStore({});
 
-// jest.mock('../../hooks/useBlocks', () =>{
-//     return ({
-//         state: {
-//             insightId: 'test',
-//             queries: {},
-//             blocks: {},
-//             cellRegistry: {},
-//         }
-//     })
-// })
-
-// jest.mock("../../hooks/useRootStore", () =>{
-//     return jest.fn(() => ({
-//         monolithStore: {
-//             insightId: '',
-//             queries: {},
-//             blocks: {},
-//             cellRegistry: {},
-//         }
-//     }))
-// })
-
-// jest.mock('../../hooks/useWorkspace', () =>{
-//     return jest.fn(()=> ({
 const workspace = {
     appId: '',
     isLoading: false,
@@ -75,6 +52,8 @@ test('renders the App', () => {
             </Blocks>
         </RootStoreContext.Provider>,
     );
+
+    WORKSPACE.setEditMode(true);
 
     const initialRender = screen.getByText(/Design/i);
 

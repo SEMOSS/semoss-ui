@@ -1,3 +1,4 @@
+import React from 'react';
 import { styled, Stack, Typography, Card, Button, Chip } from '@semoss/ui';
 import { Person, QueryBuilder } from '@mui/icons-material';
 import { DEFAULT_TEMPLATE, Template } from '@/stores';

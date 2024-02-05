@@ -80,7 +80,6 @@ const StyledHandle = styled(IconButton, {
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
-    console.log(state.insightId);
     const { monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();
