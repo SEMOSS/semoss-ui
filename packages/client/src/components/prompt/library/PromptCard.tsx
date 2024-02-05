@@ -7,6 +7,7 @@ import {
     IconButton,
     Stack,
     Typography,
+    LinearProgress,
 } from '@semoss/ui';
 import {
     Bookmark,
@@ -19,6 +20,14 @@ import { Token } from '../prompt.types';
 const StyledCard = styled(Card)(() => ({
     height: '100%',
     cursor: 'pointer',
+}));
+const StyledCardActions = styled(Card.Actions)(() => ({
+    padding: 0,
+    margin: 0,
+}));
+const StyledSpacer = styled('div')(({ theme }) => ({
+    minHeight: theme.spacing(0.5),
+    flex: 1,
 }));
 const StyledChip = styled(Chip)(({ theme }) => ({
     textTransform: 'capitalize',
@@ -38,9 +47,15 @@ export const PromptCard = (props: {
 }) => {
     // todo: hook this up to a real bookmark system
     const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const chooseTemplate = () => {
+        setIsLoading(true);
+        props.openUIBuilderForTemplate();
+    };
 
     return (
-        <StyledCard onClick={props.openUIBuilderForTemplate}>
+        <StyledCard onClick={isLoading ? null : chooseTemplate}>
             <Card.Header
                 title={
                     <Stack direction="row" justifyContent="space-between">
@@ -71,19 +86,31 @@ export const PromptCard = (props: {
                 </Grid>
             </Card.Content>
             <Spacer />
-            <Card.Actions>
-                <Grid container spacing={1}>
-                    {Array.from(props.tags.sort(), (tag, i) => (
-                        <Grid item key={`${props.cardKey}-tag-${i}`}>
-                            <StyledChip
-                                icon={<LocalOfferOutlined fontSize="small" />}
-                                label={tag}
-                                variant="outlined"
-                            />
-                        </Grid>
-                    ))}
-                </Grid>
-            </Card.Actions>
+            <StyledCardActions>
+                <Stack width="100%">
+                    <Grid container spacing={1}>
+                        {Array.from(props.tags.sort(), (tag, i) => (
+                            <Grid item key={`${props.cardKey}-tag-${i}`}>
+                                <StyledChip
+                                    icon={
+                                        <LocalOfferOutlined fontSize="small" />
+                                    }
+                                    label={tag}
+                                    variant="outlined"
+                                />
+                            </Grid>
+                        ))}
+                    </Grid>
+                    {isLoading ? (
+                        <LinearProgress
+                            color="primary"
+                            variant="indeterminate"
+                        />
+                    ) : (
+                        <StyledSpacer />
+                    )}
+                </Stack>
+            </StyledCardActions>
         </StyledCard>
     );
 };
