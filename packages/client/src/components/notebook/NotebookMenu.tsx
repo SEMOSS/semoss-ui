@@ -11,6 +11,7 @@ import {
     Stack,
     Menu,
     useNotification,
+    Icon,
 } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
 import {
@@ -459,10 +460,13 @@ export const NotebookMenu = observer((): JSX.Element => {
                                         disableTypography
                                         primary={
                                             <Stack direction="row" spacing={1}>
-                                                {createElement(
-                                                    getIconForBlock(b.widget),
-                                                    { color: 'primary' },
-                                                )}
+                                                <Icon color="primary">
+                                                    {createElement(
+                                                        getIconForBlock(
+                                                            b.widget,
+                                                        ),
+                                                    )}
+                                                </Icon>
                                                 <Typography variant="subtitle2">
                                                     {b.id}
                                                 </Typography>
