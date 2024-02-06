@@ -26,6 +26,7 @@ import { config as TextBlockConfig, TextBlockDef } from './text-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
+import { config as ImageBlockConfig, ImageBlockDef } from './image-block'
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -38,6 +39,7 @@ export type DefaultBlockDefinitions =
     | FormBlockDef
     | HeaderBlockDef
     | IframeBlockDef
+    | ImageBlockDef
     | MarkdownBlockDef
     | PageBlockDef
     | SelectBlockDef
@@ -57,6 +59,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
+    [ImageBlockConfig.widget]: ImageBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 
@@ -73,5 +76,6 @@ export {
     SelectBlockConfig,
     TextBlockConfig,
     InputBlockConfig,
+    ImageBlockConfig,
     UploadBlockConfig,
 };
