@@ -7,11 +7,15 @@ export const StyledStepPaper = styled(Paper)(({ theme }) => ({
     height: '100%',
 }));
 
-export const StyledTextPaper = styled(Paper)(({ theme }) => ({
+export const StyledTextPaper = styled(Paper, {
+    shouldForwardProp: (prop) => prop !== 'maxHeight',
+})<{ maxHeight?: string }>(({ theme, maxHeight = 'unset' }) => ({
     borderStyle: 'solid',
     borderWidth: '2px',
     borderColor: theme.palette.grey[300],
     minHeight: '50%',
+    maxHeight: maxHeight,
+    overflow: maxHeight === 'unset' ? 'unset' : 'auto',
     marginTop: theme.spacing(3),
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
