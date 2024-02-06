@@ -64,7 +64,7 @@ export const SUMMARY_STEPS = [
         icon: Block,
     },
     {
-        title: 'Preview Prompt',
+        title: 'Preview',
         icon: Preview,
     },
 ];

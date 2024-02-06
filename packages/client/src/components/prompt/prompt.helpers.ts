@@ -393,11 +393,7 @@ export function getQueryForPrompt(
     return queryJson;
 }
 
-export async function setBlocksAndOpenUIBuilder(
-    builder: Builder,
-    monolithStore: MonolithStore,
-    navigate: (route: string) => void,
-) {
+export function getBuilderJsonState(builder: Builder): SerializedState {
     // create the state
     const state: SerializedState = {
         queries: {},
@@ -579,6 +575,16 @@ export async function setBlocksAndOpenUIBuilder(
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );
+
+    return state;
+}
+
+export async function setBlocksAndOpenUIBuilder(
+    builder: Builder,
+    monolithStore: MonolithStore,
+    navigate: (route: string) => void,
+) {
+    const state = await getBuilderJsonState(builder);
 
     const pixel = `CreateAppFromBlocks ( project = [ "${
         builder.title.value
