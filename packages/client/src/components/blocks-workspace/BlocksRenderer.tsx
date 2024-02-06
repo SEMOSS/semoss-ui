@@ -17,13 +17,15 @@ interface BlocksRendererProps {
 
     /** State to render */
     state?: SerializedState;
+
+    useOverlayLoading?: boolean;
 }
 
 /**
  * Render a block app
  */
 export const BlocksRenderer = observer((props: BlocksRendererProps) => {
-    const { appId, state } = props;
+    const { appId, state, useOverlayLoading = true } = props;
     const notification = useNotification();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -52,6 +54,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
         runPixel<[SerializedState]>(pixel, 'new')
             .then(({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
+                    setIsLoading(false);
                     throw new Error(errors.join(''));
                 }
 
@@ -95,7 +98,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
             });
     }, [state, appId]);
 
-    if (!stateStore || isLoading) {
+    if ((!stateStore || isLoading) && useOverlayLoading) {
         return <LoadingScreen.Trigger />;
     }
 
