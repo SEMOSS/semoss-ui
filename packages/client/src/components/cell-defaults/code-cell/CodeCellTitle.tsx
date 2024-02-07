@@ -76,6 +76,7 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 disabled={cell.isLoading}
                 size="small"
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
+                    event.preventDefault();
                     setAnchorEl(event.currentTarget);
                 }}
                 startIcon={

@@ -205,7 +205,7 @@ export const NotebookCell = observer(
             });
         }, [cellType ? cellType.view.title : null]);
 
-        // render the title
+        // render the input
         const renderedInput = useMemo(() => {
             if (!cellType) {
                 return;
