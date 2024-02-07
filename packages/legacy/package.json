@@ -3,8 +3,8 @@
     "description": "SEMOSS Analytics Platform",
     "scripts": {
         "preinstall": "npx only-allow pnpm",
-        "dev": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack --watch --progress --config webpack.dev.js",
-        "build": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack --config webpack.prod.js",
+        "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --progress --config webpack.dev.js",
+        "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --config webpack.prod.js",
         "build:docs": "node ./makedocs.js",
         "check-types": "tsc",
         "lint": "eslint .",
@@ -12,8 +12,8 @@
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
-        "stats:dev": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack --config webpack.dev.js --profile --json > webpack-stats.json",
-        "stats:prod": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack --config webpack.prod.js --profile --json > webpack-stats.json"
+        "stats:dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --config webpack.dev.js --profile --json > webpack-stats.json",
+        "stats:prod": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --config webpack.prod.js --profile --json > webpack-stats.json"
     },
     "author": "",
     "license": "GPL-2.0",

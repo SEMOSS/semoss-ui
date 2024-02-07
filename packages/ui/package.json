@@ -14,7 +14,7 @@
         "dev": "run-p build:dev storybook",
         "build": "rollup -c",
         "build:dev": "rollup -w -c",
-        "storybook": "cross-env NODE_OPTIONS=--max_old_space_size=16384 storybook dev -p 6006",
+        "storybook": "cross-env NODE_OPTIONS=--max_old_space_size=8192 storybook dev -p 6006",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",
