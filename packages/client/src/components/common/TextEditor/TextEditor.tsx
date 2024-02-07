@@ -1,131 +1,83 @@
-import React, {
-    useMemo,
-    useEffect,
-    useState,
-    SyntheticEvent,
-    useRef,
-} from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useEffect, useState, SyntheticEvent, useRef } from 'react';
+
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
-import { Clear, Language, SaveOutlined } from '@mui/icons-material';
-import { Icon as FiletypeIcon } from '@mdi/react';
+import { Clear, SaveOutlined } from '@mui/icons-material';
 import { FILE_ICON_MAP } from './text-editor.constants';
+import { Icon as FiletypeIcon } from '@mdi/react';
+import { Link } from 'react-router-dom';
+
 import {
-    TextArea,
-    TextField,
     useNotification,
     IconButton,
     Typography,
     Container,
-    Checkbox,
     styled,
-    Button,
-    Modal,
     Tabs,
 } from '@semoss/ui';
 
 import Editor, { OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { TextEditorPreview } from './TextEditorPreview';
 
-import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel';
-import parserHtml from 'prettier/parser-html';
 import parserCss from 'prettier/parser-postcss';
+import parserHtml from 'prettier/parser-html';
+import prettier from 'prettier';
 
-import { runPixel } from '@/api';
 import { LoadingScreen } from '@/components/ui';
-
-const StyledKeepButton = styled(Button)(({ theme }) => ({
-    margin: '12px',
-}));
-
-const StyledLLMWrapper = styled('div')(({ theme }) => ({
-    border: '1px solid lightgray',
-    borderRadius: '5px',
-    marginBottom: '20px',
-}));
-
-const StyledLabel = styled('strong')(({ theme }) => ({
-    marginRight: '10px',
-    fontSize: '16px',
-}));
-
-const StyledLLMInput = styled(TextArea)(({ theme }) => ({
-    margin: '0 20px',
-}));
-
-const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
-    minWidth: '350px',
-}));
-
-const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
-    width: '180px',
-}));
+import { runPixel } from '@/api';
 
 const StyledSVG = styled('svg')(({ theme }) => ({
-    fill: '#0000008A',
     viewBox: '0 0 16 16',
-    width: '1em',
+    fill: '#0000008A',
     height: '1em',
+    width: '1em',
 }));
 
 const StyledHeaderContainer = styled(Container)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
     gap: theme.spacing(2),
+    flexDirection: 'column',
+    display: 'flex',
 }));
 
 const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+    marginRight: '8px',
     color: 'rgba(0, 0, 0, 0.6)',
     height: '24px',
     width: '24px',
-    marginRight: '8px',
-}));
-
-const StyledContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    height: '100%',
 }));
 
 const StyledEmptyFiles = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    height: '100%',
-    alignItems: 'normal',
-    textAlign: 'left',
     padding: theme.spacing(5),
     justifyContent: 'space-around',
+    alignItems: 'normal',
+    textAlign: 'left',
+    flexDirection: 'column',
+    display: 'flex',
+    height: '100%',
+    width: '100%',
 }));
 
 const StyledPrettierIconButton = styled(IconButton)(({ theme }) => ({
+    fontSize: 'inherit',
+    paddingRight: '0px',
+    marginRight: '0px',
     height: '50px',
     width: '30px',
-    fontSize: 'inherit',
-    marginRight: '0px',
-    paddingRight: '0px',
 }));
 
 const StyledSaveIconButton = styled(IconButton)(({ theme }) => ({
+    marginRight: '20px',
+    fontSize: 'inherit',
     color: '#0000008A',
     height: '50px',
     width: '30px',
-    marginRight: '20px',
-    fontSize: 'inherit',
-}));
-
-const StyledFileTabs = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: theme.spacing(1),
 }));
 
 const StyledActiveFilePath = styled('div')(({ theme }) => ({
-    display: 'flex',
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
     alignItems: 'center',
+    display: 'flex',
 }));
 
 const StyledTabsItem = styled(Tabs.Item, {
@@ -138,21 +90,37 @@ const StyledTabsItem = styled(Tabs.Item, {
 }));
 
 const StyledTabLabelContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
     gap: theme.spacing(0.5),
+    flexDirection: 'row',
     alignItems: 'center',
+    display: 'flex',
 }));
 
 const StyledTabLabel = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
     gap: theme.spacing(1),
+    flexDirection: 'row',
     alignItems: 'center',
+    display: 'flex',
 }));
 
-const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
-    color: theme.palette.primary.main,
+const StyledNonGrayPath = styled(Typography)(({ theme }) => ({
+    display: 'inline-block',
+    marginRight: '5px',
+    paddingLeft: '0px',
+    marginLeft: '0px',
+}));
+
+const StyledGrayFileName = styled(Typography)(({ theme }) => ({
+    display: 'inline-block',
+    paddingLeft: '0px',
+    marginLeft: '0px',
+    opacity: 0.6,
+}));
+
+const StyledFileTabs = styled('div')(({ theme }) => ({
+    gap: theme.spacing(1),
+    justifyContent: 'space-between',
+    display: 'flex',
 }));
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
@@ -161,31 +129,30 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledClear = styled(Clear)(({ theme }) => ({
-    width: theme.spacing(2),
     height: theme.spacing(2),
+    width: theme.spacing(2),
+}));
+
+const StyledActiveFilePathContainer = styled('div')(({ theme }) => ({
+    paddingLeft: '0px',
+    marginLeft: '0px',
+}));
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    height: '100%',
+    width: '100%',
+}));
+
+const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
+    width: '180px',
+}));
+
+const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
+    color: theme.palette.primary.main,
 }));
 
 const StyledCloseTab = styled(IconButton)(({ theme }) => ({
     fontSize: '16px',
-}));
-
-const StyledActiveFilePathContainer = styled('div')(({ theme }) => ({
-    marginLeft: '0px',
-    paddingLeft: '0px',
-}));
-
-const StyledNonGrayPath = styled(Typography)(({ theme }) => ({
-    marginLeft: '0px',
-    paddingLeft: '0px',
-    marginRight: '5px',
-    display: 'inline-block',
-}));
-
-const StyledGrayFileName = styled(Typography)(({ theme }) => ({
-    display: 'inline-block',
-    opacity: 0.6,
-    marginLeft: '0px',
-    paddingLeft: '0px',
 }));
 
 const PrettierPath = () => (
@@ -228,10 +195,10 @@ interface TextEditorProps {
 
 export const TextEditor = (props: TextEditorProps) => {
     const {
-        setControlledFiles,
         controlledFiles,
         setActiveIndex,
         setCounter,
+        setControlledFiles,
         activeIndex,
         onClose,
         counter,
@@ -239,16 +206,11 @@ export const TextEditor = (props: TextEditorProps) => {
         files,
     } = props;
 
-    const [LLMStarterModalOpen, setLLMStarterModalOpen] = useState(false);
-    const [LLMPreviewContents, setLLMPreviewContents] = useState('');
     const [LLMLoading, setLLMLoading] = useState(false);
-    const [showLLMStarter, setShowLLMStarter] = useState(true);
-    const [renderStyledLLMWrapper, setRenderStyledLLMWrapper] = useState(true);
-    const [LLMPromptInput, setLLMPromptInput] = useState('');
     const [LLMActionAdded, setLLMActionAdded] = useState(false);
-
     const notification = useNotification();
 
+    // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
     const fileTypeRef = useRef('');
 
     /**
@@ -453,77 +415,16 @@ export const TextEditor = (props: TextEditorProps) => {
         );
     };
 
-    // old starter code generator - for reference can be deleted
-    // const createStarterCode = async (inputPrompt) => {
-    //     let promptString = '';
-
-    //     if (LLMPromptInput.length == 0) {
-    //         promptString += `Generate starter, boilerplate code for a file with the file name '${activeFile.name}'. `;
-    //         promptString += 'Include consise explanatory comments. ';
-    //         promptString +=
-    //             'Try to cover all possible interpretations of the file name. ';
-    //         promptString += 'Write accurate succinct code. ';
-    //         promptString += 'Use descriptive concise variable names. ';
-    //         promptString +=
-    //             'Make clear explanatory notes for dependencies or imports that will have to be installed or defined externally and include instructions on how to do this properly. ';
-    //         promptString +=
-    //             'Do not include the name of the file at the beginning of the file. ';
-    //         promptString += 'Do not make a file that is just notes. ';
-    //         promptString += 'You must include code. ';
-    //         promptString +=
-    //             'Include a reminder / warning about imports and dependencies but include the actual code for imports / dependencies. ';
-    //         promptString +=
-    //             'Use actual imports / dependencies, do not make them up. ';
-    //         promptString +=
-    //             'Do not use imports / dependencies that do not actually exist or that user cannot create themselves. ';
-    //         promptString +=
-    //             'When possible create arrays, lists or values rather than importing them. ';
-    //         promptString +=
-    //             'Make a complete and stand-alone application or file when possible. ';
-    //         promptString +=
-    //             'Close all open tags, functions, quotes and code blocks.';
-    //         promptString += 'Do not end or cut the file off pre-maturely.';
-    //         promptString += 'Finish everything you start.';
-    //         promptString += 'There is not character limit.';
-    //     } else {
-    //         promptString += `Create starter code for a file titled ${activeFile.type} based on the following description. '${LLMPromptInput}'`;
-    //     }
-
-    //     // Notes from Neel
-    //     // focus on comment based prompting
-    //     // user highlights what they want the prompt to be in their code editor
-    //     // they second click to select 'use AI Code Generator' maybe 'prompt AI Code Generator with selected text'
-    //     // then pass prompt unedited with the filetype as a param ideally - need backend folks to address
-    //     // then paste code uncommented below comment and leave comment
-    //     // maybe highlight all pasted code or indicate where code stops at some point
-    //     // maybe mimic merge conflict interface with an 'accept incoming changes' link above highlighted new text
-
-    //     let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${
-    //         inputPrompt || promptString
-    //     }", paramValues = [ {} ] );`;
-    //     console.log('Prompting LLM', { activeFile, promptString, pixel });
-
-    //     try {
-    //         const res = await runPixel(pixel);
-    //         const LLMResponse = res.pixelReturn[0].output['response'];
-    //         let trimmedStarterCode = LLMResponse;
-    //         trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
-
-    //         trimmedStarterCode = trimmedStarterCode.substring(
-    //             trimmedStarterCode.indexOf('\n') + 1,
-    //         );
-    //         setLLMLoading(false);
-    //         setLLMPreviewContents(trimmedStarterCode);
-
-    //         console.log({ res, LLMResponse });
-    //     } catch {
-    //         setLLMLoading(false);
-    //         alert('LLM error');
-    //     }
-    // };
-
+    /**
+     * Runs LLM pixel and manages LLM loading
+     * @param string
+     * @returns LLM response string
+     */
     const promptLLM = async (inputPrompt) => {
         setLLMLoading(true);
+
+        // ideally add filetype to LLM pixel so it does not have to be in prompt string
+        // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
         let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${inputPrompt}", paramValues = [ {} ] );`;
 
         try {
@@ -538,15 +439,9 @@ export const TextEditor = (props: TextEditorProps) => {
                 trimmedStarterCode.indexOf('\n') + 1,
             );
 
-            // notification.add({
-            //     color: 'success',
-            //     message: 'Successful response from AI Code Generator',
-            // });
-
             return trimmedStarterCode;
         } catch {
             setLLMLoading(false);
-
             notification.add({
                 color: 'error',
                 message: 'Failed response from AI Code Generator',
@@ -600,23 +495,25 @@ export const TextEditor = (props: TextEditorProps) => {
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
 
+    /**
+     * Callback for new LLM dropdown action in Monaco editor
+     * @param newContent
+     */
     const executeAction: monaco.editor.IActionDescriptor = {
-        id: 'prompt-LLM',
-        label: 'Prompt AI Code Generator with Selected Text',
-        contextMenuOrder: 1,
         contextMenuGroupId: '1_modification',
-        keybindings: [
-            monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
-            monaco.KeyMod.chord(
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM,
-            ),
-        ],
-        run: async (editor) => {
-            // editor.updateOptions({ readOnly: true });
-            // editor.getDomNode().style.transition = 'opacity .5s';
-            // editor.getDomNode().style.opacity = '0.6';
+        contextMenuOrder: 1,
+        id: 'prompt-LLM',
 
+        // text that appears in dropdown
+        label: 'Generate Code',
+
+        // Key binding options - may want to change or remove
+        keybindings: [
+            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
+        ],
+
+        // function that runs when action is triggered
+        run: async (editor) => {
             const selection = editor.getSelection();
             const selectedText = editor.getModel().getValueInRange(selection);
 
@@ -659,25 +556,17 @@ export const TextEditor = (props: TextEditorProps) => {
         },
     };
 
+    /**
+     * Handler that adds new LLM dropdown action to editor when the editor mounts
+     * @param monacoInstance
+     */
     const editorOnMountHandler: OnMount = (editor, monacoInstance) => {
-        // this is currently working but is locking to the first file name / filetype and prompt
-        // if the conditional wrapper is removed additional addActions will be added but they will work
-        // behavior seems inconsistent needs further debugging
-
-        // allowing the editor actions to accumulate seems to solve bugs
-
-        // there does not currently seem to be a way to remove actions after being added (?)
-        // https://microsoft.github.io/monaco-editor/typedoc/modules/editor.html
-
+        // prevents redundant additions of new dropdown action
         if (LLMActionAdded == false) {
             monacoInstance.editor.addEditorAction(executeAction);
             setLLMActionAdded(true);
         }
     };
-
-    // if (LLMLoading) {
-    //     return <LoadingScreen.Trigger description="Generating code..." />;
-    // }
 
     if (!files.length) {
         return (
@@ -822,81 +711,8 @@ export const TextEditor = (props: TextEditorProps) => {
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
 
-                    {/* This is the old starter code generator div - for reference can be deleted */}
-                    {/* {renderStyledLLMWrapper && (
-                        <StyledLLMWrapper>
-                            <div
-                                style={{
-                                    backgroundColor: '#D9D9D914',
-                                    padding: '12px 16px 12px 16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <StyledLabel>Generate</StyledLabel>
-
-                                <TextField
-                                    size="small"
-                                    style={{ flexGrow: 1 }}
-                                    placeholder="Enter prompt to generate the code"
-                                    value={LLMPromptInput}
-                                    onChange={(e) => {
-                                        setLLMPromptInput(e.target.value);
-                                    }}
-                                    onKeyUp={(e) => {
-                                        if (e.key == 'Enter') {
-                                            setLLMLoading(true);
-                                            createStarterCode();
-                                        }
-                                    }}
-                                />
-
-                                <StyledCloseTab
-                                    size={'small'}
-                                    onClick={async (e) => {
-                                        // alert('hello!');
-                                        setRenderStyledLLMWrapper(false);
-                                    }}
-                                >
-                                    <StyledClear />
-                                </StyledCloseTab>
-                            </div>
-
-                            {LLMPreviewContents && (
-                                <>
-                                    <TextEditorPreview
-                                        language={fileLanguage}
-                                        contents={LLMPreviewContents}
-                                    />
-                                    <StyledKeepButton
-                                        variant={'contained'}
-                                        color={'primary'}
-                                        onClick={() => {
-                                            activeFile.content =
-                                                LLMPreviewContents;
-                                            setLLMPreviewContents('');
-                                        }}
-                                    >
-                                        Keep
-                                    </StyledKeepButton>
-
-                                    <StyledKeepButton
-                                        variant={'outlined'}
-                                        color={'info'}
-                                        onClick={() => {
-                                            // activeFile.content = LLMPreviewContents;
-                                            setLLMPreviewContents('');
-                                        }}
-                                    >
-                                        Cancel
-                                    </StyledKeepButton>
-                                </>
-                            )}
-                        </StyledLLMWrapper>
-                    )} */}
-
                     {LLMLoading && (
-                        <LoadingScreen.Trigger description="Awaiting AI Code Generator..." />
+                        <LoadingScreen.Trigger description="Generating..." />
                     )}
 
                     <Editor
@@ -909,55 +725,6 @@ export const TextEditor = (props: TextEditorProps) => {
                         }}
                         onMount={editorOnMountHandler}
                     ></Editor>
-
-                    {/* this is the old starter code generation modal - for reference can be deleted */}
-                    {/* <Modal open={LLMStarterModalOpen}>
-                        <Modal.Title>Generate Starter Code?</Modal.Title>
-                        <StyledModalContent>
-                            Would you like to populate this file it with starter
-                            code?
-                        </StyledModalContent>
-                        <StyledLLMInput
-                            size={'medium'}
-                            label="Starter Prompt"
-                            value={LLMPromptInput}
-                            onChange={(e) => {
-                                setLLMPromptInput(e.target.value);
-                            }}
-                            helperText={
-                                "Describe the file you'd to like generated."
-                            }
-                        />
-                        <Modal.Actions>
-                            <Checkbox
-                                label="Do not show again"
-                                checked={!showLLMStarter}
-                                onChange={() =>
-                                    setShowLLMStarter(!showLLMStarter)
-                                }
-                            />
-                            <Button
-                                variant={'contained'}
-                                color={'primary'}
-                                onClick={() => {
-                                    setLLMStarterModalOpen(false);
-                                    setLLMLoading(true);
-                                    createStarterCode();
-                                }}
-                            >
-                                Generate
-                            </Button>
-                            <Button
-                                color={'info'}
-                                variant={'outlined'}
-                                onClick={() => {
-                                    setLLMStarterModalOpen(false);
-                                }}
-                            >
-                                Close
-                            </Button>
-                        </Modal.Actions>
-                    </Modal> */}
                 </StyledContainer>
             );
         } else {
@@ -967,6 +734,7 @@ export const TextEditor = (props: TextEditorProps) => {
 };
 
 // For Formatting Python Code
+// seems like this may need it's own pixel
 const runBlack = (code) => {
     // return new Promise((resolve, reject) => {
     //     const blackProcess = spawn('black', ['-', '--quiet', '-']);

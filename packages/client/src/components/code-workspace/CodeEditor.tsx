@@ -61,8 +61,10 @@ const StyledIconButton = styled(IconButton)(() => ({
 export const CodeEditor = observer(() => {
     // App ID Needed for pixel calls
     const { workspace } = useWorkspace();
-
     const [transparentOverlay, setTransparentOverlay] = useState(false);
+
+    // temporary fix for dead refresh button should be removed
+    const [counter, setCounter] = useState(0);
 
     /**
      * Resizing of Panels Code
@@ -145,12 +147,13 @@ export const CodeEditor = observer(() => {
                             title={'Refresh'}
                             onClick={() => {
                                 // refreshApp();
+                                setCounter(counter + 1);
                             }}
                         >
                             <Refresh />
                         </StyledIconButton>
                     </StyledRendererActions>
-                    <CodeRenderer appId={workspace.appId} />
+                    <CodeRenderer appId={workspace.appId} key={counter} />
                 </StyledRendererContainer>
             </StyledRightPanel>
         </StyledTopPanel>
