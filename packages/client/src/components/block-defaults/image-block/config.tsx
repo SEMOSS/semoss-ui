@@ -1,23 +1,11 @@
 import { BlockConfig } from '@/stores';
 import { buildDimensionsSection } from '../block-defaults.shared';
 import { ImageBlockDef, ImageBlock } from './ImageBlock';
-import {
-    PanoramaOutlined,
-    AlignHorizontalLeft,
-    AlignHorizontalCenter,
-    AlignHorizontalRight,
-    ArrowUpward,
-    ArrowBack,
-    ArrowForward,
-    ArrowDownward,
-    FilterCenterFocus,
-} from '@mui/icons-material';
+import { PanoramaOutlined } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { BorderSettings, InputSettings } from '@/components/block-settings';
-import { ButtonGroupSettings } from '../../block-settings/shared/ButtonGroupSettings';
-import { SizeSettings } from '../../block-settings/shared/SizeSettings';
-import { SelectInputSettings } from '../../block-settings/shared/SelectInputSettings';
-
+import { InputSettings } from '@/components/block-settings';
+import { ButtonGroupSettings, SelectInputSettings } from '../../block-settings';
+import { AspectRatio, FitScreen, ImageAspectRatio } from '@mui/icons-material';
 // export the config for the block
 export const config: BlockConfig<ImageBlockDef> = {
     widget: 'image',
@@ -27,8 +15,10 @@ export const config: BlockConfig<ImageBlockDef> = {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            width: '200px',
+            width: '100%',
             height: '200px',
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
         },
         src: '',
         title: '',
@@ -67,5 +57,92 @@ export const config: BlockConfig<ImageBlockDef> = {
             ],
         },
     ],
-    styleMenu: [buildDimensionsSection()],
+    styleMenu: [
+        {
+            name: '',
+            children: [
+                {
+                    description: 'Ratio',
+                    render: ({ id }) => (
+                        <ButtonGroupSettings
+                            id={id}
+                            path="style.backgroundSize"
+                            label="Ratio"
+                            options={[
+                                {
+                                    value: '100% 100%',
+                                    icon: FitScreen,
+                                    title: 'fit',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'cover',
+                                    icon: AspectRatio,
+                                    title: 'cover',
+                                    isDefault: true,
+                                },
+                                {
+                                    value: 'contain',
+                                    icon: ImageAspectRatio,
+                                    title: 'contain',
+                                    isDefault: false,
+                                },
+                            ]}
+                        />
+                    ),
+                },
+                {
+                    description: 'Position',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            path="style.backgroundPosition"
+                            label="Position"
+                            allowUnset
+                            allowCustomInput
+                            options={[
+                                {
+                                    value: 'top left',
+                                    display: 'Top left',
+                                },
+                                {
+                                    value: 'top center',
+                                    display: 'Top Center',
+                                },
+                                {
+                                    value: 'top right',
+                                    display: 'Top Right',
+                                },
+                                {
+                                    value: 'center left',
+                                    display: 'Center Left',
+                                },
+                                {
+                                    value: 'center center',
+                                    display: 'Center',
+                                },
+                                {
+                                    value: 'center right',
+                                    display: 'Center Right',
+                                },
+                                {
+                                    value: 'bottom left',
+                                    display: 'Bottom Left',
+                                },
+                                {
+                                    value: 'bottom center',
+                                    display: 'Bottom Center',
+                                },
+                                {
+                                    value: 'bottom right',
+                                    display: 'Bottom Right',
+                                },
+                            ]}
+                        />
+                    ),
+                },
+            ],
+        },
+        buildDimensionsSection(),
+    ],
 };

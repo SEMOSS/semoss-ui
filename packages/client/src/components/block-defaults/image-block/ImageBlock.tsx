@@ -24,10 +24,11 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
         );
     } else {
         return (
-            <img
-                style={{ ...data.style }}
-                src={data.src}
-                title={data.title}
+            <div
+                style={{
+                    ...data.style,
+                    backgroundImage: `url(${data.src})`,
+                }}
                 {...attrs}
             />
         );
