@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
-import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
+import { styled, Stack, Icon, Divider, Tooltip } from '@/component-library';
 import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';

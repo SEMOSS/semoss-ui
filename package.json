@@ -9,7 +9,7 @@
         "dev:ui-client": "pnpm run --filter=@semoss/ui --filter=@semoss/client --stream --parallel dev",
         "dev:client": "pnpm run --filter=@semoss/client --stream --parallel dev",
         "dev:legacy": "pnpm run --filter=@semoss/legacy --stream --parallel dev",
-        "build": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client build",
+        "build": "pnpm run --filter=@semoss/client build",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix"
     },
     "author": "",

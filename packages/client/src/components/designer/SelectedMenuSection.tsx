@@ -1,7 +1,8 @@
 import { ExpandMore } from '@mui/icons-material';
-import { Accordion, Stack, Typography, styled } from '@semoss/ui';
+import { Stack, Typography, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import React, { createElement } from 'react';
+import { Accordion, AccordionSummary } from '@mui/material';
 
 const StyledMenuSectionHeader = styled('div')(({ theme }) => ({
     alignItems: 'center',
@@ -32,7 +33,7 @@ const StyledTypography = styled(Typography)(() => ({
     fontWeight: 'bold',
 }));
 
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
+const StyledMenuSectionTitle = styled(AccordionSummary)(({ theme }) => ({
     minHeight: 'auto !important',
     height: theme.spacing(6),
 }));
