@@ -1,8 +1,8 @@
 {
     "name": "@semoss/client",
     "scripts": {
-        "dev": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack --watch --mode=development --node-env=development",
-        "build": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack --mode=production --node-env=production",
+        "dev": "cross-env NODE_OPTIONS=--max-old-space-size=16384 UV_THREADPOOL_SIZE=1024 webpack --watch --mode=development --node-env=development",
+        "build": "cross-env NODE_OPTIONS=--max-old-space-size=16384 webpack UV_THREADPOOL_SIZE=1024 --mode=production --node-env=production",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",
