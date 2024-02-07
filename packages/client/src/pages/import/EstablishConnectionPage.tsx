@@ -9,7 +9,7 @@ import {
     Typography,
     Checkbox,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useNavigate } from 'react-router-dom';
 import { useRootStore } from '@/hooks';
 import { useStepper } from '@/hooks';

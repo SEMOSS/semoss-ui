@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled } from '@semoss/ui';
+import { styled } from '@/component-library';
 import { useBlocks, useDesigner } from '@/hooks';
 
 import {

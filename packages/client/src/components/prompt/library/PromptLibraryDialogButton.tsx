@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Typography } from '@semoss/ui';
+import { Button, Typography } from '@/component-library';
 import { ArrowOutward } from '@mui/icons-material';
 import { PromptLibraryDialog } from './PromptLibraryDialog';
 import { Builder } from '../prompt.types';

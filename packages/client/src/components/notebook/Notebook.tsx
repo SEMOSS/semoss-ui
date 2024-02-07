@@ -1,4 +1,4 @@
-import { styled } from '@semoss/ui';
+import { styled } from '@/component-library';
 import { observer } from 'mobx-react-lite';
 
 import { NotebookMenu } from './NotebookMenu';

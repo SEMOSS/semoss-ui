@@ -1,4 +1,10 @@
-import { Breadcrumbs, Icon, Stack, Typography, styled } from '@semoss/ui';
+import {
+    Breadcrumbs,
+    Icon,
+    Stack,
+    Typography,
+    styled,
+} from '@/component-library';
 import { Outlet } from 'react-router-dom';
 import { Page, LoadingScreen } from '@/components/ui';
 import { ArrowBack } from '@mui/icons-material';

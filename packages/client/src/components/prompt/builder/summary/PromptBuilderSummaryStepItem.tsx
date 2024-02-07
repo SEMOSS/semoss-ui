@@ -1,6 +1,6 @@
 import { INPUT_TYPE_VECTOR, INPUT_TYPE_DATABASE } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
-import { List } from '@semoss/ui';
+import { List } from '@/component-library';
 
 interface BuilderStepItemProps {
     builder: Builder;

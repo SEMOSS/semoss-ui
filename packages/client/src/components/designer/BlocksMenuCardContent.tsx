@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Typography } from '@semoss/ui';
+import { styled, Stack, Typography } from '@/component-library';
 import { BlockAvatar } from './BlockAvatar';
 
 const StyledStack = styled(Stack)(() => ({

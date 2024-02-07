@@ -4,7 +4,7 @@ import {
     LinearProgress,
     LinearProgressProps,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 
 const FlexBox = styled(Box)(() => ({
     display: 'flex',

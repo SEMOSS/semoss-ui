@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { Token } from '../../prompt.types';
 import { StyledTooltip } from '../../prompt.styled';
-import { styled, Button, List } from '@semoss/ui';
+import { styled, Button, List } from '@/component-library';
 import { Input, Sync } from '@mui/icons-material';
 import { PromptTokenChip } from './PromptTokenChip';
 import { PromptTokenTextButton } from './PromptTokenTextButton';

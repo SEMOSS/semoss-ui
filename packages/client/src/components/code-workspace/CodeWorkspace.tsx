@@ -7,7 +7,7 @@ import { Workspace, SettingsView } from '@/components/workspace';
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
 import { CodeEditor } from './CodeEditor';
 import { CodeRenderer } from './CodeRenderer';
-import { styled, Container } from '@semoss/ui';
+import { styled, Container } from '@/component-library';
 
 interface CodeWorkspaceProps {
     /** Workspace to render */

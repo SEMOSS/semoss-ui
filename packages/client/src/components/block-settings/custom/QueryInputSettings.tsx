@@ -15,7 +15,7 @@ import {
     IconButton,
     Divider,
     styled,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Autocomplete } from '@mui/material';
 import { Close, DataObject, Layers, OpenInNew } from '@mui/icons-material';
 

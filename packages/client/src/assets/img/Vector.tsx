@@ -1,6 +1,6 @@
 import React from 'react';
 import { TokenOutlined } from '@mui/icons-material';
-import { styled, CustomPaletteOptions } from '@semoss/ui';
+import { styled, CustomPaletteOptions } from '@/component-library';
 
 const StyledContainer = styled('div')(({ theme }) => {
     return {

@@ -1,5 +1,5 @@
 import { BlockConfig } from '@/stores';
-import { styled, Grid, Typography } from '@semoss/ui';
+import { styled, Grid, Typography } from '@/component-library';
 import { BlocksMenuCard } from './BlocksMenuCard';
 
 const StyledGrid = styled(Grid)(({ theme }) => ({

@@ -9,7 +9,7 @@ import {
     Card,
     List,
     Table,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     TableChartOutlined,
     TableViewRounded,

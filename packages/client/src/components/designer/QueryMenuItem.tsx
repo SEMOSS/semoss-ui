@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Chip, List, Typography, styled } from '@semoss/ui';
+import { Chip, List, Typography, styled } from '@/component-library';
 import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
 import { ActionMessages, QueryState, BlockJSON } from '@/stores';
 

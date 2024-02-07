@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { styled, ButtonGroup, Button } from '@semoss/ui';
+import { styled, ButtonGroup, Button } from '@/component-library';
 import { ContentCopy, Delete } from '@mui/icons-material';
 
 import {

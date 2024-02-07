@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Button, Checkbox, Stack, Typography, styled } from '@semoss/ui';
+import {
+    Button,
+    Checkbox,
+    Stack,
+    Typography,
+    styled,
+} from '@/component-library';
 
 const Spacer = styled('div')(({}) => ({
     display: 'flex',

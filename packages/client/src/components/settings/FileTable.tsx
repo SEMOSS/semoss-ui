@@ -13,7 +13,7 @@ import {
     Table,
     Typography,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Add, Delete } from '@mui/icons-material';
 import { usePixel, useRootStore } from '@/hooks';
 

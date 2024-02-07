@@ -1,4 +1,4 @@
-import { styled } from '@semoss/ui';
+import { styled } from '@/component-library';
 import { Env } from '@/env';
 
 const StyledIframe = styled('iframe')(() => ({

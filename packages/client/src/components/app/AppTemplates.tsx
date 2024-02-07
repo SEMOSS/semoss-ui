@@ -1,4 +1,11 @@
-import { styled, Stack, Typography, Card, Button, Chip } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    Typography,
+    Card,
+    Button,
+    Chip,
+} from '@/component-library';
 import { Person, QueryBuilder } from '@mui/icons-material';
 import { DEFAULT_TEMPLATE, Template } from '@/stores';
 import { AppMetadata } from './app.types';

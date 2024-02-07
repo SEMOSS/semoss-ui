@@ -16,7 +16,7 @@ import {
     CircularProgress,
     Stack,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import {
     SpaceDashboardOutlined,

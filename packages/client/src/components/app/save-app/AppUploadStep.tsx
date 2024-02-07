@@ -1,4 +1,4 @@
-import { FileDropzone } from '@semoss/ui';
+import { FileDropzone } from '@/component-library';
 import { Control, Controller } from 'react-hook-form';
 import { ADD_APP_FORM_FIELD_UPLOAD } from './save-app.constants';
 

@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Button } from '@semoss/ui';
+import { styled, Button } from '@/component-library';
 
 import { useBlocks } from '@/hooks';
 import {

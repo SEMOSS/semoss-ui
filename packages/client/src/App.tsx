@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import axios from 'axios';
 import { HashRouter } from 'react-router-dom';
-import { ThemeProvider, Notification } from '@semoss/ui';
+import { ThemeProvider, Notification } from '@/component-library';
 
 import { Env } from '@/env';
 import { RootStore } from '@/stores';

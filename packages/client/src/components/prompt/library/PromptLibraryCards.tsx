@@ -1,4 +1,4 @@
-import { styled, Grid, Typography } from '@semoss/ui';
+import { styled, Grid, Typography } from '@/component-library';
 import { PromptCard } from './PromptCard';
 import { Prompt } from './examples';
 import { Token } from '../prompt.types';

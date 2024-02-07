@@ -1,7 +1,7 @@
 import { TOKEN_TYPE_TEXT, INPUT_TYPE_DISPLAY } from '../../prompt.constants';
 import { Token } from '../../prompt.types';
 import { StyledTooltip } from '../../prompt.styled';
-import { Typography } from '@semoss/ui';
+import { Typography } from '@/component-library';
 import { PromptTokenChip } from './PromptTokenChip';
 import { PromptTokenTextButton } from './PromptTokenTextButton';
 

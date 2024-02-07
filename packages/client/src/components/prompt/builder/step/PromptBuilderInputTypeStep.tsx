@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Builder, Token } from '../../prompt.types';
 // import { StyledStepPaper } from '../../prompt.styled';
-import { styled, Box, Paper, Stack, Typography } from '@semoss/ui';
+import { styled, Box, Paper, Stack, Typography } from '@/component-library';
 import { INPUT_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { PromptBuilderInputTypeSelection } from './PromptBuilderInputTypeSelection';
 import { usePixel } from '@/hooks';

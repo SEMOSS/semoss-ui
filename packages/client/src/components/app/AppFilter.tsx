@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { List, Typography, styled } from '@semoss/ui';
+import { List, Typography, styled } from '@/component-library';
 import {
     ExpandLess,
     ExpandMore,

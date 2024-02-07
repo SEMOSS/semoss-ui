@@ -10,7 +10,7 @@ import {
     Select,
     Menu,
     Checkbox,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useForm, Controller } from 'react-hook-form';
 import { useRootStore } from '@/hooks';

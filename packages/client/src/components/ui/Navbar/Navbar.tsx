@@ -10,7 +10,7 @@ import {
     Popover,
     Typography,
     IconButton,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useRootStore } from '@/hooks';
 import { THEME } from '@/constants';

@@ -8,7 +8,7 @@ import {
     Breadcrumbs,
     Chip,
     IconButton,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useForm } from 'react-hook-form';
 import { KeyboardArrowRight, Close } from '@mui/icons-material';
 import { AppFormStep } from './save-app.types';

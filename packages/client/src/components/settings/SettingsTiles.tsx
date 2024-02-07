@@ -9,7 +9,7 @@ import {
     Icon,
     Switch,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     Delete,
     Lock,

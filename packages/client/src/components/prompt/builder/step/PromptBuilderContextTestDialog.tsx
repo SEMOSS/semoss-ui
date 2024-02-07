@@ -6,7 +6,7 @@ import {
     Modal,
     Stack,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Close } from '@mui/icons-material';
 import { useRootStore } from '@/hooks';
 

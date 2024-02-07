@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Card } from '@semoss/ui';
+import { styled, Card } from '@/component-library';
 
 import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';

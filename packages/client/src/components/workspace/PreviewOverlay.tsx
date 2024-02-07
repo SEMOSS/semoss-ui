@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { Button, Modal, styled } from '@semoss/ui';
+import { Button, Modal, styled } from '@/component-library';
 import { SerializedState } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
 

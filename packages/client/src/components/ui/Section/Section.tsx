@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComponentPropsWithRef, forwardRef, ForwardedRef } from 'react';
 
-import { styled } from '@semoss/ui';
+import { styled } from '@/component-library';
 
 const StyledSection = styled('section')(({ theme }) => ({
     paddingBottom: theme.spacing(2),

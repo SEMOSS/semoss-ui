@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
+import { useNotification } from '@/component-library';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore } from '@/stores';

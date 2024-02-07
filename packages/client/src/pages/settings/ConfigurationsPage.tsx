@@ -20,7 +20,7 @@ import {
     Typography,
     useNotification,
     Box,
-} from '@semoss/ui';
+} from '@/component-library';
 import Editor from '@monaco-editor/react';
 import google from '../../assets/img/google.png';
 import ms from '../../assets/img/ms.png';

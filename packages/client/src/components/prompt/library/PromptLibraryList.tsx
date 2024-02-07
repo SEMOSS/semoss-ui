@@ -1,4 +1,4 @@
-import { styled, List, Paper } from '@semoss/ui';
+import { styled, List, Paper } from '@/component-library';
 import {
     LIBRARY_PROMPT_TAG_BUSINESS,
     LIBRARY_PROMPT_TAG_COMMUNICATIONS,

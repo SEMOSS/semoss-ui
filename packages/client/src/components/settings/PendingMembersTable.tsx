@@ -12,7 +12,7 @@ import {
     RadioGroup,
     Typography,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Add, Check, Close, ExpandLess, ExpandMore } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 

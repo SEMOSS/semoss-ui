@@ -6,7 +6,7 @@ import {
     Typography,
     Button,
     Stack,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Close } from '@mui/icons-material';
 import { TourStep } from './types';
 import { Popper } from '@mui/material';

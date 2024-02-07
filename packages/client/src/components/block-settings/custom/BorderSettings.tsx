@@ -7,7 +7,7 @@ import {
     TextField,
     ToggleButton,
     ToggleButtonGroup,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';

@@ -1,4 +1,4 @@
-import { styled } from '@semoss/ui';
+import { styled } from '@/component-library';
 import { THEME } from '@/constants';
 import { blue, green } from '@mui/material/colors';
 

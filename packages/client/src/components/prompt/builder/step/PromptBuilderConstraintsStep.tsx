@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Builder, ConstraintSettings } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { styled, Box, Stack, Typography, Switch } from '@semoss/ui';
+import { styled, Box, Stack, Typography, Switch } from '@/component-library';
 
 interface Constraint {
     title: string;

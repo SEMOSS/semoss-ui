@@ -1,7 +1,14 @@
 import { useEffect } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, TextField, Modal, Button, Select } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    TextField,
+    Modal,
+    Button,
+    Select,
+} from '@/component-library';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useBlockSettings, useBlocks } from '@/hooks';

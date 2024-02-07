@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { styled, Button, Stack, Typography } from '@semoss/ui';
+import { styled, Button, Stack, Typography } from '@/component-library';
 import { useNavigate } from 'react-router-dom';
 import { FileUploadOutlined } from '@mui/icons-material';
 

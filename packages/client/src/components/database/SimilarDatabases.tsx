@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Stack, styled } from '@semoss/ui';
+import { Stack, styled } from '@/component-library';
 import { usePixel } from '@/hooks';
 import { PlainEngineCard } from '../engine/GenericEngineCards';
 import { LoadingScreen } from '@/components/ui';

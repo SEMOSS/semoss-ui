@@ -1,4 +1,10 @@
-import { styled, Button, Stack, Typography, useNotification } from '@semoss/ui';
+import {
+    styled,
+    Button,
+    Stack,
+    Typography,
+    useNotification,
+} from '@/component-library';
 
 import { useEngine, usePixel } from '@/hooks';
 

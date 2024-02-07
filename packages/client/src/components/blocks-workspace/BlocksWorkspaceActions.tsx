@@ -6,7 +6,7 @@ import {
     styled,
     Stack,
     ButtonGroup,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Code, Share, Settings, Save, Preview } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';

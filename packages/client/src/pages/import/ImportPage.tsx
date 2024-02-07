@@ -27,7 +27,7 @@ import {
     Typography,
     Box,
     Grid,
-} from '@semoss/ui';
+} from '@/component-library';
 import { stepsOne } from './import.constants';
 
 import { UploadData } from '../../components/import/refactor/UploadData';

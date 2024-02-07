@@ -1,4 +1,4 @@
-import { styled, IconButton } from '@semoss/ui';
+import { styled, IconButton } from '@/component-library';
 import { Close } from '@mui/icons-material';
 
 const StyledCardToolbar = styled('div')(() => ({

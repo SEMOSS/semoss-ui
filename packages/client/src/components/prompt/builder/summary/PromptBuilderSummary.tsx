@@ -3,7 +3,13 @@ import {
     SUMMARY_STEPS,
 } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
-import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
+import {
+    styled,
+    Avatar,
+    Collapse,
+    Typography,
+    List,
+} from '@/component-library';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';

@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { Modal } from '@semoss/ui';
+import { Modal } from '@/component-library';
 
 import { useWorkspace } from '@/hooks';
 

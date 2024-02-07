@@ -20,7 +20,7 @@ import {
     Modal,
     Grid,
     Alert,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';

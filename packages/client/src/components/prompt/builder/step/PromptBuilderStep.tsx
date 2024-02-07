@@ -6,7 +6,7 @@ import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
 } from '../../prompt.constants';
-import { styled, Paper } from '@semoss/ui';
+import { styled, Paper } from '@/component-library';
 import { PromptBuilderConstraintsStep } from './PromptBuilderConstraintsStep';
 import { PromptBuilderInputStep } from './PromptBuilderInputStep';
 import { PromptBuilderInputTypeStep } from './PromptBuilderInputTypeStep';

@@ -27,7 +27,7 @@ import {
     styled,
     Typography,
     LinearProgress,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { LoadingScreen } from '@/components/ui';
 

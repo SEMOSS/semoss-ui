@@ -21,7 +21,7 @@ import {
     Select,
     Stack,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     Delete,
     EditRounded,

@@ -8,7 +8,7 @@ import {
     matchPath,
     useNavigate,
 } from 'react-router-dom';
-import { styled, ToggleTabsGroup } from '@semoss/ui';
+import { styled, ToggleTabsGroup } from '@/component-library';
 
 import { ENGINE_TYPES } from '@/types';
 import { EngineContext } from '@/contexts';

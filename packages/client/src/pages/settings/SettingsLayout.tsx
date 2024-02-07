@@ -15,7 +15,7 @@ import {
     Tooltip,
     Paper,
     IconButton,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';

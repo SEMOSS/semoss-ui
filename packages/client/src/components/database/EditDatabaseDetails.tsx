@@ -7,7 +7,7 @@ import {
     Autocomplete,
     useNotification,
     styled,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 

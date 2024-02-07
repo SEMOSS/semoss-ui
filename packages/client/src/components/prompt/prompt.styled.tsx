@@ -1,4 +1,4 @@
-import { styled, Paper } from '@semoss/ui';
+import { styled, Paper } from '@/component-library';
 import { tooltipClasses, Tooltip, TooltipProps } from '@mui/material';
 
 export const StyledStepPaper = styled(Paper)(({ theme }) => ({

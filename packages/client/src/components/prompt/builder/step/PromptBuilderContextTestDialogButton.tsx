@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, IconButton, Typography } from '@semoss/ui';
+import { Button, IconButton, Typography } from '@/component-library';
 import { PlayArrow, Try } from '@mui/icons-material';
 import { PromptBuilderContextTestDialog } from './PromptBuilderContextTestDialog';
 import { StyledTooltip } from '../../prompt.styled';

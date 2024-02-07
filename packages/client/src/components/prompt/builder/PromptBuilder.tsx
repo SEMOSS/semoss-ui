@@ -17,7 +17,14 @@ import {
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_DATABASE,
 } from '../prompt.constants';
-import { styled, Box, Button, Grid, Paper, useNotification } from '@semoss/ui';
+import {
+    styled,
+    Box,
+    Button,
+    Grid,
+    Paper,
+    useNotification,
+} from '@/component-library';
 import { PromptBuilderSummary } from './summary';
 import { useRootStore } from '@/hooks';
 import { PromptBuilderStep } from './step';

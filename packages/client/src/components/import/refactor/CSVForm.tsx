@@ -9,7 +9,7 @@ import {
     Menu,
     Autocomplete,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useNavigate } from 'react-router-dom';
 import { ImportFormComponent } from './formTypes';
 import { DataFormTable } from './DataFormTable';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Editor from '@monaco-editor/react';
-import { styled, Stack, Button } from '@semoss/ui';
+import { styled, Stack, Button } from '@/component-library';
 
 import { useBlockSettings } from '@/hooks';
 

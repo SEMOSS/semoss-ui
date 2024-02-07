@@ -13,7 +13,7 @@ import {
     useNotification,
     CircularProgress,
     Tooltip,
-} from '@semoss/ui';
+} from '@/component-library';
 import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
 
 import { useStepper, useRootStore } from '@/hooks';

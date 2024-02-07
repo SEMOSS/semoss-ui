@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, TextField, Modal, Button } from '@semoss/ui';
+import { Stack, TextField, Modal, Button } from '@/component-library';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useBlocks } from '@/hooks';

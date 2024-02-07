@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack, Select, Menu } from '@semoss/ui';
-import { FileDropzone } from '@semoss/ui';
+import { Button, TextField, Stack, Select, Menu } from '@/component-library';
+import { FileDropzone } from '@/component-library';
 import { ImportFormComponent } from './formTypes';
 import { Metamodel } from '@/components/metamodel';
 import { useRootStore } from '@/hooks';

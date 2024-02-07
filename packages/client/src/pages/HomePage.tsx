@@ -15,7 +15,7 @@ import {
     ToggleButton,
     ToggleTabsGroup,
     TextField,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useNavigate } from 'react-router-dom';
 

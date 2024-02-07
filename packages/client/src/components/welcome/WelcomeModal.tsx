@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { styled, Card, Modal, Stack, Typography, List } from '@semoss/ui';
+import {
+    styled,
+    Card,
+    Modal,
+    Stack,
+    Typography,
+    List,
+} from '@/component-library';
 import { WelcomeStepToolbar } from './WelcomeStepToolbar';
 import { WelcomeStepActions } from './WelcomeStepActions';
 import WelcomeSplash from '@/assets/img/welcome-splash.png';

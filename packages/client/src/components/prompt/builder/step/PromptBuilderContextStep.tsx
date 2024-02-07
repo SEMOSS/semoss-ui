@@ -2,7 +2,14 @@ import { useMemo, useState } from 'react';
 import { Builder } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
 import { createFilterOptions, Autocomplete } from '@mui/material';
-import { styled, Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
+import {
+    styled,
+    Box,
+    Grid,
+    Stack,
+    TextField,
+    Typography,
+} from '@/component-library';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
 import { usePixel } from '@/hooks';
 import { PromptBuilderContextTestDialogButton } from './PromptBuilderContextTestDialogButton';

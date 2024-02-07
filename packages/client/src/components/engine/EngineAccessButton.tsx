@@ -11,7 +11,7 @@ import {
     RadioGroup,
     Stack,
     TextArea,
-} from '@semoss/ui';
+} from '@/component-library';
 import { EditRounded, RemoveRedEyeRounded, Add } from '@mui/icons-material';
 import { PERMISSION_DESCRIPTION_MAP } from '@/components/settings/member-permissions.constants';
 

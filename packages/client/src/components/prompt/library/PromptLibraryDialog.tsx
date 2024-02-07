@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Grid, IconButton, Modal, useNotification } from '@semoss/ui';
+import { Grid, IconButton, Modal, useNotification } from '@/component-library';
 import { PromptLibraryCards } from './PromptLibraryCards';
 import { PromptLibraryList } from './PromptLibraryList';
 import { PromptExamples } from './examples';

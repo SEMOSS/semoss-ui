@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { styled, useNotification } from '@semoss/ui';
+import { styled, useNotification } from '@/component-library';
 
 import { useRootStore } from '@/hooks';
 import { WorkspaceStore } from '@/stores';

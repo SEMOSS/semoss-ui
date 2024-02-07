@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { TextField, ToggleButton, ToggleButtonGroup } from '@semoss/ui';
+import {
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+} from '@/component-library';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';

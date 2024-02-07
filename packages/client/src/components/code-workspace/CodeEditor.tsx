@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Refresh } from '@mui/icons-material';
-import { styled, ThemeProvider, IconButton } from '@semoss/ui';
+import { styled, ThemeProvider, IconButton } from '@/component-library';
 
 import { useWorkspace } from '@/hooks';
 

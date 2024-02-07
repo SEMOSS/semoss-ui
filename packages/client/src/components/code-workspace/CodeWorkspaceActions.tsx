@@ -1,5 +1,11 @@
 import { observer } from 'mobx-react-lite';
-import { Button, IconButton, useNotification, styled, Stack } from '@semoss/ui';
+import {
+    Button,
+    IconButton,
+    useNotification,
+    styled,
+    Stack,
+} from '@/component-library';
 import { Code, Download, Share, Settings } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore } from '@/hooks';

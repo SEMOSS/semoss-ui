@@ -7,7 +7,7 @@ import {
     useNotification,
     Stack,
     Alert,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useBlocks } from '@/hooks';
 import { ContentCopyOutlined, ErrorOutlined } from '@mui/icons-material';

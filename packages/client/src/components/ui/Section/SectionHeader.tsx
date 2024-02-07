@@ -1,5 +1,5 @@
 import { ComponentPropsWithRef, forwardRef, ForwardedRef } from 'react';
-import { styled, Typography } from '@semoss/ui';
+import { styled, Typography } from '@/component-library';
 
 const StyledSectionHeader = styled('div')(({ theme }) => ({
     display: 'flex',

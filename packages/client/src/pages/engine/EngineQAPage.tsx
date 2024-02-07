@@ -10,7 +10,7 @@ import {
     Typography,
     Paper,
     CircularProgress,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useForm, Controller } from 'react-hook-form';
 import { Sidebar } from '@/components/settings';
 import { useEngine, useRootStore } from '@/hooks';

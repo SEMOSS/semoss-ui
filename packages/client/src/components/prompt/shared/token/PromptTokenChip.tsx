@@ -1,5 +1,5 @@
 import { blue, green } from '@mui/material/colors';
-import { styled, Chip } from '@semoss/ui';
+import { styled, Chip } from '@/component-library';
 import { THEME } from '@/constants';
 
 interface ChipRootProps {

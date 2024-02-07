@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
+import { styled, Stack, Icon, Divider, Paper } from '@/component-library';
 import { DataObject, Layers, Widgets } from '@mui/icons-material';
 import { useState } from 'react';
 

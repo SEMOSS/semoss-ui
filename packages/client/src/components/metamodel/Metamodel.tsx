@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
 import Panel from 'react-flow-renderer';
-import { Button, styled } from '@semoss/ui';
+import { Button, styled } from '@/component-library';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';

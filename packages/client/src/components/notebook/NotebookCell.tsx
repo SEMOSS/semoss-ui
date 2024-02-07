@@ -12,7 +12,7 @@ import {
     useNotification,
     IconButton,
     Divider,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     ContentCopy,
     DeleteOutlined,

@@ -1,4 +1,4 @@
-import { styled } from '@semoss/ui';
+import { styled } from '@/component-library';
 import { useNavigate } from 'react-router-dom';
 
 import { SettingsContext } from '@/contexts';

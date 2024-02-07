@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { styled, ToggleTabsGroup, Container } from '@semoss/ui';
+import { styled, ToggleTabsGroup, Container } from '@/component-library';
 
 import { useWorkspace } from '@/hooks';
 import {

@@ -1,4 +1,4 @@
-import { Table, Box, IconButton } from '@semoss/ui';
+import { Table, Box, IconButton } from '@/component-library';
 import { HighlightOffRounded, EditRounded } from '@mui/icons-material/';
 
 export const DataFormTable = (props) => {

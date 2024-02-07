@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { Builder, Token } from '../../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
-import { Box, Typography } from '@semoss/ui';
+import { Box, Typography } from '@/component-library';
 import { PromptSetToken } from '../../shared';
 
 export const PromptBuilderInputStep = (props: {

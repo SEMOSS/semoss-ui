@@ -1,5 +1,5 @@
 import React from 'react';
-import { styled, Box, useNotification } from '@semoss/ui';
+import { styled, Box, useNotification } from '@/component-library';
 import { useNavigate } from 'react-router-dom';
 import { ImportForm } from '@/components/import';
 import { useRootStore } from '@/hooks';

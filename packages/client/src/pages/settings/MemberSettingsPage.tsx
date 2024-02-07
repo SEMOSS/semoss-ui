@@ -24,7 +24,7 @@ import {
     TextField,
     Select,
     Switch,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useForm, useFormState, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useRootStore, useAPI, useSettings } from '@/hooks';

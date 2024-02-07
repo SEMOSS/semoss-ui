@@ -14,7 +14,7 @@ import {
     ToggleButtonGroup,
     Grid,
     List,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     ExpandLess,
     ExpandMore,

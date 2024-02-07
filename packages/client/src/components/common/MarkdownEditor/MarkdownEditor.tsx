@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Container, styled, ToggleTabsGroup } from '@semoss/ui';
+import { Container, styled, ToggleTabsGroup } from '@/component-library';
 import Editor from '@monaco-editor/react';
 
 import { Markdown } from '../Markdown';

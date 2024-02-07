@@ -1,4 +1,4 @@
-import { FileDropzone } from '@semoss/ui';
+import { FileDropzone } from '@/component-library';
 
 export const UploadData = (props) => {
     const { selectedValues, setSelectedValues } = props;

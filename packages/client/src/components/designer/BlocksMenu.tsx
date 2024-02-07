@@ -10,7 +10,7 @@ import {
     Stack,
     TextField,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Search, SearchOff } from '@mui/icons-material';
 import {
     BLOCK_TYPES,

@@ -10,7 +10,7 @@ import {
     IconButton,
     Typography,
     styled,
-} from '@semoss/ui';
+} from '@/component-library';
 import { AccessTimeFilled, MoreVert } from '@mui/icons-material';
 import { SEMOSS } from '@/assets/img/SEMOSS';
 

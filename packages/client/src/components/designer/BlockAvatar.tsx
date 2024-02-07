@@ -1,4 +1,4 @@
-import { styled, Avatar } from '@semoss/ui';
+import { styled, Avatar } from '@/component-library';
 
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
     width: theme.spacing(4),

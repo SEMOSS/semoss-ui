@@ -5,7 +5,7 @@ import {
     styled,
     Typography,
     CustomPaletteOptions,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import {
     AutoGraph,

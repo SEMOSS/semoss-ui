@@ -1,5 +1,11 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Container, Button, CircularProgress } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    Container,
+    Button,
+    CircularProgress,
+} from '@/component-library';
 
 import { useBlocks } from '@/hooks';
 import { NotebookCell } from './NotebookCell';

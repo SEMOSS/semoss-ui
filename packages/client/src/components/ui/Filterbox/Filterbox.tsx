@@ -11,7 +11,7 @@ import {
     Grid,
     styled,
     Divider,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';

@@ -1,6 +1,6 @@
 import { Builder, Token } from '../../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
-import { Box, Typography } from '@semoss/ui';
+import { Box, Typography } from '@/component-library';
 import { PromptPreview } from '../../shared';
 
 export const PromptBuilderPreviewStep = (props: {

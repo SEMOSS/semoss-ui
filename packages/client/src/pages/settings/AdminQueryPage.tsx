@@ -10,7 +10,7 @@ import {
     Select,
     Stack,
     TextArea,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useRootStore, useSettings } from '@/hooks';
 

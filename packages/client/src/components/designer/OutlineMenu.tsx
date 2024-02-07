@@ -11,7 +11,7 @@ import {
     TreeView,
     Typography,
     styled,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useBlocks, useDesigner } from '@/hooks';
 import {
     ChevronRight,

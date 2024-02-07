@@ -12,7 +12,7 @@ import {
     TextField,
     Stack,
     FileDropzone,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import {
     Person,

@@ -8,7 +8,7 @@ import {
     Search,
     styled,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 

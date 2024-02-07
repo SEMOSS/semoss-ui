@@ -19,7 +19,7 @@ import {
     Box,
     ButtonGroup,
     Modal,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useRootStore } from '@/hooks';
 import MS from '@/assets/img/ms.png';

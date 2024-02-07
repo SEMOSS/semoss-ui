@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNotification, styled } from '@semoss/ui';
+import { useNotification, styled } from '@/component-library';
 
 import { useWorkspace, useRootStore } from '@/hooks';
 import { AppEditor } from '@/components/common';

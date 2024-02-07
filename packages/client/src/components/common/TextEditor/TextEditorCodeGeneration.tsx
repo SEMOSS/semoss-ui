@@ -10,7 +10,7 @@ import {
     Stack,
     Select,
     Menu,
-} from '@semoss/ui';
+} from '@/component-library';
 import { AutoAwesome, ContentCopyOutlined } from '@mui/icons-material/';
 
 import { usePixel, useRootStore } from '@/hooks';

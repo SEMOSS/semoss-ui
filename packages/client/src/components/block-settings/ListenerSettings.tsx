@@ -5,7 +5,7 @@ import {
     Button,
     List,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useBlockSettings, useBlocks, useWorkspace } from '@/hooks';
 import { ACTIONS_DISPLAY, BlockDef, ListenerActions } from '@/stores';

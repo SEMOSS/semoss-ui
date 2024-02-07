@@ -1,7 +1,13 @@
 import { autorun } from 'mobx';
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNotification, styled, Typography, Stack, Icon } from '@semoss/ui';
+import {
+    useNotification,
+    styled,
+    Typography,
+    Stack,
+    Icon,
+} from '@/component-library';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore, WorkspaceStore } from '@/stores';

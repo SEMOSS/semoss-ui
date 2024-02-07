@@ -20,7 +20,7 @@ import {
     IconButton,
     useNotification,
     Divider,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { useAPI, useRootStore, useSettings } from '@/hooks';
 import {

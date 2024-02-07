@@ -12,7 +12,7 @@ import {
     Menu,
     useNotification,
     Icon,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useBlocks, useWorkspace } from '@/hooks';
 import {
     Add,

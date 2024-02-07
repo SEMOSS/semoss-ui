@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { styled, Stack, Typography } from '@semoss/ui';
+import { styled, Stack, Typography } from '@/component-library';
 
 const StyledTypography = styled(Typography)(() => ({
     width: '30%',

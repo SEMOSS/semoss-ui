@@ -4,7 +4,13 @@ import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
-import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
+import {
+    IconButton,
+    Typography,
+    Tabs,
+    styled,
+    Container,
+} from '@/component-library';
 
 import Editor from '@monaco-editor/react';
 

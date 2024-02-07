@@ -9,7 +9,7 @@ import {
     Table,
     IconButton,
     Icon,
-} from '@semoss/ui';
+} from '@/component-library';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
 
 import { usePixel, useEngine, useRootStore } from '@/hooks';

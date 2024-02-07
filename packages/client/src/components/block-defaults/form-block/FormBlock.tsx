@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 import { Slot } from '@/components/blocks';
-import { Button } from '@semoss/ui';
+import { Button } from '@/component-library';
 
 export interface FormBlockDef extends BlockDef<'form'> {
     widget: 'form';

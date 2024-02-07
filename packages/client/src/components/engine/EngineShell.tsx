@@ -10,7 +10,7 @@ import {
     Tooltip,
     useNotification,
     CircularProgress,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import { Env } from '@/env';
 import { useRootStore, useEngine, usePixel } from '@/hooks';

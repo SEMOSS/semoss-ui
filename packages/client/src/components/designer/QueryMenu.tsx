@@ -11,7 +11,7 @@ import {
     InputAdornment,
     Stack,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useBlocks, useWorkspace } from '@/hooks';
 import { Add, Search } from '@mui/icons-material';
 

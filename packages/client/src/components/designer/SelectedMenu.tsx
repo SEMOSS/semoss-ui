@@ -10,7 +10,7 @@ import {
     Collapse,
     useNotification,
     Tooltip,
-} from '@semoss/ui';
+} from '@/component-library';
 import { useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';

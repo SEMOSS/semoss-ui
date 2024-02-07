@@ -7,7 +7,7 @@ import {
     Stack,
     Typography,
     styled,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import {
     Person,

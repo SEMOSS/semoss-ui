@@ -10,7 +10,7 @@ import {
     useNotification,
     Typography,
     Stack,
-} from '@semoss/ui';
+} from '@/component-library';
 import { resolvePath } from 'react-router-dom';
 import { ContentCopyOutlined, WarningAmberOutlined } from '@mui/icons-material';
 import { useRootStore } from '@/hooks';

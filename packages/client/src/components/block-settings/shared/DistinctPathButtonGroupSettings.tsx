@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, ButtonGroup } from '@semoss/ui';
+import { Stack, Typography, ButtonGroup } from '@/component-library';
 import { Paths } from '@/types';
 import { Block, BlockDef } from '@/stores';
 import { DistinctPathButtonGroupButton } from './DistinctPathButtonGroupButton';

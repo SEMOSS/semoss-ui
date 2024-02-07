@@ -1,4 +1,4 @@
-import { Chip, Stack, styled, Typography } from '@semoss/ui';
+import { Chip, Stack, styled, Typography } from '@/component-library';
 
 import { formatName } from '@/utils';
 

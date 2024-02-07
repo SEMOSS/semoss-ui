@@ -1,4 +1,4 @@
-import { Autocomplete, TextField } from '@semoss/ui';
+import { Autocomplete, TextField } from '@/component-library';
 import { Control, Controller } from 'react-hook-form';
 import { ADD_APP_FORM_FIELD_TAGS } from './save-app.constants';
 

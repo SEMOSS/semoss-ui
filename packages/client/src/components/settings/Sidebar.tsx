@@ -8,7 +8,7 @@ import {
     Tooltip,
     List,
     MenuItem,
-} from '@semoss/ui';
+} from '@/component-library';
 import { EditOutlined } from '@mui/icons-material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 

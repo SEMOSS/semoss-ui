@@ -6,7 +6,7 @@ import {
     LinearProgress,
     Stack,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Controller, useForm } from 'react-hook-form';
 import { SerializedState } from '@/stores';
 import { useRootStore } from '@/hooks';

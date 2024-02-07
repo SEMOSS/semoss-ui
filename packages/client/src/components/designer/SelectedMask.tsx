@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Typography, styled } from '@semoss/ui';
+import { Typography, styled } from '@/component-library';
 
 import {
     ActionMessages,

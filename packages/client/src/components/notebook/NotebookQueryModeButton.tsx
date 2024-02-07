@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
+import { styled, Button, Menu, MenuProps, List } from '@/component-library';
 import { ActionMessages, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { AutoMode, AdsClick, KeyboardArrowDown } from '@mui/icons-material';

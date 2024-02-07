@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
-import { Divider } from '@semoss/ui';
+import { Divider } from '@/component-library';
 
 export interface DividerBlockDef extends BlockDef<'divider'> {
     widget: 'divider';

@@ -10,7 +10,7 @@ import {
     Avatar,
     IconButton,
     Link,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     AccessTime,
     BookmarkBorderOutlined,

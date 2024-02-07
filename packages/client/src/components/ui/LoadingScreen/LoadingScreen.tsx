@@ -1,5 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { Backdrop, CircularProgress, Typography, Stack } from '@semoss/ui';
+import {
+    Backdrop,
+    CircularProgress,
+    Typography,
+    Stack,
+} from '@/component-library';
 
 import { LoadingScreenContext } from './LoadingScreenContext';
 

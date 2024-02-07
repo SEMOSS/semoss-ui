@@ -11,7 +11,7 @@ import {
     Stack,
     Menu,
     useNotification,
-} from '@semoss/ui';
+} from '@/component-library';
 import { AccessTime, MoreVert, Person } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { Env } from '@/env';

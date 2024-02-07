@@ -8,7 +8,7 @@ import {
     TextField,
     Tooltip,
     Typography,
-} from '@semoss/ui';
+} from '@/component-library';
 import { Fade } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
 import {

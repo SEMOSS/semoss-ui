@@ -20,7 +20,7 @@ import {
     styled,
     Typography,
     ThemeProvider,
-} from '@semoss/ui';
+} from '@/component-library';
 
 import {
     ExpandMore,

@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
+import {
+    styled,
+    useNotification,
+    Button,
+    Paper,
+    Typography,
+} from '@/component-library';
 import Editor from '@monaco-editor/react';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';

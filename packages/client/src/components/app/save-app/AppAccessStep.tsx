@@ -1,4 +1,4 @@
-import { styled, Box, Switch, Stack, Typography } from '@semoss/ui';
+import { styled, Box, Switch, Stack, Typography } from '@/component-library';
 import { Control, Controller } from 'react-hook-form';
 import { ADD_APP_FORM_FIELD_IS_GLOBAL } from './save-app.constants';
 

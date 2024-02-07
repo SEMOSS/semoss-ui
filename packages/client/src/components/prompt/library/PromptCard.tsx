@@ -8,7 +8,7 @@ import {
     Stack,
     Typography,
     LinearProgress,
-} from '@semoss/ui';
+} from '@/component-library';
 import {
     Bookmark,
     BookmarkBorderOutlined,
