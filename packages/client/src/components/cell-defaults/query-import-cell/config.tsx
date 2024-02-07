@@ -10,7 +10,7 @@ export interface QueryImportCellDef extends CellDef<'query-import'> {
         databaseId: string;
 
         /** Output frame type */
-        frameType: 'GRID' | '';
+        frameType: 'GRID' | 'R' | 'PY';
 
         /** Ouput variable name */
         variableName: string;
@@ -26,7 +26,7 @@ export const QueryImportCell: Cell<QueryImportCellDef> = {
     parameters: {
         databaseId: '',
         frameType: 'GRID',
-        variableName: '',
+        variableName: 'databaseOutput',
         selectQuery: '',
     },
     view: {

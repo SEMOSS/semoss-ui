@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react';
-import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
+import { styled, Button, Menu, MenuProps, List, TextField } from '@semoss/ui';
 import { ActionMessages, CellComponent } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
 import { QueryImportCellDef } from './config';
-import { AccountTree, KeyboardArrowDown } from '@mui/icons-material';
+import {
+    AccountTree,
+    CropFree,
+    DriveFileRenameOutline,
+    KeyboardArrowDown,
+} from '@mui/icons-material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
     border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledButtonLabel = styled('span')(({ theme }) => ({
-    width: theme.spacing(8),
+const StyledButtonLabel = styled('span', {
+    shouldForwardProp: (prop) => prop !== 'width',
+})<{ width: number }>(({ theme, width }) => ({
+    width: theme.spacing(width),
     display: 'block',
     textAlign: 'start',
     overflow: 'hidden',
@@ -36,11 +43,29 @@ const StyledMenu = styled((props: MenuProps) => (
     },
 }));
 
+const FrameTypes = {
+    GRID: {
+        value: 'GRID',
+        display: 'Grid',
+    },
+    R: {
+        value: 'R',
+        display: 'R',
+    },
+    PY: {
+        value: 'PY',
+        display: 'Python',
+    },
+};
+
 export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
     props,
 ) => {
     const { cell } = props;
     const { state } = useBlocks();
+    const [menuType, setMenuType] = useState<'database' | 'frame' | 'variable'>(
+        null,
+    );
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const handleClose = () => {
@@ -96,49 +121,135 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                 size="small"
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
                     event.preventDefault();
+                    setMenuType('database');
                     setAnchorEl(event.currentTarget);
                 }}
                 startIcon={<AccountTree />}
                 endIcon={<KeyboardArrowDown />}
             >
-                <StyledButtonLabel>
+                <StyledButtonLabel width={8}>
                     {cfgLibraryDatabases.display[
                         cell.parameters.databaseId as string
                     ] ?? ''}
                 </StyledButtonLabel>
             </StyledButton>
+            <StyledButton
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                variant="outlined"
+                disableElevation
+                disabled={cell.isLoading}
+                size="small"
+                onClick={(event: React.MouseEvent<HTMLElement>) => {
+                    event.preventDefault();
+                    setMenuType('frame');
+                    setAnchorEl(event.currentTarget);
+                }}
+                startIcon={<CropFree />}
+                endIcon={<KeyboardArrowDown />}
+            >
+                <StyledButtonLabel width={6}>
+                    {FrameTypes[cell.parameters.frameType]?.display ?? ''}
+                </StyledButtonLabel>
+            </StyledButton>
+            <StyledButton
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                variant="outlined"
+                disableElevation
+                disabled={cell.isLoading}
+                size="small"
+                onClick={(event: React.MouseEvent<HTMLElement>) => {
+                    event.preventDefault();
+                    setMenuType('variable');
+                    setAnchorEl(event.currentTarget);
+                }}
+                startIcon={<DriveFileRenameOutline />}
+            >
+                <StyledButtonLabel width={6}>
+                    {cell.parameters.variableName ?? ''}
+                </StyledButtonLabel>
+            </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                <List disablePadding dense>
-                    {Array.from(cfgLibraryDatabases.ids, (databaseId) => (
-                        <List.Item
-                            disablePadding
-                            key={`${cell.id}-${databaseId}`}
-                        >
-                            <List.ItemButton
-                                onClick={() => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.databaseId',
-                                            value: databaseId,
-                                        },
-                                    });
-                                    handleClose();
-                                }}
+                {menuType === 'database' &&
+                    Array.from(cfgLibraryDatabases.ids, (databaseId) => (
+                        <List disablePadding dense>
+                            <List.Item
+                                disablePadding
+                                key={`${cell.id}-${databaseId}`}
                             >
-                                <List.ItemText
-                                    primary={
-                                        cfgLibraryDatabases.display[
-                                            databaseId
-                                        ] ?? ''
-                                    }
-                                />
-                            </List.ItemButton>
-                        </List.Item>
+                                <List.ItemButton
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.databaseId',
+                                                value: databaseId,
+                                            },
+                                        });
+                                        handleClose();
+                                    }}
+                                >
+                                    <List.ItemText
+                                        primary={
+                                            cfgLibraryDatabases.display[
+                                                databaseId
+                                            ] ?? ''
+                                        }
+                                    />
+                                </List.ItemButton>
+                            </List.Item>
+                        </List>
                     ))}
-                </List>
+                {menuType === 'frame' &&
+                    Array.from(Object.values(FrameTypes), (frameType) => (
+                        <List disablePadding dense>
+                            <List.Item
+                                disablePadding
+                                key={`${cell.id}-${frameType}`}
+                            >
+                                <List.ItemButton
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.frameType',
+                                                value: frameType.value,
+                                            },
+                                        });
+                                        handleClose();
+                                    }}
+                                >
+                                    <List.ItemText
+                                        primary={frameType.display}
+                                    />
+                                </List.ItemButton>
+                            </List.Item>
+                        </List>
+                    ))}
+                {menuType === 'variable' && (
+                    <TextField
+                        value={cell.parameters.variableName}
+                        size="small"
+                        label="Output Variable Name"
+                        onChange={(value) => {
+                            state.dispatch({
+                                message: ActionMessages.UPDATE_CELL,
+                                payload: {
+                                    queryId: cell.query.id,
+                                    cellId: cell.id,
+                                    path: 'parameters.variableName',
+                                    value: value,
+                                },
+                            });
+                            handleClose();
+                        }}
+                    />
+                )}
             </StyledMenu>
         </>
     );
