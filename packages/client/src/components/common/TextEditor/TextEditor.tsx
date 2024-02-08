@@ -503,56 +503,42 @@ export const TextEditor = (props: TextEditorProps) => {
         contextMenuGroupId: '1_modification',
         contextMenuOrder: 1,
         id: 'prompt-LLM',
-
-        // text that appears in dropdown
         label: 'Generate Code',
-
-        // Key binding options - may want to change or remove
         keybindings: [
             monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
         ],
 
-        // function that runs when action is triggered
         run: async (editor) => {
             const selection = editor.getSelection();
             const selectedText = editor.getModel().getValueInRange(selection);
 
             const LLMReturnText = await promptLLM(
-                `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`,
+                `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
             );
 
-            editor.updateOptions({ readOnly: false });
-            editor.getDomNode().style.opacity = '1';
-
-            if (selectedText.trim() !== '') {
-                const insertPosition = {
-                    lineNumber: selection.endLineNumber + 2,
-                    column: 1,
-                };
-
-                editor.executeEdits('custom-action', [
-                    {
-                        range: new monaco.Range(
-                            insertPosition.lineNumber,
-                            insertPosition.column,
-                            insertPosition.lineNumber,
-                            insertPosition.column,
-                        ),
-                        text: `\n\n${LLMReturnText}\n`,
-                        forceMoveMarkers: true,
-                    },
-                ]);
-
-                editor.setSelection(
-                    new monaco.Range(
-                        insertPosition.lineNumber + 1,
+            editor.executeEdits('custom-action', [
+                {
+                    range: new monaco.Range(
+                        selection.endLineNumber + 2,
                         1,
-                        insertPosition.lineNumber +
-                            LLMReturnText.split('\n').length,
+                        selection.endLineNumber + 2,
                         1,
                     ),
-                );
-            }
+                    text: `\n\n${LLMReturnText}\n`,
+                    forceMoveMarkers: true,
+                },
+            ]);
+
+            editor.setSelection(
+                new monaco.Range(
+                    selection.endLineNumber + 3,
+                    1,
+                    selection.endLineNumber +
+                        2 +
+                        LLMReturnText.split('\n').length,
+                    1,
+                ),
+            );
         },
     };
 
@@ -560,11 +546,11 @@ export const TextEditor = (props: TextEditorProps) => {
      * Handler that adds new LLM dropdown action to editor when the editor mounts
      * @param monacoInstance
      */
-    const editorOnMountHandler: OnMount = (editor, monacoInstance) => {
+    const editorOnMountHandler: OnMount = (_editor, monacoInstance) => {
         // prevents redundant additions of new dropdown action
         if (LLMActionAdded == false) {
-            monacoInstance.editor.addEditorAction(executeAction);
             setLLMActionAdded(true);
+            monacoInstance.editor.addEditorAction(executeAction);
         }
     };
 
