@@ -251,7 +251,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                         </List>
                     ))}
                 {menuType === 'variable' && (
-                    <Stack direction="row" alignItems="center" padding="1.5">
+                    <Stack direction="row" alignItems="center" padding={1.5}>
                         <TextField
                             value={frameVariableName}
                             size="small"
