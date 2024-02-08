@@ -23,12 +23,9 @@ import { useRootStore } from '@/hooks';
 import { PromptBuilderStep } from './step';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(4),
-    paddingBottom: 0,
-    margin: theme.spacing(1),
+    padding: theme.spacing(2),
+    margin: `${theme.spacing(1)} 0`,
     height: '100%',
-    maxHeight: '100%',
-    overflow: 'scroll',
 }));
 
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -36,6 +33,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
     justifyContent: 'flex-end',
     marginRight: theme.spacing(1),
     marginTop: theme.spacing(4),
+    gap: theme.spacing(1),
 }));
 
 const initialBuilder: Builder = {
@@ -218,7 +216,6 @@ export const PromptBuilder = () => {
                     <Button
                         color="primary"
                         variant="text"
-                        sx={{ marginRight: '8px' }}
                         onClick={backButtonAction}
                     >
                         Back

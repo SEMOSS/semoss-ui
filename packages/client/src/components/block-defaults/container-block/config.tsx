@@ -20,10 +20,10 @@ export const config: BlockConfig<ContainerBlockDef> = {
         style: {
             display: 'flex',
             flexDirection: 'column',
-            flexWrap: 'wrap',
             padding: '4px',
             gap: '8px',
             overflow: 'hidden',
+            flexWrap: 'wrap',
         },
     },
     listeners: {},

@@ -13,11 +13,11 @@ export const StyledStepPaper = styled(Paper)(({ theme }) => ({
 
 export const StyledBox = styled(Box)(({ theme }) => ({
     padding: theme.spacing(4),
-    paddingButton: theme.spacing(2),
+    paddingBottom: theme.spacing(3),
 }));
 
 export const StyledStack = styled(Stack)(({ theme }) => ({
-    padding: `${theme.spacing(2)} ${theme.spacing(4)}`,
+    padding: `${theme.spacing(1)} ${theme.spacing(4)}`,
     maxHeight: '480px',
     overflowY: 'scroll',
 }));

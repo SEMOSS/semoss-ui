@@ -3,10 +3,12 @@ import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
 import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import { Navbar } from '@/components/ui';
 
 import { ENGINE_ROUTES } from '@/pages/engine';
+import { ErrorPage } from './ErrorPage';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -77,7 +79,7 @@ export const NavigatorLayout = observer(() => {
     const { pathname } = useLocation();
 
     return (
-        <>
+        <ErrorBoundary fallback={<ErrorPage />}>
             <Navbar />
             <StyledSidebar>
                 <Tooltip title={`Open App Library`} placement="right">
@@ -127,6 +129,6 @@ export const NavigatorLayout = observer(() => {
             <StyledContent>
                 <Outlet />
             </StyledContent>
-        </>
+        </ErrorBoundary>
     );
 });
