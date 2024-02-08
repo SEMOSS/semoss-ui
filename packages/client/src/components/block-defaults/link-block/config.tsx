@@ -2,6 +2,7 @@ import { BlockConfig } from '@/stores';
 import { InputSettings } from '@/components/block-settings';
 
 import {
+    buildBorderSection,
     buildDimensionsSection,
     buildTypographySection,
 } from '../block-defaults.shared';
@@ -17,11 +18,13 @@ export const config: BlockConfig<LinkBlockDef> = {
     type: BLOCK_TYPE_ACTION,
     data: {
         style: {
-            textDecoration: 'none',
+            // textDecoration: 'none',
             display: 'flex',
             flexDirection: 'column',
             padding: '4px',
             gap: '8px',
+            width: '100%',
+            height: '100%',
         },
         src: '',
     },
@@ -83,5 +86,6 @@ export const config: BlockConfig<LinkBlockDef> = {
         },
         buildDimensionsSection(),
         buildTypographySection(),
+        buildBorderSection(),
     ],
 };

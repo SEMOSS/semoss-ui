@@ -13,7 +13,6 @@ export const DefaultStyles: CSSProperties = {
     padding: '4px',
     whiteSpace: 'pre-line',
     textOverflow: 'ellipsis',
-    overflow: 'auto',
 };
 
 // export the config for the block

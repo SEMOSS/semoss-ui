@@ -23,7 +23,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
             padding: '4px',
             gap: '8px',
             overflow: 'hidden',
-            // flexWrap: 'wrap',
+            flexWrap: 'wrap',
         },
     },
     listeners: {},

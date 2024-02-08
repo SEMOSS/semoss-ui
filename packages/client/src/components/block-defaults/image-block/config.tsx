@@ -17,8 +17,9 @@ export const config: BlockConfig<ImageBlockDef> = {
             alignItems: 'center',
             width: '100%',
             height: '200px',
-            backgroundSize: 'cover',
+            backgroundSize: 'contain',
             backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center center',
         },
         src: '',
         title: '',
@@ -79,13 +80,13 @@ export const config: BlockConfig<ImageBlockDef> = {
                                     value: 'cover',
                                     icon: AspectRatio,
                                     title: 'cover',
-                                    isDefault: true,
+                                    isDefault: false,
                                 },
                                 {
                                     value: 'contain',
                                     icon: ImageAspectRatio,
                                     title: 'contain',
-                                    isDefault: false,
+                                    isDefault: true,
                                 },
                             ]}
                         />
