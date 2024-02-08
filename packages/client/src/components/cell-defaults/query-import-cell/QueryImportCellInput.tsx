@@ -80,7 +80,7 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
             payload: {
                 queryId: cell.query.id,
                 cellId: cell.id,
-                path: 'parameters.code',
+                path: 'parameters.selectQuery',
                 value: newValue,
             },
         });

@@ -33,6 +33,9 @@ const StyledMenu = styled((props: MenuProps) => (
     '& .MuiPaper-root': {
         marginTop: theme.spacing(1),
     },
+    '.MuiList-root': {
+        padding: 0,
+    },
 }));
 
 const StyledMenuItem = styled(Menu.Item)(() => ({

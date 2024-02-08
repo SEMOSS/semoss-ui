@@ -23,7 +23,7 @@ import {
     KeyboardArrowRight,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
-import { useBlocks, useWorkspace } from '@/hooks';
+import { useBlocks } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
 
 const StyledCard = styled(Card, {
@@ -32,7 +32,7 @@ const StyledCard = styled(Card, {
     border: isCardCellSelected
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
-    overflow: 'visible',
+    overflowY: 'visible',
     flexGrow: 1,
 }));
 
@@ -217,6 +217,17 @@ export const NotebookCell = observer(
             });
         }, [cellType ? cellType.view.input : null, contentExpanded]);
 
+        // render the details
+        const renderedDetails = useMemo(() => {
+            if (!cellType || !cellType.view.details) {
+                return;
+            }
+
+            return createElement(observer(cellType.view.details), {
+                cell: cell,
+            });
+        }, [cellType ? cellType.view.details : null]);
+
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
         ) => {
@@ -329,6 +340,7 @@ export const NotebookCell = observer(
                         }
                     >
                         <StyleCardContent>
+                            {renderedDetails}
                             <Stack
                                 id={`notebook-cell-content-${queryId}-${cellId}`}
                                 direction="row"

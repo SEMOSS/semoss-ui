@@ -194,6 +194,8 @@ export interface Cell<D extends CellDef = CellDef> {
 
         /** Input view of the cell */
         input: CellComponent<D>;
+
+        details?: CellComponent<D>;
     };
 
     /** Method that to convert the cell into pixel */

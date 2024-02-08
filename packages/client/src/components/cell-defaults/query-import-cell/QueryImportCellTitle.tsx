@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { styled, Button, Menu, MenuProps, List, TextField } from '@semoss/ui';
+import {
+    styled,
+    Button,
+    Menu,
+    MenuProps,
+    List,
+    TextField,
+    Stack,
+} from '@semoss/ui';
 import { ActionMessages, CellComponent } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
 import { QueryImportCellDef } from './config';
@@ -41,6 +49,9 @@ const StyledMenu = styled((props: MenuProps) => (
     '& .MuiPaper-root': {
         marginTop: theme.spacing(1),
     },
+    '.MuiList-root': {
+        padding: 0,
+    },
 }));
 
 const FrameTypes = {
@@ -71,6 +82,14 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    const [frameVariableName, setFrameVariableName] = useState<string>('');
+
+    useEffect(() => {
+        if (open && menuType === 'frame') {
+            setFrameVariableName(cell.parameters.frameVariableName);
+        }
+    }, [open]);
 
     const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
         loading: false,
@@ -166,14 +185,14 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                 }}
                 startIcon={<DriveFileRenameOutline />}
             >
-                <StyledButtonLabel width={6}>
+                <StyledButtonLabel width={8}>
                     {cell.parameters.frameVariableName ?? ''}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
                 {menuType === 'database' &&
                     Array.from(cfgLibraryDatabases.ids, (databaseId) => (
-                        <List disablePadding dense>
+                        <List dense>
                             <List.Item
                                 disablePadding
                                 key={`${cell.id}-${databaseId}`}
@@ -205,7 +224,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                     ))}
                 {menuType === 'frame' &&
                     Array.from(Object.values(FrameTypes), (frameType) => (
-                        <List disablePadding dense>
+                        <List dense>
                             <List.Item
                                 disablePadding
                                 key={`${cell.id}-${frameType}`}
@@ -232,23 +251,33 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                         </List>
                     ))}
                 {menuType === 'variable' && (
-                    <TextField
-                        value={cell.parameters.frameVariableName}
-                        size="small"
-                        label="Output Variable Name"
-                        onChange={(value) => {
-                            state.dispatch({
-                                message: ActionMessages.UPDATE_CELL,
-                                payload: {
-                                    queryId: cell.query.id,
-                                    cellId: cell.id,
-                                    path: 'parameters.frameVariableName',
-                                    value: value,
-                                },
-                            });
-                            handleClose();
-                        }}
-                    />
+                    <Stack direction="row" alignItems="center" padding="1.5">
+                        <TextField
+                            value={frameVariableName}
+                            size="small"
+                            label="Output Variable Name"
+                            onChange={(e) =>
+                                setFrameVariableName(e.target.value)
+                            }
+                        />
+                        <Button
+                            variant="text"
+                            onClick={() => {
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.frameVariableName',
+                                        value: frameVariableName,
+                                    },
+                                });
+                                handleClose;
+                            }}
+                        >
+                            Save
+                        </Button>
+                    </Stack>
                 )}
             </StyledMenu>
         </>

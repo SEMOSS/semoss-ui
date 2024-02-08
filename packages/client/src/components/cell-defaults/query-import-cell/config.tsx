@@ -2,6 +2,7 @@ import { Cell, CellDef } from '@/stores';
 import { QueryImportCellTitle } from './QueryImportCellTitle';
 import { QueryImportCellInput } from './QueryImportCellInput';
 import { getQueryImportPipeline } from './query-import-pipeline-utils';
+import { QueryImportCellDetails } from './QueryImportCellDetails';
 
 export interface QueryImportCellDef extends CellDef<'query-import'> {
     widget: 'query-import';
@@ -32,6 +33,7 @@ export const QueryImportCell: Cell<QueryImportCellDef> = {
     view: {
         title: QueryImportCellTitle,
         input: QueryImportCellInput,
+        details: QueryImportCellDetails,
     },
     toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
         return getQueryImportPipeline(
