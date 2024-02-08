@@ -272,7 +272,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                                         value: frameVariableName,
                                     },
                                 });
-                                handleClose;
+                                handleClose();
                             }}
                         >
                             Save

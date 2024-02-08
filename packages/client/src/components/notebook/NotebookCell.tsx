@@ -38,6 +38,7 @@ const StyledCard = styled(Card, {
 
 const StyleCardContent = styled(Card.Content)(() => ({
     margin: '0!important',
+    padding: '0!important',
 }));
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -225,8 +226,9 @@ export const NotebookCell = observer(
 
             return createElement(observer(cellType.view.details), {
                 cell: cell,
+                isExpanded: contentExpanded,
             });
-        }, [cellType ? cellType.view.details : null]);
+        }, [cellType ? cellType.view.details : null, contentExpanded]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
@@ -346,6 +348,7 @@ export const NotebookCell = observer(
                                 direction="row"
                                 alignContent="start"
                                 paddingTop={0.5}
+                                paddingX={2}
                             >
                                 <Stack>
                                     <IconButton
