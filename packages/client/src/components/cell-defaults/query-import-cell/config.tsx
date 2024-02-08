@@ -1,7 +1,7 @@
 import { Cell, CellDef } from '@/stores';
 import { QueryImportCellTitle } from './QueryImportCellTitle';
 import { QueryImportCellInput } from './QueryImportCellInput';
-import { Parser } from 'node-sql-parser';
+import { getQueryImportPipeline } from './query-import-pipeline-utils';
 
 export interface QueryImportCellDef extends CellDef<'query-import'> {
     widget: 'query-import';
@@ -13,7 +13,7 @@ export interface QueryImportCellDef extends CellDef<'query-import'> {
         frameType: 'GRID' | 'R' | 'PY';
 
         /** Ouput variable name */
-        variableName: string;
+        frameVariableName: string;
 
         /** Select query rendered in the cell */
         selectQuery: string;
@@ -26,22 +26,19 @@ export const QueryImportCell: Cell<QueryImportCellDef> = {
     parameters: {
         databaseId: '',
         frameType: 'GRID',
-        variableName: 'databaseOutput',
+        frameVariableName: 'databaseOutput',
         selectQuery: '',
     },
     view: {
         title: QueryImportCellTitle,
         input: QueryImportCellInput,
     },
-    toPixel: ({ databaseId, frameType, variableName, selectQuery }) => {
-        const parser = new Parser();
-        const ast = parser.astify(selectQuery);
-
-        console.log(ast);
-
-        return `Database ( database = [ \"${databaseId}\" ] ) | 
-            Select ( DIABETES__AGE , DIABETES__DRUG ) .as ( [ AGE , DRUG ] ) | 
-            Distinct ( false ) | Limit ( 20 ) | 
-            Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${variableName}\" ] ) ] ) ;`;
+    toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
+        return getQueryImportPipeline(
+            databaseId,
+            frameType,
+            frameVariableName,
+            selectQuery,
+        );
     },
 };

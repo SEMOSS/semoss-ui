@@ -167,7 +167,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                 startIcon={<DriveFileRenameOutline />}
             >
                 <StyledButtonLabel width={6}>
-                    {cell.parameters.variableName ?? ''}
+                    {cell.parameters.frameVariableName ?? ''}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
@@ -233,7 +233,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                     ))}
                 {menuType === 'variable' && (
                     <TextField
-                        value={cell.parameters.variableName}
+                        value={cell.parameters.frameVariableName}
                         size="small"
                         label="Output Variable Name"
                         onChange={(value) => {
@@ -242,7 +242,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.variableName',
+                                    path: 'parameters.frameVariableName',
                                     value: value,
                                 },
                             });
