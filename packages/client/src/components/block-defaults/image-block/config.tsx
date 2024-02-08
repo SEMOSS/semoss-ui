@@ -36,13 +36,9 @@ export const config: BlockConfig<ImageBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'External Image Source',
+                    description: 'Image Source',
                     render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Image Source"
-                            path="src"
-                        />
+                        <InputSettings id={id} label="Image URL" path="src" />
                     ),
                 },
                 {
