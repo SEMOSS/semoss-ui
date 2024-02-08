@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import {
     Button,
@@ -6,52 +6,15 @@ import {
     Chip,
     Typography,
     styled,
-    Stack,
-    Avatar,
     IconButton,
     Link,
+    Stack,
+    Menu,
+    useNotification,
 } from '@semoss/ui';
-import {
-    AccessTime,
-    BookmarkBorderOutlined,
-    MoreVert,
-    OpenInNewOutlined,
-    Person,
-} from '@mui/icons-material';
+import { AccessTime, MoreVert, Person } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { Env } from '@/env';
-import { useNavigate } from 'react-router-dom';
-
-const StyledCard = styled(Card)(() => ({
-    borderRadius: '12px',
-}));
-
-const StyledContent = styled(Card.Content)(({ theme }) => ({
-    // ...theme.typography.body1,
-    // color: theme.palette.text.primary,
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1.5),
-}));
-
-const StyledActions = styled(Card.Actions)(({ theme }) => ({
-    alignItems: 'end',
-    paddingTop: theme.spacing(2),
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1.5),
-}));
-
-const StyledBackdrop = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(1),
-    padding: theme.spacing(1),
-    borderRadius: '12px',
-}));
-
-const StyledChip = styled(Chip)(({ theme }) => ({
-    background: theme.palette.background.paper,
-}));
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -59,30 +22,15 @@ const StyledName = styled(Typography)(() => ({
     textOverflow: 'ellipsis',
 }));
 
-const StyledDescription = styled(Typography)(() => ({
-    height: '40px',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-}));
-
-const StyledActionButton = styled(IconButton)(({ theme }) => ({
-    background: theme.palette.text.primary,
-    color: theme.palette.primary.contrastText,
-    '&:hover': {
-        background: theme.palette.text.secondary,
-    },
-}));
-
-// --- NEW STYLES ------------------------------
-const StyledTileCard = styled(Card)({
+const StyledTileCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled: boolean }>(({ disabled }) => ({
     width: '280px',
     height: '412px',
     '&:hover': {
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
     },
-});
+}));
 
 const StyledContainer = styled('div')({
     position: 'relative',
@@ -101,19 +49,11 @@ const StyledOverlayContent = styled('div')(({ theme }) => ({
     //   alignItems: 'center',
 }));
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    background: theme.palette.background.paper,
-    height: '32px',
-    width: '32px',
-    color: theme.palette.text.secondary,
-}));
-
 const StyledTileCardMedia = styled(Card.Media)({
     display: 'flex',
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
-
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
@@ -126,7 +66,6 @@ const StyledTileCardImage = styled('img')({
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
-
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
@@ -169,14 +108,13 @@ const StyledCardDescription = styled(Typography)({
     textOverflow: 'ellipsis',
 });
 
-const StyledChipDiv = styled('div')({
-    display: 'flex',
-    flexDirection: 'row',
-    minHeight: '32px',
-    width: '80px',
-    alignItems: 'center',
-    gap: 2,
-});
+const StyledTagChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'maxWidth',
+})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+    maxWidth: maxWidth,
+    textOverflow: 'ellipsis',
+    backgroundColor: theme.palette.grey[200],
+}));
 
 const StyledCardActions = styled(Card.Actions)({
     display: 'flex',
@@ -207,12 +145,12 @@ interface AppTileCardProps {
      * Action that is triggered when clicked
      * aop - current selected app
      */
-    onAction?: (app: AppMetadata) => void;
+    onAction?: () => void;
 
     /**
      * Link to navigate to
      */
-    href: string;
+    href?: string;
 }
 
 /**
@@ -235,13 +173,33 @@ export const AppTileCard = (props: AppTileCardProps) => {
         image,
         background = '#DAC9F5',
         onAction = () => null,
-        href,
+        href = null,
     } = props;
+
+    const notification = useNotification();
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const copyProjectId = (projectId: string) => {
+        try {
+            navigator.clipboard.writeText(projectId);
+
+            notification.add({
+                color: 'success',
+                message: 'Succesfully copied to clipboard',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
 
     // pretty format the data
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_portal_published_date);
-        console.log(app);
         if (!d.isValid()) {
             return `Published ${dayjs().format('MMMM D, YYYY')}`;
         }
@@ -250,7 +208,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     }, [app.project_date_created]);
 
     return (
-        <StyledTileCard>
+        <StyledTileCard disabled={!href}>
             <Link
                 href={href}
                 rel="noopener noreferrer"
@@ -259,12 +217,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
             >
                 <StyledContainer>
                     {image ? (
-                        <StyledTileCardMedia
-                            image={image}
-                            sx={{
-                                height: '140px',
-                            }}
-                        />
+                        <StyledTileCardMedia image={image} />
                     ) : (
                         <StyledTileCardImage
                             src={`${Env.MODULE}/api/project-${app.project_id}/projectImage/download`}
@@ -298,26 +251,49 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ? app.description
                             : 'No description available'}
                     </StyledCardDescription>
-                    <StyledChipDiv>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        minHeight="32px"
+                    >
                         {app.tag !== undefined &&
-                            (typeof app.tag === 'object' ? (
-                                app.tag.map((t, i) => {
-                                    return (
-                                        <Chip
-                                            key={app.project_id + i}
-                                            variant={'outlined'}
-                                            label={t}
-                                        />
-                                    );
-                                })
+                            (Array.isArray(app.tag) ? (
+                                <>
+                                    {app.tag.map((tag, i) => {
+                                        if (i <= 2) {
+                                            return (
+                                                <StyledTagChip
+                                                    key={`${app.project_id}${i}`}
+                                                    maxWidth={
+                                                        app.tag.length === 2
+                                                            ? '100px'
+                                                            : app.tag.length ===
+                                                              1
+                                                            ? '200px'
+                                                            : '75px'
+                                                    }
+                                                    label={tag}
+                                                />
+                                            );
+                                        }
+                                    })}
+                                    {app.tag.length > 3 ? (
+                                        <Typography variant="caption">
+                                            +{app.tag.length - 3}
+                                        </Typography>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </>
                             ) : (
-                                <Chip
-                                    key={app.project_id + app.tag}
-                                    variant={'outlined'}
+                                <StyledTagChip
+                                    key={`${app.project_id}0`}
+                                    variant="outlined"
                                     label={app.tag}
                                 />
                             ))}
-                    </StyledChipDiv>
+                    </Stack>
                     <StyledPublishedByContainer>
                         <StyledAccessTimeIcon />
                         <StyledPublishedByLabel variant={'body2'}>
@@ -326,12 +302,54 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledPublishedByContainer>
                 </Card.Content>
                 <StyledCardActions>
-                    <Button>Open</Button>
-                    <IconButton disabled={true}>
-                        <MoreVert />
-                    </IconButton>
+                    <Button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onAction();
+                        }}
+                    >
+                        Open
+                    </Button>
+                    {app.project_created_by !== 'SYSTEM' ? (
+                        <IconButton
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setAnchorEl(e.currentTarget);
+                            }}
+                        >
+                            <MoreVert />
+                        </IconButton>
+                    ) : (
+                        <></>
+                    )}
                 </StyledCardActions>
             </Link>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={() => {
+                    setAnchorEl(null);
+                }}
+            >
+                <Menu.Item
+                    value="copy"
+                    onClick={() => {
+                        copyProjectId(app.project_id);
+                        setAnchorEl(null);
+                    }}
+                >
+                    Copy App ID
+                </Menu.Item>
+                {/* {
+                    app?.user_permission && app.user_permission <= 2 ?
+                    (
+                        <Menu.Item value="copy" onClick={() => {}}>
+                            Edit App Details
+                        </Menu.Item>
+                    ) :
+                    <></>
+                } */}
+            </Menu>
         </StyledTileCard>
     );
 };

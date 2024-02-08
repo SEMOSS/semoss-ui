@@ -26,6 +26,8 @@ import { config as TextBlockConfig, TextBlockDef } from './text-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
+import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
+import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -38,6 +40,8 @@ export type DefaultBlockDefinitions =
     | FormBlockDef
     | HeaderBlockDef
     | IframeBlockDef
+    | ImageBlockDef
+    | LinkBlockDef
     | MarkdownBlockDef
     | PageBlockDef
     | SelectBlockDef
@@ -57,9 +61,24 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
+    [ImageBlockConfig.widget]: ImageBlockConfig,
+    [LinkBlockConfig.widget]: LinkBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
     return DefaultBlocks[widget]?.icon;
 }
+
+export {
+    ButtonBlockConfig,
+    ContainerBlockConfig,
+    CheckboxBlockConfig,
+    MarkdownBlockConfig,
+    PageBlockConfig,
+    SelectBlockConfig,
+    TextBlockConfig,
+    InputBlockConfig,
+    ImageBlockConfig,
+    UploadBlockConfig,
+};

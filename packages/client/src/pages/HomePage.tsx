@@ -78,7 +78,7 @@ const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
     project_reactors_compiled_user: '',
     project_reactors_compiled_user_type: '',
     project_favorite: '',
-    user_permission: '',
+    user_permission: null,
     group_permission: '',
     tag: [],
     description: 'Develop dashboards and visualizations to view data',
@@ -103,7 +103,7 @@ const TERMINAL_APP: AppMetadata = {
     project_reactors_compiled_user: '',
     project_reactors_compiled_user_type: '',
     project_favorite: '',
-    user_permission: '',
+    user_permission: null,
     group_permission: '',
     tag: [],
     description: 'Execute commands and see a response',
@@ -291,6 +291,9 @@ export const HomePage = observer((): JSX.Element => {
                                             app={BUSINESS_INTELLIGENCE_APP}
                                             background="#BADEFF"
                                             href="../../../"
+                                            onAction={() =>
+                                                navigate('../../../')
+                                            }
                                         />
                                     ))}
 
@@ -307,6 +310,11 @@ export const HomePage = observer((): JSX.Element => {
                                             app={TERMINAL_APP}
                                             background="#BADEFF"
                                             href="../../../#!/embed-terminal"
+                                            onAction={() =>
+                                                navigate(
+                                                    '../../../#!/embed-terminal',
+                                                )
+                                            }
                                         />
                                     ))}
                             </StyledSection>
@@ -335,6 +343,11 @@ export const HomePage = observer((): JSX.Element => {
                                               key={i}
                                               app={app}
                                               href={`#/app/${app.project_id}`}
+                                              onAction={() =>
+                                                  navigate(
+                                                      `/app/${app.project_id}`,
+                                                  )
+                                              }
                                           />
                                       );
                                   }

@@ -1,16 +1,18 @@
 import { ActionMessages } from './state.actions';
 import { Template } from './state.types';
+import {
+    ButtonBlockConfig,
+    ContainerBlockConfig,
+    InputBlockConfig,
+    PageBlockConfig,
+    TextBlockConfig,
+    UploadBlockConfig,
+} from '@/components/block-defaults';
 
 import HELLOWORLD from '@/assets/img/helloworld.jpeg';
 import QUERY from '@/assets/img/query.jpeg';
 import CHATAI from '@/assets/img/chatai.jpeg';
-
-import { DefaultStyles as PageBlockStyles } from '@/components/block-defaults/page-block';
-import { DefaultStyles as ContainerBlockStyles } from '@/components/block-defaults/container-block';
-import { DefaultStyles as TextBlockStyles } from '@/components/block-defaults/text-block';
-import { DefaultStyles as ButtonBlockStyles } from '@/components/block-defaults/button-block';
-import { DefaultStyles as InputBlockStyles } from '@/components/block-defaults/input-block';
-import { DefaultStyles as UploadBlockStyles } from '@/components/block-defaults/upload-block';
+import LANDINGPAGE from '@/assets/img/LandingPage.jpeg';
 
 export const ACTIONS_DISPLAY = {
     [ActionMessages.RUN_QUERY]: 'Run Query',
@@ -33,7 +35,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     widget: 'page',
                     parent: null,
                     data: {
-                        style: PageBlockStyles,
+                        style: PageBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -51,7 +53,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'content',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -69,7 +71,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: TextBlockStyles,
+                        style: TextBlockConfig.data.style,
                         text: 'Hello World',
                     },
                     listeners: {},
@@ -108,7 +110,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     widget: 'page',
                     parent: null,
                     data: {
-                        style: PageBlockStyles,
+                        style: PageBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -126,7 +128,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'content',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -151,7 +153,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.5rem',
-                            ...TextBlockStyles,
+                            ...TextBlockConfig.data.style,
                         },
                         text: 'Ask LLM',
                     },
@@ -168,7 +170,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.25rem',
-                            ...TextBlockStyles,
+                            ...TextBlockConfig.data.style,
                         },
                         text: 'Ask an LLM a question',
                     },
@@ -183,7 +185,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -201,7 +203,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: InputBlockStyles,
+                        style: InputBlockConfig.data.style,
                         label: 'Question',
                         rows: 3,
                         type: 'text',
@@ -220,7 +222,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: ButtonBlockStyles,
+                        style: ButtonBlockConfig.data.style,
                         label: 'Ask',
                         loading: '{{query.ask-llm.isLoading}}',
                         variant: 'contained',
@@ -245,7 +247,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: TextBlockStyles,
+                        style: TextBlockConfig.data.style,
                         text: '{{query.ask-llm.output.response}}',
                     },
                     listeners: {},
@@ -292,7 +294,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     widget: 'page',
                     parent: null,
                     data: {
-                        style: PageBlockStyles,
+                        style: PageBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -310,7 +312,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'content',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -335,7 +337,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.5rem',
-                            ...TextBlockStyles,
+                            ...TextBlockConfig.data.style,
                         },
                         text: 'CSV Query',
                     },
@@ -352,7 +354,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: {
                             fontSize: '1.25rem',
-                            ...TextBlockStyles,
+                            ...TextBlockConfig.data.style,
                         },
                         text: 'Upload a csv file and ask a question',
                     },
@@ -367,7 +369,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: ContainerBlockStyles,
+                        style: ContainerBlockConfig.data.style,
                     },
                     listeners: {},
                     slots: {
@@ -385,7 +387,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: UploadBlockStyles,
+                        style: UploadBlockConfig.data.style,
                         label: 'Upload',
                         required: true,
                     },
@@ -402,7 +404,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: InputBlockStyles,
+                        style: InputBlockConfig.data.style,
                         label: 'Question',
                         rows: 3,
                         type: 'text',
@@ -421,7 +423,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: ButtonBlockStyles,
+                        style: ButtonBlockConfig.data.style,
                         label: 'Ask',
                         loading: '{{query.ask-model.isLoading}}',
                         variant: 'contained',
@@ -446,11 +448,502 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        style: TextBlockStyles,
+                        style: TextBlockConfig.data.style,
                         text: '{{query.ask-model.output.0.output.Query}}',
                     },
                     listeners: {},
                     slots: {},
+                },
+            },
+        },
+    },
+    {
+        name: 'Landing Page',
+        description: 'A simple starter landing page with navigation cards',
+        image: LANDINGPAGE,
+        author: 'SYSTEM',
+        lastUpdatedDate: new Date().toISOString(),
+        tags: [],
+        state: {
+            queries: {},
+            blocks: {
+                'container--8497': {
+                    parent: {
+                        id: 'page-1',
+                        slot: 'content',
+                    },
+                    slots: {
+                        children: {
+                            children: [
+                                'link--5768',
+                                'link--7352',
+                                'link--9492',
+                                'link--9930',
+                            ],
+                            name: 'children',
+                        },
+                    },
+                    widget: 'container',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            overflow: 'hidden',
+                            flexWrap: 'wrap',
+                            flexDirection: 'row',
+                            display: 'flex',
+                            gap: '8px',
+                            justifyContent: 'left',
+                        },
+                    },
+                    listeners: {},
+                    id: 'container--8497',
+                },
+                'image--514': {
+                    parent: {
+                        id: 'link--9930',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'image',
+                    data: {
+                        src: '',
+                        style: {
+                            alignItems: 'center',
+                            display: 'flex',
+                            width: '100%',
+                            backgroundSize: 'contain',
+                            backgroundPosition: 'center center',
+                            backgroundRepeat: 'no-repeat',
+                            justifyContent: 'center',
+                            height: '200px',
+                        },
+                        title: '',
+                    },
+                    listeners: {},
+                    id: 'image--514',
+                },
+                'link--9492': {
+                    parent: {
+                        id: 'container--8497',
+                        slot: 'children',
+                    },
+                    slots: {
+                        children: {
+                            children: ['image--9275', 'text--3205'],
+                            name: 'children',
+                        },
+                    },
+                    widget: 'link',
+                    data: {
+                        src: '',
+                        style: {
+                            border: '1px solid #000000',
+                            'border-radius': '5px',
+                            padding: '4px',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                            width: '250px',
+                            height: '300px',
+                        },
+                    },
+                    listeners: {},
+                    id: 'link--9492',
+                },
+                'text--3281': {
+                    parent: {
+                        id: 'link--9930',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'text',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            whiteSpace: 'pre-line',
+                            textAlign: 'center',
+                            textOverflow: 'ellipsis',
+                        },
+                        text: 'Navigate to page 4',
+                    },
+                    listeners: {},
+                    id: 'text--3281',
+                },
+                'text--5410': {
+                    parent: {
+                        id: 'link--5768',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'text',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            whiteSpace: 'pre-line',
+                            textAlign: 'center',
+                            textOverflow: 'ellipsis',
+                        },
+                        text: 'Navigate to page 1',
+                    },
+                    listeners: {},
+                    id: 'text--5410',
+                },
+                'image--3003': {
+                    parent: {
+                        id: 'link--5768',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'image',
+                    data: {
+                        src: '',
+                        style: {
+                            alignItems: 'center',
+                            display: 'flex',
+                            width: '100%',
+                            backgroundSize: 'contain',
+                            backgroundPosition: 'center center',
+                            backgroundRepeat: 'no-repeat',
+                            justifyContent: 'center',
+                            height: '200px',
+                        },
+                        title: '',
+                    },
+                    listeners: {},
+                    id: 'image--3003',
+                },
+                'text--4835': {
+                    parent: {
+                        id: 'link--7352',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'text',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            whiteSpace: 'pre-line',
+                            textAlign: 'center',
+                            textOverflow: 'ellipsis',
+                        },
+                        text: 'Navigate to page 2',
+                    },
+                    listeners: {},
+                    id: 'text--4835',
+                },
+                'text--3205': {
+                    parent: {
+                        id: 'link--9492',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'text',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            whiteSpace: 'pre-line',
+                            textAlign: 'center',
+                            textOverflow: 'ellipsis',
+                        },
+                        text: 'Navigate to page 3',
+                    },
+                    listeners: {},
+                    id: 'text--3205',
+                },
+                'text--3116': {
+                    parent: {
+                        id: 'container--3613',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'text',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            whiteSpace: 'pre-line',
+                            fontSize: '1.875rem',
+                            textOverflow: 'ellipsis',
+                            fontWeight: 'bold',
+                        },
+                        text: 'Landing Page',
+                    },
+                    listeners: {},
+                    id: 'text--3116',
+                },
+                'link--7352': {
+                    parent: {
+                        id: 'container--8497',
+                        slot: 'children',
+                    },
+                    slots: {
+                        children: {
+                            children: ['image--5235', 'text--4835'],
+                            name: 'children',
+                        },
+                    },
+                    widget: 'link',
+                    data: {
+                        src: '',
+                        style: {
+                            border: '1px solid #000000',
+                            'border-radius': '5px',
+                            padding: '4px',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                            width: '250px',
+                            height: '300px',
+                        },
+                    },
+                    listeners: {},
+                    id: 'link--7352',
+                },
+                'page-1': {
+                    slots: {
+                        content: {
+                            children: [
+                                'container--3613',
+                                'container--8497',
+                                'container--3154',
+                            ],
+                            name: 'content',
+                        },
+                    },
+                    widget: 'page',
+                    data: {
+                        style: {
+                            padding: '24px',
+                            fontFamily: 'roboto',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                        },
+                    },
+                    parent: null,
+                    listeners: {},
+                    id: 'page-1',
+                },
+                'image--5235': {
+                    parent: {
+                        id: 'link--7352',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'image',
+                    data: {
+                        src: '',
+                        style: {
+                            alignItems: 'center',
+                            display: 'flex',
+                            width: '100%',
+                            backgroundSize: 'contain',
+                            backgroundPosition: 'center center',
+                            backgroundRepeat: 'no-repeat',
+                            justifyContent: 'center',
+                            height: '200px',
+                        },
+                        title: '',
+                    },
+                    listeners: {},
+                    id: 'image--5235',
+                },
+                'link--5768': {
+                    parent: {
+                        id: 'container--8497',
+                        slot: 'children',
+                    },
+                    slots: {
+                        children: {
+                            children: ['image--3003', 'text--5410'],
+                            name: 'children',
+                        },
+                    },
+                    widget: 'link',
+                    data: {
+                        src: '',
+                        style: {
+                            border: '1px solid #000000',
+                            'border-radius': '5px',
+                            padding: '4px',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                            width: '250px',
+                            height: '300px',
+                        },
+                    },
+                    listeners: {},
+                    id: 'link--5768',
+                },
+                'container--3613': {
+                    parent: {
+                        id: 'page-1',
+                        slot: 'content',
+                    },
+                    slots: {
+                        children: {
+                            children: ['text--3116'],
+                            name: 'children',
+                        },
+                    },
+                    widget: 'container',
+                    data: {
+                        style: {
+                            padding: '4px',
+                            overflow: 'hidden',
+                            flexWrap: 'wrap',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                        },
+                    },
+                    listeners: {},
+                    id: 'container--3613',
+                },
+                'image--9275': {
+                    parent: {
+                        id: 'link--9492',
+                        slot: 'children',
+                    },
+                    slots: {
+                        test: {
+                            children: [],
+                            name: 'test',
+                        },
+                    },
+                    widget: 'image',
+                    data: {
+                        src: '',
+                        style: {
+                            alignItems: 'center',
+                            display: 'flex',
+                            width: '100%',
+                            backgroundSize: 'contain',
+                            backgroundPosition: 'center center',
+                            backgroundRepeat: 'no-repeat',
+                            justifyContent: 'center',
+                            height: '200px',
+                        },
+                        title: '',
+                    },
+                    listeners: {},
+                    id: 'image--9275',
+                },
+                'link--9930': {
+                    parent: {
+                        id: 'container--8497',
+                        slot: 'children',
+                    },
+                    slots: {
+                        children: {
+                            children: ['image--514', 'text--3281'],
+                            name: 'children',
+                        },
+                    },
+                    widget: 'link',
+                    data: {
+                        src: '',
+                        style: {
+                            border: '1px solid #000000',
+                            'border-radius': '5px',
+                            padding: '4px',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                            width: '250px',
+                            height: '300px',
+                        },
+                    },
+                    listeners: {},
+                    id: 'link--9930',
+                },
+                'container--3154': {
+                    id: 'container--3154',
+                    widget: 'container',
+                    parent: {
+                        id: 'page-1',
+                        slot: 'content',
+                    },
+                    data: {
+                        style: {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            padding: '4px',
+                            gap: '8px',
+                            overflow: 'hidden',
+                            flexWrap: 'wrap',
+                        },
+                    },
+                    listeners: {},
+                    slots: {
+                        children: {
+                            name: 'children',
+                            children: ['text--650'],
+                        },
+                    },
+                },
+                'text--650': {
+                    id: 'text--650',
+                    widget: 'text',
+                    parent: {
+                        id: 'container--3154',
+                        slot: 'children',
+                    },
+                    data: {
+                        style: {
+                            padding: '4px',
+                            whiteSpace: 'pre-line',
+                            textOverflow: 'ellipsis',
+                        },
+                        text: 'Drag and drop your content here to start populating your page.  Add images, text, and links to customize your landing page and make it your own.  Whether you are setting up a portfolio, a business page, or a personal blog, this is the first step to creating something unique and engaging.  Make your vision come to life, start by dragging your content into this space.',
+                    },
+                    listeners: {},
+                    slots: {
+                        test: {
+                            name: 'test',
+                            children: [],
+                        },
+                    },
                 },
             },
         },

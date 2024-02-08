@@ -12,29 +12,19 @@ import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
 import { HighlightAlt } from '@mui/icons-material';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 
-export const DefaultStyles: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    flexWrap: 'wrap',
-    padding: '4px',
-    gap: '8px',
-    overflow: 'hidden',
-};
-
-export const VariantOne: CSSProperties = {
-    ...DefaultStyles,
-};
-
-export const VariantTwo: CSSProperties = {
-    ...DefaultStyles,
-};
-
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {
     widget: 'container',
     type: BLOCK_TYPE_LAYOUT,
     data: {
-        style: DefaultStyles,
+        style: {
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '4px',
+            gap: '8px',
+            overflow: 'hidden',
+            flexWrap: 'wrap',
+        },
     },
     listeners: {},
     slots: {
