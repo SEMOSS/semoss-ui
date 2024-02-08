@@ -4,6 +4,7 @@ import {
     Button,
     Card,
     Chip,
+    Menu,
     Typography,
     styled,
     IconButton,
@@ -311,14 +312,61 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             <Button>Open</Button>
                         </Link>
                     </Box>
-                    <IconButton onClick={() => favoriteProject(app)}>
+                    {/* <IconButton onClick={() => favoriteProject(app)}>
                         <StyledBookmark />
-                    </IconButton>
+                    </IconButton> */}
                     <Box>
-                        <IconButton onClick={handleClick}>
-                            <StyledVert />
-                        </IconButton>
-                        <Popover
+                        {app.project_created_by !== 'SYSTEM' ? (
+                            <IconButton onClick={handleClick}>
+                                <StyledVert />
+                            </IconButton>
+                        ) : (
+                            <></>
+                        )}
+                        <Menu
+                            open={open}
+                            anchorEl={anchorEl}
+                            onClose={handleClose}
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'left',
+                            }}
+                        >
+                            <Menu.Item
+                                value="copy"
+                                onClick={() => {
+                                    copy(app.project_id);
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                Copy App ID
+                            </Menu.Item>
+                            {/* <Menu.Item
+                                value="app-details"
+                                onClick={() => {
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                App Details
+                            </Menu.Item>
+                            <Menu.Item
+                                value="enter-app-details"
+                                onClick={() => {
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                Enter App Details
+                            </Menu.Item>
+                            <Menu.Item
+                                value="github"
+                                onClick={() => {
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                Go to GitHub
+                            </Menu.Item> */}
+                        </Menu>
+                        {/* <Popover
                             id={id}
                             open={open}
                             anchorEl={anchorEl}
@@ -333,7 +381,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                                     Copy App ID
                                 </StyledPopoverItem>
                             </Box>
-                            <StyledPopoverItem variant="body2">
+                            {/* <StyledPopoverItem variant="body2">
                                 App Details
                             </StyledPopoverItem>
                             <StyledPopoverItem variant="body2">
@@ -341,8 +389,9 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             </StyledPopoverItem>
                             <StyledPopoverItem variant="body2">
                                 Go to GitHub
-                            </StyledPopoverItem>
-                        </Popover>
+                            </StyledPopoverItem> 
+                            */}
+                        {/* </Popover> */}
                     </Box>
                 </StyledIconRow>
             </StyledContentContainer>
