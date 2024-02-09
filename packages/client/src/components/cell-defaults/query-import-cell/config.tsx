@@ -1,10 +1,7 @@
 import { Cell, CellDef } from '@/stores';
 import { QueryImportCellTitle } from './QueryImportCellTitle';
 import { QueryImportCellInput } from './QueryImportCellInput';
-import {
-    getQueryImportPipeline,
-    validateQueryImportQuery,
-} from './query-import-pipeline-utils';
+import { getQueryImportPipeline } from './query-import-pipeline-utils';
 import { QueryImportCellDetails } from './QueryImportCellDetails';
 import { QueryImportCellOutput } from './QueryImportCellOutput';
 
@@ -41,7 +38,6 @@ export const QueryImportCell: Cell<QueryImportCellDef> = {
         output: QueryImportCellOutput,
     },
     toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
-        validateQueryImportQuery(selectQuery);
         return getQueryImportPipeline(
             databaseId,
             frameType,

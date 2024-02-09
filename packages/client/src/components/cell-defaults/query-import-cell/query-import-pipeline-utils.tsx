@@ -1,10 +1,3 @@
-export const validateQueryImportQuery = (query: string) => {
-    // can only be a select statement
-    if (query.toLowerCase().substring(0, 7) !== 'select ') {
-        throw new Error('Query must be a valid SELECT statement');
-    }
-};
-
 export const getQueryImportPipeline = (
     databaseId: string,
     frameType: 'GRID' | 'PY' | 'R',
