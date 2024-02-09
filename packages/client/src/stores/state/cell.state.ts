@@ -317,8 +317,12 @@ export class CellState<D extends CellDef = CellDef> {
                     this._store.parameters = merged;
                 }
 
+                // any previous errors will be cleared on operation type sync
                 this._sync(operationType, output);
             });
+        } catch (e) {
+            // catch and set errors
+            this._sync(['ERROR'], e.message);
         } finally {
             const end = new Date();
             const start = new Date(this._store.executionStart);

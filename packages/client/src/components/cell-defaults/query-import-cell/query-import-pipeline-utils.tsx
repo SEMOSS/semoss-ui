@@ -1,7 +1,7 @@
 export const validateQueryImportQuery = (query: string) => {
     // can only be a select statement
     if (query.toLowerCase().substring(0, 7) !== 'select ') {
-        throw new Error('Invalid select statement in import query.');
+        throw new Error('Query must be a valid SELECT statement');
     }
 };
 
