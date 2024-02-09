@@ -1,88 +1,84 @@
-import { useMemo, useEffect, SyntheticEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useEffect, useState, SyntheticEvent, useRef } from 'react';
+
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
-import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
-import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
+import { Icon as FiletypeIcon } from '@mdi/react';
+import { Link } from 'react-router-dom';
 
-import Editor from '@monaco-editor/react';
+import {
+    useNotification,
+    IconButton,
+    Typography,
+    Container,
+    styled,
+    Tabs,
+} from '@semoss/ui';
 
-import prettier from 'prettier';
+import Editor, { OnMount } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+
 import parserBabel from 'prettier/parser-babel';
-import parserHtml from 'prettier/parser-html';
-import parserTypescript from 'prettier/parser-typescript';
 import parserCss from 'prettier/parser-postcss';
-// Python Code Formatting
-import { spawn } from 'child_process';
+import parserHtml from 'prettier/parser-html';
+import prettier from 'prettier';
 
-const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
-    width: '180px',
-}));
+import { LoadingScreen } from '@/components/ui';
+import { useLLM } from '@/hooks';
+import { runPixel } from '@/api';
 
 const StyledSVG = styled('svg')(({ theme }) => ({
-    fill: '#0000008A',
     viewBox: '0 0 16 16',
-    width: '1em',
+    fill: '#0000008A',
     height: '1em',
+    width: '1em',
 }));
 
 const StyledHeaderContainer = styled(Container)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
     gap: theme.spacing(2),
+    flexDirection: 'column',
+    display: 'flex',
 }));
 
 const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+    marginRight: '8px',
     color: 'rgba(0, 0, 0, 0.6)',
     height: '24px',
     width: '24px',
-    marginRight: '8px',
-}));
-
-const StyledContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    height: '100%',
 }));
 
 const StyledEmptyFiles = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    height: '100%',
-    alignItems: 'normal',
-    textAlign: 'left',
     padding: theme.spacing(5),
     justifyContent: 'space-around',
+    alignItems: 'normal',
+    textAlign: 'left',
+    flexDirection: 'column',
+    display: 'flex',
+    height: '100%',
+    width: '100%',
 }));
 
 const StyledPrettierIconButton = styled(IconButton)(({ theme }) => ({
+    fontSize: 'inherit',
+    paddingRight: '0px',
+    marginRight: '0px',
     height: '50px',
     width: '30px',
-    fontSize: 'inherit',
-    marginRight: '0px',
-    paddingRight: '0px',
 }));
 
 const StyledSaveIconButton = styled(IconButton)(({ theme }) => ({
+    marginRight: '20px',
+    fontSize: 'inherit',
     color: '#0000008A',
     height: '50px',
     width: '30px',
-    marginRight: '20px',
-    fontSize: 'inherit',
-}));
-
-const StyledFileTabs = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: theme.spacing(1),
 }));
 
 const StyledActiveFilePath = styled('div')(({ theme }) => ({
-    display: 'flex',
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
     alignItems: 'center',
+    display: 'flex',
 }));
 
 const StyledTabsItem = styled(Tabs.Item, {
@@ -95,21 +91,37 @@ const StyledTabsItem = styled(Tabs.Item, {
 }));
 
 const StyledTabLabelContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
     gap: theme.spacing(0.5),
+    flexDirection: 'row',
     alignItems: 'center',
+    display: 'flex',
 }));
 
 const StyledTabLabel = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
     gap: theme.spacing(1),
+    flexDirection: 'row',
     alignItems: 'center',
+    display: 'flex',
 }));
 
-const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
-    color: theme.palette.primary.main,
+const StyledNonGrayPath = styled(Typography)(({ theme }) => ({
+    display: 'inline-block',
+    marginRight: '5px',
+    paddingLeft: '0px',
+    marginLeft: '0px',
+}));
+
+const StyledGrayFileName = styled(Typography)(({ theme }) => ({
+    display: 'inline-block',
+    paddingLeft: '0px',
+    marginLeft: '0px',
+    opacity: 0.6,
+}));
+
+const StyledFileTabs = styled('div')(({ theme }) => ({
+    gap: theme.spacing(1),
+    justifyContent: 'space-between',
+    display: 'flex',
 }));
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
@@ -118,31 +130,30 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledClear = styled(Clear)(({ theme }) => ({
-    width: theme.spacing(2),
     height: theme.spacing(2),
+    width: theme.spacing(2),
+}));
+
+const StyledActiveFilePathContainer = styled('div')(({ theme }) => ({
+    paddingLeft: '0px',
+    marginLeft: '0px',
+}));
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    height: '100%',
+    width: '100%',
+}));
+
+const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
+    width: '180px',
+}));
+
+const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
+    color: theme.palette.primary.main,
 }));
 
 const StyledCloseTab = styled(IconButton)(({ theme }) => ({
     fontSize: '16px',
-}));
-
-const StyledActiveFilePathContainer = styled('div')(({ theme }) => ({
-    marginLeft: '0px',
-    paddingLeft: '0px',
-}));
-
-const StyledNonGrayPath = styled(Typography)(({ theme }) => ({
-    marginLeft: '0px',
-    paddingLeft: '0px',
-    marginRight: '5px',
-    display: 'inline-block',
-}));
-
-const StyledGrayFileName = styled(Typography)(({ theme }) => ({
-    display: 'inline-block',
-    opacity: 0.6,
-    marginLeft: '0px',
-    paddingLeft: '0px',
 }));
 
 const PrettierPath = () => (
@@ -179,22 +190,34 @@ interface TextEditorProps {
      */
     setControlledFiles: (controlledFiles: ControlledFile[]) => void;
 
+    /**
+     * NEED TO GET RID OF THIS
+     */
     counter: number;
     setCounter: (index: number) => void;
 }
 
 export const TextEditor = (props: TextEditorProps) => {
     const {
-        files,
-        activeIndex,
-        setActiveIndex,
-        onSave,
-        onClose,
         controlledFiles,
-        setControlledFiles,
+        activeIndex,
         counter,
+        files,
+        setActiveIndex,
         setCounter,
+        setControlledFiles,
+        onClose,
+        onSave,
     } = props;
+
+    const notification = useNotification();
+    const { modelId } = useLLM();
+
+    const [LLMLoading, setLLMLoading] = useState(false);
+    const [LLMActionAdded, setLLMActionAdded] = useState(false);
+    // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
+    const fileTypeRef = useRef('');
+    const modelIdRef = useRef('');
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -220,8 +243,6 @@ export const TextEditor = (props: TextEditorProps) => {
      * Adds new files to Controlled structure
      */
     useEffect(() => {
-        console.log('files', files);
-        console.log('contfiles', controlledFiles);
         if (controlledFiles.length === files.length) return;
 
         const newControlledFiles = controlledFiles;
@@ -232,6 +253,15 @@ export const TextEditor = (props: TextEditorProps) => {
 
         setControlledFiles(newControlledFiles);
     }, [files.length, activeIndex, controlledFiles.length]);
+
+    useEffect(() => {
+        fileTypeRef.current = files[activeIndex]?.type;
+    }, [activeIndex]);
+
+    // Effect to re-initialize 'id' ref change
+    useEffect(() => {
+        modelIdRef.current = modelId;
+    }, [modelId]);
 
     /**
      * @name prettifyFile
@@ -275,8 +305,6 @@ export const TextEditor = (props: TextEditorProps) => {
                 ) {
                     prettierConfig['parser'] = 'babel';
                     prettierConfig['plugins'] = [parserBabel];
-                    // prettierConfig['semi'] = false;
-                    // prettierConfig['singleQuote'] = true;
                 } else if (
                     activeFile.type === 'css' ||
                     activeFile.type === 'scss'
@@ -332,6 +360,8 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const editFile = (newContent: string) => {
         // Update Controlled Value
+        fileTypeRef.current = files[activeIndex].type;
+
         const edittedFile = {
             ...controlledFiles[activeIndex],
             content: newContent,
@@ -394,6 +424,41 @@ export const TextEditor = (props: TextEditorProps) => {
         );
     };
 
+    /**
+     * Runs LLM pixel and manages LLM loading
+     * @param string
+     * @returns LLM response string
+     */
+    const promptLLM = async (inputPrompt) => {
+        setLLMLoading(true);
+
+        // ideally add filetype to LLM pixel so it does not have to be in prompt string
+        // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
+        const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
+
+        try {
+            const res = await runPixel(pixel);
+            setLLMLoading(false);
+
+            const LLMResponse = res.pixelReturn[0].output['response'];
+            let trimmedStarterCode = LLMResponse;
+            trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
+
+            trimmedStarterCode = trimmedStarterCode.substring(
+                trimmedStarterCode.indexOf('\n') + 1,
+            );
+
+            return trimmedStarterCode;
+        } catch {
+            setLLMLoading(false);
+            notification.add({
+                color: 'error',
+                message: 'Failed response from AI Code Generator',
+            });
+            return '';
+        }
+    };
+
     /** ------------------
      * Memoized Values
      *  ------------------
@@ -438,6 +503,65 @@ export const TextEditor = (props: TextEditorProps) => {
         }
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
+
+    /**
+     * Callback for new LLM dropdown action in Monaco editor
+     * @param newContent
+     */
+    const executeAction: monaco.editor.IActionDescriptor = {
+        contextMenuGroupId: '1_modification',
+        contextMenuOrder: 1,
+        id: 'prompt-LLM',
+        label: 'Generate Code',
+        keybindings: [
+            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
+        ],
+
+        run: async (editor) => {
+            const selection = editor.getSelection();
+            const selectedText = editor.getModel().getValueInRange(selection);
+
+            const LLMReturnText = await promptLLM(
+                `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+            );
+
+            editor.executeEdits('custom-action', [
+                {
+                    range: new monaco.Range(
+                        selection.endLineNumber + 2,
+                        1,
+                        selection.endLineNumber + 2,
+                        1,
+                    ),
+                    text: `\n\n${LLMReturnText}\n`,
+                    forceMoveMarkers: true,
+                },
+            ]);
+
+            editor.setSelection(
+                new monaco.Range(
+                    selection.endLineNumber + 3,
+                    1,
+                    selection.endLineNumber +
+                        2 +
+                        LLMReturnText.split('\n').length,
+                    1,
+                ),
+            );
+        },
+    };
+
+    /**
+     * Handler that adds new LLM dropdown action to editor when the editor mounts
+     * @param monacoInstance
+     */
+    const editorOnMountHandler: OnMount = (_editor, monacoInstance) => {
+        // prevents redundant additions of new dropdown action
+        if (LLMActionAdded == false && process.env.NODE_ENV == 'development') {
+            setLLMActionAdded(true);
+            monacoInstance.editor.addEditorAction(executeAction);
+        }
+    };
 
     if (!files.length) {
         return (
@@ -581,20 +705,19 @@ export const TextEditor = (props: TextEditorProps) => {
                     <StyledActiveFilePath>
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
-
+                    {LLMLoading && (
+                        <LoadingScreen.Trigger description="Generating..." />
+                    )}
                     <Editor
-                        // theme={'vs-dark'}
+                        key={modelIdRef.current}
                         width={'100%'}
                         height={'100%'}
                         value={activeFile.content}
                         language={fileLanguage}
                         onChange={(newValue, e) => {
-                            // Set new value of file in state, keep old contents
                             editFile(newValue);
-
-                            // onSave for App Renderer
-                            // onChange(newValue);
                         }}
+                        onMount={editorOnMountHandler}
                     ></Editor>
                 </StyledContainer>
             );
@@ -604,7 +727,8 @@ export const TextEditor = (props: TextEditorProps) => {
     }
 };
 
-// Formats Python Code
+// For Formatting Python Code
+// seems like this may need it's own pixel
 const runBlack = (code) => {
     // return new Promise((resolve, reject) => {
     //     const blackProcess = spawn('black', ['-', '--quiet', '-']);

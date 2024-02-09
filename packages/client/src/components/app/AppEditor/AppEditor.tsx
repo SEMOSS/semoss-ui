@@ -7,8 +7,8 @@
 // This needs to handle Adding of Folders and Files to projects, and editting contents of existing
 // --------------------
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useRootStore } from '@/hooks';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { usePixel, useRootStore } from '@/hooks';
 import {
     TextEditor,
     ControlledFile,
@@ -43,6 +43,7 @@ import {
     NoteAddOutlined,
     DeleteOutline,
 } from '@mui/icons-material/';
+import { LLMContext } from '@/contexts';
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     overflow: 'hidden',
@@ -328,63 +329,31 @@ export const AppEditor = (props: AppEditorProps) => {
 
     // limit the number of files that are displayed on initial load
     // limit will often be exceeded due to unknown file count in folders but when limit is met no new folders will be opened
-    const initialLoadFileSet = useRef(new Set());
     const [initLoadComplete, setInitLoadComplete] = useState(false);
 
+    const initialLoadFileSet = useRef(new Set());
     const [isLoading, setIsLoading] = useState(false);
 
-    // backup solution for stopping initial auto-opening folders if file limit is never met
-    const firstClickHandler = () => {
-        setInitLoadComplete(true);
-        document.removeEventListener('click', firstClickHandler);
-    };
+    const [models, setModels] = useState<
+        { app_id: string; app_name: string }[]
+    >([]);
+
+    const [modelId, setModelId] = useState<string>('');
+
+    const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
+    MyEngines(engineTypes=['MODEL']);
+    `);
 
     useEffect(() => {
         getInitialAppStructure();
 
         // set event listener for first user click to disable auto folder opening
-        document.addEventListener('click', firstClickHandler);
+        // document.addEventListener('click', firstClickHandler);
+
+        // setTimeout(() => {
+        //     setInitLoadComplete(true);
+        // }, 5000)
     }, []);
-
-    // helper function for recursive folder opening on initial explorer load
-    const openFoldersHelper = (node) => {
-        initialLoadFileSet.current = new Set([
-            ...initialLoadFileSet.current,
-            node.id,
-        ]);
-
-        if (initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT)
-            setInitLoadComplete(true);
-        if (
-            node.type !== 'directory' ||
-            initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
-        )
-            return;
-
-        // add to open folders set for open folder icon rendering
-        const tempSet2 = new Set(openFolderSet);
-        tempSet2.add(node.id);
-        setOpenFolderSet(tempSet2);
-
-        // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
-        if (!expanded.includes(node.id)) openFolderById(node.id);
-
-        // recursively call on all children
-        node.children.forEach(openFoldersHelper);
-    };
-
-    // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
-    useEffect(() => {
-        if (
-            initLoadComplete ||
-            initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
-        )
-            return;
-
-        // if the user has not yet interacted with the page open all folders recursively
-        appDirectory.forEach(openFoldersHelper);
-        // only runs recursive directory check on updates to appDirectory, not continuously
-    }, [appDirectory]);
 
     useEffect(() => {
         if (newDirectoryRefs.current) {
@@ -408,12 +377,27 @@ export const AppEditor = (props: AppEditorProps) => {
         }
     }, [width]);
 
+    useEffect(() => {
+        if (myModels.status !== 'SUCCESS') {
+            return;
+        }
+
+        setModels(
+            myModels.data.map((d) => ({
+                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                app_id: d.app_id,
+            })),
+        );
+
+        setModelId(myModels.data[0].app_id);
+    }, [myModels.status, myModels.data]);
+
     /**
      * Get the App Structure, first on mount
      * TODO*** Decide when i went to call this and how often (reusability)
      */
     const getInitialAppStructure = async () => {
-        const pixel = `BrowseAsset(filePath=["version/assets"], space=["${appId}"]);`;
+        const pixel = `BrowseAsset(filePath=["version/assets/portals"], space=["${appId}"]);`;
         const response = await monolithStore.runQuery(pixel);
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
@@ -458,6 +442,8 @@ export const AppEditor = (props: AppEditorProps) => {
         );
 
         setAppDirectory(formattedDirectoryNodes);
+
+        setInitLoadComplete(true);
     };
 
     /**
@@ -604,15 +590,8 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // No issues with reactor, set selected nodes for visual representation
         if (initLoadComplete) setSelected(nodeIds);
-
-        // return nodeIds;
     };
 
-    /**
-     * 1. Save the Application Asset with *Pixel*
-     * 2. Commit the Application Asset with *Pixel*
-     * 2. Refresh the Application/IFRAME view
-     */
     const saveApplicationAsset = async (
         file: ControlledFile,
     ): Promise<boolean> => {
@@ -735,34 +714,6 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // if (initLoadComplete) setSelected([nodeReplacement.id]);
         setCounter(counter + 1);
-    };
-
-    /**
-     * Method that is called to download the app
-     */
-    const downloadApp = async () => {
-        try {
-            const path = 'version/assets/';
-
-            // upnzip the file in the new app
-            const response = await monolithStore.runQuery(
-                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
-            );
-
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error Downloading Asset');
-            }
-
-            await monolithStore.download(configStore.store.insightID, key);
-        } catch (e) {
-            console.error(e);
-
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        }
     };
 
     /**
@@ -1039,6 +990,56 @@ export const AppEditor = (props: AppEditorProps) => {
         });
     };
 
+    const confirmFileDeleteHandler = async () => {
+        try {
+            await monolithStore.runQuery(
+                `DeleteAsset(filePath=["${fileToBeDeleted.path}"], space=["${appId}"]);`,
+            );
+
+            await removeNodeById(UINodes, fileToBeDeleted.id);
+
+            notification.add({
+                color: 'success',
+                message: `${fileToBeDeleted.name} successfully deleted.`,
+            });
+
+            // Current fix for folders not being removed from explorer on delete
+            const newDeletedNodesSet = new Set(deletedNodesSet);
+            newDeletedNodesSet.add(fileToBeDeleted.id);
+            setDeletedNodesSet(newDeletedNodesSet);
+
+            // working using props factored out from TextEditor, testing no bugs found yet
+            closeCurrentTab();
+
+            setIsDeleteConfirmOpen(false);
+        } catch {
+            notification.add({
+                color: 'error',
+                message: `Error: ${fileToBeDeleted.name} was not deleted.`,
+            });
+
+            setIsDeleteConfirmOpen(false);
+        }
+    };
+
+    const fileDeleteHandler = async (nodes, targetNode) => {
+        setFileToBeDeleted(targetNode);
+        setUINodes(nodes);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const closeCurrentTab = () => {
+        const newControlledFiles = controlledFiles;
+        newControlledFiles.splice(activeFileIndex, 1);
+
+        setControlledFiles(newControlledFiles);
+
+        removeFileToView(activeFileIndex);
+
+        // Refresh Active File Memoized value
+        setCounterTextEditor(counterTextEditor + 1);
+    };
+
     // ----------------------------
     // Render Helpers -------------
     // ----------------------------
@@ -1222,91 +1223,6 @@ export const AppEditor = (props: AppEditorProps) => {
         });
     };
 
-    const removeFileFromFilesToViewById = (targetFile) => {
-        const newFilesToView = [];
-        for (let i = 0; i < filesToView.length; i++) {
-            const currFile = filesToView[i];
-            if (currFile.id !== targetFile.id) {
-                newFilesToView.push(currFile);
-            }
-        }
-
-        setActiveFileIndex(0);
-        setFilesToView(newFilesToView);
-    };
-
-    const confirmFileDeleteHandler = async () => {
-        try {
-            await monolithStore.runQuery(
-                `DeleteAsset(filePath=["${fileToBeDeleted.path}"], space=["${appId}"]);`,
-            );
-
-            await removeNodeById(UINodes, fileToBeDeleted.id);
-
-            notification.add({
-                color: 'success',
-                message: `${fileToBeDeleted.name} successfully deleted.`,
-            });
-
-            // Current fix for folders not being removed from explorer on delete
-            const newDeletedNodesSet = new Set(deletedNodesSet);
-            newDeletedNodesSet.add(fileToBeDeleted.id);
-            setDeletedNodesSet(newDeletedNodesSet);
-
-            // working using props factored out from TextEditor, testing no bugs found yet
-            closeCurrentTab();
-
-            setIsDeleteConfirmOpen(false);
-        } catch {
-            notification.add({
-                color: 'error',
-                message: `Error: ${fileToBeDeleted.name} was not deleted.`,
-            });
-
-            setIsDeleteConfirmOpen(false);
-        }
-    };
-
-    const fileDeleteHandler = async (nodes, targetNode) => {
-        setFileToBeDeleted(targetNode);
-        setUINodes(nodes);
-        setIsDeleteConfirmOpen(true);
-    };
-
-    const closeCurrentTab = () => {
-        console.warn(' closing tab', controlledFiles);
-
-        const newControlledFiles = controlledFiles;
-        newControlledFiles.splice(activeFileIndex, 1);
-
-        setControlledFiles(newControlledFiles);
-
-        // close this index, set state of files in parent
-        // await onClose(i);
-        removeFileToView(activeFileIndex);
-
-        // Refresh Active File Memoized value
-        setCounterTextEditor(counterTextEditor + 1);
-    };
-
-    const openFolderById = (nodeId) => {
-        const foundNode = findNodeById(appDirectory, nodeId);
-        setExpanded([...expanded, nodeId]); // rotates folder carret
-
-        const formattedChildren = sortArrayOfObjects(
-            foundNode.children,
-            'type',
-        );
-
-        const updatedTreeData = updateNodeRecursively(appDirectory, nodeId, {
-            ...foundNode,
-            children: formattedChildren,
-        });
-
-        viewAsset([nodeId]);
-        setAppDirectory(updatedTreeData);
-    };
-
     // only
     if (!initLoadComplete) {
         return (
@@ -1315,239 +1231,248 @@ export const AppEditor = (props: AppEditorProps) => {
     }
 
     return (
-        <StyledEditorPanel>
-            {/* If Open: Displays App Explorer */}
-            <StyledCollapse
-                in={openAppAssetsPanel}
-                timeout="auto"
-                orientation={'horizontal'}
-            >
-                {/* Move into smaller component */}
-                <StyledCollapseContainer>
-                    <StyleAppExplorerHeader>
-                        <Typography variant="h6">Explorer</Typography>
-                    </StyleAppExplorerHeader>
-                    <StyledAppExplorerContainer>
-                        <StyledAppExplorerSection>
-                            <CustomAccordion
-                                disableGutters
-                                square={true}
-                                // ### expanded
-                                expanded={
-                                    openAccordion.indexOf('file') > -1
-                                        ? true
-                                        : false
-                                }
-                                onChange={() => {
-                                    setExpanded([]);
-                                    if (initLoadComplete) setSelected([]);
-                                    handleAccordionChange('file');
-                                }}
-                            >
-                                <CustomAccordionTrigger
-                                    expandIcon={<ChevronRight />}
+        <LLMContext.Provider
+            value={{
+                modelId: modelId,
+                modelOptions: models,
+                setModel: (id) => {
+                    setModelId(id);
+                },
+            }}
+        >
+            <StyledEditorPanel>
+                <StyledCollapse
+                    in={openAppAssetsPanel}
+                    timeout="auto"
+                    orientation={'horizontal'}
+                >
+                    {/* Move into smaller component */}
+                    <StyledCollapseContainer>
+                        <StyleAppExplorerHeader>
+                            <Typography variant="h6">Explorer</Typography>
+                        </StyleAppExplorerHeader>
+                        <StyledAppExplorerContainer>
+                            <StyledAppExplorerSection>
+                                <CustomAccordion
+                                    disableGutters
+                                    square={true}
+                                    expanded={
+                                        openAccordion.indexOf('file') > -1
+                                            ? true
+                                            : false
+                                    }
+                                    onChange={() => {
+                                        setExpanded([]);
+                                        if (initLoadComplete) setSelected([]);
+                                        handleAccordionChange('file');
+                                    }}
                                 >
-                                    <CustomAccordionTriggerContent>
-                                        <CustomAccordionTriggerLabel>
-                                            <Typography variant="body1">
-                                                Files
-                                            </Typography>
-                                        </CustomAccordionTriggerLabel>
-                                        {openAccordion.indexOf('file') > -1 ? (
-                                            <StyledRow>
-                                                <IconButton
-                                                    size={'small'}
-                                                    onClick={(e) => {
-                                                        console.log(
-                                                            'Add a file to App',
-                                                        );
-                                                        e.stopPropagation();
-                                                        addPlaceholderNode(
-                                                            'file',
-                                                        );
-                                                    }}
-                                                >
-                                                    <NoteAddOutlined />
-                                                </IconButton>
-                                                <IconButton
-                                                    size={'small'}
-                                                    onClick={(e) => {
-                                                        console.log(
-                                                            'Add a directory to App',
-                                                        );
-
-                                                        e.stopPropagation();
-                                                        addPlaceholderNode(
-                                                            'directory',
-                                                        );
-                                                    }}
-                                                >
-                                                    <CreateNewFolderOutlined />
-                                                </IconButton>
-                                            </StyledRow>
-                                        ) : null}
-                                    </CustomAccordionTriggerContent>
-                                </CustomAccordionTrigger>
-                                <CustomAccordionContent>
-                                    <StyledTreeView
-                                        multiSelect
-                                        // ### explanded
-                                        expanded={expanded}
-                                        selected={selected}
-                                        onNodeToggle={handleToggle}
-                                        onNodeSelect={(e, v) => {
-                                            viewAsset(v, e);
-                                        }}
-                                        defaultCollapseIcon={
-                                            <StyledIcon>
-                                                <ExpandMore />
-                                            </StyledIcon>
-                                        }
-                                        defaultExpandIcon={
-                                            <StyledIcon>
-                                                <ChevronRight />
-                                            </StyledIcon>
-                                        }
+                                    <CustomAccordionTrigger
+                                        expandIcon={<ChevronRight />}
                                     >
-                                        {renderTreeNodes(appDirectory)}
-                                    </StyledTreeView>
-                                </CustomAccordionContent>
-                            </CustomAccordion>
-                        </StyledAppExplorerSection>
+                                        <CustomAccordionTriggerContent>
+                                            <CustomAccordionTriggerLabel>
+                                                <Typography variant="body1">
+                                                    Files
+                                                </Typography>
+                                            </CustomAccordionTriggerLabel>
+                                            {openAccordion.indexOf('file') >
+                                            -1 ? (
+                                                <StyledRow>
+                                                    <IconButton
+                                                        size={'small'}
+                                                        onClick={(e) => {
+                                                            console.log(
+                                                                'Add a file to App',
+                                                            );
+                                                            e.stopPropagation();
+                                                            addPlaceholderNode(
+                                                                'file',
+                                                            );
+                                                        }}
+                                                    >
+                                                        <NoteAddOutlined />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size={'small'}
+                                                        onClick={(e) => {
+                                                            console.log(
+                                                                'Add a directory to App',
+                                                            );
 
-                        {/* Dependencies */}
-                        {/* <StyledAppExplorerSection>
-                            <CustomAccordion
-                                disableGutters
-                                square={true}
-                                expanded={
-                                    openAccordion.indexOf('dependency') > -1
-                                        ? true
-                                        : false
-                                }
-                                onChange={() => {
-                                    setExpanded([]);
-                                    if (initLoadComplete) setSelected([]);
-                                    handleAccordionChange('dependency');
+                                                            e.stopPropagation();
+                                                            addPlaceholderNode(
+                                                                'directory',
+                                                            );
+                                                        }}
+                                                    >
+                                                        <CreateNewFolderOutlined />
+                                                    </IconButton>
+                                                </StyledRow>
+                                            ) : null}
+                                        </CustomAccordionTriggerContent>
+                                    </CustomAccordionTrigger>
+                                    <CustomAccordionContent>
+                                        <StyledTreeView
+                                            multiSelect
+                                            expanded={expanded}
+                                            selected={selected}
+                                            onNodeToggle={handleToggle}
+                                            onNodeSelect={(e, v) => {
+                                                viewAsset(v, e);
+                                            }}
+                                            defaultCollapseIcon={
+                                                <StyledIcon>
+                                                    <ExpandMore />
+                                                </StyledIcon>
+                                            }
+                                            defaultExpandIcon={
+                                                <StyledIcon>
+                                                    <ChevronRight />
+                                                </StyledIcon>
+                                            }
+                                        >
+                                            {renderTreeNodes(appDirectory)}
+                                        </StyledTreeView>
+                                    </CustomAccordionContent>
+                                </CustomAccordion>
+                            </StyledAppExplorerSection>
+                        </StyledAppExplorerContainer>
+                        {process.env.NODE_ENV == 'development' && (
+                            <TextEditorCodeGenerationWrapper>
+                                <TextEditorCodeGeneration />
+                            </TextEditorCodeGenerationWrapper>
+                        )}
+                    </StyledCollapseContainer>
+                </StyledCollapse>
+
+                {/* Collapse Trigger Container */}
+                <StyledCollapseTrigger openAppAssetsPanel={openAppAssetsPanel}>
+                    <StyledOpenAssetsContainer>
+                        {openAppAssetsPanel ? (
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    setOpenAppAssetsPanel(false);
                                 }}
                             >
-                                <CustomAccordionTrigger
-                                    expandIcon={<ChevronRight />}
-                                >
-                                    <CustomAccordionTriggerContent>
-                                        <CustomAccordionTriggerLabel>
-                                            <Typography variant="body1">
-                                                Dependencies
-                                            </Typography>
-                                        </CustomAccordionTriggerLabel>
-                                    </CustomAccordionTriggerContent>
-                                </CustomAccordionTrigger>
+                                <KeyboardDoubleArrowLeft />
+                            </IconButton>
+                        ) : (
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    setOpenAppAssetsPanel(true);
+                                }}
+                            >
+                                <KeyboardDoubleArrowRight />
+                            </IconButton>
+                        )}
+                    </StyledOpenAssetsContainer>
+                </StyledCollapseTrigger>
 
-                                <CustomAccordionContent>
-                                    <Typography variant="body1">
-                                        Currently in Progress ...
-                                    </Typography>
-                                </CustomAccordionContent>
-                            </CustomAccordion>
-                        </StyledAppExplorerSection> */}
-                    </StyledAppExplorerContainer>
-                    {process.env.NODE_ENV == 'development' && (
-                        <TextEditorCodeGenerationWrapper>
-                            <TextEditorCodeGeneration />
-                        </TextEditorCodeGenerationWrapper>
-                    )}
-                </StyledCollapseContainer>
-            </StyledCollapse>
+                {/* Text Editor */}
+                <StyledTextEditorDiv
+                    style={{
+                        width: openAppAssetsPanel
+                            ? 'calc(100% - 50px - 250px)'
+                            : 'calc(100% - 50px)',
+                    }}
+                >
+                    <TextEditor
+                        controlledFiles={controlledFiles}
+                        setControlledFiles={setControlledFiles}
+                        counter={counterTextEditor}
+                        setCounter={setCounterTextEditor}
+                        files={filesToView}
+                        activeIndex={activeFileIndex}
+                        setActiveIndex={(val: number) => {
+                            setActiveFileIndex(val);
+                        }}
+                        onSave={(asset: ControlledFile) => {
+                            return saveApplicationAsset(asset);
+                        }}
+                        onClose={(index: number) => {
+                            removeFileToView(index);
+                        }}
+                    />
+                </StyledTextEditorDiv>
 
-            {/* Collapse Trigger Container */}
-            <StyledCollapseTrigger openAppAssetsPanel={openAppAssetsPanel}>
-                <StyledOpenAssetsContainer>
-                    {openAppAssetsPanel ? (
-                        <IconButton
-                            size="small"
+                <Modal open={isDeleteConfirmOpen}>
+                    <Modal.Title>Are you sure?</Modal.Title>
+                    <StyledModalContent>
+                        This will delete <b>{fileToBeDeleted.name}</b>
+                    </StyledModalContent>
+                    <Modal.Actions>
+                        <Button
+                            variant={'outlined'}
                             onClick={() => {
-                                setOpenAppAssetsPanel(false);
+                                setIsDeleteConfirmOpen(false);
                             }}
                         >
-                            <KeyboardDoubleArrowLeft />
-                        </IconButton>
-                    ) : (
-                        <IconButton
-                            size="small"
+                            Close
+                        </Button>
+                        <Button
+                            color={'error'}
+                            variant={'contained'}
                             onClick={() => {
-                                setOpenAppAssetsPanel(true);
+                                confirmFileDeleteHandler();
                             }}
                         >
-                            <KeyboardDoubleArrowRight />
-                        </IconButton>
-                    )}
-                </StyledOpenAssetsContainer>
-            </StyledCollapseTrigger>
-
-            {/* Text Editor */}
-            <StyledTextEditorDiv
-                // openAppAssetsPanel={openAppAssetsPanel}
-
-                // only remaining inline style, mui styled workaround commented out above breaking TextEditor
-                style={{
-                    width: openAppAssetsPanel
-                        ? 'calc(100% - 50px - 250px)'
-                        : 'calc(100% - 50px)',
-                }}
-            >
-                <TextEditor
-                    // attempting to pass these in from parent for tab close
-                    controlledFiles={controlledFiles}
-                    setControlledFiles={setControlledFiles}
-                    counter={counterTextEditor}
-                    setCounter={setCounterTextEditor}
-                    files={filesToView}
-                    activeIndex={activeFileIndex}
-                    setActiveIndex={(val: number) => {
-                        setActiveFileIndex(val);
-                    }}
-                    onSave={(asset: ControlledFile) => {
-                        console.log(
-                            'App Editor onSave callback, hit Save Asset reactor and Refresh AppRenderer',
-                            // asset,
-                        );
-                        // Hit Save Asset Reactor for App
-                        return saveApplicationAsset(asset);
-                    }}
-                    onClose={(index: number) => {
-                        console.log('remove activeFileIndex from filesToView');
-                        removeFileToView(index);
-                    }}
-                />
-            </StyledTextEditorDiv>
-
-            {/* Delete Confirmation Modal */}
-            <Modal open={isDeleteConfirmOpen}>
-                {/* used same basic text / styling from MembersTable delete member modal except for minimum width in Modal.Content */}
-                <Modal.Title>Are you sure?</Modal.Title>
-                <StyledModalContent>
-                    This will delete <b>{fileToBeDeleted.name}</b>
-                </StyledModalContent>
-                <Modal.Actions>
-                    <Button
-                        variant={'outlined'}
-                        onClick={() => {
-                            setIsDeleteConfirmOpen(false);
-                        }}
-                    >
-                        Close
-                    </Button>
-                    <Button
-                        color={'error'}
-                        variant={'contained'}
-                        onClick={() => {
-                            confirmFileDeleteHandler();
-                        }}
-                    >
-                        Confirm
-                    </Button>
-                </Modal.Actions>
-            </Modal>
-        </StyledEditorPanel>
+                            Confirm
+                        </Button>
+                    </Modal.Actions>
+                </Modal>
+            </StyledEditorPanel>
+        </LLMContext.Provider>
     );
 };
+
+// Recursive open folders
+
+// // backup solution for stopping initial auto-opening folders if file limit is never met
+// const firstClickHandler = () => {
+//     setInitLoadComplete(true);
+//     document.removeEventListener('click', firstClickHandler);
+// };
+
+// helper function for recursive folder opening on initial explorer load
+// const openFoldersHelper = (node) => {
+//     initialLoadFileSet.current = new Set([
+//         ...initialLoadFileSet.current,
+//         node.id,
+//     ]);
+
+//     console.log('loop')
+//     if (initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT)
+//         setInitLoadComplete(true);
+//     if (
+//         node.type !== 'directory' ||
+//         initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
+//     )
+//         return;
+
+//     // add to open folders set for open folder icon rendering
+//     const tempSet2 = new Set(openFolderSet);
+//     tempSet2.add(node.id);
+//     setOpenFolderSet(tempSet2);
+
+//     // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
+//     if (!expanded.includes(node.id)) openFolderById(node.id);
+
+//     // recursively call on all children
+//     node.children.forEach(openFoldersHelper);
+// };
+
+// // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
+// useEffect(() => {
+//     if (
+//         initLoadComplete ||
+//         initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
+//     )
+//         return;
+
+//     // if the user has not yet interacted with the page open all folders recursively
+//     appDirectory.forEach(openFoldersHelper);
+//     // only runs recursive directory check on updates to appDirectory, not continuously
+// }, [appDirectory]);
