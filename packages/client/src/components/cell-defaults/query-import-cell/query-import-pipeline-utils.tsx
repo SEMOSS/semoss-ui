@@ -15,6 +15,10 @@ export const getQueryImportPipeline = (
     )}]);`;
 };
 
+export const getQueryImportPreviewPipeline = (frameVariableName: string) => {
+    return `META|Frame( frame=[${frameVariableName}] )|QueryAll()|Limit(20)|CollectAll();`;
+};
+
 const getImportFramePipelineCommand = (
     frameType: string,
     frameVariableName: string,

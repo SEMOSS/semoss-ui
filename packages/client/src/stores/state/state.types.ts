@@ -195,6 +195,9 @@ export interface Cell<D extends CellDef = CellDef> {
         /** Input view of the cell */
         input: CellComponent<D>;
 
+        /** Output view of the cell */
+        output: CellComponent<D>;
+
         details?: CellComponent<D>;
     };
 

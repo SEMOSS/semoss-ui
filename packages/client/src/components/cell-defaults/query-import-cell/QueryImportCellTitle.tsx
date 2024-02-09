@@ -86,10 +86,10 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
     const [frameVariableName, setFrameVariableName] = useState<string>('');
 
     useEffect(() => {
-        if (open && menuType === 'frame') {
+        if (open && menuType === 'variable') {
             setFrameVariableName(cell.parameters.frameVariableName);
         }
-    }, [open]);
+    }, [open, menuType]);
 
     const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
         loading: false,

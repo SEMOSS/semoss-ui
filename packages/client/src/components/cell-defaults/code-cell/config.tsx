@@ -1,6 +1,7 @@
 import { Cell, CellDef } from '@/stores';
 import { CodeCellInput } from './CodeCellInput';
 import { CodeCellTitle } from './CodeCellTitle';
+import { CodeCellOutput } from './CodeCellOutput';
 
 export interface CodeCellDef extends CellDef<'code'> {
     widget: 'code';
@@ -23,6 +24,7 @@ export const CodeCell: Cell<CodeCellDef> = {
     view: {
         title: CodeCellTitle,
         input: CodeCellInput,
+        output: CodeCellOutput,
     },
     toPixel: ({ type, code }) => {
         if (type === 'r') {

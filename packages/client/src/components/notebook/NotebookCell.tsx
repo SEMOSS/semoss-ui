@@ -230,6 +230,17 @@ export const NotebookCell = observer(
             });
         }, [cellType ? cellType.view.details : null, contentExpanded]);
 
+        // render the output
+        const renderedOutput = useMemo(() => {
+            if (!cellType || !cellType.view.output) {
+                return;
+            }
+
+            return createElement(observer(cellType.view.output), {
+                cell: cell,
+            });
+        }, [cellType ? cellType.view.output : null]);
+
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
         ) => {
@@ -496,21 +507,9 @@ export const NotebookCell = observer(
                                                 {cell.error}
                                             </Typography>
                                         ) : null}
-                                        {cell.isSuccessful ? (
-                                            typeof cell.output === 'string' ? (
-                                                <StyledJson>
-                                                    {cell.output}
-                                                </StyledJson>
-                                            ) : (
-                                                <StyledJson>
-                                                    {JSON.stringify(
-                                                        cell.output,
-                                                        null,
-                                                        4,
-                                                    )}
-                                                </StyledJson>
-                                            )
-                                        ) : null}
+                                        {cell.isSuccessful
+                                            ? renderedOutput
+                                            : null}
                                     </>
                                 )}
                             </Stack>
