@@ -92,6 +92,7 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
                 width="100%"
                 height={isExpanded ? editorHeight : EditorLineHeight}
                 value={cell.parameters.selectQuery}
+                defaultValue="--SELECT * FROM..."
                 language="sql" /** todo: language support? can we tell this from the database type? */
                 options={{
                     lineNumbers: 'on',
