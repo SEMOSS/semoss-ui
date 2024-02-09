@@ -24,6 +24,7 @@ import parserHtml from 'prettier/parser-html';
 import prettier from 'prettier';
 
 import { LoadingScreen } from '@/components/ui';
+import { useLLM } from '@/hooks';
 import { runPixel } from '@/api';
 
 const StyledSVG = styled('svg')(({ theme }) => ({
@@ -189,6 +190,9 @@ interface TextEditorProps {
      */
     setControlledFiles: (controlledFiles: ControlledFile[]) => void;
 
+    /**
+     * NEED TO GET RID OF THIS
+     */
     counter: number;
     setCounter: (index: number) => void;
 }
@@ -196,22 +200,24 @@ interface TextEditorProps {
 export const TextEditor = (props: TextEditorProps) => {
     const {
         controlledFiles,
+        activeIndex,
+        counter,
+        files,
         setActiveIndex,
         setCounter,
         setControlledFiles,
-        activeIndex,
         onClose,
-        counter,
         onSave,
-        files,
     } = props;
+
+    const notification = useNotification();
+    const { modelId } = useLLM();
 
     const [LLMLoading, setLLMLoading] = useState(false);
     const [LLMActionAdded, setLLMActionAdded] = useState(false);
-    const notification = useNotification();
-
     // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
     const fileTypeRef = useRef('');
+    const modelIdRef = useRef('');
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -237,8 +243,6 @@ export const TextEditor = (props: TextEditorProps) => {
      * Adds new files to Controlled structure
      */
     useEffect(() => {
-        console.log('files', files);
-        console.log('contfiles', controlledFiles);
         if (controlledFiles.length === files.length) return;
 
         const newControlledFiles = controlledFiles;
@@ -253,6 +257,11 @@ export const TextEditor = (props: TextEditorProps) => {
     useEffect(() => {
         fileTypeRef.current = files[activeIndex]?.type;
     }, [activeIndex]);
+
+    // Effect to re-initialize 'id' ref change
+    useEffect(() => {
+        modelIdRef.current = modelId;
+    }, [modelId]);
 
     /**
      * @name prettifyFile
@@ -425,7 +434,7 @@ export const TextEditor = (props: TextEditorProps) => {
 
         // ideally add filetype to LLM pixel so it does not have to be in prompt string
         // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
-        let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${inputPrompt}", paramValues = [ {} ] );`;
+        const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
 
         try {
             const res = await runPixel(pixel);
@@ -548,7 +557,7 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const editorOnMountHandler: OnMount = (_editor, monacoInstance) => {
         // prevents redundant additions of new dropdown action
-        if (LLMActionAdded == false) {
+        if (LLMActionAdded == false && process.env.NODE_ENV == 'development') {
             setLLMActionAdded(true);
             monacoInstance.editor.addEditorAction(executeAction);
         }
@@ -696,12 +705,11 @@ export const TextEditor = (props: TextEditorProps) => {
                     <StyledActiveFilePath>
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
-
                     {LLMLoading && (
                         <LoadingScreen.Trigger description="Generating..." />
                     )}
-
                     <Editor
+                        key={modelIdRef.current}
                         width={'100%'}
                         height={'100%'}
                         value={activeFile.content}

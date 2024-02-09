@@ -13,7 +13,7 @@ import {
 } from '@semoss/ui';
 import { AutoAwesome, ContentCopyOutlined } from '@mui/icons-material/';
 
-import { usePixel, useRootStore } from '@/hooks';
+import { useLLM, usePixel, useRootStore } from '@/hooks';
 
 const StyledGenerateButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== 'full',
@@ -66,29 +66,14 @@ const StyledSkeletonContainer = styled('div')(() => ({
 }));
 
 export const TextEditorCodeGeneration = () => {
+    const { modelId, modelOptions, setModel: setModelId } = useLLM();
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [model, setModel] = useState('');
     const [code, setCode] = useState('');
     const [prompt, setPrompt] = useState('');
-
-    const myEngines = usePixel<{ app_id: string; app_name: string }[]>(`
-    MyEngines(engineTypes=['MODEL']);
-    `);
-
-    const options = useMemo(() => {
-        if (myEngines.status !== 'SUCCESS') {
-            return [];
-        }
-
-        return myEngines.data.map((d) => ({
-            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            app_id: d.app_id,
-        }));
-    }, [myEngines.status, myEngines.data]);
 
     /**
      * Assitant for adding code
@@ -96,7 +81,7 @@ export const TextEditorCodeGeneration = () => {
      */
     const generateCode = async () => {
         try {
-            if (!model) {
+            if (!modelId) {
                 throw new Error('Model is required');
             }
 
@@ -108,7 +93,7 @@ export const TextEditorCodeGeneration = () => {
             setIsLoading(true);
 
             const response = await monolithStore.runQuery(
-                `LLM(engine=["${model}"], command=["${prompt}"])`,
+                `LLM(engine=["${modelId}"], command=["Create code with the user prompt: ${prompt}, No additional explanation or text is needed."], paramValues=[{}])`,
             );
 
             const { output, operationType } = response.pixelReturn[0];
@@ -117,19 +102,17 @@ export const TextEditorCodeGeneration = () => {
             }
 
             // Regex anything between the 3 backticks
-            const codeMatch = output.response.match(
-                /```[\s\S]*?\n([\s\S]*)\n```/,
-            );
+            const codeMatch = output.response.replace(/^```|```$/g, '');
 
             // TODO: Figure out if there is a particular LLM that will have a consistent response structure
             if (!codeMatch) {
                 throw new Error('Unable to parse generated code');
             }
 
-            // Will this be multiple indexes
-            if (codeMatch.length > 1) {
-                setCode(codeMatch[1]);
-            }
+            // // Will this be multiple indexes
+            // if (codeMatch.length > 1) {
+            setCode(codeMatch);
+            // }
         } catch (e) {
             console.log(e);
 
@@ -186,10 +169,10 @@ export const TextEditorCodeGeneration = () => {
                         <Select
                             fullWidth={true}
                             label={'Model'}
-                            value={model}
-                            onChange={(e) => setModel(e.target.value)}
+                            value={modelId}
+                            onChange={(e) => setModelId(e.target.value)}
                         >
-                            {options.map((m) => (
+                            {modelOptions.map((m) => (
                                 <Menu.Item key={m.app_id} value={m.app_id}>
                                     {m.app_name}
                                 </Menu.Item>
