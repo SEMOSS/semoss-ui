@@ -23,7 +23,7 @@ import {
     KeyboardArrowRight,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
-import { useBlocks, useWorkspace } from '@/hooks';
+import { useBlocks } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
 
 const StyledCard = styled(Card, {
@@ -32,12 +32,13 @@ const StyledCard = styled(Card, {
     border: isCardCellSelected
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
-    overflow: 'visible',
+    overflowY: 'visible',
     flexGrow: 1,
 }));
 
 const StyleCardContent = styled(Card.Content)(() => ({
     margin: '0!important',
+    padding: '0!important',
 }));
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -205,7 +206,7 @@ export const NotebookCell = observer(
             });
         }, [cellType ? cellType.view.title : null]);
 
-        // render the title
+        // render the input
         const renderedInput = useMemo(() => {
             if (!cellType) {
                 return;
@@ -216,6 +217,29 @@ export const NotebookCell = observer(
                 isExpanded: contentExpanded,
             });
         }, [cellType ? cellType.view.input : null, contentExpanded]);
+
+        // render the details
+        const renderedDetails = useMemo(() => {
+            if (!cellType || !cellType.view.details) {
+                return;
+            }
+
+            return createElement(observer(cellType.view.details), {
+                cell: cell,
+                isExpanded: contentExpanded,
+            });
+        }, [cellType ? cellType.view.details : null, contentExpanded]);
+
+        // render the output
+        const renderedOutput = useMemo(() => {
+            if (!cellType || !cellType.view.output) {
+                return;
+            }
+
+            return createElement(observer(cellType.view.output), {
+                cell: cell,
+            });
+        }, [cellType ? cellType.view.output : null]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
@@ -329,11 +353,13 @@ export const NotebookCell = observer(
                         }
                     >
                         <StyleCardContent>
+                            {renderedDetails}
                             <Stack
                                 id={`notebook-cell-content-${queryId}-${cellId}`}
                                 direction="row"
                                 alignContent="start"
                                 paddingTop={0.5}
+                                paddingX={2}
                             >
                                 <Stack>
                                     <IconButton
@@ -481,21 +507,9 @@ export const NotebookCell = observer(
                                                 {cell.error}
                                             </Typography>
                                         ) : null}
-                                        {cell.isSuccessful ? (
-                                            typeof cell.output === 'string' ? (
-                                                <StyledJson>
-                                                    {cell.output}
-                                                </StyledJson>
-                                            ) : (
-                                                <StyledJson>
-                                                    {JSON.stringify(
-                                                        cell.output,
-                                                        null,
-                                                        4,
-                                                    )}
-                                                </StyledJson>
-                                            )
-                                        ) : null}
+                                        {cell.isSuccessful
+                                            ? renderedOutput
+                                            : null}
                                     </>
                                 )}
                             </Stack>

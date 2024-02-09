@@ -33,6 +33,9 @@ const StyledMenu = styled((props: MenuProps) => (
     '& .MuiPaper-root': {
         marginTop: theme.spacing(1),
     },
+    '.MuiList-root': {
+        padding: 0,
+    },
 }));
 
 const StyledListIcon = styled(List.Icon)(({ theme }) => ({
@@ -76,6 +79,7 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 disabled={cell.isLoading}
                 size="small"
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
+                    event.preventDefault();
                     setAnchorEl(event.currentTarget);
                 }}
                 startIcon={
@@ -94,7 +98,7 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                <List disablePadding dense>
+                <List dense>
                     {Array.from(
                         Object.values(CodeCellOptions),
                         (codeCellOption) => (
