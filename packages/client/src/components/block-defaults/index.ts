@@ -36,23 +36,28 @@ import {
     config as BarChartBlockConfig,
     BarChartBlockDef,
 } from './bar-chart-block';
+import {
+    config as GroupedBarChartBlockConfig,
+    GroupedBarChartBlockDef,
+} from './grouped-bar-chart-block';
 
 export type DefaultBlockDefinitions =
     | BarChartBlockDef
     | BodyBlockDef
     | ButtonBlockDef
-    | QueryBlockDef
     | CheckboxBlockDef
     | ContainerBlockDef
     | DividerBlockDef
     | FooterBlockDef
     | FormBlockDef
+    | GroupedBarChartBlockDef
     | HeaderBlockDef
     | IframeBlockDef
     | ImageBlockDef
     | LinkBlockDef
     | MarkdownBlockDef
     | PageBlockDef
+    | QueryBlockDef
     | SelectBlockDef
     | TableBlockDef
     | TextBlockDef
@@ -66,14 +71,15 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [QueryBlockConfig.widget]: QueryBlockConfig,
+    [GroupedBarChartBlockConfig.widget]: GroupedBarChartBlockConfig,
+    [ImageBlockConfig.widget]: ImageBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
+    [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
+    [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
-    [InputBlockConfig.widget]: InputBlockConfig,
-    [ImageBlockConfig.widget]: ImageBlockConfig,
-    [LinkBlockConfig.widget]: LinkBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
 };
@@ -87,12 +93,13 @@ export {
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
+    GroupedBarChartBlockConfig,
+    ImageBlockConfig,
+    InputBlockConfig,
     MarkdownBlockConfig,
     PageBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
-    InputBlockConfig,
-    ImageBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
 };

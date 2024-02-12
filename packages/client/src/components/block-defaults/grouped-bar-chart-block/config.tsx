@@ -1,17 +1,21 @@
 import { BlockConfig } from '@/stores';
 
-import { BarChartBlockDef, BarChartBlock } from './BarChartBlock';
-import { BarChart } from '@mui/icons-material';
+import {
+    GroupedBarChartBlockDef,
+    GroupedBarChartBlock,
+} from './GroupedBarChartBlock';
+import { Addchart } from '@mui/icons-material';
 import { BLOCK_TYPE_CHART } from '../block-defaults.constants';
 import { InputSettings, QueryInputSettings } from '@/components/block-settings';
 
 // export the config for the block
-export const config: BlockConfig<BarChartBlockDef> = {
-    widget: 'bar-chart',
+export const config: BlockConfig<GroupedBarChartBlockDef> = {
+    widget: 'grouped-bar-chart',
     type: BLOCK_TYPE_CHART,
     data: {
         chartData: '',
-        xAxisField: '',
+        categoryField: '',
+        groupField: '',
         xAxisLabel: '',
         yAxisField: '',
         yAxisLabel: '',
@@ -22,8 +26,8 @@ export const config: BlockConfig<BarChartBlockDef> = {
     },
     listeners: {},
     slots: {},
-    render: BarChartBlock,
-    icon: BarChart,
+    render: GroupedBarChartBlock,
+    icon: Addchart,
     isBlocksMenuEnabled: true,
     contentMenu: [
         {
@@ -40,12 +44,22 @@ export const config: BlockConfig<BarChartBlockDef> = {
                     ),
                 },
                 {
-                    description: 'X-Axis Field',
+                    description: 'Category Field',
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="X-Axis Field"
-                            path="xAxisField"
+                            label="Category Field"
+                            path="categoryField"
+                        />
+                    ),
+                },
+                {
+                    description: 'Group Field',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Group Field"
+                            path="groupField"
                         />
                     ),
                 },
