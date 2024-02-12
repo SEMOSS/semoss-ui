@@ -28,8 +28,17 @@ import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
 import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
+import {
+    config as VegaVisualizationBlockConfig,
+    VegaVisualizationBlockDef,
+} from './vega-visualization-block';
+import {
+    config as BarChartBlockConfig,
+    BarChartBlockDef,
+} from './bar-chart-block';
 
 export type DefaultBlockDefinitions =
+    | BarChartBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | QueryBlockDef
@@ -49,9 +58,11 @@ export type DefaultBlockDefinitions =
     | TextBlockDef
     | InputBlockDef
     | SectionBlockDef
-    | UploadBlockDef;
+    | UploadBlockDef
+    | VegaVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [BarChartBlockConfig.widget]: BarChartBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
@@ -64,6 +75,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
+    [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -71,6 +83,7 @@ export function getIconForBlock(widget: string) {
 }
 
 export {
+    BarChartBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
@@ -81,4 +94,5 @@ export {
     InputBlockConfig,
     ImageBlockConfig,
     UploadBlockConfig,
+    VegaVisualizationBlockConfig,
 };
