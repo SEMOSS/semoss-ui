@@ -3,6 +3,7 @@ import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
 import { useBlockSettings } from './useBlockSettings';
 import { useEngine } from './useEngine';
+import { useLLM } from './useLLM';
 import { useMetamodel } from './useMetamodel';
 import { useRootStore } from './useRootStore';
 import { useSettings } from './useSettings';
@@ -17,6 +18,7 @@ export {
     useBlocks,
     useBlockSettings,
     useEngine,
+    useLLM,
     useMetamodel,
     useRootStore,
     useSettings,
