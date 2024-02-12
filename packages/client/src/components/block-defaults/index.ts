@@ -40,6 +40,10 @@ import {
     config as GroupedBarChartBlockConfig,
     GroupedBarChartBlockDef,
 } from './grouped-bar-chart-block';
+import {
+    config as PieChartBlockConfig,
+    PieChartBlockDef,
+} from './pie-chart-block';
 
 export type DefaultBlockDefinitions =
     | BarChartBlockDef
@@ -57,6 +61,7 @@ export type DefaultBlockDefinitions =
     | LinkBlockDef
     | MarkdownBlockDef
     | PageBlockDef
+    | PieChartBlockDef
     | QueryBlockDef
     | SelectBlockDef
     | TableBlockDef
@@ -77,6 +82,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
+    [PieChartBlockConfig.widget]: PieChartBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
@@ -98,6 +104,7 @@ export {
     InputBlockConfig,
     MarkdownBlockConfig,
     PageBlockConfig,
+    PieChartBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,

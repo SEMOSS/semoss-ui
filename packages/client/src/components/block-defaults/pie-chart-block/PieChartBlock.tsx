@@ -12,15 +12,13 @@ const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
 }));
 
-export interface GroupedBarChartBlockDef extends BlockDef<'grouped-bar-chart'> {
-    widget: 'grouped-bar-chart';
+export interface PieChartBlockDef extends BlockDef<'pie-chart'> {
+    widget: 'pie-chart';
     data: {
         chartData: string | Array<any>;
         categoryField: string;
-        groupField: string;
-        yAxisField: string;
-        xAxisLabel?: string;
-        yAxisLabel?: string;
+        valueField: string;
+        categoryLabel?: string;
         chartTitle?: string;
         width: number;
         height: number;
@@ -29,8 +27,8 @@ export interface GroupedBarChartBlockDef extends BlockDef<'grouped-bar-chart'> {
     slots: never;
 }
 
-export const GroupedBarChartBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock<GroupedBarChartBlockDef>(id);
+export const PieChartBlock: BlockComponent = observer(({ id }) => {
+    const { data, attrs } = useBlock<PieChartBlockDef>(id);
 
     const specJsonData = useMemo(() => {
         if (typeof data.chartData === 'string') {
@@ -55,24 +53,17 @@ export const GroupedBarChartBlock: BlockComponent = observer(({ id }) => {
             data: {
                 values: specJsonData,
             },
-            mark: 'bar',
+            mark: 'arc',
             encoding: {
-                x: {
-                    field: data.categoryField,
-                    title: data.xAxisLabel ?? data.categoryField,
-                    type: 'nominal',
-                    axis: { labelAngle: 0 },
-                },
-                y: {
-                    field: data.yAxisField,
-                    title: data.yAxisLabel,
+                theta: {
+                    field: data.valueField,
                     type: 'quantitative',
-                },
-                xOffset: {
-                    field: data.groupField,
+                    stack: 'normalize',
                 },
                 color: {
-                    field: data.groupField,
+                    field: data.categoryField,
+                    title: data.categoryLabel ?? data.categoryField,
+                    type: 'nominal',
                 },
             },
         } as VisualizationSpec;
@@ -86,13 +77,13 @@ export const GroupedBarChartBlock: BlockComponent = observer(({ id }) => {
         );
     }
 
-    const GroupedBarChart = createClassFromSpec({
+    const PieChart = createClassFromSpec({
         spec: specJsonObject,
     });
 
     return (
         <StyledChartContainer {...attrs}>
-            <GroupedBarChart data={specJsonData} actions={false} />
+            <PieChart data={specJsonData} actions={false} />
         </StyledChartContainer>
     );
 });

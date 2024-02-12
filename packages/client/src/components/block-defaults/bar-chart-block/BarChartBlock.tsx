@@ -74,7 +74,7 @@ export const BarChartBlock: BlockComponent = observer(({ id }) => {
     if (!data.chartData) {
         return (
             <div style={{ height: data.height, width: data.width }} {...attrs}>
-                Add spec to render your visualization
+                Add data to render your visualization
             </div>
         );
     }
