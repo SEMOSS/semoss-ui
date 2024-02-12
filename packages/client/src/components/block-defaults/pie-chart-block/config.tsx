@@ -1,7 +1,7 @@
 import { BlockConfig } from '@/stores';
 
 import { PieChartBlockDef, PieChartBlock } from './PieChartBlock';
-import { Addchart } from '@mui/icons-material';
+import { PieChart } from '@mui/icons-material';
 import { BLOCK_TYPE_CHART } from '../block-defaults.constants';
 import { InputSettings, QueryInputSettings } from '@/components/block-settings';
 
@@ -22,7 +22,7 @@ export const config: BlockConfig<PieChartBlockDef> = {
     listeners: {},
     slots: {},
     render: PieChartBlock,
-    icon: Addchart,
+    icon: PieChart,
     isBlocksMenuEnabled: true,
     contentMenu: [
         {
