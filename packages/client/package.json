@@ -25,8 +25,8 @@
         "marked": "^4.0.18",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
-        "node-sql-parser": "^4.18.0",
         "monaco-editor": "^0.45.0",
+        "node-sql-parser": "^4.18.0",
         "react": "^17.0.2",
         "react-beautiful-dnd": "^13.1.1",
         "react-dom": "^17.0.2",
@@ -34,7 +34,10 @@
         "react-flow-renderer": "^10.3.16",
         "react-hook-form": "^7.34.2",
         "react-markdown": "8.0.7",
-        "react-router-dom": "^6.3.0"
+        "react-router-dom": "^6.3.0",
+        "react-vega": "^7.6.0",
+        "vega": "^5.27.0",
+        "vega-lite": "^5.16.3"
     },
     "devDependencies": {
         "@types/node": "^16.11.47",

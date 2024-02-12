@@ -11,7 +11,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     cursor: 'grab',
     width: theme.spacing(11),
-    height: theme.spacing(11),
+    height: theme.spacing(12),
 }));
 
 export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
