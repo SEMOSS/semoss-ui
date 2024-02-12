@@ -44,6 +44,10 @@ import {
     config as PieChartBlockConfig,
     PieChartBlockDef,
 } from './pie-chart-block';
+import {
+    config as ProgressBlockConfig,
+    ProgressBlockDef,
+} from './progress-block';
 
 export type DefaultBlockDefinitions =
     | BarChartBlockDef
@@ -62,6 +66,7 @@ export type DefaultBlockDefinitions =
     | MarkdownBlockDef
     | PageBlockDef
     | PieChartBlockDef
+    | ProgressBlockDef
     | QueryBlockDef
     | SelectBlockDef
     | TableBlockDef
@@ -83,6 +88,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [PieChartBlockConfig.widget]: PieChartBlockConfig,
+    [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
@@ -105,6 +111,7 @@ export {
     MarkdownBlockConfig,
     PageBlockConfig,
     PieChartBlockConfig,
+    ProgressBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
