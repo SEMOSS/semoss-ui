@@ -397,7 +397,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * TODO*** Decide when i went to call this and how often (reusability)
      */
     const getInitialAppStructure = async () => {
-        const pixel = `BrowseAsset(filePath=["version/assets/portals"], space=["${appId}"]);`;
+        const pixel = `BrowseAsset(filePath=["version/assets"], space=["${appId}"]);`;
         const response = await monolithStore.runQuery(pixel);
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
