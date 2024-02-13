@@ -44,11 +44,30 @@ export interface VegaPieChartBlockDef
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
 
-    if (
-        !data.specJson ||
-        (data.specJson.hasOwnProperty('data') &&
-            !(data.specJson?.data as { values: Array<any> }).values?.length)
-    ) {
+    const hasNoData = () => {
+        if (!data.specJson) {
+            return true;
+        }
+        if ((data.specJson?.$schema ?? '').includes('vega-lite')) {
+            return (
+                !data.specJson?.data ||
+                (data.specJson.hasOwnProperty('data') &&
+                    !(data.specJson?.data as { values: Array<any> }).values
+                        ?.length)
+            );
+        } else {
+            return (
+                !data.specJson.data ||
+                (data.specJson.hasOwnProperty('data') &&
+                    (Array.isArray(data.specJson.data)
+                        ? !data.specJson.data.length
+                        : !(data.specJson?.data as { values: Array<any> })
+                              .values?.length))
+            );
+        }
+    };
+
+    if (!data.specJson || hasNoData()) {
         return (
             <div style={{ height: '200px', width: '200px' }} {...attrs}>
                 Add spec to render your visualization
