@@ -28,42 +28,72 @@ import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
 import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
+import {
+    config as VegaVisualizationBlockConfig,
+    VegaVisualizationBlockDef,
+} from './vega-visualization-block';
+import {
+    config as BarChartBlockConfig,
+    BarChartBlockDef,
+} from './bar-chart-block';
+import {
+    config as GroupedBarChartBlockConfig,
+    GroupedBarChartBlockDef,
+} from './grouped-bar-chart-block';
+import {
+    config as PieChartBlockConfig,
+    PieChartBlockDef,
+} from './pie-chart-block';
+import {
+    config as ProgressBlockConfig,
+    ProgressBlockDef,
+} from './progress-block';
 
 export type DefaultBlockDefinitions =
+    | BarChartBlockDef
     | BodyBlockDef
     | ButtonBlockDef
-    | QueryBlockDef
     | CheckboxBlockDef
     | ContainerBlockDef
     | DividerBlockDef
     | FooterBlockDef
     | FormBlockDef
+    | GroupedBarChartBlockDef
     | HeaderBlockDef
     | IframeBlockDef
     | ImageBlockDef
     | LinkBlockDef
     | MarkdownBlockDef
     | PageBlockDef
+    | PieChartBlockDef
+    | ProgressBlockDef
+    | QueryBlockDef
     | SelectBlockDef
     | TableBlockDef
     | TextBlockDef
     | InputBlockDef
     | SectionBlockDef
-    | UploadBlockDef;
+    | UploadBlockDef
+    | VegaVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [BarChartBlockConfig.widget]: BarChartBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [QueryBlockConfig.widget]: QueryBlockConfig,
+    [GroupedBarChartBlockConfig.widget]: GroupedBarChartBlockConfig,
+    [ImageBlockConfig.widget]: ImageBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
+    [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
+    [PieChartBlockConfig.widget]: PieChartBlockConfig,
+    [ProgressBlockConfig.widget]: ProgressBlockConfig,
+    [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
-    [InputBlockConfig.widget]: InputBlockConfig,
-    [ImageBlockConfig.widget]: ImageBlockConfig,
-    [LinkBlockConfig.widget]: LinkBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
+    [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -71,14 +101,19 @@ export function getIconForBlock(widget: string) {
 }
 
 export {
+    BarChartBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
+    GroupedBarChartBlockConfig,
+    ImageBlockConfig,
+    InputBlockConfig,
     MarkdownBlockConfig,
     PageBlockConfig,
+    PieChartBlockConfig,
+    ProgressBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
-    InputBlockConfig,
-    ImageBlockConfig,
     UploadBlockConfig,
+    VegaVisualizationBlockConfig,
 };
