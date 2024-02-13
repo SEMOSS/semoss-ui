@@ -3,82 +3,42 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
-import { createClassFromSpec } from 'react-vega';
+import { VisualizationSpec, createClassFromSpec } from 'react-vega';
 import { styled } from '@mui/material';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
 }));
 
-type BaseVegaSpec = {
-    $schema: string;
-    title: string | null;
-    width: number | null;
-    height: number | null;
-    padding: number | null;
+export interface BaseVisualizationBlockDef {
     data: {
-        values: undefined | Array<object>;
-    };
-    mark: 'bar' | 'arc';
-    encoding: {
-        x?: {
-            field: string;
-            title: string;
-            type: 'nominal' | 'quantitative';
-            axis: { labelAngle: 0 };
-        };
-        y?: {
-            field: string;
-            title: string;
-            type: 'nominal' | 'quantitative';
-        };
-        xOffset?: {
-            field: string;
-        };
-        theta?: {
-            field: string;
-            type: 'quantitative';
-            stack: 'normalize';
-        };
-        color?: {
-            field: string;
-            title?: string;
-            type?: 'nominal';
-        };
-    };
-};
-
-export interface VegaVisualizationBlockDef extends BlockDef<'vega'> {
-    widget: 'vega';
-    data: {
-        specJson: undefined | object | BaseVegaSpec;
+        specJson: undefined | VisualizationSpec;
     };
     slots: never;
 }
 
-export interface VegaBarChartBlockDef extends BlockDef<'bar-chart'> {
+export interface VegaVisualizationBlockDef
+    extends Omit<BlockDef<'vega'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
+    widget: 'vega';
+}
+
+export interface VegaBarChartBlockDef
+    extends Omit<BlockDef<'bar-chart'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
     widget: 'bar-chart';
-    data: {
-        specJson: undefined | BaseVegaSpec;
-    };
-    slots: never;
 }
 
 export interface VegaGroupedBarChartBlockDef
-    extends BlockDef<'grouped-bar-chart'> {
+    extends Omit<BlockDef<'grouped-bar-chart'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
     widget: 'grouped-bar-chart';
-    data: {
-        specJson: undefined | BaseVegaSpec;
-    };
-    slots: never;
 }
 
-export interface VegaPieChartBlockDef extends BlockDef<'pie-chart'> {
+export interface VegaPieChartBlockDef
+    extends Omit<BlockDef<'pie-chart'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
     widget: 'pie-chart';
-    data: {
-        specJson: undefined | BaseVegaSpec;
-    };
-    slots: never;
 }
 
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
@@ -87,7 +47,7 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     if (
         !data.specJson ||
         (data.specJson.hasOwnProperty('data') &&
-            !(data?.specJson as BaseVegaSpec).data.values?.length)
+            !(data.specJson?.data as { values: Array<any> }).values?.length)
     ) {
         return (
             <div style={{ height: '200px', width: '200px' }} {...attrs}>
