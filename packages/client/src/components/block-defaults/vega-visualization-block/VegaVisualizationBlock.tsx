@@ -1,4 +1,3 @@
-import { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -11,11 +10,73 @@ const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
 }));
 
+type BaseVegaSpec = {
+    $schema: string;
+    title: string | null;
+    width: number | null;
+    height: number | null;
+    padding: number | null;
+    data: {
+        values: undefined | Array<object>;
+    };
+    mark: 'bar' | 'arc';
+    encoding: {
+        x?: {
+            field: string;
+            title: string;
+            type: 'nominal' | 'quantitative';
+            axis: { labelAngle: 0 };
+        };
+        y?: {
+            field: string;
+            title: string;
+            type: 'nominal' | 'quantitative';
+        };
+        xOffset?: {
+            field: string;
+        };
+        theta?: {
+            field: string;
+            type: 'quantitative';
+            stack: 'normalize';
+        };
+        color?: {
+            field: string;
+            title?: string;
+            type?: 'nominal';
+        };
+    };
+};
+
 export interface VegaVisualizationBlockDef extends BlockDef<'vega'> {
     widget: 'vega';
     data: {
-        specJson: string | object;
-        data: string | object | Array<any>;
+        specJson: undefined | object | BaseVegaSpec;
+    };
+    slots: never;
+}
+
+export interface VegaBarChartBlockDef extends BlockDef<'bar-chart'> {
+    widget: 'bar-chart';
+    data: {
+        specJson: undefined | BaseVegaSpec;
+    };
+    slots: never;
+}
+
+export interface VegaGroupedBarChartBlockDef
+    extends BlockDef<'grouped-bar-chart'> {
+    widget: 'grouped-bar-chart';
+    data: {
+        specJson: undefined | BaseVegaSpec;
+    };
+    slots: never;
+}
+
+export interface VegaPieChartBlockDef extends BlockDef<'pie-chart'> {
+    widget: 'pie-chart';
+    data: {
+        specJson: undefined | BaseVegaSpec;
     };
     slots: never;
 }
@@ -23,43 +84,23 @@ export interface VegaVisualizationBlockDef extends BlockDef<'vega'> {
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
 
-    const specJsonObject = useMemo(() => {
-        if (typeof data.specJson === 'string') {
-            const cleaned = data.specJson.replace(/ {4}|[\t\n\r]/gm, '');
-            try {
-                console.log(JSON.parse(cleaned));
-                return JSON.parse(cleaned);
-            } catch (e) {
-                return {};
-            }
-        } else {
-            console.log(data.specJson);
-            return data.specJson;
-        }
-    }, [data.specJson]);
-
-    const specJsonData = useMemo(() => {
-        if (typeof data.data === 'string') {
-            const cleaned = data.data.replace(/ {4}|[\t\n\r]/gm, '');
-            try {
-                return JSON.parse(cleaned);
-            } catch (e) {
-                return {};
-            }
-        } else {
-            return data.data;
-        }
-    }, [data.data]);
-
-    if (!data.specJson) {
-        return <div {...attrs}>Add spec to render your visualization</div>;
+    if (
+        !data.specJson ||
+        (data.specJson.hasOwnProperty('data') &&
+            !(data?.specJson as BaseVegaSpec).data.values?.length)
+    ) {
+        return (
+            <div style={{ height: '200px', width: '200px' }} {...attrs}>
+                Add spec to render your visualization
+            </div>
+        );
     }
 
-    const Chart = createClassFromSpec({ spec: specJsonObject });
+    const Chart = createClassFromSpec({ spec: data.specJson });
 
     return (
         <StyledChartContainer {...attrs}>
-            <Chart data={specJsonData} />
+            <Chart actions={false} />
         </StyledChartContainer>
     );
 });
