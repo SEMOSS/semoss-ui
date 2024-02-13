@@ -71,22 +71,22 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [VegaBarChartBlockConfig.widget]: VegaBarChartBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [VegaGroupedBarChartBlockConfig.widget]: VegaGroupedBarChartBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
+    [VegaPieChartBlockConfig.widget]: VegaPieChartBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
-    [VegaBarChartBlockConfig.widget]: VegaBarChartBlockConfig,
-    [VegaGroupedBarChartBlockConfig.widget]: VegaGroupedBarChartBlockConfig,
-    [VegaPieChartBlockConfig.widget]: VegaPieChartBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
 };
 
