@@ -89,7 +89,7 @@ export const AIGenerationSettings = observer(
         const generateAIResponse = async () => {
             try {
                 setResponseLoading(true);
-                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${prompt}. Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure \"data\" and \"schema\" are top-level keys in the JSON object.</encode>"], paramValues=[${JSON.stringify(
+                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${prompt}. Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure \"data\" is a top-level key in the JSON object.</encode>"], paramValues=[${JSON.stringify(
                     {
                         max_new_tokens: 4000,
                     },
@@ -103,7 +103,6 @@ export const AIGenerationSettings = observer(
                 if (errors.length > 0 || typeof valueToSet !== 'string') {
                     throw new Error(errors.join(''));
                 }
-                console.log(valueToSet);
 
                 if (valueAsObject) {
                     valueToSet = !!pixelReturn[0].output?.response
@@ -113,7 +112,6 @@ export const AIGenerationSettings = observer(
                                   .replaceAll('\\n', ''),
                           )
                         : undefined;
-                    console.log(valueToSet);
                 }
 
                 setData(path, valueToSet as PathValue<D['data'], typeof path>);
