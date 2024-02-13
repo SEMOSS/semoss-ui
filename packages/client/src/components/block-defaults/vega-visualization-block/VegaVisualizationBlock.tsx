@@ -1,65 +1,66 @@
-import { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
-import { createClassFromSpec } from 'react-vega';
+import { VisualizationSpec, createClassFromSpec } from 'react-vega';
 import { styled } from '@mui/material';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
 }));
 
-export interface VegaVisualizationBlockDef extends BlockDef<'vega'> {
-    widget: 'vega';
+export interface BaseVisualizationBlockDef {
     data: {
-        specJson: string | object;
-        data: string | object | Array<any>;
+        specJson: undefined | VisualizationSpec;
     };
     slots: never;
+}
+
+export interface VegaVisualizationBlockDef
+    extends Omit<BlockDef<'vega'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
+    widget: 'vega';
+}
+
+export interface VegaBarChartBlockDef
+    extends Omit<BlockDef<'bar-chart'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
+    widget: 'bar-chart';
+}
+
+export interface VegaGroupedBarChartBlockDef
+    extends Omit<BlockDef<'grouped-bar-chart'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
+    widget: 'grouped-bar-chart';
+}
+
+export interface VegaPieChartBlockDef
+    extends Omit<BlockDef<'pie-chart'>, 'data' | 'slots'>,
+        BaseVisualizationBlockDef {
+    widget: 'pie-chart';
 }
 
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
 
-    const specJsonObject = useMemo(() => {
-        if (typeof data.specJson === 'string') {
-            const cleaned = data.specJson.replace(/ {4}|[\t\n\r]/gm, '');
-            try {
-                console.log(JSON.parse(cleaned));
-                return JSON.parse(cleaned);
-            } catch (e) {
-                return {};
-            }
-        } else {
-            console.log(data.specJson);
-            return data.specJson;
-        }
-    }, [data.specJson]);
-
-    const specJsonData = useMemo(() => {
-        if (typeof data.data === 'string') {
-            const cleaned = data.data.replace(/ {4}|[\t\n\r]/gm, '');
-            try {
-                return JSON.parse(cleaned);
-            } catch (e) {
-                return {};
-            }
-        } else {
-            return data.data;
-        }
-    }, [data.data]);
-
-    if (!data.specJson) {
-        return <div {...attrs}>Add spec to render your visualization</div>;
+    if (
+        !data.specJson ||
+        (data.specJson.hasOwnProperty('data') &&
+            !(data.specJson?.data as { values: Array<any> }).values?.length)
+    ) {
+        return (
+            <div style={{ height: '200px', width: '200px' }} {...attrs}>
+                Add spec to render your visualization
+            </div>
+        );
     }
 
-    const Chart = createClassFromSpec({ spec: specJsonObject });
+    const Chart = createClassFromSpec({ spec: data.specJson });
 
     return (
         <StyledChartContainer {...attrs}>
-            <Chart data={specJsonData} />
+            <Chart actions={false} />
         </StyledChartContainer>
     );
 });
