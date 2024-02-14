@@ -12,14 +12,12 @@ const StyledTypography = styled(Typography)(() => ({
 }));
 
 export const BlocksMenuCardContent = observer(
-    (props: { icon: any; widget: string }) => {
-        const blockDisplay = props.widget.replaceAll('-', ' ');
-
+    (props: { icon: any; display: string }) => {
         return (
             <StyledStack direction="column" padding={1} spacing={1}>
                 <BlockAvatar icon={props.icon} />
                 <StyledTypography variant="subtitle2">
-                    {blockDisplay}
+                    {props.display}
                 </StyledTypography>
             </StyledStack>
         );

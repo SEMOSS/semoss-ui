@@ -29,14 +29,8 @@ import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
 import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
 import {
-    VegaVisualizationBlockConfig,
-    VegaBarChartBlockConfig,
+    config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
-    VegaBarChartBlockDef,
-    VegaGroupedBarChartBlockDef,
-    VegaGroupedBarChartBlockConfig,
-    VegaPieChartBlockDef,
-    VegaPieChartBlockConfig,
 } from './vega-visualization-block';
 import {
     config as ProgressBlockConfig,
@@ -70,23 +64,17 @@ export type DefaultBlockDefinitions =
     | InputBlockDef
     | SectionBlockDef
     | UploadBlockDef
-    | VegaBarChartBlockDef
-    | VegaGroupedBarChartBlockDef
-    | VegaPieChartBlockDef
     | VegaVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
-    [VegaBarChartBlockConfig.widget]: VegaBarChartBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [VegaGroupedBarChartBlockConfig.widget]: VegaGroupedBarChartBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
-    [VegaPieChartBlockConfig.widget]: VegaPieChartBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
@@ -112,6 +100,5 @@ export {
     SelectBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
-    VegaBarChartBlockConfig,
     VegaVisualizationBlockConfig,
 };
