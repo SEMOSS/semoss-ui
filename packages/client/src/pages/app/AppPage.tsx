@@ -1,51 +1,34 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { styled, useNotification } from '@semoss/ui';
+import { Button, useNotification } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
-import { BlocksWorkspace } from '@/components/blocks-workspace';
-import { CodeWorkspace } from '@/components/code-workspace';
+import { BlocksRenderer } from '@/components/blocks-workspace';
+import { CodeRenderer } from '@/components/code-workspace';
 
 import { WorkspaceStore } from '@/stores';
-
-const StyledViewport = styled('div')(() => ({
-    display: 'flex',
-    height: '100vh',
-    width: '100vw',
-    overflow: 'hidden',
-}));
+import { Workspace } from '@/components/workspace';
 
 export const AppPage = observer(() => {
     // App ID Needed for pixel calls
     const { appId } = useParams();
-    const { cache } = useRootStore();
+    const { configStore } = useRootStore();
 
     const notification = useNotification();
     const navigate = useNavigate();
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
-
     useEffect(() => {
-        // see if the workspace is already loaded
-        if (cache.containsWorkspace(appId)) {
-            // load the cached workspace
-            const w = cache.getWorkspace(appId);
-            setWorkspace(w);
-
-            return;
-        }
-
         // clear out the old app
         setWorkspace(undefined);
 
-        // load the app
-        cache
-            .loadWorkspace(appId)
-            .then((loadedApp) => {
-                setWorkspace(loadedApp);
+        configStore
+            .createWorkspace(appId)
+            .then((loadedWorkspace) => {
+                setWorkspace(loadedWorkspace);
             })
             .catch((e) => {
                 notification.add({
@@ -63,13 +46,34 @@ export const AppPage = observer(() => {
     }
 
     return (
-        <StyledViewport>
+        <Workspace
+            workspace={workspace}
+            startTopbar={null}
+            endTopbar={
+                <Button
+                    variant="contained"
+                    size={'small'}
+                    color={'primary'}
+                    disabled={
+                        !(
+                            workspace.role === 'OWNER' ||
+                            workspace.role === 'EDIT'
+                        )
+                    }
+                    onClick={() => {
+                        navigate('edit');
+                    }}
+                >
+                    Edit App
+                </Button>
+            }
+        >
             {workspace.type === 'CODE' ? (
-                <CodeWorkspace workspace={workspace} />
+                <CodeRenderer appId={workspace.appId} />
             ) : null}
             {workspace.type === 'BLOCKS' ? (
-                <BlocksWorkspace workspace={workspace} />
+                <BlocksRenderer appId={workspace.appId} />
             ) : null}
-        </StyledViewport>
+        </Workspace>
     );
 });

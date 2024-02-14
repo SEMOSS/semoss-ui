@@ -17,11 +17,6 @@ export interface WorkspaceStoreInterface {
     isLoading: boolean;
 
     /**
-     * Track if the workspace is in edit mode
-     */
-    isEditMode: boolean;
-
-    /**
      *  View of the workspace when in edit mode
      */
     view: string;
@@ -95,7 +90,6 @@ export class WorkspaceStore {
     private _store: WorkspaceStoreInterface = {
         appId: '',
         isLoading: false,
-        isEditMode: false,
         view: '',
         role: 'READ_ONLY',
         type: 'CODE',
@@ -158,13 +152,6 @@ export class WorkspaceStore {
     }
 
     /**
-     * Track if the workspace is in edit mode
-     */
-    get isEditMode() {
-        return this._store.isEditMode;
-    }
-
-    /**
      * Get the view of the app when it is in edit mode
      */
     get view() {
@@ -218,15 +205,6 @@ export class WorkspaceStore {
      */
     setLoading = (isLoading: boolean) => {
         this._store.isLoading = isLoading;
-    };
-
-    /**
-     * Set if the workspace is in edit mode
-     * @param editMode - track if the workspace is in editmode
-     */
-
-    setEditMode = (editMode: boolean) => {
-        this._store.isEditMode = editMode;
     };
 
     /**

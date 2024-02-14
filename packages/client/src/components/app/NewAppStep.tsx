@@ -1,5 +1,4 @@
-import { Breadcrumbs, Icon, Stack, Typography, styled } from '@semoss/ui';
-import { Outlet } from 'react-router-dom';
+import { Breadcrumbs, Stack, Typography, styled } from '@semoss/ui';
 import { Page, LoadingScreen } from '@/components/ui';
 import { ArrowBack } from '@mui/icons-material';
 import React from 'react';
@@ -55,9 +54,7 @@ export const NewAppStep = (props: NewAppStepProps) => {
                                     previous.onClick();
                                 }}
                             >
-                                <Icon>
-                                    <ArrowBack />
-                                </Icon>
+                                <ArrowBack />
                                 {previous.title}
                             </StyledLink>
                         ) : null}

@@ -386,13 +386,6 @@ export class StateStore {
     }
 
     /**
-     * Update the mode of the state
-     */
-    updateMode(mode: 'interactive' | 'static') {
-        this._store.mode = mode;
-    }
-
-    /**
      * Internal
      */
     /**

@@ -49,7 +49,7 @@ export const BlocksMenu = observer(() => {
     };
 
     const getBlocksForSearch = () => {
-        if (!!search) {
+        if (search) {
             return menuBlocks.filter((block) => {
                 return block.widget
                     .replaceAll('-', ' ')
@@ -112,7 +112,7 @@ export const BlocksMenu = observer(() => {
             </StyledMenuHeader>
 
             <StyledBlockSectionContainer>
-                {!!search ? (
+                {search ? (
                     <BlocksMenuBlockTypeSection blocks={getBlocksForSearch()} />
                 ) : (
                     Array.from(BLOCK_TYPES, (blockType, i) => {

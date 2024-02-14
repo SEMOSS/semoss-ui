@@ -30,8 +30,8 @@ export const PromptBuilderInputStep = (props: {
         const tokenArray = contextString.match(
             /(?:[^\s\{\{\}\}]+|\{\{[^\{\{\}\}]*\}\})+/g,
         );
-        let preconfiguredInputs = {};
-        let tokenObjectArray: Token[] = [];
+        const preconfiguredInputs = {};
+        const tokenObjectArray: Token[] = [];
         tokenArray.forEach((token) => {
             let tokenObjectArrayIndex = tokenObjectArray.length;
             if (token.match(/(\{\{.+?\}\})/g)?.length > 0) {
@@ -108,8 +108,8 @@ export const PromptBuilderInputStep = (props: {
      */
     const setTokenType = (tokenIndex: number, tokenType: string) => {
         setTokens((previousState) => {
-            let newTokens = [...previousState];
-            let indexToken = newTokens[tokenIndex];
+            const newTokens = [...previousState];
+            const indexToken = newTokens[tokenIndex];
             newTokens[tokenIndex] = {
                 ...indexToken,
                 type: tokenType,
@@ -126,7 +126,7 @@ export const PromptBuilderInputStep = (props: {
     const setTokenDisplay = (tokenIndex: number, tokenDisplay: string) => {
         setTokens((previousState) => {
             const value = tokenDisplay.replace(/[\W_]+/g, ' ').trim();
-            let newTokens = [...previousState];
+            const newTokens = [...previousState];
             newTokens[tokenIndex] = {
                 ...newTokens[tokenIndex],
                 display: tokenDisplay,
@@ -142,7 +142,7 @@ export const PromptBuilderInputStep = (props: {
      */
     const setHideToken = (tokenIndex: number, hideToken: boolean) => {
         setTokens((previousState) => {
-            let newTokens = [...previousState];
+            const newTokens = [...previousState];
             newTokens[tokenIndex] = {
                 ...newTokens[tokenIndex],
                 isHiddenPhraseInputToken: hideToken,
@@ -155,7 +155,7 @@ export const PromptBuilderInputStep = (props: {
         linkedTokenIndex: number,
     ) => {
         setTokens((previousState) => {
-            let newTokens = [...previousState];
+            const newTokens = [...previousState];
             newTokens[tokenIndex] = {
                 ...newTokens[tokenIndex],
                 linkedInputToken: linkedTokenIndex,
@@ -270,7 +270,7 @@ export const PromptBuilderInputStep = (props: {
      * Everything selected should become an input token
      * Multi-word inputs should be merged
      */
-    const setSelectedTokensAsInputs = (setAsLinked: boolean = false) => {
+    const setSelectedTokensAsInputs = (setAsLinked = false) => {
         if (selectedInputTokens.length > 1) {
             const selectedInputTokensCopy = [...selectedInputTokens];
             selectedInputTokensCopy.sort((a, b) => a - b);

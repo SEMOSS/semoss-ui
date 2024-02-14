@@ -104,8 +104,8 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
             return;
         }
 
-        let dbIds: string[] = [];
-        let dbDisplay = {};
+        const dbIds: string[] = [];
+        const dbDisplay = {};
         myDbs.data.forEach((db) => {
             dbIds.push(db.app_id);
             dbDisplay[db.app_id] = db.app_name;

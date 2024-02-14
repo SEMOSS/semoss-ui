@@ -12,7 +12,7 @@ import {
     CircularProgress,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
-import { Sidebar } from '@/components/settings';
+import { EngineQASidebar } from '@/components/settings';
 import { useEngine, useRootStore } from '@/hooks';
 import { Markdown } from '@/components/common';
 
@@ -151,7 +151,7 @@ export const EngineQAPage = () => {
     useEffect(() => {
         setIsLoading(true);
         //Grabbing all the Models that are in CfG
-        let pixel = `MyEngines ( engineTypes=["MODEL"]);`;
+        const pixel = `MyEngines ( engineTypes=["MODEL"]);`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const { output, operationType } = response.pixelReturn[0];
@@ -170,7 +170,7 @@ export const EngineQAPage = () => {
     return (
         <StyledLayout>
             <Stack direction="row">
-                <Sidebar
+                <EngineQASidebar
                     modelOptions={modelOptions}
                     selectedModel={selectedModel}
                     setSelectedModel={setSelectedModel}

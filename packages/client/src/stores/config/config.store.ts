@@ -1,7 +1,8 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { RootStore } from '@/stores';
+import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { runPixel } from '@/api';
+import { AppMetadata } from '@/components/app';
 
 interface ConfigStoreInterface {
     /** Status of the application */
@@ -460,5 +461,51 @@ export class ConfigStore {
             this._store.insightID ? this._store.insightID : 'new',
             pixel,
         );
+    }
+
+    /**
+     * Load an app into a new workspace
+     *
+     * @param appId - id of app to load into the workspace
+     */
+    async createWorkspace(appId: string) {
+        // check the permission
+        const getUserProjectPermission =
+            await this._root.monolithStore.getUserProjectPermission(appId);
+
+        // get the role and throw an error if it is missing
+        const role = getUserProjectPermission.permission;
+        if (!role) {
+            throw new Error('Unauthorized');
+        }
+
+        // get the metadata
+        const getAppInfo = await this._root.monolithStore.runQuery<
+            [AppMetadata]
+        >(`ProjectInfo(project=["${appId}"]);`);
+
+        // throw the errors if there are any
+        if (getAppInfo.errors.length > 0) {
+            throw new Error(getAppInfo.errors.join(''));
+        }
+
+        const metadata = {
+            ...getAppInfo.pixelReturn[0].output,
+        };
+
+        const workspace: WorkspaceConfigInterface = {
+            appId: appId,
+            type: 'CODE',
+            role: role,
+            metadata: metadata,
+        };
+
+        // set it as blocks
+        if (metadata.project_type === 'BLOCKS') {
+            workspace.type = 'BLOCKS';
+        }
+
+        // create the newly loaded workspace
+        return new WorkspaceStore(this._root, workspace);
     }
 }

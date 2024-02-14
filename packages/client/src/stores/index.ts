@@ -1,4 +1,3 @@
-export * from './cache';
 export * from './config';
 export * from './designer';
 export * from './monolith';
