@@ -23,6 +23,8 @@ interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    resetValueOnChange?: boolean;
 }
 
 export const SwitchSettings = observer(
@@ -30,6 +32,7 @@ export const SwitchSettings = observer(
         id,
         label = '',
         path,
+        resetValueOnChange = false,
     }: SwitchSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
@@ -81,6 +84,12 @@ export const SwitchSettings = observer(
                 try {
                     // set the value
                     setData(path, value as PathValue<D['data'], typeof path>);
+                    if (resetValueOnChange) {
+                        setData(
+                            'value' as Paths<Block<D>['data'], 4>,
+                            undefined,
+                        );
+                    }
                 } catch (e) {
                     console.log(e);
                 }
