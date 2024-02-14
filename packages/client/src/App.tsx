@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { HashRouter } from 'react-router-dom';
 import { ThemeProvider, Notification } from '@semoss/ui';
 
@@ -15,12 +15,29 @@ axios.interceptors.response.use(
         return response;
     },
     function (error) {
+        console.log(error);
         if (error.status === 302 && error.headers && error.headers.redirect) {
             window.location.replace(error.headers.redirect);
         }
 
-        // return the message
-        return Promise.reject(error.response.data.errorMessage);
+        if (isAxiosError(error)) {
+            const { response } = error;
+            if (
+                response.status === 302 &&
+                response.headers &&
+                response.headers.redirect
+            ) {
+                window.location.replace(response.headers.redirect);
+            }
+        }
+
+        // return the message if it exists
+        if (error.message) {
+            return Promise.reject(error.message);
+        }
+
+        // reject with generic error
+        return Promise.reject('Error');
     },
 );
 
