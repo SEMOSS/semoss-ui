@@ -24,6 +24,7 @@ export interface VegaVisualizationBlockDef {
     widget: 'vega';
     data: {
         specJson: undefined | VisualizationSpec;
+        variation?: undefined | string;
     };
     listeners: never;
     slots: never;

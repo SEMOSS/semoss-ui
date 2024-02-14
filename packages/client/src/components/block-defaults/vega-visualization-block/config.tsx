@@ -13,6 +13,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
     type: BLOCK_TYPE_CHART,
     data: {
         specJson: undefined,
+        variation: undefined,
     },
     listeners: {},
     slots: {},

@@ -36,11 +36,11 @@ export const BlocksMenuCard = observer((props: { block: MenuBlockConfig }) => {
         // set the dragged
         designer.activateDrag(
             props.block.widget,
-            props.block.display,
-            props.block.icon,
             () => {
                 return true;
             },
+            props.block.display,
+            props.block.icon,
         );
 
         // clear the hovered
