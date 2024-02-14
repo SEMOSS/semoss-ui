@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Chip, List, Typography, styled } from '@semoss/ui';
 import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
 import { ActionMessages, QueryState, BlockJSON } from '@/stores';
+import { getIconForBlock } from '../block-defaults';
 
 const StyledListItem = styled(List.Item)(() => ({
     padding: '0px 4px',
@@ -51,9 +52,14 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag('text', () => {
-            return true;
-        });
+        designer.activateDrag(
+            'text',
+            () => {
+                return true;
+            },
+            'text',
+            getIconForBlock('text'),
+        );
 
         // clear the hovered
         designer.setHovered('');

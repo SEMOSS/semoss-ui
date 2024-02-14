@@ -158,9 +158,9 @@ export class DesignerStore {
      */
     activateDrag(
         widget: DesignerStoreInterface['drag']['ghostWidget'],
-        display: DesignerStoreInterface['drag']['ghostDisplay'],
-        icon: DesignerStoreInterface['drag']['ghostIcon'],
         canDrop: DesignerStoreInterface['drag']['canDrop'],
+        display?: DesignerStoreInterface['drag']['ghostDisplay'],
+        icon?: DesignerStoreInterface['drag']['ghostIcon'],
     ) {
         // activate the drag
         this._store.drag.active = true;
@@ -187,6 +187,8 @@ export class DesignerStore {
 
         // reset the ghost
         this._store.drag.ghostWidget = '';
+        this._store.drag.ghostDisplay = '';
+        this._store.drag.ghostIcon = '';
         this._store.drag.ghostPosition = null;
 
         // reset the validation
