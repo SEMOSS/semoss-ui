@@ -46,7 +46,14 @@ export const SettingsView = () => {
         >
             <Container
                 maxWidth={'xl'}
-                sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+                sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    overflowX: 'hidden',
+                    overflowY: 'auto',
+                }}
             >
                 <StyledContainer>
                     {workspace.role === 'OWNER' ? (

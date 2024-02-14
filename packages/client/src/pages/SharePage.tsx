@@ -4,10 +4,10 @@ import { observer } from 'mobx-react-lite';
 import { styled, useNotification } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
-import { WorkspaceStore } from '@/stores';
 import { LoadingScreen } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
 import { BlocksRenderer } from '@/components/blocks-workspace';
+import { AppType, AppMetadata } from '@/components/app';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -19,46 +19,78 @@ const StyledViewport = styled('div')(() => ({
 export const SharePage = observer(() => {
     // App ID Needed for pixel calls
     const { appId } = useParams();
-    const { cache } = useRootStore();
+    const { monolithStore } = useRootStore();
 
     const notification = useNotification();
     const navigate = useNavigate();
 
-    const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+    const [type, setType] = useState<AppType | null>(null);
 
-    useEffect(() => {
-        // clear out the old app
-        setWorkspace(undefined);
+    /**
+     * Load an app
+     *
+     * @param appId - id of app to load into the workspace
+     */
+    const loadApp = async (appId: string) => {
+        try {
+            // clear the type
+            setType(null);
 
-        // load a fresh copy of the app
-        cache
-            .loadWorkspace(appId)
-            .then((loadedApp) => {
-                setWorkspace(loadedApp);
-            })
-            .catch((e) => {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
+            // check the permission
+            const getUserProjectPermission =
+                await monolithStore.getUserProjectPermission(appId);
 
-                navigate('/');
+            // get the role and throw an error if it is missing
+            const role = getUserProjectPermission.permission;
+            if (!role) {
+                throw new Error('Unauthorized');
+            }
+
+            // get the metadata
+            const getAppInfo = await monolithStore.runQuery<[AppMetadata]>(
+                `ProjectInfo(project=["${appId}"]);`,
+            );
+
+            // throw the errors if there are any
+            if (getAppInfo.errors.length > 0) {
+                throw new Error(getAppInfo.errors.join(''));
+            }
+
+            const metadata = {
+                ...getAppInfo.pixelReturn[0].output,
+            };
+
+            let type: AppType = 'CODE';
+            // set it as blocks
+            if (metadata.project_type === 'BLOCKS') {
+                type = 'BLOCKS';
+            }
+
+            setType(type);
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
             });
+
+            navigate('/');
+        }
+    };
+
+    // load the app
+    useEffect(() => {
+        loadApp(appId);
     }, [appId]);
 
     // hide the screen while it loads
-    if (!workspace) {
+    if (!type) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
     return (
         <StyledViewport>
-            {workspace.type === 'CODE' ? (
-                <CodeRenderer appId={workspace.appId} />
-            ) : null}
-            {workspace.type === 'BLOCKS' ? (
-                <BlocksRenderer appId={workspace.appId} />
-            ) : null}
+            {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
+            {type === 'BLOCKS' ? <BlocksRenderer appId={appId} /> : null}
         </StyledViewport>
     );
 });

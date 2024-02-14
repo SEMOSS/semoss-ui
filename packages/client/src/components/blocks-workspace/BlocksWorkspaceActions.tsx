@@ -1,81 +1,34 @@
 import { observer } from 'mobx-react-lite';
 import {
+    styled,
     Button,
     IconButton,
-    useNotification,
-    styled,
     Stack,
+    useNotification,
     ButtonGroup,
 } from '@semoss/ui';
-import { Code, Share, Settings, Save, Preview } from '@mui/icons-material';
+import { PlayCircleRounded, ShareRounded } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
-import { ShareOverlay } from '@/components/workspace';
-import { PreviewOverlay } from '../workspace/PreviewOverlay';
+import { ShareOverlay, PreviewOverlay } from '@/components/workspace';
 
-const StyledNavItem = styled(ButtonGroup.Item, {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{
-    /** Track if item is selected */
-    selected: boolean;
-}>(({ selected }) => ({
-    backgroundColor: selected ? 'rgba(4, 113, 240, 0.12)' : '',
-    transition: 'backgroundColor 2s ease',
+const StyledShareButton = styled(Button)(({ theme }) => ({
+    //TODO: styled needs to be updated to match the theme
+    borderRadius: '12px', //  theme.shape.borderRadiusLg
 }));
 
-const StyledTrack = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'active',
-})<{
-    /** Track if dev mode is enabled */
-    active: boolean;
-}>(({ theme, active }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: '0',
-    width: '52px',
-    height: '32px',
-    padding: '2px 4px',
-    borderRadius: '100px',
-    borderWidth: '2px',
-    borderStyle: 'solid',
-    borderColor: active
-        ? theme.palette.primary.light
-        : theme.palette.grey['500'],
-    backgroundColor: active
-        ? theme.palette.primary.light
-        : theme.palette.action.active,
-    '&:hover': {
-        borderColor: active
-            ? `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`
-            : theme.palette.grey['400'],
-    },
+const StyledShareButtonText = styled('span')(({ theme }) => ({
+    ...theme.typography.button,
+    color: theme.palette.text.primary,
 }));
 
-const StyledHandle = styled(IconButton, {
-    shouldForwardProp: (prop) => prop !== 'active',
-})<{
-    /** Track if dev mode is enabled */
-    active: boolean;
-}>(({ theme, active }) => ({
-    left: active ? '16px' : '0px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '24px',
-    height: '24px',
-    borderRadius: '23px',
-    color: active ? theme.palette.common.white : theme.palette.common.black,
-    backgroundColor: active
-        ? theme.palette.primary.main
-        : theme.palette.grey['500'],
-    '&:hover': {
-        backgroundColor: active
-            ? `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`
-            : theme.palette.grey['400'],
-    },
-    transition: theme.transitions.create(['left'], {
-        duration: theme.transitions.duration.standard,
-    }),
+const StyledShareIcon = styled(ShareRounded)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, 0.54)',
+}));
+
+const StyledSaveButtonGroup = styled(ButtonGroup)(({ theme }) => ({
+    //TODO: styled needs to be updated to match the theme
+    borderRadius: '12px', //  theme.shape.borderRadiusLg
 }));
 
 export const BlocksWorkspaceActions = observer(() => {
@@ -203,117 +156,37 @@ export const BlocksWorkspaceActions = observer(() => {
     };
 
     return (
-        <Stack direction="row" alignItems={'center'} spacing={2}>
-            {(workspace.role === 'OWNER' || workspace.role === 'EDIT') &&
-            workspace.isEditMode ? (
-                <Stack direction="row" alignItems={'center'} spacing={0}>
-                    <ButtonGroup
-                        orientation="horizontal"
-                        color="primary"
-                        size="small"
-                        variant="outlined"
-                    >
-                        <StyledNavItem
-                            title={'Data'}
-                            selected={workspace.view === 'data'}
-                            onClick={() => {
-                                workspace.setView('data');
-                            }}
-                        >
-                            Data
-                        </StyledNavItem>
-                        <StyledNavItem
-                            title={'Design'}
-                            selected={workspace.view === 'design'}
-                            onClick={() => {
-                                workspace.setView('design');
-                            }}
-                        >
-                            Design
-                        </StyledNavItem>
-                        <StyledNavItem
-                            title={'Settings'}
-                            selected={workspace.view === 'settings'}
-                            onClick={() => {
-                                workspace.setView('settings');
-                            }}
-                        >
-                            <Stack
-                                alignItems={'center'}
-                                justifyContent={'center'}
-                            >
-                                <Settings fontSize="small" />
-                            </Stack>
-                        </StyledNavItem>
-                    </ButtonGroup>
-                </Stack>
-            ) : (
-                <></>
-            )}
-            <Stack flex={1}>&nbsp;</Stack>
-            {workspace.isEditMode && (
-                <>
-                    <Button
-                        color="secondary"
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Preview />}
-                        onClick={() => {
-                            previewApp();
-                        }}
-                    >
-                        Preview
-                    </Button>
-                    <Button
-                        size={'small'}
-                        color={'secondary'}
-                        variant={'outlined'}
-                        startIcon={<Share />}
-                        onClick={() => {
-                            shareApp();
-                        }}
-                    >
-                        Share
-                    </Button>
-
-                    {workspace.role === 'OWNER' || workspace.role === 'EDIT' ? (
-                        <>
-                            <Button
-                                size={'small'}
-                                color={'secondary'}
-                                variant={'outlined'}
-                                startIcon={<Save />}
-                                onClick={() => {
-                                    saveApp();
-                                }}
-                            >
-                                Save
-                            </Button>
-                        </>
-                    ) : (
-                        <></>
-                    )}
-                </>
-            )}
-            {workspace.role === 'OWNER' || workspace.role === 'EDIT' ? (
-                <>
-                    <StyledTrack
-                        title={`Enter ${
-                            workspace.isEditMode ? 'preview' : 'edit'
-                        } mode`}
-                        active={workspace.isEditMode}
-                        onClick={() => {
-                            workspace.setEditMode(!workspace.isEditMode);
-                        }}
-                    >
-                        <StyledHandle active={workspace.isEditMode}>
-                            <Code />
-                        </StyledHandle>
-                    </StyledTrack>
-                </>
-            ) : (
-                <></>
-            )}
+        <Stack direction="row" spacing={1.25} alignItems={'center'}>
+            <IconButton
+                color="default"
+                size="small"
+                onClick={() => {
+                    previewApp();
+                }}
+            >
+                <PlayCircleRounded />
+            </IconButton>
+            <StyledShareButton
+                size={'small'}
+                color={'secondary'}
+                variant={'outlined'}
+                startIcon={<StyledShareIcon />}
+                onClick={() => {
+                    shareApp();
+                }}
+            >
+                <StyledShareButtonText>Share</StyledShareButtonText>
+            </StyledShareButton>
+            <StyledSaveButtonGroup variant={'contained'} color={'primary'}>
+                <ButtonGroup.Item
+                    size={'small'}
+                    onClick={() => {
+                        saveApp();
+                    }}
+                >
+                    Save
+                </ButtonGroup.Item>
+            </StyledSaveButtonGroup>
         </Stack>
     );
 });

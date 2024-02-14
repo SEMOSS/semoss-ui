@@ -46,6 +46,11 @@ export interface DesignerStoreInterface {
     };
 }
 
+export interface DesignerConfigInterface {
+    /** Current rendered block */
+    rendered: string;
+}
+
 /**
  * Internal state management of the designer object
  */
@@ -65,9 +70,13 @@ export class DesignerStore {
         },
     };
 
-    constructor(state: StateStore) {
+    constructor(state: StateStore, config: DesignerConfigInterface) {
         // register the blocks
         this._store.state = state;
+
+        if (config.rendered) {
+            this._store.rendered = config.rendered;
+        }
 
         // make it observable
         makeAutoObservable(this);
