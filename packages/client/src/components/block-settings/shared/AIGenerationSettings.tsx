@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { computed } from 'mobx';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Button, Stack, TextField, useNotification } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, usePixel, useRootStore } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
-import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { AutoAwesome } from '@mui/icons-material';
 import { Autocomplete } from '@mui/material';
+import { VisualizationSpec } from 'react-vega';
 
 type CfgLibraryEngineState = {
     loading: boolean;
@@ -32,9 +31,20 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
      */
     path: Paths<Block<D>['data'], 4>;
 
+    /**
+     * Placeholder text in prompt input
+     */
     placeholder?: string;
 
+    /**
+     * Set path value as object instead of string
+     */
     valueAsObject?: boolean;
+
+    /**
+     * Append additional context to the end of the prompt
+     */
+    appendPrompt?: string;
 }
 
 export const AIGenerationSettings = observer(
@@ -44,6 +54,7 @@ export const AIGenerationSettings = observer(
         placeholder = null,
         path,
         valueAsObject = false,
+        appendPrompt = '',
     }: AIGenerationSettingsProps<D>) => {
         const { setData } = useBlockSettings<D>(id);
         const { monolithStore } = useRootStore();
@@ -89,7 +100,7 @@ export const AIGenerationSettings = observer(
         const generateAIResponse = async () => {
             try {
                 setResponseLoading(true);
-                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${prompt}. Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure \"data\" is a top-level key in the JSON object.</encode>"], paramValues=[${JSON.stringify(
+                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${prompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
                     {
                         max_new_tokens: 4000,
                     },
