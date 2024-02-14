@@ -5,17 +5,25 @@ export const SidebarItem = styled('div', {
 })<{
     /** Track if item is selected */
     selected?: boolean;
-}>(({ theme, selected }) => ({
+
+    /** Track if item is disabled */
+    disabled?: boolean;
+}>(({ theme, selected, disabled }) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    color: selected ? theme.palette.primary.main : 'rgba(0, 0, 0, 0.54)',
+    color: disabled
+        ? 'rgba(0, 0, 0, 0.3)'
+        : selected
+        ? theme.palette.primary.main
+        : 'rgba(0, 0, 0, 0.54)',
     textDecoration: 'none',
     width: '100%',
     paddingTop: theme.spacing(2),
     paddingBottom: theme.spacing(2),
-    cursor: 'pointer',
+    cursor: disabled ? undefined : 'cursor',
+    pointerEvents: disabled ? 'none' : undefined,
     backgroundColor: selected ? 'rgba(4, 113, 240, 0.12)' : 'transparent',
     transition: 'backgroundColor 2s ease',
     '&:hover': {

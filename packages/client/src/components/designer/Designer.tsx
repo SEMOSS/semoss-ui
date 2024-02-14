@@ -1,12 +1,12 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Paper } from '@semoss/ui';
-import { DashboardRounded, Layers } from '@mui/icons-material';
+import { styled, Stack, Paper, Divider, Tooltip } from '@semoss/ui';
+import { DashboardRounded, DataObject, Layers } from '@mui/icons-material';
 import { useMemo, useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { Sidebar, SidebarItem } from '@/components/common';
+import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 import { Renderer } from '@/components/blocks';
 
 import { BlocksMenu } from './BlocksMenu';
@@ -188,23 +188,32 @@ export const Designer = observer((): JSX.Element => {
                     width={view ? leftMenuResize.width : 0}
                 >
                     <Sidebar>
+                        <SidebarText>Build</SidebarText>
                         <SidebarItem
                             selected={view === 'outline'}
                             onClick={() => updateView('outline')}
                         >
-                            <Layers color="inherit" />
+                            <Tooltip title={'View Outline'} placement="right">
+                                <Layers color="inherit" />
+                            </Tooltip>
                         </SidebarItem>
-                        {/* <SidebarItem
-                            selected={view === 'query'}
-                            onClick={() => updateView('query')}
-                        >
-                            <DataObject color="inherit" />
-                        </SidebarItem> */}
                         <SidebarItem
                             selected={view === 'add'}
                             onClick={() => updateView('add')}
                         >
-                            <DashboardRounded color="inherit" />
+                            <Tooltip title={'Add'} placement="right">
+                                <DashboardRounded color="inherit" />
+                            </Tooltip>
+                        </SidebarItem>
+                        <Divider orientation="horizontal" />
+                        <SidebarText>Connect</SidebarText>
+                        <SidebarItem
+                            selected={view === 'query'}
+                            onClick={() => updateView('query')}
+                        >
+                            <Tooltip title={'Connect Query'} placement="right">
+                                <DataObject color="inherit" />
+                            </Tooltip>
                         </SidebarItem>
                     </Sidebar>
                     {view ? (
