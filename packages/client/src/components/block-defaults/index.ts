@@ -29,28 +29,21 @@ import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
 import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
 import {
-    config as VegaVisualizationBlockConfig,
+    VegaVisualizationBlockConfig,
+    VegaBarChartBlockConfig,
     VegaVisualizationBlockDef,
+    VegaBarChartBlockDef,
+    VegaGroupedBarChartBlockDef,
+    VegaGroupedBarChartBlockConfig,
+    VegaPieChartBlockDef,
+    VegaPieChartBlockConfig,
 } from './vega-visualization-block';
-import {
-    config as BarChartBlockConfig,
-    BarChartBlockDef,
-} from './bar-chart-block';
-import {
-    config as GroupedBarChartBlockConfig,
-    GroupedBarChartBlockDef,
-} from './grouped-bar-chart-block';
-import {
-    config as PieChartBlockConfig,
-    PieChartBlockDef,
-} from './pie-chart-block';
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
 } from './progress-block';
 
 export type DefaultBlockDefinitions =
-    | BarChartBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -58,14 +51,12 @@ export type DefaultBlockDefinitions =
     | DividerBlockDef
     | FooterBlockDef
     | FormBlockDef
-    | GroupedBarChartBlockDef
     | HeaderBlockDef
     | IframeBlockDef
     | ImageBlockDef
     | LinkBlockDef
     | MarkdownBlockDef
     | PageBlockDef
-    | PieChartBlockDef
     | ProgressBlockDef
     | QueryBlockDef
     | SelectBlockDef
@@ -74,20 +65,23 @@ export type DefaultBlockDefinitions =
     | InputBlockDef
     | SectionBlockDef
     | UploadBlockDef
+    | VegaBarChartBlockDef
+    | VegaGroupedBarChartBlockDef
+    | VegaPieChartBlockDef
     | VegaVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
-    [BarChartBlockConfig.widget]: BarChartBlockConfig,
+    [VegaBarChartBlockConfig.widget]: VegaBarChartBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [GroupedBarChartBlockConfig.widget]: GroupedBarChartBlockConfig,
+    [VegaGroupedBarChartBlockConfig.widget]: VegaGroupedBarChartBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
-    [PieChartBlockConfig.widget]: PieChartBlockConfig,
+    [VegaPieChartBlockConfig.widget]: VegaPieChartBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
@@ -101,19 +95,17 @@ export function getIconForBlock(widget: string) {
 }
 
 export {
-    BarChartBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
-    GroupedBarChartBlockConfig,
     ImageBlockConfig,
     InputBlockConfig,
     MarkdownBlockConfig,
     PageBlockConfig,
-    PieChartBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
+    VegaBarChartBlockConfig,
     VegaVisualizationBlockConfig,
 };

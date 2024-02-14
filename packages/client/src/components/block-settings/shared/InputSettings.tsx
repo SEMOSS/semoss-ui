@@ -24,8 +24,15 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
      */
     path: Paths<Block<D>['data'], 4>;
 
+    /**
+     * Secondary to update
+     */
+    secondaryPath?: Paths<Block<D>['data'], 4>;
+
     /** Type of input to render for settings */
     type?: string;
+
+    valueAsObject?: boolean;
 }
 
 export const InputSettings = observer(
@@ -33,7 +40,9 @@ export const InputSettings = observer(
         id,
         label = '',
         path,
+        secondaryPath = undefined,
         type = 'text',
+        valueAsObject = false,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
@@ -81,8 +90,30 @@ export const InputSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
+                    let valueToSet = value;
+                    if (valueAsObject) {
+                        try {
+                            valueToSet = !!value
+                                ? JSON.parse(value)
+                                : undefined;
+                        } catch (e) {
+                            console.log(e);
+                        }
+                    }
                     // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    setData(
+                        path,
+                        valueToSet as PathValue<D['data'], typeof path>,
+                    );
+                    if (!!secondaryPath) {
+                        setData(
+                            secondaryPath,
+                            valueToSet as PathValue<
+                                D['data'],
+                                typeof secondaryPath
+                            >,
+                        );
+                    }
                 } catch (e) {
                     console.log(e);
                 }
