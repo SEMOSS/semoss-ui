@@ -11,6 +11,8 @@ import {
 import { useBlocks, useDesigner } from '@/hooks';
 
 import { DragIndicator } from '@mui/icons-material';
+import { getIconForBlock } from '../block-defaults';
+import { MenuBlocks } from './BlocksMenuBlocks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -74,15 +76,37 @@ export const SelectedMask = observer(() => {
             return;
         }
 
-        // set the dragged
-        designer.activateDrag(block.widget, (parent) => {
-            // if the parent block is a child of the selected, we cannot add
-            if (state.containsBlock(designer.selected, parent)) {
-                return false;
-            }
+        let display = block.widget.replaceAll('-', ' ');
+        let icon = getIconForBlock(block.widget);
 
-            return true;
-        });
+        if (block.data?.variation) {
+            const menuVariation = MenuBlocks.find((menuBlockConfig) => {
+                return (
+                    menuBlockConfig.widget === block.widget &&
+                    (menuBlockConfig.data as any)?.variation ===
+                        block.data?.variation
+                );
+            });
+            if (menuVariation) {
+                display = (menuVariation.data as any)?.variation;
+                icon = menuVariation.icon;
+            }
+        }
+
+        // set the dragged
+        designer.activateDrag(
+            block.widget,
+            (parent) => {
+                // if the parent block is a child of the selected, we cannot add
+                if (state.containsBlock(designer.selected, parent)) {
+                    return false;
+                }
+
+                return true;
+            },
+            display,
+            icon,
+        );
 
         // clear the hovered
         designer.setHovered('');

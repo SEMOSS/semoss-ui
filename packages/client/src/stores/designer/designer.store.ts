@@ -19,6 +19,10 @@ export interface DesignerStoreInterface {
         canDrop: (parent: string, slot: string) => boolean;
         /** Name of the dragged widget */
         ghostWidget: string;
+        /** Display name of the dragged widget */
+        ghostDisplay: string;
+        /** Icon of the dragged widget */
+        ghostIcon: any;
         /** Position of the dragged item */
         ghostPosition: {
             x: number;
@@ -64,6 +68,8 @@ export class DesignerStore {
             active: false,
             canDrop: () => false,
             ghostWidget: '',
+            ghostDisplay: '',
+            ghostIcon: null,
             ghostPosition: null,
             placeholderSize: null,
             placeholderAction: null,
@@ -153,6 +159,8 @@ export class DesignerStore {
     activateDrag(
         widget: DesignerStoreInterface['drag']['ghostWidget'],
         canDrop: DesignerStoreInterface['drag']['canDrop'],
+        display?: DesignerStoreInterface['drag']['ghostDisplay'],
+        icon?: DesignerStoreInterface['drag']['ghostIcon'],
     ) {
         // activate the drag
         this._store.drag.active = true;
@@ -162,6 +170,8 @@ export class DesignerStore {
 
         // initialize the ghost
         this._store.drag.ghostWidget = widget;
+        this._store.drag.ghostDisplay = display;
+        this._store.drag.ghostIcon = icon;
         this._store.drag.ghostPosition = null;
 
         // reset the placeholder
@@ -177,6 +187,8 @@ export class DesignerStore {
 
         // reset the ghost
         this._store.drag.ghostWidget = '';
+        this._store.drag.ghostDisplay = '';
+        this._store.drag.ghostIcon = '';
         this._store.drag.ghostPosition = null;
 
         // reset the validation

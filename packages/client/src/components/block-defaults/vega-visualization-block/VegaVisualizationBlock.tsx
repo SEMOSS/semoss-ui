@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
-import { BlockDef, BlockComponent } from '@/stores';
+import { BlockComponent } from '@/stores';
 
 import { VisualizationSpec, createClassFromSpec } from 'react-vega';
 import { styled } from '@mui/material';
@@ -20,35 +20,14 @@ const StyledNoDataContainer = styled('div', {
     color: error ? theme.palette.error.main : 'unset',
 }));
 
-export interface BaseVisualizationBlockDef {
+export interface VegaVisualizationBlockDef {
+    widget: 'vega';
     data: {
         specJson: undefined | VisualizationSpec;
+        variation?: undefined | string;
     };
+    listeners: never;
     slots: never;
-}
-
-export interface VegaVisualizationBlockDef
-    extends Omit<BlockDef<'vega'>, 'data' | 'slots'>,
-        BaseVisualizationBlockDef {
-    widget: 'vega';
-}
-
-export interface VegaBarChartBlockDef
-    extends Omit<BlockDef<'bar-chart'>, 'data' | 'slots'>,
-        BaseVisualizationBlockDef {
-    widget: 'bar-chart';
-}
-
-export interface VegaGroupedBarChartBlockDef
-    extends Omit<BlockDef<'grouped-bar-chart'>, 'data' | 'slots'>,
-        BaseVisualizationBlockDef {
-    widget: 'grouped-bar-chart';
-}
-
-export interface VegaPieChartBlockDef
-    extends Omit<BlockDef<'pie-chart'>, 'data' | 'slots'>,
-        BaseVisualizationBlockDef {
-    widget: 'pie-chart';
 }
 
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {

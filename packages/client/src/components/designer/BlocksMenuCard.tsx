@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Card } from '@semoss/ui';
 
-import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
+import { ActionMessages, BlockJSON } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 import { BlocksMenuCardContent } from './BlocksMenuCardContent';
+import { MenuBlockConfig } from './BlocksMenuBlocks';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     borderRadius: '8px',
@@ -14,7 +15,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     height: theme.spacing(12),
 }));
 
-export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
+export const BlocksMenuCard = observer((props: { block: MenuBlockConfig }) => {
     const json: BlockJSON = {
         widget: props.block.widget,
         data: props.block.data,
@@ -33,9 +34,14 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag(props.block.widget, () => {
-            return true;
-        });
+        designer.activateDrag(
+            props.block.widget,
+            () => {
+                return true;
+            },
+            props.block.display,
+            props.block.icon,
+        );
 
         // clear the hovered
         designer.setHovered('');
@@ -127,7 +133,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
     return (
         <StyledCard onMouseDown={handleMouseDown}>
             <BlocksMenuCardContent
-                widget={props.block.widget}
+                display={props.block.display}
                 icon={props.block.icon}
             />
         </StyledCard>

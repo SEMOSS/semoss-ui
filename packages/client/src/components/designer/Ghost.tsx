@@ -68,8 +68,8 @@ export const Ghost = observer(() => {
         >
             <StyledCard>
                 <BlocksMenuCardContent
-                    widget={designer.drag.ghostWidget}
-                    icon={getIconForBlock(designer.drag.ghostWidget)}
+                    display={designer.drag.ghostDisplay}
+                    icon={designer.drag.ghostIcon}
                 />
             </StyledCard>
         </StyledGhost>

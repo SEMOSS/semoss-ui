@@ -9,13 +9,13 @@ import {
     TextField,
     Collapse,
     useNotification,
-    Tooltip,
 } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
+import { MenuBlocks } from './BlocksMenuBlocks';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -73,7 +73,20 @@ export const SelectedMenu = observer(() => {
             return [];
         }
 
-        const m = registry[block.widget].contentMenu;
+        let m = registry[block.widget].contentMenu;
+
+        if (block.data?.variation) {
+            const menuVariation = MenuBlocks.find((menuBlockConfig) => {
+                return (
+                    menuBlockConfig.widget === block.widget &&
+                    (menuBlockConfig.data as any)?.variation ===
+                        block.data?.variation
+                );
+            });
+            if (menuVariation) {
+                m = menuVariation.contentMenu;
+            }
+        }
 
         // clear out the accordion
         const acc = {};
@@ -114,7 +127,20 @@ export const SelectedMenu = observer(() => {
             return [];
         }
 
-        const m = registry[block.widget].styleMenu;
+        let m = registry[block.widget].styleMenu;
+
+        if (block.data?.variation) {
+            const menuVariation = MenuBlocks.find((menuBlockConfig) => {
+                return (
+                    menuBlockConfig.widget === block.widget &&
+                    (menuBlockConfig.data as any)?.variation ===
+                        block.data?.variation
+                );
+            });
+            if (menuVariation) {
+                m = menuVariation.styleMenu;
+            }
+        }
 
         // clear out the accordion
         const acc = {};
@@ -177,7 +203,15 @@ export const SelectedMenu = observer(() => {
         }
     }, [block]);
 
-    const blockDisplay = block ? block.widget.replaceAll('-', ' ') : '';
+    const getBlockDisplay = () => {
+        if (block) {
+            return block.data?.variation
+                ? block.widget.replaceAll('-', ' ')
+                : '';
+        } else {
+            return '';
+        }
+    };
 
     // ignore if there is no menu
     if (!block) {
@@ -196,7 +230,9 @@ export const SelectedMenu = observer(() => {
                 <Stack flex={1} spacing={2} direction="row" alignItems="center">
                     <BlockAvatar icon={getIconForBlock(block.widget)} />
                     <Stack direction={'row'} spacing={0.5} alignItems="center">
-                        <StyledTitle variant="h6">{blockDisplay}</StyledTitle>
+                        <StyledTitle variant="h6">
+                            {getBlockDisplay()}
+                        </StyledTitle>
                         <IconButton
                             aria-label="copy"
                             color="default"
