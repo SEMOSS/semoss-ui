@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { DefaultBlocks } from '../block-defaults';
+import { MenuBlockConfig, MenuBlocks } from './BlocksMenuBlocks';
 
 import {
     styled,
@@ -32,7 +32,7 @@ const StyledBlockSectionContainer = styled('div')(({ theme }) => ({
     padding: `0 ${theme.spacing(2)}`,
 }));
 
-const StyledHeader = styled('div')(({ theme }) => ({
+const StyledHeader = styled('div')(() => ({
     minWidth: '118px',
 }));
 
@@ -40,7 +40,7 @@ export const BlocksMenu = observer(() => {
     const [search, setSearch] = useState('');
     const [showSearch, setShowSearch] = useState<boolean>(false);
 
-    const menuBlocks = Object.values(DefaultBlocks).filter(
+    const menuBlocks: MenuBlockConfig[] = MenuBlocks.filter(
         (block) => block.isBlocksMenuEnabled,
     );
 
@@ -51,7 +51,7 @@ export const BlocksMenu = observer(() => {
     const getBlocksForSearch = () => {
         if (search) {
             return menuBlocks.filter((block) => {
-                return block.widget
+                return block.display
                     .replaceAll('-', ' ')
                     .includes(search.toLowerCase());
             });
