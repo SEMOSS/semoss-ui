@@ -57,7 +57,7 @@ export const DatabaseTables = (props: { databaseId: string }) => {
             return;
         }
         const { nodes = [], dataTypes = {} } = databaseMetamodel.data;
-        let retrievedTables = {};
+        const retrievedTables = {};
         nodes.forEach((n) => {
             const tableName = n.conceptualName;
             const filteredDataTypes = Object.keys(dataTypes).filter((colName) =>

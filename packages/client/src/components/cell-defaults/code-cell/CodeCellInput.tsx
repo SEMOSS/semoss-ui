@@ -99,7 +99,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
-            let suggestions = [];
+            const suggestions = [];
             Object.values(state.blocks).forEach((block: Block) => {
                 // only input block types will have values
                 const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
@@ -163,7 +163,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             // if suggestion already exist, dispose and re-add
             // this may be superfluous at times but we re-add instead of setting up suggestions once
             // so that we are pulling more real-time values off of the blocks/queries
-            if (!!completionItemProviders[language]) {
+            if (completionItemProviders[language]) {
                 completionItemProviders[language].dispose();
             }
             completionItemProviders = {
@@ -185,7 +185,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             }
 
                             // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-                            var specialCharacterStartRange = {
+                            const specialCharacterStartRange = {
                                 startLineNumber: position.lineNumber,
                                 endLineNumber: position.lineNumber,
                                 startColumn: word.startColumn - 2,
@@ -199,7 +199,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                                 preceedingTwoCharacters === '{{' ? 2 : 1;
                             // python editor will automatically add closed bracket when you type a start one
                             // need to replace the closed brackets appropriately
-                            var specialCharacterEndRange = {
+                            const specialCharacterEndRange = {
                                 startLineNumber: position.lineNumber,
                                 endLineNumber: position.lineNumber,
                                 startColumn: word.endColumn,

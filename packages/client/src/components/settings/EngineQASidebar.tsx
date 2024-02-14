@@ -46,7 +46,7 @@ const StyledList = styled(List)(({ theme }) => ({
     background: 'rgba(217, 217, 217, 0.3)',
 }));
 
-export const Sidebar = ({
+export const EngineQASidebar = ({
     modelOptions,
     selectedModel,
     setSelectedModel,

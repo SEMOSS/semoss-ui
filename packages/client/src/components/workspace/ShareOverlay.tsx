@@ -65,10 +65,7 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
             <Modal.Content>
                 {diffs && (
                     <Alert severity="warning" icon={<WarningAmberOutlined />}>
-                        <Alert.Title>
-                            Save app prior to sharing to reflect the latest
-                            changes
-                        </Alert.Title>
+                        Save app prior to sharing to reflect the latest changes
                     </Alert>
                 )}
                 <Stack direction="column" spacing={2}>

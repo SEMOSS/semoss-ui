@@ -1,5 +1,8 @@
 import { styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
+import { DataArrayRounded } from '@mui/icons-material';
+
+import { Sidebar, SidebarItem } from '@/components/common';
 
 import { NotebookMenu } from './NotebookMenu';
 import { NotebookSheet } from './NotebookSheet';
@@ -30,6 +33,11 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     return (
         <StyledNotebook>
+            <Sidebar>
+                <SidebarItem selected={true} onClick={() => null}>
+                    <DataArrayRounded color="inherit" />
+                </SidebarItem>
+            </Sidebar>
             <StyledLeftPanel>
                 <NotebookMenu />
             </StyledLeftPanel>

@@ -312,7 +312,7 @@ export function getQueryForPrompt(
         })
         .join(', ')})`;
 
-    let queryDefinitionCells = [
+    const queryDefinitionCells = [
         {
             id: 'py-prompt-query-definition',
             widget: 'code',
@@ -368,7 +368,7 @@ export function getQueryForPrompt(
         });
     }
 
-    let queryJson: Record<string, QueryStateConfig> = {
+    const queryJson: Record<string, QueryStateConfig> = {
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
             mode: 'automatic',

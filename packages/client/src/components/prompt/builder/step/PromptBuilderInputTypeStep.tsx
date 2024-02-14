@@ -61,8 +61,8 @@ export const PromptBuilderInputTypeStep = (props: {
             return;
         }
 
-        let vectorDbIds: string[] = [];
-        let vectorDbDisplay = {};
+        const vectorDbIds: string[] = [];
+        const vectorDbDisplay = {};
         myVectorDbs.data.forEach((vector) => {
             vectorDbIds.push(vector.app_id);
             vectorDbDisplay[vector.app_id] = vector.app_name;
@@ -82,8 +82,8 @@ export const PromptBuilderInputTypeStep = (props: {
             return;
         }
 
-        let dbIds: string[] = [];
-        let dbDisplay = {};
+        const dbIds: string[] = [];
+        const dbDisplay = {};
         myDbs.data.forEach((vector) => {
             dbIds.push(vector.app_id);
             dbDisplay[vector.app_id] = vector.app_name;

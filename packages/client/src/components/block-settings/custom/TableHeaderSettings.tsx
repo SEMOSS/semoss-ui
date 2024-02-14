@@ -80,7 +80,7 @@ export const TableHeaderSettings = observer(
             value: string,
         ) => {
             // set the value
-            let newHeaders = [...currentHeaders];
+            const newHeaders = [...currentHeaders];
             newHeaders[headerIndex] = {
                 display: display,
                 value: value,
@@ -110,7 +110,7 @@ export const TableHeaderSettings = observer(
 
         const onRemoveCustomHeader = (index: number) => {
             // set the value
-            let newHeaders = [
+            const newHeaders = [
                 ...headers.slice(0, index),
                 ...headers.slice(index + 1),
             ];

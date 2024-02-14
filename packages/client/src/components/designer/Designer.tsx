@@ -1,10 +1,13 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
-import { DataObject, Layers, Widgets } from '@mui/icons-material';
-import { useState } from 'react';
+import { styled, Stack, Paper } from '@semoss/ui';
+import { DashboardRounded, Layers } from '@mui/icons-material';
+import { useMemo, useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
+import { useBlocks } from '@/hooks';
+import { Sidebar, SidebarItem } from '@/components/common';
+import { Renderer } from '@/components/blocks';
 
 import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
@@ -20,60 +23,6 @@ const StyledLeftMenu = styled('div', {
     flexDirection: 'row',
     width: `calc(${width}% + ${theme.spacing(7)});`,
     flexShrink: '0',
-}));
-
-const StyledSidebar = styled('div')(({ theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    height: '100%',
-    minWidth: theme.spacing(7),
-    overflow: 'hidden',
-    color: 'rgba(235, 238, 254, 1)',
-    backgroundColor: theme.palette.common.black,
-    zIndex: 10,
-    overflowX: 'hidden',
-    overflowY: 'auto',
-}));
-
-const StyledSidebarItem = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{
-    /** Track if item is selected */
-    selected: boolean;
-    /** Track if item is disabled because of app view mode - temporary for demos */
-    disabled: boolean;
-}>(({ theme, selected, disabled }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: selected
-        ? theme.palette.primary.light
-        : disabled
-        ? theme.palette.grey[800]
-        : 'inherit',
-    textDecoration: 'none',
-    height: theme.spacing(6),
-    width: '100%',
-    cursor: disabled ? 'default' : 'pointer',
-    backgroundColor: selected ? '#2A3A4C' : theme.palette.common.black,
-    transition: 'backgroundColor 2s ease',
-    '&:hover': {
-        backgroundColor: disabled
-            ? theme.palette.common.black
-            : selected
-            ? theme.palette.primary.main
-            : `${theme.palette.primary.dark}`,
-        transition: 'backgroundColor 2s ease',
-    },
-}));
-
-const StyledSidebarDivider = styled(Divider)(({ theme }) => ({
-    backgroundColor: 'rgba(235, 238, 254, 1)',
-    width: theme.spacing(2),
 }));
 
 const StyledSidebarContent = styled(Paper)(({ theme }) => ({
@@ -132,16 +81,10 @@ const StyledDragger = styled('div', {
     },
 }));
 
-interface DesignerProps {
-    /** Content to render in the designer */
-    children: React.ReactNode;
+const ACTIVE = 'page-1';
 
-    /** Connect the designer to a store */
-    designer: DesignerStore;
-}
-
-export const Designer = observer((props: DesignerProps): JSX.Element => {
-    const { children, designer } = props;
+export const Designer = observer((): JSX.Element => {
+    const { state } = useBlocks();
 
     // view
     const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
@@ -161,6 +104,16 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
         width: 25,
         isResizing: false,
     });
+
+    /**
+     * Have the designer control the blocks
+     */
+    const designer = useMemo(() => {
+        // return the store
+        return new DesignerStore(state, {
+            rendered: ACTIVE,
+        });
+    }, [state]);
 
     /**
      * Set the view. If it is the same, close it
@@ -212,6 +165,10 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
         });
     };
 
+    if (!designer) {
+        return null;
+    }
+
     return (
         <DesignerContext.Provider
             value={{
@@ -230,36 +187,26 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                     onMouseDown={handleLeftMenuMouseDown}
                     width={view ? leftMenuResize.width : 0}
                 >
-                    <StyledSidebar>
-                        <StyledSidebarItem
-                            disabled={false}
+                    <Sidebar>
+                        <SidebarItem
                             selected={view === 'outline'}
                             onClick={() => updateView('outline')}
                         >
-                            <Icon>
-                                <Layers />
-                            </Icon>
-                        </StyledSidebarItem>
-                        <StyledSidebarItem
-                            disabled={false}
+                            <Layers color="inherit" />
+                        </SidebarItem>
+                        {/* <SidebarItem
                             selected={view === 'query'}
                             onClick={() => updateView('query')}
                         >
-                            <Icon>
-                                <DataObject />
-                            </Icon>
-                        </StyledSidebarItem>
-                        <StyledSidebarDivider />
-                        <StyledSidebarItem
-                            disabled={false}
+                            <DataObject color="inherit" />
+                        </SidebarItem> */}
+                        <SidebarItem
                             selected={view === 'add'}
                             onClick={() => updateView('add')}
                         >
-                            <Icon>
-                                <Widgets />
-                            </Icon>
-                        </StyledSidebarItem>
-                    </StyledSidebar>
+                            <DashboardRounded color="inherit" />
+                        </SidebarItem>
+                    </Sidebar>
                     {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
@@ -295,7 +242,9 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                         />
                     ) : null}
                 </StyledLeftMenu>
-                <Screen>{children}</Screen>
+                <Screen>
+                    <Renderer id={designer.rendered} />
+                </Screen>
                 <StyledRightMenu width={rightMenuResize.width} elevation={7}>
                     <StyledDragger
                         onMouseDown={(e) => {

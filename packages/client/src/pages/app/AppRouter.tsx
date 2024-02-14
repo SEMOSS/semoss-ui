@@ -5,7 +5,9 @@ import { NewAppPage } from './NewAppPage';
 
 // Fix these
 import { NavigatorLayout } from '../NavigatorLayout';
+import { HeaderLayout } from '../HeaderLayout';
 import { NewPromptBuilderAppPage } from './NewPromptBuilderAppPage';
+import { EditAppPage } from './EditAppPage';
 
 export const AppRouter = observer(() => {
     return (
@@ -16,7 +18,10 @@ export const AppRouter = observer(() => {
                 <Route path="prompt" element={<NewPromptBuilderAppPage />} />
             </Route>
             {/* Already Built App */}
-            <Route path=":appId" element={<AppPage />}></Route>
+            <Route path=":appId" element={<HeaderLayout />}>
+                <Route index element={<AppPage />} />
+                <Route path="edit" element={<EditAppPage />} />
+            </Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />
         </Routes>
     );
