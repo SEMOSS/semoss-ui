@@ -93,6 +93,41 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 }
 
                 appId = pixelReturn[0].output.project_id;
+
+                // after the project is created run a pixel to create a new portals/index.html file
+                // use the returned projectId
+
+                const newIndexFilePath = 'version/assets/portals/index.html';
+                const newIndexFileContent = ''; // file is intentionally empty
+
+                const saveIndexFilePixel = `
+                    SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]); 
+                    CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
+                `;
+
+                const response = await monolithStore.runQuery(
+                    saveIndexFilePixel,
+                );
+
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType,
+                    outputTwo = response.pixelReturn[1].output,
+                    operationTypeTwo = response.pixelReturn[1].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return false;
+                }
+
+                if (operationTypeTwo.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: outputTwo,
+                    });
+                }
             } else {
                 return;
             }

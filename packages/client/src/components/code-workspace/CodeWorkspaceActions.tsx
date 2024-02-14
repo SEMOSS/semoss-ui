@@ -34,7 +34,7 @@ export const CodeWorkspaceActions = observer(() => {
         try {
             // export  the app
             const response = await monolithStore.runQuery<[string]>(
-                `ExportProject(project=["${workspace.appId}"]);`,
+                `ExportProjectApp(project=["${workspace.appId}"]);`,
             );
 
             // throw an error if there is no key

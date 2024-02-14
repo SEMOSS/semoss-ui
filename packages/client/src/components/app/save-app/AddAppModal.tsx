@@ -15,10 +15,9 @@ import {
     ADD_APP_FORM_FIELD_UPLOAD,
 } from './save-app.constants';
 import { AppUploadStep } from './AppUploadStep';
-import { AppDetailsStep } from './AppDetailsStep';
-import { AppTagsStep } from './AppTagsStep';
 import { AppAccessStep } from './AppAccessStep';
 import { SaveAppModal } from './SaveAppModal';
+import { useNotification } from '@semoss/ui';
 
 type AddAppForm = {
     [ADD_APP_FORM_FIELD_NAME]: string;
@@ -47,23 +46,23 @@ const AddAppFormSteps: AddAppFormStep[] = [
         component: AppUploadStep,
         requiredFields: [ADD_APP_FORM_FIELD_UPLOAD],
     },
-    {
-        name: 'Details',
-        icon: <Edit />,
-        title: 'Details',
-        component: AppDetailsStep,
-        requiredFields: [
-            ADD_APP_FORM_FIELD_NAME,
-            ADD_APP_FORM_FIELD_DESCRIPTION,
-        ],
-    },
-    {
-        name: 'Tags',
-        icon: <LocalOffer />,
-        title: 'Tags',
-        component: AppTagsStep,
-        requiredFields: [],
-    },
+    // {
+    //     name: 'Details',
+    //     icon: <Edit />,
+    //     title: 'Details',
+    //     component: AppDetailsStep,
+    //     requiredFields: [
+    //         ADD_APP_FORM_FIELD_NAME,
+    //         ADD_APP_FORM_FIELD_DESCRIPTION,
+    //     ],
+    // },
+    // {
+    //     name: 'Tags',
+    //     icon: <LocalOffer />,
+    //     title: 'Tags',
+    //     component: AppTagsStep,
+    //     requiredFields: [],
+    // },
     {
         name: 'Access',
         icon: <Visibility />,
@@ -85,6 +84,7 @@ export const AddAppModal = (props: AddAppProps) => {
     const { open, handleClose } = props;
 
     const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
 
     const defaultFormValues: AddAppForm = {
         [ADD_APP_FORM_FIELD_NAME]: '',
@@ -98,50 +98,32 @@ export const AddAppModal = (props: AddAppProps) => {
      * Method that is called to create the app
      */
     const createApp = async (data: AddAppForm) => {
-        const path = 'version/assets/';
-
-        // create the project
-        const response = await monolithStore.runQuery(
-            `META | projectVar = CreateProject(project=["${
-                data[ADD_APP_FORM_FIELD_NAME]
-            }"], portal=[true], global=[${
-                data[ADD_APP_FORM_FIELD_IS_GLOBAL]
-            }]); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
-                {
-                    description: data[ADD_APP_FORM_FIELD_DESCRIPTION],
-                    tag: data[ADD_APP_FORM_FIELD_TAGS],
-                },
-            )}])`,
-        );
-
-        const output = response.pixelReturn[0].output;
-
-        // get the app id
-        const appId = output.project_id;
-
         // upload the file
         const upload = await monolithStore.uploadFile(
             [data[ADD_APP_FORM_FIELD_UPLOAD]],
             configStore.store.insightID,
-            appId,
-            path,
         );
 
-        // upnzip the file in the new project
-        await monolithStore.runQuery(
-            `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"]); ReloadInsightClasses('${appId}'); PublishProject('${appId}', release=true);`,
+        const resp = await monolithStore.runQuery(
+            `UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
         );
 
-        // Load the insight classes
-        // await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
+        let output = undefined;
+        let type = undefined;
 
-        // Publish the project the insight classes
-        // await monolithStore.runQuery(
-        //     `PublishProject('${appId}', release=true);`,
-        // );
+        output = resp.pixelReturn[0].output;
+        type = resp.pixelReturn[0].operationType[0];
 
+        if (type.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        }
         // close it
-        handleClose(appId);
+        handleClose(output.project_id);
     };
 
     return (

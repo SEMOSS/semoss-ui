@@ -347,6 +347,8 @@ export const AppEditor = (props: AppEditorProps) => {
     useEffect(() => {
         getInitialAppStructure();
 
+        // TODO: open portals folder automatically
+
         // set event listener for first user click to disable auto folder opening
         // document.addEventListener('click', firstClickHandler);
 
