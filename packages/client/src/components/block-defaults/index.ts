@@ -42,6 +42,10 @@ import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
 } from './progress-block';
+import {
+    config as ToggleButtonBlockConfig,
+    ToggleButtonBlockDef,
+} from './toggle-button-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -62,6 +66,7 @@ export type DefaultBlockDefinitions =
     | SelectBlockDef
     | TableBlockDef
     | TextBlockDef
+    | ToggleButtonBlockDef
     | InputBlockDef
     | SectionBlockDef
     | UploadBlockDef
@@ -86,6 +91,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
+    [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
 };

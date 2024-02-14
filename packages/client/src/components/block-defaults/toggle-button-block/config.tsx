@@ -2,13 +2,14 @@ import { CSSProperties } from 'react';
 import { BlockConfig } from '@/stores';
 import {
     QuerySelectionSettings,
-    InputSettings,
     SelectInputSettings,
+    OptionsSettings,
 } from '@/components/block-settings';
 
 import { ToggleButtonBlockDef, ToggleButtonBlock } from './ToggleButtonBlock';
 import { SmartButton } from '@mui/icons-material';
 import { BLOCK_TYPE_ACTION } from '../block-defaults.constants';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -19,10 +20,19 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
     data: {
         disabled: false,
         color: 'primary',
-        size: 'medium',
-        options: [],
+        size: 'small',
+        options: [
+            {
+                display: 'on',
+                value: 'on',
+            },
+            {
+                display: 'off',
+                value: 'off',
+            },
+        ],
         value: null,
-        mandatory: false,
+        mandatory: true,
     },
     listeners: {},
     slots: {},
@@ -34,19 +44,18 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'Label',
+                    description: 'Options',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
+                        <OptionsSettings id={id} path="options" />
                     ),
                 },
                 {
-                    description: 'Loading',
+                    description: 'Mandatory',
                     render: ({ id }) => (
-                        <QuerySelectionSettings
+                        <SwitchSettings
                             id={id}
-                            label="Loading"
-                            path="loading"
-                            queryPath="isLoading"
+                            label="Mandatory"
+                            path="mandatory"
                         />
                     ),
                 },
@@ -86,12 +95,16 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
                             path="color"
                             options={[
                                 {
-                                    value: 'primary',
-                                    display: 'primary',
+                                    value: 'small',
+                                    display: 'small',
                                 },
                                 {
-                                    value: 'secondary',
-                                    display: 'secondary',
+                                    value: 'medium',
+                                    display: 'medium',
+                                },
+                                {
+                                    value: 'large',
+                                    display: 'large',
                                 },
                             ]}
                         />

@@ -7,17 +7,18 @@ import { styled, ToggleButtonGroup, ToggleButton } from '@mui/material';
 
 const StyledContainer = styled('div')(() => ({
     padding: '4px',
+    width: 'fit-content',
 }));
 
 export interface ToggleButtonBlockDef extends BlockDef<'toggle-button'> {
     widget: 'toggle-button';
     data: {
-        disabled?: boolean;
+        disabled: boolean;
         color: 'primary' | 'secondary';
         size: 'small' | 'medium' | 'large';
         options: Array<{ value: string; display: string }>;
         value: string;
-        mandatory?: boolean;
+        mandatory: boolean;
     };
 }
 
@@ -39,6 +40,8 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
                         setData('value', newValue);
                     }
                 }}
+                value={data.value}
+                exclusive
             >
                 {Array.from(data.options, (option, index) => {
                     return (
