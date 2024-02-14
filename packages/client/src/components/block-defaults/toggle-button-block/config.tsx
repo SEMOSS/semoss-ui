@@ -33,6 +33,7 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
         ],
         value: null,
         mandatory: true,
+        multiple: false,
     },
     listeners: {},
     slots: {},
@@ -56,6 +57,17 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
                             id={id}
                             label="Mandatory"
                             path="mandatory"
+                        />
+                    ),
+                },
+                {
+                    description: 'Multiple',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Multiple"
+                            path="multiple"
+                            resetValueOnChange
                         />
                     ),
                 },

@@ -17,8 +17,9 @@ export interface ToggleButtonBlockDef extends BlockDef<'toggle-button'> {
         color: 'primary' | 'secondary';
         size: 'small' | 'medium' | 'large';
         options: Array<{ value: string; display: string }>;
-        value: string;
+        value: string | Array<string>;
         mandatory: boolean;
+        multiple: boolean;
     };
 }
 
@@ -31,17 +32,23 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
                 disabled={data.disabled}
                 size={data.size}
                 color={data.color}
-                onChange={(_, newValue: string | null) => {
+                onChange={(_, newValue: string | string[] | null) => {
                     if (data.mandatory) {
-                        if (newValue !== null) {
-                            setData('value', newValue);
+                        if (Array.isArray(newValue)) {
+                            if (newValue.length) {
+                                setData('value', newValue);
+                            }
+                        } else {
+                            if (newValue !== null) {
+                                setData('value', newValue);
+                            }
                         }
                     } else {
                         setData('value', newValue);
                     }
                 }}
                 value={data.value}
-                exclusive
+                exclusive={!data.multiple}
             >
                 {Array.from(data.options, (option, index) => {
                     return (
