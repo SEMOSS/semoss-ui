@@ -8,6 +8,16 @@ import { styled } from '@mui/material';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
+    minWidth: '50px',
+    minHeight: '50px',
+}));
+
+const StyledNoDataContainer = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'error',
+})<{ error?: boolean }>(({ error = false, theme }) => ({
+    height: '200px',
+    width: '200px',
+    color: error ? theme.palette.error.main : 'unset',
 }));
 
 export interface BaseVisualizationBlockDef {
@@ -44,15 +54,18 @@ export interface VegaPieChartBlockDef
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
 
-    if (
-        !data.specJson ||
-        (data.specJson.hasOwnProperty('data') &&
-            !(data.specJson?.data as { values: Array<any> }).values?.length)
-    ) {
+    if (!data.specJson) {
         return (
-            <div style={{ height: '200px', width: '200px' }} {...attrs}>
+            <StyledNoDataContainer {...attrs}>
                 Add spec to render your visualization
-            </div>
+            </StyledNoDataContainer>
+        );
+    } else if (typeof data.specJson === 'string') {
+        // spec was unable to be parsed as object
+        return (
+            <StyledNoDataContainer error {...attrs}>
+                There was an issue parsing your JSON.
+            </StyledNoDataContainer>
         );
     }
 

@@ -11,6 +11,7 @@ import { Addchart, BarChart, Insights, PieChart } from '@mui/icons-material';
 import { BLOCK_TYPE_CHART } from '../block-defaults.constants';
 import { InputSettings, QueryInputSettings } from '@/components/block-settings';
 import { VisualizationSpec } from 'react-vega';
+import { AIGenerationSettings } from '@/components/block-settings/shared/AIGenerationSettings';
 
 // method for generating configs for the different vega visualization types
 const generateConfig = (
@@ -39,6 +40,20 @@ const generateConfig = (
                             id={id}
                             label="JSON"
                             path="specJson"
+                            valueAsObject
+                        />
+                    ),
+                },
+                {
+                    description: 'AI Generator',
+                    render: ({ id }) => (
+                        <AIGenerationSettings
+                            id={id}
+                            path="specJson"
+                            appendPrompt={
+                                'Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure "data" is a top-level key in the JSON object.'
+                            }
+                            placeholder="Ex: Generate a bar graph."
                             valueAsObject
                         />
                     ),
