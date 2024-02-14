@@ -122,9 +122,6 @@ export const AddAppModal = (props: AddAppProps) => {
 
             return;
         }
-
-        debugger;
-
         // close it
         handleClose(output.project_id);
     };
