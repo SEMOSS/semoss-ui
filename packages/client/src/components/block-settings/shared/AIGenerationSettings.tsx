@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Button, Stack, TextField, useNotification } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, usePixel, useRootStore } from '@/hooks';
+import { useBlockSettings, useBlocks, usePixel, useRootStore } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { AutoAwesome } from '@mui/icons-material';
 import { Autocomplete } from '@mui/material';
-import { VisualizationSpec } from 'react-vega';
 
 type CfgLibraryEngineState = {
     loading: boolean;
@@ -57,6 +56,7 @@ export const AIGenerationSettings = observer(
         appendPrompt = '',
     }: AIGenerationSettingsProps<D>) => {
         const { setData } = useBlockSettings<D>(id);
+        const { state } = useBlocks();
         const { monolithStore } = useRootStore();
         const notification = useNotification();
 
@@ -100,7 +100,8 @@ export const AIGenerationSettings = observer(
         const generateAIResponse = async () => {
             try {
                 setResponseLoading(true);
-                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${prompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
+                const flattenedPrompt = state.flattenVariable(prompt);
+                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
                     {
                         max_new_tokens: 4000,
                     },

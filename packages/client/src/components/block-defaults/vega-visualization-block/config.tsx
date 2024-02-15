@@ -241,41 +241,23 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                 {
                     description: 'Width',
                     render: ({ id }) => (
-                        <ConditionalVariationSettings
+                        <InputSettings
                             id={id}
-                            variations={[
-                                'bar-chart',
-                                'grouped-bar-chart',
-                                'pie-chart',
-                            ]}
-                        >
-                            <InputSettings
-                                id={id}
-                                label="Width"
-                                path="specJson.width"
-                                type="number"
-                            />
-                        </ConditionalVariationSettings>
+                            label="Width"
+                            path="specJson.width"
+                            type="number"
+                        />
                     ),
                 },
                 {
                     description: 'Height',
                     render: ({ id }) => (
-                        <ConditionalVariationSettings
+                        <InputSettings
                             id={id}
-                            variations={[
-                                'bar-chart',
-                                'grouped-bar-chart',
-                                'pie-chart',
-                            ]}
-                        >
-                            <InputSettings
-                                id={id}
-                                label="Height"
-                                path="specJson.height"
-                                type="number"
-                            />
-                        </ConditionalVariationSettings>
+                            label="Height"
+                            path="specJson.height"
+                            type="number"
+                        />
                     ),
                 },
             ],
@@ -286,21 +268,12 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                 {
                     description: 'Chart Padding',
                     render: ({ id }) => (
-                        <ConditionalVariationSettings
+                        <InputSettings
                             id={id}
-                            variations={[
-                                'bar-chart',
-                                'grouped-bar-chart',
-                                'pie-chart',
-                            ]}
-                        >
-                            <InputSettings
-                                id={id}
-                                label="Padding"
-                                path="specJson.padding"
-                                type="number"
-                            />
-                        </ConditionalVariationSettings>
+                            label="Padding"
+                            path="specJson.padding"
+                            type="number"
+                        />
                     ),
                 },
             ],
