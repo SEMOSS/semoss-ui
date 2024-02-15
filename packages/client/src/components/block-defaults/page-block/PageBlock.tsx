@@ -10,7 +10,9 @@ export interface PageBlockDef extends BlockDef<'page'> {
     data: {
         style: CSSProperties;
     };
-    slots: 'content';
+    slots: {
+        content: true;
+    };
 }
 
 export const PageBlock: BlockComponent = observer(({ id }) => {

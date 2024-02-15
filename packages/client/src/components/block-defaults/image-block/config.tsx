@@ -25,9 +25,7 @@ export const config: BlockConfig<ImageBlockDef> = {
         title: '',
     },
     listeners: {},
-    slots: {
-        test: [],
-    },
+    slots: {},
     render: ImageBlock,
     icon: PanoramaOutlined,
     isBlocksMenuEnabled: true,

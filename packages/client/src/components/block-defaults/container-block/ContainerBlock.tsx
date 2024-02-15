@@ -10,7 +10,9 @@ export interface ContainerBlockDef extends BlockDef<'container'> {
     data: {
         style: CSSProperties;
     };
-    slots: 'children';
+    slots: {
+        children: true;
+    };
 }
 
 export const ContainerBlock: BlockComponent = observer(({ id }) => {

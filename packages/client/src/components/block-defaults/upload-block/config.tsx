@@ -31,9 +31,7 @@ export const config: BlockConfig<UploadBlockDef> = {
     listeners: {
         onChange: [],
     },
-    slots: {
-        content: [],
-    },
+    slots: {},
     render: UploadBlock,
     icon: Upload,
     isBlocksMenuEnabled: true,

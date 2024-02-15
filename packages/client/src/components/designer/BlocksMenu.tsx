@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { MenuBlockConfig, MenuBlocks } from './BlocksMenuBlocks';
+import { BlocksMenuItem, MenuBlocks } from './BlocksMenuBlocks';
 
 import {
     styled,
@@ -17,6 +17,7 @@ import {
     BLOCK_TYPE_INPUT,
 } from '../block-defaults/block-defaults.constants';
 import { BlocksMenuBlockTypeSection } from './BlocksMenuBlockTypeSection';
+import { getTypeForBlock } from '../block-defaults';
 
 const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -40,23 +41,23 @@ export const BlocksMenu = observer(() => {
     const [search, setSearch] = useState('');
     const [showSearch, setShowSearch] = useState<boolean>(false);
 
-    const menuBlocks: MenuBlockConfig[] = MenuBlocks.filter(
-        (block) => block.isBlocksMenuEnabled,
-    );
+    const menuItems: BlocksMenuItem[] = [...MenuBlocks];
 
-    const getBlocksForType = (blockType: string) => {
-        return menuBlocks.filter((block) => block.type === blockType);
+    const getMenuItemsForType = (blockType: string) => {
+        return menuItems.filter(
+            (block) => getTypeForBlock(block.blockJson.widget) === blockType,
+        );
     };
 
-    const getBlocksForSearch = () => {
+    const getMenuItemsForSearch = () => {
         if (search) {
-            return menuBlocks.filter((block) => {
+            return menuItems.filter((block) => {
                 return block.display
                     .replaceAll('-', ' ')
                     .includes(search.toLowerCase());
             });
         } else {
-            return menuBlocks;
+            return menuItems;
         }
     };
 
@@ -113,14 +114,16 @@ export const BlocksMenu = observer(() => {
 
             <StyledBlockSectionContainer>
                 {search ? (
-                    <BlocksMenuBlockTypeSection blocks={getBlocksForSearch()} />
+                    <BlocksMenuBlockTypeSection
+                        menuItems={getMenuItemsForSearch()}
+                    />
                 ) : (
                     Array.from(BLOCK_TYPES, (blockType, i) => {
                         return (
                             <BlocksMenuBlockTypeSection
                                 key={`${blockType}-${i}`}
                                 title={getTitleForBlockType(blockType)}
-                                blocks={getBlocksForType(blockType)}
+                                menuItems={getMenuItemsForType(blockType)}
                             />
                         );
                     })

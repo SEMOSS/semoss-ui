@@ -159,7 +159,7 @@ export class DesignerStore {
     activateDrag(
         widget: DesignerStoreInterface['drag']['ghostWidget'],
         canDrop: DesignerStoreInterface['drag']['canDrop'],
-        display?: DesignerStoreInterface['drag']['ghostDisplay'],
+        display: DesignerStoreInterface['drag']['ghostDisplay'],
         icon?: DesignerStoreInterface['drag']['ghostIcon'],
     ) {
         // activate the drag
@@ -171,7 +171,9 @@ export class DesignerStore {
         // initialize the ghost
         this._store.drag.ghostWidget = widget;
         this._store.drag.ghostDisplay = display;
-        this._store.drag.ghostIcon = icon;
+        if (icon) {
+            this._store.drag.ghostIcon = icon;
+        }
         this._store.drag.ghostPosition = null;
 
         // reset the placeholder

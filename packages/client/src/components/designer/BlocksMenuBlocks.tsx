@@ -1,531 +1,492 @@
-import { BlockConfig } from '@/stores';
-import { DefaultBlockDefinitions } from '../block-defaults';
-import { config as ButtonBlockConfig } from '../block-defaults/button-block';
-import { config as CheckboxBlockConfig } from '../block-defaults/checkbox-block';
-import { config as ContainerBlockConfig } from '../block-defaults/container-block';
-import { config as ImageBlockConfig } from '../block-defaults/image-block';
-import { config as InputBlockConfig } from '../block-defaults/input-block';
-import { config as LinkBlockConfig } from '../block-defaults/link-block';
-import { config as MarkdownBlockConfig } from '../block-defaults/markdown-block';
-import { config as PageBlockConfig } from '../block-defaults/page-block';
-import { config as ProgressBlockConfig } from '../block-defaults/progress-block';
-import { config as QueryBlockConfig } from '../block-defaults/query-block';
-import { config as SelectBlockConfig } from '../block-defaults/select-block';
-import { config as TextBlockConfig } from '../block-defaults/text-block';
-import { config as ToggleButtonBlockConfig } from '../block-defaults/toggle-button-block';
-import { config as UploadBlockConfig } from '../block-defaults/upload-block';
-import { config as VegaVisualizationBlockConfig } from '../block-defaults/vega-visualization-block';
-import { Addchart, BarChart, PieChart } from '@mui/icons-material';
-import { InputSettings, QueryInputSettings } from '../block-settings';
+import { BlockJSON } from '@/stores';
+import {
+    Addchart,
+    BarChart,
+    BlurLinear,
+    CheckBox,
+    FileCopyOutlined,
+    FormatListBulleted,
+    FormatShapes,
+    HighlightAlt,
+    Insights,
+    Link,
+    PanoramaOutlined,
+    PieChart,
+    SmartButton,
+    TextFields,
+    Upload,
+    ViewList,
+    Widgets,
+} from '@mui/icons-material';
 
-export interface MenuBlockConfig extends BlockConfig<DefaultBlockDefinitions> {
+export interface BlocksMenuItem {
+    key: string;
     display: string;
+    blockJson: BlockJSON;
 }
 
 /**
  * Blocks that appear on the menu
  * Can be different implementations of the same block with different configs
  */
-export const MenuBlocks: MenuBlockConfig[] = [
+export const MenuBlocks: BlocksMenuItem[] = [
     {
+        key: 'bar-chart',
         display: 'Bar Chart',
-        ...VegaVisualizationBlockConfig,
-        data: {
-            ...VegaVisualizationBlockConfig.data,
-            variation: 'Bar Chart',
-            specJson: {
-                $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                title: undefined,
-                width: 200,
-                height: 200,
-                padding: 5,
-                data: {
-                    values: undefined,
-                },
-                mark: 'bar',
-                encoding: {
-                    x: {
-                        field: undefined,
-                        title: undefined,
-                        type: 'nominal',
-                        axis: { labelAngle: 0 },
+        blockJson: {
+            widget: 'vega',
+            data: {
+                variation: 'bar-chart',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: undefined,
+                    width: 200,
+                    height: 200,
+                    padding: 5,
+                    data: {
+                        values: undefined,
                     },
-                    y: {
-                        field: undefined,
-                        title: undefined,
-                        type: 'quantitative',
+                    mark: 'bar',
+                    encoding: {
+                        x: {
+                            field: undefined,
+                            title: undefined,
+                            type: 'nominal',
+                            axis: { labelAngle: 0 },
+                        },
+                        y: {
+                            field: undefined,
+                            title: undefined,
+                            type: 'quantitative',
+                        },
                     },
                 },
             },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
         },
-        icon: BarChart,
-        contentMenu: [
-            {
-                name: 'General',
-                children: [
-                    {
-                        description: 'Data',
-                        render: ({ id }) => (
-                            <QueryInputSettings
-                                id={id}
-                                label="Data"
-                                path="specJson.data.values"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'X-Axis Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="X-Axis Field"
-                                path="specJson.encoding.x.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Y-Axis Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Y-Axis Field"
-                                path="specJson.encoding.y.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Title',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Title"
-                                path="specJson.title"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'X-Axis Label',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="X-Axis Label"
-                                path="specJson.encoding.x.title"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Y-Axis Label',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Y-Axis Label"
-                                path="specJson.encoding.y.title"
-                            />
-                        ),
-                    },
-                ],
-            },
-        ],
-        styleMenu: [
-            {
-                name: 'Dimensions',
-                children: [
-                    {
-                        description: 'Width',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Width"
-                                path="specJson.width"
-                                type="number"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Height',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Height"
-                                path="specJson.height"
-                                type="number"
-                            />
-                        ),
-                    },
-                ],
-            },
-            {
-                name: 'Spacing',
-                children: [
-                    {
-                        description: 'Chart Padding',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Padding"
-                                path="specJson.padding"
-                                type="number"
-                            />
-                        ),
-                    },
-                ],
-            },
-        ],
     },
     {
+        key: 'button',
         display: 'Button',
-        ...ButtonBlockConfig,
+        blockJson: {
+            widget: 'button',
+            data: {
+                style: {},
+                label: 'Submit',
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+            },
+            listeners: {
+                onClick: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'checkbox',
         display: 'Checkbox',
-        ...CheckboxBlockConfig,
+        blockJson: {
+            widget: 'checkbox',
+            data: {
+                style: {
+                    padding: 'none',
+                },
+                label: 'Example Checkbox',
+                required: false,
+                disabled: false,
+                value: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'container',
         display: 'Container',
-        ...ContainerBlockConfig,
+        blockJson: {
+            widget: 'container',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    overflow: 'hidden',
+                    flexWrap: 'wrap',
+                },
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
     },
     {
+        key: 'grouped-bar-chart',
         display: 'Grouped Bar Chart',
-        ...VegaVisualizationBlockConfig,
-        data: {
-            ...VegaVisualizationBlockConfig.data,
-            variation: 'Grouped Bar Chart',
-            specJson: {
-                $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                title: undefined,
-                width: 200,
-                height: 200,
-                padding: 5,
-                data: {
-                    values: undefined,
-                },
-                mark: 'bar',
-                encoding: {
-                    x: {
-                        field: undefined,
-                        title: undefined,
-                        type: 'nominal',
-                        axis: { labelAngle: 0 },
+        blockJson: {
+            widget: 'vega',
+            data: {
+                variation: 'grouped-bar-chart',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: undefined,
+                    width: 200,
+                    height: 200,
+                    padding: 5,
+                    data: {
+                        values: undefined,
                     },
-                    y: {
-                        field: undefined,
-                        title: undefined,
-                        type: 'quantitative',
-                    },
-                    xOffset: {
-                        field: undefined,
-                    },
-                    color: {
-                        field: undefined,
+                    mark: 'bar',
+                    encoding: {
+                        x: {
+                            field: undefined,
+                            title: undefined,
+                            type: 'nominal',
+                            axis: { labelAngle: 0 },
+                        },
+                        y: {
+                            field: undefined,
+                            title: undefined,
+                            type: 'quantitative',
+                        },
+                        xOffset: {
+                            field: undefined,
+                        },
+                        color: {
+                            field: undefined,
+                        },
                     },
                 },
             },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
         },
-        icon: Addchart,
-        contentMenu: [
-            {
-                name: 'General',
-                children: [
-                    {
-                        description: 'Data',
-                        render: ({ id }) => (
-                            <QueryInputSettings
-                                id={id}
-                                label="Data"
-                                path="specJson.data.values"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Category Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Category Field"
-                                path="specJson.encoding.x.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Group Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Group Field"
-                                path="specJson.encoding.xOffset.field"
-                                secondaryPath="specJson.encoding.color.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Y-Axis Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Y-Axis Field"
-                                path="specJson.encoding.y.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Title',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Title"
-                                path="specJson.title"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'X-Axis Label',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="X-Axis Label"
-                                path="specJson.encoding.x.title"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Y-Axis Label',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Y-Axis Label"
-                                path="specJson.encoding.y.title"
-                            />
-                        ),
-                    },
-                ],
-            },
-        ],
-        styleMenu: [
-            {
-                name: 'Dimensions',
-                children: [
-                    {
-                        description: 'Width',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Width"
-                                path="specJson.width"
-                                type="number"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Height',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Height"
-                                path="specJson.height"
-                                type="number"
-                            />
-                        ),
-                    },
-                ],
-            },
-            {
-                name: 'Spacing',
-                children: [
-                    {
-                        description: 'Chart Padding',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Padding"
-                                path="specJson.padding"
-                                type="number"
-                            />
-                        ),
-                    },
-                ],
-            },
-        ],
     },
     {
+        key: 'image',
         display: 'Image',
-        ...ImageBlockConfig,
+        blockJson: {
+            widget: 'image',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'input',
         display: 'Input',
-        ...InputBlockConfig,
-    },
-    {
-        display: 'Link',
-        ...LinkBlockConfig,
-    },
-    {
-        display: 'Markdown',
-        ...MarkdownBlockConfig,
-    },
-    {
-        display: 'Page',
-        ...PageBlockConfig,
-    },
-    {
-        display: 'Pie Chart',
-        ...VegaVisualizationBlockConfig,
-        data: {
-            ...VegaVisualizationBlockConfig.data,
-            variation: 'Pie Chart',
-            specJson: {
-                $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                title: undefined,
-                width: 200,
-                height: 200,
-                padding: 5,
-                data: {
-                    values: undefined,
+        blockJson: {
+            widget: 'input',
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
                 },
-                mark: 'arc',
-                encoding: {
-                    theta: {
-                        field: undefined,
-                        type: 'quantitative',
-                        stack: 'normalize',
-                    },
-                    color: {
-                        field: undefined,
-                        title: undefined,
-                        type: 'nominal',
-                    },
-                },
+                value: '',
+                label: 'Example Input',
+                hint: '',
+                type: 'text',
+                rows: 1,
+                multiline: false,
+                disabled: false,
+                required: false,
+                loading: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
             },
         },
-        icon: PieChart,
-        contentMenu: [
-            {
-                name: 'General',
-                children: [
-                    {
-                        description: 'Data',
-                        render: ({ id }) => (
-                            <QueryInputSettings
-                                id={id}
-                                label="Data"
-                                path="specJson.data.values"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Value Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Value Field"
-                                path="specJson.encoding.theta.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Category Field',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Category Field"
-                                path="specJson.encoding.color.field"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Title',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Title"
-                                path="specJson.title"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Category Label',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Category Label"
-                                path="specJson.encoding.color.title"
-                            />
-                        ),
-                    },
-                ],
-            },
-        ],
-        styleMenu: [
-            {
-                name: 'Dimensions',
-                children: [
-                    {
-                        description: 'Width',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Width"
-                                path="specJson.width"
-                                type="number"
-                            />
-                        ),
-                    },
-                    {
-                        description: 'Height',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Height"
-                                path="specJson.height"
-                                type="number"
-                            />
-                        ),
-                    },
-                ],
-            },
-            {
-                name: 'Spacing',
-                children: [
-                    {
-                        description: 'Chart Padding',
-                        render: ({ id }) => (
-                            <InputSettings
-                                id={id}
-                                label="Padding"
-                                path="specJson.padding"
-                                type="number"
-                            />
-                        ),
-                    },
-                ],
-            },
-        ],
     },
     {
+        key: 'link',
+        display: 'Link',
+        blockJson: {
+            widget: 'link',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    width: '100%',
+                    height: '100%',
+                },
+                src: '',
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
+        key: 'markdown',
+        display: 'Markdown',
+        blockJson: {
+            widget: 'markdown',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                markdown: '**Hello world**',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        key: 'page',
+        display: 'Page',
+        blockJson: {
+            widget: 'page',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '24px',
+                    gap: '8px',
+                    fontFamily: 'roboto',
+                },
+            },
+            listeners: {},
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        key: 'pie-chart',
+        display: 'Pie Chart',
+        blockJson: {
+            widget: 'vega',
+            data: {
+                variation: 'pie-chart',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: undefined,
+                    width: 200,
+                    height: 200,
+                    padding: 5,
+                    data: {
+                        values: undefined,
+                    },
+                    mark: 'arc',
+                    encoding: {
+                        theta: {
+                            field: undefined,
+                            type: 'quantitative',
+                            stack: 'normalize',
+                        },
+                        color: {
+                            field: undefined,
+                            title: undefined,
+                            type: 'nominal',
+                        },
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        key: 'progress',
         display: 'Progress',
-        ...ProgressBlockConfig,
+        blockJson: {
+            widget: 'progress',
+            data: {
+                type: 'linear',
+                value: 50,
+                includeLabel: true,
+                size: '300px',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'query',
         display: 'Query',
-        ...QueryBlockConfig,
+        blockJson: {
+            widget: 'query',
+            data: {
+                style: {},
+                queryId: '',
+                cellId: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'select',
         display: 'Select',
-        ...SelectBlockConfig,
+        blockJson: {
+            widget: 'select',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Select Input',
+                hint: '',
+                options: [],
+                required: false,
+                disabled: false,
+                loading: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
     },
     {
+        key: 'text',
         display: 'Text',
-        ...TextBlockConfig,
+        blockJson: {
+            widget: 'text',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Hello world',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'toggle-button',
         display: 'Toggle Button',
-        ...ToggleButtonBlockConfig,
+        blockJson: {
+            widget: 'toggle-button',
+            data: {
+                disabled: false,
+                color: 'primary',
+                size: 'small',
+                options: [
+                    {
+                        display: 'on',
+                        value: 'on',
+                    },
+                    {
+                        display: 'off',
+                        value: 'off',
+                    },
+                ],
+                value: null,
+                mandatory: true,
+                multiple: false,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
     },
     {
+        key: 'upload',
         display: 'Upload',
-        ...UploadBlockConfig,
+        blockJson: {
+            widget: 'upload',
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Input',
+                hint: '',
+                loading: false,
+                disabled: false,
+                required: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
     },
     {
+        key: 'vega',
         display: 'Vega',
-        ...VegaVisualizationBlockConfig,
+        blockJson: {
+            widget: 'vega',
+            data: {
+                specJson: undefined,
+                variation: undefined,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
     },
 ];
+
+export const getIconForMenuItemByKey = (key: string) => {
+    switch (key) {
+        case 'bar-chart':
+            return BarChart;
+        case 'button':
+        case 'toggle-button':
+            return SmartButton;
+        case 'checkbox':
+            return CheckBox;
+        case 'container':
+            return HighlightAlt;
+        case 'grouped-bar-chart':
+            return Addchart;
+        case 'image':
+            return PanoramaOutlined;
+        case 'input':
+            return FormatShapes;
+        case 'link':
+            return Link;
+        case 'markdown':
+            return FormatListBulleted;
+        case 'page':
+            return FileCopyOutlined;
+        case 'pie-chart':
+            return PieChart;
+        case 'progress':
+            return BlurLinear;
+        case 'query':
+            return HighlightAlt;
+        case 'select':
+            return ViewList;
+        case 'text':
+            return TextFields;
+        case 'upload':
+            return Upload;
+        case 'vega':
+            return Insights;
+        default:
+            return Widgets;
+    }
+};

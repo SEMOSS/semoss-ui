@@ -24,9 +24,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         markdown: '**Hello world**',
     },
     listeners: {},
-    slots: {
-        test: [],
-    },
+    slots: {},
     render: MarkdownBlock,
     icon: FormatListBulleted,
     isBlocksMenuEnabled: true,

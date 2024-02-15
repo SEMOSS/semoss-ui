@@ -12,7 +12,9 @@ export interface FormBlockDef extends BlockDef<'form'> {
         style: CSSProperties;
         label: string;
     };
-    slots: 'children';
+    slots: {
+        children: true;
+    };
 }
 
 export const FormBlock: BlockComponent = observer(({ id }) => {

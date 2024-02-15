@@ -88,6 +88,10 @@ export function getIconForBlock(widget: string) {
     return DefaultBlocks[widget]?.icon;
 }
 
+export function getTypeForBlock(widget: string) {
+    return DefaultBlocks[widget]?.type;
+}
+
 export {
     ButtonBlockConfig,
     ContainerBlockConfig,

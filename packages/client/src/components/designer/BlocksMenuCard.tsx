@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Card } from '@semoss/ui';
 
-import { ActionMessages, BlockJSON } from '@/stores';
+import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 import { BlocksMenuCardContent } from './BlocksMenuCardContent';
-import { MenuBlockConfig } from './BlocksMenuBlocks';
+import { BlocksMenuItem, getIconForMenuItemByKey } from './BlocksMenuBlocks';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     borderRadius: '8px',
@@ -15,127 +15,122 @@ const StyledCard = styled(Card)(({ theme }) => ({
     height: theme.spacing(12),
 }));
 
-export const BlocksMenuCard = observer((props: { block: MenuBlockConfig }) => {
-    const json: BlockJSON = {
-        widget: props.block.widget,
-        data: props.block.data,
-        slots: (props.block.slots || {}) as BlockJSON['slots'],
-        listeners: props.block.listeners || {},
-    };
+export const BlocksMenuCard = observer(
+    (props: { menuItem: BlocksMenuItem }) => {
+        const { state } = useBlocks();
+        const { designer } = useDesigner();
 
-    const { state } = useBlocks();
-    const { designer } = useDesigner();
+        // track if it is this one that is dragging
+        const [local, setLocal] = useState(false);
 
-    // track if it is this one that is dragging
-    const [local, setLocal] = useState(false);
+        /**
+         * Handle the mousedown on the widget.
+         */
+        const handleMouseDown = () => {
+            // set the dragged
+            designer.activateDrag(
+                props.menuItem.blockJson.widget,
+                () => {
+                    return true;
+                },
+                props.menuItem.display,
+                getIconForMenuItemByKey(props.menuItem.key),
+            );
 
-    /**
-     * Handle the mousedown on the widget.
-     */
-    const handleMouseDown = () => {
-        // set the dragged
-        designer.activateDrag(
-            props.block.widget,
-            () => {
-                return true;
-            },
-            props.block.display,
-            props.block.icon,
-        );
+            // clear the hovered
+            designer.setHovered('');
 
-        // clear the hovered
-        designer.setHovered('');
+            // clear the selected
+            designer.setSelected('');
 
-        // clear the selected
-        designer.setSelected('');
+            // set as inactive
+            setLocal(true);
+        };
 
-        // set as inactive
-        setLocal(true);
-    };
+        /**
+         * Handle the mouseup event on the document
+         */
+        const handleDocumentMouseUp = useCallback(() => {
+            if (!designer.drag.active) {
+                return;
+            }
 
-    /**
-     * Handle the mouseup event on the document
-     */
-    const handleDocumentMouseUp = useCallback(() => {
-        if (!designer.drag.active) {
-            return;
-        }
+            // apply the action
+            const placeholderAction = designer.drag.placeholderAction;
+            if (placeholderAction) {
+                if (
+                    placeholderAction.type === 'before' ||
+                    placeholderAction.type === 'after'
+                ) {
+                    const siblingWidget = state.getBlock(placeholderAction.id);
 
-        // apply the action
-        const placeholderAction = designer.drag.placeholderAction;
-        if (placeholderAction) {
-            if (
-                placeholderAction.type === 'before' ||
-                placeholderAction.type === 'after'
-            ) {
-                const siblingWidget = state.getBlock(placeholderAction.id);
-
-                if (siblingWidget?.parent) {
+                    if (siblingWidget?.parent) {
+                        state.dispatch({
+                            message: ActionMessages.ADD_BLOCK,
+                            payload: {
+                                json: props.menuItem.blockJson,
+                                position: {
+                                    parent: siblingWidget.parent.id,
+                                    slot: siblingWidget.parent.slot,
+                                    sibling: siblingWidget.id,
+                                    type: placeholderAction.type,
+                                },
+                            },
+                        });
+                    }
+                } else if (placeholderAction.type === 'replace') {
                     state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
-                            json: json,
+                            json: props.menuItem.blockJson,
                             position: {
-                                parent: siblingWidget.parent.id,
-                                slot: siblingWidget.parent.slot,
-                                sibling: siblingWidget.id,
-                                type: placeholderAction.type,
+                                parent: placeholderAction.id,
+                                slot: placeholderAction.slot,
                             },
                         },
                     });
                 }
-            } else if (placeholderAction.type === 'replace') {
-                state.dispatch({
-                    message: ActionMessages.ADD_BLOCK,
-                    payload: {
-                        json: json,
-                        position: {
-                            parent: placeholderAction.id,
-                            slot: placeholderAction.slot,
-                        },
-                    },
-                });
             }
-        }
 
-        // clear the drag
-        designer.deactivateDrag();
+            // clear the drag
+            designer.deactivateDrag();
 
-        // clear the hovered
-        designer.setHovered('');
+            // clear the hovered
+            designer.setHovered('');
 
-        // clear the selected
-        designer.setSelected('');
+            // clear the selected
+            designer.setSelected('');
 
-        // set as active
-        setLocal(false);
-    }, [
-        json,
-        designer.drag.active,
-        designer.drag.placeholderAction,
-        designer,
-        state,
-    ]);
+            // set as active
+            setLocal(false);
+        }, [
+            props.menuItem.blockJson,
+            designer.drag.active,
+            designer.drag.placeholderAction,
+            designer,
+            state,
+        ]);
 
-    // add the mouse up listener when dragged
-    useEffect(() => {
-        if (!designer.drag.active || !local) {
-            return;
-        }
+        // add the mouse up listener when dragged
+        useEffect(() => {
+            if (!designer.drag.active || !local) {
+                return;
+            }
 
-        document.addEventListener('mouseup', handleDocumentMouseUp);
+            document.addEventListener('mouseup', handleDocumentMouseUp);
 
-        return () => {
-            document.removeEventListener('mouseup', handleDocumentMouseUp);
-        };
-    }, [designer.drag.active, local, handleDocumentMouseUp]);
+            return () => {
+                document.removeEventListener('mouseup', handleDocumentMouseUp);
+            };
+        }, [designer.drag.active, local, handleDocumentMouseUp]);
 
-    return (
-        <StyledCard onMouseDown={handleMouseDown}>
-            <BlocksMenuCardContent
-                display={props.block.display}
-                icon={props.block.icon}
-            />
-        </StyledCard>
-    );
-});
+        return (
+            <StyledCard onMouseDown={handleMouseDown}>
+                <BlocksMenuCardContent
+                    display={props.menuItem.display}
+                    icon={getIconForMenuItemByKey(props.menuItem.key)}
+                />
+            </StyledCard>
+        );
+    },
+);

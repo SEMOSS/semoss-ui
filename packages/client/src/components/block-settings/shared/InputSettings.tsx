@@ -32,6 +32,9 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
     /** Type of input to render for settings */
     type?: string;
 
+    /**
+     * Parse input as object to set value
+     */
     valueAsObject?: boolean;
 }
 
