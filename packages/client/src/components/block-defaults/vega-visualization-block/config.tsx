@@ -63,9 +63,9 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                         <ConditionalVariationSettings
                             id={id}
                             variations={[
-                                'Bar Chart',
-                                'Grouped Bar Chart',
-                                'Pie Chart',
+                                'bar-chart',
+                                'grouped-bar-chart',
+                                'pie-chart',
                             ]}
                         >
                             <QueryInputSettings
@@ -81,7 +81,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Bar Chart']}
+                            variations={['bar-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -96,7 +96,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Grouped Bar Chart']}
+                            variations={['grouped-bar-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -111,7 +111,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Grouped Bar Chart']}
+                            variations={['grouped-bar-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -127,7 +127,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Bar Chart', 'Grouped Bar Chart']}
+                            variations={['bar-chart', 'grouped-bar-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -142,7 +142,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Pie Chart']}
+                            variations={['pie-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -157,7 +157,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Pie Chart']}
+                            variations={['pie-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -173,9 +173,9 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                         <ConditionalVariationSettings
                             id={id}
                             variations={[
-                                'Bar Chart',
-                                'Grouped Bar Chart',
-                                'Pie Chart',
+                                'bar-chart',
+                                'grouped-bar-chart',
+                                'pie-chart',
                             ]}
                         >
                             <InputSettings
@@ -191,7 +191,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Bar Chart', 'Grouped Bar Chart']}
+                            variations={['bar-chart', 'grouped-bar-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -206,7 +206,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Bar Chart', 'Grouped Bar Chart']}
+                            variations={['bar-chart', 'grouped-bar-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -221,7 +221,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     render: ({ id }) => (
                         <ConditionalVariationSettings
                             id={id}
-                            variations={['Pie Chart']}
+                            variations={['pie-chart']}
                         >
                             <InputSettings
                                 id={id}
@@ -244,9 +244,9 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                         <ConditionalVariationSettings
                             id={id}
                             variations={[
-                                'Bar Chart',
-                                'Grouped Bar Chart',
-                                'Pie Chart',
+                                'bar-chart',
+                                'grouped-bar-chart',
+                                'pie-chart',
                             ]}
                         >
                             <InputSettings
@@ -264,9 +264,9 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                         <ConditionalVariationSettings
                             id={id}
                             variations={[
-                                'Bar Chart',
-                                'Grouped Bar Chart',
-                                'Pie Chart',
+                                'bar-chart',
+                                'grouped-bar-chart',
+                                'pie-chart',
                             ]}
                         >
                             <InputSettings
@@ -289,9 +289,9 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                         <ConditionalVariationSettings
                             id={id}
                             variations={[
-                                'Bar Chart',
-                                'Grouped Bar Chart',
-                                'Pie Chart',
+                                'bar-chart',
+                                'grouped-bar-chart',
+                                'pie-chart',
                             ]}
                         >
                             <InputSettings

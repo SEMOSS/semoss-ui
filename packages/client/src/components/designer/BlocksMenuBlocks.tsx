@@ -1,9 +1,27 @@
 import { BlockJSON } from '@/stores';
+import {
+    Addchart,
+    BarChart,
+    BlurLinear,
+    CheckBox,
+    FileCopyOutlined,
+    FormatListBulleted,
+    FormatShapes,
+    HighlightAlt,
+    Insights,
+    Link,
+    PanoramaOutlined,
+    PieChart,
+    SmartButton,
+    TextFields,
+    Upload,
+    ViewList,
+    Widgets,
+} from '@mui/icons-material';
 
 export interface BlocksMenuItem {
     key: string;
     display: string;
-    icon: string;
     blockJson: BlockJSON;
 }
 
@@ -15,11 +33,10 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'bar-chart',
         display: 'Bar Chart',
-        icon: 'bar_chart',
         blockJson: {
             widget: 'vega',
             data: {
-                variation: 'Bar Chart',
+                variation: 'bar-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
                     title: undefined,
@@ -52,7 +69,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'button',
         display: 'Button',
-        icon: 'smart_button',
         blockJson: {
             widget: 'button',
             data: {
@@ -72,7 +88,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'checkbox',
         display: 'Checkbox',
-        icon: 'check_box',
         blockJson: {
             widget: 'checkbox',
             data: {
@@ -93,7 +108,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'container',
         display: 'Container',
-        icon: 'highlight_alt',
         blockJson: {
             widget: 'container',
             data: {
@@ -115,7 +129,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'grouped-bar-chart',
         display: 'Grouped Bar Chart',
-        icon: 'addchart',
         blockJson: {
             widget: 'vega',
             data: {
@@ -158,7 +171,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'image',
         display: 'Image',
-        icon: 'panorama_outlined',
         blockJson: {
             widget: 'image',
             data: {
@@ -182,7 +194,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'input',
         display: 'Input',
-        icon: 'format_shapes',
         blockJson: {
             widget: 'input',
             data: {
@@ -211,7 +222,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'link',
         display: 'Link',
-        icon: 'link',
         blockJson: {
             widget: 'link',
             data: {
@@ -233,7 +243,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     },
     {
         key: 'markdown',
-        icon: 'format_list_bulleted',
         display: 'Markdown',
         blockJson: {
             widget: 'markdown',
@@ -250,7 +259,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'page',
         display: 'Page',
-        icon: 'file_copy_outlined',
         blockJson: {
             widget: 'page',
             data: {
@@ -271,11 +279,10 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'pie-chart',
         display: 'Pie Chart',
-        icon: 'pie_chart',
         blockJson: {
             widget: 'vega',
             data: {
-                variation: 'Pie Chart',
+                variation: 'pie-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
                     title: undefined,
@@ -307,7 +314,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'progress',
         display: 'Progress',
-        icon: 'blur_linear',
         blockJson: {
             widget: 'progress',
             data: {
@@ -323,7 +329,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'query',
         display: 'Query',
-        icon: 'highlight_alt',
         blockJson: {
             widget: 'query',
             data: {
@@ -338,7 +343,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'select',
         display: 'Select',
-        icon: 'view_list',
         blockJson: {
             widget: 'select',
             data: {
@@ -364,7 +368,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'text',
         display: 'Text',
-        icon: 'text_fields',
         blockJson: {
             widget: 'text',
             data: {
@@ -382,7 +385,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'toggle-button',
         display: 'Toggle Button',
-        icon: 'smart_button',
         blockJson: {
             widget: 'toggle-button',
             data: {
@@ -410,7 +412,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'upload',
         display: 'Upload',
-        icon: 'upload',
         blockJson: {
             widget: 'upload',
             data: {
@@ -436,7 +437,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
     {
         key: 'vega',
         display: 'Vega',
-        icon: 'insights',
         blockJson: {
             widget: 'vega',
             data: {
@@ -448,3 +448,45 @@ export const MenuBlocks: BlocksMenuItem[] = [
         },
     },
 ];
+
+export const getIconForMenuItemByKey = (key: string) => {
+    switch (key) {
+        case 'bar-chart':
+            return BarChart;
+        case 'button':
+        case 'toggle-button':
+            return SmartButton;
+        case 'checkbox':
+            return CheckBox;
+        case 'container':
+            return HighlightAlt;
+        case 'grouped-bar-chart':
+            return Addchart;
+        case 'image':
+            return PanoramaOutlined;
+        case 'input':
+            return FormatShapes;
+        case 'link':
+            return Link;
+        case 'markdown':
+            return FormatListBulleted;
+        case 'page':
+            return FileCopyOutlined;
+        case 'pie-chart':
+            return PieChart;
+        case 'progress':
+            return BlurLinear;
+        case 'query':
+            return HighlightAlt;
+        case 'select':
+            return ViewList;
+        case 'text':
+            return TextFields;
+        case 'upload':
+            return Upload;
+        case 'vega':
+            return Insights;
+        default:
+            return Widgets;
+    }
+};

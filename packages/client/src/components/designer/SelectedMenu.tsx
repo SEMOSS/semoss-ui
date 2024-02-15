@@ -12,10 +12,9 @@ import {
 } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
-import { getIconForBlock } from '../block-defaults';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
-import { MenuBlocks } from './BlocksMenuBlocks';
+import { getIconForMenuItemByKey } from './BlocksMenuBlocks';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -180,8 +179,8 @@ export const SelectedMenu = observer(() => {
     const getBlockDisplay = () => {
         if (block) {
             return block.data?.variation
-                ? block.widget.replaceAll('-', ' ')
-                : '';
+                ? (block.data.variation as string).replaceAll('-', ' ')
+                : block.widget.replaceAll('-', ' ');
         } else {
             return '';
         }
@@ -202,7 +201,11 @@ export const SelectedMenu = observer(() => {
         <StyledMenu>
             <StyledMenuHeader>
                 <Stack flex={1} spacing={2} direction="row" alignItems="center">
-                    <BlockAvatar icon={getIconForBlock(block.widget)} />
+                    <BlockAvatar
+                        icon={getIconForMenuItemByKey(
+                            (block.data?.variation as string) ?? block.widget,
+                        )}
+                    />
                     <Stack direction={'row'} spacing={0.5} alignItems="center">
                         <StyledTitle variant="h6">
                             {getBlockDisplay()}

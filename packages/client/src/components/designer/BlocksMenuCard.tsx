@@ -5,7 +5,7 @@ import { styled, Card } from '@semoss/ui';
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 import { BlocksMenuCardContent } from './BlocksMenuCardContent';
-import { BlocksMenuItem } from './BlocksMenuBlocks';
+import { BlocksMenuItem, getIconForMenuItemByKey } from './BlocksMenuBlocks';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     borderRadius: '8px',
@@ -34,7 +34,7 @@ export const BlocksMenuCard = observer(
                     return true;
                 },
                 props.menuItem.display,
-                props.menuItem.icon,
+                getIconForMenuItemByKey(props.menuItem.key),
             );
 
             // clear the hovered
@@ -128,7 +128,7 @@ export const BlocksMenuCard = observer(
             <StyledCard onMouseDown={handleMouseDown}>
                 <BlocksMenuCardContent
                     display={props.menuItem.display}
-                    icon={props.menuItem.icon}
+                    icon={getIconForMenuItemByKey(props.menuItem.key)}
                 />
             </StyledCard>
         );
