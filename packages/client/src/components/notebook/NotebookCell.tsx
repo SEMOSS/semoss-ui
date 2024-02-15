@@ -32,7 +32,7 @@ const StyledCard = styled(Card, {
     border: isCardCellSelected
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
-    overflowY: 'visible',
+    overflow: 'visible',
     flexGrow: 1,
 }));
 
