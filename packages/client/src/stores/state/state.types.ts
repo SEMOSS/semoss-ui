@@ -30,10 +30,10 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
 
           /** Slots associated with the block */
           slots: Record<
-              D['slots'],
+              keyof D['slots'],
               {
                   /** Name of the slot */
-                  name: D['slots'];
+                  name: keyof D['slots'];
                   /** Children IDs of the slot */
                   children: string[];
               }
@@ -55,7 +55,7 @@ export interface BlockDef<W extends string = string> {
     listeners: Record<string, true>;
 
     /** Names of the slot associated with the widget */
-    slots: string;
+    slots: Record<string, true>;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     listeners: Record<keyof D['listeners'], ListenerActions[]>;
 
     /** Children associated with the block */
-    slots: Record<D['slots'], BlockJSON[]>;
+    slots: Record<keyof D['slots'], BlockJSON[]>;
 
     /** Render the block */
     render: BlockComponent;
@@ -141,6 +141,7 @@ export type BlockJSON<
           listeners: Record<keyof T['listeners'], ListenerActions[]>;
 
           /** Slot information */
+
           slots: Record<keyof T['slots'], BlockJSON<A, A>[]>;
       }
     : never;

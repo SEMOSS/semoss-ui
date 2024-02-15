@@ -10,7 +10,9 @@ export interface BodyBlockDef extends BlockDef<'body'> {
     data: {
         style: CSSProperties;
     };
-    slots: 'content';
+    slots: {
+        content: true;
+    };
 }
 
 export const BodyBlock: BlockComponent = observer(({ id }) => {

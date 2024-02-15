@@ -23,9 +23,7 @@ export const config: BlockConfig<DividerBlockDef> = {
         },
     },
     listeners: {},
-    slots: {
-        children: [],
-    },
+    slots: {},
     render: DividerBlock,
     icon: HorizontalRule,
     isBlocksMenuEnabled: true,

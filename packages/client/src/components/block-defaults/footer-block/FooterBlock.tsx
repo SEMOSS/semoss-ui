@@ -10,7 +10,9 @@ export interface FooterBlockDef extends BlockDef<'footer'> {
     data: {
         style: CSSProperties;
     };
-    slots: 'content';
+    slots: {
+        content: true;
+    };
 }
 
 export const FooterBlock: BlockComponent = observer(({ id }) => {

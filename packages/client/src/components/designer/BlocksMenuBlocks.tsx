@@ -184,6 +184,7 @@ export const MenuBlocks: BlocksMenuItem[] = [
         display: 'Input',
         icon: 'format_shapes',
         blockJson: {
+            widget: 'input',
             data: {
                 style: {
                     width: '100%',
@@ -212,6 +213,7 @@ export const MenuBlocks: BlocksMenuItem[] = [
         display: 'Link',
         icon: 'link',
         blockJson: {
+            widget: 'link',
             data: {
                 style: {
                     display: 'flex',
@@ -338,6 +340,7 @@ export const MenuBlocks: BlocksMenuItem[] = [
         display: 'Select',
         icon: 'view_list',
         blockJson: {
+            widget: 'select',
             data: {
                 style: {
                     padding: '4px',

@@ -14,7 +14,9 @@ export interface SectionBlockDef extends BlockDef<'section'> {
             config: { rows: number; cols: number };
         };
     };
-    slots: 'children';
+    slots: {
+        children: true;
+    };
 }
 
 export const SectionBlock: BlockComponent = observer(({ id }) => {

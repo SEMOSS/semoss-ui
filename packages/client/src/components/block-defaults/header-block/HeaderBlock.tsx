@@ -10,7 +10,9 @@ export interface HeaderBlockDef extends BlockDef<'header'> {
     data: {
         style: CSSProperties;
     };
-    slots: 'content';
+    slots: {
+        content: true;
+    };
 }
 
 export const HeaderBlock: BlockComponent = observer(({ id }) => {
