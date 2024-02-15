@@ -12,7 +12,7 @@ import { useBlocks, useDesigner } from '@/hooks';
 
 import { DragIndicator } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';
-import { MenuBlocks } from './BlocksMenuBlocks';
+import { MenuBlocks, getIconForMenuItemByKey } from './BlocksMenuBlocks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -88,6 +88,9 @@ export const SelectedMask = observer(() => {
                 return true;
             },
             block.id,
+            getIconForMenuItemByKey(
+                (block.data?.variation as string) ?? block.widget,
+            ),
         );
 
         // clear the hovered

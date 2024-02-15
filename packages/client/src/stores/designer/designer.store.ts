@@ -159,7 +159,7 @@ export class DesignerStore {
     activateDrag(
         widget: DesignerStoreInterface['drag']['ghostWidget'],
         canDrop: DesignerStoreInterface['drag']['canDrop'],
-        display?: DesignerStoreInterface['drag']['ghostDisplay'],
+        display: DesignerStoreInterface['drag']['ghostDisplay'],
         icon?: DesignerStoreInterface['drag']['ghostIcon'],
     ) {
         // activate the drag
