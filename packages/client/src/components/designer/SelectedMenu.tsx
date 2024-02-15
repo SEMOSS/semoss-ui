@@ -75,19 +75,6 @@ export const SelectedMenu = observer(() => {
 
         let m = registry[block.widget].contentMenu;
 
-        if (block.data?.variation) {
-            const menuVariation = MenuBlocks.find((menuBlockConfig) => {
-                return (
-                    menuBlockConfig.widget === block.widget &&
-                    (menuBlockConfig.data as any)?.variation ===
-                        block.data?.variation
-                );
-            });
-            if (menuVariation) {
-                m = menuVariation.contentMenu;
-            }
-        }
-
         // clear out the accordion
         const acc = {};
         for (let sIdx = 0, sLen = m.length; sIdx < sLen; sIdx++) {
@@ -128,19 +115,6 @@ export const SelectedMenu = observer(() => {
         }
 
         let m = registry[block.widget].styleMenu;
-
-        if (block.data?.variation) {
-            const menuVariation = MenuBlocks.find((menuBlockConfig) => {
-                return (
-                    menuBlockConfig.widget === block.widget &&
-                    (menuBlockConfig.data as any)?.variation ===
-                        block.data?.variation
-                );
-            });
-            if (menuVariation) {
-                m = menuVariation.styleMenu;
-            }
-        }
 
         // clear out the accordion
         const acc = {};

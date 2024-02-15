@@ -1,6 +1,6 @@
 import { styled, Grid, Typography } from '@semoss/ui';
 import { BlocksMenuCard } from './BlocksMenuCard';
-import { MenuBlockConfig } from './BlocksMenuBlocks';
+import { BlocksMenuItem } from './BlocksMenuBlocks';
 
 const StyledGrid = styled(Grid)(({ theme }) => ({
     paddingBottom: theme.spacing(3),
@@ -19,7 +19,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 
 export function BlocksMenuBlockTypeSection(props: {
     title?: string;
-    blocks: MenuBlockConfig[];
+    menuItems: BlocksMenuItem[];
 }) {
     return (
         <StyledGrid container>
@@ -29,14 +29,14 @@ export function BlocksMenuBlockTypeSection(props: {
                 </StyledTypography>
             </Grid>
             <Grid container spacing={2}>
-                {Array.from(props.blocks, (block) => {
+                {Array.from(props.menuItems, (menuItem: BlocksMenuItem) => {
                     return (
-                        <Grid item key={block.widget} xs={'auto'}>
-                            <BlocksMenuCard block={block} />
+                        <Grid item key={menuItem.blockJson.widget} xs={'auto'}>
+                            <BlocksMenuCard menuItem={menuItem} />
                         </Grid>
                     );
                 })}
-                {!props.blocks.length ? (
+                {!props.menuItems.length ? (
                     <Grid item>
                         <Typography variant="body1">
                             <em>No blocks found</em>

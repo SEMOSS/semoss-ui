@@ -24,9 +24,7 @@ export const config: BlockConfig<TextBlockDef> = {
         text: 'Hello world',
     },
     listeners: {},
-    slots: {
-        test: [],
-    },
+    slots: {},
     render: TextBlock,
     icon: TextFields,
     isBlocksMenuEnabled: true,

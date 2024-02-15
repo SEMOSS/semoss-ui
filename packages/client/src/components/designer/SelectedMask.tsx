@@ -76,23 +76,6 @@ export const SelectedMask = observer(() => {
             return;
         }
 
-        let display = block.widget.replaceAll('-', ' ');
-        let icon = getIconForBlock(block.widget);
-
-        if (block.data?.variation) {
-            const menuVariation = MenuBlocks.find((menuBlockConfig) => {
-                return (
-                    menuBlockConfig.widget === block.widget &&
-                    (menuBlockConfig.data as any)?.variation ===
-                        block.data?.variation
-                );
-            });
-            if (menuVariation) {
-                display = (menuVariation.data as any)?.variation;
-                icon = menuVariation.icon;
-            }
-        }
-
         // set the dragged
         designer.activateDrag(
             block.widget,
@@ -104,8 +87,7 @@ export const SelectedMask = observer(() => {
 
                 return true;
             },
-            display,
-            icon,
+            block.id,
         );
 
         // clear the hovered

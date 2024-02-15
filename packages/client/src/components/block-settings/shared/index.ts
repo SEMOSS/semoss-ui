@@ -8,3 +8,5 @@ export { DistinctPathButtonGroupSettings } from './DistinctPathButtonGroupSettin
 export { InputSettings } from './InputSettings';
 export { SelectInputSettings } from './SelectInputSettings';
 export { SizeSettings } from './SizeSettings';
+export { ConditionalVariationSettings } from './ConditionalVariationSettings';
+export { AIGenerationSettings } from './AIGenerationSettings';
