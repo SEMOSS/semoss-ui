@@ -98,7 +98,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 // use the returned projectId
 
                 const newIndexFilePath = 'version/assets/portals/index.html';
-                const newIndexFileContent = ''; // file is intentionally empty
+                const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${data.APP_NAME}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
 
                 const saveIndexFilePixel = `
                     SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]); 
