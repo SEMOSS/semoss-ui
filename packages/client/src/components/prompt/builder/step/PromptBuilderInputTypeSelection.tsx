@@ -59,6 +59,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return false;
         }
     };
+
     const getMetaSelectorOptions = (): Array<string> => {
         switch (props.inputType) {
             case INPUT_TYPE_VECTOR:
@@ -69,6 +70,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return [];
         }
     };
+
     const getMetaSelectorDisplay = (value: string): string => {
         switch (props.inputType) {
             case INPUT_TYPE_VECTOR:
@@ -79,6 +81,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return '';
         }
     };
+
     const getMetaSelectorLabel = (): string => {
         switch (props.inputType) {
             case INPUT_TYPE_VECTOR:

@@ -72,15 +72,16 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             slot: 'children',
         },
         data: {
+            style: {
+                padding: '4px',
+            },
             label: label,
             value: '',
             options: [],
-            style: {
-                width: '100%',
-                padding: '8px',
-            },
         },
-        listeners: {},
+        listeners: {
+            onChange: [],
+        },
         slots: {},
     };
 }

@@ -1,5 +1,6 @@
 import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
+    PROMPT_BUILDER_PREVIEW_STEP,
     SUMMARY_STEPS,
 } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
@@ -8,19 +9,26 @@ import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
 
-const StyledListItem = styled(List.Item, {
+const StyledListItem = styled(List.Item)(({ theme }) => ({
+    backgroundColor: theme.palette.grey[100],
+    borderRadius: theme.shape.borderRadius,
+    marginBottom: theme.spacing(1),
+}));
+
+const StyledStepListItem = styled(StyledListItem, {
     shouldForwardProp: (prop) =>
         prop !== 'disabled' && prop !== 'isStepComplete',
 })<{ disabled?: boolean; isStepComplete?: boolean }>(
     ({ theme, disabled, isStepComplete }) => ({
-        backgroundColor: theme.palette.grey[100],
         color: disabled
             ? theme.palette.grey[400]
             : isStepComplete
             ? theme.palette.primary.main
             : theme.palette.grey[900],
-        borderRadius: theme.shape.borderRadius,
-        marginBottom: theme.spacing(1),
+
+        '&:hover': {
+            cursor: !disabled ? 'pointer' : 'inherit',
+        },
     }),
 );
 
@@ -43,21 +51,9 @@ export const PromptBuilderSummary = (props: {
     builder: Builder;
     currentBuilderStep: number;
     isBuilderStepComplete: (step: number) => boolean;
+    isBuildStepsComplete: () => boolean;
+    changeBuilderStep: (step: number) => void;
 }) => {
-    const markBuilderStepComplete = (
-        summaryStep: number,
-        currentBuilderStep: number,
-    ) => {
-        if (summaryStep < currentBuilderStep) {
-            return true;
-        } else {
-            return (
-                props.isBuilderStepComplete(summaryStep) &&
-                summaryStep <= currentBuilderStep
-            );
-        }
-    };
-
     // don't count optional step items as part of overall completion until the step is active
     const builderProgress = () => {
         const builderArray = Object.values(props.builder);
@@ -105,47 +101,63 @@ export const PromptBuilderSummary = (props: {
                 />
             </StyledListItem>
 
-            {Array.from(SUMMARY_STEPS, (step: { title; icon }, i) => (
-                <span key={i + 1}>
-                    <StyledListItem
-                        disabled={i + 1 > props.currentBuilderStep}
-                        isStepComplete={markBuilderStepComplete(
-                            i + 1,
-                            props.currentBuilderStep,
-                        )}
-                        secondaryAction={
-                            markBuilderStepComplete(
-                                i + 1,
-                                props.currentBuilderStep,
-                            ) ? (
-                                <StyledCheckCircleOutlined />
-                            ) : (
-                                <PendingOutlined sx={{ marginTop: '8px' }} />
-                            )
-                        }
-                    >
-                        <List.ItemAvatar>
-                            <StyledAvatar>
-                                <step.icon />
-                            </StyledAvatar>
-                        </List.ItemAvatar>
-                        <List.ItemText
-                            disableTypography
-                            primary={
-                                <StyledListItemTypography variant="subtitle2">
-                                    {step.title}
-                                </StyledListItemTypography>
+            {Array.from(SUMMARY_STEPS, (step: { title; icon }, i) => {
+                let isStepComplete = props.isBuilderStepComplete(i + 1);
+                let disabled =
+                    i + 1 > props.currentBuilderStep && !isStepComplete;
+
+                // Preview Step, depends on completion of other steps
+                if (i === PROMPT_BUILDER_PREVIEW_STEP - 1) {
+                    const completedSteps = props.isBuildStepsComplete();
+                    disabled = !completedSteps;
+                    isStepComplete = false;
+                }
+
+                return (
+                    <span
+                        key={i + 1}
+                        onClick={() => {
+                            if (!disabled) {
+                                props.changeBuilderStep(i + 1);
                             }
-                        />
-                    </StyledListItem>
-                    <Collapse in={props.currentBuilderStep === i + 1}>
-                        <PromptBuilderSummaryStepItem
-                            builder={props.builder}
-                            currentBuilderStep={i + 1}
-                        />
-                    </Collapse>
-                </span>
-            ))}
+                        }}
+                    >
+                        <StyledStepListItem
+                            disabled={disabled}
+                            isStepComplete={isStepComplete}
+                            secondaryAction={
+                                isStepComplete ? (
+                                    <StyledCheckCircleOutlined />
+                                ) : (
+                                    <PendingOutlined
+                                        sx={{ marginTop: '8px' }}
+                                    />
+                                )
+                            }
+                        >
+                            <List.ItemAvatar>
+                                <StyledAvatar>
+                                    <step.icon />
+                                </StyledAvatar>
+                            </List.ItemAvatar>
+                            <List.ItemText
+                                disableTypography
+                                primary={
+                                    <StyledListItemTypography variant="subtitle2">
+                                        {step.title}
+                                    </StyledListItemTypography>
+                                }
+                            />
+                        </StyledStepListItem>
+                        <Collapse in={props.currentBuilderStep === i + 1}>
+                            <PromptBuilderSummaryStepItem
+                                builder={props.builder}
+                                currentBuilderStep={i + 1}
+                            />
+                        </Collapse>
+                    </span>
+                );
+            })}
         </List>
     );
 };

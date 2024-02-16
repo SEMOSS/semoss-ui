@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Builder, ConstraintSettings } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
 import { styled, Box, Stack, Typography, Switch } from '@semoss/ui';
+import { LoadingScreen } from '@/components/ui';
 
 interface Constraint {
     title: string;
@@ -45,6 +46,7 @@ const outputConstraints: Constraints = [
         key: 'bulletpoints',
     },
 ];
+
 const initialConstraintSettings: ConstraintSettings = {
     restrictInput: false,
     filterHateSpeech: true,
@@ -120,7 +122,6 @@ export const PromptBuilderConstraint = (props: {
         builderStepKey: string,
         value: ConstraintSettings,
     ) => void;
-    toggleConstraintSetting: (constraintKey: string) => void;
 }) => {
     return (
         <StyledBox>
@@ -130,11 +131,9 @@ export const PromptBuilderConstraint = (props: {
                     props.constraintSettings[props.constraint.key] ?? false
                 }
                 onChange={(e) => {
-                    props.toggleConstraintSetting(props.constraint.key);
-                    props.setBuilderValue(
-                        'constraints',
-                        props.constraintSettings,
-                    );
+                    const copy = props.constraintSettings;
+                    copy[props.constraint.key] = !copy[props.constraint.key];
+                    props.setBuilderValue('constraints', copy);
                 }}
             />
             <Stack direction="column" ml="12px">
@@ -156,18 +155,24 @@ export function PromptBuilderConstraintsStep(props: {
         value: ConstraintSettings,
     ) => void;
 }) {
-    const [constraintSettings, setConstraintSettings] = useState(
-        initialConstraintSettings,
-    );
-    const toggleConstraintSetting = (constraintKey: string) => {
-        setConstraintSettings((state) => ({
-            ...state,
-            [constraintKey]: !state[constraintKey],
-        }));
-    };
+    const builderConstraintSettings = props.builder.constraints
+        .value as ConstraintSettings;
+
+    const [constraintSettings, setConstraintSettings] =
+        useState<ConstraintSettings | null>(null);
+
     useEffect(() => {
-        props.setBuilderValue('constraints', constraintSettings);
-    }, []);
+        if (!builderConstraintSettings) {
+            props.setBuilderValue('constraints', initialConstraintSettings);
+            return;
+        } else {
+            setConstraintSettings(builderConstraintSettings);
+        }
+    }, [builderConstraintSettings]);
+
+    if (!constraintSettings) {
+        return <></>;
+    }
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -188,7 +193,6 @@ export function PromptBuilderConstraintsStep(props: {
                             constraint={constraint}
                             constraintSettings={constraintSettings}
                             setBuilderValue={props.setBuilderValue}
-                            toggleConstraintSetting={toggleConstraintSetting}
                         />
                     ),
                 )}
@@ -201,7 +205,6 @@ export function PromptBuilderConstraintsStep(props: {
                             constraint={constraint}
                             constraintSettings={constraintSettings}
                             setBuilderValue={props.setBuilderValue}
-                            toggleConstraintSetting={toggleConstraintSetting}
                         />
                     ),
                 )}

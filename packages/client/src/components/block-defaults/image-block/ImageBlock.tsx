@@ -19,7 +19,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <div
-            // src={!data.src ? ImageSkeleton : data.src}
             style={{
                 ...data.style,
                 backgroundImage: `url(${!data.src ? ImageSkeleton : data.src})`,
