@@ -346,15 +346,6 @@ export const AppEditor = (props: AppEditorProps) => {
 
     useEffect(() => {
         getInitialAppStructure();
-
-        // TODO: open portals folder automatically
-
-        // set event listener for first user click to disable auto folder opening
-        // document.addEventListener('click', firstClickHandler);
-
-        // setTimeout(() => {
-        //     setInitLoadComplete(true);
-        // }, 5000)
     }, []);
 
     useEffect(() => {
@@ -393,6 +384,14 @@ export const AppEditor = (props: AppEditorProps) => {
 
         setModelId(myModels.data[0].app_id);
     }, [myModels.status, myModels.data]);
+
+    /**
+     * @desc opens and loads contents for portals folder after initial app directory is loaded
+     */
+    useEffect(() => {
+        handleToggle(null, ['version/assets/portals/']); // opens the folder in the file explorer
+        viewAsset(['version/assets/portals/']); // adds the folder contents to the file explorer
+    }, [initLoadComplete]);
 
     /**
      * Get the App Structure, first on mount
@@ -739,6 +738,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * @param nodeIds
      */
     const handleToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
+        console.log({ nodeIds });
         setOpenFolderSet(new Set(nodeIds));
         setExpanded(nodeIds);
     };
@@ -1225,7 +1225,6 @@ export const AppEditor = (props: AppEditorProps) => {
         });
     };
 
-    // only
     if (!initLoadComplete) {
         return (
             <LoadingScreen.Trigger description="Retrieving files from application..." />
@@ -1429,52 +1428,3 @@ export const AppEditor = (props: AppEditorProps) => {
         </LLMContext.Provider>
     );
 };
-
-// Recursive open folders
-
-// // backup solution for stopping initial auto-opening folders if file limit is never met
-// const firstClickHandler = () => {
-//     setInitLoadComplete(true);
-//     document.removeEventListener('click', firstClickHandler);
-// };
-
-// helper function for recursive folder opening on initial explorer load
-// const openFoldersHelper = (node) => {
-//     initialLoadFileSet.current = new Set([
-//         ...initialLoadFileSet.current,
-//         node.id,
-//     ]);
-
-//     console.log('loop')
-//     if (initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT)
-//         setInitLoadComplete(true);
-//     if (
-//         node.type !== 'directory' ||
-//         initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
-//     )
-//         return;
-
-//     // add to open folders set for open folder icon rendering
-//     const tempSet2 = new Set(openFolderSet);
-//     tempSet2.add(node.id);
-//     setOpenFolderSet(tempSet2);
-
-//     // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
-//     if (!expanded.includes(node.id)) openFolderById(node.id);
-
-//     // recursively call on all children
-//     node.children.forEach(openFoldersHelper);
-// };
-
-// // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
-// useEffect(() => {
-//     if (
-//         initLoadComplete ||
-//         initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
-//     )
-//         return;
-
-//     // if the user has not yet interacted with the page open all folders recursively
-//     appDirectory.forEach(openFoldersHelper);
-//     // only runs recursive directory check on updates to appDirectory, not continuously
-// }, [appDirectory]);

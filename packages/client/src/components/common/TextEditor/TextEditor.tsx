@@ -218,6 +218,7 @@ export const TextEditor = (props: TextEditorProps) => {
     // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
     const fileTypeRef = useRef('');
     const modelIdRef = useRef('');
+    const wordWrapRef = useRef(false);
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -552,7 +553,25 @@ export const TextEditor = (props: TextEditorProps) => {
     };
 
     /**
-     * Handler that adds new LLM dropdown action to editor when the editor mounts
+     * Callback for adding word wrap toggle action in dropdown menu and as keyboard shortcut
+     */
+    const toggleWordWrapAction: monaco.editor.IActionDescriptor = {
+        contextMenuGroupId: '1_modification',
+        contextMenuOrder: 2,
+        id: 'toggle-word-wrap',
+        label: 'Toggle Word Wrap',
+        keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+
+        run: async (editor) => {
+            wordWrapRef.current = !wordWrapRef.current;
+            editor.updateOptions({
+                wordWrap: wordWrapRef.current ? 'on' : 'off',
+            });
+        },
+    };
+
+    /**
+     * Handler that adds new LLM dropdown actions to editor when the editor mounts
      * @param monacoInstance
      */
     const editorOnMountHandler: OnMount = (_editor, monacoInstance) => {
@@ -560,6 +579,7 @@ export const TextEditor = (props: TextEditorProps) => {
         if (LLMActionAdded == false && process.env.NODE_ENV == 'development') {
             setLLMActionAdded(true);
             monacoInstance.editor.addEditorAction(executeAction);
+            monacoInstance.editor.addEditorAction(toggleWordWrapAction);
         }
     };
 
