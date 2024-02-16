@@ -247,7 +247,7 @@ export const NewAppPage = () => {
                             <StyledBoxContent>
                                 <StyledBoxHeader>
                                     <Typography variant={'h6'}>
-                                        Prompt
+                                        Agent Builder
                                     </Typography>
                                     <Typography variant={'body1'}>
                                         Engineer a prompt to interact with your

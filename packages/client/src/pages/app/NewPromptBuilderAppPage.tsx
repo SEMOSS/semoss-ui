@@ -8,7 +8,7 @@ export const NewPromptBuilderAppPage = () => {
 
     return (
         <NewAppStep
-            title={'Prompt Builder'}
+            title={'Agent Builder'}
             previous={{
                 title: 'New App',
                 onClick: () => navigate('/app/new'),

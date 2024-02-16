@@ -26,21 +26,10 @@ export const PromptBuilderInputTypeStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: object) => void;
 }) => {
+    const builderInputTypes = props.builder.inputTypes.value;
+
     const [inputTokens, setInputTokens] = useState([]);
     const [inputTypes, setInputTypes] = useState({});
-    const setInputType = (
-        inputTokenIndex: number,
-        inputType: string,
-        inputTypeMeta: string | null,
-    ) => {
-        setInputTypes((state) => ({
-            ...state,
-            [inputTokenIndex]: {
-                type: inputType,
-                meta: inputTypeMeta,
-            },
-        }));
-    };
 
     const [cfgLibraryVectorDbs, setCfgLibraryVectorDbs] = useState({
         loading: false,
@@ -95,6 +84,9 @@ export const PromptBuilderInputTypeStep = (props: {
         });
     }, [myDbs.status, myDbs.data]);
 
+    /**
+     * Pulls in Builder state of inputTypes
+     */
     useEffect(() => {
         const tokens = [...(props.builder.inputs.value as Token[])];
         const filteredTokens = tokens.filter(
@@ -105,19 +97,43 @@ export const PromptBuilderInputTypeStep = (props: {
                     ? token.index === token.linkedInputToken
                     : true),
         );
-        setInputTokens(filteredTokens);
-        const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
-            return {
-                ...acc,
-                [token.index]: { type: INPUT_TYPE_TEXT, meta: null },
-            };
-        }, {});
-        setInputTypes(keyedInputs);
-    }, []);
+        if (!builderInputTypes) {
+            const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
+                return {
+                    ...acc,
+                    [token.index]: { type: INPUT_TYPE_TEXT, meta: null },
+                };
+            }, {});
 
-    useEffect(() => {
-        props.setBuilderValue('inputTypes', inputTypes);
-    }, [inputTypes]);
+            setInputTypes(keyedInputs);
+            props.setBuilderValue('inputTypes', keyedInputs);
+        } else {
+            setInputTypes(builderInputTypes);
+        }
+
+        setInputTokens(filteredTokens);
+    }, [builderInputTypes]);
+
+    const setInputType = (
+        inputTokenIndex: number,
+        inputType: string,
+        inputTypeMeta: string | null,
+    ) => {
+        const inputTypesDup = {
+            ...inputTypes,
+            [inputTokenIndex]: {
+                type: inputType,
+                meta: inputTypeMeta,
+            },
+        };
+
+        setInputTypes(inputTypesDup);
+        props.setBuilderValue('inputTypes', inputTypesDup);
+    };
+
+    if (Object.keys(inputTypes).length !== inputTokens.length) {
+        return <></>;
+    }
 
     return (
         <StyledStepPaper elevation={2} square>

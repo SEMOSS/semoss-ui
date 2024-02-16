@@ -15,6 +15,8 @@ export const PromptBuilderInputStep = (props: {
 
     useEffect(() => {
         props.setBuilderValue('inputs', tokens);
+        // Anytime inputs change we should reset inputTypes
+        props.setBuilderValue('inputTypes', undefined);
     }, [tokens]);
 
     /**

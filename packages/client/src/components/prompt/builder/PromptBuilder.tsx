@@ -45,7 +45,7 @@ const initialBuilder: Builder = {
     },
     tags: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
-        value: undefined,
+        value: [],
         required: false,
         display: 'Tags',
     },
@@ -130,11 +130,16 @@ export const PromptBuilder = () => {
                     return token.type === TOKEN_TYPE_INPUT;
                 },
             );
+
+            if (!hasInputs) {
+                setBuilderValue('inputTypes', {});
+            }
             changeBuilderStep(currentBuilderStep + (hasInputs ? 1 : 2));
         } else {
             changeBuilderStep(currentBuilderStep + 1);
         }
     };
+
     const backButtonAction = () => {
         if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP + 1) {
             // moving back from step after input types step - if no input types, skip that step moving backwards
@@ -149,11 +154,26 @@ export const PromptBuilder = () => {
         }
     };
 
+    const navigateBuilderSteps = (step: number) => {
+        if (step === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+            // moving back from step after input types step - if no input types, skip that step moving backwards
+            const hasInputs = (builder.inputs.value as Token[]).some(
+                (token: Token) => {
+                    return token.type === TOKEN_TYPE_INPUT;
+                },
+            );
+            changeBuilderStep(currentBuilderStep - (hasInputs ? 1 : 2));
+        } else {
+            changeBuilderStep(step);
+        }
+    };
+
     const isBuilderStepComplete = (step: number) => {
         const stepItems = Object.values(builder).filter(
             (builderStepItem: BuilderStepItem) => {
                 return (
-                    builderStepItem.step === step && builderStepItem.required
+                    builderStepItem.step === step &&
+                    (builderStepItem.required || !builderStepItem.value)
                 );
             },
         );
@@ -182,12 +202,24 @@ export const PromptBuilder = () => {
                 );
             default:
                 return stepItems.every((builderStepItem: BuilderStepItem) => {
-                    return builderStepItem.required
+                    return !builderStepItem.value
                         ? !!builderStepItem.value
                         : true;
                 });
         }
     };
+
+    const isBuildStepsComplete = () => {
+        let completed = true;
+        Object.values(builder).forEach((obj) => {
+            if (!obj.value) {
+                completed = false;
+            }
+        });
+        return completed;
+    };
+
+    console.log('BUILDER', builder);
 
     return (
         <>
@@ -198,6 +230,10 @@ export const PromptBuilder = () => {
                             builder={builder}
                             currentBuilderStep={currentBuilderStep}
                             isBuilderStepComplete={isBuilderStepComplete}
+                            isBuildStepsComplete={isBuildStepsComplete}
+                            changeBuilderStep={(step) => {
+                                navigateBuilderSteps(step);
+                            }}
                         />
                     </StyledPaper>
                 </Grid>

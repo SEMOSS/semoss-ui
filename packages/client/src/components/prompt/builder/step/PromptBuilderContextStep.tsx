@@ -161,9 +161,13 @@ export const PromptBuilderContextStep = (props: {
                     multiline
                     rows={6}
                     value={props.builder.context.value}
-                    onChange={(e) =>
-                        props.setBuilderValue('context', e.target.value)
-                    }
+                    onChange={(e) => {
+                        // Reset Values that are dependent on Context
+                        props.setBuilderValue('inputTypes', undefined);
+                        props.setBuilderValue('inputs', undefined);
+
+                        props.setBuilderValue('context', e.target.value);
+                    }}
                 />
                 <Stack direction="row">
                     <PromptBuilderContextTestDialogButton
