@@ -1,4 +1,13 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { Stack, Typography, styled } from '@semoss/ui';
+import Error from '@/assets/img/Error.svg';
+
+const StyledContainer = styled(Stack)(() => ({
+    width: '100vw',
+    height: '100vh',
+    alignItems: 'center',
+    justifyContent: 'center',
+}));
 
 interface Props {
     children?: ReactNode;
@@ -26,7 +35,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public render() {
         if (this.state.hasError) {
-            return <div>Error. Check Logs</div>;
+            return (
+                <StyledContainer>
+                    <img src={Error} height="50%" />
+                    <Typography variant="h6">Something went wrong!</Typography>
+                    <Typography variant="body1">
+                        We're working hard to fix it. If the issue persists,
+                        please reach out and let us know.
+                    </Typography>
+                </StyledContainer>
+            );
         }
 
         return this.props.children;

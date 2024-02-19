@@ -145,6 +145,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                 }}
                 startIcon={<AccountTree />}
                 endIcon={<KeyboardArrowDown />}
+                title="Select Database"
             >
                 <StyledButtonLabel width={8}>
                     {cfgLibraryDatabases.display[
@@ -166,6 +167,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                 }}
                 startIcon={<CropFree />}
                 endIcon={<KeyboardArrowDown />}
+                title="Select Frame Type"
             >
                 <StyledButtonLabel width={6}>
                     {FrameTypes[cell.parameters.frameType]?.display ?? ''}
@@ -184,15 +186,16 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                     setAnchorEl(event.currentTarget);
                 }}
                 startIcon={<DriveFileRenameOutline />}
+                title="Set Frame Variable Name"
             >
-                <StyledButtonLabel width={8}>
+                <StyledButtonLabel width={14}>
                     {cell.parameters.frameVariableName ?? ''}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                {menuType === 'database' &&
-                    Array.from(cfgLibraryDatabases.ids, (databaseId) => (
-                        <List dense>
+                {menuType === 'database' && (
+                    <List dense>
+                        {Array.from(cfgLibraryDatabases.ids, (databaseId) => (
                             <List.Item
                                 disablePadding
                                 key={`${cell.id}-${databaseId}`}
@@ -220,11 +223,12 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                                     />
                                 </List.ItemButton>
                             </List.Item>
-                        </List>
-                    ))}
-                {menuType === 'frame' &&
-                    Array.from(Object.values(FrameTypes), (frameType) => (
-                        <List dense>
+                        ))}
+                    </List>
+                )}
+                {menuType === 'frame' && (
+                    <List dense>
+                        {Array.from(Object.values(FrameTypes), (frameType) => (
                             <List.Item
                                 disablePadding
                                 key={`${cell.id}-${frameType}`}
@@ -248,14 +252,15 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                                     />
                                 </List.ItemButton>
                             </List.Item>
-                        </List>
-                    ))}
+                        ))}
+                    </List>
+                )}
                 {menuType === 'variable' && (
                     <Stack direction="row" alignItems="center" padding={1.5}>
                         <TextField
                             value={frameVariableName}
                             size="small"
-                            label="Output Variable Name"
+                            label="Frame Variable Name"
                             onChange={(e) =>
                                 setFrameVariableName(e.target.value)
                             }
