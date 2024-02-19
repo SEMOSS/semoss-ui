@@ -10,8 +10,8 @@ export interface LinkBlockDef extends BlockDef<'link'> {
     widget: 'link';
     data: {
         style: CSSProperties;
-        src: string;
-        label?: string;
+        href: string;
+        text: string;
     };
 }
 
@@ -19,17 +19,16 @@ export interface LinkBlockDef extends BlockDef<'link'> {
 TO-DO: If this is a link to somewhere internally on app switch to a Link (react-router)
 */
 export const LinkBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<LinkBlockDef>(id);
-
+    const { attrs, data } = useBlock<LinkBlockDef>(id);
     return (
         <a
-            href={data.src}
+            href={data.href}
             style={{
                 ...data.style,
             }}
             {...attrs}
         >
-            {data.label ? data.label : <Slot slot={slots.children}></Slot>}
+            {data.text}
         </a>
     );
 });
