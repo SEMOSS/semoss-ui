@@ -1,10 +1,10 @@
 export const getFrameHeaderTypesPipeline = (
     frameVariableName: string,
-    headerTypes: string[],
+    headerTypes?: string[],
 ) => {
-    return `META | ${frameVariableName} | FrameHeaders (headerTypes = ${JSON.stringify(
-        headerTypes,
-    )});`;
+    return `META | ${frameVariableName} | FrameHeaders (${
+        headerTypes ? `headerTypes = ${JSON.stringify(headerTypes)}` : ''
+    });`;
 };
 
 export const getFrameUppercasePipeline = (

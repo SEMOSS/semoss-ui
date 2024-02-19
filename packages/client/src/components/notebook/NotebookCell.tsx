@@ -34,11 +34,15 @@ const StyledCard = styled(Card, {
         : 'unset',
     overflow: 'visible',
     flexGrow: 1,
+    cursor: isCardCellSelected ? 'inherit' : 'pointer',
 }));
 
-const StyleCardContent = styled(Card.Content)(() => ({
+const StyleCardContent = styled(Card.Content, {
+    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
+})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => ({
     margin: '0!important',
     padding: '0!important',
+    pointerEvents: isCardCellSelected ? 'inherit' : 'none',
 }));
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -348,11 +352,15 @@ export const NotebookCell = observer(
                         isCardCellSelected={
                             (notebook?.selectedCell?.id ?? '') == cell.id
                         }
-                        onClick={() =>
-                            notebook.selectCell(cell.query.id, cell.id)
-                        }
+                        onClick={(e) => {
+                            notebook.selectCell(cell.query.id, cell.id);
+                        }}
                     >
-                        <StyleCardContent>
+                        <StyleCardContent
+                            isCardCellSelected={
+                                (notebook?.selectedCell?.id ?? '') == cell.id
+                            }
+                        >
                             {renderedDetails}
                             <Stack
                                 id={`notebook-cell-content-${queryId}-${cellId}`}

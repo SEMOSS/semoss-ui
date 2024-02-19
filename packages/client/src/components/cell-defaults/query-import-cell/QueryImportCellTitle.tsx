@@ -92,7 +92,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
     }, [open, menuType]);
 
     const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
-        loading: false,
+        loading: true,
         ids: [],
         display: {},
     });
