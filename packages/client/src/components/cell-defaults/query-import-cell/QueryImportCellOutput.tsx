@@ -3,10 +3,7 @@ import { QueryImportCellDef } from './config';
 import { LinearProgress, Table, Typography, styled } from '@semoss/ui';
 import { useBlocks, useRootStore } from '@/hooks';
 import { useEffect, useState } from 'react';
-import {
-    getQueryImportCountPipeline,
-    getQueryImportPreviewPipeline,
-} from './query-import-pipeline-utils';
+import { getQueryPreviewPipeline, getQueryCountPipeline } from '../shared';
 
 const StyledTableContainer = styled(Table.Container)(() => ({
     height: '200px',
@@ -37,9 +34,7 @@ export const QueryImportCellOutput: CellComponent<QueryImportCellDef> = (
             monolithStore
                 .run(
                     state.insightId,
-                    getQueryImportPreviewPipeline(
-                        cell.parameters.frameVariableName,
-                    ),
+                    getQueryPreviewPipeline(cell.parameters.frameVariableName),
                 )
                 .then((response) => {
                     if (!response.errors.length) {
@@ -61,7 +56,7 @@ export const QueryImportCellOutput: CellComponent<QueryImportCellDef> = (
             monolithStore
                 .run(
                     state.insightId,
-                    getQueryImportCountPipeline(
+                    getQueryCountPipeline(
                         cell.parameters.databaseId,
                         cell.parameters.selectQuery,
                     ),
