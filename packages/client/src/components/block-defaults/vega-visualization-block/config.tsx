@@ -10,6 +10,7 @@ import {
     AIGenerationSettings,
     ConditionalVariationSettings,
     QueryInputSettings,
+    JsonModalSettings,
 } from '@/components/block-settings';
 
 export const config: BlockConfig<VegaVisualizationBlockDef> = {
@@ -32,11 +33,10 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                     description: 'JSON Specification',
                     render: ({ id }) => (
                         <ConditionalVariationSettings id={id}>
-                            <InputSettings
+                            <JsonModalSettings
                                 id={id}
                                 label="JSON"
                                 path="specJson"
-                                valueAsObject
                             />
                         </ConditionalVariationSettings>
                     ),

@@ -10,3 +10,4 @@ export { SelectInputSettings } from './SelectInputSettings';
 export { SizeSettings } from './SizeSettings';
 export { ConditionalVariationSettings } from './ConditionalVariationSettings';
 export { AIGenerationSettings } from './AIGenerationSettings';
+export { JsonModalSettings } from './JsonModalSettings';
