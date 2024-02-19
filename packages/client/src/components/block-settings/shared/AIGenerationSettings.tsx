@@ -124,6 +124,13 @@ export const AIGenerationSettings = observer(
                                   .replaceAll('\\n', ''),
                           )
                         : undefined;
+                    if (valueToSet === undefined) {
+                        notification.add({
+                            color: 'error',
+                            message:
+                                'There was an issue parsing the JSON in your response.',
+                        });
+                    }
                 }
 
                 setData(path, valueToSet as PathValue<D['data'], typeof path>);

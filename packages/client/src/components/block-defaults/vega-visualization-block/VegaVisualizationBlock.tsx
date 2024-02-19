@@ -39,7 +39,16 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
                 Add spec to render your visualization
             </StyledNoDataContainer>
         );
-    } else if (typeof data.specJson === 'string') {
+    }
+    try {
+        const Chart = createClassFromSpec({ spec: data.specJson });
+
+        return (
+            <StyledChartContainer {...attrs}>
+                <Chart actions={false} />
+            </StyledChartContainer>
+        );
+    } catch (e) {
         // spec was unable to be parsed as object
         return (
             <StyledNoDataContainer error {...attrs}>
@@ -47,12 +56,4 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
             </StyledNoDataContainer>
         );
     }
-
-    const Chart = createClassFromSpec({ spec: data.specJson });
-
-    return (
-        <StyledChartContainer {...attrs}>
-            <Chart actions={false} />
-        </StyledChartContainer>
-    );
 });
