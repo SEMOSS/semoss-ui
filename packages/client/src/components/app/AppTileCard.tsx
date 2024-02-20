@@ -302,14 +302,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledPublishedByContainer>
                 </Card.Content>
                 <StyledCardActions>
-                    <Button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            onAction();
-                        }}
+                    <Link
+                        href={href}
+                        rel="noopener noreferrer"
+                        color="inherit"
+                        underline="none"
                     >
-                        Open
-                    </Button>
+                        <Button>Open</Button>
+                    </Link>
                     {app.project_created_by !== 'SYSTEM' ? (
                         <IconButton
                             onClick={(e) => {
