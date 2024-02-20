@@ -39,7 +39,6 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
     slots: {},
     render: ToggleButtonBlock,
     icon: SmartButton,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

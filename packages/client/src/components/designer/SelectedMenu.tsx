@@ -14,7 +14,7 @@ import { useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
-import { getIconForMenuItemByKey } from './BlocksMenuBlocks';
+import { getIconForMenuItemByKey } from './designer.constants';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',

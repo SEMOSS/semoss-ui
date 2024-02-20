@@ -26,7 +26,6 @@ export const config: BlockConfig<DividerBlockDef> = {
     slots: {},
     render: DividerBlock,
     icon: HorizontalRule,
-    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         {

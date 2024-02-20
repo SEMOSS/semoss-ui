@@ -35,7 +35,6 @@ export const config: BlockConfig<TableBlockDef> = {
     slots: {},
     render: TableBlock,
     icon: TableChart,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

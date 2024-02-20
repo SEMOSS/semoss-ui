@@ -3,8 +3,6 @@ import { styled, Card } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerStoreInterface } from '@/stores';
-import { getIconForBlock } from '../block-defaults';
-import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     border: `1px solid ${theme.palette.primary.main}`,
@@ -66,12 +64,7 @@ export const Ghost = observer(() => {
                 ...getGhostStyle(designer.drag.ghostPosition),
             }}
         >
-            <StyledCard>
-                <BlocksMenuCardContent
-                    display={designer.drag.ghostDisplay}
-                    icon={designer.drag.ghostIcon}
-                />
-            </StyledCard>
+            <StyledCard>{designer.drag.ghostDisplay}</StyledCard>
         </StyledGhost>
     );
 });

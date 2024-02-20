@@ -27,7 +27,6 @@ export const config: BlockConfig<CheckboxBlockDef> = {
     slots: {},
     render: CheckboxBlock,
     icon: CheckBox,
-    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [],
 };

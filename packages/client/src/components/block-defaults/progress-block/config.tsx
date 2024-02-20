@@ -24,7 +24,6 @@ export const config: BlockConfig<ProgressBlockDef> = {
     slots: {},
     render: ProgressBlock,
     icon: BlurLinear,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

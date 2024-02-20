@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Chip, List, Typography, styled } from '@semoss/ui';
 import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
 import { ActionMessages, QueryState, BlockJSON } from '@/stores';
-import { getIconForMenuItemByKey } from './BlocksMenuBlocks';
+import { getIconForMenuItemByKey } from './designer.constants';
 
 const StyledListItem = styled(List.Item)(() => ({
     padding: '0px 4px',

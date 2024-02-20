@@ -35,7 +35,6 @@ export const config: BlockConfig<ButtonBlockDef> = {
     slots: {},
     render: ButtonBlock,
     icon: SmartButton,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

@@ -24,7 +24,6 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
     slots: {},
     render: VegaVisualizationBlock,
     icon: Insights,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

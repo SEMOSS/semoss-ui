@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Paper, Tooltip } from '@semoss/ui';
-import { DashboardRounded, DataObject, Layers } from '@mui/icons-material';
+import { BarChartRounded, DashboardRounded, Layers } from '@mui/icons-material';
 import { useMemo, useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
@@ -9,11 +9,11 @@ import { useBlocks } from '@/hooks';
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 import { Renderer } from '@/components/blocks';
 
-import { BlocksMenu } from './BlocksMenu';
+import { AddBlocksMenu } from './AddBlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
-import { QueryMenu } from './QueryMenu';
 import { Screen } from './Screen';
+import { DEFAULT_MENU, VISUALIZATION_MENU } from './designer.constants';
 
 const StyledLeftMenu = styled('div', {
     shouldForwardProp: (prop) => prop !== 'width',
@@ -87,7 +87,9 @@ export const Designer = observer((): JSX.Element => {
     const { state } = useBlocks();
 
     // view
-    const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
+    const [view, setView] = useState<
+        'outline' | 'blocks' | 'visualization' | ''
+    >('');
 
     // menu resize
     const [leftMenuResize, setLeftMenuResize] = useState<{
@@ -198,30 +200,44 @@ export const Designer = observer((): JSX.Element => {
                             <SidebarText>Outline</SidebarText>
                         </SidebarItem>
                         <SidebarItem
-                            selected={view === 'add'}
-                            onClick={() => updateView('add')}
+                            selected={view === 'blocks'}
+                            onClick={() => updateView('blocks')}
                         >
-                            <Tooltip title={'Add'} placement="right">
+                            <Tooltip title={'Add Blocks'} placement="right">
                                 <DashboardRounded color="inherit" />
                             </Tooltip>
-                            <SidebarText>Add</SidebarText>
+                            <SidebarText>Blocks</SidebarText>
                         </SidebarItem>
                         <SidebarItem
-                            selected={view === 'query'}
-                            onClick={() => updateView('query')}
+                            selected={view === 'visualization'}
+                            onClick={() => updateView('visualization')}
                         >
-                            <Tooltip title={'Connect Query'} placement="right">
-                                <DataObject color="inherit" />
+                            <Tooltip
+                                title={'Add Visualizations'}
+                                placement="right"
+                            >
+                                <BarChartRounded color="inherit" />
                             </Tooltip>
-                            <SidebarText>Queries</SidebarText>
+                            <SidebarText>Viz</SidebarText>
                         </SidebarItem>
                     </Sidebar>
                     {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
                                 {view === 'outline' ? <OutlineMenu /> : null}
-                                {view === 'query' ? <QueryMenu /> : null}
-                                {view === 'add' ? <BlocksMenu /> : null}
+                                {view === 'blocks' ? (
+                                    <AddBlocksMenu
+                                        title={'Add Blocks'}
+                                        items={DEFAULT_MENU}
+                                    />
+                                ) : null}
+
+                                {view === 'visualization' ? (
+                                    <AddBlocksMenu
+                                        title={'Add Visualization'}
+                                        items={VISUALIZATION_MENU}
+                                    />
+                                ) : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
                     ) : null}
