@@ -244,6 +244,7 @@ export const MenuBlocks: BlocksMenuItem[] = [
                     padding: '4px',
                     whiteSpace: 'pre-line',
                     textOverflow: 'ellipsis',
+                    textDecoration: 'none',
                 },
                 href: '',
                 text: 'Insert text',
