@@ -39,7 +39,7 @@ const StyledCard = styled(Card, {
 
 const StyleCardContent = styled(Card.Content, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
-})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => ({
+})<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
     margin: '0!important',
     padding: '0!important',
     pointerEvents: isCardCellSelected ? 'inherit' : 'none',

@@ -5,6 +5,7 @@ import {
     CleanRoutineTypes,
     UppercaseCleanRoutineDef,
 } from './clean.types';
+import { FontDownload } from '@mui/icons-material';
 
 export interface CleanRoutineConfig<
     D extends CleanRoutineDef = CleanRoutineDef,
@@ -23,12 +24,14 @@ export const CleanRoutines: Record<
     {
         routine: CleanRoutineTypes;
         display: string;
+        icon: React.FunctionComponent;
         config: CleanRoutineConfig;
     }
 > = {
     uppercase: {
         routine: 'uppercase',
         display: 'Uppercase',
+        icon: FontDownload,
         config: {
             routine: 'uppercase',
             parameters: {

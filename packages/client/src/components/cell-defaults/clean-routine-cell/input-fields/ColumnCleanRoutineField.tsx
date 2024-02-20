@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
 import { getFrameHeaderTypesPipeline } from '../clean-routine-pipeline-utils';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { runPixel } from '@/api';
+import { CellState } from '@/stores';
+import { CleanRoutineTargetCell } from '../clean.types';
 
 interface FrameHeaderInfo {
     headers: {
@@ -12,8 +15,8 @@ interface FrameHeaderInfo {
 }
 
 export type ColumnCleanRoutineFieldComponent = (props: {
+    cell: CellState;
     selectedColumns: string[];
-    frameVariableName: string;
     columnTypes?: string[];
     insightId: string;
     onChange: (selectedColumns: string[]) => void;
@@ -22,12 +25,23 @@ export type ColumnCleanRoutineFieldComponent = (props: {
 export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
     observer((props) => {
         const {
+            cell,
             selectedColumns,
-            frameVariableName,
             columnTypes = undefined,
             insightId,
             onChange,
         } = props;
+
+        const frameVariableName = computed(() => {
+            return (cell.parameters.targetCell as CleanRoutineTargetCell)
+                .frameVariableName;
+        }).get();
+
+        const targetCell: CellState = computed(() => {
+            return cell.query.cells[
+                (cell.parameters.targetCell as CleanRoutineTargetCell).id
+            ];
+        }).get();
 
         const [frameColumns, setFrameColumns] = useState({
             loading: true,
@@ -64,7 +78,7 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
             };
 
             fetchHeaders();
-        }, []);
+        }, [targetCell.output]);
 
         return (
             <Autocomplete

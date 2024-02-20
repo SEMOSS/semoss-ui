@@ -16,12 +16,10 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                     Change the values of the selected columns to uppercase.
                 </Typography>
                 <ColumnCleanRoutineField
+                    cell={cell}
                     selectedColumns={
                         (cell.parameters.cleanRoutine.parameters
                             ?.columns as string[]) ?? []
-                    }
-                    frameVariableName={
-                        cell.parameters.targetCell.frameVariableName
                     }
                     insightId={state.insightId}
                     columnTypes={['STRING']}
