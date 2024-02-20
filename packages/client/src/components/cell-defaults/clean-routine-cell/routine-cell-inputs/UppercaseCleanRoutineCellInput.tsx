@@ -43,7 +43,7 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
         }
 
         return (
-            <>
+            <Stack spacing={2}>
                 <Typography variant="caption">
                     {targetCell &&
                     (!targetCell.isExecuted || !targetCell.output)
@@ -71,6 +71,6 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                         });
                     }}
                 />
-            </>
+            </Stack>
         );
     });

@@ -22,7 +22,7 @@ export type ColumnCleanRoutineFieldComponent = (props: {
     insightId: string;
     multiple?: boolean;
     label?: string;
-    onChange: (selectedColumns: ColumnInfo[] | ColumnInfo) => void;
+    onChange: (newColumns: ColumnInfo[] | ColumnInfo) => void;
 }) => JSX.Element;
 
 export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
@@ -89,7 +89,7 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
             };
 
             fetchHeaders();
-        }, [targetCell.output]);
+        }, [targetCell ? targetCell.output : null]);
 
         return (
             <Autocomplete
@@ -106,12 +106,12 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
                     onChange(newValue);
                 }}
                 options={frameColumns.columns}
+                getOptionLabel={(option: ColumnInfo) => option.name}
                 renderInput={(params) => (
                     <TextField
                         {...params}
                         variant="outlined"
-                        label={label}
-                        placeholder="Select columns"
+                        label={label ?? `Column${multiple ? 's' : ''}`}
                     />
                 )}
             />

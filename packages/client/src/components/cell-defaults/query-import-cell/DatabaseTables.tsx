@@ -11,6 +11,7 @@ import {
     Collapse,
 } from '@semoss/ui';
 import {
+    AccessTime,
     DateRange,
     FontDownload,
     KeyboardArrowRight,
@@ -86,6 +87,8 @@ export const DatabaseTables = (props: { databaseId: string }) => {
             case 'DATE':
             case 'DATETIME':
                 return <DateRange />;
+            case 'TIME':
+                return <AccessTime />;
             default:
                 return <></>;
         }
