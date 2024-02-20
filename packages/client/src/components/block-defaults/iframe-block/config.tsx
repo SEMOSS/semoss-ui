@@ -21,9 +21,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         enableFrameInteractions: true,
     },
     listeners: {},
-    slots: {
-        test: [],
-    },
+    slots: {},
     render: IframeBlock,
     icon: AspectRatio,
     isBlocksMenuEnabled: true,
