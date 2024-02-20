@@ -1,7 +1,7 @@
 import { CellComponent } from '@/stores';
 import { CleanRoutineCellDef } from './config';
 import { UppercaseCleanRoutineCellInput } from './routine-cell-inputs';
-import { Avatar, Chip, Stack, styled } from '@semoss/ui';
+import { Avatar, Chip, Stack, Typography, styled } from '@semoss/ui';
 import { CleanRoutines } from './clean.constants';
 import { THEME } from '@/constants';
 import { blue, green } from '@mui/material/colors';
@@ -20,6 +20,10 @@ export const CleanRoutineChipAvatar = styled(Avatar)(({ theme }) => ({
         fontSize: '1.25rem',
     },
 }));
+export const StyledTypography = styled(Typography)(({ theme }) => ({
+    lineHeight: '24px',
+    fontWeight: theme.typography.fontWeightBold,
+}));
 
 export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
     props,
@@ -29,6 +33,18 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
     const CleanRoutineIcon: React.FunctionComponent =
         CleanRoutines[cell.parameters.cleanRoutine.routine].icon;
 
+    const cleanRoutineDisplay: string =
+        CleanRoutines[cell.parameters.cleanRoutine.routine].display;
+
+    const cleanRoutineCellInputContent = () => {
+        switch (cell.parameters.cleanRoutine.routine) {
+            case 'uppercase':
+                return <UppercaseCleanRoutineCellInput {...props} />;
+            default:
+                return <></>;
+        }
+    };
+
     if (!isExpanded) {
         return (
             <Stack width="100%" paddingY={0.5}>
@@ -36,10 +52,7 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
                     <CleanRoutineChip
                         size="small"
                         color="primary"
-                        label={
-                            CleanRoutines[cell.parameters.cleanRoutine.routine]
-                                .display
-                        }
+                        label={cleanRoutineDisplay}
                         avatar={
                             <CleanRoutineChipAvatar variant="rounded">
                                 <CleanRoutineIcon />
@@ -51,10 +64,12 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
         );
     }
 
-    switch (cell.parameters.cleanRoutine.routine) {
-        case 'uppercase':
-            return <UppercaseCleanRoutineCellInput {...props} />;
-        default:
-            return <></>;
-    }
+    return (
+        <Stack width="100%" paddingY={0.5}>
+            <StyledTypography variant="body1">
+                {cleanRoutineDisplay}
+            </StyledTypography>
+            {cleanRoutineCellInputContent()}
+        </Stack>
+    );
 };

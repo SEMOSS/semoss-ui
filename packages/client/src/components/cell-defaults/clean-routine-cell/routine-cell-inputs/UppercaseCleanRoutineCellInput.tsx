@@ -39,12 +39,12 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
         }
 
         return (
-            <Stack width="100%" paddingY={0.75}>
+            <>
                 <Typography variant="caption">
                     {targetCell &&
                     (!targetCell.isExecuted || !targetCell.output)
                         ? helpText
-                        : 'Change the values of the selected columns to uppercase.'}
+                        : 'Change the values of the selected columns to uppercase'}
                 </Typography>
                 <ColumnCleanRoutineField
                     cell={cell}
@@ -66,6 +66,6 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                         });
                     }}
                 />
-            </Stack>
+            </>
         );
     });
