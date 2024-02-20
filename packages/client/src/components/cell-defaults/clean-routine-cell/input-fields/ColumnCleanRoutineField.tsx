@@ -22,6 +22,7 @@ export type ColumnCleanRoutineFieldComponent = (props: {
     insightId: string;
     multiple?: boolean;
     label?: string;
+    disabled?: boolean;
     onChange: (newColumns: ColumnInfo[] | ColumnInfo) => void;
 }) => JSX.Element;
 
@@ -34,6 +35,7 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
             insightId,
             multiple = false,
             label = undefined,
+            disabled = false,
             onChange,
         } = props;
 
@@ -58,6 +60,7 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
 
         useEffect(() => {
             const fetchHeaders = async () => {
+                let columns = [];
                 try {
                     const response = await runPixel<
                         [{ headerInfo: FrameHeaderInfo }]
@@ -68,31 +71,32 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
                         ),
                         insightId,
                     );
-                    const columns =
+                    columns =
                         response.pixelReturn[0].output.headerInfo.headers.map(
                             (header) => ({
                                 name: header.alias,
                                 dataType: header.dataType,
                             }),
                         );
+                } catch (e) {
+                    console.log(e);
+                } finally {
                     setFrameColumns({
                         loading: false,
                         columns: columns,
                     });
-                } catch (e) {
-                    console.log(e);
-                    setFrameColumns({
-                        loading: false,
-                        columns: [],
-                    });
                 }
             };
 
-            fetchHeaders();
+            if (targetCell && targetCell.output) {
+                fetchHeaders();
+            }
         }, [targetCell ? targetCell.output : null]);
 
         return (
             <Autocomplete
+                disabled={disabled}
+                disableClearable
                 size="small"
                 loading={frameColumns.loading}
                 value={

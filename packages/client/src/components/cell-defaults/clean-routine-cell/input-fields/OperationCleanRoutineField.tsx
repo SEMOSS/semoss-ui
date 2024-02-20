@@ -5,19 +5,27 @@ import { operation } from '../clean.types';
 import { operations } from '../clean.constants';
 
 export type OperationCleanRoutineFieldComponent = (props: {
-    selectedOpration: operation;
+    selectedOperation: operation;
     label?: string;
+    disabled?: boolean;
     onChange: (operation: string) => void;
 }) => JSX.Element;
 
 export const OperationCleanRoutineField: OperationCleanRoutineFieldComponent =
     observer((props) => {
-        const { selectedOpration, label = 'Operation', onChange } = props;
+        const {
+            selectedOperation,
+            label = 'Operation',
+            disabled = false,
+            onChange,
+        } = props;
 
         return (
             <Autocomplete
+                disableClearable
+                disabled={disabled}
                 size="small"
-                value={selectedOpration}
+                value={selectedOperation}
                 fullWidth
                 onChange={(_, newValue: string) => {
                     onChange(newValue);

@@ -5,7 +5,7 @@ export type ColumnInfo = {
     dataType: string;
 };
 
-export type CleanRoutineTypes = 'uppercase';
+export type CleanRoutineTypes = 'uppercase' | 'update-row';
 
 export interface CleanRoutineDef<W extends string = string> {
     /** Unique routine name */
@@ -32,10 +32,10 @@ export interface UpdateRowValuesCleanRoutineDef
     routine: 'update-row';
     parameters: {
         compareColumn: ColumnInfo;
-        compareOperator: operation;
-        compareValue: any;
+        compareOperation: operation;
+        compareValue: string;
         targetColumn: ColumnInfo;
-        targetValue: any;
+        targetValue: string;
     };
 }
 

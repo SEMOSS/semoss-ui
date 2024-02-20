@@ -1,6 +1,9 @@
 import { CellComponent } from '@/stores';
 import { CleanRoutineCellDef } from './config';
-import { UppercaseCleanRoutineCellInput } from './routine-cell-inputs';
+import {
+    UpdateRowCleanRoutineCellInput,
+    UppercaseCleanRoutineCellInput,
+} from './routine-cell-inputs';
 import { Avatar, Chip, Stack, Typography, styled } from '@semoss/ui';
 import { CleanRoutines } from './clean.constants';
 import { THEME } from '@/constants';
@@ -40,6 +43,8 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
         switch (cell.parameters.cleanRoutine.routine) {
             case 'uppercase':
                 return <UppercaseCleanRoutineCellInput {...props} />;
+            case 'update-row':
+                return <UpdateRowCleanRoutineCellInput {...props} />;
             default:
                 return <></>;
         }

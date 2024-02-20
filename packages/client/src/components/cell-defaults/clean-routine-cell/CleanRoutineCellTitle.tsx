@@ -11,9 +11,15 @@ import {
 } from '@mui/icons-material';
 import { CleanRoutines } from './clean.constants';
 
-const StyledButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-    border: `1px solid ${theme.palette.text.secondary}`,
+const StyledButton = styled(Button, {
+    shouldForwardProp: (prop) => prop !== 'error',
+})<{ error?: boolean }>(({ theme, error }) => ({
+    color: error
+        ? `${theme.palette.error.main}!important`
+        : theme.palette.text.secondary,
+    border: `1px solid ${
+        error ? theme.palette.error.main : theme.palette.text.secondary
+    }!important`,
 }));
 
 const StyledButtonLabel = styled('span', {
@@ -24,6 +30,7 @@ const StyledButtonLabel = styled('span', {
     textAlign: 'start',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    textWrap: 'nowrap',
 }));
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -97,6 +104,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                 });
             }
             if (
+                !cell.query.cells[cell.parameters.targetCell.id] ||
                 !isValidFrameTypeForCleanRoutine(
                     cell.query.cells[cell.parameters.targetCell.id].parameters
                         .frameType as string,
@@ -145,6 +153,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
             <StyledButton
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
+                error={availableFrameCells.length == 0}
                 variant="outlined"
                 disableElevation
                 disabled={
@@ -207,7 +216,14 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                                                 queryId: cell.query.id,
                                                 cellId: cell.id,
                                                 path: 'parameters.cleanRoutine',
-                                                value: routine.config,
+                                                value: {
+                                                    routine:
+                                                        routine.config.routine,
+                                                    parameters: {
+                                                        ...routine.config
+                                                            .parameters,
+                                                    },
+                                                },
                                             },
                                         });
                                         handleClose();
@@ -228,6 +244,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                             >
                                 <List.ItemButton
                                     onClick={() => {
+                                        // update the target cell info
                                         state.dispatch({
                                             message: ActionMessages.UPDATE_CELL,
                                             payload: {
@@ -239,6 +256,28 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                                                     frameVariableName:
                                                         frameCell.parameters
                                                             .frameVariableName,
+                                                },
+                                            },
+                                        });
+                                        // reset the clean routine info
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.cleanRoutine',
+                                                value: {
+                                                    routine:
+                                                        cell.parameters
+                                                            .cleanRoutine
+                                                            .routine,
+                                                    parameters: {
+                                                        ...CleanRoutines[
+                                                            cell.parameters
+                                                                .cleanRoutine
+                                                                .routine
+                                                        ].config.parameters,
+                                                    },
                                                 },
                                             },
                                         });

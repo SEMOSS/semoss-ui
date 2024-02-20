@@ -17,22 +17,29 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
         const { cell } = props;
         const { state } = useBlocks();
 
-        const helpText = `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a clean routine.`;
-
         const targetCell: CellState<QueryImportCellDef> = computed(() => {
             return cell.query.cells[
                 cell.parameters.targetCell.id
             ] as CellState<QueryImportCellDef>;
         }).get();
 
-        if (
-            targetCell &&
-            (!targetCell.isExecuted || !targetCell.output) &&
-            !(
-                cell.parameters
-                    .cleanRoutine as CleanRoutine<UppercaseCleanRoutineDef>
-            ).parameters.columns.length
-        ) {
+        const cellCleanRoutine: CleanRoutine<UppercaseCleanRoutineDef> =
+            computed(() => {
+                return cell.parameters
+                    .cleanRoutine as CleanRoutine<UppercaseCleanRoutineDef>;
+            }).get();
+
+        const doesFrameExist: boolean = computed(() => {
+            return (
+                !!targetCell && (targetCell.isExecuted || !!targetCell.output)
+            );
+        }).get();
+
+        const helpText = cell.parameters.targetCell.id
+            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a clean routine.`
+            : 'A target frame variable must be defined in order to apply a clean routine.';
+
+        if (!doesFrameExist && !cellCleanRoutine.parameters.columns.length) {
             return (
                 <Stack width="100%" paddingY={0.75}>
                     <Typography variant="caption">
@@ -45,17 +52,16 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
         return (
             <Stack spacing={2}>
                 <Typography variant="caption">
-                    {targetCell &&
-                    (!targetCell.isExecuted || !targetCell.output)
-                        ? helpText
-                        : 'Change the values of the selected columns to uppercase'}
+                    {!doesFrameExist ? (
+                        <em>{helpText}</em>
+                    ) : (
+                        'Change the values of the selected columns to uppercase'
+                    )}
                 </Typography>
                 <ColumnCleanRoutineField
+                    disabled={!doesFrameExist}
                     cell={cell}
-                    selectedColumns={
-                        (cell.parameters.cleanRoutine.parameters
-                            ?.columns as ColumnInfo[]) ?? []
-                    }
+                    selectedColumns={cellCleanRoutine.parameters.columns ?? []}
                     multiple
                     insightId={state.insightId}
                     columnTypes={['STRING']}

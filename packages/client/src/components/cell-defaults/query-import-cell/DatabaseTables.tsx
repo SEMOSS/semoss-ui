@@ -81,8 +81,10 @@ export const DatabaseTables = (props: { databaseId: string }) => {
             case 'INT':
             case 'DOUBLE':
             case 'DECIMAL':
+            case 'NUMBER':
                 return <Numbers />;
             case 'STRING':
+            case 'TEXT':
                 return <FontDownload />;
             case 'DATE':
             case 'DATETIME':

@@ -22,13 +22,9 @@ export const getFrameUpdateRowValuesPipeline = (
     frameVariableName: string,
     compareColumn: string,
     compareOperator: operation,
-    compareValue: any,
+    compareValue: string, // already wrapped in quotes if necessary
     targetColumn: string,
-    targetValue: any,
+    targetValue: string, // already wrapped in quotes if necessary
 ) => {
-    return `${frameVariableName} | UpdateRowValues (${targetColumn}, ${
-        typeof targetValue === 'string' ? `"${targetValue}"` : targetValue
-    }), Filter (${compareColumn} ${compareOperator} ${
-        typeof compareValue === 'string' ? `"${compareValue}"` : compareValue
-    }))`;
+    return `${frameVariableName} | UpdateRowValues (${targetColumn}, ${targetValue}, Filter (${compareColumn} ${compareOperator} ${compareValue}))`;
 };

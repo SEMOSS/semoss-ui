@@ -1,22 +1,32 @@
 import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
 import { TextField } from '@semoss/ui';
 
 export type ValueCleanRoutineFieldComponent = (props: {
     value: string;
     valueDatabaseType: string;
     label: string;
+    disabled?: boolean;
     onChange: (newValue: string) => void;
 }) => JSX.Element;
 
 export const ValueCleanRoutineField: ValueCleanRoutineFieldComponent = observer(
     (props) => {
-        const { value, valueDatabaseType, label, onChange } = props;
+        const {
+            value,
+            valueDatabaseType,
+            label,
+            disabled = false,
+            onChange,
+        } = props;
 
-        const getTextFieldTypeForDatabaseType = (): string => {
+        const textFieldType: string = computed(() => {
+            console.log(valueDatabaseType);
             switch (valueDatabaseType) {
                 case 'INT':
                 case 'DOUBLE':
                 case 'DECIMAL':
+                case 'NUMBER':
                     return 'number';
                 case 'DATE':
                     return 'date';
@@ -25,15 +35,23 @@ export const ValueCleanRoutineField: ValueCleanRoutineFieldComponent = observer(
                 default:
                     return 'text';
             }
-        };
+        }).get();
 
         return (
             <TextField
                 onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
                 variant="outlined"
                 label={label}
                 value={value}
-                type={getTextFieldTypeForDatabaseType()}
+                fullWidth
+                size="small"
+                InputLabelProps={{
+                    shrink: ['text', 'number'].includes(textFieldType)
+                        ? !!value
+                        : true,
+                }}
+                type={textFieldType}
             />
         );
     },

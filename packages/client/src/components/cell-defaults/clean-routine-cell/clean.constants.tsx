@@ -1,12 +1,16 @@
-import { getFrameUppercasePipeline } from './clean-routine-pipeline-utils';
+import {
+    getFrameUpdateRowValuesPipeline,
+    getFrameUppercasePipeline,
+} from './clean-routine-pipeline-utils';
 import {
     CleanRoutineDef,
     CleanRoutineTargetCell,
     CleanRoutineTypes,
+    UpdateRowValuesCleanRoutineDef,
     UppercaseCleanRoutineDef,
     operation,
 } from './clean.types';
-import { FontDownload } from '@mui/icons-material';
+import { FontDownload, TableRows } from '@mui/icons-material';
 
 export const operations: operation[] = [
     '==',
@@ -55,5 +59,44 @@ export const CleanRoutines: Record<
                 );
             },
         } as CleanRoutineConfig<UppercaseCleanRoutineDef>,
+    },
+    'update-row': {
+        routine: 'update-row',
+        display: 'Update Row Values',
+        icon: TableRows,
+        config: {
+            routine: 'update-row',
+            parameters: {
+                compareColumn: {
+                    name: '',
+                    dataType: '',
+                },
+                compareOperation: '==',
+                compareValue: '',
+                targetColumn: {
+                    name: '',
+                    dataType: '',
+                },
+                targetValue: '',
+            },
+            toPixel: (parameters, targetCell) => {
+                return getFrameUpdateRowValuesPipeline(
+                    targetCell.frameVariableName,
+                    parameters.compareColumn.name,
+                    parameters.compareOperation,
+                    ['INT', 'DOUBLE', 'DECIMAL'].includes(
+                        parameters.compareColumn.dataType,
+                    )
+                        ? parameters.compareValue
+                        : `"${parameters.compareValue}"`,
+                    parameters.targetColumn.name,
+                    ['INT', 'DOUBLE', 'DECIMAL'].includes(
+                        parameters.targetColumn.dataType,
+                    )
+                        ? parameters.targetValue
+                        : `"${parameters.targetValue}"`,
+                );
+            },
+        } as CleanRoutineConfig<UpdateRowValuesCleanRoutineDef>,
     },
 };
