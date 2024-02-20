@@ -116,7 +116,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
                     flexDirection: 'column',
                     padding: '4px',
                     gap: '8px',
-                    overflow: 'hidden',
                     flexWrap: 'wrap',
                 },
             },
@@ -226,19 +225,15 @@ export const MenuBlocks: BlocksMenuItem[] = [
             widget: 'link',
             data: {
                 style: {
-                    display: 'flex',
-                    flexDirection: 'column',
                     padding: '4px',
-                    gap: '8px',
-                    width: '100%',
-                    height: '100%',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
                 },
-                src: '',
+                href: '',
+                text: 'Insert text',
             },
             listeners: {},
-            slots: {
-                children: [],
-            },
+            slots: {},
         },
     },
     {
