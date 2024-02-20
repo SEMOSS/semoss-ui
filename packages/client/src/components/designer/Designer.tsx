@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Paper, Divider, Tooltip } from '@semoss/ui';
+import { styled, Stack, Paper, Tooltip } from '@semoss/ui';
 import { DashboardRounded, DataObject, Layers } from '@mui/icons-material';
 import { useMemo, useState } from 'react';
 
@@ -188,7 +188,6 @@ export const Designer = observer((): JSX.Element => {
                     width={view ? leftMenuResize.width : 0}
                 >
                     <Sidebar>
-                        <SidebarText>Build</SidebarText>
                         <SidebarItem
                             selected={view === 'outline'}
                             onClick={() => updateView('outline')}
@@ -196,6 +195,7 @@ export const Designer = observer((): JSX.Element => {
                             <Tooltip title={'View Outline'} placement="right">
                                 <Layers color="inherit" />
                             </Tooltip>
+                            <SidebarText>Outline</SidebarText>
                         </SidebarItem>
                         <SidebarItem
                             selected={view === 'add'}
@@ -204,9 +204,8 @@ export const Designer = observer((): JSX.Element => {
                             <Tooltip title={'Add'} placement="right">
                                 <DashboardRounded color="inherit" />
                             </Tooltip>
+                            <SidebarText>Add</SidebarText>
                         </SidebarItem>
-                        <Divider orientation="horizontal" />
-                        <SidebarText>Connect</SidebarText>
                         <SidebarItem
                             selected={view === 'query'}
                             onClick={() => updateView('query')}
@@ -214,6 +213,7 @@ export const Designer = observer((): JSX.Element => {
                             <Tooltip title={'Connect Query'} placement="right">
                                 <DataObject color="inherit" />
                             </Tooltip>
+                            <SidebarText>Queries</SidebarText>
                         </SidebarItem>
                     </Sidebar>
                     {view ? (

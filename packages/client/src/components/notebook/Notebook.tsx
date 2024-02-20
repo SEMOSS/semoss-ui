@@ -1,4 +1,4 @@
-import { Divider, Tooltip, styled } from '@semoss/ui';
+import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import {
     DashboardCustomizeRounded,
@@ -61,7 +61,6 @@ export const Notebook = observer(() => {
     return (
         <StyledNotebook>
             <Sidebar>
-                <SidebarText>Build</SidebarText>
                 <SidebarItem
                     selected={view === 'queries'}
                     onClick={() => updateView('queries')}
@@ -69,6 +68,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Add'} placement="right">
                         <Layers color="inherit" />
                     </Tooltip>
+                    <SidebarText>Queries</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     disabled={true}
@@ -78,9 +78,8 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Transform'} placement="right">
                         <DashboardCustomizeRounded color="inherit" />
                     </Tooltip>
+                    <SidebarText>Transform</SidebarText>
                 </SidebarItem>
-                <Divider orientation="horizontal" />
-                <SidebarText>Connect</SidebarText>
                 <SidebarItem
                     disabled={true}
                     selected={view === 'catalog'}
@@ -89,6 +88,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Catalog'} placement="right">
                         <DataArrayRounded color="inherit" />
                     </Tooltip>
+                    <SidebarText>Catalog</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     selected={view === 'blocks'}
@@ -97,6 +97,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Blocks'} placement="right">
                         <SwipeRightAltRounded color="inherit" />
                     </Tooltip>
+                    <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
             </Sidebar>
             {view ? (
