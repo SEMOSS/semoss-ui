@@ -1,3 +1,10 @@
+export type operation = '==' | '<' | '>' | '!=' | '<=' | '>=' | '?like';
+
+export type ColumnInfo = {
+    name: string;
+    dataType: string;
+};
+
 export type CleanRoutineTypes = 'uppercase';
 
 export interface CleanRoutineDef<W extends string = string> {
@@ -16,7 +23,19 @@ export interface CleanRoutineTargetCell {
 export interface UppercaseCleanRoutineDef extends CleanRoutineDef<'uppercase'> {
     routine: 'uppercase';
     parameters: {
-        columns: string[];
+        columns: ColumnInfo[];
+    };
+}
+
+export interface UpdateRowValuesCleanRoutineDef
+    extends CleanRoutineDef<'update-row'> {
+    routine: 'update-row';
+    parameters: {
+        compareColumn: ColumnInfo;
+        compareOperator: operation;
+        compareValue: any;
+        targetColumn: ColumnInfo;
+        targetValue: any;
     };
 }
 

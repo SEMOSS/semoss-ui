@@ -6,7 +6,11 @@ import { Stack, Typography } from '@semoss/ui';
 import { CleanRoutineCellDef } from '../config';
 import { ColumnCleanRoutineField } from '../input-fields';
 import { QueryImportCellDef } from '../../query-import-cell';
-import { CleanRoutine, UppercaseCleanRoutineDef } from '../clean.types';
+import {
+    CleanRoutine,
+    ColumnInfo,
+    UppercaseCleanRoutineDef,
+} from '../clean.types';
 
 export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> =
     observer((props) => {
@@ -50,11 +54,12 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                     cell={cell}
                     selectedColumns={
                         (cell.parameters.cleanRoutine.parameters
-                            ?.columns as string[]) ?? []
+                            ?.columns as ColumnInfo[]) ?? []
                     }
+                    multiple
                     insightId={state.insightId}
                     columnTypes={['STRING']}
-                    onChange={(newColumns) => {
+                    onChange={(newColumns: ColumnInfo[]) => {
                         state.dispatch({
                             message: ActionMessages.UPDATE_CELL,
                             payload: {

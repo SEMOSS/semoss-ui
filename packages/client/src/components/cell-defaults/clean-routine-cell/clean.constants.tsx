@@ -4,8 +4,19 @@ import {
     CleanRoutineTargetCell,
     CleanRoutineTypes,
     UppercaseCleanRoutineDef,
+    operation,
 } from './clean.types';
 import { FontDownload } from '@mui/icons-material';
+
+export const operations: operation[] = [
+    '==',
+    '<',
+    '>',
+    '!=',
+    '<=',
+    '>=',
+    '?like',
+];
 
 export interface CleanRoutineConfig<
     D extends CleanRoutineDef = CleanRoutineDef,
@@ -40,7 +51,7 @@ export const CleanRoutines: Record<
             toPixel: (parameters, targetCell) => {
                 return getFrameUppercasePipeline(
                     targetCell.frameVariableName,
-                    parameters.columns,
+                    parameters.columns.map((column) => column.name),
                 );
             },
         } as CleanRoutineConfig<UppercaseCleanRoutineDef>,

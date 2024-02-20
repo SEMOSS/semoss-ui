@@ -6,20 +6,23 @@ import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { runPixel } from '@/api';
 import { CellState } from '@/stores';
-import { CleanRoutineTargetCell } from '../clean.types';
+import { CleanRoutineTargetCell, ColumnInfo } from '../clean.types';
 
 interface FrameHeaderInfo {
     headers: {
         alias: string;
+        dataType: string;
     }[];
 }
 
 export type ColumnCleanRoutineFieldComponent = (props: {
     cell: CellState;
-    selectedColumns: string[];
+    selectedColumns: ColumnInfo[] | ColumnInfo;
     columnTypes?: string[];
     insightId: string;
-    onChange: (selectedColumns: string[]) => void;
+    multiple?: boolean;
+    label?: string;
+    onChange: (selectedColumns: ColumnInfo[] | ColumnInfo) => void;
 }) => JSX.Element;
 
 export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
@@ -29,6 +32,8 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
             selectedColumns,
             columnTypes = undefined,
             insightId,
+            multiple = false,
+            label = undefined,
             onChange,
         } = props;
 
@@ -43,7 +48,10 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
             ];
         }).get();
 
-        const [frameColumns, setFrameColumns] = useState({
+        const [frameColumns, setFrameColumns] = useState<{
+            loading: boolean;
+            columns: ColumnInfo[];
+        }>({
             loading: true,
             columns: [],
         });
@@ -62,7 +70,10 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
                     );
                     const columns =
                         response.pixelReturn[0].output.headerInfo.headers.map(
-                            (header) => header.alias,
+                            (header) => ({
+                                name: header.alias,
+                                dataType: header.dataType,
+                            }),
                         );
                     setFrameColumns({
                         loading: false,
@@ -84,10 +95,14 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
             <Autocomplete
                 size="small"
                 loading={frameColumns.loading}
-                value={selectedColumns}
+                value={
+                    multiple
+                        ? (selectedColumns as ColumnInfo[])
+                        : (selectedColumns as ColumnInfo)
+                }
                 fullWidth
-                multiple
-                onChange={(_, newValue: string[]) => {
+                multiple={multiple}
+                onChange={(_, newValue: ColumnInfo[] | ColumnInfo) => {
                     onChange(newValue);
                 }}
                 options={frameColumns.columns}
@@ -95,6 +110,7 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
                     <TextField
                         {...params}
                         variant="outlined"
+                        label={label}
                         placeholder="Select columns"
                     />
                 )}
