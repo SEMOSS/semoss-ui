@@ -9,6 +9,7 @@ import {
     Icon,
     Switch,
     useNotification,
+    Typography,
 } from '@semoss/ui';
 import {
     Delete,
@@ -28,13 +29,21 @@ const StyledIcon = styled(Icon)(() => ({
 }));
 
 const StyledAlert = styled(Alert)(({ theme }) => ({
-    width: '468px',
+    width: '600px',
     height: theme.spacing(13),
-    backgroundColor: theme.palette.background.paper,
-    padding: '8px, 0',
-    '.MuiAlert-root': {
-        background: 'rgba(100,0,150, 0.4)',
-    },
+    // padding: '8px, 0',
+    // '.MuiAlert-root': {
+    //     background: 'rgba(100,0,150, 0.4)',
+    // },
+    display: 'flex',
+    padding: '16px',
+    alignItems: 'flex-start',
+    gap: '16px',
+    flex: '1 0 0',
+    alignSelf: 'stretch',
+    borderRadius: '12px',
+    background: theme.palette.background.paper,
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     '.MuiAlert-action': {
         paddingRight: '8px',
     },
@@ -280,11 +289,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             <Paper sx={{ width: '100%' }}>
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
-                    icon={
-                        <StyledIcon>
-                            <Lock />
-                        </StyledIcon>
-                    }
+                    icon={false}
                     action={
                         <Switch
                             title={
@@ -304,22 +309,14 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         ></Switch>
                     }
                 >
-                    <Alert.Title>{global ? 'Public' : 'Private'}</Alert.Title>
-                    {global
-                        ? 'All members can access'
-                        : 'No one outside of the specified member group can access'}
+                    <Alert.Title>
+                        <Typography variant="body1">Make Public</Typography>
+                    </Alert.Title>
+                    {`Show ${name} to all users and automatically give them read-only access. Users can request elevated access.`}
                 </StyledAlert>
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
-                    icon={
-                        <StyledIcon>
-                            {!discoverable ? (
-                                <VisibilityOffRounded />
-                            ) : (
-                                <Visibility />
-                            )}
-                        </StyledIcon>
-                    }
+                    icon={false}
                     action={
                         <Switch
                             title={
@@ -335,18 +332,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     }
                 >
                     <Alert.Title>
-                        {discoverable ? 'Discoverable' : 'Non-Discoverable'}
+                        <Typography variant="body1">
+                            Make Discoverable
+                        </Typography>
                     </Alert.Title>
-                    Users {discoverable ? 'can' : 'cannot'} request access to
-                    this {name} if private
+                    <Typography variant="body2">
+                        {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+                    </Typography>
                 </StyledAlert>
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
-                    icon={
-                        <StyledIcon>
-                            <Delete />
-                        </StyledIcon>
-                    }
+                    icon={false}
                     action={
                         <Button
                             variant="contained"
@@ -391,11 +387,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             <StyledGrid container spacing={3}>
                 <Grid item>
                     <StyledAlert
-                        icon={
-                            <StyledIcon>
-                                <Lock />
-                            </StyledIcon>
-                        }
+                        icon={false}
                         action={
                             <Switch
                                 title={
@@ -416,24 +408,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         }
                     >
                         <Alert.Title>
-                            {global ? 'Public' : 'Private'}
+                            <Typography variant="body1">Make Public</Typography>
                         </Alert.Title>
-                        {global
-                            ? 'All members can access'
-                            : 'No one outside of the specified member group can access'}
+                        <Typography variant="body2">
+                            {`Show ${name} to all users and automatically give them read-only access. Users can request elevated access.`}
+                        </Typography>
                     </StyledAlert>
                 </Grid>
                 <Grid item>
                     <StyledAlert
-                        icon={
-                            <StyledIcon>
-                                {!discoverable ? (
-                                    <VisibilityOffRounded />
-                                ) : (
-                                    <Visibility />
-                                )}
-                            </StyledIcon>
-                        }
+                        icon={false}
                         action={
                             <Switch
                                 title={
@@ -449,20 +433,19 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         }
                     >
                         <Alert.Title>
-                            {discoverable ? 'Discoverable' : 'Non-Discoverable'}
+                            <Typography variant="body1">
+                                Make Discoverable
+                            </Typography>
                         </Alert.Title>
-                        Users {discoverable ? 'can' : 'cannot'} request access
-                        to this {name} if private
+                        <Typography variant="body2">
+                            {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+                        </Typography>
                     </StyledAlert>
                 </Grid>
                 {onDelete ? (
                     <Grid item>
                         <StyledAlert
-                            icon={
-                                <StyledIcon>
-                                    <Delete />
-                                </StyledIcon>
-                            }
+                            icon={false}
                             action={
                                 <Button
                                     variant="contained"
@@ -473,8 +456,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 </Button>
                             }
                         >
-                            <Alert.Title>Delete {name}</Alert.Title>
-                            Remove {name} from catalog
+                            <Alert.Title>
+                                <Typography variant="body1">Delete</Typography>
+                            </Alert.Title>
+                            <Typography variant="body2">
+                                {`Delete ${name} from catalog.`}
+                            </Typography>
                         </StyledAlert>
                         <Modal open={deleteModal}>
                             <Modal.Title>Are you sure?</Modal.Title>
