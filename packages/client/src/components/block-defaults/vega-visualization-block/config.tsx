@@ -180,8 +180,8 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
                         >
                             <InputSettings
                                 id={id}
-                                label="Y-Axis Field"
-                                path="specJson.encoding.y.field"
+                                label="Title"
+                                path="specJson.title"
                             />
                         </ConditionalVariationSettings>
                     ),
