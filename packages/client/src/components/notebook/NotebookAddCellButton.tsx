@@ -1,4 +1,5 @@
 import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
 import { styled, Button, Menu, MenuProps } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
@@ -11,6 +12,8 @@ import {
 import { Add } from '@mui/icons-material';
 import { DefaultCellTypes } from '../cell-defaults';
 import { useState } from 'react';
+import { CleanRoutineCell } from '../cell-defaults/clean-routine-cell';
+import { CodeCell } from '../cell-defaults/code-cell';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -49,6 +52,31 @@ export const NotebookAddCellButton = observer(
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
+        const cellTypeOptions = computed(() => {
+            let defaultCellTypes = { ...DefaultCellTypes };
+            // clean routine cell types can only be added if there exists a query-import cell before it
+            if (!previousCellId) {
+                delete defaultCellTypes[CleanRoutineCell.widget];
+            } else {
+                const previousCellIndex = query.list.indexOf(previousCellId);
+                let hasFrameVariable = false;
+                for (let index = 0; index <= previousCellIndex; index++) {
+                    if (
+                        query.cells[query.list[index]].cellType.widget ===
+                        'query-import'
+                    ) {
+                        hasFrameVariable = true;
+                        break;
+                    }
+                }
+                if (!hasFrameVariable) {
+                    delete defaultCellTypes[CleanRoutineCell.widget];
+                }
+            }
+
+            return Object.keys(defaultCellTypes);
+        }).get();
+
         /**
          * Create a new cell
          */
@@ -65,15 +93,15 @@ export const NotebookAddCellButton = observer(
                     previousCellId &&
                     state.queries[query.id].cells[previousCellId].cellType
                         .widget === widget &&
-                    widget === 'code'
+                    widget === CodeCell.widget
                 ) {
                     const previousCellType =
                         state.queries[query.id].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
                     config = {
-                        widget: DefaultCellTypes['code'].widget,
+                        widget: DefaultCellTypes[CodeCell.widget].widget,
                         parameters: {
-                            ...DefaultCellTypes['code'].parameters,
+                            ...DefaultCellTypes[CodeCell.widget].parameters,
                             type: previousCellType,
                         },
                     } as NewCellAction['payload']['config'];
@@ -116,23 +144,20 @@ export const NotebookAddCellButton = observer(
                         setAnchorEl(null);
                     }}
                 >
-                    {Array.from(
-                        Object.keys(DefaultCellTypes),
-                        (widget, index) => {
-                            return (
-                                <StyledMenuItem
-                                    key={index}
-                                    value={widget}
-                                    onClick={() => {
-                                        appendCell(widget);
-                                        setAnchorEl(null);
-                                    }}
-                                >
-                                    {widget.replaceAll('-', ' ')}
-                                </StyledMenuItem>
-                            );
-                        },
-                    )}
+                    {Array.from(cellTypeOptions, (widget, index) => {
+                        return (
+                            <StyledMenuItem
+                                key={index}
+                                value={widget}
+                                onClick={() => {
+                                    appendCell(widget);
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                {widget.replaceAll('-', ' ')}
+                            </StyledMenuItem>
+                        );
+                    })}
                 </StyledMenu>
             </>
         );
