@@ -1,5 +1,8 @@
 import { makeAutoObservable } from 'mobx';
 
+import { useContext } from 'react';
+import { LLMContext, LLMContextType } from '@/contexts';
+
 import { Role } from '@/types';
 import { RootStore } from '@/stores';
 
@@ -242,5 +245,18 @@ export class WorkspaceStore {
 
         // clear the content
         this._store.overlay.content = null;
+    };
+
+    /**
+     * Access the current LLM Context
+     * @returns the LLM Context
+     */
+    useLLM = (): LLMContextType => {
+        const context = useContext(LLMContext);
+        if (context === undefined) {
+            throw new Error('useLLM must be used within LLMProvider');
+        }
+
+        return context;
     };
 }

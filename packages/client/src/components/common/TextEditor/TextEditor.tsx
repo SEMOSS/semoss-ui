@@ -24,7 +24,7 @@ import parserHtml from 'prettier/parser-html';
 import prettier from 'prettier';
 
 import { LoadingScreen } from '@/components/ui';
-import { useLLM } from '@/hooks';
+import { useWorkspace } from '@/hooks';
 import { runPixel } from '@/api';
 
 const StyledSVG = styled('svg')(({ theme }) => ({
@@ -198,6 +198,8 @@ interface TextEditorProps {
 }
 
 export const TextEditor = (props: TextEditorProps) => {
+    const { workspace } = useWorkspace();
+
     const {
         controlledFiles,
         activeIndex,
@@ -211,7 +213,7 @@ export const TextEditor = (props: TextEditorProps) => {
     } = props;
 
     const notification = useNotification();
-    const { modelId } = useLLM();
+    const { modelId } = workspace.useLLM();
 
     const [LLMLoading, setLLMLoading] = useState(false);
     const [LLMActionAdded, setLLMActionAdded] = useState(false);

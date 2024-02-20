@@ -13,7 +13,7 @@ import {
 } from '@semoss/ui';
 import { AutoAwesome, ContentCopyOutlined } from '@mui/icons-material/';
 
-import { useLLM, usePixel, useRootStore } from '@/hooks';
+import { useRootStore, useWorkspace } from '@/hooks';
 
 const StyledGenerateButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== 'full',
@@ -66,7 +66,9 @@ const StyledSkeletonContainer = styled('div')(() => ({
 }));
 
 export const TextEditorCodeGeneration = () => {
-    const { modelId, modelOptions, setModel: setModelId } = useLLM();
+    const { workspace } = useWorkspace();
+
+    const { modelId, modelOptions, setModel: setModelId } = workspace.useLLM();
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
