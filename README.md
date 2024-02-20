@@ -1,8 +1,10 @@
 # First-Time Semoss-UI Setup Instructions
 
-1. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@8.
+1. Git clone this repository to you `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
-2. create a `.env.local` file and populate with the following, MODULE may have to be adjusted for your project specific endpoint.
+2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@8.
+
+3. create a `.env.local` file and populate with the following, MODULE may have to be adjusted for your project specific endpoint.
 
 ```
     ENDPOINT=../../..
@@ -14,11 +16,11 @@
     NODE_ENV=development
 ```
 
-3. Run `pnpm install` in root directory.
+4. Run `pnpm install` in root directory.
 
-4. Build our component library, go to `packages/ui` and run `pnpm run build`.
+5. Build our component library, go to `packages/ui` and run `pnpm run build`.
 
-5. Upon completion of the build on our component library, navigate back to our root directory and run `pnpm run dev:client`
+6. Upon completion of the build on our component library, navigate back to our root directory and run `pnpm run dev:client`
 
 Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
