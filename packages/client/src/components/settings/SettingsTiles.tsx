@@ -89,6 +89,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const { adminMode } = useSettings();
 
     const [deleteModal, setDeleteModal] = useState(false);
+    const [closeEngineModal, setCloseEngineModal] = useState(false);
     const [discoverable, setDiscoverable] = useState(false);
     const [global, setGlobal] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -172,6 +173,45 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
         } finally {
             // stop the loading screen
             setLoading(false);
+        }
+    };
+
+    /**
+     * Close the engine for item
+     */
+    const closeEngine = async () => {
+        try {
+            // start the loading screen
+            setLoading(true);
+
+            // run the pixel
+            const response = await monolithStore.runQuery(
+                mode === 'engine' ? `CloseEngine(engine=['${id}']);` : '',
+            );
+
+            const operationType = response.pixelReturn[0].operationType;
+            const output = response.pixelReturn[0].output;
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully closed engine for ${name}`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
+        } finally {
+            // stop the loading screen
+            setLoading(false);
+            setCloseEngineModal(false);
         }
     };
 
@@ -358,8 +398,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Button>
                     }
                 >
-                    <Alert.Title>Delete {name}</Alert.Title>
-                    Remove {name} from catalog
+                    <Alert.Title>
+                        <Typography variant="body1">Delete</Typography>
+                    </Alert.Title>
+                    <Typography variant="body2">
+                        {`Delete ${name} from catalog.`}
+                    </Typography>
                 </StyledAlert>
                 <Modal open={deleteModal}>
                     <Modal.Title>Are you sure?</Modal.Title>
@@ -377,6 +421,44 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             onClick={() => deleteWorkflow()}
                         >
                             Delete
+                        </Button>
+                    </Modal.Actions>
+                </Modal>
+                <StyledAlert
+                    sx={{ width: '100%', boxShadow: 'none' }}
+                    icon={false}
+                    action={
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => setCloseEngineModal(true)}
+                        >
+                            Close
+                        </Button>
+                    }
+                >
+                    <Alert.Title>
+                        <Typography variant="body1">Close Engine</Typography>
+                    </Alert.Title>
+                    <Typography variant="body2">
+                        {`Close ${name}'s engine.`}
+                    </Typography>
+                </StyledAlert>
+                <Modal open={closeEngineModal}>
+                    <Modal.Title>Are you sure?</Modal.Title>
+                    <Modal.Content>
+                        This action will close the engine for {name}.
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Button onClick={() => setCloseEngineModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            color={'primary'}
+                            variant={'contained'}
+                            onClick={() => closeEngine()}
+                        >
+                            Close
                         </Button>
                     </Modal.Actions>
                 </Modal>
@@ -420,6 +502,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         icon={false}
                         action={
                             <Switch
+                                disabled={global}
                                 title={
                                     discoverable
                                         ? `Make ${name} non-discoverable`
@@ -484,6 +567,47 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Modal>
                     </Grid>
                 ) : null}
+                <Grid item>
+                    <StyledAlert
+                        icon={false}
+                        action={
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => setCloseEngineModal(true)}
+                            >
+                                Close
+                            </Button>
+                        }
+                    >
+                        <Alert.Title>
+                            <Typography variant="body1">
+                                Close Engine
+                            </Typography>
+                        </Alert.Title>
+                        <Typography variant="body2">
+                            {`Close ${name}'s engine.`}
+                        </Typography>
+                    </StyledAlert>
+                    <Modal open={closeEngineModal}>
+                        <Modal.Title>Are you sure?</Modal.Title>
+                        <Modal.Content>
+                            This action will close the engine for {name}.
+                        </Modal.Content>
+                        <Modal.Actions>
+                            <Button onClick={() => setCloseEngineModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                color={'primary'}
+                                variant={'contained'}
+                                onClick={() => closeEngine()}
+                            >
+                                Close
+                            </Button>
+                        </Modal.Actions>
+                    </Modal>
+                </Grid>
             </StyledGrid>
         );
     }
