@@ -1,6 +1,7 @@
 import { BlockJSON } from '@/stores';
 import {
     Addchart,
+    AspectRatio,
     BarChart,
     BlurLinear,
     CheckBox,
@@ -162,6 +163,21 @@ export const MenuBlocks: BlocksMenuItem[] = [
                         },
                     },
                 },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        key: 'iframe',
+        display: 'IFrame',
+        blockJson: {
+            widget: 'iframe',
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -457,6 +473,8 @@ export const getIconForMenuItemByKey = (key: string) => {
             return HighlightAlt;
         case 'grouped-bar-chart':
             return Addchart;
+        case 'iframe':
+            return AspectRatio;
         case 'image':
             return PanoramaOutlined;
         case 'input':
