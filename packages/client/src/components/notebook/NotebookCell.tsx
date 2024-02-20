@@ -184,6 +184,22 @@ export const NotebookCell = observer(
             }
         };
 
+        const deleteCell = () => {
+            try {
+                state.dispatch({
+                    message: ActionMessages.DELETE_CELL,
+                    payload: {
+                        queryId: cell.query.id,
+                        cellId: cell.id,
+                    },
+                });
+
+                notebook.selectCell(queryId, query.list[0]);
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
         // get the view
         const cellType = cell.cellType;
 
@@ -476,15 +492,7 @@ export const NotebookCell = observer(
                                                 disabled={cell.isLoading}
                                                 size="small"
                                                 onClick={() => {
-                                                    state.dispatch({
-                                                        message:
-                                                            ActionMessages.DELETE_CELL,
-                                                        payload: {
-                                                            queryId:
-                                                                cell.query.id,
-                                                            cellId: cell.id,
-                                                        },
-                                                    });
+                                                    deleteCell();
                                                 }}
                                             >
                                                 <StyledButtonLabel>
