@@ -234,6 +234,36 @@ export const NotebookCell = observer(
             });
         }, [cellType ? cellType.view.details : null, contentExpanded]);
 
+        // render the action button
+        const renderedRunActionButton = useMemo(() => {
+            if (!cellType) {
+                return;
+            }
+            if (!cellType.view.runActionButton) {
+                return (
+                    <IconButton
+                        title="Run cell"
+                        disabled={cell.isLoading}
+                        size="small"
+                        onClick={() =>
+                            state.dispatch({
+                                message: ActionMessages.RUN_CELL,
+                                payload: {
+                                    queryId: cell.query.id,
+                                    cellId: cell.id,
+                                },
+                            })
+                        }
+                    >
+                        <PlayCircle fontSize="small" />
+                    </IconButton>
+                );
+            }
+            return createElement(observer(cellType.view.runActionButton), {
+                cell: cell,
+            });
+        }, [cellType ? cellType.view.runActionButton : null, contentExpanded]);
+
         // render the output
         const renderedOutput = useMemo(() => {
             if (!cellType || !cellType.view.output) {
@@ -369,25 +399,7 @@ export const NotebookCell = observer(
                                 paddingTop={0.5}
                                 paddingX={2}
                             >
-                                <Stack>
-                                    <IconButton
-                                        title="Run cell"
-                                        disabled={cell.isLoading}
-                                        size="small"
-                                        onClick={() =>
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.RUN_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                },
-                                            })
-                                        }
-                                    >
-                                        <PlayCircle fontSize="small" />
-                                    </IconButton>
-                                </Stack>
+                                <Stack>{renderedRunActionButton}</Stack>
                                 {renderedInput}
                             </Stack>
                         </StyleCardContent>

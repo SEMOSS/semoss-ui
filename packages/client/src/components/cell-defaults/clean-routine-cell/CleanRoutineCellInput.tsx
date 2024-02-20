@@ -36,7 +36,7 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
 
     if (targetCell && (!targetCell.isExecuted || !targetCell.output)) {
         return (
-            <Stack width="100%" paddingY={0.5}>
+            <Stack width="100%" paddingY={0.75}>
                 <Typography variant="caption">
                     <em>
                         Run Cell {cell.parameters.targetCell.id} to define the

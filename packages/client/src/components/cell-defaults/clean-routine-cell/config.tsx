@@ -9,6 +9,7 @@ import {
     UppercaseCleanRoutineDef,
 } from './clean.types';
 import { CleanRoutines } from './clean.constants';
+import { CleanRoutineCellRunActionButton } from './CleanRoutineCellRunActionButton';
 
 export interface CleanRoutineCellDef extends CellDef<'clean'> {
     widget: 'clean';
@@ -45,6 +46,7 @@ export const CleanRoutineCell: Cell<CleanRoutineCellDef> = {
         input: CleanRoutineCellInput,
         details: CleanRoutineCellDetails,
         output: CleanRoutineCellOutput,
+        runActionButton: CleanRoutineCellRunActionButton,
     },
     toPixel: ({ cleanRoutine, targetCell }) => {
         if (!targetCell.id) {

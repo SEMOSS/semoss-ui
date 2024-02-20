@@ -7,11 +7,11 @@ import { ColumnCleanRoutineField } from '../input-fields';
 
 export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> =
     observer((props) => {
-        const { cell, isExpanded } = props;
+        const { cell } = props;
         const { state } = useBlocks();
 
         return (
-            <Stack width="100%" paddingY={0.5}>
+            <Stack width="100%" paddingY={0.75}>
                 <Typography variant="caption">
                     Change the values of the selected columns to uppercase.
                 </Typography>
