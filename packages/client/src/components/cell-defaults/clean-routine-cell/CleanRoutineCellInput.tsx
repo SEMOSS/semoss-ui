@@ -1,9 +1,7 @@
-import { computed } from 'mobx';
-import { CellComponent, CellState } from '@/stores';
+import { CellComponent } from '@/stores';
 import { CleanRoutineCellDef } from './config';
 import { UppercaseCleanRoutineCellInput } from './routine-cell-inputs';
-import { Avatar, Chip, Stack, Typography, styled } from '@semoss/ui';
-import { QueryImportCellDef } from '../query-import-cell';
+import { Avatar, Chip, Stack, styled } from '@semoss/ui';
 import { CleanRoutines } from './clean.constants';
 import { THEME } from '@/constants';
 import { blue, green } from '@mui/material/colors';
@@ -27,25 +25,6 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
     props,
 ) => {
     const { cell, isExpanded } = props;
-
-    const targetCell: CellState<QueryImportCellDef> = computed(() => {
-        return cell.query.cells[
-            cell.parameters.targetCell.id
-        ] as CellState<QueryImportCellDef>;
-    }).get();
-
-    if (targetCell && (!targetCell.isExecuted || !targetCell.output)) {
-        return (
-            <Stack width="100%" paddingY={0.75}>
-                <Typography variant="caption">
-                    <em>
-                        Run Cell {cell.parameters.targetCell.id} to define the
-                        target frame variable before applying a clean routine.
-                    </em>
-                </Typography>
-            </Stack>
-        );
-    }
 
     const CleanRoutineIcon: React.FunctionComponent =
         CleanRoutines[cell.parameters.cleanRoutine.routine].icon;
