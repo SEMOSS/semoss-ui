@@ -186,6 +186,8 @@ export const NotebookCell = observer(
 
         const deleteCell = () => {
             try {
+                const currentCellIndex = query.list.indexOf(cell.id);
+
                 state.dispatch({
                     message: ActionMessages.DELETE_CELL,
                     payload: {
@@ -194,7 +196,10 @@ export const NotebookCell = observer(
                     },
                 });
 
-                notebook.selectCell(queryId, query.list[0]);
+                notebook.selectCell(
+                    queryId,
+                    query.list[Math.max(currentCellIndex - 1, 0)],
+                );
             } catch (e) {
                 console.error(e);
             }
@@ -491,7 +496,8 @@ export const NotebookCell = observer(
                                                 title="Delete cell"
                                                 disabled={cell.isLoading}
                                                 size="small"
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     deleteCell();
                                                 }}
                                             >
