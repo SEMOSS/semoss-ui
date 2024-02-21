@@ -40,6 +40,13 @@ const StyledGrid = styled(Grid)(() => ({
     flex: '1',
 }));
 
+const StyledTypography = styled(Typography)<{
+    // Track if discoverable will be disabled or not
+    isDisabled: boolean;
+}>(({ isDisabled, theme }) => ({
+    color: isDisabled ? theme.palette.text.disabled : 'inherit',
+}));
+
 interface SettingsTilesProps {
     /**
      * Mode of setting
@@ -341,32 +348,74 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     </Alert.Title>
                     {`Show ${name} to all users and automatically give them read-only access. Users can request elevated access.`}
                 </StyledAlert>
-                <StyledAlert
-                    sx={{ width: '100%', boxShadow: 'none' }}
-                    icon={false}
-                    action={
-                        <Switch
-                            title={
-                                discoverable
-                                    ? `Make ${name} non-discoverable`
-                                    : `Make ${name} discoverable`
+                {global ? (
+                    <Tooltip
+                        title={`An ${name} does not need to be discoverable and public.`}
+                        placement="top"
+                    >
+                        <StyledAlert
+                            sx={{ width: '100%', boxShadow: 'none' }}
+                            icon={false}
+                            action={
+                                <Switch
+                                    title={
+                                        discoverable
+                                            ? `Make ${name} non-discoverable`
+                                            : `Make ${name} discoverable`
+                                    }
+                                    disabled={global}
+                                    checked={discoverable}
+                                    onChange={() => {
+                                        changeDiscoverable();
+                                    }}
+                                ></Switch>
                             }
-                            checked={discoverable}
-                            onChange={() => {
-                                changeDiscoverable();
-                            }}
-                        ></Switch>
-                    }
-                >
-                    <Alert.Title>
-                        <Typography variant="body1">
-                            Make Discoverable
-                        </Typography>
-                    </Alert.Title>
-                    <Typography variant="body2">
-                        {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-                    </Typography>
-                </StyledAlert>
+                        >
+                            <Alert.Title>
+                                <StyledTypography
+                                    variant="body1"
+                                    isDisabled={true}
+                                >
+                                    Make Discoverable
+                                </StyledTypography>
+                            </Alert.Title>
+                            <StyledTypography variant="body2" isDisabled={true}>
+                                {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+                            </StyledTypography>
+                        </StyledAlert>
+                    </Tooltip>
+                ) : (
+                    <StyledAlert
+                        sx={{ width: '100%', boxShadow: 'none' }}
+                        icon={false}
+                        action={
+                            <Switch
+                                title={
+                                    discoverable
+                                        ? `Make ${name} non-discoverable`
+                                        : `Make ${name} discoverable`
+                                }
+                                disabled={global}
+                                checked={discoverable}
+                                onChange={() => {
+                                    changeDiscoverable();
+                                }}
+                            ></Switch>
+                        }
+                    >
+                        <Alert.Title>
+                            <StyledTypography
+                                variant="body1"
+                                isDisabled={false}
+                            >
+                                Make Discoverable
+                            </StyledTypography>
+                        </Alert.Title>
+                        <StyledTypography variant="body2" isDisabled={false}>
+                            {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+                        </StyledTypography>
+                    </StyledAlert>
+                )}
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={false}
@@ -508,13 +557,19 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                             >
                                 <Alert.Title>
-                                    <Typography variant="body1">
+                                    <StyledTypography
+                                        variant="body1"
+                                        isDisabled={true}
+                                    >
                                         Make Discoverable
-                                    </Typography>
+                                    </StyledTypography>
                                 </Alert.Title>
-                                <Typography variant="body2">
+                                <StyledTypography
+                                    variant="body2"
+                                    isDisabled={true}
+                                >
                                     {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-                                </Typography>
+                                </StyledTypography>
                             </StyledAlert>
                         </Grid>
                     </Tooltip>
@@ -538,13 +593,19 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             }
                         >
                             <Alert.Title>
-                                <Typography variant="body1">
+                                <StyledTypography
+                                    variant="body1"
+                                    isDisabled={false}
+                                >
                                     Make Discoverable
-                                </Typography>
+                                </StyledTypography>
                             </Alert.Title>
-                            <Typography variant="body2">
+                            <StyledTypography
+                                variant="body2"
+                                isDisabled={false}
+                            >
                                 {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-                            </Typography>
+                            </StyledTypography>
                         </StyledAlert>
                     </Grid>
                 )}
