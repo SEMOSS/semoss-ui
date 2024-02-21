@@ -6,7 +6,7 @@ import { useBlocks } from '@/hooks';
 import { CleanRoutineCellDef } from './config';
 import {
     FilterFrames,
-    CleaningServices,
+    Transform,
     KeyboardArrowDown,
 } from '@mui/icons-material';
 import { CleanRoutines } from './clean.constants';
@@ -191,7 +191,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                     setMenuType('routine');
                     setAnchorEl(event.currentTarget);
                 }}
-                startIcon={<CleaningServices />}
+                startIcon={<Transform />}
                 endIcon={<KeyboardArrowDown />}
                 title="Select Clean Routine"
             >
@@ -259,7 +259,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                                                 },
                                             },
                                         });
-                                        // reset the clean routine info
+                                        // reset the transformation info
                                         state.dispatch({
                                             message: ActionMessages.UPDATE_CELL,
                                             payload: {

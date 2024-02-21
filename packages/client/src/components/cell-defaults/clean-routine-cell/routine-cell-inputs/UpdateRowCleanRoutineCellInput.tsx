@@ -40,8 +40,8 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
         }).get();
 
         const helpText = cell.parameters.targetCell.id
-            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a clean routine.`
-            : 'A target frame variable must be defined in order to apply a clean routine.';
+            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
+            : 'A target frame variable must be defined in order to apply a transformation.';
 
         if (
             !doesFrameExist &&

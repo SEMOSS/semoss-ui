@@ -54,7 +54,7 @@ export const NotebookAddCellButton = observer(
 
         const cellTypeOptions = computed(() => {
             let defaultCellTypes = { ...DefaultCellTypes };
-            // clean routine cell types can only be added if there exists a query-import cell before it
+            // transformation cell types can only be added if there exists a query-import cell before it
             if (!previousCellId) {
                 delete defaultCellTypes[CleanRoutineCell.widget];
             } else {
