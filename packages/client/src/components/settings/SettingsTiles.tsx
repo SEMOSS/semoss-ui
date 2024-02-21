@@ -6,17 +6,12 @@ import {
     Paper,
     Grid,
     Modal,
-    Icon,
     Switch,
     useNotification,
     Typography,
+    Tooltip,
 } from '@semoss/ui';
-import {
-    Delete,
-    Lock,
-    Visibility,
-    VisibilityOffRounded,
-} from '@mui/icons-material';
+
 import { AxiosResponse } from 'axios';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
@@ -24,17 +19,9 @@ import { LoadingScreen } from '@/components/ui';
 
 import { SETTINGS_MODE } from './settings.types';
 
-const StyledIcon = styled(Icon)(() => ({
-    color: 'rgba(0, 0, 0, .5)',
-}));
-
 const StyledAlert = styled(Alert)(({ theme }) => ({
     width: '600px',
     height: theme.spacing(13),
-    // padding: '8px, 0',
-    // '.MuiAlert-root': {
-    //     background: 'rgba(100,0,150, 0.4)',
-    // },
     display: 'flex',
     padding: '16px',
     alignItems: 'flex-start',
@@ -424,7 +411,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Button>
                     </Modal.Actions>
                 </Modal>
-                <StyledAlert
+                {/* <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={false}
                     action={
@@ -461,7 +448,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             Close
                         </Button>
                     </Modal.Actions>
-                </Modal>
+                </Modal> */}
             </Paper>
         );
     } else {
@@ -497,34 +484,70 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Typography>
                     </StyledAlert>
                 </Grid>
-                <Grid item>
-                    <StyledAlert
-                        icon={false}
-                        action={
-                            <Switch
-                                disabled={global}
-                                title={
-                                    discoverable
-                                        ? `Make ${name} non-discoverable`
-                                        : `Make ${name} discoverable`
-                                }
-                                checked={discoverable}
-                                onChange={() => {
-                                    changeDiscoverable();
-                                }}
-                            ></Switch>
-                        }
+                {global ? (
+                    <Tooltip
+                        title={`An ${name} does not need to be discoverable and public.`}
+                        placement="top"
                     >
-                        <Alert.Title>
-                            <Typography variant="body1">
-                                Make Discoverable
+                        <Grid item>
+                            <StyledAlert
+                                icon={false}
+                                action={
+                                    <Switch
+                                        disabled={global}
+                                        title={
+                                            discoverable
+                                                ? `Make ${name} non-discoverable`
+                                                : `Make ${name} discoverable`
+                                        }
+                                        checked={discoverable}
+                                        onChange={() => {
+                                            changeDiscoverable();
+                                        }}
+                                    ></Switch>
+                                }
+                            >
+                                <Alert.Title>
+                                    <Typography variant="body1">
+                                        Make Discoverable
+                                    </Typography>
+                                </Alert.Title>
+                                <Typography variant="body2">
+                                    {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+                                </Typography>
+                            </StyledAlert>
+                        </Grid>
+                    </Tooltip>
+                ) : (
+                    <Grid item>
+                        <StyledAlert
+                            icon={false}
+                            action={
+                                <Switch
+                                    disabled={global}
+                                    title={
+                                        discoverable
+                                            ? `Make ${name} non-discoverable`
+                                            : `Make ${name} discoverable`
+                                    }
+                                    checked={discoverable}
+                                    onChange={() => {
+                                        changeDiscoverable();
+                                    }}
+                                ></Switch>
+                            }
+                        >
+                            <Alert.Title>
+                                <Typography variant="body1">
+                                    Make Discoverable
+                                </Typography>
+                            </Alert.Title>
+                            <Typography variant="body2">
+                                {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
                             </Typography>
-                        </Alert.Title>
-                        <Typography variant="body2">
-                            {`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-                        </Typography>
-                    </StyledAlert>
-                </Grid>
+                        </StyledAlert>
+                    </Grid>
+                )}
                 {onDelete ? (
                     <Grid item>
                         <StyledAlert
@@ -567,7 +590,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Modal>
                     </Grid>
                 ) : null}
-                <Grid item>
+                {/* <Grid item>
                     <StyledAlert
                         icon={false}
                         action={
@@ -607,7 +630,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             </Button>
                         </Modal.Actions>
                     </Modal>
-                </Grid>
+                </Grid> */}
             </StyledGrid>
         );
     }
