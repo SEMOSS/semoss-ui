@@ -2,7 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { TextField } from '@semoss/ui';
 
-export type ValueCleanRoutineFieldComponent = (props: {
+export type ValueTransformationFieldComponent = (props: {
     value: string;
     valueDatabaseType: string;
     label: string;
@@ -10,8 +10,8 @@ export type ValueCleanRoutineFieldComponent = (props: {
     onChange: (newValue: string) => void;
 }) => JSX.Element;
 
-export const ValueCleanRoutineField: ValueCleanRoutineFieldComponent = observer(
-    (props) => {
+export const ValueTransformationField: ValueTransformationFieldComponent =
+    observer((props) => {
         const {
             value,
             valueDatabaseType,
@@ -21,7 +21,6 @@ export const ValueCleanRoutineField: ValueCleanRoutineFieldComponent = observer(
         } = props;
 
         const textFieldType: string = computed(() => {
-            console.log(valueDatabaseType);
             switch (valueDatabaseType) {
                 case 'INT':
                 case 'DOUBLE':
@@ -54,5 +53,4 @@ export const ValueCleanRoutineField: ValueCleanRoutineFieldComponent = observer(
                 type={textFieldType}
             />
         );
-    },
-);
+    });

@@ -3,16 +3,16 @@ import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { CellComponent, ActionMessages, CellState } from '@/stores';
 import { Stack, Typography } from '@semoss/ui';
-import { CleanRoutineCellDef } from '../config';
-import { ColumnCleanRoutineField } from '../input-fields';
+import { TransformationCellDef } from '../config';
+import { ColumnTransformationField } from '../input-fields';
 import { QueryImportCellDef } from '../../query-import-cell';
 import {
-    CleanRoutine,
+    Transformation,
     ColumnInfo,
-    UppercaseCleanRoutineDef,
-} from '../clean.types';
+    UppercaseTransformationDef,
+} from '../transformation.types';
 
-export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> =
+export const UppercaseTransformationCellInput: CellComponent<TransformationCellDef> =
     observer((props) => {
         const { cell } = props;
         const { state } = useBlocks();
@@ -23,10 +23,10 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
             ] as CellState<QueryImportCellDef>;
         }).get();
 
-        const cellCleanRoutine: CleanRoutine<UppercaseCleanRoutineDef> =
+        const cellTransformation: Transformation<UppercaseTransformationDef> =
             computed(() => {
                 return cell.parameters
-                    .cleanRoutine as CleanRoutine<UppercaseCleanRoutineDef>;
+                    .transformation as Transformation<UppercaseTransformationDef>;
             }).get();
 
         const doesFrameExist: boolean = computed(() => {
@@ -39,7 +39,7 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
             ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
             : 'A target frame variable must be defined in order to apply a transformation.';
 
-        if (!doesFrameExist && !cellCleanRoutine.parameters.columns.length) {
+        if (!doesFrameExist && !cellTransformation.parameters.columns.length) {
             return (
                 <Stack width="100%" paddingY={0.75}>
                     <Typography variant="caption">
@@ -58,10 +58,12 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                         'Change the values of the selected columns to uppercase'
                     )}
                 </Typography>
-                <ColumnCleanRoutineField
+                <ColumnTransformationField
                     disabled={!doesFrameExist}
                     cell={cell}
-                    selectedColumns={cellCleanRoutine.parameters.columns ?? []}
+                    selectedColumns={
+                        cellTransformation.parameters.columns ?? []
+                    }
                     multiple
                     insightId={state.insightId}
                     columnTypes={['STRING']}
@@ -71,7 +73,7 @@ export const UppercaseCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                             payload: {
                                 queryId: cell.query.id,
                                 cellId: cell.id,
-                                path: 'parameters.cleanRoutine.parameters.columns',
+                                path: 'parameters.transformation.parameters.columns',
                                 value: newColumns,
                             },
                         });

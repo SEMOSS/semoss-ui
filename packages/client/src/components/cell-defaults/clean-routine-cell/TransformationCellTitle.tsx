@@ -3,13 +3,13 @@ import { computed } from 'mobx';
 import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
 import { ActionMessages, CellComponent } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { CleanRoutineCellDef } from './config';
+import { TransformationCellDef } from './config';
 import {
     FilterFrames,
     Transform,
     KeyboardArrowDown,
 } from '@mui/icons-material';
-import { CleanRoutines } from './clean.constants';
+import { Transformations } from './transformation.constants';
 
 const StyledButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -54,13 +54,13 @@ const StyledMenu = styled((props: MenuProps) => (
     },
 }));
 
-export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
+export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
     props,
 ) => {
     const { cell } = props;
     const { state } = useBlocks();
 
-    const isValidFrameTypeForCleanRoutine = (frameType: string) => {
+    const isValidFrameTypeForTransformation = (frameType: string) => {
         return frameType === 'PY' || frameType === 'R';
     };
 
@@ -75,7 +75,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
             // consider query import cells with PY or R frame types only
             if (
                 queryCell.widget === 'query-import' &&
-                isValidFrameTypeForCleanRoutine(
+                isValidFrameTypeForTransformation(
                     queryCell.parameters.frameType as string,
                 )
             ) {
@@ -105,7 +105,7 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
             }
             if (
                 !cell.query.cells[cell.parameters.targetCell.id] ||
-                !isValidFrameTypeForCleanRoutine(
+                !isValidFrameTypeForTransformation(
                     cell.query.cells[cell.parameters.targetCell.id].parameters
                         .frameType as string,
                 )
@@ -196,43 +196,50 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                 title="Select Clean Routine"
             >
                 <StyledButtonLabel width={14}>
-                    {CleanRoutines[cell.parameters.cleanRoutine.routine]
+                    {Transformations[cell.parameters.transformation.routine]
                         .display ?? ''}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
                 {menuType === 'routine' && (
                     <List dense>
-                        {Array.from(Object.values(CleanRoutines), (routine) => (
-                            <List.Item
-                                disablePadding
-                                key={`${cell.id}-${routine.routine}`}
-                            >
-                                <List.ItemButton
-                                    onClick={() => {
-                                        state.dispatch({
-                                            message: ActionMessages.UPDATE_CELL,
-                                            payload: {
-                                                queryId: cell.query.id,
-                                                cellId: cell.id,
-                                                path: 'parameters.cleanRoutine',
-                                                value: {
-                                                    routine:
-                                                        routine.config.routine,
-                                                    parameters: {
-                                                        ...routine.config
-                                                            .parameters,
+                        {Array.from(
+                            Object.values(Transformations),
+                            (routine) => (
+                                <List.Item
+                                    disablePadding
+                                    key={`${cell.id}-${routine.routine}`}
+                                >
+                                    <List.ItemButton
+                                        onClick={() => {
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.UPDATE_CELL,
+                                                payload: {
+                                                    queryId: cell.query.id,
+                                                    cellId: cell.id,
+                                                    path: 'parameters.transformation',
+                                                    value: {
+                                                        routine:
+                                                            routine.config
+                                                                .routine,
+                                                        parameters: {
+                                                            ...routine.config
+                                                                .parameters,
+                                                        },
                                                     },
                                                 },
-                                            },
-                                        });
-                                        handleClose();
-                                    }}
-                                >
-                                    <List.ItemText primary={routine.display} />
-                                </List.ItemButton>
-                            </List.Item>
-                        ))}
+                                            });
+                                            handleClose();
+                                        }}
+                                    >
+                                        <List.ItemText
+                                            primary={routine.display}
+                                        />
+                                    </List.ItemButton>
+                                </List.Item>
+                            ),
+                        )}
                     </List>
                 )}
                 {menuType === 'frame' && (
@@ -265,16 +272,16 @@ export const CleanRoutineCellTitle: CellComponent<CleanRoutineCellDef> = (
                                             payload: {
                                                 queryId: cell.query.id,
                                                 cellId: cell.id,
-                                                path: 'parameters.cleanRoutine',
+                                                path: 'parameters.transformation',
                                                 value: {
                                                     routine:
                                                         cell.parameters
-                                                            .cleanRoutine
+                                                            .transformation
                                                             .routine,
                                                     parameters: {
-                                                        ...CleanRoutines[
+                                                        ...Transformations[
                                                             cell.parameters
-                                                                .cleanRoutine
+                                                                .transformation
                                                                 .routine
                                                         ].config.parameters,
                                                     },

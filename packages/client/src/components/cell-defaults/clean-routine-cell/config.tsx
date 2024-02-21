@@ -1,59 +1,59 @@
 import { Cell, CellDef } from '@/stores';
-import { CleanRoutineCellTitle } from './CleanRoutineCellTitle';
-import { CleanRoutineCellInput } from './CleanRoutineCellInput';
-import { CleanRoutineCellDetails } from './CleanRoutineCellDetails';
-import { CleanRoutineCellOutput } from './CleanRoutineCellOutput';
+import { TransformationCellTitle } from './TransformationCellTitle';
+import { TransformationCellInput } from './TransformationCellInput';
+import { TransformationCellDetails } from './TransformationCellDetails';
+import { TransformationCellOutput } from './TransformationCellOutput';
 import {
-    CleanRoutine,
-    CleanRoutineTargetCell,
-    UppercaseCleanRoutineDef,
-} from './clean.types';
-import { CleanRoutines } from './clean.constants';
-import { CleanRoutineCellRunActionButton } from './CleanRoutineCellRunActionButton';
+    Transformation,
+    TransformationTargetCell,
+    UppercaseTransformationDef,
+} from './transformation.types';
+import { Transformations } from './transformation.constants';
+import { TransformationCellRunActionButton } from './TransformationCellRunActionButton';
 
-export interface CleanRoutineCellDef extends CellDef<'clean'> {
-    widget: 'clean';
+export interface TransformationCellDef extends CellDef<'transformation'> {
+    widget: 'transformation';
     parameters: {
         /**
          * Routine type
          */
-        cleanRoutine: CleanRoutine;
+        transformation: Transformation;
 
         /**
-         * ID of the query cell that defines the frame we want to clean
+         * ID of the query cell that defines the frame we want to transform
          */
-        targetCell: CleanRoutineTargetCell;
+        targetCell: TransformationTargetCell;
     };
 }
 
 // export the config for the block
-export const CleanRoutineCell: Cell<CleanRoutineCellDef> = {
-    widget: 'clean',
+export const TransformationCell: Cell<TransformationCellDef> = {
+    widget: 'transformation',
     parameters: {
-        cleanRoutine: {
+        transformation: {
             routine: 'uppercase',
             parameters: {
                 columns: [],
             },
-        } as CleanRoutine<UppercaseCleanRoutineDef>, // set a default routine
+        } as Transformation<UppercaseTransformationDef>, // set a default routine
         targetCell: {
             id: '',
             frameVariableName: '',
         },
     },
     view: {
-        title: CleanRoutineCellTitle,
-        input: CleanRoutineCellInput,
-        details: CleanRoutineCellDetails,
-        output: CleanRoutineCellOutput,
-        runActionButton: CleanRoutineCellRunActionButton,
+        title: TransformationCellTitle,
+        input: TransformationCellInput,
+        details: TransformationCellDetails,
+        output: TransformationCellOutput,
+        runActionButton: TransformationCellRunActionButton,
     },
-    toPixel: ({ cleanRoutine, targetCell }) => {
+    toPixel: ({ transformation, targetCell }) => {
         if (!targetCell.id) {
             return '';
         }
-        return CleanRoutines[cleanRoutine.routine].config.toPixel(
-            cleanRoutine.parameters,
+        return Transformations[transformation.routine].config.toPixel(
+            transformation.parameters,
             targetCell,
         );
     },

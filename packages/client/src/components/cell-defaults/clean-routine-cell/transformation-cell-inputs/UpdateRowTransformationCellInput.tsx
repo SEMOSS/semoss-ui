@@ -3,20 +3,20 @@ import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { CellComponent, ActionMessages, CellState } from '@/stores';
 import { Stack, Typography } from '@semoss/ui';
-import { CleanRoutineCellDef } from '../config';
+import { TransformationCellDef } from '../config';
 import {
-    ColumnCleanRoutineField,
-    OperationCleanRoutineField,
-    ValueCleanRoutineField,
+    ColumnTransformationField,
+    OperationTransformationField,
+    ValueTransformationField,
 } from '../input-fields';
 import { QueryImportCellDef } from '../../query-import-cell';
 import {
-    CleanRoutine,
+    Transformation,
     ColumnInfo,
-    UpdateRowValuesCleanRoutineDef,
-} from '../clean.types';
+    UpdateRowValuesTransformationDef,
+} from '../transformation.types';
 
-export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> =
+export const UpdateRowTransformationCellInput: CellComponent<TransformationCellDef> =
     observer((props) => {
         const { cell } = props;
         const { state } = useBlocks();
@@ -27,10 +27,10 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
             ] as CellState<QueryImportCellDef>;
         }).get();
 
-        const cellCleanRoutine: CleanRoutine<UpdateRowValuesCleanRoutineDef> =
+        const cellTransformation: Transformation<UpdateRowValuesTransformationDef> =
             computed(() => {
                 return cell.parameters
-                    .cleanRoutine as CleanRoutine<UpdateRowValuesCleanRoutineDef>;
+                    .transformation as Transformation<UpdateRowValuesTransformationDef>;
             }).get();
 
         const doesFrameExist: boolean = computed(() => {
@@ -45,7 +45,7 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
 
         if (
             !doesFrameExist &&
-            !cellCleanRoutine.parameters.compareColumn.name
+            !cellTransformation.parameters.compareColumn.name
         ) {
             return (
                 <Stack width="100%" paddingY={0.75}>
@@ -66,11 +66,11 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                     )}
                 </Typography>
                 <Stack direction="row" flex={1} spacing={2}>
-                    <ColumnCleanRoutineField
+                    <ColumnTransformationField
                         disabled={!doesFrameExist}
                         cell={cell}
                         selectedColumns={
-                            cellCleanRoutine.parameters.compareColumn ?? {
+                            cellTransformation.parameters.compareColumn ?? {
                                 name: '',
                                 dataType: '',
                             }
@@ -82,17 +82,17 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.cleanRoutine.parameters.compareColumn',
+                                    path: 'parameters.transformation.parameters.compareColumn',
                                     value: newColumn,
                                 },
                             });
                         }}
                         label="Compare Column"
                     />
-                    <OperationCleanRoutineField
+                    <OperationTransformationField
                         disabled={!doesFrameExist}
                         selectedOperation={
-                            cellCleanRoutine.parameters.compareOperation
+                            cellTransformation.parameters.compareOperation
                         }
                         onChange={(newOperation: string) => {
                             state.dispatch({
@@ -100,17 +100,17 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.cleanRoutine.parameters.compareOperation',
+                                    path: 'parameters.transformation.parameters.compareOperation',
                                     value: newOperation,
                                 },
                             });
                         }}
                     />
-                    <ValueCleanRoutineField
+                    <ValueTransformationField
                         disabled={!doesFrameExist}
-                        value={cellCleanRoutine.parameters.compareValue}
+                        value={cellTransformation.parameters.compareValue}
                         valueDatabaseType={
-                            cellCleanRoutine.parameters.compareColumn.dataType
+                            cellTransformation.parameters.compareColumn.dataType
                         }
                         label="Compare Value"
                         onChange={(newValue) => {
@@ -119,7 +119,7 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.cleanRoutine.parameters.compareValue',
+                                    path: 'parameters.transformation.parameters.compareValue',
                                     value: newValue,
                                 },
                             });
@@ -127,11 +127,11 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                     />
                 </Stack>
                 <Stack direction="row" flex={1} spacing={2}>
-                    <ColumnCleanRoutineField
+                    <ColumnTransformationField
                         disabled={!doesFrameExist}
                         cell={cell}
                         selectedColumns={
-                            cellCleanRoutine.parameters.targetColumn ?? {
+                            cellTransformation.parameters.targetColumn ?? {
                                 name: '',
                                 dataType: '',
                             }
@@ -143,18 +143,18 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.cleanRoutine.parameters.targetColumn',
+                                    path: 'parameters.transformation.parameters.targetColumn',
                                     value: newColumn,
                                 },
                             });
                         }}
                         label="Update Column"
                     />
-                    <ValueCleanRoutineField
+                    <ValueTransformationField
                         disabled={!doesFrameExist}
-                        value={cellCleanRoutine.parameters.targetValue}
+                        value={cellTransformation.parameters.targetValue}
                         valueDatabaseType={
-                            cellCleanRoutine.parameters.targetColumn.dataType
+                            cellTransformation.parameters.targetColumn.dataType
                         }
                         label="Update Value"
                         onChange={(newValue) => {
@@ -163,7 +163,7 @@ export const UpdateRowCleanRoutineCellInput: CellComponent<CleanRoutineCellDef> 
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.cleanRoutine.parameters.targetValue',
+                                    path: 'parameters.transformation.parameters.targetValue',
                                     value: newValue,
                                 },
                             });

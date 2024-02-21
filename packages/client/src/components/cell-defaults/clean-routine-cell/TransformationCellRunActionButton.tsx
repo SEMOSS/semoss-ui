@@ -1,13 +1,13 @@
 import { computed } from 'mobx';
 import { ActionMessages, CellComponent, CellState } from '@/stores';
-import { CleanRoutineCellDef } from './config';
+import { TransformationCellDef } from './config';
 import { useBlocks } from '@/hooks';
 import { IconButton } from '@semoss/ui';
 import { PlayCircle } from '@mui/icons-material';
 import { QueryImportCellDef } from '../query-import-cell';
 
-export const CleanRoutineCellRunActionButton: CellComponent<
-    CleanRoutineCellDef
+export const TransformationCellRunActionButton: CellComponent<
+    TransformationCellDef
 > = (props) => {
     const { cell } = props;
     const { state } = useBlocks();

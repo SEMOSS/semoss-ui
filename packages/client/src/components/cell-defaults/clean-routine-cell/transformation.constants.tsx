@@ -1,15 +1,15 @@
 import {
     getFrameUpdateRowValuesPipeline,
     getFrameUppercasePipeline,
-} from './clean-routine-pipeline-utils';
+} from './transformation-pipeline-utils';
 import {
-    CleanRoutineDef,
-    CleanRoutineTargetCell,
-    CleanRoutineTypes,
-    UpdateRowValuesCleanRoutineDef,
-    UppercaseCleanRoutineDef,
+    TransformationDef,
+    TransformationTargetCell,
+    TransformationTypes,
+    UpdateRowValuesTransformationDef,
+    UppercaseTransformationDef,
     operation,
-} from './clean.types';
+} from './transformation.types';
 import { FontDownload, TableRows } from '@mui/icons-material';
 
 export const operations: operation[] = [
@@ -22,25 +22,25 @@ export const operations: operation[] = [
     '?like',
 ];
 
-export interface CleanRoutineConfig<
-    D extends CleanRoutineDef = CleanRoutineDef,
+export interface TransformationConfig<
+    D extends TransformationDef = TransformationDef,
 > {
     routine: D['routine'];
     parameters: D['parameters'];
     toPixel: (
         /** Parameters associated with the routine */
         parameters: D['parameters'],
-        targetCell: CleanRoutineTargetCell,
+        targetCell: TransformationTargetCell,
     ) => string;
 }
 
-export const CleanRoutines: Record<
-    CleanRoutineTypes,
+export const Transformations: Record<
+    TransformationTypes,
     {
-        routine: CleanRoutineTypes;
+        routine: TransformationTypes;
         display: string;
         icon: React.FunctionComponent;
-        config: CleanRoutineConfig;
+        config: TransformationConfig;
     }
 > = {
     uppercase: {
@@ -58,7 +58,7 @@ export const CleanRoutines: Record<
                     parameters.columns.map((column) => column.name),
                 );
             },
-        } as CleanRoutineConfig<UppercaseCleanRoutineDef>,
+        } as TransformationConfig<UppercaseTransformationDef>,
     },
     'update-row': {
         routine: 'update-row',
@@ -97,6 +97,6 @@ export const CleanRoutines: Record<
                         : `"${parameters.targetValue}"`,
                 );
             },
-        } as CleanRoutineConfig<UpdateRowValuesCleanRoutineDef>,
+        } as TransformationConfig<UpdateRowValuesTransformationDef>,
     },
 };

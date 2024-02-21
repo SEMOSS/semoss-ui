@@ -5,9 +5,9 @@ export type ColumnInfo = {
     dataType: string;
 };
 
-export type CleanRoutineTypes = 'uppercase' | 'update-row';
+export type TransformationTypes = 'uppercase' | 'update-row';
 
-export interface CleanRoutineDef<W extends string = string> {
+export interface TransformationDef<W extends string = string> {
     /** Unique routine name */
     routine: W;
 
@@ -15,20 +15,21 @@ export interface CleanRoutineDef<W extends string = string> {
     parameters: Record<string, unknown>;
 }
 
-export interface CleanRoutineTargetCell {
+export interface TransformationTargetCell {
     id: string;
     frameVariableName: string;
 }
 
-export interface UppercaseCleanRoutineDef extends CleanRoutineDef<'uppercase'> {
+export interface UppercaseTransformationDef
+    extends TransformationDef<'uppercase'> {
     routine: 'uppercase';
     parameters: {
         columns: ColumnInfo[];
     };
 }
 
-export interface UpdateRowValuesCleanRoutineDef
-    extends CleanRoutineDef<'update-row'> {
+export interface UpdateRowValuesTransformationDef
+    extends TransformationDef<'update-row'> {
     routine: 'update-row';
     parameters: {
         compareColumn: ColumnInfo;
@@ -39,7 +40,9 @@ export interface UpdateRowValuesCleanRoutineDef
     };
 }
 
-export interface CleanRoutine<D extends CleanRoutineDef = CleanRoutineDef> {
+export interface Transformation<
+    D extends TransformationDef = TransformationDef,
+> {
     routine: D['routine'];
     parameters: D['parameters'];
 }

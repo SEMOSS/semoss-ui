@@ -1,10 +1,10 @@
 import { computed } from 'mobx';
 import { CellComponent, CellState } from '@/stores';
-import { CleanRoutineCellDef } from './config';
+import { TransformationCellDef } from './config';
 import { QueryPreviewCellOutput } from '../shared';
 import { QueryImportCellDef } from '../query-import-cell';
 
-export const CleanRoutineCellOutput: CellComponent<CleanRoutineCellDef> = (
+export const TransformationCellOutput: CellComponent<TransformationCellDef> = (
     props,
 ) => {
     const { cell } = props;
@@ -15,7 +15,7 @@ export const CleanRoutineCellOutput: CellComponent<CleanRoutineCellDef> = (
         ] as CellState<QueryImportCellDef>;
     }).get();
 
-    switch (cell.parameters.cleanRoutine.routine) {
+    switch (cell.parameters.transformation.routine) {
         case 'uppercase':
             return (
                 <QueryPreviewCellOutput

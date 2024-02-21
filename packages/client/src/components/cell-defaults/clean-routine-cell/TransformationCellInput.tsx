@@ -1,21 +1,21 @@
 import { CellComponent } from '@/stores';
-import { CleanRoutineCellDef } from './config';
+import { TransformationCellDef } from './config';
 import {
-    UpdateRowCleanRoutineCellInput,
-    UppercaseCleanRoutineCellInput,
-} from './routine-cell-inputs';
+    UpdateRowTransformationCellInput,
+    UppercaseTransformationCellInput,
+} from './transformation-cell-inputs';
 import { Avatar, Chip, Stack, Typography, styled } from '@semoss/ui';
-import { CleanRoutines } from './clean.constants';
+import { Transformations } from './transformation.constants';
 import { THEME } from '@/constants';
 import { blue, green } from '@mui/material/colors';
 
 const primaryLight = THEME.name === 'SEMOSS' ? blue[50] : green[50];
-export const CleanRoutineChip = styled(Chip)(({ theme }) => ({
+export const TransformationChip = styled(Chip)(({ theme }) => ({
     backgroundColor: primaryLight,
     color: theme.palette.primary.main,
     paddingLeft: theme.spacing(0.5),
 }));
-export const CleanRoutineChipAvatar = styled(Avatar)(({ theme }) => ({
+export const TransformationChipAvatar = styled(Avatar)(({ theme }) => ({
     color: `${theme.palette.primary.main}!important`,
     backgroundColor: primaryLight,
     borderRadius: '4px',
@@ -28,23 +28,23 @@ export const StyledTypography = styled(Typography)(({ theme }) => ({
     fontWeight: theme.typography.fontWeightBold,
 }));
 
-export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
+export const TransformationCellInput: CellComponent<TransformationCellDef> = (
     props,
 ) => {
     const { cell, isExpanded } = props;
 
-    const CleanRoutineIcon: React.FunctionComponent =
-        CleanRoutines[cell.parameters.cleanRoutine.routine].icon;
+    const TransformationIcon: React.FunctionComponent =
+        Transformations[cell.parameters.transformation.routine].icon;
 
-    const cleanRoutineDisplay: string =
-        CleanRoutines[cell.parameters.cleanRoutine.routine].display;
+    const transformationDisplay: string =
+        Transformations[cell.parameters.transformation.routine].display;
 
-    const cleanRoutineCellInputContent = () => {
-        switch (cell.parameters.cleanRoutine.routine) {
+    const transformationCellInputContent = () => {
+        switch (cell.parameters.transformation.routine) {
             case 'uppercase':
-                return <UppercaseCleanRoutineCellInput {...props} />;
+                return <UppercaseTransformationCellInput {...props} />;
             case 'update-row':
-                return <UpdateRowCleanRoutineCellInput {...props} />;
+                return <UpdateRowTransformationCellInput {...props} />;
             default:
                 return <></>;
         }
@@ -54,14 +54,14 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
         return (
             <Stack width="100%" paddingY={0.5}>
                 <div>
-                    <CleanRoutineChip
+                    <TransformationChip
                         size="small"
                         color="primary"
-                        label={cleanRoutineDisplay}
+                        label={transformationDisplay}
                         avatar={
-                            <CleanRoutineChipAvatar variant="rounded">
-                                <CleanRoutineIcon />
-                            </CleanRoutineChipAvatar>
+                            <TransformationChipAvatar variant="rounded">
+                                <TransformationIcon />
+                            </TransformationChipAvatar>
                         }
                     />
                 </div>
@@ -72,9 +72,9 @@ export const CleanRoutineCellInput: CellComponent<CleanRoutineCellDef> = (
     return (
         <Stack width="100%" paddingY={0.5}>
             <StyledTypography variant="body1">
-                {cleanRoutineDisplay}
+                {transformationDisplay}
             </StyledTypography>
-            {cleanRoutineCellInputContent()}
+            {transformationCellInputContent()}
         </Stack>
     );
 };

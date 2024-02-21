@@ -12,7 +12,7 @@ import {
 import { Add } from '@mui/icons-material';
 import { DefaultCellTypes } from '../cell-defaults';
 import { useState } from 'react';
-import { CleanRoutineCell } from '../cell-defaults/clean-routine-cell';
+import { TransformationCell } from '../cell-defaults/clean-routine-cell';
 import { CodeCell } from '../cell-defaults/code-cell';
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -56,7 +56,7 @@ export const NotebookAddCellButton = observer(
             let defaultCellTypes = { ...DefaultCellTypes };
             // transformation cell types can only be added if there exists a query-import cell before it
             if (!previousCellId) {
-                delete defaultCellTypes[CleanRoutineCell.widget];
+                delete defaultCellTypes[TransformationCell.widget];
             } else {
                 const previousCellIndex = query.list.indexOf(previousCellId);
                 let hasFrameVariable = false;
@@ -70,7 +70,7 @@ export const NotebookAddCellButton = observer(
                     }
                 }
                 if (!hasFrameVariable) {
-                    delete defaultCellTypes[CleanRoutineCell.widget];
+                    delete defaultCellTypes[TransformationCell.widget];
                 }
             }
 

@@ -1,17 +1,17 @@
 import { observer } from 'mobx-react-lite';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
-import { operation } from '../clean.types';
-import { operations } from '../clean.constants';
+import { operation } from '../transformation.types';
+import { operations } from '../transformation.constants';
 
-export type OperationCleanRoutineFieldComponent = (props: {
+export type OperationTransformationFieldComponent = (props: {
     selectedOperation: operation;
     label?: string;
     disabled?: boolean;
     onChange: (operation: string) => void;
 }) => JSX.Element;
 
-export const OperationCleanRoutineField: OperationCleanRoutineFieldComponent =
+export const OperationTransformationField: OperationTransformationFieldComponent =
     observer((props) => {
         const {
             selectedOperation,

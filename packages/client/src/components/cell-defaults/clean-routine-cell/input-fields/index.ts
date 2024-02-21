@@ -1,3 +1,3 @@
-export * from './ColumnCleanRoutineField';
-export * from './OperationCleanRoutineField';
-export * from './ValueCleanRoutineField';
+export * from './ColumnTransformationField';
+export * from './OperationTransformationField';
+export * from './ValueTransformationField';

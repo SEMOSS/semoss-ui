@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { getFrameHeaderTypesPipeline } from '../clean-routine-pipeline-utils';
+import { getFrameHeaderTypesPipeline } from '../transformation-pipeline-utils';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { runPixel } from '@/api';
 import { CellState } from '@/stores';
-import { CleanRoutineTargetCell, ColumnInfo } from '../clean.types';
+import { TransformationTargetCell, ColumnInfo } from '../transformation.types';
 
 interface FrameHeaderInfo {
     headers: {
@@ -15,7 +15,7 @@ interface FrameHeaderInfo {
     }[];
 }
 
-export type ColumnCleanRoutineFieldComponent = (props: {
+export type ColumnTransformationFieldComponent = (props: {
     cell: CellState;
     selectedColumns: ColumnInfo[] | ColumnInfo;
     columnTypes?: string[];
@@ -26,7 +26,7 @@ export type ColumnCleanRoutineFieldComponent = (props: {
     onChange: (newColumns: ColumnInfo[] | ColumnInfo) => void;
 }) => JSX.Element;
 
-export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
+export const ColumnTransformationField: ColumnTransformationFieldComponent =
     observer((props) => {
         const {
             cell,
@@ -40,13 +40,13 @@ export const ColumnCleanRoutineField: ColumnCleanRoutineFieldComponent =
         } = props;
 
         const frameVariableName = computed(() => {
-            return (cell.parameters.targetCell as CleanRoutineTargetCell)
+            return (cell.parameters.targetCell as TransformationTargetCell)
                 .frameVariableName;
         }).get();
 
         const targetCell: CellState = computed(() => {
             return cell.query.cells[
-                (cell.parameters.targetCell as CleanRoutineTargetCell).id
+                (cell.parameters.targetCell as TransformationTargetCell).id
             ];
         }).get();
 

@@ -1,4 +1,4 @@
-import { operation } from './clean.types';
+import { operation } from './transformation.types';
 
 export const getFrameHeaderTypesPipeline = (
     frameVariableName: string,
