@@ -269,26 +269,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
         },
     },
     {
-        key: 'page',
-        display: 'Page',
-        blockJson: {
-            widget: 'page',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '24px',
-                    gap: '8px',
-                    fontFamily: 'roboto',
-                },
-            },
-            listeners: {},
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
         key: 'pie-chart',
         display: 'Pie Chart',
         blockJson: {
@@ -459,6 +439,26 @@ export const MenuBlocks: BlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // {
+    //     key: 'page',
+    //     display: 'Page',
+    //     blockJson: {
+    //         widget: 'page',
+    //         data: {
+    //             style: {
+    //                 display: 'flex',
+    //                 flexDirection: 'column',
+    //                 padding: '24px',
+    //                 gap: '8px',
+    //                 fontFamily: 'roboto',
+    //             },
+    //         },
+    //         listeners: {},
+    //         slots: {
+    //             content: [],
+    //         },
+    //     },
+    // },
 ];
 
 export const getIconForMenuItemByKey = (key: string) => {
