@@ -188,6 +188,27 @@ export const NotebookCell = observer(
             }
         };
 
+        const deleteCell = () => {
+            try {
+                const currentCellIndex = query.list.indexOf(cell.id);
+
+                state.dispatch({
+                    message: ActionMessages.DELETE_CELL,
+                    payload: {
+                        queryId: cell.query.id,
+                        cellId: cell.id,
+                    },
+                });
+
+                notebook.selectCell(
+                    queryId,
+                    query.list[Math.max(currentCellIndex - 1, 0)],
+                );
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
         // get the view
         const cellType = cell.cellType;
 
@@ -495,16 +516,9 @@ export const NotebookCell = observer(
                                                 title="Delete cell"
                                                 disabled={cell.isLoading}
                                                 size="small"
-                                                onClick={() => {
-                                                    state.dispatch({
-                                                        message:
-                                                            ActionMessages.DELETE_CELL,
-                                                        payload: {
-                                                            queryId:
-                                                                cell.query.id,
-                                                            cellId: cell.id,
-                                                        },
-                                                    });
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteCell();
                                                 }}
                                             >
                                                 <StyledButtonLabel>

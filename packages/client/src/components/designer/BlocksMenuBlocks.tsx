@@ -1,6 +1,7 @@
 import { BlockJSON } from '@/stores';
 import {
     Addchart,
+    AspectRatio,
     BarChart,
     BlurLinear,
     CheckBox,
@@ -116,7 +117,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
                     flexDirection: 'column',
                     padding: '4px',
                     gap: '8px',
-                    overflow: 'hidden',
                     flexWrap: 'wrap',
                 },
             },
@@ -163,6 +163,21 @@ export const MenuBlocks: BlocksMenuItem[] = [
                         },
                     },
                 },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        key: 'iframe',
+        display: 'IFrame',
+        blockJson: {
+            widget: 'iframe',
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
@@ -226,19 +241,16 @@ export const MenuBlocks: BlocksMenuItem[] = [
             widget: 'link',
             data: {
                 style: {
-                    display: 'flex',
-                    flexDirection: 'column',
                     padding: '4px',
-                    gap: '8px',
-                    width: '100%',
-                    height: '100%',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                    textDecoration: 'none',
                 },
-                src: '',
+                href: '',
+                text: 'Insert text',
             },
             listeners: {},
-            slots: {
-                children: [],
-            },
+            slots: {},
         },
     },
     {
@@ -462,6 +474,8 @@ export const getIconForMenuItemByKey = (key: string) => {
             return HighlightAlt;
         case 'grouped-bar-chart':
             return Addchart;
+        case 'iframe':
+            return AspectRatio;
         case 'image':
             return PanoramaOutlined;
         case 'input':
