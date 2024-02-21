@@ -231,7 +231,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
                         {Array.from(Object.values(FrameTypes), (frameType) => (
                             <List.Item
                                 disablePadding
-                                key={`${cell.id}-${frameType}`}
+                                key={`${cell.id}-${frameType.value}`}
                             >
                                 <List.ItemButton
                                     onClick={() => {

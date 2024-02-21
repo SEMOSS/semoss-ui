@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react';
 import { computed } from 'mobx';
 import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
-import { ActionMessages, CellComponent } from '@/stores';
+import {
+    ActionMessages,
+    CellComponent,
+    CellStateConfig,
+    NewCellAction,
+} from '@/stores';
 import { useBlocks } from '@/hooks';
-import { TransformationCellDef } from './config';
 import {
     FilterFrames,
     Transform,
     KeyboardArrowDown,
 } from '@mui/icons-material';
 import { Transformations } from './transformation.constants';
+import { TransformationCellDef } from './transformation.types';
+import { DefaultCellTypes } from '../..';
 
 const StyledButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -58,7 +64,7 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
     props,
 ) => {
     const { cell } = props;
-    const { state } = useBlocks();
+    const { state, notebook } = useBlocks();
 
     const isValidFrameTypeForTransformation = (frameType: string) => {
         return frameType === 'PY' || frameType === 'R';
@@ -85,6 +91,32 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
             return false;
         });
     }).get();
+
+    const changeTransformationType = (newTransformationWidget: string) => {
+        let previousCellId = '';
+        const currentCellIndex = cell.query.list.indexOf(cell.id);
+        if (currentCellIndex > 0) {
+            previousCellId = cell.query.list[currentCellIndex - 1];
+        }
+        let config: NewCellAction['payload']['config'] = {
+            widget: DefaultCellTypes[newTransformationWidget].widget,
+            parameters: {
+                ...DefaultCellTypes[newTransformationWidget].parameters,
+                targetCell: { ...cell.parameters.targetCell },
+            },
+        };
+
+        state.dispatch({
+            message: ActionMessages.NEW_CELL,
+            payload: {
+                queryId: cell.query.id,
+                cellId: cell.id,
+                previousCellId: previousCellId,
+                config: config as Omit<CellStateConfig, 'id'>,
+            },
+        });
+        notebook.selectCell(cell.query.id, cell.id);
+    };
 
     useEffect(() => {
         if (!!cell.parameters.targetCell.id) {
@@ -196,8 +228,8 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
                 title="Select Clean Routine"
             >
                 <StyledButtonLabel width={14}>
-                    {Transformations[cell.parameters.transformation.routine]
-                        .display ?? ''}
+                    {Transformations[cell.parameters.transformation.key]
+                        ?.display ?? ''}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
@@ -205,36 +237,21 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
                     <List dense>
                         {Array.from(
                             Object.values(Transformations),
-                            (routine) => (
+                            (transformation) => (
                                 <List.Item
                                     disablePadding
-                                    key={`${cell.id}-${routine.routine}`}
+                                    key={`${cell.id}-${transformation.widget}`}
                                 >
                                     <List.ItemButton
                                         onClick={() => {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.UPDATE_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                    path: 'parameters.transformation',
-                                                    value: {
-                                                        routine:
-                                                            routine.config
-                                                                .routine,
-                                                        parameters: {
-                                                            ...routine.config
-                                                                .parameters,
-                                                        },
-                                                    },
-                                                },
-                                            });
+                                            changeTransformationType(
+                                                transformation.widget,
+                                            );
                                             handleClose();
                                         }}
                                     >
                                         <List.ItemText
-                                            primary={routine.display}
+                                            primary={transformation.display}
                                         />
                                     </List.ItemButton>
                                 </List.Item>
@@ -274,15 +291,14 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
                                                 cellId: cell.id,
                                                 path: 'parameters.transformation',
                                                 value: {
-                                                    routine:
+                                                    transformation:
                                                         cell.parameters
-                                                            .transformation
-                                                            .routine,
+                                                            .transformation.key,
                                                     parameters: {
                                                         ...Transformations[
                                                             cell.parameters
                                                                 .transformation
-                                                                .routine
+                                                                .key
                                                         ].config.parameters,
                                                     },
                                                 },

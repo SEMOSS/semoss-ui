@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { getFrameHeaderTypesPipeline } from '../transformation-pipeline-utils';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { runPixel } from '@/api';
 import { CellState } from '@/stores';
-import { TransformationTargetCell, ColumnInfo } from '../transformation.types';
+import { TransformationTargetCell, ColumnInfo } from './transformation.types';
 
 interface FrameHeaderInfo {
     headers: {
@@ -65,10 +64,11 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                     const response = await runPixel<
                         [{ headerInfo: FrameHeaderInfo }]
                     >(
-                        getFrameHeaderTypesPipeline(
-                            frameVariableName,
-                            columnTypes,
-                        ),
+                        `META | ${frameVariableName} | FrameHeaders (${
+                            columnTypes
+                                ? `headerTypes = ${JSON.stringify(columnTypes)}`
+                                : ''
+                        });`,
                         insightId,
                     );
                     columns =

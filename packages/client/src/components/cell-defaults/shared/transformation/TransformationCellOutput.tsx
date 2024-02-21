@@ -1,8 +1,8 @@
 import { computed } from 'mobx';
 import { CellComponent, CellState } from '@/stores';
-import { TransformationCellDef } from './config';
-import { QueryPreviewCellOutput } from '../shared';
-import { QueryImportCellDef } from '../query-import-cell';
+import { QueryPreviewCellOutput } from '../QueryPreviewCellOutput';
+import { TransformationCellDef } from './transformation.types';
+import { QueryImportCellDef } from '../../query-import-cell';
 
 export const TransformationCellOutput: CellComponent<TransformationCellDef> = (
     props,
@@ -15,7 +15,7 @@ export const TransformationCellOutput: CellComponent<TransformationCellDef> = (
         ] as CellState<QueryImportCellDef>;
     }).get();
 
-    switch (cell.parameters.transformation.routine) {
+    switch (cell.parameters.transformation.key) {
         case 'uppercase':
             return (
                 <QueryPreviewCellOutput

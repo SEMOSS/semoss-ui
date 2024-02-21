@@ -1,13 +1,7 @@
-import { CellComponent } from '@/stores';
-import { TransformationCellDef } from './config';
-import {
-    UpdateRowTransformationCellInput,
-    UppercaseTransformationCellInput,
-} from './transformation-cell-inputs';
 import { Avatar, Chip, Stack, Typography, styled } from '@semoss/ui';
-import { Transformations } from './transformation.constants';
 import { THEME } from '@/constants';
 import { blue, green } from '@mui/material/colors';
+import React from 'react';
 
 const primaryLight = THEME.name === 'SEMOSS' ? blue[50] : green[50];
 export const TransformationChip = styled(Chip)(({ theme }) => ({
@@ -28,27 +22,21 @@ export const StyledTypography = styled(Typography)(({ theme }) => ({
     fontWeight: theme.typography.fontWeightBold,
 }));
 
-export const TransformationCellInput: CellComponent<TransformationCellDef> = (
+type TransformationCellInputComponent = React.FunctionComponent<{
+    /** Whether the content is expanded */
+    isExpanded?: boolean;
+    /** User facing name to display */
+    display: string;
+    /** Icon to display */
+    Icon: React.FunctionComponent;
+    /** Main content slot */
+    children: React.ReactNode;
+}>;
+
+export const TransformationCellInput: TransformationCellInputComponent = (
     props,
 ) => {
-    const { cell, isExpanded } = props;
-
-    const TransformationIcon: React.FunctionComponent =
-        Transformations[cell.parameters.transformation.routine].icon;
-
-    const transformationDisplay: string =
-        Transformations[cell.parameters.transformation.routine].display;
-
-    const transformationCellInputContent = () => {
-        switch (cell.parameters.transformation.routine) {
-            case 'uppercase':
-                return <UppercaseTransformationCellInput {...props} />;
-            case 'update-row':
-                return <UpdateRowTransformationCellInput {...props} />;
-            default:
-                return <></>;
-        }
-    };
+    const { children, display, Icon, isExpanded } = props;
 
     if (!isExpanded) {
         return (
@@ -57,10 +45,10 @@ export const TransformationCellInput: CellComponent<TransformationCellDef> = (
                     <TransformationChip
                         size="small"
                         color="primary"
-                        label={transformationDisplay}
+                        label={display}
                         avatar={
                             <TransformationChipAvatar variant="rounded">
-                                <TransformationIcon />
+                                <Icon />
                             </TransformationChipAvatar>
                         }
                     />
@@ -71,10 +59,8 @@ export const TransformationCellInput: CellComponent<TransformationCellDef> = (
 
     return (
         <Stack width="100%" paddingY={0.5}>
-            <StyledTypography variant="body1">
-                {transformationDisplay}
-            </StyledTypography>
-            {transformationCellInputContent()}
+            <StyledTypography variant="body1">{display}</StyledTypography>
+            {children}
         </Stack>
     );
 };

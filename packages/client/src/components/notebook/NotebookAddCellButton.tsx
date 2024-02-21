@@ -12,8 +12,9 @@ import {
 import { Add } from '@mui/icons-material';
 import { DefaultCellTypes } from '../cell-defaults';
 import { useState } from 'react';
-import { TransformationCell } from '../cell-defaults/clean-routine-cell';
 import { CodeCell } from '../cell-defaults/code-cell';
+import { QueryImportCell } from '../cell-defaults/query-import-cell';
+import { UppercaseTransformationCell } from '../cell-defaults/uppercase-transformation-cell';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -45,6 +46,25 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
 }));
 
+interface AddCellOption {
+    display: string;
+    defaultCellType: string;
+}
+const AddCellOptions: Record<string, AddCellOption> = {
+    code: {
+        display: 'Code',
+        defaultCellType: CodeCell.widget,
+    },
+    'query-import': {
+        display: 'Query Import',
+        defaultCellType: QueryImportCell.widget,
+    },
+    transformation: {
+        display: 'Transformation',
+        defaultCellType: UppercaseTransformationCell.widget, // TODO: figure out what the most popular transformation is and use as default
+    },
+};
+
 export const NotebookAddCellButton = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -53,10 +73,10 @@ export const NotebookAddCellButton = observer(
         const { state, notebook } = useBlocks();
 
         const cellTypeOptions = computed(() => {
-            let defaultCellTypes = { ...DefaultCellTypes };
+            let options = { ...AddCellOptions };
             // transformation cell types can only be added if there exists a query-import cell before it
             if (!previousCellId) {
-                delete defaultCellTypes[TransformationCell.widget];
+                delete options['transformation'];
             } else {
                 const previousCellIndex = query.list.indexOf(previousCellId);
                 let hasFrameVariable = false;
@@ -70,11 +90,11 @@ export const NotebookAddCellButton = observer(
                     }
                 }
                 if (!hasFrameVariable) {
-                    delete defaultCellTypes[TransformationCell.widget];
+                    delete options['transformation'];
                 }
             }
 
-            return Object.keys(defaultCellTypes);
+            return Object.values(options);
         }).get();
 
         /**
@@ -107,7 +127,7 @@ export const NotebookAddCellButton = observer(
                     } as NewCellAction['payload']['config'];
                 }
 
-                // copy and add the step to the end
+                // copy and add the step
                 state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
@@ -144,20 +164,23 @@ export const NotebookAddCellButton = observer(
                         setAnchorEl(null);
                     }}
                 >
-                    {Array.from(cellTypeOptions, (widget, index) => {
-                        return (
-                            <StyledMenuItem
-                                key={index}
-                                value={widget}
-                                onClick={() => {
-                                    appendCell(widget);
-                                    setAnchorEl(null);
-                                }}
-                            >
-                                {widget.replaceAll('-', ' ')}
-                            </StyledMenuItem>
-                        );
-                    })}
+                    {Array.from(
+                        cellTypeOptions,
+                        ({ display, defaultCellType }, index) => {
+                            return (
+                                <StyledMenuItem
+                                    key={index}
+                                    value={display}
+                                    onClick={() => {
+                                        appendCell(defaultCellType);
+                                        setAnchorEl(null);
+                                    }}
+                                >
+                                    {display}
+                                </StyledMenuItem>
+                            );
+                        },
+                    )}
                 </StyledMenu>
             </>
         );
