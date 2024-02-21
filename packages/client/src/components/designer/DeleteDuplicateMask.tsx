@@ -169,7 +169,7 @@ export const DeleteDuplicateMask = observer(() => {
         designer.setSelected('');
     };
 
-    const onDuplicate = () => {
+    const onDuplicate = async () => {
         // get the json for the block to add
         const getJsonForBlock = (id: string) => {
             const block = state.blocks[id];
@@ -205,7 +205,7 @@ export const DeleteDuplicateMask = observer(() => {
               }
             : undefined;
 
-        state.dispatch({
+        const id = await state.dispatch({
             message: ActionMessages.ADD_BLOCK,
             payload: {
                 json: getJsonForBlock(block.id) as BlockJSON,
@@ -213,8 +213,7 @@ export const DeleteDuplicateMask = observer(() => {
             },
         });
 
-        // clear the selected value
-        designer.setSelected('');
+        designer.setSelected(id ? id : '');
     };
 
     // TODO: revisit these actions for the base page once multiple pages/routing is enabled
