@@ -8,6 +8,9 @@ import { CodeCellDef } from './config';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
+import { useLLM } from '@/hooks';
+import { runPixel } from '@/api';
+
 const EditorLineHeight = 19;
 
 const StyledContent = styled('div', {
@@ -40,6 +43,44 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
 
+    const modelIdRef = useRef('3def3347-30e1-4028-86a0-83a1e5ed619c');
+    // const fileTypeRef = useRef('');
+    // const { modelId } = useLLM();
+
+    // useEffect(() => {
+    //     modelIdRef.current = modelId;
+    // }, [modelId]);
+
+    const promptLLM = async (inputPrompt) => {
+        // setLLMLoading(true);
+
+        // ideally add filetype to LLM pixel so it does not have to be in prompt string
+        // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
+        const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
+
+        try {
+            const res = await runPixel(pixel);
+            // setLLMLoading(false);
+
+            const LLMResponse = res.pixelReturn[0].output['response'];
+            let trimmedStarterCode = LLMResponse;
+            trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
+
+            trimmedStarterCode = trimmedStarterCode.substring(
+                trimmedStarterCode.indexOf('\n') + 1,
+            );
+
+            return trimmedStarterCode;
+        } catch {
+            // setLLMLoading(false);
+            // notification.add({
+            //     color: 'error',
+            //     message: 'Failed response from AI Code Generator',
+            // });
+            return '';
+        }
+    };
+
     const handleMount = (editor, monaco) => {
         // first time you set the height based on content Height
         editorRef.current = editor;
@@ -71,6 +112,56 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                         cellId: cell.id,
                     },
                 });
+            },
+        });
+
+        editor.addAction({
+            contextMenuGroupId: '1_modification',
+            contextMenuOrder: 1,
+            id: 'prompt-LLM',
+            label: 'Generate Code',
+            keybindings: [
+                monaco.KeyMod.CtrlCmd |
+                    monaco.KeyMod.Shift |
+                    monaco.KeyCode.KeyG,
+            ],
+
+            run: async (editor) => {
+                const selection = editor.getSelection();
+                const selectedText = editor
+                    .getModel()
+                    .getValueInRange(selection);
+
+                const LLMReturnText = await promptLLM(
+                    // `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+                    `Create code for a .${
+                        EditorLanguages[cell.parameters.type]
+                    } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+                );
+
+                editor.executeEdits('custom-action', [
+                    {
+                        range: new monaco.Range(
+                            selection.endLineNumber + 2,
+                            1,
+                            selection.endLineNumber + 2,
+                            1,
+                        ),
+                        text: `\n\n${LLMReturnText}\n`,
+                        forceMoveMarkers: true,
+                    },
+                ]);
+
+                editor.setSelection(
+                    new monaco.Range(
+                        selection.endLineNumber + 3,
+                        1,
+                        selection.endLineNumber +
+                            2 +
+                            LLMReturnText.split('\n').length,
+                        1,
+                    ),
+                );
             },
         });
 
