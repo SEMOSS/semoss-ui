@@ -808,9 +808,11 @@ export class StateStore {
         );
 
         if (!config.cells.length) {
+            const newCellId = `${Math.floor(Math.random() * 100000)}`;
+
             this.newCell(
                 queryId,
-                `${queryId}-cell`,
+                newCellId,
                 {
                     parameters: {
                         code: '',
@@ -912,6 +914,24 @@ export class StateStore {
 
         // add the cell
         q._processDeleteCell(cellId);
+
+        // always have at least one cell
+        if (q.list.length === 0) {
+            const newCellId = `${Math.floor(Math.random() * 100000)}`;
+
+            this.newCell(
+                queryId,
+                newCellId,
+                {
+                    parameters: {
+                        code: '',
+                        type: 'pixel',
+                    },
+                    widget: 'code',
+                } as Omit<CellStateConfig, 'id'>,
+                '',
+            );
+        }
     };
 
     /**
