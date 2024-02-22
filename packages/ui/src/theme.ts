@@ -77,7 +77,7 @@ export const lightTheme: CustomThemeOptions = {
             // dark: "#046A38",
         },
         secondary: {
-            main: "#E9E9E9",
+            main: "#D9D9D9",
             light: "#F2F2F2",
             dark: "#B5B5B5",
         },
@@ -182,9 +182,9 @@ export const lightTheme: CustomThemeOptions = {
     },
     shape: {
         borderRadiusNone: 0,
-        borderRadius: 8,
+        borderRadius: 12,
         borderRadiusSm: 4,
-        borderRadiusLg: 12,
+        borderRadiusLg: 20,
         borderRadiusCircle: 64,
         borderRadiusChip: 64,
     },
@@ -294,6 +294,7 @@ export const lightTheme: CustomThemeOptions = {
         },
         button: {
             textTransform: "none",
+            fontWeight: "600",
         },
     },
     components: {
@@ -437,6 +438,13 @@ export const lightTheme: CustomThemeOptions = {
                         borderRadius: shape.borderRadiusLg,
                     };
                 },
+            },
+        },
+        MuiButton: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    boxShadow: "none",
+                }),
             },
         },
     },
@@ -542,9 +550,9 @@ export const darkTheme: CustomThemeOptions = {
     },
     shape: {
         borderRadiusNone: 0,
-        borderRadius: 8,
+        borderRadius: 12,
         borderRadiusSm: 4,
-        borderRadiusLg: 12,
+        borderRadiusLg: 20,
         borderRadiusCircle: 64,
         borderRadiusChip: 64,
     },
@@ -654,6 +662,7 @@ export const darkTheme: CustomThemeOptions = {
         },
         button: {
             textTransform: "none",
+            fontWeight: "600",
         },
     },
     components: {
@@ -797,6 +806,13 @@ export const darkTheme: CustomThemeOptions = {
                         borderRadius: shape.borderRadiusLg,
                     };
                 },
+            },
+        },
+        MuiButton: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    boxShadow: "none",
+                }),
             },
         },
     },
