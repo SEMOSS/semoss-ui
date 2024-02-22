@@ -48,7 +48,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
             ];
         }).get();
 
-        const [frameHeaderss, setFrameHeaderss] = useState<{
+        const [frameHeaders, setFrameHeaders] = useState<{
             loading: boolean;
             columns: ColumnInfo[];
         }>({
@@ -78,7 +78,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                 }),
             );
 
-            setFrameHeaderss({
+            setFrameHeaders({
                 loading: false,
                 columns: columns,
             });
@@ -95,7 +95,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                 disabled={disabled}
                 disableClearable
                 size="small"
-                loading={frameHeaderss.loading}
+                loading={frameHeaders.loading}
                 value={
                     multiple
                         ? (selectedColumns as ColumnInfo[])
@@ -106,7 +106,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                 onChange={(_, newValue: ColumnInfo[] | ColumnInfo) => {
                     onChange(newValue);
                 }}
-                options={frameHeaderss.columns}
+                options={frameHeaders?.columns ?? []}
                 isOptionEqualToValue={(
                     option: ColumnInfo,
                     value: ColumnInfo,
