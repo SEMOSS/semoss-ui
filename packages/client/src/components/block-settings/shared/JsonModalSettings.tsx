@@ -69,7 +69,6 @@ export const JsonModalSettings = observer(
 
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
-            console.log('in useMemo');
             return computed(() => {
                 if (!data) {
                     return '';
