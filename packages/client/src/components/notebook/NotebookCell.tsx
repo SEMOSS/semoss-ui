@@ -37,11 +37,17 @@ const StyledCard = styled(Card, {
     cursor: isCardCellSelected ? 'inherit' : 'pointer',
 }));
 
-const StyleCardContent = styled(Card.Content, {
+const StyledCardContent = styled(Card.Content, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
 })<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
     margin: '0!important',
     padding: '0!important',
+    pointerEvents: isCardCellSelected ? 'inherit' : 'none',
+}));
+
+const StyledCardActions = styled(Card.Actions, {
+    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
+})<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
     pointerEvents: isCardCellSelected ? 'inherit' : 'none',
 }));
 
@@ -79,13 +85,6 @@ const StyledStatusChip = styled(Chip, {
 const StyledIdChip = styled(Chip)(({ theme }) => ({
     backgroundColor: theme.palette.grey[300],
     height: theme.spacing(3.5),
-}));
-
-const StyledJson = styled('pre')(({ theme }) => ({
-    ...theme.typography.body2,
-    textWrap: 'wrap',
-    maxHeight: '200px',
-    overflowY: 'scroll',
 }));
 
 const StyledSidebarStack = styled(Stack)(() => ({
@@ -405,9 +404,10 @@ export const NotebookCell = observer(
                         }
                         onClick={(e) => {
                             notebook.selectCell(cell.query.id, cell.id);
+                            console.log('in card onclick');
                         }}
                     >
-                        <StyleCardContent
+                        <StyledCardContent
                             isCardCellSelected={
                                 (notebook?.selectedCell?.id ?? '') == cell.id
                             }
@@ -423,9 +423,13 @@ export const NotebookCell = observer(
                                 <Stack>{renderedRunActionButton}</Stack>
                                 {renderedInput}
                             </Stack>
-                        </StyleCardContent>
+                        </StyledCardContent>
                         <StyledDivider />
-                        <Card.Actions>
+                        <StyledCardActions
+                            isCardCellSelected={
+                                (notebook?.selectedCell?.id ?? '') == cell.id
+                            }
+                        >
                             <Stack
                                 spacing={2}
                                 width="100%"
@@ -547,7 +551,7 @@ export const NotebookCell = observer(
                                     </>
                                 )}
                             </Stack>
-                        </Card.Actions>
+                        </StyledCardActions>
                     </StyledCard>
                 </Stack>
                 <Collapse in={(notebook?.selectedCell?.id ?? '') === cell.id}>

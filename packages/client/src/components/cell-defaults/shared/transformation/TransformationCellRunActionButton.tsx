@@ -25,10 +25,8 @@ export const TransformationCellRunActionButton: CellComponent<
     const checkFieldsValid = (object: object): void | boolean => {
         for (const value of Object.values(object)) {
             if (!Array.isArray(value) && typeof value == 'object') {
-                console.log('in first');
                 return checkFieldsValid(value);
             } else if (!value || (Array.isArray(value) && !value.length)) {
-                console.log('returning false');
                 return false;
             }
         }
