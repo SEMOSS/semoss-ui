@@ -78,7 +78,6 @@ export const UppercaseTransformationCellInput: CellComponent<
                         cellTransformation.parameters.columns ?? []
                     }
                     multiple
-                    insightId={state.insightId}
                     columnTypes={['STRING']}
                     onChange={(newColumns: ColumnInfo[]) => {
                         state.dispatch({

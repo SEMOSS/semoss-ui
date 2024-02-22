@@ -404,7 +404,6 @@ export const NotebookCell = observer(
                         }
                         onClick={(e) => {
                             notebook.selectCell(cell.query.id, cell.id);
-                            console.log('in card onclick');
                         }}
                     >
                         <StyledCardContent

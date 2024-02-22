@@ -99,7 +99,6 @@ export const UpdateRowTransformationCellInput: CellComponent<
                                 dataType: '',
                             }
                         }
-                        insightId={state.insightId}
                         onChange={(newColumn: ColumnInfo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
@@ -183,7 +182,6 @@ export const UpdateRowTransformationCellInput: CellComponent<
                                 dataType: '',
                             }
                         }
-                        insightId={state.insightId}
                         onChange={(newColumn: ColumnInfo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,

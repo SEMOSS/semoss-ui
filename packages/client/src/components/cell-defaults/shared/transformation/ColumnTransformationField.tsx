@@ -6,6 +6,7 @@ import { Autocomplete } from '@mui/material';
 import { runPixel } from '@/api';
 import { CellState } from '@/stores';
 import { TransformationTargetCell, ColumnInfo } from './transformation.types';
+import { useBlocksPixel } from '@/hooks/useBlocksPixel';
 
 interface FrameHeaderInfo {
     headers: {
@@ -18,7 +19,6 @@ export type ColumnTransformationFieldComponent = (props: {
     cell: CellState;
     selectedColumns: ColumnInfo[] | ColumnInfo;
     columnTypes?: string[];
-    insightId: string;
     multiple?: boolean;
     label?: string;
     disabled?: boolean;
@@ -31,7 +31,6 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
             cell,
             selectedColumns,
             columnTypes = undefined,
-            insightId,
             multiple = false,
             label = undefined,
             disabled = false,
@@ -49,7 +48,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
             ];
         }).get();
 
-        const [frameColumns, setFrameColumns] = useState<{
+        const [frameHeaderss, setFrameHeaderss] = useState<{
             loading: boolean;
             columns: ColumnInfo[];
         }>({
@@ -57,39 +56,37 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
             columns: [],
         });
 
-        useEffect(() => {
-            const fetchHeaders = async () => {
-                let columns = [];
-                try {
-                    const response = await runPixel<
-                        [{ headerInfo: FrameHeaderInfo }]
-                    >(
-                        `META | ${frameVariableName} | FrameHeaders (${
-                            columnTypes
-                                ? `headerTypes = ${JSON.stringify(columnTypes)}`
-                                : ''
-                        });`,
-                        insightId,
-                    );
-                    columns =
-                        response.pixelReturn[0].output.headerInfo.headers.map(
-                            (header) => ({
-                                name: header.alias,
-                                dataType: header.dataType,
-                            }),
-                        );
-                } catch (e) {
-                    console.log(e);
-                } finally {
-                    setFrameColumns({
-                        loading: false,
-                        columns: columns,
-                    });
-                }
-            };
+        const frameHeaderPixelReturn = useBlocksPixel<{
+            headerInfo: FrameHeaderInfo;
+        }>(
+            `META | ${frameVariableName} | FrameHeaders (${
+                columnTypes
+                    ? `headerTypes = ${JSON.stringify(columnTypes)}`
+                    : ''
+            });`,
+        );
 
+        useEffect(() => {
+            if (frameHeaderPixelReturn.status !== 'SUCCESS') {
+                return;
+            }
+
+            const columns = frameHeaderPixelReturn.data.headerInfo.headers.map(
+                (header) => ({
+                    name: header.alias,
+                    dataType: header.dataType,
+                }),
+            );
+
+            setFrameHeaderss({
+                loading: false,
+                columns: columns,
+            });
+        }, [frameHeaderPixelReturn.status, frameHeaderPixelReturn.data]);
+
+        useEffect(() => {
             if (targetCell && targetCell.output) {
-                fetchHeaders();
+                frameHeaderPixelReturn.refresh();
             }
         }, [targetCell ? targetCell.output : null]);
 
@@ -98,7 +95,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                 disabled={disabled}
                 disableClearable
                 size="small"
-                loading={frameColumns.loading}
+                loading={frameHeaderss.loading}
                 value={
                     multiple
                         ? (selectedColumns as ColumnInfo[])
@@ -109,7 +106,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                 onChange={(_, newValue: ColumnInfo[] | ColumnInfo) => {
                     onChange(newValue);
                 }}
-                options={frameColumns.columns}
+                options={frameHeaderss.columns}
                 isOptionEqualToValue={(
                     option: ColumnInfo,
                     value: ColumnInfo,
