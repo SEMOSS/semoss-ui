@@ -110,6 +110,12 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
                     onChange(newValue);
                 }}
                 options={frameColumns.columns}
+                isOptionEqualToValue={(
+                    option: ColumnInfo,
+                    value: ColumnInfo,
+                ) => {
+                    return option.name === value.name;
+                }}
                 getOptionLabel={(option: ColumnInfo) => option.name}
                 renderInput={(params) => (
                     <TextField

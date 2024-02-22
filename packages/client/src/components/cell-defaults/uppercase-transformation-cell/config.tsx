@@ -7,9 +7,9 @@ import {
     TransformationCellOutput,
     Transformation,
     TransformationTargetCell,
+    TransformationCellRunActionButton,
 } from '../shared';
 import { UppercaseTransformationCellInput } from './UppercaseTransformationCellInput';
-import { UppercaseTransformationCellRunActionButton } from './UppercaseTransformationCellRunActionButton';
 
 export interface UppercaseTransformationDef
     extends TransformationDef<'uppercase'> {
@@ -55,7 +55,8 @@ export const UppercaseTransformationCell: Cell<UppercaseTransformationCellDef> =
             title: TransformationCellTitle as CellComponent<UppercaseTransformationCellDef>,
             input: UppercaseTransformationCellInput,
             output: TransformationCellOutput as CellComponent<UppercaseTransformationCellDef>,
-            runActionButton: UppercaseTransformationCellRunActionButton,
+            runActionButton:
+                TransformationCellRunActionButton as CellComponent<UppercaseTransformationCellDef>,
         },
         toPixel: ({ transformation, targetCell }) => {
             const columnNames = transformation.parameters.columns.map(

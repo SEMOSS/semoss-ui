@@ -7,10 +7,10 @@ import {
     TransformationCellOutput,
     Transformation,
     TransformationTargetCell,
+    TransformationCellRunActionButton,
     operation,
 } from '../shared';
 import { UpdateRowTransformationCellInput } from './UpdateRowTransformationCellInput';
-import { UpdateRowTransformationCellRunActionButton } from './UpdateRowTransformationCellRunActionButton';
 
 export interface UpdateRowTransformationDef
     extends TransformationDef<'update-row'> {
@@ -70,7 +70,8 @@ export const UpdateRowTransformationCell: Cell<UpdateRowTransformationCellDef> =
             title: TransformationCellTitle as CellComponent<UpdateRowTransformationCellDef>,
             input: UpdateRowTransformationCellInput,
             output: TransformationCellOutput as CellComponent<UpdateRowTransformationCellDef>,
-            runActionButton: UpdateRowTransformationCellRunActionButton,
+            runActionButton:
+                TransformationCellRunActionButton as CellComponent<UpdateRowTransformationCellDef>,
         },
         toPixel: ({ transformation, targetCell }) => {
             return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;
