@@ -109,6 +109,13 @@ export const NotebookAddCellButton = observer(
                     parameters: DefaultCellTypes[widget].parameters,
                 };
 
+                if (widget === QueryImportCell.widget) {
+                    config.parameters = {
+                        ...DefaultCellTypes[widget].parameters,
+                        frameVariableName: `FRAME_${newCellId}`,
+                    };
+                }
+
                 if (
                     previousCellId &&
                     state.queries[query.id].cells[previousCellId].cellType
@@ -118,13 +125,10 @@ export const NotebookAddCellButton = observer(
                     const previousCellType =
                         state.queries[query.id].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
-                    config = {
-                        widget: DefaultCellTypes[CodeCell.widget].widget,
-                        parameters: {
-                            ...DefaultCellTypes[CodeCell.widget].parameters,
-                            type: previousCellType,
-                        },
-                    } as NewCellAction['payload']['config'];
+                    config.parameters = {
+                        ...DefaultCellTypes[widget].parameters,
+                        type: previousCellType,
+                    };
                 }
 
                 // copy and add the step
