@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import Editor from '@monaco-editor/react';
-import { styled } from '@semoss/ui';
 
+import Editor from '@monaco-editor/react';
+import { DiffEditor } from '@monaco-editor/react';
+
+import { styled } from '@semoss/ui';
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
@@ -10,6 +12,13 @@ import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.con
 
 import { useLLM } from '@/hooks';
 import { runPixel } from '@/api';
+
+import { LoadingScreen } from '@/components/ui';
+
+import * as monaco from 'monaco-editor';
+
+// best documentation on component versions of monaco editor and diffeditor
+// https://www.npmjs.com/package/@monaco-editor/react
 
 const EditorLineHeight = 19;
 
@@ -25,6 +34,10 @@ const StyledContent = styled('div', {
         overflow: 'visible',
     },
     pointerEvents: disabled ? 'none' : 'unset',
+
+    // // optional solution to scrolling bugginess
+    // maxHeight: "50vh",
+    // overflowY: "auto",
 }));
 
 const EditorLanguages = {
@@ -38,29 +51,36 @@ let completionItemProviders = {};
 
 export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
+    const monacoRef = useRef(null);
+    const selectionRef = useRef(null);
+    const LLMReturnRef = useRef('');
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
 
+    const [LLMLoading, setLLMLoading] = useState(false);
+    const [diffEditMode, setDiffEditMode] = useState(false);
+    const wordWrapRef = useRef(false);
+
+    const [oldContentDiffEdit, setOldContentDiffEdit] = useState('');
+    const [newContentDiffEdit, setNewContentDiffEdit] = useState('');
+
+    // // unclear how we want to manage model ID
     const modelIdRef = useRef('3def3347-30e1-4028-86a0-83a1e5ed619c');
     // const fileTypeRef = useRef('');
-    // const { modelId } = useLLM();
-
+    // const { modelId } = useLLM(); // currently throwing error
     // useEffect(() => {
     //     modelIdRef.current = modelId;
     // }, [modelId]);
 
     const promptLLM = async (inputPrompt) => {
-        // setLLMLoading(true);
-
-        // ideally add filetype to LLM pixel so it does not have to be in prompt string
-        // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
+        setLLMLoading(true);
         const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
 
         try {
             const res = await runPixel(pixel);
-            // setLLMLoading(false);
+            setLLMLoading(false);
 
             const LLMResponse = res.pixelReturn[0].output['response'];
             let trimmedStarterCode = LLMResponse;
@@ -72,21 +92,91 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
             return trimmedStarterCode;
         } catch {
-            // setLLMLoading(false);
-            // notification.add({
-            //     color: 'error',
-            //     message: 'Failed response from AI Code Generator',
-            // });
+            setLLMLoading(false);
+            console.error('Failed response from AI Code Generator');
             return '';
         }
     };
 
+    const handleDiffEditorMount = (editor, monaco) => {
+        monaco.editor.addEditorAction({
+            contextMenuGroupId: '1_modification',
+            contextMenuOrder: 2,
+            id: 'toggle-word-wrap',
+            label: 'Toggle Word Wrap',
+            keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+
+            run: async (editor) => {
+                wordWrapRef.current = !wordWrapRef.current;
+                editor.updateOptions({
+                    wordWrap: wordWrapRef.current ? 'on' : 'off',
+                });
+            },
+        });
+
+        // monaco.editor.addEditorAction(toggleWordWrapAction);
+        // // using defineTheme to apply limited custom styling
+        // monaco.editor.defineTheme('default', {
+        //     base: 'vs-dark',
+        //     inherit: true,
+        // rules: [
+        //   {
+        //     token: "identifier",
+        //     foreground: "FF0000"
+        //   },
+        //   {
+        //     token: "identifier.function",
+        //     foreground: "DCDCAA"
+        //   },
+        //   {
+        //     token: "type",
+        //     foreground: "1AAFB0"
+        //   },
+        //   { token: 'added', foreground: '008000', fontStyle: 'bold' }, // Color for added lines
+        //   { token: 'removed', foreground: 'FF0000', fontStyle: 'bold' }, // Color for removed lines
+        //   { token: 'modified', foreground: '0000FF', fontStyle: 'bold' } // Color for modified lines
+        // ],
+        // colors: {}
+        // });
+        // monaco.editor.setTheme('default')
+    };
+
     const handleMount = (editor, monaco) => {
+        // if (selectionRef.current && LLMReturnRef.current) {
+        //     monaco.editor.current.setSelection(
+        //         new monaco.Range(
+        //             selectionRef.current.endLineNumber + 2,
+        //             1,
+        //             selectionRef.current.endLineNumber +
+        //                 3 +
+        //                 LLMReturnRef.current.split('\n').length,
+        //             1,
+        //         ),
+        //     );
+        // }
+
         // first time you set the height based on content Height
         editorRef.current = editor;
+        monacoRef.current = monaco;
         const contentHeight = editor.getContentHeight();
         setEditorHeight(contentHeight);
         // update the action
+
+        monaco.editor.addEditorAction({
+            contextMenuGroupId: '1_modification',
+            contextMenuOrder: 2,
+            id: 'toggle-word-wrap',
+            label: 'Toggle Word Wrap',
+            keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+
+            run: async (editor) => {
+                wordWrapRef.current = !wordWrapRef.current;
+                editor.updateOptions({
+                    wordWrap: wordWrapRef.current ? 'on' : 'off',
+                });
+            },
+        });
+
         editor.addAction({
             id: 'run',
             label: 'Run',
@@ -128,16 +218,22 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
             run: async (editor) => {
                 const selection = editor.getSelection();
+                selectionRef.current = selection;
                 const selectedText = editor
                     .getModel()
                     .getValueInRange(selection);
 
                 const LLMReturnText = await promptLLM(
-                    // `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
                     `Create code for a .${
                         EditorLanguages[cell.parameters.type]
                     } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
                 );
+                LLMReturnRef.current = LLMReturnText;
+
+                setOldContentDiffEdit(editor.getModel().getValue());
+                // set diffedit old content
+                // set diffedit new content
+                // go into diffedit mode
 
                 editor.executeEdits('custom-action', [
                     {
@@ -152,16 +248,21 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     },
                 ]);
 
-                editor.setSelection(
-                    new monaco.Range(
-                        selection.endLineNumber + 3,
-                        1,
-                        selection.endLineNumber +
-                            2 +
-                            LLMReturnText.split('\n').length,
-                        1,
-                    ),
-                );
+                setNewContentDiffEdit(editor.getModel().getValue());
+
+                setDiffEditMode(true);
+
+                // isnt retained after diffedit
+                // editor.setSelection(
+                //     new monaco.Range(
+                //         selection.endLineNumber + 2,
+                //         1,
+                //         selection.endLineNumber +
+                //             3 +
+                //             LLMReturnText.split('\n').length,
+                //         1,
+                //     ),
+                // );
             },
         });
 
@@ -346,25 +447,76 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         });
     };
 
+    const acceptDiffEditHandler = () => {
+        setDiffEditMode(false);
+    };
+
+    const rejectDiffEditHandler = () => {
+        setDiffEditMode(false);
+    };
+
     return (
-        <StyledContent disabled={!isExpanded}>
-            <Editor
-                width="100%"
-                height={isExpanded ? editorHeight : EditorLineHeight}
-                value={cell.parameters.code}
-                language={EditorLanguages[cell.parameters.type]}
-                options={{
-                    lineNumbers: 'on',
-                    readOnly: false,
-                    minimap: { enabled: false },
-                    automaticLayout: true,
-                    scrollBeyondLastLine: false,
-                    lineHeight: EditorLineHeight,
-                    overviewRulerBorder: false,
-                }}
-                onChange={handleChange}
-                onMount={handleMount}
-            />
-        </StyledContent>
+        <>
+            <StyledContent disabled={!isExpanded}>
+                {LLMLoading && (
+                    <LoadingScreen.Trigger description="Generating..." />
+                )}
+                {/* may need to add switch statement here to render seperate diffEdit component */}
+
+                {diffEditMode && (
+                    <DiffEditor
+                        // theme={customTheme}
+                        width="100%"
+                        // height={isExpanded ? editorHeight : EditorLineHeight}
+                        height="500px"
+                        // original={cell.parameters.code}
+                        original={oldContentDiffEdit}
+                        // modified={`some new text\n\n${cell.parameters.code}`}
+                        modified={newContentDiffEdit}
+                        language={EditorLanguages[cell.parameters.type]}
+                        options={{
+                            lineNumbers: 'on',
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            automaticLayout: true,
+                            scrollBeyondLastLine: false,
+                            lineHeight: EditorLineHeight,
+                            overviewRulerBorder: false,
+                            // inDiffEditor: true, // this is valid but only seems to lock the editor
+                        }}
+                        // onChange={handleChange}
+                        onMount={handleDiffEditorMount}
+                    />
+                )}
+
+                {diffEditMode && (
+                    <div>
+                        <button onClick={acceptDiffEditHandler}>accept</button>
+                        <button onClick={rejectDiffEditHandler}>reject</button>
+                    </div>
+                )}
+
+                {!diffEditMode && (
+                    <Editor
+                        width="100%"
+                        height={isExpanded ? editorHeight : EditorLineHeight}
+                        value={cell.parameters.code}
+                        language={EditorLanguages[cell.parameters.type]}
+                        options={{
+                            lineNumbers: 'on',
+                            readOnly: false,
+                            minimap: { enabled: false },
+                            automaticLayout: true,
+                            scrollBeyondLastLine: false,
+                            lineHeight: EditorLineHeight,
+                            overviewRulerBorder: false,
+                            // inDiffEditor: true, // this is valid but only seems to lock the editor
+                        }}
+                        onChange={handleChange}
+                        onMount={handleMount}
+                    />
+                )}
+            </StyledContent>
+        </>
     );
 };
