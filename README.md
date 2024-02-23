@@ -1,8 +1,10 @@
 # First-Time Semoss-UI Setup Instructions
 
-1. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@8.
+1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
-2. create a `.env.local` file and populate with the following, MODULE may have to be adjusted for your project specific endpoint.
+2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@8.
+
+3. create a `.env.local` file and populate with the following. **Do not change the .env**
 
 ```
     ENDPOINT=../../..
@@ -14,18 +16,21 @@
     NODE_ENV=development
 ```
 
-3. Run `pnpm install` in root directory.
+**If you are coming from another client project (within SEMOSS)**, MODULE may have to be adjusted for that client specific endpoint, consult with your client project lead for details on that endpoint.
 
-4. Build our component library, go to `packages/ui` and run `pnpm run build`.
+4. Run `pnpm install` in root directory.
 
-5. Upon completion of the build on our component library, navigate back to our root directory and run `pnpm run dev:client`
+5. Build our component library, go to `packages/ui` and run `pnpm run build`.
+
+6. Upon completion of the build on our component library, navigate back to our root directory and run `pnpm run dev:client`
 
 Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
 
 ## Common Errors
- `Cannot find module @semoss/ui` - This error indicates that our component library is not fully built out which is a required dependency in SemossUI.  To get around this do these steps rerun steps **4** and **5**.
+ 1. `Cannot find module @semoss/ui` - This error indicates that our component library is not fully built out which is a required dependency in SemossUI.  To get around this do these steps rerun steps **4** and **5**.
 
+ 2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
 
 # Contributions and Standardized Commits 
 

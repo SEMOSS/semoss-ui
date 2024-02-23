@@ -283,7 +283,9 @@ export class CellState<D extends CellDef = CellDef> {
             }
 
             // start the loading screen
-            this._store.isLoading = true;
+            runInAction(() => {
+                this._store.isLoading = true;
+            });
 
             const now = new Date();
             this._store.executionStart = `${now.toDateString()} ${now.toLocaleTimeString(
@@ -326,10 +328,10 @@ export class CellState<D extends CellDef = CellDef> {
         } finally {
             const end = new Date();
             const start = new Date(this._store.executionStart);
-            this._store.executionDurationMilliseconds =
-                end.getTime() - start.getTime();
-            // stop the loading screen
             runInAction(() => {
+                this._store.executionDurationMilliseconds =
+                    end.getTime() - start.getTime();
+                // stop the loading screen
                 this._store.isLoading = false;
             });
         }

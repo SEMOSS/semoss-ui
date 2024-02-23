@@ -1,4 +1,5 @@
 import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
 import { styled, Button, Menu, MenuProps } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
@@ -11,6 +12,9 @@ import {
 import { Add } from '@mui/icons-material';
 import { DefaultCellTypes } from '../cell-defaults';
 import { useState } from 'react';
+import { CodeCell } from '../cell-defaults/code-cell';
+import { QueryImportCell } from '../cell-defaults/query-import-cell';
+import { UppercaseTransformationCell } from '../cell-defaults/uppercase-transformation-cell';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -42,12 +46,56 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
 }));
 
+interface AddCellOption {
+    display: string;
+    defaultCellType: string;
+}
+const AddCellOptions: Record<string, AddCellOption> = {
+    code: {
+        display: 'Code',
+        defaultCellType: CodeCell.widget,
+    },
+    'query-import': {
+        display: 'Query Import',
+        defaultCellType: QueryImportCell.widget,
+    },
+    transformation: {
+        display: 'Transformation',
+        defaultCellType: UppercaseTransformationCell.widget, // TODO: figure out what the most popular transformation is and use as default
+    },
+};
+
 export const NotebookAddCellButton = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
+
+        const cellTypeOptions = computed(() => {
+            let options = { ...AddCellOptions };
+            // transformation cell types can only be added if there exists a query-import cell before it
+            if (!previousCellId) {
+                delete options['transformation'];
+            } else {
+                const previousCellIndex = query.list.indexOf(previousCellId);
+                let hasFrameVariable = false;
+                for (let index = 0; index <= previousCellIndex; index++) {
+                    if (
+                        query.cells[query.list[index]].cellType.widget ===
+                        'query-import'
+                    ) {
+                        hasFrameVariable = true;
+                        break;
+                    }
+                }
+                if (!hasFrameVariable) {
+                    delete options['transformation'];
+                }
+            }
+
+            return Object.values(options);
+        }).get();
 
         /**
          * Create a new cell
@@ -61,25 +109,29 @@ export const NotebookAddCellButton = observer(
                     parameters: DefaultCellTypes[widget].parameters,
                 };
 
+                if (widget === QueryImportCell.widget) {
+                    config.parameters = {
+                        ...DefaultCellTypes[widget].parameters,
+                        frameVariableName: `FRAME_${newCellId}`,
+                    };
+                }
+
                 if (
                     previousCellId &&
                     state.queries[query.id].cells[previousCellId].cellType
                         .widget === widget &&
-                    widget === 'code'
+                    widget === CodeCell.widget
                 ) {
                     const previousCellType =
                         state.queries[query.id].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
-                    config = {
-                        widget: DefaultCellTypes['code'].widget,
-                        parameters: {
-                            ...DefaultCellTypes['code'].parameters,
-                            type: previousCellType,
-                        },
-                    } as NewCellAction['payload']['config'];
+                    config.parameters = {
+                        ...DefaultCellTypes[widget].parameters,
+                        type: previousCellType,
+                    };
                 }
 
-                // copy and add the step to the end
+                // copy and add the step
                 state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
@@ -117,18 +169,18 @@ export const NotebookAddCellButton = observer(
                     }}
                 >
                     {Array.from(
-                        Object.keys(DefaultCellTypes),
-                        (widget, index) => {
+                        cellTypeOptions,
+                        ({ display, defaultCellType }, index) => {
                             return (
                                 <StyledMenuItem
                                     key={index}
-                                    value={widget}
+                                    value={display}
                                     onClick={() => {
-                                        appendCell(widget);
+                                        appendCell(defaultCellType);
                                         setAnchorEl(null);
                                     }}
                                 >
-                                    {widget.replaceAll('-', ' ')}
+                                    {display}
                                 </StyledMenuItem>
                             );
                         },

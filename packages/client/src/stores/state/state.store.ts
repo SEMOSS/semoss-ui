@@ -223,7 +223,7 @@ export class StateStore {
             } else if (ActionMessages.ADD_BLOCK === action.message) {
                 const { json, position } = action.payload;
 
-                this.addBlock(json, position);
+                return this.addBlock(json, position);
             } else if (ActionMessages.MOVE_BLOCK === action.message) {
                 const { id, position } = action.payload;
 
@@ -562,11 +562,12 @@ export class StateStore {
      * Create a block and add it to the tree
      * @param json - json of the block that we are adding
      * @param position - where is the block going
+     * @returns id of new block
      */
     private addBlock = (
         json: BlockJSON,
         position?: AddBlockAction['payload']['position'],
-    ): void => {
+    ): string => {
         // generate the block
         const block = this.generateBlock(json);
 
@@ -603,6 +604,7 @@ export class StateStore {
                 block.id,
             );
         }
+        return block.id;
     };
 
     /**
@@ -806,9 +808,11 @@ export class StateStore {
         );
 
         if (!config.cells.length) {
+            const newCellId = `${Math.floor(Math.random() * 100000)}`;
+
             this.newCell(
                 queryId,
-                `${queryId}-cell`,
+                newCellId,
                 {
                     parameters: {
                         code: '',
@@ -910,6 +914,24 @@ export class StateStore {
 
         // add the cell
         q._processDeleteCell(cellId);
+
+        // always have at least one cell
+        if (q.list.length === 0) {
+            const newCellId = `${Math.floor(Math.random() * 100000)}`;
+
+            this.newCell(
+                queryId,
+                newCellId,
+                {
+                    parameters: {
+                        code: '',
+                        type: 'pixel',
+                    },
+                    widget: 'code',
+                } as Omit<CellStateConfig, 'id'>,
+                '',
+            );
+        }
     };
 
     /**

@@ -1,6 +1,7 @@
 import { BlockJSON } from '@/stores';
 import {
     Addchart,
+    AspectRatio,
     BarChart,
     BlurLinear,
     CheckBox,
@@ -168,6 +169,21 @@ export const MenuBlocks: BlocksMenuItem[] = [
         },
     },
     {
+        key: 'iframe',
+        display: 'IFrame',
+        blockJson: {
+            widget: 'iframe',
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         key: 'image',
         display: 'Image',
         blockJson: {
@@ -228,6 +244,7 @@ export const MenuBlocks: BlocksMenuItem[] = [
                     padding: '4px',
                     whiteSpace: 'pre-line',
                     textOverflow: 'ellipsis',
+                    textDecoration: 'none',
                 },
                 href: '',
                 text: 'Insert text',
@@ -249,26 +266,6 @@ export const MenuBlocks: BlocksMenuItem[] = [
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        key: 'page',
-        display: 'Page',
-        blockJson: {
-            widget: 'page',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '24px',
-                    gap: '8px',
-                    fontFamily: 'roboto',
-                },
-            },
-            listeners: {},
-            slots: {
-                content: [],
-            },
         },
     },
     {
@@ -442,6 +439,26 @@ export const MenuBlocks: BlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // {
+    //     key: 'page',
+    //     display: 'Page',
+    //     blockJson: {
+    //         widget: 'page',
+    //         data: {
+    //             style: {
+    //                 display: 'flex',
+    //                 flexDirection: 'column',
+    //                 padding: '24px',
+    //                 gap: '8px',
+    //                 fontFamily: 'roboto',
+    //             },
+    //         },
+    //         listeners: {},
+    //         slots: {
+    //             content: [],
+    //         },
+    //     },
+    // },
 ];
 
 export const getIconForMenuItemByKey = (key: string) => {
@@ -457,6 +474,8 @@ export const getIconForMenuItemByKey = (key: string) => {
             return HighlightAlt;
         case 'grouped-bar-chart':
             return Addchart;
+        case 'iframe':
+            return AspectRatio;
         case 'image':
             return PanoramaOutlined;
         case 'input':

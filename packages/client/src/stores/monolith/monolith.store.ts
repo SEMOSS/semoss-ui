@@ -109,10 +109,10 @@ export class MonolithStore {
      * @param pixel - pixel to execute
      */
     //TODO: switch to extend unknown
-    async runQuery<O extends any[] | []>(pixel: string) {
+    async runQuery<O extends any[] | []>(pixel: string, insightId?: string) {
         const { configStore } = this._root;
 
-        return this.run<O>(configStore.store.insightID, pixel);
+        return this.run<O>(insightId ?? configStore.store.insightID, pixel);
     }
 
     /**

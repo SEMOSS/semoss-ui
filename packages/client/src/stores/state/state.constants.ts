@@ -20,66 +20,66 @@ export const ACTIONS_DISPLAY = {
 };
 
 export const DEFAULT_TEMPLATE: Template[] = [
-    {
-        name: 'Hello World',
-        description: 'A simple starter app',
-        image: HELLOWORLD,
-        author: 'SYSTEM',
-        lastUpdatedDate: new Date().toISOString(),
-        tags: [],
-        state: {
-            queries: {},
-            blocks: {
-                'page-1': {
-                    id: 'page-1',
-                    widget: 'page',
-                    parent: null,
-                    data: {
-                        style: PageBlockConfig.data.style,
-                    },
-                    listeners: {},
-                    slots: {
-                        content: {
-                            name: 'content',
-                            children: ['container-1'],
-                        },
-                    },
-                },
-                'container-1': {
-                    id: 'container-1',
-                    widget: 'container',
-                    parent: {
-                        id: 'page-1',
-                        slot: 'content',
-                    },
-                    data: {
-                        style: ContainerBlockConfig.data.style,
-                    },
-                    listeners: {},
-                    slots: {
-                        children: {
-                            name: 'children',
-                            children: ['text-1'],
-                        },
-                    },
-                },
-                'text-1': {
-                    id: 'text-1',
-                    widget: 'text',
-                    parent: {
-                        id: 'container-1',
-                        slot: 'children',
-                    },
-                    data: {
-                        style: TextBlockConfig.data.style,
-                        text: 'Hello World',
-                    },
-                    listeners: {},
-                    slots: {},
-                },
-            },
-        },
-    },
+    // {
+    //     name: 'Hello World',
+    //     description: 'A simple starter app',
+    //     image: HELLOWORLD,
+    //     author: 'SYSTEM',
+    //     lastUpdatedDate: new Date().toISOString(),
+    //     tags: [],
+    //     state: {
+    //         queries: {},
+    //         blocks: {
+    //             'page-1': {
+    //                 id: 'page-1',
+    //                 widget: 'page',
+    //                 parent: null,
+    //                 data: {
+    //                     style: PageBlockConfig.data.style,
+    //                 },
+    //                 listeners: {},
+    //                 slots: {
+    //                     content: {
+    //                         name: 'content',
+    //                         children: ['container-1'],
+    //                     },
+    //                 },
+    //             },
+    //             'container-1': {
+    //                 id: 'container-1',
+    //                 widget: 'container',
+    //                 parent: {
+    //                     id: 'page-1',
+    //                     slot: 'content',
+    //                 },
+    //                 data: {
+    //                     style: ContainerBlockConfig.data.style,
+    //                 },
+    //                 listeners: {},
+    //                 slots: {
+    //                     children: {
+    //                         name: 'children',
+    //                         children: ['text-1'],
+    //                     },
+    //                 },
+    //             },
+    //             'text-1': {
+    //                 id: 'text-1',
+    //                 widget: 'text',
+    //                 parent: {
+    //                     id: 'container-1',
+    //                     slot: 'children',
+    //                 },
+    //                 data: {
+    //                     style: TextBlockConfig.data.style,
+    //                     text: 'Hello World',
+    //                 },
+    //                 listeners: {},
+    //                 slots: {},
+    //             },
+    //         },
+    //     },
+    // },
     {
         name: 'Landing Page',
         description: 'A simple starter landing page with navigation cards',

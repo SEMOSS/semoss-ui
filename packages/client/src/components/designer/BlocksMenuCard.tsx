@@ -55,6 +55,9 @@ export const BlocksMenuCard = observer(
                 return;
             }
 
+            // ID of newly added block
+            let id = '';
+
             // apply the action
             const placeholderAction = designer.drag.placeholderAction;
             if (placeholderAction) {
@@ -65,7 +68,7 @@ export const BlocksMenuCard = observer(
                     const siblingWidget = state.getBlock(placeholderAction.id);
 
                     if (siblingWidget?.parent) {
-                        state.dispatch({
+                        id = state.dispatch({
                             message: ActionMessages.ADD_BLOCK,
                             payload: {
                                 json: props.menuItem.blockJson,
@@ -79,7 +82,7 @@ export const BlocksMenuCard = observer(
                         });
                     }
                 } else if (placeholderAction.type === 'replace') {
-                    state.dispatch({
+                    id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: props.menuItem.blockJson,
@@ -98,8 +101,8 @@ export const BlocksMenuCard = observer(
             // clear the hovered
             designer.setHovered('');
 
-            // clear the selected
-            designer.setSelected('');
+            // set selected
+            designer.setSelected(id ? id : '');
 
             // set as active
             setLocal(false);
