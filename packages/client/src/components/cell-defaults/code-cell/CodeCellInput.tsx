@@ -18,9 +18,9 @@ const StyledContent = styled('div', {
     width: '100%',
     position: 'relative',
     display: 'flex',
-    '.monaco-editor': {
-        overflow: 'visible',
-    },
+    // '.monaco-editor': {
+    //     overflow: 'none',
+    // },
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
@@ -236,9 +236,11 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     const handleChange = (newValue: string) => {
-        // pad an extra line so autocomplete is visible
+        // set editor height to content height
+        // set max height to equivalent of 25 lines
+        const maxHeight = 25 * EditorLineHeight;
         setEditorHeight(
-            editorRef.current.getModel().getLineCount() * EditorLineHeight,
+            Math.min(editorRef.current.getContentHeight(), maxHeight),
         );
         if (cell.isLoading) {
             return;
@@ -255,11 +257,15 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         });
     };
 
+    const getHeight = () => {
+        return isExpanded ? editorHeight : EditorLineHeight;
+    };
+
     return (
         <StyledContent disabled={!isExpanded}>
             <Editor
                 width="100%"
-                height={isExpanded ? editorHeight : EditorLineHeight}
+                height={getHeight()}
                 value={cell.parameters.code}
                 language={EditorLanguages[cell.parameters.type]}
                 options={{
@@ -270,6 +276,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     scrollBeyondLastLine: false,
                     lineHeight: EditorLineHeight,
                     overviewRulerBorder: false,
+                    wordWrap: 'on',
                 }}
                 onChange={handleChange}
                 onMount={handleMount}
