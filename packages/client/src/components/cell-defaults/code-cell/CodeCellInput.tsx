@@ -3,7 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { DiffEditor } from '@monaco-editor/react';
 
-import { styled } from '@semoss/ui';
+import { styled, ButtonGroup, IconButton, Button } from '@semoss/ui';
+
+import { CheckCircle, Cancel } from '@mui/icons-material';
+
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
@@ -101,7 +104,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     const handleDiffEditorMount = (editor, monaco) => {
-        monaco.editor.addEditorAction({
+        editor.addAction({
             contextMenuGroupId: '1_modification',
             contextMenuOrder: 2,
             id: 'toggle-word-wrap',
@@ -158,7 +161,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         setEditorHeight(contentHeight);
         // update the action
 
-        monaco.editor.addEditorAction({
+        editor.addAction({
             contextMenuGroupId: '1_modification',
             contextMenuOrder: 2,
             id: 'toggle-word-wrap',
@@ -465,9 +468,23 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
                 {/* tempory accept reject buttons */}
                 {diffEditMode && (
-                    <div>
-                        <button onClick={acceptDiffEditHandler}>accept</button>
-                        <button onClick={rejectDiffEditHandler}>reject</button>
+                    <div style={{ marginLeft: '20px' }}>
+                        <IconButton
+                            title="Accept changes"
+                            size="medium"
+                            color="primary"
+                            onClick={acceptDiffEditHandler}
+                        >
+                            <CheckCircle />
+                        </IconButton>
+                        <IconButton
+                            title="Reject changes"
+                            size="medium"
+                            color="default"
+                            onClick={rejectDiffEditHandler}
+                        >
+                            <Cancel />
+                        </IconButton>
                     </div>
                 )}
 
