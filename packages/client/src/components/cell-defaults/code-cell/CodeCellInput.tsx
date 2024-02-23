@@ -228,9 +228,16 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             };
         });
 
-        const lineContentHeight =
-            editor.getModel().getLineCount() * EditorLineHeight;
-        setEditorHeight(Math.max(2 * EditorLineHeight, lineContentHeight));
+        const lines = editor.getModel().getLineCount();
+        const lineContentHeight = lines * EditorLineHeight;
+        const singleLineNoOverflow =
+            lines === 1 && lineContentHeight == editor.getContentHeight();
+        setEditorHeight(
+            Math.max(
+                (singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
+                lineContentHeight,
+            ),
+        );
     };
 
     const handleChange = (newValue: string) => {
