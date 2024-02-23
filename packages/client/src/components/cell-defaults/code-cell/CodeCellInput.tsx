@@ -66,6 +66,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const [oldContentDiffEdit, setOldContentDiffEdit] = useState('');
     const [newContentDiffEdit, setNewContentDiffEdit] = useState('');
 
+    const [isLLMRejected, setIsLLMRejected] = useState(false);
+
     // // unclear how we want to manage model ID
     const modelIdRef = useRef('3def3347-30e1-4028-86a0-83a1e5ed619c');
     // const fileTypeRef = useRef('');
@@ -114,24 +116,14 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             },
         });
 
-        // monaco.editor.addEditorAction(toggleWordWrapAction);
-        // // using defineTheme to apply limited custom styling
+        // // use defineTheme to apply limited custom styling if desired
         // monaco.editor.defineTheme('default', {
         //     base: 'vs-dark',
         //     inherit: true,
         // rules: [
-        //   {
-        //     token: "identifier",
-        //     foreground: "FF0000"
-        //   },
-        //   {
-        //     token: "identifier.function",
-        //     foreground: "DCDCAA"
-        //   },
-        //   {
-        //     token: "type",
-        //     foreground: "1AAFB0"
-        //   },
+        //   { token: "identifier", foreground: "FF0000" },
+        //   { token: "identifier.function", foreground: "DCDCAA" },
+        //   { token: "type", foreground: "1AAFB0" },
         //   { token: 'added', foreground: '008000', fontStyle: 'bold' }, // Color for added lines
         //   { token: 'removed', foreground: 'FF0000', fontStyle: 'bold' }, // Color for removed lines
         //   { token: 'modified', foreground: '0000FF', fontStyle: 'bold' } // Color for modified lines
@@ -142,18 +134,22 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     const handleMount = (editor, monaco) => {
+        // not working - should select new text after exiting diffeditor
         // if (selectionRef.current && LLMReturnRef.current) {
         //     monaco.editor.current.setSelection(
         //         new monaco.Range(
         //             selectionRef.current.endLineNumber + 2,
         //             1,
-        //             selectionRef.current.endLineNumber +
-        //                 3 +
-        //                 LLMReturnRef.current.split('\n').length,
-        //             1,
+        //             selectionRef.current.endLineNumber + 3 + LLMReturnRef.current.split('\n').length, 1,
         //         ),
         //     );
         // }
+
+        // if diffedit code has been rejected set to old editor content
+        if (isLLMRejected) {
+            editor.getModel().setValue(oldContentDiffEdit);
+            setIsLLMRejected(false);
+        }
 
         // first time you set the height based on content Height
         editorRef.current = editor;
@@ -231,9 +227,6 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 LLMReturnRef.current = LLMReturnText;
 
                 setOldContentDiffEdit(editor.getModel().getValue());
-                // set diffedit old content
-                // set diffedit new content
-                // go into diffedit mode
 
                 editor.executeEdits('custom-action', [
                     {
@@ -249,20 +242,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 ]);
 
                 setNewContentDiffEdit(editor.getModel().getValue());
-
                 setDiffEditMode(true);
-
-                // isnt retained after diffedit
-                // editor.setSelection(
-                //     new monaco.Range(
-                //         selection.endLineNumber + 2,
-                //         1,
-                //         selection.endLineNumber +
-                //             3 +
-                //             LLMReturnText.split('\n').length,
-                //         1,
-                //     ),
-                // );
             },
         });
 
@@ -452,6 +432,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     const rejectDiffEditHandler = () => {
+        setIsLLMRejected(true);
         setDiffEditMode(false);
     };
 
@@ -461,17 +442,12 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 {LLMLoading && (
                     <LoadingScreen.Trigger description="Generating..." />
                 )}
-                {/* may need to add switch statement here to render seperate diffEdit component */}
 
                 {diffEditMode && (
                     <DiffEditor
-                        // theme={customTheme}
                         width="100%"
-                        // height={isExpanded ? editorHeight : EditorLineHeight}
                         height="500px"
-                        // original={cell.parameters.code}
                         original={oldContentDiffEdit}
-                        // modified={`some new text\n\n${cell.parameters.code}`}
                         modified={newContentDiffEdit}
                         language={EditorLanguages[cell.parameters.type]}
                         options={{
@@ -482,13 +458,12 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             scrollBeyondLastLine: false,
                             lineHeight: EditorLineHeight,
                             overviewRulerBorder: false,
-                            // inDiffEditor: true, // this is valid but only seems to lock the editor
                         }}
-                        // onChange={handleChange}
                         onMount={handleDiffEditorMount}
                     />
                 )}
 
+                {/* tempory accept reject buttons */}
                 {diffEditMode && (
                     <div>
                         <button onClick={acceptDiffEditHandler}>accept</button>
@@ -510,7 +485,6 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             scrollBeyondLastLine: false,
                             lineHeight: EditorLineHeight,
                             overviewRulerBorder: false,
-                            // inDiffEditor: true, // this is valid but only seems to lock the editor
                         }}
                         onChange={handleChange}
                         onMount={handleMount}
