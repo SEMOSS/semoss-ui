@@ -18,9 +18,6 @@ const StyledContent = styled('div', {
     width: '100%',
     position: 'relative',
     display: 'flex',
-    // '.monaco-editor': {
-    //     overflow: 'none',
-    // },
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
@@ -41,10 +38,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const { state, notebook } = useBlocks();
 
     const handleMount = (editor, monaco) => {
-        // first time you set the height based on content Height
         editorRef.current = editor;
-        const contentHeight = editor.getContentHeight();
-        setEditorHeight(contentHeight);
         // update the action
         editor.addAction({
             id: 'run',
@@ -233,6 +227,10 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 ),
             };
         });
+
+        const lineContentHeight =
+            editor.getModel().getLineCount() * EditorLineHeight;
+        setEditorHeight(Math.max(2 * EditorLineHeight, lineContentHeight));
     };
 
     const handleChange = (newValue: string) => {
@@ -272,7 +270,6 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     lineNumbers: 'on',
                     readOnly: false,
                     minimap: { enabled: false },
-                    automaticLayout: true,
                     scrollBeyondLastLine: false,
                     lineHeight: EditorLineHeight,
                     overviewRulerBorder: false,
