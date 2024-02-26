@@ -14,7 +14,8 @@ import { useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
-import { getIconForMenuItemByKey } from './designer.constants';
+// import { getIconForMenuItemByKey } from './designer.constants';
+import { getIconForBlock } from '../block-defaults';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -201,11 +202,7 @@ export const SelectedMenu = observer(() => {
         <StyledMenu>
             <StyledMenuHeader>
                 <Stack flex={1} spacing={2} direction="row" alignItems="center">
-                    <BlockAvatar
-                        icon={getIconForMenuItemByKey(
-                            (block.data?.variation as string) ?? block.widget,
-                        )}
-                    />
+                    <BlockAvatar icon={getIconForBlock(block.widget)} />
                     <Stack direction={'row'} spacing={0.5} alignItems="center">
                         <StyledTitle variant="h6">
                             {getBlockDisplay()}

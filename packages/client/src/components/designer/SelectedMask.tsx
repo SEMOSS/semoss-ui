@@ -11,7 +11,6 @@ import {
 import { useBlocks, useDesigner } from '@/hooks';
 
 import { DragIndicator } from '@mui/icons-material';
-import { getIconForMenuItemByKey } from './designer.constants';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',

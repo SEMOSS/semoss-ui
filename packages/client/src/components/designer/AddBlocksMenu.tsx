@@ -142,24 +142,28 @@ export const AddBlocksMenu = observer((props: AddBlocksMenuProps) => {
 
                             return (
                                 <React.Fragment key={idx}>
+                                    {/* Why does width extend Designer screen */}
                                     {!prev || prev.section !== item.section ? (
-                                        <Grid item xs={12}>
+                                        <Grid
+                                            item
+                                            xs={12}
+                                            sx={{ width: '50px' }}
+                                        >
                                             <StyledSection>
                                                 {item.section}
                                             </StyledSection>
                                         </Grid>
                                     ) : null}
-                                    <Grid
-                                        item
-                                        xs={6}
-                                        display="flex"
-                                        justifyContent="center"
-                                        alignItems="center"
-                                    >
+
+                                    <Grid item xs={6} sx={{ width: '50px' }}>
                                         <AddBlocksMenuCard item={item} />
                                     </Grid>
                                     {next && next.section !== item.section ? (
-                                        <Grid item xs={12}>
+                                        <Grid
+                                            item
+                                            xs={12}
+                                            sx={{ width: '50px' }}
+                                        >
                                             <Divider
                                                 orientation="horizontal"
                                                 variant="fullWidth"

@@ -1,5 +1,18 @@
 import { BlockJSON } from '@/stores';
 
+import BLOCK_BUTTON from '@/assets/img/BLOCK_BUTTON.png';
+import BLOCK_CHECKBOX from '@/assets/img/BLOCK_CHECKBOX.png';
+import BLOCK_CONTAINER from '@/assets/img/BLOCK_CONTAINER.png';
+import BLOCK_FILE_UPLOAD from '@/assets/img/BLOCK_FILE_UPLOAD.png';
+import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
+import BLOCK_IMAGE from '@/assets/img/BLOCK_IMAGE.png';
+import BLOCK_LINK from '@/assets/img/BLOCK_LINK.png';
+import BLOCK_MARKDOWN from '@/assets/img/BLOCK_MARKDOWN.png';
+import BLOCK_PROGRESS_BAR from '@/assets/img/BLOCK_PROGRESS_BAR.png';
+import BLOCK_SELECT from '@/assets/img/BLOCK_SELECT.png';
+import BLOCK_TEXT from '@/assets/img/BLOCK_TEXT.png';
+import BLOCK_TOGGLE_BUTTON from '@/assets/img/BLOCK_TOGGLE_BUTTON.png';
+
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
     section: string;
@@ -20,7 +33,7 @@ export interface AddBlocksMenuItem {
 export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     {
         section: 'Input',
-        image: '',
+        image: BLOCK_BUTTON,
         name: 'Button',
         json: {
             widget: 'button',
@@ -40,7 +53,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Input',
-        image: '',
+        image: BLOCK_CHECKBOX,
         name: 'Checkbox',
         json: {
             widget: 'checkbox',
@@ -61,7 +74,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Input',
-        image: '',
+        image: BLOCK_INPUT,
         name: 'Input',
         json: {
             widget: 'input',
@@ -90,7 +103,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Input',
-        image: '',
+        image: BLOCK_SELECT,
         name: 'Select',
         json: {
             widget: 'select',
@@ -116,7 +129,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Input',
-        image: '',
+        image: BLOCK_FILE_UPLOAD,
         name: 'Upload',
         json: {
             widget: 'upload',
@@ -142,7 +155,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Layout',
-        image: '',
+        image: BLOCK_CONTAINER,
         name: 'Container',
         json: {
             widget: 'container',
@@ -163,7 +176,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Element',
-        image: '',
+        image: BLOCK_PROGRESS_BAR,
         name: 'Progress',
         json: {
             widget: 'progress',
@@ -179,7 +192,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Element',
-        image: '',
+        image: BLOCK_IMAGE,
         name: 'Image',
         json: {
             widget: 'image',
@@ -203,7 +216,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Progress',
-        image: '',
+        image: BLOCK_TOGGLE_BUTTON,
         name: 'Toggle Button',
         json: {
             widget: 'toggle-button',
@@ -231,7 +244,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Text',
-        image: '',
+        image: BLOCK_LINK,
         name: 'Link',
         json: {
             widget: 'link',
@@ -250,7 +263,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Text',
-        image: '',
+        image: BLOCK_MARKDOWN,
         name: 'Markdown',
         json: {
             widget: 'markdown',
@@ -266,7 +279,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: 'Text',
-        image: '',
+        image: BLOCK_TEXT,
         name: 'Text',
         json: {
             widget: 'text',
