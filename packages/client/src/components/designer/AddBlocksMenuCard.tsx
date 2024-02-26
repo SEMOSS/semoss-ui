@@ -44,7 +44,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            item.image,
+            item.image || THEME.logo,
         );
 
         // clear the hovered

@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Card } from '@semoss/ui';
+import { styled, Card, Stack, Typography } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerStoreInterface } from '@/stores';
@@ -23,6 +23,15 @@ const StyledGhost = styled('div')(({ theme }) => ({
     userSelect: 'none',
     whiteSpace: 'nowrap',
     cursor: 'grabbing',
+}));
+
+const StyledStack = styled(Stack)(() => ({
+    alignItems: 'center',
+    justifyContent: 'center',
+}));
+
+const StyledTypography = styled(Typography)(() => ({
+    textTransform: 'capitalize',
 }));
 
 /**
@@ -55,16 +64,25 @@ export const Ghost = observer(() => {
     const { designer } = useDesigner();
 
     if (!designer.drag.ghostPosition) {
+        console.log('no ghost position in ghost');
         return <></>;
     }
 
+    // console.log(designer.drag.ghostPosition)
     return (
         <StyledGhost
             style={{
                 ...getGhostStyle(designer.drag.ghostPosition),
             }}
         >
-            <StyledCard>{designer.drag.ghostDisplay}</StyledCard>
+            <StyledCard>
+                <StyledStack direction="column" padding={1} spacing={1}>
+                    <div>{designer.drag.ghostIcon ? 'hello' : 'image'}</div>
+                    <StyledTypography variant="subtitle2">
+                        {designer.drag.ghostDisplay}
+                    </StyledTypography>
+                </StyledStack>
+            </StyledCard>
         </StyledGhost>
     );
 });

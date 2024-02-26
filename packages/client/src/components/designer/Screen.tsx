@@ -45,6 +45,7 @@ const StyledContentOuter = styled('div')(({ theme }) => ({
     flex: 1,
     minWidth: '100%',
     height: '100%',
+    border: 'solid red',
 }));
 
 const StyledContentInner = styled('div', {
@@ -56,6 +57,7 @@ const StyledContentInner = styled('div', {
         minWidth: '100%',
         height: '100%',
         cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
+        border: 'solid green',
         // iframes should not get pointer events in design mode
         iframe: {
             pointerEvents: 'none!important',
@@ -123,6 +125,9 @@ export const Screen = observer((props: ScreenProps) => {
 
         // reset the placeholder / clear the ghost if is its off the screen
         if (designer.drag.active) {
+            console.log(
+                "THIS IS THE BUG: left screen, it didn't actually leave screen",
+            );
             designer.resetPlaceholder();
             designer.updateGhostPosition(null);
         }
