@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import Editor from '@monaco-editor/react';
 import { DiffEditor } from '@monaco-editor/react';
 
-import { styled, ButtonGroup, IconButton, Button } from '@semoss/ui';
-
-import { CheckCircle, Cancel } from '@mui/icons-material';
+import { styled, Button, Grid } from '@semoss/ui';
 
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
@@ -13,11 +11,8 @@ import { CodeCellDef } from './config';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
-import { useLLM } from '@/hooks';
 import { runPixel } from '@/api';
-
 import { LoadingScreen } from '@/components/ui';
-
 import * as monaco from 'monaco-editor';
 
 // best documentation on component versions of monaco editor and diffeditor
@@ -37,10 +32,6 @@ const StyledContent = styled('div', {
         overflow: 'visible',
     },
     pointerEvents: disabled ? 'none' : 'unset',
-
-    // // optional solution to scrolling bugginess
-    // maxHeight: "50vh",
-    // overflowY: "auto",
 }));
 
 const EditorLanguages = {
@@ -71,13 +62,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
 
-    // // unclear how we want to manage model ID
+    // temporary hard-coding modelId
     const modelIdRef = useRef('3def3347-30e1-4028-86a0-83a1e5ed619c');
-    // const fileTypeRef = useRef('');
-    // const { modelId } = useLLM(); // currently throwing error
-    // useEffect(() => {
-    //     modelIdRef.current = modelId;
-    // }, [modelId]);
 
     const promptLLM = async (inputPrompt) => {
         setLLMLoading(true);
@@ -118,36 +104,9 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 });
             },
         });
-
-        // // use defineTheme to apply limited custom styling if desired
-        // monaco.editor.defineTheme('default', {
-        //     base: 'vs-dark',
-        //     inherit: true,
-        // rules: [
-        //   { token: "identifier", foreground: "FF0000" },
-        //   { token: "identifier.function", foreground: "DCDCAA" },
-        //   { token: "type", foreground: "1AAFB0" },
-        //   { token: 'added', foreground: '008000', fontStyle: 'bold' }, // Color for added lines
-        //   { token: 'removed', foreground: 'FF0000', fontStyle: 'bold' }, // Color for removed lines
-        //   { token: 'modified', foreground: '0000FF', fontStyle: 'bold' } // Color for modified lines
-        // ],
-        // colors: {}
-        // });
-        // monaco.editor.setTheme('default')
     };
 
     const handleMount = (editor, monaco) => {
-        // not working - should select new text after exiting diffeditor
-        // if (selectionRef.current && LLMReturnRef.current) {
-        //     monaco.editor.current.setSelection(
-        //         new monaco.Range(
-        //             selectionRef.current.endLineNumber + 2,
-        //             1,
-        //             selectionRef.current.endLineNumber + 3 + LLMReturnRef.current.split('\n').length, 1,
-        //         ),
-        //     );
-        // }
-
         // if diffedit code has been rejected set to old editor content
         if (isLLMRejected) {
             editor.getModel().setValue(oldContentDiffEdit);
@@ -446,67 +405,80 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     <LoadingScreen.Trigger description="Generating..." />
                 )}
 
-                {diffEditMode && (
-                    <DiffEditor
-                        width="100%"
-                        height="500px"
-                        original={oldContentDiffEdit}
-                        modified={newContentDiffEdit}
-                        language={EditorLanguages[cell.parameters.type]}
-                        options={{
-                            lineNumbers: 'on',
-                            readOnly: true,
-                            minimap: { enabled: false },
-                            automaticLayout: true,
-                            scrollBeyondLastLine: false,
-                            lineHeight: EditorLineHeight,
-                            overviewRulerBorder: false,
-                        }}
-                        onMount={handleDiffEditorMount}
-                    />
-                )}
+                <Grid container spacing={3}>
+                    {diffEditMode && (
+                        <Grid item md={12}>
+                            <DiffEditor
+                                width="100%"
+                                height={
+                                    isExpanded ? editorHeight : EditorLineHeight
+                                }
+                                original={oldContentDiffEdit}
+                                modified={newContentDiffEdit}
+                                language={EditorLanguages[cell.parameters.type]}
+                                options={{
+                                    lineNumbers: 'on',
+                                    readOnly: true,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: EditorLineHeight,
+                                    overviewRulerBorder: false,
+                                }}
+                                onMount={handleDiffEditorMount}
+                            />
+                        </Grid>
+                    )}
 
-                {/* tempory accept reject buttons */}
-                {diffEditMode && (
-                    <div style={{ marginLeft: '20px' }}>
-                        <IconButton
-                            title="Accept changes"
-                            size="medium"
-                            color="primary"
-                            onClick={acceptDiffEditHandler}
-                        >
-                            <CheckCircle />
-                        </IconButton>
-                        <IconButton
-                            title="Reject changes"
-                            size="medium"
-                            color="default"
-                            onClick={rejectDiffEditHandler}
-                        >
-                            <Cancel />
-                        </IconButton>
-                    </div>
-                )}
+                    {diffEditMode && (
+                        <Grid item md={12}>
+                            <div>
+                                <Button
+                                    title="Accept changes"
+                                    size="small"
+                                    color="primary"
+                                    variant="contained"
+                                    onClick={acceptDiffEditHandler}
+                                >
+                                    Keep
+                                </Button>
+                                <Button
+                                    title="Reject changes"
+                                    size="small"
+                                    color="primary"
+                                    variant="text"
+                                    onClick={rejectDiffEditHandler}
+                                >
+                                    Reject
+                                </Button>
+                            </div>
+                        </Grid>
+                    )}
 
-                {!diffEditMode && (
-                    <Editor
-                        width="100%"
-                        height={isExpanded ? editorHeight : EditorLineHeight}
-                        value={cell.parameters.code}
-                        language={EditorLanguages[cell.parameters.type]}
-                        options={{
-                            lineNumbers: 'on',
-                            readOnly: false,
-                            minimap: { enabled: false },
-                            automaticLayout: true,
-                            scrollBeyondLastLine: false,
-                            lineHeight: EditorLineHeight,
-                            overviewRulerBorder: false,
-                        }}
-                        onChange={handleChange}
-                        onMount={handleMount}
-                    />
-                )}
+                    {!diffEditMode && (
+                        <Grid item md={12}>
+                            <Editor
+                                width="100%"
+                                height={
+                                    isExpanded ? editorHeight : EditorLineHeight
+                                }
+                                value={cell.parameters.code}
+                                language={EditorLanguages[cell.parameters.type]}
+                                options={{
+                                    lineNumbers: 'on',
+                                    readOnly: false,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: EditorLineHeight,
+                                    overviewRulerBorder: false,
+                                }}
+                                onChange={handleChange}
+                                onMount={handleMount}
+                            />
+                        </Grid>
+                    )}
+                </Grid>
             </StyledContent>
         </>
     );
