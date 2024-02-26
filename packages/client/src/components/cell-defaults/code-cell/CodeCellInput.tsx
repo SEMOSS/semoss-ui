@@ -29,9 +29,6 @@ const StyledContent = styled('div', {
     width: '100%',
     position: 'relative',
     display: 'flex',
-    '.monaco-editor': {
-        overflow: 'visible',
-    },
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
@@ -56,7 +53,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
     const [LLMLoading, setLLMLoading] = useState(false);
     const [diffEditMode, setDiffEditMode] = useState(false);
-    const wordWrapRef = useRef(false);
+    const wordWrapRef = useRef(true);
 
     const [oldContentDiffEdit, setOldContentDiffEdit] = useState('');
     const [newContentDiffEdit, setNewContentDiffEdit] = useState('');
@@ -373,12 +370,25 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 ),
             };
         });
+
+        const lines = editor.getModel().getLineCount();
+        const lineContentHeight = lines * EditorLineHeight;
+        const singleLineNoOverflow =
+            lines === 1 && lineContentHeight == editor.getContentHeight();
+        setEditorHeight(
+            Math.max(
+                (singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
+                lineContentHeight,
+            ),
+        );
     };
 
     const handleChange = (newValue: string) => {
-        // pad an extra line so autocomplete is visible
+        // set editor height to content height
+        // set max height to equivalent of 25 lines
+        const maxHeight = 25 * EditorLineHeight;
         setEditorHeight(
-            editorRef.current.getModel().getLineCount() * EditorLineHeight,
+            Math.min(editorRef.current.getContentHeight(), maxHeight),
         );
         if (cell.isLoading) {
             return;
@@ -402,6 +412,10 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const rejectDiffEditHandler = () => {
         setIsLLMRejected(true);
         setDiffEditMode(false);
+    };
+
+    const getHeight = () => {
+        return isExpanded ? editorHeight : EditorLineHeight;
     };
 
     return (
@@ -431,6 +445,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                                     scrollBeyondLastLine: false,
                                     lineHeight: EditorLineHeight,
                                     overviewRulerBorder: false,
+                                    wordWrap: 'on',
                                 }}
                                 onMount={handleDiffEditorMount}
                             />
@@ -467,9 +482,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             <Editor
                                 key={modelIdRef.current}
                                 width="100%"
-                                height={
-                                    isExpanded ? editorHeight : EditorLineHeight
-                                }
+                                height={getHeight()}
                                 value={cell.parameters.code}
                                 language={EditorLanguages[cell.parameters.type]}
                                 options={{
@@ -480,6 +493,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                                     scrollBeyondLastLine: false,
                                     lineHeight: EditorLineHeight,
                                     overviewRulerBorder: false,
+                                    wordWrap: 'on',
                                 }}
                                 onChange={handleChange}
                                 onMount={handleMount}
