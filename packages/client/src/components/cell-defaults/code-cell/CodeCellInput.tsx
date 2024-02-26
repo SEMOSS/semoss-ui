@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Editor from '@monaco-editor/react';
 import { DiffEditor } from '@monaco-editor/react';
@@ -11,6 +11,7 @@ import { CodeCellDef } from './config';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
+import { useLLM } from '@/hooks';
 import { runPixel } from '@/api';
 import { LoadingScreen } from '@/components/ui';
 import * as monaco from 'monaco-editor';
@@ -61,13 +62,18 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const [newContentDiffEdit, setNewContentDiffEdit] = useState('');
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
+    const { modelId } = useLLM();
+    const modelIdRef = useRef('');
 
-    // temporary hard-coding modelId
-    const modelIdRef = useRef('3def3347-30e1-4028-86a0-83a1e5ed619c');
+    useEffect(() => {
+        modelIdRef.current = modelId;
+        console.log({ modelId });
+    }, [modelId]);
 
     const promptLLM = async (inputPrompt) => {
         setLLMLoading(true);
         const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
+        console.log({ 'modelIdRef.current': modelIdRef.current });
 
         try {
             const res = await runPixel(pixel);
@@ -407,8 +413,9 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
                 <Grid container spacing={3}>
                     {diffEditMode && (
-                        <Grid item md={12}>
+                        <Grid item sm={12}>
                             <DiffEditor
+                                key={modelIdRef.current}
                                 width="100%"
                                 height={
                                     isExpanded ? editorHeight : EditorLineHeight
@@ -431,7 +438,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     )}
 
                     {diffEditMode && (
-                        <Grid item md={12}>
+                        <Grid item sm={12}>
                             <div>
                                 <Button
                                     title="Accept changes"
@@ -456,8 +463,9 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     )}
 
                     {!diffEditMode && (
-                        <Grid item md={12}>
+                        <Grid item sm={12}>
                             <Editor
+                                key={modelIdRef.current}
                                 width="100%"
                                 height={
                                     isExpanded ? editorHeight : EditorLineHeight
