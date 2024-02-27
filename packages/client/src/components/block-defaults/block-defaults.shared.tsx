@@ -344,16 +344,6 @@ export const buildTypographySection = () => ({
             ),
         },
         {
-            description: 'Font Size',
-            render: ({ id }) => (
-                <FontSizeSettings
-                    id={id}
-                    sizePath="style.fontSize"
-                    weightPath="style.fontWeight"
-                />
-            ),
-        },
-        {
             description: 'Color',
             render: ({ id }) => (
                 <ColorSettings id={id} label="Color" path="style.color" />
