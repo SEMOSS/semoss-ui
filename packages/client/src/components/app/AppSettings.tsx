@@ -338,8 +338,13 @@ export const AppSettings = (props: AppSettingsProps) => {
     /**
      * @name recompileReactors
      */
-    const recompileReactors = () => {
-        const pixelString = `ReloadInsightClasses('${id}');`;
+    const recompileReactors = ({ release }) => {
+        let pixelString;
+        if (release == null) {
+            pixelString = `ReloadInsightClasses('${id}');`;
+        } else {
+            pixelString = `ReloadInsightClasses('${id}', release = true );`;
+        }
 
         monolithStore
             .runQuery(pixelString)
@@ -355,14 +360,20 @@ export const AppSettings = (props: AppSettingsProps) => {
                         color: 'error',
                         message: output,
                     });
-
                     return;
                 }
 
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully recompiled',
-                });
+                if (release == null) {
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully recompiled',
+                    });
+                } else {
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully redeployed',
+                    });
+                }
             })
             .catch((error) => {
                 notification.add({
@@ -738,13 +749,23 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 <StyledListItemHeader>
                                     Custom reactors created for the portal.
                                 </StyledListItemHeader>
+                                {/* old recompile button */}
+                                {/* <Button variant="contained" onClick={() => { recompileReactors(); }}>Recompile</Button> */}
                                 <Button
                                     variant="contained"
                                     onClick={() => {
-                                        recompileReactors();
+                                        recompileReactors({ release: null }); // added release param to split old button functionality
                                     }}
                                 >
-                                    Recompile
+                                    Compile Changes on This Instance
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        recompileReactors({ release: true });
+                                    }}
+                                >
+                                    Deploy and Persist Changes
                                 </Button>
                                 {portalReactors.lastCompiled && (
                                     <StyledLeftActionContainer>
