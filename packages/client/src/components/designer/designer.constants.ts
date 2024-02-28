@@ -20,6 +20,10 @@ import BLOCK_MARKDOWN from '@/assets/img/BLOCK_MARKDOWN.png';
 import BLOCK_PROGRESS_BAR from '@/assets/img/BLOCK_PROGRESS_BAR.png';
 import BLOCK_SELECT from '@/assets/img/BLOCK_SELECT.png';
 import BLOCK_TOGGLE_BUTTON from '@/assets/img/BLOCK_TOGGLE_BUTTON.png';
+import PIE_CHART from '@/assets/img/PIE_CHART.png';
+import BAR_CHART from '@/assets/img/BAR_CHART.png';
+import GROUP_BAR_CHART from '@/assets/img/GROUP_BAR_CHART.png';
+import GENERAL_CHART from '@/assets/img/GENERAL_CHART.png';
 
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
@@ -468,7 +472,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
         section: 'Bar Chart',
         name: 'Bar Chart',
-        image: '',
+        image: BAR_CHART,
         json: {
             widget: 'vega',
             data: {
@@ -505,7 +509,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
         section: 'Bar Chart',
         name: 'Grouped Bar Chart',
-        image: '',
+        image: GROUP_BAR_CHART,
         json: {
             widget: 'vega',
             data: {
@@ -548,7 +552,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
         section: 'Pie Chart',
         name: 'Pie Chart',
-        image: '',
+        image: PIE_CHART,
         json: {
             widget: 'vega',
             data: {
@@ -584,7 +588,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
         section: 'General',
         name: 'Vega',
-        image: '',
+        image: GENERAL_CHART,
         json: {
             widget: 'vega',
             data: {
