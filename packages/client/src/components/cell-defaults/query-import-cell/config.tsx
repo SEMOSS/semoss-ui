@@ -28,7 +28,7 @@ export const QueryImportCell: Cell<QueryImportCellDef> = {
     parameters: {
         databaseId: '',
         frameType: 'GRID',
-        frameVariableName: 'databaseOutput',
+        frameVariableName: '',
         selectQuery: '',
     },
     view: {

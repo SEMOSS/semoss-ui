@@ -599,6 +599,26 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // {
+    //     key: 'page',
+    //     display: 'Page',
+    //     blockJson: {
+    //         widget: 'page',
+    //         data: {
+    //             style: {
+    //                 display: 'flex',
+    //                 flexDirection: 'column',
+    //                 padding: '24px',
+    //                 gap: '8px',
+    //                 fontFamily: 'roboto',
+    //             },
+    //         },
+    //         listeners: {},
+    //         slots: {
+    //             content: [],
+    //         },
+    //     },
+    // },
 ];
 
 export const getImageForWidget = (widget) => {

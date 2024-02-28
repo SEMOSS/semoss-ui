@@ -92,6 +92,7 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                     )
                 }
                 endIcon={<KeyboardArrowDown />}
+                title="Select Language"
             >
                 <StyledButtonLabel>
                     {CodeCellOptions[cell.parameters.type].display}

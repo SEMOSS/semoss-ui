@@ -65,6 +65,11 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             return;
         }
 
+        console.log('hello');
+
+        // ID of newly added block
+        let id = '';
+
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
         if (placeholderAction) {
@@ -75,7 +80,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
-                    state.dispatch({
+                    id = state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: item.json,
@@ -89,7 +94,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                state.dispatch({
+                id = state.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {
                         json: item.json,
@@ -109,7 +114,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         designer.setHovered('');
 
         // clear the selected
-        designer.setSelected('');
+        designer.setSelected(id ? id : '');
 
         // set as active
         setLocal(false);

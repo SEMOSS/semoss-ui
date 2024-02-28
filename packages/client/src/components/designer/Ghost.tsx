@@ -76,11 +76,7 @@ export const Ghost = observer(() => {
             <StyledCard>
                 <StyledStack direction="column" padding={1} spacing={1}>
                     <div>
-                        <img
-                            draggable={false}
-                            src={designer.drag.ghostIcon}
-                            alt="ghost-image"
-                        />
+                        <img src={designer.drag.ghostIcon} alt="ghost-image" />
                     </div>
                     <StyledTypography variant="subtitle2">
                         {designer.drag.ghostDisplay}

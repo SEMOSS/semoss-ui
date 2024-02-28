@@ -12,7 +12,7 @@ interface PixelState<D> {
     error?: Error;
 }
 
-interface PixelConfig<D> {
+export interface PixelConfig<D> {
     /** Initial Data */
     data: D;
 }
@@ -34,6 +34,7 @@ interface usePixel<D> extends PixelState<D> {
 export function usePixel<D>(
     pixel: string,
     config?: Partial<PixelConfig<D>>,
+    insightId?: string,
 ): usePixel<D> {
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -100,7 +101,7 @@ export function usePixel<D>(
         });
 
         monolithStore
-            .runQuery(pixel)
+            .runQuery(pixel, insightId)
             .then((response) => {
                 // ignore if its cancelled
                 if (isCancelled) {

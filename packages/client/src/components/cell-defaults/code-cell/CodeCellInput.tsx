@@ -18,9 +18,6 @@ const StyledContent = styled('div', {
     width: '100%',
     position: 'relative',
     display: 'flex',
-    '.monaco-editor': {
-        overflow: 'visible',
-    },
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
@@ -41,10 +38,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const { state, notebook } = useBlocks();
 
     const handleMount = (editor, monaco) => {
-        // first time you set the height based on content Height
         editorRef.current = editor;
-        const contentHeight = editor.getContentHeight();
-        setEditorHeight(contentHeight);
         // update the action
         editor.addAction({
             id: 'run',
@@ -233,12 +227,25 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 ),
             };
         });
+
+        const lines = editor.getModel().getLineCount();
+        const lineContentHeight = lines * EditorLineHeight;
+        const singleLineNoOverflow =
+            lines === 1 && lineContentHeight == editor.getContentHeight();
+        setEditorHeight(
+            Math.max(
+                (singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
+                lineContentHeight,
+            ),
+        );
     };
 
     const handleChange = (newValue: string) => {
-        // pad an extra line so autocomplete is visible
+        // set editor height to content height
+        // set max height to equivalent of 25 lines
+        const maxHeight = 25 * EditorLineHeight;
         setEditorHeight(
-            editorRef.current.getModel().getLineCount() * EditorLineHeight,
+            Math.min(editorRef.current.getContentHeight(), maxHeight),
         );
         if (cell.isLoading) {
             return;
@@ -255,21 +262,25 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         });
     };
 
+    const getHeight = () => {
+        return isExpanded ? editorHeight : EditorLineHeight;
+    };
+
     return (
         <StyledContent disabled={!isExpanded}>
             <Editor
                 width="100%"
-                height={isExpanded ? editorHeight : EditorLineHeight}
+                height={getHeight()}
                 value={cell.parameters.code}
                 language={EditorLanguages[cell.parameters.type]}
                 options={{
                     lineNumbers: 'on',
                     readOnly: false,
                     minimap: { enabled: false },
-                    automaticLayout: true,
                     scrollBeyondLastLine: false,
                     lineHeight: EditorLineHeight,
                     overviewRulerBorder: false,
+                    wordWrap: 'on',
                 }}
                 onChange={handleChange}
                 onMount={handleMount}

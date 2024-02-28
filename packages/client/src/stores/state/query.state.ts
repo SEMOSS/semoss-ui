@@ -360,7 +360,9 @@ export class QueryState {
         }
 
         // add it
-        this._store.list.splice(previousCellIdx + 1, 0, cellId);
+        if (!this._store.list.includes(cellId)) {
+            this._store.list.splice(previousCellIdx + 1, 0, cellId);
+        }
     };
 
     /**

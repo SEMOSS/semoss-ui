@@ -34,11 +34,21 @@ const StyledCard = styled(Card, {
         : 'unset',
     overflow: 'visible',
     flexGrow: 1,
+    cursor: isCardCellSelected ? 'inherit' : 'pointer',
 }));
 
-const StyleCardContent = styled(Card.Content)(() => ({
+const StyledCardContent = styled(Card.Content, {
+    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
+})<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
     margin: '0!important',
     padding: '0!important',
+    pointerEvents: isCardCellSelected ? 'inherit' : 'none',
+}));
+
+const StyledCardActions = styled(Card.Actions, {
+    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
+})<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
+    pointerEvents: isCardCellSelected ? 'inherit' : 'none',
 }));
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -75,13 +85,6 @@ const StyledStatusChip = styled(Chip, {
 const StyledIdChip = styled(Chip)(({ theme }) => ({
     backgroundColor: theme.palette.grey[300],
     height: theme.spacing(3.5),
-}));
-
-const StyledJson = styled('pre')(({ theme }) => ({
-    ...theme.typography.body2,
-    textWrap: 'wrap',
-    maxHeight: '200px',
-    overflowY: 'scroll',
 }));
 
 const StyledSidebarStack = styled(Stack)(() => ({
@@ -184,6 +187,27 @@ export const NotebookCell = observer(
             }
         };
 
+        const deleteCell = () => {
+            try {
+                const currentCellIndex = query.list.indexOf(cell.id);
+
+                state.dispatch({
+                    message: ActionMessages.DELETE_CELL,
+                    payload: {
+                        queryId: cell.query.id,
+                        cellId: cell.id,
+                    },
+                });
+
+                notebook.selectCell(
+                    queryId,
+                    query.list[Math.max(currentCellIndex - 1, 0)],
+                );
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
         // get the view
         const cellType = cell.cellType;
 
@@ -229,6 +253,36 @@ export const NotebookCell = observer(
                 isExpanded: contentExpanded,
             });
         }, [cellType ? cellType.view.details : null, contentExpanded]);
+
+        // render the action button
+        const renderedRunActionButton = useMemo(() => {
+            if (!cellType) {
+                return;
+            }
+            if (!cellType.view.runActionButton) {
+                return (
+                    <IconButton
+                        title="Run cell"
+                        disabled={cell.isLoading}
+                        size="small"
+                        onClick={() =>
+                            state.dispatch({
+                                message: ActionMessages.RUN_CELL,
+                                payload: {
+                                    queryId: cell.query.id,
+                                    cellId: cell.id,
+                                },
+                            })
+                        }
+                    >
+                        <PlayCircle fontSize="small" />
+                    </IconButton>
+                );
+            }
+            return createElement(observer(cellType.view.runActionButton), {
+                cell: cell,
+            });
+        }, [cellType ? cellType.view.runActionButton : null, contentExpanded]);
 
         // render the output
         const renderedOutput = useMemo(() => {
@@ -348,11 +402,15 @@ export const NotebookCell = observer(
                         isCardCellSelected={
                             (notebook?.selectedCell?.id ?? '') == cell.id
                         }
-                        onClick={() =>
-                            notebook.selectCell(cell.query.id, cell.id)
-                        }
+                        onClick={(e) => {
+                            notebook.selectCell(cell.query.id, cell.id);
+                        }}
                     >
-                        <StyleCardContent>
+                        <StyledCardContent
+                            isCardCellSelected={
+                                (notebook?.selectedCell?.id ?? '') == cell.id
+                            }
+                        >
                             {renderedDetails}
                             <Stack
                                 id={`notebook-cell-content-${queryId}-${cellId}`}
@@ -361,30 +419,16 @@ export const NotebookCell = observer(
                                 paddingTop={0.5}
                                 paddingX={2}
                             >
-                                <Stack>
-                                    <IconButton
-                                        title="Run cell"
-                                        disabled={cell.isLoading}
-                                        size="small"
-                                        onClick={() =>
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.RUN_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                },
-                                            })
-                                        }
-                                    >
-                                        <PlayCircle fontSize="small" />
-                                    </IconButton>
-                                </Stack>
+                                <Stack>{renderedRunActionButton}</Stack>
                                 {renderedInput}
                             </Stack>
-                        </StyleCardContent>
+                        </StyledCardContent>
                         <StyledDivider />
-                        <Card.Actions>
+                        <StyledCardActions
+                            isCardCellSelected={
+                                (notebook?.selectedCell?.id ?? '') == cell.id
+                            }
+                        >
                             <Stack
                                 spacing={2}
                                 width="100%"
@@ -475,16 +519,9 @@ export const NotebookCell = observer(
                                                 title="Delete cell"
                                                 disabled={cell.isLoading}
                                                 size="small"
-                                                onClick={() => {
-                                                    state.dispatch({
-                                                        message:
-                                                            ActionMessages.DELETE_CELL,
-                                                        payload: {
-                                                            queryId:
-                                                                cell.query.id,
-                                                            cellId: cell.id,
-                                                        },
-                                                    });
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteCell();
                                                 }}
                                             >
                                                 <StyledButtonLabel>
@@ -513,7 +550,7 @@ export const NotebookCell = observer(
                                     </>
                                 )}
                             </Stack>
-                        </Card.Actions>
+                        </StyledCardActions>
                     </StyledCard>
                 </Stack>
                 <Collapse in={(notebook?.selectedCell?.id ?? '') === cell.id}>
