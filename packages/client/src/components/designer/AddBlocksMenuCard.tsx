@@ -4,7 +4,7 @@ import { styled, Card, Tooltip } from '@semoss/ui';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
-import { AddBlocksMenuItem } from './designer.constants';
+import { AddBlocksMenuItem, getImageForWidget } from './designer.constants';
 import { THEME } from '@/constants';
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -44,7 +44,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            item.image || THEME.logo,
+            getImageForWidget(item.json.widget),
         );
 
         // clear the hovered
@@ -137,7 +137,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     return (
         <StyledCard onMouseDown={handleMouseDown}>
             <Tooltip title={`Add ${item.name}`}>
-                <img src={item.image || THEME.logo} />
+                <img draggable={false} src={item.image || THEME.logo} />
             </Tooltip>
         </StyledCard>
     );

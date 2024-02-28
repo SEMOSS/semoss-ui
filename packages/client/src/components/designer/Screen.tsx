@@ -123,9 +123,6 @@ export const Screen = observer((props: ScreenProps) => {
 
         // reset the placeholder / clear the ghost if is its off the screen
         if (designer.drag.active) {
-            console.log(
-                "THIS IS THE BUG: left screen, it didn't actually leave screen",
-            );
             designer.resetPlaceholder();
             designer.updateGhostPosition(null);
         }

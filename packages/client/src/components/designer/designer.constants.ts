@@ -596,3 +596,13 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
 ];
+
+export const getImageForWidget = (widget) => {
+    const combinedMenu = [...DEFAULT_MENU, ...VISUALIZATION_MENU];
+
+    // Find the menu item that matches the widget id
+    const menuItem = combinedMenu.find((item) => item.json.widget === widget);
+
+    // Return the image if the menu item is found, undefined otherwise
+    return menuItem ? menuItem.image : undefined;
+};
