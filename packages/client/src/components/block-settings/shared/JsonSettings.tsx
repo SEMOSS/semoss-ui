@@ -20,49 +20,25 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 import { Editor } from '@monaco-editor/react';
 
-interface JsonModalSettingsProps<D extends BlockDef = BlockDef> {
+interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
 
     /**
-     * Label to pass into the input
-     */
-    label: string;
-
-    /**
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
-
-    /**
-     * Placeholder for text field
-     */
-    placeholder?: string;
 }
 
-const StyledModalHeader = styled(Stack)(({ theme }) => ({
-    padding: theme.spacing(2),
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-}));
-
-export const JsonModalSettings = observer(
-    <D extends BlockDef = BlockDef>({
-        id,
-        label = '',
-        path,
-        placeholder = '',
-    }: JsonModalSettingsProps<D>) => {
+export const JsonSettings = observer(
+    <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const { state, notebook } = useBlocks();
 
         // track the value
         const [value, setValue] = useState('');
-        // track the modal
-        const [open, setOpen] = useState(false);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -263,64 +239,26 @@ export const JsonModalSettings = observer(
         };
 
         return (
-            <>
-                <BaseSettingSection label={label}>
-                    <TextField
-                        fullWidth
-                        placeholder={placeholder}
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                        size="small"
-                        variant="outlined"
-                        autoComplete="off"
-                    />
-                    <IconButton size="small" onClick={() => setOpen(true)}>
-                        <OpenInNew />
-                    </IconButton>
-                </BaseSettingSection>
-                <Modal
-                    open={open}
-                    fullWidth
-                    maxWidth={
-                        data.hasOwnProperty('type') && data.type === 'date'
-                            ? 'sm'
-                            : 'lg'
-                    }
-                >
-                    <StyledModalHeader>
-                        <Typography variant="h5">{`Edit ${label}`}</Typography>
-                        <IconButton onClick={() => setOpen(false)}>
-                            <Close />
-                        </IconButton>
-                    </StyledModalHeader>
-                    <Divider />
-                    <Modal.Content>
-                        <Editor
-                            width="100%"
-                            height="300px"
-                            value={value}
-                            language="json"
-                            options={{
-                                lineNumbers: 'on',
-                                readOnly: false,
-                                minimap: { enabled: false },
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                lineHeight: 19,
-                                overviewRulerBorder: false,
-                            }}
-                            onChange={(e) => {
-                                // sync the data on change
-                                onChange(e);
-                            }}
-                            onMount={handleMount}
-                        />
-                    </Modal.Content>
-                </Modal>
-            </>
+            <Editor
+                width="100%"
+                height="100%"
+                value={value}
+                language="json"
+                options={{
+                    lineNumbers: 'on',
+                    readOnly: false,
+                    minimap: { enabled: false },
+                    automaticLayout: true,
+                    scrollBeyondLastLine: false,
+                    lineHeight: 19,
+                    overviewRulerBorder: false,
+                }}
+                onChange={(e) => {
+                    // sync the data on change
+                    onChange(e);
+                }}
+                onMount={handleMount}
+            />
         );
     },
 );
