@@ -68,6 +68,9 @@
 							<warSourceExcludes>
 								.m2/,
 								node_modules/,
+								client/node_modules/,
+								sdk/,
+								sdk-react/
 								target/,
 								pom.xml,
 								settings.xml,
@@ -78,6 +81,9 @@
 							<packagingExcludes>
 								.m2/,
 								node_modules/,
+								client/node_modules/,
+								sdk/,
+								sdk-react/
 								target/,
 								pom.xml,
 								settings.xml,
