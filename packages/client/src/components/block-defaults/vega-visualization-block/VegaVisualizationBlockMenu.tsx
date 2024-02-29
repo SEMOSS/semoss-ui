@@ -1,4 +1,3 @@
-import { observer } from 'mobx-react-lite';
 import { BlockComponent } from '@/stores';
 import { Stack } from '@semoss/ui';
 import {
@@ -6,7 +5,7 @@ import {
     JsonSettings,
 } from '@/components/block-settings';
 
-export const VegaVisualizationBlockMenu: BlockComponent = observer(({ id }) => {
+export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
     return (
         <Stack padding={2} height="100%">
             <JsonSettings id={id} path="specJson" />
@@ -21,4 +20,4 @@ export const VegaVisualizationBlockMenu: BlockComponent = observer(({ id }) => {
             />
         </Stack>
     );
-});
+};

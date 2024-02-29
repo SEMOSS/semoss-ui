@@ -84,10 +84,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     icon: React.FunctionComponent;
 
     /** *new* custom menu */
-    menu?: (props: {
-        /** Id of the block */
-        id: string;
-    }) => JSX.Element;
+    menu?: BlockComponent;
 
     /** Content Menu */
     contentMenu?: {

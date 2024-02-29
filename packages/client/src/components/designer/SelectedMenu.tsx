@@ -227,7 +227,7 @@ export const SelectedMenu = observer(() => {
                         </IconButton>
                     </Stack>
 
-                    {menu ?? (
+                    {!menu && (
                         <Stack
                             flex={1}
                             spacing={1}
@@ -265,7 +265,7 @@ export const SelectedMenu = observer(() => {
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>
-                {menu &&
+                {!!menu &&
                     createElement(menu, {
                         id: block.id,
                     })}
