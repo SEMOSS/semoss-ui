@@ -1,43 +1,110 @@
-import { useEffect, useRef, useState } from 'react';
-import Editor from '@monaco-editor/react';
-import { styled } from '@semoss/ui';
+import { useRef, useState } from 'react';
+import Editor, { Monaco } from '@monaco-editor/react';
+import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
+import { KeyboardArrowDown, CodeOff } from '@mui/icons-material';
 
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { CodeCellDef } from './config';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
-const EditorLineHeight = 19;
+import { CodeCellDef } from './config';
+import { PythonIcon, RIcon } from './icons';
+import { editor } from 'monaco-editor';
+
+const EDITOR_LINEHEIGHT = 19;
+const EDITOR_MAX_HEIGHT = 500; // ~25 lines
+
+const EDITOR_OPTIONS = {
+    py: {
+        display: 'Python',
+        value: 'py',
+        icon: PythonIcon,
+    },
+    r: {
+        display: 'R',
+        value: 'r',
+        icon: RIcon,
+    },
+    pixel: {
+        display: 'Pixel',
+        value: 'pixel',
+        icon: CodeOff,
+    },
+};
 
 const StyledContent = styled('div', {
     shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled: boolean }>(({ theme, disabled }) => ({
-    paddingTop: theme.spacing(0.75),
-    margin: '0!important',
-    width: '100%',
+})<{ disabled: boolean }>(({ disabled }) => ({
     position: 'relative',
-    display: 'flex',
+    width: '100%',
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
-const EditorLanguages = {
-    py: 'python',
-    pixel: 'pixel',
-    r: 'r',
-};
+const StyledButton = styled(Button)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+    border: `1px solid ${theme.palette.divider}`,
+}));
+
+const StyledButtonLabel = styled('span')(({ theme }) => ({
+    width: theme.spacing(5.5),
+    display: 'block',
+    textAlign: 'start',
+}));
+
+const StyledMenu = styled((props: MenuProps) => (
+    <Menu
+        anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+        }}
+        transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+        }}
+        {...props}
+    />
+))(({ theme }) => ({
+    '& .MuiPaper-root': {
+        marginTop: theme.spacing(1),
+    },
+    '.MuiList-root': {
+        padding: 0,
+    },
+}));
+
+const StyledListIcon = styled(List.Icon)(({ theme }) => ({
+    width: theme.spacing(4),
+    minWidth: 'unset',
+}));
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(0.5),
+}));
 
 // track completion providers outside of render context
 let completionItemProviders = {};
 
+// TODO:: Refactor height to account for Layout
 export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
+    // track the popover menu
+    const [menuAnchorEle, setMenuAnchorEle] = useState<null | HTMLElement>(
+        null,
+    );
+    const isMenuOpen = Boolean(menuAnchorEle);
+
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
 
-    const handleMount = (editor, monaco) => {
+    const handleMount = (
+        editor: editor.IStandaloneCodeEditor,
+        monaco: Monaco,
+    ) => {
         editorRef.current = editor;
         // update the action
         editor.addAction({
@@ -153,100 +220,111 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
         monaco.languages.register({ id: 'pixel' });
 
         // add suggestions for each language
-        Object.values(EditorLanguages).forEach((language) => {
+        Object.values(EDITOR_OPTIONS).forEach((language) => {
             // if suggestion already exist, dispose and re-add
             // this may be superfluous at times but we re-add instead of setting up suggestions once
             // so that we are pulling more real-time values off of the blocks/queries
-            if (completionItemProviders[language]) {
-                completionItemProviders[language].dispose();
+            if (completionItemProviders[language.value]) {
+                completionItemProviders[language.value].dispose();
             }
             completionItemProviders = {
                 ...completionItemProviders,
-                [language]: monaco.languages.registerCompletionItemProvider(
-                    language,
-                    {
-                        provideCompletionItems: (model, position) => {
-                            const word = model.getWordUntilPosition(position);
-                            // getWordUntilPosition doesn't track when words are led by special characters
-                            // we need to chack for wrapping curly brackets manually to know what to replace
+                [language.value]:
+                    monaco.languages.registerCompletionItemProvider(
+                        language.value,
+                        {
+                            provideCompletionItems: (model, position) => {
+                                const word =
+                                    model.getWordUntilPosition(position);
+                                // getWordUntilPosition doesn't track when words are led by special characters
+                                // we need to chack for wrapping curly brackets manually to know what to replace
 
-                            // word is not empty, completion was triggered by a non-special character
-                            if (word.word !== '') {
-                                // return empty suggestions to trigger built in typeahead
-                                return {
-                                    suggestions: [],
+                                // word is not empty, completion was triggered by a non-special character
+                                if (word.word !== '') {
+                                    // return empty suggestions to trigger built in typeahead
+                                    return {
+                                        suggestions: [],
+                                    };
+                                }
+
+                                // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+                                const specialCharacterStartRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.startColumn - 2,
+                                    endColumn: word.startColumn,
                                 };
-                            }
+                                const preceedingTwoCharacters =
+                                    model.getValueInRange(
+                                        specialCharacterStartRange,
+                                    );
+                                const replaceRangeStartBuffer =
+                                    preceedingTwoCharacters === '{{' ? 2 : 1;
+                                // python editor will automatically add closed bracket when you type a start one
+                                // need to replace the closed brackets appropriately
+                                const specialCharacterEndRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.endColumn,
+                                    endColumn: word.endColumn + 2,
+                                };
+                                const followingTwoCharacters =
+                                    model.getValueInRange(
+                                        specialCharacterEndRange,
+                                    );
+                                const replaceRangeEndBuffer =
+                                    followingTwoCharacters === '}}'
+                                        ? 2
+                                        : followingTwoCharacters == '} ' ||
+                                          followingTwoCharacters == '}'
+                                        ? 1
+                                        : 0;
 
-                            // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-                            const specialCharacterStartRange = {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn: word.startColumn - 2,
-                                endColumn: word.startColumn,
-                            };
-                            const preceedingTwoCharacters =
-                                model.getValueInRange(
-                                    specialCharacterStartRange,
-                                );
-                            const replaceRangeStartBuffer =
-                                preceedingTwoCharacters === '{{' ? 2 : 1;
-                            // python editor will automatically add closed bracket when you type a start one
-                            // need to replace the closed brackets appropriately
-                            const specialCharacterEndRange = {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn: word.endColumn,
-                                endColumn: word.endColumn + 2,
-                            };
-                            const followingTwoCharacters =
-                                model.getValueInRange(specialCharacterEndRange);
-                            const replaceRangeEndBuffer =
-                                followingTwoCharacters === '}}'
-                                    ? 2
-                                    : followingTwoCharacters == '} ' ||
-                                      followingTwoCharacters == '}'
-                                    ? 1
-                                    : 0;
-
-                            // compose range that we want to replace with the suggestion
-                            const replaceRange = {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn:
-                                    word.startColumn - replaceRangeStartBuffer,
-                                endColumn:
-                                    word.endColumn + replaceRangeEndBuffer,
-                            };
-                            return {
-                                suggestions: generateSuggestions(replaceRange),
-                            };
+                                // compose range that we want to replace with the suggestion
+                                const replaceRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn:
+                                        word.startColumn -
+                                        replaceRangeStartBuffer,
+                                    endColumn:
+                                        word.endColumn + replaceRangeEndBuffer,
+                                };
+                                return {
+                                    suggestions:
+                                        generateSuggestions(replaceRange),
+                                };
+                            },
+                            triggerCharacters: ['{'],
                         },
-                        triggerCharacters: ['{'],
-                    },
-                ),
+                    ),
             };
         });
 
-        const lines = editor.getModel().getLineCount();
-        const lineContentHeight = lines * EditorLineHeight;
-        const singleLineNoOverflow =
-            lines === 1 && lineContentHeight == editor.getContentHeight();
-        setEditorHeight(
-            Math.max(
-                (singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
-                lineContentHeight,
-            ),
-        );
+        // set the initial height
+        let height = 0;
+
+        // if expanded scale to lines, but do not go over the max height
+        if (isExpanded) {
+            height = Math.max(editor.getContentHeight(), EDITOR_MAX_HEIGHT);
+        }
+
+        // add the trailing line
+        setEditorHeight(height + EDITOR_LINEHEIGHT);
     };
 
     const handleChange = (newValue: string) => {
-        // set editor height to content height
-        // set max height to equivalent of 25 lines
-        const maxHeight = 25 * EditorLineHeight;
-        setEditorHeight(
-            Math.min(editorRef.current.getContentHeight(), maxHeight),
+        // TODO: we should probably disable when running
+
+        // get the height
+        const height = Math.min(
+            editorRef.current.getContentHeight(),
+            EDITOR_MAX_HEIGHT,
         );
+
+        // add the trailing line
+        setEditorHeight(height + EDITOR_LINEHEIGHT);
+
         if (cell.isLoading) {
             return;
         }
@@ -263,28 +341,111 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     const getHeight = () => {
-        return isExpanded ? editorHeight : EditorLineHeight;
+        return isExpanded ? editorHeight : EDITOR_LINEHEIGHT;
+    };
+
+    /**
+     * Close the Language menu
+     */
+    const handleMenuClose = () => {
+        setMenuAnchorEle(null);
     };
 
     return (
         <StyledContent disabled={!isExpanded}>
-            <Editor
-                width="100%"
-                height={getHeight()}
-                value={cell.parameters.code}
-                language={EditorLanguages[cell.parameters.type]}
-                options={{
-                    lineNumbers: 'on',
-                    readOnly: false,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    lineHeight: EditorLineHeight,
-                    overviewRulerBorder: false,
-                    wordWrap: 'on',
-                }}
-                onChange={handleChange}
-                onMount={handleMount}
-            />
+            <Stack direction="column" spacing={2}>
+                <Stack direction="row">
+                    <StyledButton
+                        aria-haspopup="true"
+                        aria-expanded={isMenuOpen ? 'true' : undefined}
+                        variant="outlined"
+                        disableElevation
+                        disabled={cell.isLoading}
+                        size="small"
+                        onClick={(event: React.MouseEvent<HTMLElement>) => {
+                            event.preventDefault();
+                            setMenuAnchorEle(event.currentTarget);
+                        }}
+                        startIcon={
+                            cell.parameters.type === 'py' ? (
+                                <PythonIcon color="inherit" fontSize="small" />
+                            ) : cell.parameters.type === 'r' ? (
+                                <RIcon color="inherit" fontSize="small" />
+                            ) : (
+                                <CodeOff color="inherit" fontSize="small" />
+                            )
+                        }
+                        endIcon={<KeyboardArrowDown />}
+                        title="Select Language"
+                    >
+                        <StyledButtonLabel>
+                            {EDITOR_OPTIONS[cell.parameters.type].display}
+                        </StyledButtonLabel>
+                    </StyledButton>
+                </Stack>
+                <StyledMenu
+                    anchorEl={menuAnchorEle}
+                    open={isMenuOpen}
+                    onClose={handleMenuClose}
+                >
+                    <List dense>
+                        {Array.from(
+                            Object.values(EDITOR_OPTIONS),
+                            (language) => (
+                                <List.Item
+                                    disablePadding
+                                    key={`${cell.id}-${language.value}`}
+                                >
+                                    <List.ItemButton
+                                        onClick={() => {
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.UPDATE_CELL,
+                                                payload: {
+                                                    queryId: cell.query.id,
+                                                    cellId: cell.id,
+                                                    path: 'parameters.type',
+                                                    value: language.value,
+                                                },
+                                            });
+                                            handleMenuClose();
+                                        }}
+                                    >
+                                        <StyledListIcon>
+                                            <language.icon
+                                                color="inherit"
+                                                fontSize="small"
+                                            />
+                                        </StyledListIcon>
+                                        <List.ItemText
+                                            primary={language.display}
+                                        />
+                                    </List.ItemButton>
+                                </List.Item>
+                            ),
+                        )}
+                    </List>
+                </StyledMenu>
+                <StyledContainer>
+                    <Editor
+                        width="100%"
+                        height={getHeight()}
+                        value={cell.parameters.code}
+                        language={EDITOR_OPTIONS[cell.parameters.type].value}
+                        options={{
+                            lineNumbers: 'on',
+                            readOnly: false,
+                            minimap: { enabled: false },
+                            scrollBeyondLastLine: false,
+                            lineHeight: EDITOR_LINEHEIGHT,
+                            overviewRulerBorder: false,
+                            wordWrap: 'on',
+                        }}
+                        onChange={handleChange}
+                        onMount={handleMount}
+                    />
+                </StyledContainer>
+            </Stack>
         </StyledContent>
     );
 };

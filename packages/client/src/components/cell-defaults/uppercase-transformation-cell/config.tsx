@@ -1,13 +1,10 @@
-import { Cell, CellComponent } from '@/stores';
+import { Cell } from '@/stores';
 import {
     ColumnInfo,
     TransformationDef,
-    TransformationCellTitle,
     TransformationCellDef,
-    TransformationCellOutput,
     Transformation,
     TransformationTargetCell,
-    TransformationCellRunActionButton,
 } from '../shared';
 import { UppercaseTransformationCellInput } from './UppercaseTransformationCellInput';
 
@@ -38,6 +35,7 @@ export interface UppercaseTransformationCellDef
 // export the config for the block
 export const UppercaseTransformationCell: Cell<UppercaseTransformationCellDef> =
     {
+        name: 'Uppercase',
         widget: 'uppercase-transformation',
         parameters: {
             transformation: {
@@ -52,11 +50,7 @@ export const UppercaseTransformationCell: Cell<UppercaseTransformationCellDef> =
             },
         },
         view: {
-            title: TransformationCellTitle as CellComponent<UppercaseTransformationCellDef>,
             input: UppercaseTransformationCellInput,
-            output: TransformationCellOutput as CellComponent<UppercaseTransformationCellDef>,
-            runActionButton:
-                TransformationCellRunActionButton as CellComponent<UppercaseTransformationCellDef>,
         },
         toPixel: ({ transformation, targetCell }) => {
             const columnNames = transformation.parameters.columns.map(

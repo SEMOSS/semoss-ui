@@ -1,13 +1,10 @@
-import { Cell, CellComponent } from '@/stores';
+import { Cell } from '@/stores';
 import {
     ColumnInfo,
     TransformationDef,
-    TransformationCellTitle,
     TransformationCellDef,
-    TransformationCellOutput,
     Transformation,
     TransformationTargetCell,
-    TransformationCellRunActionButton,
     operation,
 } from '../shared';
 import { UpdateRowTransformationCellInput } from './UpdateRowTransformationCellInput';
@@ -43,6 +40,7 @@ export interface UpdateRowTransformationCellDef
 // export the config for the block
 export const UpdateRowTransformationCell: Cell<UpdateRowTransformationCellDef> =
     {
+        name: 'Update Row',
         widget: 'update-row-transformation',
         parameters: {
             transformation: {
@@ -67,11 +65,7 @@ export const UpdateRowTransformationCell: Cell<UpdateRowTransformationCellDef> =
             },
         },
         view: {
-            title: TransformationCellTitle as CellComponent<UpdateRowTransformationCellDef>,
             input: UpdateRowTransformationCellInput,
-            output: TransformationCellOutput as CellComponent<UpdateRowTransformationCellDef>,
-            runActionButton:
-                TransformationCellRunActionButton as CellComponent<UpdateRowTransformationCellDef>,
         },
         toPixel: ({ transformation, targetCell }) => {
             return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;

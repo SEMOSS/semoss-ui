@@ -2,6 +2,15 @@ import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
 import { CellState } from './cell.state';
 import { QueryStateConfig } from './query.state';
+
+export type SerializedState = {
+    /** Queries rendered in the insight */
+    queries: Record<string, QueryStateConfig>;
+
+    /** Blocks rendered in the insight */
+    blocks: Record<string, Block>;
+};
+
 /**
  * Block
  */
@@ -182,6 +191,9 @@ export interface CellDef<W extends string = string> {
  * Cell configuration
  */
 export interface Cell<D extends CellDef = CellDef> {
+    /** Nmae of the Cell */
+    name: string;
+
     /** Unique widget name */
     widget: D['widget'];
 
@@ -190,20 +202,8 @@ export interface Cell<D extends CellDef = CellDef> {
 
     /** View associated with the cell */
     view: {
-        /** Title view of the cell */
-        title: string | CellComponent<D>;
-
         /** Input view of the cell */
         input: CellComponent<D>;
-
-        /** Output view of the cell */
-        output: CellComponent<D>;
-
-        /** Detail view of the cell */
-        details?: CellComponent<D>;
-
-        /** Run action button for the cell */
-        runActionButton?: CellComponent<D>;
     };
 
     /** Method that to convert the cell into pixel */
@@ -229,14 +229,6 @@ export type CellComponent<D extends CellDef = CellDef> =
         /** Whether the content is expanded */
         isExpanded?: boolean;
     }>;
-
-export type SerializedState = {
-    /** Queries rendered in the insight */
-    queries: Record<string, QueryStateConfig>;
-
-    /** Blocks rendered in the insight */
-    blocks: Record<string, Block>;
-};
 
 export type Template = {
     /** Name of the template */

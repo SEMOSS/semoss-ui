@@ -1,9 +1,5 @@
 import { Cell, CellDef } from '@/stores';
-import { QueryImportCellTitle } from './QueryImportCellTitle';
 import { QueryImportCellInput } from './QueryImportCellInput';
-import { getQueryImportPipeline } from './query-import-pipeline-utils';
-import { QueryImportCellDetails } from './QueryImportCellDetails';
-import { QueryImportCellOutput } from './QueryImportCellOutput';
 
 export interface QueryImportCellDef extends CellDef<'query-import'> {
     widget: 'query-import';
@@ -12,7 +8,7 @@ export interface QueryImportCellDef extends CellDef<'query-import'> {
         databaseId: string;
 
         /** Output frame type */
-        frameType: 'GRID' | 'R' | 'PY';
+        frameType: 'NATIVE' | 'PY' | 'R' | 'GRID';
 
         /** Ouput variable name */
         frameVariableName: string;
@@ -24,25 +20,18 @@ export interface QueryImportCellDef extends CellDef<'query-import'> {
 
 // export the config for the block
 export const QueryImportCell: Cell<QueryImportCellDef> = {
+    name: 'Import',
     widget: 'query-import',
     parameters: {
         databaseId: '',
-        frameType: 'GRID',
+        frameType: 'PY',
         frameVariableName: '',
         selectQuery: '',
     },
     view: {
-        title: QueryImportCellTitle,
         input: QueryImportCellInput,
-        details: QueryImportCellDetails,
-        output: QueryImportCellOutput,
     },
     toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
-        return getQueryImportPipeline(
-            databaseId,
-            frameType,
-            frameVariableName,
-            selectQuery,
-        );
+        return `Database( database=["${databaseId}"] ) | Query("<encode>${selectQuery}</encode>") | Import(frame=[CreateFrame(frameType=[${frameType}], override=[true]).as(["${frameVariableName}"])]);`;
     },
 };
