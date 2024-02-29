@@ -484,6 +484,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'bar-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Bar Chart',
                     width: 300,
                     height: 300,
                     data: {
@@ -520,6 +521,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'grouped-bar-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Grouped Bar Chart',
                     width: 300,
                     height: 300,
                     data: {
@@ -558,6 +560,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'pie-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Pie Chart',
                     width: 300,
                     height: 300,
                     description: 'A simple pie chart with embedded data.',
@@ -592,6 +595,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'radial-plot',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Radial Plot',
                     width: 300,
                     height: 300,
                     description: 'A simple radial chart with embedded data.',
@@ -655,6 +659,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'line-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Line Chart',
                     width: 300,
                     height: 300,
                     data: {
@@ -690,6 +695,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'area-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Area Chart',
                     width: 300,
                     height: 300,
                     data: {
@@ -730,9 +736,10 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'area-chart-with-gradient',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Area Chart with Gradient',
                     width: 300,
                     height: 300,
-                    description: "Google's stock price over time.",
+                    description: 'Simple area chart with gradient.',
                     data: {
                         values: [
                             { a: 'A', b: 28 },
@@ -793,6 +800,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'scatter-plot',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    title: 'Scatter Plot',
                     width: 300,
                     height: 300,
                     description: 'A scatterplot.',
