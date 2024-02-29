@@ -24,6 +24,11 @@ import PIE_CHART from '@/assets/img/PIE_CHART.png';
 import BAR_CHART from '@/assets/img/BAR_CHART.png';
 import GROUP_BAR_CHART from '@/assets/img/GROUP_BAR_CHART.png';
 import GENERAL_CHART from '@/assets/img/GENERAL_CHART.png';
+import LINE_CHART from '@/assets/img/LINE_CHART.png';
+import AREA_CHART from '@/assets/img/AREA_CHART.png';
+import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
+import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
+import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
 
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
@@ -479,26 +484,25 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'bar-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                    title: undefined,
-                    width: 200,
-                    height: 200,
-                    padding: 5,
+                    width: 300,
+                    height: 300,
                     data: {
-                        values: undefined,
+                        values: [
+                            { a: 'A', b: 28 },
+                            { a: 'B', b: 55 },
+                            { a: 'C', b: 43 },
+                            { a: 'D', b: 91 },
+                            { a: 'E', b: 81 },
+                            { a: 'F', b: 53 },
+                            { a: 'G', b: 19 },
+                            { a: 'H', b: 87 },
+                            { a: 'I', b: 52 },
+                        ],
                     },
                     mark: 'bar',
                     encoding: {
-                        x: {
-                            field: undefined,
-                            title: undefined,
-                            type: 'nominal',
-                            axis: { labelAngle: 0 },
-                        },
-                        y: {
-                            field: undefined,
-                            title: undefined,
-                            type: 'quantitative',
-                        },
+                        x: { field: 'a', type: 'ordinal' },
+                        y: { field: 'b', type: 'quantitative' },
                     },
                 },
             },
@@ -516,32 +520,27 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'grouped-bar-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                    title: undefined,
-                    width: 200,
-                    height: 200,
-                    padding: 5,
+                    width: 300,
+                    height: 300,
                     data: {
-                        values: undefined,
+                        values: [
+                            { category: 'A', group: 'x', value: 0.1 },
+                            { category: 'A', group: 'y', value: 0.6 },
+                            { category: 'A', group: 'z', value: 0.9 },
+                            { category: 'B', group: 'x', value: 0.7 },
+                            { category: 'B', group: 'y', value: 0.2 },
+                            { category: 'B', group: 'z', value: 1.1 },
+                            { category: 'C', group: 'x', value: 0.6 },
+                            { category: 'C', group: 'y', value: 0.1 },
+                            { category: 'C', group: 'z', value: 0.2 },
+                        ],
                     },
                     mark: 'bar',
                     encoding: {
-                        x: {
-                            field: undefined,
-                            title: undefined,
-                            type: 'nominal',
-                            axis: { labelAngle: 0 },
-                        },
-                        y: {
-                            field: undefined,
-                            title: undefined,
-                            type: 'quantitative',
-                        },
-                        xOffset: {
-                            field: undefined,
-                        },
-                        color: {
-                            field: undefined,
-                        },
+                        x: { field: 'category' },
+                        y: { field: 'value', type: 'quantitative' },
+                        xOffset: { field: 'group' },
+                        color: { field: 'group' },
                     },
                 },
             },
@@ -559,25 +558,72 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                 variation: 'pie-chart',
                 specJson: {
                     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                    title: undefined,
-                    width: 200,
-                    height: 200,
-                    padding: 5,
+                    width: 300,
+                    height: 300,
+                    description: 'A simple pie chart with embedded data.',
                     data: {
-                        values: undefined,
+                        values: [
+                            { category: 1, value: 4 },
+                            { category: 2, value: 6 },
+                            { category: 3, value: 10 },
+                            { category: 4, value: 3 },
+                            { category: 5, value: 7 },
+                            { category: 6, value: 8 },
+                        ],
                     },
                     mark: 'arc',
                     encoding: {
+                        theta: { field: 'value', type: 'quantitative' },
+                        color: { field: 'category', type: 'nominal' },
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Pie Chart',
+        name: 'Radial Plot',
+        image: RADIAL_CHART,
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'radial-plot',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    width: 300,
+                    height: 300,
+                    description: 'A simple radial chart with embedded data.',
+                    data: {
+                        values: [12, 23, 47, 6, 52, 19],
+                    },
+                    layer: [
+                        {
+                            mark: {
+                                type: 'arc',
+                                innerRadius: 20,
+                                stroke: '#fff',
+                            },
+                        },
+                        {
+                            mark: { type: 'text', radiusOffset: 10 },
+                            encoding: {
+                                text: { field: 'data', type: 'quantitative' },
+                            },
+                        },
+                    ],
+                    encoding: {
                         theta: {
-                            field: undefined,
+                            field: 'data',
                             type: 'quantitative',
-                            stack: 'normalize',
+                            stack: true,
                         },
-                        color: {
-                            field: undefined,
-                            title: undefined,
-                            type: 'nominal',
+                        radius: {
+                            field: 'data',
+                            scale: { type: 'sqrt', zero: true, rangeMin: 20 },
                         },
+                        color: { field: 'data', type: 'nominal', legend: null },
                     },
                 },
             },
@@ -594,6 +640,179 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
             data: {
                 specJson: undefined,
                 variation: undefined,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Line Chart',
+        name: 'Line Chart',
+        image: LINE_CHART,
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'line-chart',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    width: 300,
+                    height: 300,
+                    data: {
+                        values: [
+                            { a: 'A', b: 28 },
+                            { a: 'B', b: 55, predicted: false },
+                            { a: 'D', b: 91, predicted: false },
+                            { a: 'E', b: 81, predicted: false },
+                            { a: 'E', b: 81, predicted: true },
+                            { a: 'G', b: 19, predicted: true },
+                            { a: 'H', b: 87, predicted: true },
+                        ],
+                    },
+                    mark: 'line',
+                    encoding: {
+                        x: { field: 'a', type: 'ordinal' },
+                        y: { field: 'b', type: 'quantitative' },
+                        strokeDash: { field: 'predicted', type: 'nominal' },
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Area Chart',
+        name: 'Area Chart',
+        image: AREA_CHART,
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'area-chart',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    width: 300,
+                    height: 300,
+                    data: {
+                        values: [
+                            { a: 'A', b: 28 },
+                            { a: 'B', b: 55 },
+                            { a: 'D', b: 91 },
+                            { a: 'E', b: 81 },
+                            { a: 'E', b: 81 },
+                            { a: 'G', b: 19 },
+                            { a: 'H', b: 87 },
+                        ],
+                    },
+                    mark: 'area',
+                    encoding: {
+                        x: {
+                            field: 'a',
+                        },
+                        y: {
+                            aggregate: 'sum',
+                            field: 'b',
+                            title: 'count',
+                        },
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Area Chart',
+        name: 'Area Chart with Gradient',
+        image: GRADIENT_CHART,
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'area-chart-with-gradient',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    width: 300,
+                    height: 300,
+                    description: "Google's stock price over time.",
+                    data: {
+                        values: [
+                            { a: 'A', b: 28 },
+                            { a: 'B', b: 55 },
+                            { a: 'D', b: 91 },
+                            { a: 'E', b: 81 },
+                            { a: 'E', b: 81 },
+                            { a: 'G', b: 19 },
+                            { a: 'H', b: 87 },
+                        ],
+                    },
+                    mark: {
+                        type: 'area',
+                        line: {
+                            color: 'darkgreen',
+                        },
+                        color: {
+                            x1: 1,
+                            y1: 1,
+                            x2: 1,
+                            y2: 0,
+                            gradient: 'linear',
+                            stops: [
+                                {
+                                    offset: 0,
+                                    color: 'white',
+                                },
+                                {
+                                    offset: 1,
+                                    color: 'darkgreen',
+                                },
+                            ],
+                        },
+                    },
+                    encoding: {
+                        x: {
+                            field: 'a',
+                        },
+                        y: {
+                            aggregate: 'sum',
+                            field: 'b',
+                            title: 'count',
+                        },
+                    },
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Scatter Plots',
+        name: 'Scatter Plot',
+        image: SCATTER_PLOT,
+        json: {
+            widget: 'vega',
+            data: {
+                variation: 'scatter-plot',
+                specJson: {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    width: 300,
+                    height: 300,
+                    description: 'A scatterplot.',
+                    data: {
+                        values: [
+                            { a: 10, b: 28 },
+                            { a: 20, b: 55 },
+                            { a: 30, b: 91 },
+                            { a: 40, b: 81 },
+                            { a: 50, b: 81 },
+                            { a: 60, b: 19 },
+                            { a: 70, b: 87 },
+                        ],
+                    },
+                    mark: 'point',
+                    encoding: {
+                        x: { field: 'a', type: 'quantitative' },
+                        y: { field: 'b', type: 'quantitative' },
+                    },
+                },
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
