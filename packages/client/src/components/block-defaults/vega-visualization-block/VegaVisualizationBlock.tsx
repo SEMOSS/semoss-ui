@@ -23,7 +23,7 @@ const StyledNoDataContainer = styled('div', {
 export interface VegaVisualizationBlockDef {
     widget: 'vega';
     data: {
-        specJson: undefined | VisualizationSpec;
+        specJson: undefined | VisualizationSpec | string;
         variation?: undefined | string;
     };
     listeners: never;
@@ -41,7 +41,14 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
         );
     }
     try {
-        const Chart = createClassFromSpec({ spec: data.specJson });
+        let Chart;
+        // Will get switched out soon, pushed specifically my use case and switching the way things get flattened
+        // Handling as string in order to map data tabs values to the JSON
+        if (typeof data.specJson === 'string') {
+            Chart = createClassFromSpec({ spec: JSON.parse(data.specJson) });
+        } else {
+            Chart = createClassFromSpec({ spec: data.specJson });
+        }
 
         return (
             <StyledChartContainer {...attrs}>
