@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { createElement, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -73,7 +73,7 @@ export const SelectedMenu = observer(() => {
             return [];
         }
 
-        let m = registry[block.widget].contentMenu;
+        let m = registry[block.widget]?.contentMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -114,7 +114,7 @@ export const SelectedMenu = observer(() => {
             return [];
         }
 
-        let m = registry[block.widget].styleMenu;
+        let m = registry[block.widget]?.styleMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -148,6 +148,15 @@ export const SelectedMenu = observer(() => {
         }
         return m;
     }, [registry, block ? block.widget : '', search]);
+
+    // new custom righthand menu content
+    const menu = useMemo(() => {
+        if (!registry || !block || !registry[block.widget]) {
+            return null;
+        }
+
+        return registry[block.widget]?.menu ?? null;
+    }, [registry, block ? block.widget : '']);
 
     /**
      * Copy text and add it to the clipboard
@@ -218,42 +227,48 @@ export const SelectedMenu = observer(() => {
                         </IconButton>
                     </Stack>
 
-                    <Stack
-                        flex={1}
-                        spacing={1}
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="end"
-                    >
-                        <Collapse orientation="horizontal" in={showSearch}>
-                            <TextField
-                                placeholder="Search"
-                                size="small"
-                                value={search}
-                                variant="outlined"
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </Collapse>
-                        <IconButton
-                            aria-label="toggle-search"
-                            color="default"
-                            size="small"
-                            onClick={() => {
-                                setShowSearch(!showSearch);
-                                setSearch('');
-                            }}
+                    {!menu && (
+                        <Stack
+                            flex={1}
+                            spacing={1}
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="end"
                         >
-                            {showSearch ? (
-                                <SearchOff fontSize="medium" />
-                            ) : (
-                                <Search fontSize="medium" />
-                            )}
-                        </IconButton>
-                    </Stack>
+                            <Collapse orientation="horizontal" in={showSearch}>
+                                <TextField
+                                    placeholder="Search"
+                                    size="small"
+                                    value={search}
+                                    variant="outlined"
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </Collapse>
+                            <IconButton
+                                aria-label="toggle-search"
+                                color="default"
+                                size="small"
+                                onClick={() => {
+                                    setShowSearch(!showSearch);
+                                    setSearch('');
+                                }}
+                            >
+                                {showSearch ? (
+                                    <SearchOff fontSize="medium" />
+                                ) : (
+                                    <Search fontSize="medium" />
+                                )}
+                            </IconButton>
+                        </Stack>
+                    )}
                 </Stack>
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>
+                {!!menu &&
+                    createElement(menu, {
+                        id: block.id,
+                    })}
                 {contentMenu.length ? (
                     <SelectedMenuSection
                         id={block.id}

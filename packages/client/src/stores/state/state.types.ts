@@ -83,8 +83,11 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Icon to render in the builder sidebar */
     icon: React.FunctionComponent;
 
+    /** *new* custom menu */
+    menu?: BlockComponent;
+
     /** Content Menu */
-    contentMenu: {
+    contentMenu?: {
         name: string;
         children: {
             /** Description for the setting */
@@ -98,7 +101,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     }[];
 
     /** Style Menu */
-    styleMenu: {
+    styleMenu?: {
         name: string;
         children: {
             /** Description for the setting */
