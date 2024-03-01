@@ -199,7 +199,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     // pretty format the data
     const createdDate = useMemo(() => {
-        const d = dayjs(app.project_portal_published_date);
+        const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
             return `Published ${dayjs().format('MMMM D, YYYY')}`;
         }
