@@ -338,8 +338,13 @@ export const AppSettings = (props: AppSettingsProps) => {
     /**
      * @name recompileReactors
      */
-    const recompileReactors = () => {
-        const pixelString = `ReloadInsightClasses('${id}');`;
+    const recompileReactors = ({ release }) => {
+        let pixelString;
+        if (release == null) {
+            pixelString = `ReloadInsightClasses('${id}');`;
+        } else {
+            pixelString = `ReloadInsightClasses('${id}', release = true );`;
+        }
 
         monolithStore
             .runQuery(pixelString)
@@ -355,14 +360,20 @@ export const AppSettings = (props: AppSettingsProps) => {
                         color: 'error',
                         message: output,
                     });
-
                     return;
                 }
 
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully recompiled',
-                });
+                if (release == null) {
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully recompiled',
+                    });
+                } else {
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully redeployed',
+                    });
+                }
             })
             .catch((error) => {
                 notification.add({
@@ -525,7 +536,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     alignItems: 'center',
                                 }}
                             >
-                                {/* <StyledSwitchIcon /> */}
                                 <StyledPublishIcon />
                                 <StyledTypography variant="body1">
                                     Enable Publishing
@@ -571,7 +581,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         publish();
                                     }}
                                 >
-                                    {/* <StyledPublishedIcon /> */}Publish
+                                    Publish
                                 </StyledRightButton>
                             </StyledSubRow>
 
@@ -686,15 +696,15 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         </Typography>
 
                                         <StyledRightButton
+                                            variant="outlined"
+                                            startIcon={<StyledPublishedIcon />}
                                             disabled={
                                                 !portalDetails.project_has_portal
                                             }
-                                            variant="outlined"
                                             onClick={() => {
                                                 publish();
                                             }}
                                         >
-                                            <StyledPublishedIcon />
                                             Publish
                                         </StyledRightButton>
                                     </StyledSubRow>
@@ -741,10 +751,18 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 <Button
                                     variant="contained"
                                     onClick={() => {
-                                        recompileReactors();
+                                        recompileReactors({ release: null });
                                     }}
                                 >
-                                    Recompile
+                                    Compile Changes on This Instance
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        recompileReactors({ release: true });
+                                    }}
+                                >
+                                    Deploy and Persist Changes
                                 </Button>
                                 {portalReactors.lastCompiled && (
                                     <StyledLeftActionContainer>
@@ -760,9 +778,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                             <Typography variant="body2">
                                                 {portalReactors.compiledBy}
                                             </Typography>
-                                            {/* <Typography variant="body2">
-                                            {user.time}
-                                        </Typography> */}
                                             <Typography variant="body2">
                                                 on
                                             </Typography>
