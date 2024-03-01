@@ -66,30 +66,36 @@
 							<failOnMissingWebXml>true</failOnMissingWebXml>
 							<warSourceDirectory>${basedir}</warSourceDirectory>
 							<warSourceExcludes>
+								.gitlab-ci.yml,
+								.svnignore,
+								.gitignore,
 								.m2/,
+								.husky/,
+								.vcode/,
 								node_modules/,
 								packages/client/node_modules/,
 								packages/sdk/,
-								packages/sdk-react/
+								packages/sdk-react/,
 								target/,
 								pom.xml,
 								settings.xml,
-								web.xml,
-								.gitlab-ci.yml,
-								.svnignore
+								web.xml
 							</warSourceExcludes>
 							<packagingExcludes>
+								.gitlab-ci.yml,
+								.svnignore,
+								.gitignore,
 								.m2/,
+								.husky/,
+								.vcode/,
 								node_modules/,
 								packages/client/node_modules/,
 								packages/sdk/,
-								packages/sdk-react/
+								packages/sdk-react/,
 								target/,
 								pom.xml,
 								settings.xml,
-								web.xml,
-								.gitlab-ci.yml,
-								.svnignore
+								web.xml
 							</packagingExcludes>
 							<!--warSourceIncludes>
 								dist/,
