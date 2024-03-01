@@ -40,7 +40,6 @@ export const config: BlockConfig<InputBlockDef> = {
     },
     render: InputBlock,
     icon: FormatShapes,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

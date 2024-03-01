@@ -27,7 +27,6 @@ export const config: BlockConfig<LinkBlockDef> = {
     slots: {},
     render: LinkBlock,
     icon: Link,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

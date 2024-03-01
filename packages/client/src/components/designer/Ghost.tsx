@@ -1,10 +1,8 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Card } from '@semoss/ui';
+import { styled, Card, Stack, Typography } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerStoreInterface } from '@/stores';
-import { getIconForBlock } from '../block-defaults';
-import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     border: `1px solid ${theme.palette.primary.main}`,
@@ -25,6 +23,15 @@ const StyledGhost = styled('div')(({ theme }) => ({
     userSelect: 'none',
     whiteSpace: 'nowrap',
     cursor: 'grabbing',
+}));
+
+const StyledStack = styled(Stack)(() => ({
+    alignItems: 'center',
+    justifyContent: 'center',
+}));
+
+const StyledTypography = styled(Typography)(() => ({
+    textTransform: 'capitalize',
 }));
 
 /**
@@ -67,10 +74,19 @@ export const Ghost = observer(() => {
             }}
         >
             <StyledCard>
-                <BlocksMenuCardContent
-                    display={designer.drag.ghostDisplay}
-                    icon={designer.drag.ghostIcon}
-                />
+                <StyledStack direction="column" padding={1} spacing={1}>
+                    <div>
+                        <img
+                            src={designer.drag.ghostIcon}
+                            alt="ghost-image"
+                            width={50}
+                            height={50}
+                        />
+                    </div>
+                    <StyledTypography variant="subtitle2">
+                        {designer.drag.ghostDisplay}
+                    </StyledTypography>
+                </StyledStack>
             </StyledCard>
         </StyledGhost>
     );

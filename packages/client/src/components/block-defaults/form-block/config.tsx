@@ -31,7 +31,6 @@ export const config: BlockConfig<FormBlockDef> = {
     },
     render: FormBlock,
     icon: DynamicForm,
-    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         {

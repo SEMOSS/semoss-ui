@@ -22,7 +22,7 @@ export const SidebarItem = styled('div', {
     width: '100%',
     paddingTop: theme.spacing(2),
     paddingBottom: theme.spacing(2),
-    cursor: disabled ? undefined : 'cursor',
+    cursor: disabled ? undefined : 'pointer',
     pointerEvents: disabled ? 'none' : undefined,
     backgroundColor: selected ? 'rgba(4, 113, 240, 0.12)' : 'transparent',
     transition: 'backgroundColor 2s ease',

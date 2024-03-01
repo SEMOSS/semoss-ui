@@ -27,7 +27,6 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     slots: {},
     render: MarkdownBlock,
     icon: FormatListBulleted,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

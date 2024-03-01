@@ -23,7 +23,7 @@ const StyledNoDataContainer = styled('div', {
 export interface VegaVisualizationBlockDef {
     widget: 'vega';
     data: {
-        specJson: undefined | VisualizationSpec;
+        specJson: string;
         variation?: undefined | string;
     };
     listeners: never;
@@ -36,12 +36,13 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     if (!data.specJson) {
         return (
             <StyledNoDataContainer {...attrs}>
-                Add spec to render your visualization
+                Add JSON to render your visualization
             </StyledNoDataContainer>
         );
     }
     try {
-        const Chart = createClassFromSpec({ spec: data.specJson });
+        const specJson: VisualizationSpec = JSON.parse(data.specJson);
+        const Chart = createClassFromSpec({ spec: specJson });
 
         return (
             <StyledChartContainer {...attrs}>
@@ -50,6 +51,7 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
         );
     } catch (e) {
         // spec was unable to be parsed as object
+        console.error(e);
         return (
             <StyledNoDataContainer error {...attrs}>
                 There was an issue parsing your JSON.

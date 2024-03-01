@@ -24,7 +24,6 @@ export const config: BlockConfig<IframeBlockDef> = {
     slots: {},
     render: IframeBlock,
     icon: AspectRatio,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

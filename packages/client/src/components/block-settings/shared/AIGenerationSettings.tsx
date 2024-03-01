@@ -147,60 +147,57 @@ export const AIGenerationSettings = observer(
         };
 
         return (
-            <BaseSettingSection label={label} wide>
-                <Stack spacing={1} width="100%">
-                    <TextField
-                        disabled={
-                            !cfgLibraryModels.ids.length || responseLoading
-                        }
-                        fullWidth
-                        multiline
-                        rows={5}
-                        value={prompt}
-                        onChange={(e) => {
-                            // sync the data on change
-                            setPrompt(e.target.value);
-                        }}
-                        size="small"
-                        variant="outlined"
-                        autoComplete="off"
-                        placeholder={placeholder}
-                    />
-                    <Autocomplete
-                        disabled={
-                            !cfgLibraryModels.ids.length || responseLoading
-                        }
-                        disableClearable
-                        fullWidth
-                        id="model-autocomplete"
-                        loading={cfgLibraryModels.loading}
-                        options={cfgLibraryModels.ids}
-                        value={selectedModel}
-                        size="small"
-                        getOptionLabel={(modelId: string) =>
-                            cfgLibraryModels.display[modelId] ?? ''
-                        }
-                        onChange={(_, newModelId) => {
-                            setSelectedModel(newModelId);
-                        }}
-                        renderInput={(params) => (
-                            <TextField {...params} variant="outlined" />
-                        )}
-                    />
-                    <Button
-                        disabled={
-                            !cfgLibraryModels.ids.length ||
-                            cfgLibraryModels.loading
-                        }
-                        loading={responseLoading}
-                        variant="outlined"
-                        endIcon={<AutoAwesome />}
-                        onClick={generateAIResponse}
-                    >
-                        Generate
-                    </Button>
-                </Stack>
-            </BaseSettingSection>
+            <Stack spacing={1} padding={2} width="100%">
+                <TextField
+                    disabled={!cfgLibraryModels.ids.length || responseLoading}
+                    fullWidth
+                    multiline
+                    rows={5}
+                    value={prompt}
+                    onChange={(e) => {
+                        // sync the data on change
+                        setPrompt(e.target.value);
+                    }}
+                    size="small"
+                    variant="outlined"
+                    autoComplete="off"
+                    placeholder={placeholder}
+                    label="AI Generator"
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                />
+                <Autocomplete
+                    disabled={!cfgLibraryModels.ids.length || responseLoading}
+                    disableClearable
+                    fullWidth
+                    id="model-autocomplete"
+                    loading={cfgLibraryModels.loading}
+                    options={cfgLibraryModels.ids}
+                    value={selectedModel}
+                    size="small"
+                    getOptionLabel={(modelId: string) =>
+                        cfgLibraryModels.display[modelId] ?? ''
+                    }
+                    onChange={(_, newModelId) => {
+                        setSelectedModel(newModelId);
+                    }}
+                    renderInput={(params) => (
+                        <TextField {...params} variant="outlined" />
+                    )}
+                />
+                <Button
+                    disabled={
+                        !cfgLibraryModels.ids.length || cfgLibraryModels.loading
+                    }
+                    loading={responseLoading}
+                    variant="outlined"
+                    endIcon={<AutoAwesome />}
+                    onClick={generateAIResponse}
+                >
+                    Generate
+                </Button>
+            </Stack>
         );
     },
 );
