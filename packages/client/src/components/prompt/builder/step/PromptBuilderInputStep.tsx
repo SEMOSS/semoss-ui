@@ -9,6 +9,9 @@ export const PromptBuilderInputStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
 }) => {
+    // this stores all information needed to save / load state
+    const [savedTokens, setSavedTokens] = useState<Token[]>([]);
+
     const [tokens, setTokens] = useState<Token[]>([]);
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
@@ -273,6 +276,8 @@ export const PromptBuilderInputStep = (props: {
      * Multi-word inputs should be merged
      */
     const setSelectedTokensAsInputs = (setAsLinked = false) => {
+        console.log({ selectedInputTokens });
+        console.log({ tokens });
         if (selectedInputTokens.length > 1) {
             const selectedInputTokensCopy = [...selectedInputTokens];
             selectedInputTokensCopy.sort((a, b) => a - b);
@@ -306,6 +311,30 @@ export const PromptBuilderInputStep = (props: {
 
     return (
         <StyledStepPaper elevation={2} square>
+            <button
+                onClick={() => {
+                    console.log({
+                        tokens,
+                        selectedInputTokens,
+                    });
+                }}
+            >
+                Print
+            </button>
+            <button
+                onClick={() => {
+                    setSavedTokens(tokens);
+                }}
+            >
+                COPY
+            </button>
+            <button
+                onClick={() => {
+                    setTokens(savedTokens);
+                }}
+            >
+                PASTE
+            </button>
             <Box>
                 <Typography variant="h5">Set Inputs</Typography>
                 <Typography variant="body1">
