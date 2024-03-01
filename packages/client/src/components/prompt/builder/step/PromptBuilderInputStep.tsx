@@ -5,21 +5,88 @@ import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
 import { Box, Typography } from '@semoss/ui';
 import { PromptSetToken } from '../../shared';
 
+const TEST_TOKEN_STATE = [
+    // delete later
+    {
+        index: 0,
+        key: 'Suppose',
+        display: 'Suppose',
+        type: 'text',
+        isHiddenPhraseInputToken: false,
+    },
+    {
+        index: 1,
+        key: 'you',
+        display: 'you',
+        type: 'text',
+        isHiddenPhraseInputToken: false,
+    },
+    {
+        index: 2,
+        key: 'are',
+        display: 'are',
+        type: 'text',
+        isHiddenPhraseInputToken: false,
+    },
+    {
+        index: 3,
+        key: 'a',
+        display: 'a',
+        type: 'text',
+        isHiddenPhraseInputToken: false,
+    },
+    {
+        index: 4,
+        key: 'talking cat',
+        display: 'talking cat.',
+        type: 'input',
+        isHiddenPhraseInputToken: false,
+    },
+    {
+        index: 5,
+        key: 'cat',
+        display: 'cat.',
+        type: 'input',
+        isHiddenPhraseInputToken: true,
+    },
+];
+
 export const PromptBuilderInputStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
 }) => {
-    // this stores all information needed to save / load state
-    const [savedTokens, setSavedTokens] = useState<Token[]>([]);
-
     const [tokens, setTokens] = useState<Token[]>([]);
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
 
+    // PromptBuilderInputSettings
+    const builderInputSettings = props.builder.inputs.value as Token[];
+
+    // this stores all information needed to save / load state
+    const [savedTokens, setSavedTokens] = useState<Token[]>([]);
+
+    const [initLoadComplete, setInitLoadComplete] = useState(false);
+
     useEffect(() => {
-        props.setBuilderValue('inputs', tokens);
-        // Anytime inputs change we should reset inputTypes
-        props.setBuilderValue('inputTypes', undefined);
+        alert('useEffect builderInputSettings');
+        console.log({ inputsFromState: builderInputSettings });
+        // console.log({initLoadComplete, builderInputSettings, tokens})
+        // if (!initLoadComplete) {
+        //     if (!builderInputSettings) {
+        //         // props.setBuilderValue('inputs', tokens);
+        //         // return;
+        //     } else {
+        //         setTokens(builderInputSettings);
+        //     }
+        //     setInitLoadComplete(true);
+        // }
+    }, [builderInputSettings]);
+
+    useEffect(() => {
+        // alert("useEffect tokens")
+        // props.setBuilderValue('inputs', tokens);
+        // // Anytime inputs change we should reset inputTypes
+        // props.setBuilderValue('inputTypes', undefined);
     }, [tokens]);
 
     /**
@@ -311,7 +378,7 @@ export const PromptBuilderInputStep = (props: {
 
     return (
         <StyledStepPaper elevation={2} square>
-            <button
+            {/* <button
                 onClick={() => {
                     console.log({
                         tokens,
@@ -320,21 +387,43 @@ export const PromptBuilderInputStep = (props: {
                 }}
             >
                 Print
-            </button>
-            <button
+            </button> */}
+
+            {/* <button
                 onClick={() => {
                     setSavedTokens(tokens);
                 }}
-            >
+                >
                 COPY
-            </button>
-            <button
+            </button> */}
+
+            {/* <button
                 onClick={() => {
-                    setTokens(savedTokens);
+                    // working fully
+                    setTokens(TEST_TOKEN_STATE);
                 }}
             >
                 PASTE
+            </button> */}
+
+            <button
+                onClick={() => {
+                    alert('saving...');
+                    console.log({ tokensBeingSaved: tokens });
+                    props.setBuilderValue('inputs', tokens);
+                }}
+            >
+                SAVE
             </button>
+
+            <button
+                onClick={() => {
+                    setTokens(builderInputSettings);
+                }}
+            >
+                LOAD
+            </button>
+
             <Box>
                 <Typography variant="h5">Set Inputs</Typography>
                 <Typography variant="body1">
