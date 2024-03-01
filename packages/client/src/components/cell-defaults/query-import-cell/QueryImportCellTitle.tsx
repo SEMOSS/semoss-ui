@@ -116,7 +116,7 @@ export const QueryImportCellTitle: CellComponent<QueryImportCellDef> = (
             display: dbDisplay,
         });
 
-        if (!cell.cellType.parameters.databaseId && dbIds.length) {
+        if (!cell.parameters.databaseId && dbIds.length) {
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
                 payload: {
