@@ -608,43 +608,60 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
             widget: 'vega',
             data: {
                 variation: 'radial-plot',
-                specJson: JSON.stringify({
-                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                    title: 'Radial Plot',
-                    width: 300,
-                    height: 300,
-                    description: 'A simple radial chart with embedded data.',
-                    data: {
-                        values: [12, 23, 47, 6, 52, 19],
-                    },
-                    layer: [
-                        {
-                            mark: {
-                                type: 'arc',
-                                innerRadius: 20,
-                                stroke: '#fff',
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Radial Plot',
+                        width: 300,
+                        height: 300,
+                        description:
+                            'A simple radial chart with embedded data.',
+                        data: {
+                            values: [12, 23, 47, 6, 52, 19],
+                        },
+                        layer: [
+                            {
+                                mark: {
+                                    type: 'arc',
+                                    innerRadius: 20,
+                                    stroke: '#fff',
+                                },
+                            },
+                            {
+                                mark: { type: 'text', radiusOffset: 10 },
+                                encoding: {
+                                    text: {
+                                        field: 'data',
+                                        type: 'quantitative',
+                                    },
+                                },
+                            },
+                        ],
+                        encoding: {
+                            theta: {
+                                field: 'data',
+                                type: 'quantitative',
+                                stack: true,
+                            },
+                            radius: {
+                                field: 'data',
+                                scale: {
+                                    type: 'sqrt',
+                                    zero: true,
+                                    rangeMin: 20,
+                                },
+                            },
+                            color: {
+                                field: 'data',
+                                type: 'nominal',
+                                legend: null,
                             },
                         },
-                        {
-                            mark: { type: 'text', radiusOffset: 10 },
-                            encoding: {
-                                text: { field: 'data', type: 'quantitative' },
-                            },
-                        },
-                    ],
-                    encoding: {
-                        theta: {
-                            field: 'data',
-                            type: 'quantitative',
-                            stack: true,
-                        },
-                        radius: {
-                            field: 'data',
-                            scale: { type: 'sqrt', zero: true, rangeMin: 20 },
-                        },
-                        color: { field: 'data', type: 'nominal', legend: null },
                     },
-                }),
+                    null,
+                    2,
+                ),
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
