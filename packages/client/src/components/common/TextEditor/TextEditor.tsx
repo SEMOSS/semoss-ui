@@ -262,6 +262,7 @@ export const TextEditor = (props: TextEditorProps) => {
     // Effect to re-initialize 'id' ref change
     useEffect(() => {
         modelIdRef.current = modelId;
+        console.log({ modelId });
     }, [modelId]);
 
     /**

@@ -11,8 +11,12 @@ import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 
 import { NotebookQueriesMenu } from './NotebookQueriesMenu';
 import { NotebookSheet } from './NotebookSheet';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NotebookBlocksMenu } from './NotebookBlocksMenu';
+
+import { usePixel } from '@/hooks';
+
+import { LLMContext } from '@/contexts';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -57,6 +61,30 @@ export const Notebook = observer(() => {
         // set the view
         setView(v);
     };
+
+    const [modelId, setModelId] = useState<string>('');
+    const [models, setModels] = useState<
+        { app_id: string; app_name: string }[]
+    >([]);
+
+    const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
+    MyEngines(engineTypes=['MODEL']);
+    `);
+
+    useEffect(() => {
+        if (myModels.status !== 'SUCCESS') {
+            return;
+        }
+
+        setModels(
+            myModels.data.map((d) => ({
+                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                app_id: d.app_id,
+            })),
+        );
+
+        setModelId(myModels.data[0].app_id);
+    }, [myModels.status, myModels.data]);
 
     return (
         <StyledNotebook>
@@ -110,7 +138,17 @@ export const Notebook = observer(() => {
             ) : null}
 
             <StyledRightPanel>
-                <NotebookSheet />
+                <LLMContext.Provider
+                    value={{
+                        modelId: modelId,
+                        modelOptions: models,
+                        setModel: (id) => {
+                            setModelId(id);
+                        },
+                    }}
+                >
+                    <NotebookSheet />
+                </LLMContext.Provider>
             </StyledRightPanel>
         </StyledNotebook>
     );
