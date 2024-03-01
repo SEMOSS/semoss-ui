@@ -61,9 +61,6 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                             data?.hint
                         )
                     }
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
                 />
             )}
             {...attrs}
