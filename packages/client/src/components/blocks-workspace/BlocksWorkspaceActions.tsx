@@ -7,7 +7,11 @@ import {
     useNotification,
     ButtonGroup,
 } from '@semoss/ui';
-import { PlayCircleRounded, ShareRounded } from '@mui/icons-material';
+import {
+    GetAppRounded,
+    PlayCircleRounded,
+    ShareRounded,
+} from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
 import { ShareOverlay, PreviewOverlay } from '@/components/workspace';
@@ -34,7 +38,7 @@ const StyledSaveButtonGroup = styled(ButtonGroup)(({ theme }) => ({
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
 
-    const { monolithStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();
 
@@ -109,6 +113,44 @@ export const BlocksWorkspaceActions = observer(() => {
     };
 
     /**
+     * Method that is called to export the app
+     */
+    const exportApp = async () => {
+        // turn on loading
+        workspace.setLoading(true);
+
+        try {
+            // export  the app
+            const response = await monolithStore.runQuery<[string]>(
+                `ExportProjectApp(project=["${workspace.appId}"]);`,
+            );
+
+            // throw an error if there is no key
+            const key = response.pixelReturn[0].output;
+            if (!key) {
+                throw new Error('Error exporting app');
+            }
+
+            await monolithStore.download(configStore.store.insightID, key);
+
+            notification.add({
+                color: 'success',
+                message: 'Success',
+            });
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            // turn of loading
+            workspace.setLoading(false);
+        }
+    };
+
+    /**
      * Share the current App
      */
     const shareApp = async () => {
@@ -160,16 +202,28 @@ export const BlocksWorkspaceActions = observer(() => {
             <IconButton
                 color="default"
                 size="small"
+                title="Preview App"
                 onClick={() => {
                     previewApp();
                 }}
             >
                 <PlayCircleRounded />
             </IconButton>
+            <IconButton
+                color="default"
+                size="small"
+                title="Download App"
+                onClick={() => {
+                    exportApp();
+                }}
+            >
+                <GetAppRounded />
+            </IconButton>
             <StyledShareButton
                 size={'small'}
                 color={'secondary'}
                 variant={'outlined'}
+                title={'Share App'}
                 startIcon={<StyledShareIcon />}
                 onClick={() => {
                     shareApp();
@@ -179,6 +233,7 @@ export const BlocksWorkspaceActions = observer(() => {
             </StyledShareButton>
             <StyledSaveButtonGroup variant={'contained'} color={'primary'}>
                 <ButtonGroup.Item
+                    title={'Save App'}
                     size={'small'}
                     onClick={() => {
                         saveApp();
