@@ -11,7 +11,7 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
     widget: 'vega',
     type: BLOCK_TYPE_CHART,
     data: {
-        specJson: undefined,
+        specJson: '',
         variation: undefined,
     },
     listeners: {},

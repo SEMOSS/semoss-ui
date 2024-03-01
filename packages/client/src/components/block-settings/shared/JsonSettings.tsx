@@ -1,21 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import {
-    Divider,
-    IconButton,
-    Modal,
-    Stack,
-    TextField,
-    Typography,
-    styled,
-} from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef, QueryState } from '@/stores';
 import { getValueByPath } from '@/utility';
-import { BaseSettingSection } from '../BaseSettingSection';
-import { Close, OpenInNew } from '@mui/icons-material';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 import { Editor } from '@monaco-editor/react';
@@ -81,17 +70,8 @@ export const JsonSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    let valueToSet = value;
-                    try {
-                        valueToSet = !!value ? JSON.parse(value) : value;
-                    } catch (e) {
-                        console.log(e);
-                    }
                     // set the value
-                    setData(
-                        path,
-                        valueToSet as PathValue<D['data'], typeof path>,
-                    );
+                    setData(path, value as PathValue<D['data'], typeof path>);
                 } catch (e) {
                     console.log(e);
                 }
