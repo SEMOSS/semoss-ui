@@ -14,6 +14,7 @@ import BLOCK_H6 from '@/assets/img/BLOCK_H6.png';
 import BLOCK_P from '@/assets/img/BLOCK_P.png';
 import BLOCK_P_ITALICS from '@/assets/img/BLOCK_P_ITALICS.png';
 import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
+import BLOCK_IFRAME from '@/assets/img/BLOCK_IFRAME.png';
 import BLOCK_IMAGE from '@/assets/img/BLOCK_IMAGE.png';
 import BLOCK_LINK from '@/assets/img/BLOCK_LINK.png';
 import BLOCK_MARKDOWN from '@/assets/img/BLOCK_MARKDOWN.png';
@@ -202,6 +203,22 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                 value: 50,
                 includeLabel: true,
                 size: '300px',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Element',
+        image: BLOCK_IFRAME,
+        name: 'Iframe',
+        json: {
+            widget: 'iframe',
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
