@@ -265,15 +265,16 @@ export const NotebookCell = observer(
                         title="Run cell"
                         disabled={cell.isLoading}
                         size="small"
-                        onClick={() =>
+                        onClick={() => {
+                            console.log('here');
                             state.dispatch({
                                 message: ActionMessages.RUN_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
                                 },
-                            })
-                        }
+                            });
+                        }}
                     >
                         <PlayCircle fontSize="small" />
                     </IconButton>
@@ -419,8 +420,33 @@ export const NotebookCell = observer(
                                 paddingTop={0.5}
                                 paddingX={2}
                             >
-                                <Stack>{renderedRunActionButton}</Stack>
-                                {renderedInput}
+                                <div>
+                                    <IconButton
+                                        title="Run cell"
+                                        disabled={cell.isLoading}
+                                        size="small"
+                                        onClick={() => {
+                                            console.log('here');
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.RUN_CELL,
+                                                payload: {
+                                                    queryId: cell.query.id,
+                                                    cellId: cell.id,
+                                                },
+                                            });
+                                        }}
+                                    >
+                                        <PlayCircle fontSize="small" />
+                                    </IconButton>
+                                </div>
+                                <div
+                                    style={{
+                                        width: '100%',
+                                    }}
+                                >
+                                    {renderedInput}
+                                </div>
                             </Stack>
                         </StyledCardContent>
                         <StyledDivider />
