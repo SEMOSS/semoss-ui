@@ -346,6 +346,7 @@ export class StateStore {
             if (block) {
                 // get the search path
                 const s = path.slice(2).join('.');
+                console.log('t', getValueByPath(block.data, s));
                 return getValueByPath(block.data, s);
             }
         }
@@ -354,6 +355,97 @@ export class StateStore {
     };
 
     parseVariableBad = (expression: string): unknown => {
+        // Use a regular expression to find all {{...}} patterns
+        const regex = /\{\{([^}]+)\}\}/g;
+        let match;
+        // Copy the original expression to work with replacements
+        let result = expression;
+
+        // If string is a JSON (vega), go through each param value included in string
+        let isJSON;
+        try {
+            JSON.parse(expression);
+            isJSON = true;
+        } catch (error) {
+            isJSON = false;
+        }
+
+        if (isJSON) {
+            while ((match = regex.exec(expression)) !== null) {
+                // Extract the matched placeholder without the brackets
+                const variable = match[1];
+
+                // Replace the current match in the result string with its evaluated value
+                const replacedValue = this.replaceVariable(variable);
+                result = result.replace(match[0], replacedValue);
+            }
+
+            return result;
+        } else {
+            // trim the whitespace
+            let cleaned = expression.trim();
+            if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
+                return expression;
+            }
+
+            // remove the brackets
+            cleaned = cleaned.slice(2, -2);
+
+            // get the keys in the path
+            const path = cleaned.split('.');
+
+            if (path[0] === 'query' && path[2] === 'cell') {
+                // check if the id is there
+                const queryId = path[1];
+                const cellId = path[3];
+
+                // get the query
+                const query = this._store.queries[queryId];
+                const cell = query ? query.getCell(cellId) : null;
+                if (cell) {
+                    // if the key is a cell, calculate as a cell
+                    const key = path[4];
+                    if (key in cell._exposed) {
+                        // get the search path
+                        const s = path.slice(4).join('.');
+                        return getValueByPath(cell._exposed, s);
+                    }
+                }
+            } else if (path[0] === 'query' && path[2] !== 'cell') {
+                // check if the id is there
+                const queryId = path[1];
+
+                // get the attribute key
+                const key = path[2];
+
+                // get the query
+                const query = this._store.queries[queryId];
+                if (query) {
+                    if (key in query._exposed) {
+                        // get the search path
+                        const s = path.slice(2).join('.');
+                        return getValueByPath(query._exposed, s);
+                    }
+                }
+            } else if (path[0] === 'block') {
+                // check if the id is there
+                const blockId = path[1];
+
+                // get the block
+                const block = this._store.blocks[blockId];
+                if (block) {
+                    // get the search path
+                    const s = path.slice(2).join('.');
+                    console.log('t', getValueByPath(block.data, s));
+                    return getValueByPath(block.data, s);
+                }
+            }
+
+            return expression;
+        }
+    };
+
+    parseBad = (expression: string): unknown => {
         // Use a regular expression to find all {{...}} patterns
         const regex = /\{\{([^}]+)\}\}/g;
         let match;
@@ -370,25 +462,6 @@ export class StateStore {
         }
 
         return result;
-    };
-
-    /**
-     * Flatten a string containing multiple variables
-     * @param expression - expression to flatten
-     * @returns the flatten parameter
-     */
-    flattenVariable = (expression: string): string => {
-        return expression.replace(/{{(.*?)}}/g, (match) => {
-            // try to extract the variable
-            const v = this.parseVariable(match);
-
-            // if it is not a string, convert to a string
-            if (typeof v !== 'string') {
-                return JSON.stringify(v);
-            }
-
-            return v;
-        });
     };
 
     replaceVariable = (placeholder) => {
@@ -432,6 +505,25 @@ export class StateStore {
 
         // Return the evaluated value or the original placeholder
         return value;
+    };
+
+    /**
+     * Flatten a string containing multiple variables
+     * @param expression - expression to flatten
+     * @returns the flatten parameter
+     */
+    flattenVariable = (expression: string): string => {
+        return expression.replace(/{{(.*?)}}/g, (match) => {
+            // try to extract the variable
+            const v = this.parseVariable(match);
+
+            // if it is not a string, convert to a string
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
+            }
+
+            return v;
+        });
     };
 
     /**
