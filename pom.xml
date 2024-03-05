@@ -97,16 +97,6 @@
 								settings.xml,
 								web.xml
 							</packagingExcludes>
-							<!--warSourceIncludes>
-								dist/,
-								core/,
-								embed/,
-								widgets/,
-								widget-resources/,
-								index.html,
-								embed.html,
-								app.constants.js
-							</warSourceIncludes-->
 						</configuration>
 					</plugin>
 				</plugins>
@@ -136,35 +126,37 @@
 							<failOnMissingWebXml>true</failOnMissingWebXml>
 							<warSourceDirectory>${basedir}</warSourceDirectory>
 							<warSourceExcludes>
+								.gitlab-ci.yml,
+								.svnignore,
+								.gitignore,
 								.m2/,
+								.husky/,
+								.vscode/,
 								node_modules/,
+								packages/client/node_modules/,
+								packages/sdk/,
+								packages/sdk-react/,
 								target/,
 								pom.xml,
 								settings.xml,
-								web.xml,
-								.gitlab-ci.yml,
-								.svnignore
+								web.xml
 							</warSourceExcludes>
 							<packagingExcludes>
+								.gitlab-ci.yml,
+								.svnignore,
+								.gitignore,
 								.m2/,
+								.husky/,
+								.vscode/,
 								node_modules/,
+								packages/client/node_modules/,
+								packages/sdk/,
+								packages/sdk-react/,
 								target/,
 								pom.xml,
 								settings.xml,
-								web.xml,
-								.gitlab-ci.yml,
-								.svnignore
+								web.xml
 							</packagingExcludes>
-							<!--warSourceIncludes>
-								dist/,
-								core/,
-								embed/,
-								widgets/,
-								widget-resources/,
-								index.html,
-								embed.html,
-								app.constants.js
-							</warSourceIncludes-->
 						</configuration>
 					</plugin>
 					<plugin>
