@@ -33,6 +33,7 @@ export interface VegaVisualizationBlockDef {
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
 
+    console.log(data.specJson);
     if (!data.specJson) {
         return (
             <StyledNoDataContainer {...attrs}>
