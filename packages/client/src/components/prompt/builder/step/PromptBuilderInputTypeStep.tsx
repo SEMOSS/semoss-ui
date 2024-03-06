@@ -131,9 +131,34 @@ export const PromptBuilderInputTypeStep = (props: {
         props.setBuilderValue('inputTypes', inputTypesDup);
     };
 
-    if (Object.keys(inputTypes).length !== inputTokens.length) {
-        return <></>;
-    }
+    // doesn't seem be necessary since the step is skipped if there are no inputs
+    // needed to be removed so going back to step 2 wouldn't crash the app
+    // if (Object.keys(inputTypes).length !== inputTokens.length) {
+    //     return <></>;
+    // }
+
+    const refreshInputTypesFromState = () => {
+        // copied from page load useEffect
+        const tokens = [...(props.builder.inputs.value as Token[])];
+        const filteredTokens = tokens.filter(
+            (token) =>
+                token.type === TOKEN_TYPE_INPUT &&
+                !token.isHiddenPhraseInputToken &&
+                (token.linkedInputToken !== undefined
+                    ? token.index === token.linkedInputToken
+                    : true),
+        );
+
+        const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
+            return {
+                ...acc,
+                [token.index]: { type: INPUT_TYPE_TEXT, meta: null },
+            };
+        }, {});
+
+        setInputTypes(keyedInputs);
+        props.setBuilderValue('inputTypes', keyedInputs);
+    };
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -144,12 +169,15 @@ export const PromptBuilderInputTypeStep = (props: {
                     inputs.
                 </Typography>
             </StyledBox>
+            make reset button / function for previous page
             <StyledStack spacing={3}>
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection
                         inputToken={inputToken}
-                        inputType={inputTypes[inputToken.index].type}
-                        inputTypeMeta={inputTypes[inputToken.index].meta}
+                        // optional chaining prevents crash after step 2 changes
+                        // couldn't find any negative impacts
+                        inputType={inputTypes[inputToken.index]?.type}
+                        inputTypeMeta={inputTypes[inputToken.index]?.meta}
                         key={inputToken.index}
                         cfgLibraryVectorDbs={cfgLibraryVectorDbs}
                         cfgLibraryDatabases={cfgLibraryDatabases}

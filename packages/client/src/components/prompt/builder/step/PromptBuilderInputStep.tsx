@@ -25,9 +25,8 @@ export const PromptBuilderInputStep = (props: {
         // initial load only runs once but does not update tokens with empty loaded builderInputSettings
         if (!initLoadComplete && builderInputSettings) {
             // setTimeout forces the set function to run on next tick of event loop
-            // unclear why but seems to be an issue with multiple setTokens running in event loop
+            // multiple setTokens running in event loop are interfering
             // setTimeout not ideal but seems to be a somewhat common fix
-            // will find a better way if possible but may require bigger restructure
             setTimeout(() => {
                 setTokens(builderInputSettings);
             }, 0);

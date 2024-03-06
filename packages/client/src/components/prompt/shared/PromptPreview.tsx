@@ -10,8 +10,10 @@ export const PromptPreview = (props: {
         if (token.type === TOKEN_TYPE_TEXT || token.isHiddenPhraseInputToken) {
             return null;
         } else {
+            // optional chaining prevents crash after step 2 changes
+            // couldn't find any negative impacts
             return props.inputTypes[token?.linkedInputToken ?? token.index]
-                .type;
+                ?.type;
         }
     };
 
