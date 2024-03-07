@@ -137,29 +137,6 @@ export const PromptBuilderInputTypeStep = (props: {
     //     return <></>;
     // }
 
-    const refreshInputTypesFromState = () => {
-        // copied from page load useEffect
-        const tokens = [...(props.builder.inputs.value as Token[])];
-        const filteredTokens = tokens.filter(
-            (token) =>
-                token.type === TOKEN_TYPE_INPUT &&
-                !token.isHiddenPhraseInputToken &&
-                (token.linkedInputToken !== undefined
-                    ? token.index === token.linkedInputToken
-                    : true),
-        );
-
-        const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
-            return {
-                ...acc,
-                [token.index]: { type: INPUT_TYPE_TEXT, meta: null },
-            };
-        }, {});
-
-        setInputTypes(keyedInputs);
-        props.setBuilderValue('inputTypes', keyedInputs);
-    };
-
     return (
         <StyledStepPaper elevation={2} square>
             <StyledBox>
@@ -170,6 +147,16 @@ export const PromptBuilderInputTypeStep = (props: {
                 </Typography>
             </StyledBox>
             make reset button / function for previous page
+            <button
+                onClick={() => {
+                    console.log({
+                        // "props.builder.inputs.value": props.builder.inputs.value
+                        props: props,
+                    });
+                }}
+            >
+                props
+            </button>
             <StyledStack spacing={3}>
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection

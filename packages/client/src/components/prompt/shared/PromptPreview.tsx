@@ -19,6 +19,17 @@ export const PromptPreview = (props: {
 
     return (
         <>
+            <button
+                onClick={() => {
+                    console.log({
+                        // "props.builder.inputs.value": props.builder.inputs.value
+                        props: props,
+                    });
+                }}
+            >
+                props
+            </button>
+
             {Array.from(props.tokens, (token: Token) => (
                 <PromptHoverToken
                     key={token.index}

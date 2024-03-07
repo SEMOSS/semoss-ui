@@ -195,6 +195,7 @@ export const PromptBuilderInputStep = (props: {
      * @param tokenIndex
      */
     const addSelectedInputToken = (tokenIndex: number) => {
+        alert(`Adding: ${tokenIndex}`);
         const selectedInputTokensCopy = [...selectedInputTokens];
         const sortedTokens = selectedInputTokensCopy.sort((a, b) => a - b);
         let isConsecutive = false;
@@ -217,6 +218,9 @@ export const PromptBuilderInputStep = (props: {
      * @param tokenIndex
      */
     const removeSelectedInputToken = (tokenIndex: number) => {
+        alert(`Removing: ${tokenIndex}`);
+        console.log({ props });
+
         const selectedInputTokensCopy = [...selectedInputTokens];
         const index = selectedInputTokensCopy.indexOf(tokenIndex);
         // item is not the first or last item, make the selections no longer consectutive
@@ -246,6 +250,33 @@ export const PromptBuilderInputStep = (props: {
      * @param tokenIndex
      */
     const resetInputToken = (tokenIndex: number) => {
+        alert(`Resetting: ${tokenIndex}`);
+
+        // when a token is changed...
+        //   check each token
+        //      if the token.index is in props.builder.inputTypes.value
+        //        then remove it from props.builder.inputTypes.value
+        //          copy it and reassign it with props.setBuilderValue('inputTypes', newCopy)
+
+        const inputTypes = props.builder.inputTypes.value;
+        // removes token from inputTypes so it doesn't end up in the app after preview
+        if (inputTypes) {
+            // Not able to remove key from object for some reason
+            // tested locally with node, should be working
+            const { [tokenIndex]: _, ...newInputTypes } = { ...inputTypes };
+
+            // this is an alternative approach that might work
+
+            // const obj = { a: 1, b: 2, c: 3 };
+            // const keysToRemove = ['b'];
+            // const newObj = Object.fromEntries(
+            //   Object.entries(obj).filter(([key]) => !keysToRemove.includes(key))
+            // );
+
+            console.log({ inputTypes });
+            console.log({ newInputTypes });
+        }
+
         const phrase = tokens[tokenIndex].display;
         const phraseArray = phrase.split(' ');
         if (phrase.length === 1) {
@@ -337,6 +368,16 @@ export const PromptBuilderInputStep = (props: {
                     user-defined input. Click a defined input to deselect it.
                 </Typography>
             </Box>
+            <button
+                onClick={() => {
+                    console.log({
+                        // "props.builder.inputs.value": props.builder.inputs.value
+                        props: props,
+                    });
+                }}
+            >
+                props
+            </button>
             <StyledTextPaper>
                 {Array.from(tokens, (token: Token) => (
                     <React.Fragment key={token.index}>
