@@ -47,7 +47,7 @@ export const ColumnTypeTransformationCellInput: CellComponent<
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
-                display="ColumnType"
+                display="Change Column Type"
                 Icon={FontDownload}
             >
                 <Stack width="100%" paddingY={0.75}>
