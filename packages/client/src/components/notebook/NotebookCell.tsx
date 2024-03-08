@@ -266,7 +266,6 @@ export const NotebookCell = observer(
                         disabled={cell.isLoading}
                         size="small"
                         onClick={() => {
-                            console.log('here');
                             state.dispatch({
                                 message: ActionMessages.RUN_CELL,
                                 payload: {
@@ -426,7 +425,6 @@ export const NotebookCell = observer(
                                         disabled={cell.isLoading}
                                         size="small"
                                         onClick={() => {
-                                            console.log('here');
                                             state.dispatch({
                                                 message:
                                                     ActionMessages.RUN_CELL,

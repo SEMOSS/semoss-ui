@@ -2,12 +2,14 @@ import { CellDef } from '@/stores';
 
 export type operation = '==' | '<' | '>' | '!=' | '<=' | '>=' | '?like';
 
+export type columnTypes = 'STRING' | 'NUMBER' | 'DATE';
+
 export type ColumnInfo = {
     name: string;
     dataType: string;
 };
 
-export type TransformationTypes = 'uppercase' | 'update-row';
+export type TransformationTypes = 'uppercase' | 'update-row' | 'column-type';
 
 export interface TransformationDef<R extends string = string> {
     /** Unique transformation name */

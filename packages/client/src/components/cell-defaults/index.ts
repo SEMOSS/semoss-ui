@@ -9,16 +9,22 @@ import {
     UpdateRowTransformationCell,
     UpdateRowTransformationCellDef,
 } from './update-row-transformation-cell';
+import {
+    ColumnTypeTransformationCell,
+    ColumnTypeTransformationCellDef,
+} from './column-type-transformation-cell';
 
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
     | UppercaseTransformationCellDef
-    | UpdateRowTransformationCellDef;
+    | UpdateRowTransformationCellDef
+    | ColumnTypeTransformationCellDef;
 
 export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [CodeCell.widget]: CodeCell,
     [QueryImportCell.widget]: QueryImportCell,
     [UppercaseTransformationCell.widget]: UppercaseTransformationCell,
     [UpdateRowTransformationCell.widget]: UpdateRowTransformationCell,
+    [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
 };
