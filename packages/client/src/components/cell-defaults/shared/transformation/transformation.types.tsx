@@ -4,12 +4,20 @@ export type operation = '==' | '<' | '>' | '!=' | '<=' | '>=' | '?like';
 
 export type columnTypes = 'STRING' | 'NUMBER' | 'DATE';
 
+export type dateUnit = 'day' | 'week' | 'month' | 'year';
+
+export type dateType = 'column' | 'custom';
+
 export type ColumnInfo = {
     name: string;
     dataType: string;
 };
 
-export type TransformationTypes = 'uppercase' | 'update-row' | 'column-type';
+export type TransformationTypes =
+    | 'uppercase'
+    | 'update-row'
+    | 'column-type'
+    | 'date-difference';
 
 export interface TransformationDef<R extends string = string> {
     /** Unique transformation name */

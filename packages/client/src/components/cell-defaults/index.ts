@@ -13,13 +13,18 @@ import {
     ColumnTypeTransformationCell,
     ColumnTypeTransformationCellDef,
 } from './column-type-transformation-cell';
+import {
+    DateDifferenceTransformationCell,
+    DateDifferenceTransformationCellDef,
+} from './date-difference-transformation-cell';
 
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
     | UppercaseTransformationCellDef
     | UpdateRowTransformationCellDef
-    | ColumnTypeTransformationCellDef;
+    | ColumnTypeTransformationCellDef
+    | DateDifferenceTransformationCellDef;
 
 export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [CodeCell.widget]: CodeCell,
@@ -27,4 +32,5 @@ export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [UppercaseTransformationCell.widget]: UppercaseTransformationCell,
     [UpdateRowTransformationCell.widget]: UpdateRowTransformationCell,
     [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
+    [DateDifferenceTransformationCell.widget]: DateDifferenceTransformationCell,
 };

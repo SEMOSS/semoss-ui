@@ -3,11 +3,13 @@ import {
     TransformationTypes,
     operation,
     columnTypes,
+    dateUnit,
 } from './transformation.types';
 import {
     FontDownload,
     TableRows,
     ChangeCircleOutlined,
+    CalendarTodayOutlined,
 } from '@mui/icons-material';
 
 export const operations: operation[] = [
@@ -25,6 +27,8 @@ export const transformationColumnTypes: columnTypes[] = [
     'NUMBER',
     'DATE',
 ];
+
+export const dateUnitTypes: dateUnit[] = ['day', 'week', 'month', 'year'];
 
 export interface TransformationConfig<
     D extends TransformationDef = TransformationDef,
@@ -59,5 +63,11 @@ export const Transformations: Record<
         display: 'Change Column Type',
         icon: ChangeCircleOutlined,
         widget: 'column-type-transformation',
+    },
+    'date-difference': {
+        transformation: 'date-difference',
+        display: 'Date Difference',
+        icon: CalendarTodayOutlined,
+        widget: 'date-difference-transformation',
     },
 };
