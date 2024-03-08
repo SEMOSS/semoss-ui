@@ -17,6 +17,8 @@ export const TransformationCellOutput: CellComponent<TransformationCellDef> = (
 
     switch (cell.parameters.transformation.key) {
         case 'uppercase':
+        case 'update-row':
+        case 'column-type':
             return (
                 <QueryPreviewCellOutput
                     cellOutput={cell.output}

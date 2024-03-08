@@ -1,11 +1,14 @@
-import { UpdateRowTransformationDef } from '../../update-row-transformation-cell';
-import { UppercaseTransformationDef } from '../../uppercase-transformation-cell';
 import {
     TransformationDef,
     TransformationTypes,
     operation,
+    columnTypes,
 } from './transformation.types';
-import { FontDownload, TableRows } from '@mui/icons-material';
+import {
+    FontDownload,
+    TableRows,
+    ChangeCircleOutlined,
+} from '@mui/icons-material';
 
 export const operations: operation[] = [
     '==',
@@ -15,6 +18,12 @@ export const operations: operation[] = [
     '<=',
     '>=',
     '?like',
+];
+
+export const transformationColumnTypes: columnTypes[] = [
+    'STRING',
+    'NUMBER',
+    'DATE',
 ];
 
 export interface TransformationConfig<
@@ -44,5 +53,11 @@ export const Transformations: Record<
         display: 'Update Row Values',
         icon: TableRows,
         widget: 'update-row-transformation',
+    },
+    'column-type': {
+        transformation: 'column-type',
+        display: 'Change Column Type',
+        icon: ChangeCircleOutlined,
+        widget: 'column-type-transformation',
     },
 };
