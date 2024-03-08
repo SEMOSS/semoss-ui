@@ -110,7 +110,7 @@ export const NewAppPage = () => {
             return;
         }
 
-        navigate(`/app/${appId}`);
+        navigate(`/app/${appId}/edit`);
     };
 
     return (
