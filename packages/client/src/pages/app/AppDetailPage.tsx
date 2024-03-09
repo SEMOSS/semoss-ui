@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
@@ -14,6 +15,35 @@ import { SettingsTiles } from '@/components/settings/SettingsTiles';
 import { AppSettings } from '@/components/app/AppSettings';
 import { useRootStore } from '@/hooks';
 
+const HEADINGS = [
+    { id: 'main-uses', text: 'Main Uses' },
+    { id: 'tags', text: 'Tags' },
+    { id: 'videos', text: 'Videos' },
+    { id: 'dependencies', text: 'Dependencies' },
+    { id: 'app-access', text: 'App Access' },
+    { id: 'member-access', text: 'Member Access' },
+];
+
+const OuterContainer = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    justifyContent: 'center',
+    overflow: 'scroll',
+    padding: '0 1rem',
+    width: '100%',
+});
+
+const InnerContainer = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    gap: '1rem',
+    margin: 'auto',
+    maxWidth: '79rem',
+    width: '100%',
+});
+
 const TopButtonsContainer = styled('div')({
     display: 'flex',
     gap: '0.25rem',
@@ -25,26 +55,25 @@ const StyledTextButton = styled(Button)(({ theme }) => ({
 }));
 
 const StyledArrowDropDownIcon = styled(ArrowDropDownIcon)({
-    display: 'flex',
-    alignItems: 'center',
+    '&:first-child': {
+        display: 'flex',
+    },
 });
 
-const Sidebar = styled('div')({
+const StyledHeading2 = styled('h2')({
+    fontSize: 18,
+    fontWeight: '550',
+    margin: '0.5rem 0',
+});
+
+const Content = styled('div')({
     display: 'flex',
-    borderRight: 'solid',
+});
+
+const Sections = styled('div')({
+    display: 'flex',
     flexDirection: 'column',
     fontWeight: 'bold',
-    gap: '1rem',
-    overflow: 'scroll',
-});
-
-const SidebarLink = styled(Link)({
-    color: 'inherit',
-    fontWeight: 'bold',
-    textDecoration: 'none',
-    '&:visited': {
-        color: 'inherit',
-    },
 });
 
 export function AppDetailPage() {
@@ -56,52 +85,40 @@ export function AppDetailPage() {
     const navigate = useNavigate();
 
     return (
-        <Sidebar>
-            <Breadcrumbs>Breadcrumbs</Breadcrumbs>
-            <TopButtonsContainer>
-                <StyledTextButton variant="text">
-                    Change Access
-                </StyledTextButton>
-                <ButtonGroup>
-                    <Button variant="contained">Open</Button>
-                    <Button variant="contained">
-                        <StyledArrowDropDownIcon />
-                    </Button>
-                </ButtonGroup>
-                {/* <div style={{ width: '50rem' }}> */}
-                <IconButton>
-                    <MoreVertIcon />
-                </IconButton>
-                {/* </div> */}
-            </TopButtonsContainer>
-            <div
-                style={{
-                    display: 'flex',
-                }}
-            >
-                <Sidebar>
-                    <SidebarLink to="#main-uses">Main Uses</SidebarLink>
-                    <SidebarLink to="#tags">Tags</SidebarLink>
-                    <SidebarLink to="#videos">Videos</SidebarLink>
-                    <SidebarLink to="#dependencies">Dependencies</SidebarLink>
-                    <SidebarLink to="#app-access">App Access</SidebarLink>
-                    <SidebarLink to="#member-access">Member Access</SidebarLink>
-                </Sidebar>
-                <div
+        <OuterContainer>
+            <InnerContainer>
+                <Breadcrumbs>Breadcrumbs</Breadcrumbs>
+                <TopButtonsContainer>
+                    <StyledTextButton variant="text">
+                        Change Access
+                    </StyledTextButton>
+                    <ButtonGroup>
+                        <Button variant="contained">Open</Button>
+                        <Button variant="contained" sx={{ display: 'flex' }}>
+                            <StyledArrowDropDownIcon />
+                        </Button>
+                    </ButtonGroup>
+                    <IconButton>
+                        <MoreVertIcon />
+                    </IconButton>
+                </TopButtonsContainer>
+                <Content
                     style={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        fontWeight: 'bold',
                     }}
                 >
-                    <pre>(Title Section)</pre>
-                    <pre id="#main-uses">Main uses</pre>
-                    <pre id="#tags">Tags</pre>
-                    <pre id="#videos">Video</pre>
-                    <pre id="#dependencies">Dependencies (reactor call)</pre>
-                    <pre id="#member-access">Member Access</pre>
-                    {/* <AppSettings id={appId} /> */}
-                    {/* <SettingsTiles
+                    <Sidebar />
+                    <Sections>
+                        {HEADINGS.map(({ id, text }) => (
+                            <StyledHeading2
+                                key={nanoid()}
+                                id={`#${id}-app-detail-page`}
+                            >
+                                {text}
+                            </StyledHeading2>
+                        ))}
+                        {/* <AppSettings id={appId} /> */}
+                        {/* <SettingsTiles
                         id={appId}
                         mode={'app'}
                         name={'app'}
@@ -109,11 +126,43 @@ export function AppDetailPage() {
                             navigate('..', { relative: 'path' });
                         }}
                     /> */}
-                    <pre id="#app-access">
-                        App Access section (components from Settings)
-                    </pre>
-                </div>
-            </div>
-        </Sidebar>
+                        <pre id="#app-access">
+                            App Access section (components from Settings)
+                        </pre>
+                    </Sections>
+                </Content>
+            </InnerContainer>
+        </OuterContainer>
+    );
+}
+
+const StyledSidebar = styled('div')(({ theme }) => ({
+    display: 'flex',
+    borderRight: `2px solid ${theme.palette.secondary.main}`,
+    flexDirection: 'column',
+    fontWeight: 'bold',
+    gap: '1rem',
+    paddingRight: '0.7rem',
+    marginRight: '3rem',
+}));
+
+const SidebarLink = styled(Link)({
+    color: 'inherit',
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    '&:visited': {
+        color: 'inherit',
+    },
+});
+
+function Sidebar() {
+    return (
+        <StyledSidebar>
+            {HEADINGS.map(({ id, text }) => (
+                <SidebarLink key={nanoid()} to={`#${id}-app-detail-page`}>
+                    {text}
+                </SidebarLink>
+            ))}
+        </StyledSidebar>
     );
 }
