@@ -47,7 +47,7 @@ export const TimestampTransformationCellInput: CellComponent<
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
-                display="Timestamp"
+                display={Transformations[cellTransformation.key].display}
                 Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
@@ -62,7 +62,7 @@ export const TimestampTransformationCellInput: CellComponent<
     return (
         <TransformationCellInput
             isExpanded={isExpanded}
-            display="Timestamp"
+            display={Transformations[cellTransformation.key].display}
             Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>

@@ -63,7 +63,7 @@ export const UpdateRowTransformationCellInput: CellComponent<
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
-                display="Update Row Values"
+                display={Transformations[cellTransformation.key].display}
                 Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
@@ -78,7 +78,7 @@ export const UpdateRowTransformationCellInput: CellComponent<
     return (
         <TransformationCellInput
             isExpanded={isExpanded}
-            display="Update Row Values"
+            display={Transformations[cellTransformation.key].display}
             Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>

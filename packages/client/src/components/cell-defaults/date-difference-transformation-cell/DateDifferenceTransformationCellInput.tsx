@@ -54,7 +54,7 @@ export const DateDifferenceTransformationCellInput: CellComponent<
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
-                display="Date Difference"
+                display={Transformations[cellTransformation.key].display}
                 Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
@@ -69,7 +69,7 @@ export const DateDifferenceTransformationCellInput: CellComponent<
     return (
         <TransformationCellInput
             isExpanded={isExpanded}
-            display="Date Difference"
+            display={Transformations[cellTransformation.key].display}
             Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>
