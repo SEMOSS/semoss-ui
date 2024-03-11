@@ -147,16 +147,6 @@ export const PromptBuilderInputTypeStep = (props: {
                 </Typography>
             </StyledBox>
             make reset button / function for previous page
-            <button
-                onClick={() => {
-                    console.log({
-                        // "props.builder.inputs.value": props.builder.inputs.value
-                        props: props,
-                    });
-                }}
-            >
-                props
-            </button>
             <StyledStack spacing={3}>
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection
