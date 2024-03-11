@@ -19,6 +19,8 @@ export const TransformationCellOutput: CellComponent<TransformationCellDef> = (
         case 'uppercase':
         case 'update-row':
         case 'column-type':
+        case 'date-difference':
+        case 'timestamp':
             return (
                 <QueryPreviewCellOutput
                     cellOutput={cell.output}

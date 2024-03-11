@@ -17,7 +17,8 @@ export type TransformationTypes =
     | 'uppercase'
     | 'update-row'
     | 'column-type'
-    | 'date-difference';
+    | 'date-difference'
+    | 'timestamp';
 
 export interface TransformationDef<R extends string = string> {
     /** Unique transformation name */

@@ -17,6 +17,10 @@ import {
     DateDifferenceTransformationCell,
     DateDifferenceTransformationCellDef,
 } from './date-difference-transformation-cell';
+import {
+    TimestampTransformationCell,
+    TimestampTransformationCellDef,
+} from './timestamp-transformation-cell';
 
 export type DefaultCellDefinitions =
     | CodeCellDef
@@ -24,7 +28,8 @@ export type DefaultCellDefinitions =
     | UppercaseTransformationCellDef
     | UpdateRowTransformationCellDef
     | ColumnTypeTransformationCellDef
-    | DateDifferenceTransformationCellDef;
+    | DateDifferenceTransformationCellDef
+    | TimestampTransformationCellDef;
 
 export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [CodeCell.widget]: CodeCell,
@@ -33,4 +38,5 @@ export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [UpdateRowTransformationCell.widget]: UpdateRowTransformationCell,
     [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
     [DateDifferenceTransformationCell.widget]: DateDifferenceTransformationCell,
+    [TimestampTransformationCell.widget]: TimestampTransformationCell,
 };

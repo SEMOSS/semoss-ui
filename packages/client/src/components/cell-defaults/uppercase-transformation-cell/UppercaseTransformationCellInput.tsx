@@ -7,13 +7,13 @@ import {
     ColumnInfo,
     ColumnTransformationField,
     TransformationCellInput,
+    Transformations,
 } from '../shared';
 import {
     UppercaseTransformationCellDef,
     UppercaseTransformationDef,
 } from './config';
 import { QueryImportCellDef } from '../query-import-cell';
-import { FontDownload } from '@mui/icons-material';
 
 export const UppercaseTransformationCellInput: CellComponent<
     UppercaseTransformationCellDef
@@ -45,8 +45,8 @@ export const UppercaseTransformationCellInput: CellComponent<
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
-                display="Uppercase"
-                Icon={FontDownload}
+                display={Transformations[cellTransformation.key].display}
+                Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
                     <Typography variant="caption">
@@ -60,8 +60,8 @@ export const UppercaseTransformationCellInput: CellComponent<
     return (
         <TransformationCellInput
             isExpanded={isExpanded}
-            display="Uppercase"
-            Icon={FontDownload}
+            display={Transformations[cellTransformation.key].display}
+            Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>
                 <Typography variant="caption">
