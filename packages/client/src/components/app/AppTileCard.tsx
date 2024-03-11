@@ -308,6 +308,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         <Link
                             href={href}
                             rel="noopener noreferrer"
+                            target="_blank"
                             color="inherit"
                             underline="none"
                         >

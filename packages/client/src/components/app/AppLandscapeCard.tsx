@@ -308,6 +308,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             rel="noopener noreferrer"
                             color="inherit"
                             underline="none"
+                            target="_blank"
                         >
                             <Button>Open</Button>
                         </Link>
