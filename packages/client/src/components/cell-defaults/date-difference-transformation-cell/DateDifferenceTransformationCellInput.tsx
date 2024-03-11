@@ -15,17 +15,14 @@ import {
     ColumnTransformationField,
     TransformationCellInput,
     dateUnitTypes,
+    Transformations,
 } from '../shared';
 import {
     DateDifferenceTransformationCellDef,
     DateDifferenceTransformationDef,
 } from './config';
 import { QueryImportCellDef } from '../query-import-cell';
-import {
-    CalendarMonth,
-    FontDownload,
-    TableChartOutlined,
-} from '@mui/icons-material';
+import { CalendarMonth, TableChartOutlined } from '@mui/icons-material';
 
 export const DateDifferenceTransformationCellInput: CellComponent<
     DateDifferenceTransformationCellDef
@@ -58,7 +55,7 @@ export const DateDifferenceTransformationCellInput: CellComponent<
             <TransformationCellInput
                 isExpanded={isExpanded}
                 display="Date Difference"
-                Icon={FontDownload}
+                Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
                     <Typography variant="caption">
@@ -73,7 +70,7 @@ export const DateDifferenceTransformationCellInput: CellComponent<
         <TransformationCellInput
             isExpanded={isExpanded}
             display="Date Difference"
-            Icon={FontDownload}
+            Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>
                 <Typography variant="caption">

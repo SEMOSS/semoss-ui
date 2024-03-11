@@ -9,13 +9,13 @@ import {
     ColumnTransformationField,
     TransformationCellInput,
     transformationColumnTypes,
+    Transformations,
 } from '../shared';
 import {
     ColumnTypeTransformationCellDef,
     ColumnTypeTransformationDef,
 } from './config';
 import { QueryImportCellDef } from '../query-import-cell';
-import { FontDownload } from '@mui/icons-material';
 
 export const ColumnTypeTransformationCellInput: CellComponent<
     ColumnTypeTransformationCellDef
@@ -48,7 +48,7 @@ export const ColumnTypeTransformationCellInput: CellComponent<
             <TransformationCellInput
                 isExpanded={isExpanded}
                 display="Change Column Type"
-                Icon={FontDownload}
+                Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
                     <Typography variant="caption">
@@ -63,7 +63,7 @@ export const ColumnTypeTransformationCellInput: CellComponent<
         <TransformationCellInput
             isExpanded={isExpanded}
             display="Column Type"
-            Icon={FontDownload}
+            Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>
                 <Typography variant="caption">

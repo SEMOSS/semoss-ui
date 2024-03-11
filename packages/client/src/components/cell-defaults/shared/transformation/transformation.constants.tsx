@@ -9,7 +9,8 @@ import {
     FontDownload,
     TableRows,
     ChangeCircleOutlined,
-    CalendarTodayOutlined,
+    TodayOutlined,
+    DateRangeOutlined,
 } from '@mui/icons-material';
 
 export const operations: operation[] = [
@@ -67,7 +68,13 @@ export const Transformations: Record<
     'date-difference': {
         transformation: 'date-difference',
         display: 'Date Difference',
-        icon: CalendarTodayOutlined,
+        icon: DateRangeOutlined,
         widget: 'date-difference-transformation',
+    },
+    timestamp: {
+        transformation: 'timestamp',
+        display: 'Timestamp',
+        icon: TodayOutlined,
+        widget: 'timestamp-transformation',
     },
 };

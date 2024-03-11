@@ -8,6 +8,7 @@ import {
     ColumnTransformationField,
     Transformation,
     TransformationCellInput,
+    Transformations,
     operations,
 } from '../shared';
 import { QueryImportCellDef } from '../query-import-cell';
@@ -15,7 +16,6 @@ import {
     UpdateRowTransformationCellDef,
     UpdateRowTransformationDef,
 } from './config';
-import { TableRows } from '@mui/icons-material';
 
 export const UpdateRowTransformationCellInput: CellComponent<
     UpdateRowTransformationCellDef
@@ -64,7 +64,7 @@ export const UpdateRowTransformationCellInput: CellComponent<
             <TransformationCellInput
                 isExpanded={isExpanded}
                 display="Update Row Values"
-                Icon={TableRows}
+                Icon={Transformations[cellTransformation.key].icon}
             >
                 <Stack width="100%" paddingY={0.75}>
                     <Typography variant="caption">
@@ -79,7 +79,7 @@ export const UpdateRowTransformationCellInput: CellComponent<
         <TransformationCellInput
             isExpanded={isExpanded}
             display="Update Row Values"
-            Icon={TableRows}
+            Icon={Transformations[cellTransformation.key].icon}
         >
             <Stack spacing={2}>
                 <Typography variant="caption">
