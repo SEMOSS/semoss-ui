@@ -248,7 +248,9 @@ export const PromptBuilderInputStep = (props: {
         const inputTypes = props.builder.inputTypes.value;
         // removes token from inputTypes so it doesn't end up in the app after preview
         if (inputTypes) {
-            const { [tokenIndex]: _, ...newInputTypes } = { ...inputTypes };
+            const { [tokenIndex]: _, ...newInputTypes } = {
+                ...Object(inputTypes),
+            };
             props.setBuilderValue('inputTypes', newInputTypes);
         }
 

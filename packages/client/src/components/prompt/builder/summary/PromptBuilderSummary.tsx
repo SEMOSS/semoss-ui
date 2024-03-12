@@ -117,7 +117,14 @@ export const PromptBuilderSummary = (props: {
                     <span
                         key={i + 1}
                         onClick={() => {
+                            console.log({
+                                'props.currentBuilderStep':
+                                    props.currentBuilderStep,
+                                disabled,
+                                i,
+                            });
                             if (!disabled) {
+                                console.log(`Changing to step ${i + 1}`);
                                 props.changeBuilderStep(i + 1);
                             }
                         }}
