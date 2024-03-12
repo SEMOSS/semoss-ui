@@ -152,7 +152,6 @@ export const PromptBuilderInputTypeStep = (props: {
                     <PromptBuilderInputTypeSelection
                         inputToken={inputToken}
                         // optional chaining prevents crash after step 2 changes
-                        // couldn't find any negative impacts
                         inputType={inputTypes[inputToken.index]?.type}
                         inputTypeMeta={inputTypes[inputToken.index]?.meta}
                         key={inputToken.index}

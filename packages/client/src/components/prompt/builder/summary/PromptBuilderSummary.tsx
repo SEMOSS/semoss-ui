@@ -2,12 +2,14 @@ import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     SUMMARY_STEPS,
+    TOKEN_TYPE_INPUT,
 } from '../../prompt.constants';
-import { Builder, BuilderStepItem } from '../../prompt.types';
+import { Builder, BuilderStepItem, Token } from '../../prompt.types';
 import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
+import { useEffect } from 'react';
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     backgroundColor: theme.palette.grey[100],
@@ -48,6 +50,7 @@ const StyledListItemTypography = styled(Typography)(() => ({
 }));
 
 export const PromptBuilderSummary = (props: {
+    // builder: Builder; // not sure if this is used anywhere
     builder: Builder;
     currentBuilderStep: number;
     isBuilderStepComplete: (step: number) => boolean;
@@ -78,6 +81,10 @@ export const PromptBuilderSummary = (props: {
             : Math.round(100 / builderArray.length) *
                   completedStepsToCount.length;
     };
+
+    // useEffect(() => {
+    //     alert("useEffect")
+    // }, [currentBuilderStep])
 
     return (
         <List component="nav">
@@ -113,18 +120,29 @@ export const PromptBuilderSummary = (props: {
                     isStepComplete = false;
                 }
 
+                // to reproduce problem
+                // Go step by step
+                // after filling out the Define Input Steps click manually on previous Set Inputs
+                // it incorrectly opens step 1
+                // if you click Define Input Steps again it appears blank
+
+                // this is now working but its just always disabled
+                // need better way to track input types
+
+                if (i + 1 === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+                    const hasInputs = (
+                        props.builder.inputs.value as Token[]
+                    )?.some((token: Token) => {
+                        return token.type === TOKEN_TYPE_INPUT;
+                    });
+                    disabled = !hasInputs;
+                }
+
                 return (
                     <span
                         key={i + 1}
                         onClick={() => {
-                            console.log({
-                                'props.currentBuilderStep':
-                                    props.currentBuilderStep,
-                                disabled,
-                                i,
-                            });
                             if (!disabled) {
-                                console.log(`Changing to step ${i + 1}`);
                                 props.changeBuilderStep(i + 1);
                             }
                         }}

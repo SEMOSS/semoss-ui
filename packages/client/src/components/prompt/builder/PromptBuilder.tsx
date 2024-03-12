@@ -154,18 +154,28 @@ export const PromptBuilder = () => {
         }
     };
 
+    // this seems to be causing the previous state navigation bug
     const navigateBuilderSteps = (step: number) => {
-        if (step === PROMPT_BUILDER_INPUT_TYPES_STEP) {
-            // moving back from step after input types step - if no input types, skip that step moving backwards
-            const hasInputs = (builder.inputs.value as Token[]).some(
-                (token: Token) => {
-                    return token.type === TOKEN_TYPE_INPUT;
-                },
-            );
-            changeBuilderStep(currentBuilderStep - (hasInputs ? 1 : 2));
-        } else {
-            changeBuilderStep(step);
-        }
+        // this doesn't seem to be necessary since input types step is disabled if there are no inputs
+        // tested and this seems to be the only thing causing buggy behavior
+        // when enabled it skips to step one then shows blank step if clicked again
+
+        // still need to disable that step if there are no inputs set
+        // it is clickable and blank / broken if you are on Set Constraints step
+
+        // if (step === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+        //     // moving back from step after input types step - if no input types, skip that step moving backwards
+        //     const hasInputs = (builder.inputs.value as Token[]).some(
+        //         (token: Token) => {
+        //             return token.type === TOKEN_TYPE_INPUT;
+        //         },
+        //     );
+        //     changeBuilderStep(currentBuilderStep - (hasInputs ? 1 : 2));
+        // } else {
+        //     changeBuilderStep(step);
+        // }
+
+        changeBuilderStep(step);
     };
 
     const isBuilderStepComplete = (step: number) => {
@@ -231,9 +241,12 @@ export const PromptBuilder = () => {
                             currentBuilderStep={currentBuilderStep}
                             isBuilderStepComplete={isBuilderStepComplete}
                             isBuildStepsComplete={isBuildStepsComplete}
-                            changeBuilderStep={(step) => {
-                                navigateBuilderSteps(step);
-                            }}
+                            // changeBuilderStep={(step) => {
+                            //     navigateBuilderSteps(step);
+                            // }}
+
+                            // this seems to work fine cant find any bugs
+                            changeBuilderStep={changeBuilderStep}
                         />
                     </StyledPaper>
                 </Grid>
