@@ -9,14 +9,17 @@ import {
     Button,
     ButtonGroup,
     IconButton,
+    Menu,
+    MenuItem,
     styled,
     useNotification,
 } from '@semoss/ui';
 import { SettingsTiles } from '@/components/settings/SettingsTiles';
 import { AppSettings } from '@/components/app/AppSettings';
 import { usePixel, useRootStore } from '@/hooks';
+import { MonolithStore } from '@/stores';
 
-// TODO: Implement top drop-down menus per <https://github.com/mui/material-ui/blob/v5.15.12/docs/data/material/components/button-group/SplitButton.tsx>.
+// TODO: Implement top drop-down menus.
 
 const HEADINGS = [
     { id: 'main-uses', text: 'Main Uses' },
@@ -83,16 +86,19 @@ const Sections = styled('div')({
 export function AppDetailPage() {
     // App ID Needed for pixel calls
     const { appId } = useParams();
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
 
     const notification = useNotification();
     const navigate = useNavigate();
 
     const dependencies = usePixel(`GetProjectDependencies(project="${appId}")`);
 
-    const setDependencies = usePixel(
-        `SetProjectDependencies(project="${appId}", dependencies="${dependencies})`,
-    );
+    // const setDependencies = usePixel(
+    //     `SetProjectDependencies(project="${appId}", dependencies="${dependencies})`,
+    // );
+
+    const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
+    const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
 
     // async function onSetDependencies() {
     //     await setDependencies();
@@ -105,8 +111,51 @@ export function AppDetailPage() {
     //     }[]
     // >(`SimilarCatalog(database=["${id}"])`);
 
-    // SetProjectDependencies(project="<project_id>", dependencies=["<engine_id_1>","<engine_id_2>",...]);
+    // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
     // GetProjectDependencies()
+
+    // TODO: Explicitly set type based on expected options.
+    // TODO: Handle errors in pixel calls.
+    // TODO: Apply usePixel instead.
+    // TODO: Check out how we do this in legacy.
+    // To run legacy, do `pnpm run dev:legacy`
+    // Tend to pass reactors arrays, even if one arg.
+    const [permissionState, setPermissionState] = useState('');
+    const [appInfoState, setAppInfoState] = useState(null);
+    const [dependenciesState, setDependenciesState] = useState(null);
+
+    async function getPermission() {
+        const getUserProjectPermission =
+            await monolithStore.getUserProjectPermission(appId);
+        setPermissionState(getUserProjectPermission.permission);
+    }
+
+    async function getAppInfo() {
+        const response = await monolithStore.runQuery(
+            `ProjectInfo(project=["${appId}"])`,
+        );
+        console.log('response: ', response);
+        const appInfo = response.pixelReturn[0].output;
+        setAppInfoState(appInfo);
+        return appInfo;
+    }
+
+    async function getDependencies() {
+        const response = await monolithStore.runQuery(
+            `GetProjectDependencies(project="${appId}")`,
+        );
+
+        const dependencies = response.pixelReturn[0].output;
+        console.log('deps: ', dependencies);
+        setDependenciesState(dependencies);
+        return dependencies;
+    }
+
+    useEffect(() => {
+        getPermission();
+        getAppInfo();
+        getDependencies();
+    }, []);
 
     return (
         <OuterContainer>
@@ -133,14 +182,25 @@ export function AppDetailPage() {
                 >
                     <Sidebar />
                     <Sections>
+                        <div>
+                            {/* <div>{appInfoState.project_name}</div> */}
+                            <div>Permission: {permissionState}</div>
+                            <div>Description</div>
+                        </div>
                         <StyledHeading2 id="#dependencies-app-detail-page">
                             <div
                                 style={{
                                     alignItems: 'center',
                                     display: 'flex',
+                                    flexDirection: 'column',
                                 }}
                             >
                                 <div>Dependencies</div>
+                                {dependenciesState?.length > 0
+                                    ? dependenciesState.map((dependency) => (
+                                          <div key={nanoid()}>{dependency}</div>
+                                      ))
+                                    : 'This app has no dependencies. (Prompt to add dependencies.)'}
                                 <IconButton sx={{ marginLeft: 'auto' }}>
                                     <EditIcon />
                                 </IconButton>
@@ -185,11 +245,13 @@ const StyledSidebar = styled('div')(({ theme }) => ({
 
 const SidebarLink = styled(Link)({
     color: 'inherit',
+    fontSize: 13,
     fontWeight: 'bold',
     textDecoration: 'none',
     '&:visited': {
         color: 'inherit',
     },
+    whiteSpace: 'nowrap',
 });
 
 function Sidebar() {
