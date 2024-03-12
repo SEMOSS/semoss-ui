@@ -25,6 +25,9 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Output associated with the cell */
     output: unknown | undefined;
 
+    /** Prints and logs */
+    messages: string[] | undefined;
+
     /** Widget to bind the cell to */
     widget: D['widget'];
 
@@ -56,6 +59,7 @@ export class CellState<D extends CellDef = CellDef> {
         executionDurationMilliseconds: undefined,
         operation: [],
         output: undefined,
+        messages: [],
         widget: '',
         parameters: {},
     };
@@ -170,6 +174,13 @@ export class CellState<D extends CellDef = CellDef> {
     }
 
     /**
+     * Get the messages of the cell
+     */
+    get messages() {
+        return this._store.messages;
+    }
+
+    /**
      * Get the widget associated with the cell
      */
     get widget() {
@@ -248,20 +259,29 @@ export class CellState<D extends CellDef = CellDef> {
         /** Output associated with the cell */
         output: unknown,
 
+        /** Messages, logs and prints */
+        message?: string[],
+
         resetExecutionTracking?: boolean,
     ) {
         this._store.operation = operation;
 
-        // if we are dealing with a CODE_EXECUTION operation, modify output
-        if (operation.includes('CODE_EXECUTION') && output != undefined) {
-            this._store.output = Array.isArray(output)
-                ? output.length > 0
-                    ? output[0].output
-                    : null
-                : output;
-        } else {
-            this._store.output = output;
-        }
+        // Prints and messages
+        this._store.messages = message;
+
+        // Let Operations handle how things get interpretted
+        this._store.output = output;
+
+        // // if we are dealing with a CODE_EXECUTION operation, modify output
+        // if (operation.includes('CODE_EXECUTION') && output != undefined) {
+        //     this._store.output = Array.isArray(output)
+        //         ? output.length > 0
+        //             ? output[0].output
+        //             : null
+        //         : output;
+        // } else {
+        //     this._store.output = output;
+        // }
 
         // syncing from query - we don't have granular information about execution
         if (resetExecutionTracking) {
@@ -304,23 +324,45 @@ export class CellState<D extends CellDef = CellDef> {
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenVariable(raw);
 
-            // run the pixel
-            const { pixelReturn } = await this._state._runPixel(filled);
+            const { jobId, status, messages, results } =
+                await this._state._runPixelAsync(filled);
 
-            if (pixelReturn.length !== 1) {
-                throw new Error('Unexpected number of pixel statements');
+            // How do we want results to be mapped to cell
+            // We currently can have multiple results per cell which I'm not sure if thats ideal
+            // Do we want one output per cell
+            // For example if I chain: MyEngines(); MyProjects(); -> results will give me results for both
+            // Will it be expected they run these two independently
+
+            if (!results) {
+                throw new Error('Unable to parse pixel results');
+            }
+            let output;
+
+            // Set output per operation
+            if (results[1].pixelType === 'CUSTOM_DATA_STRUCTURE') {
+                output = results[1].value;
+            } else if (results[1].pixelType === 'FORMATTED_DATA_SET') {
+                output = results[1].value[0];
+            } else if (results[1].pixelType === 'CODE') {
+                output = results[1].value[0].value[0];
+            } else if (results[1].pixelType === 'ERROR') {
+                output = results[1].value[0];
+            } else if (results[1].pixelType === 'CONST_STRING') {
+                output = results[1].value[0];
+            } else if (results[1].pixelType === 'INVALID_SYNTAX') {
+                output = results[1].value[0];
+            } else {
+                output = results[1].value;
             }
 
-            // assume there is 1 pixelReturn + cell
-            const { output, operationType } = pixelReturn[0];
             runInAction(() => {
                 // update the parameters
-                if (operationType.indexOf('ERROR') > -1) {
+                if (results[1].opType.indexOf('ERROR') > -1) {
                     this._store.parameters = merged;
                 }
 
                 // any previous errors will be cleared on operation type sync
-                this._sync(operationType, output);
+                this._sync(results[1].opType, output, messages);
             });
         } catch (e) {
             // catch and set errors
@@ -365,6 +407,7 @@ export class CellState<D extends CellDef = CellDef> {
             isSuccessful: this.isSuccessful,
             error: this.error,
             output: this.output,
+            messages: this.messages,
             operation: this.operation,
         };
     }
