@@ -3,6 +3,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { CellState, CellStateConfig } from './cell.state';
 import { StateStore } from './state.store';
 import { setValueByPath } from '@/utility';
+import { PixelResult } from '@/api';
 
 export interface QueryStateStoreInterface {
     /** Id of the query */
@@ -259,39 +260,72 @@ export class QueryState {
             // start the loading screen
             this._store.isLoading = true;
 
-            // convert the cells to the raw pixel
-            const raw = this.toPixel();
+            const results: { message: string[]; results: PixelResult[] }[] = [];
 
-            // fill the braces {{ }} to create the final pixel
-            const filled = this._state.flattenVariable(raw);
+            // Run query cells individually
+            for (let i = 0; i < this._store.list.length; i++) {
+                const pixel = this._store.cells[this._store.list[i]].toPixel();
 
-            // run as a single pixel block;
-            const { pixelReturn } = await this._state._runPixel(filled);
+                const {
+                    jobId,
+                    status,
+                    messages,
+                    results: res,
+                } = await this._state._runPixelAsync(pixel);
+
+                // How do we want results to be mapped to cell
+                // We currently can have multiple results per cell which I'm not sure if thats ideal
+                // Do we want one output per cell
+                // For example if I chain: MyEngines(); MyProjects(); -> results will give me results for both
+                // Will it be expected they run these two independently
+
+                // Set struct to pass to cell
+                const runPixelResult = {
+                    message: messages,
+                    results: res,
+                };
+
+                results.push(runPixelResult);
+            }
 
             const cellLen = this._store.list.length;
-            if (pixelReturn.length !== cellLen) {
+            if (results.length !== cellLen) {
                 throw new Error(
                     'Error processing pixel. Cells do not equal pixelReturn',
                 );
             }
 
             runInAction(() => {
-                // update the existing cells with the pixel blocks
-                // let data = undefined;
                 for (let cellIdx = 0; cellIdx < cellLen; cellIdx++) {
                     const cellId = this._store.list[cellIdx];
-
-                    // get the cell
                     const cell = this._store.cells[cellId];
+                    const { results: cellResult, message } = results[cellIdx];
 
-                    const { operationType, output } = pixelReturn[cellIdx];
+                    // Hardcoded at 1 because I'm getting a JOB_ID, look at cellResult
+                    const opTypes = cellResult[1].opType;
+                    let output;
 
-                    // sync step information
-                    cell._sync(operationType, output, true);
+                    // Set output per operation
+                    if (cellResult[1].pixelType === 'CUSTOM_DATA_STRUCTURE') {
+                        output = cellResult[1].value;
+                    } else if (
+                        cellResult[1].pixelType === 'FORMATTED_DATA_SET'
+                    ) {
+                        output = cellResult[1].value[0];
+                    } else if (cellResult[1].pixelType === 'CODE') {
+                        output = cellResult[1].value[0].value[0];
+                    } else if (cellResult[1].pixelType === 'ERROR') {
+                        output = cellResult[1].value[0];
+                    } else if (cellResult[1].pixelType === 'CONST_STRING') {
+                        output = cellResult[1].value[0];
+                    } else if (cellResult[1].pixelType === 'INVALID_SYNTAX') {
+                        output = cellResult[1].value[0];
+                    } else {
+                        output = cellResult[1].value;
+                    }
+
+                    cell._sync(opTypes, output, message, true);
                 }
-
-                // clear the error
-                this._store.error = null;
             });
         } catch (e) {
             // TODO - because we use _sync cells instead of _processRun on them individually
