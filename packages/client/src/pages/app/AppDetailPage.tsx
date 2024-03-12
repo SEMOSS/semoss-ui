@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
     Breadcrumbs,
@@ -13,7 +14,9 @@ import {
 } from '@semoss/ui';
 import { SettingsTiles } from '@/components/settings/SettingsTiles';
 import { AppSettings } from '@/components/app/AppSettings';
-import { useRootStore } from '@/hooks';
+import { usePixel, useRootStore } from '@/hooks';
+
+// TODO: Implement top drop-down menus per <https://github.com/mui/material-ui/blob/v5.15.12/docs/data/material/components/button-group/SplitButton.tsx>.
 
 const HEADINGS = [
     { id: 'main-uses', text: 'Main Uses' },
@@ -74,6 +77,7 @@ const Sections = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     fontWeight: 'bold',
+    width: '100%',
 });
 
 export function AppDetailPage() {
@@ -83,6 +87,26 @@ export function AppDetailPage() {
 
     const notification = useNotification();
     const navigate = useNavigate();
+
+    const dependencies = usePixel(`GetProjectDependencies(project="${appId}")`);
+
+    const setDependencies = usePixel(
+        `SetProjectDependencies(project="${appId}", dependencies="${dependencies})`,
+    );
+
+    // async function onSetDependencies() {
+    //     await setDependencies();
+    // }
+
+    // const { status, data, refresh } = usePixel<
+    //     {
+    //         database_name: string;
+    //         database_id: string;
+    //     }[]
+    // >(`SimilarCatalog(database=["${id}"])`);
+
+    // SetProjectDependencies(project="<project_id>", dependencies=["<engine_id_1>","<engine_id_2>",...]);
+    // GetProjectDependencies()
 
     return (
         <OuterContainer>
@@ -109,14 +133,27 @@ export function AppDetailPage() {
                 >
                     <Sidebar />
                     <Sections>
-                        {HEADINGS.map(({ id, text }) => (
+                        <StyledHeading2 id="#dependencies-app-detail-page">
+                            <div
+                                style={{
+                                    alignItems: 'center',
+                                    display: 'flex',
+                                }}
+                            >
+                                <div>Dependencies</div>
+                                <IconButton sx={{ marginLeft: 'auto' }}>
+                                    <EditIcon />
+                                </IconButton>
+                            </div>
+                        </StyledHeading2>
+                        {/* {HEADINGS.map(({ id, text }) => (
                             <StyledHeading2
                                 key={nanoid()}
                                 id={`#${id}-app-detail-page`}
                             >
                                 {text}
                             </StyledHeading2>
-                        ))}
+                        ))} */}
                         {/* <AppSettings id={appId} /> */}
                         {/* <SettingsTiles
                         id={appId}
