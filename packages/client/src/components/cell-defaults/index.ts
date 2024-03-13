@@ -9,16 +9,34 @@ import {
     UpdateRowTransformationCell,
     UpdateRowTransformationCellDef,
 } from './update-row-transformation-cell';
+import {
+    ColumnTypeTransformationCell,
+    ColumnTypeTransformationCellDef,
+} from './column-type-transformation-cell';
+import {
+    DateDifferenceTransformationCell,
+    DateDifferenceTransformationCellDef,
+} from './date-difference-transformation-cell';
+import {
+    TimestampTransformationCell,
+    TimestampTransformationCellDef,
+} from './timestamp-transformation-cell';
 
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
     | UppercaseTransformationCellDef
-    | UpdateRowTransformationCellDef;
+    | UpdateRowTransformationCellDef
+    | ColumnTypeTransformationCellDef
+    | DateDifferenceTransformationCellDef
+    | TimestampTransformationCellDef;
 
 export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [CodeCell.widget]: CodeCell,
     [QueryImportCell.widget]: QueryImportCell,
     [UppercaseTransformationCell.widget]: UppercaseTransformationCell,
     [UpdateRowTransformationCell.widget]: UpdateRowTransformationCell,
+    [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
+    [DateDifferenceTransformationCell.widget]: DateDifferenceTransformationCell,
+    [TimestampTransformationCell.widget]: TimestampTransformationCell,
 };

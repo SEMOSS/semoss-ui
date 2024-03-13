@@ -1,22 +1,24 @@
 import { useBlocks } from '@/hooks';
 import { computed } from 'mobx';
 import { CellComponent, ActionMessages, CellState } from '@/stores';
-import { Stack, Typography } from '@semoss/ui';
+import { Stack, TextField, Typography } from '@semoss/ui';
+import { Autocomplete } from '@mui/material';
 import {
     Transformation,
     ColumnInfo,
     ColumnTransformationField,
     TransformationCellInput,
+    transformationColumnTypes,
     Transformations,
 } from '../shared';
 import {
-    UppercaseTransformationCellDef,
-    UppercaseTransformationDef,
+    ColumnTypeTransformationCellDef,
+    ColumnTypeTransformationDef,
 } from './config';
 import { QueryImportCellDef } from '../query-import-cell';
 
-export const UppercaseTransformationCellInput: CellComponent<
-    UppercaseTransformationCellDef
+export const ColumnTypeTransformationCellInput: CellComponent<
+    ColumnTypeTransformationCellDef
 > = (props) => {
     const { cell, isExpanded } = props;
     const { state } = useBlocks();
@@ -27,10 +29,10 @@ export const UppercaseTransformationCellInput: CellComponent<
         ] as CellState<QueryImportCellDef>;
     }).get();
 
-    const cellTransformation: Transformation<UppercaseTransformationDef> =
+    const cellTransformation: Transformation<ColumnTypeTransformationDef> =
         computed(() => {
             return cell.parameters
-                .transformation as Transformation<UppercaseTransformationDef>;
+                .transformation as Transformation<ColumnTypeTransformationDef>;
         }).get();
 
     const doesFrameExist: boolean = computed(() => {
@@ -41,7 +43,7 @@ export const UppercaseTransformationCellInput: CellComponent<
         ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
         : 'A Python or R target frame variable must be defined in order to apply a transformation.';
 
-    if (!doesFrameExist && !cellTransformation.parameters.columns.length) {
+    if (!doesFrameExist && !cellTransformation.parameters.column) {
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
@@ -68,28 +70,50 @@ export const UppercaseTransformationCellInput: CellComponent<
                     {!doesFrameExist ? (
                         <em>{helpText}</em>
                     ) : (
-                        'Change the values of the selected columns to uppercase'
+                        'Change the type of the selected column'
                     )}
                 </Typography>
                 <ColumnTransformationField
                     disabled={!doesFrameExist}
                     cell={cell}
-                    selectedColumns={
-                        cellTransformation.parameters.columns ?? []
-                    }
-                    multiple
-                    columnTypes={['STRING']}
-                    onChange={(newColumns: ColumnInfo[]) => {
+                    selectedColumns={cellTransformation.parameters.column}
+                    onChange={(newColumn: ColumnInfo) => {
                         state.dispatch({
                             message: ActionMessages.UPDATE_CELL,
                             payload: {
                                 queryId: cell.query.id,
                                 cellId: cell.id,
-                                path: 'parameters.transformation.parameters.columns',
-                                value: newColumns,
+                                path: 'parameters.transformation.parameters.column',
+                                value: newColumn,
                             },
                         });
                     }}
+                />
+                <Autocomplete
+                    disableClearable
+                    disabled={!doesFrameExist}
+                    size="small"
+                    value={cellTransformation.parameters.columnType}
+                    fullWidth
+                    onChange={(_, newOperation: string) => {
+                        state.dispatch({
+                            message: ActionMessages.UPDATE_CELL,
+                            payload: {
+                                queryId: cell.query.id,
+                                cellId: cell.id,
+                                path: 'parameters.transformation.parameters.columnType',
+                                value: newOperation,
+                            },
+                        });
+                    }}
+                    options={transformationColumnTypes}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            variant="outlined"
+                            label="Operation"
+                        />
+                    )}
                 />
             </Stack>
         </TransformationCellInput>

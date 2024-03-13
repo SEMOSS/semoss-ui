@@ -5,6 +5,7 @@ import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
 import { Autocomplete, LinearProgress, TextField } from '@mui/material';
+import { optimize } from 'webpack';
 
 export interface SelectBlockDef extends BlockDef<'select'> {
     widget: 'select';
@@ -28,9 +29,20 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
 
     const stringifiedOptions: string[] = useMemo(() => {
-        return (!Array.isArray(data?.options) ? [] : data.options).map(
-            (option) => JSON.stringify(option),
-        );
+        let arr = [];
+        if (!data.options) {
+            // NOOP
+        } else if (!Array.isArray(data?.options)) {
+            if (typeof data.options === 'string') {
+                const opts: string = data.options;
+                if (opts.startsWith('[') && opts.endsWith(']')) {
+                    arr = JSON.parse(data.options);
+                }
+            }
+        } else {
+            arr = data.options;
+        }
+        return arr.map((option) => JSON.stringify(option));
     }, [data.options]);
 
     return (
@@ -38,13 +50,13 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             fullWidth
             disableClearable
             options={stringifiedOptions}
-            value={data.value}
+            value={data.value || null}
             disabled={data?.disabled || data?.loading}
-            sx={{
-                ...data.style,
-            }}
             onChange={(_, value) => {
                 setData('value', value);
+            }}
+            sx={{
+                ...data.style,
             }}
             renderInput={(params) => (
                 <TextField
