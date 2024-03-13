@@ -36,7 +36,7 @@ module.exports = {
                         paramName: 'sigDigits',
                         view: {
                             displayType: 'number',
-                            label: 'Choose number of significant digits to keep',
+                            label: 'Choose number of decimal places to keep',
                         },
                         model: {
                             defaultValue: 0,
