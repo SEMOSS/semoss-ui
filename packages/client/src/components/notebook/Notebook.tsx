@@ -10,6 +10,7 @@ import {
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 
 import { NotebookQueriesMenu } from './NotebookQueriesMenu';
+import { NotebookTransformMenu } from './NotebookTransformMenu';
 import { NotebookSheet } from './NotebookSheet';
 import { useState } from 'react';
 import { NotebookBlocksMenu } from './NotebookBlocksMenu';
@@ -71,7 +72,7 @@ export const Notebook = observer(() => {
                     </Tooltip>
                 </SidebarItem>
                 <SidebarItem
-                    disabled={true}
+                    disabled={false}
                     selected={view === 'transform'}
                     onClick={() => updateView('transform')}
                 >
@@ -82,7 +83,7 @@ export const Notebook = observer(() => {
                 <Divider orientation="horizontal" />
                 <SidebarText>Connect</SidebarText>
                 <SidebarItem
-                    disabled={true}
+                    disabled={false}
                     selected={view === 'catalog'}
                     onClick={() => updateView('catalog')}
                 >
@@ -102,7 +103,7 @@ export const Notebook = observer(() => {
             {view ? (
                 <StyledLeftPanel>
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
-                    {view === 'transform' ? <div>Transform</div> : null}
+                    {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
                     {view === 'catalog' ? <div>Blocks</div> : null}
                 </StyledLeftPanel>
