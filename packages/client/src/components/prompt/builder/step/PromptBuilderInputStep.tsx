@@ -16,17 +16,13 @@ export const PromptBuilderInputStep = (props: {
     // PromptBuilderInputSettings
     const builderInputSettings = props.builder.inputs.value as Token[];
 
-    // this stores all information needed to save / load state
-    const [savedTokens, setSavedTokens] = useState<Token[]>([]);
-
     const [initLoadComplete, setInitLoadComplete] = useState(false);
 
     useEffect(() => {
         // initial load only runs once but does not update tokens with empty loaded builderInputSettings
         if (!initLoadComplete && builderInputSettings) {
-            // setTimeout forces the set function to run on next tick of event loop
-            // multiple setTokens running in event loop are competing unpredictably
-            // setTimeout seems to be a somewhat common fix
+            // multiple setTokens running in event loop causing buggy behavior
+            // setTimeout forces setTokens to run on next tick of event loop this seems to be a somewhat common fix
             setTimeout(() => {
                 setTokens(builderInputSettings);
             }, 0);

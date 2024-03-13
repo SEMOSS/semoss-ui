@@ -106,6 +106,18 @@ export const PromptBuilder = () => {
             ? 'Preview'
             : 'Create App';
 
+    // adds explanation to error message if input types are not set properly
+    const checkForInputTypesSkipped = (errorMessage) => {
+        if (
+            errorMessage ===
+            "Cannot read properties of undefined (reading 'type')"
+        ) {
+            return `${errorMessage}. Please define input types.`;
+        } else {
+            return errorMessage;
+        }
+    };
+
     const nextButtonAction = async () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             setCreateAppLoading(true);
@@ -119,7 +131,7 @@ export const PromptBuilder = () => {
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: checkForInputTypesSkipped(e.message),
                 });
                 setCreateAppLoading(false);
             }
@@ -154,28 +166,20 @@ export const PromptBuilder = () => {
         }
     };
 
-    // this seems to be causing the previous state navigation bug
+    // this seemed to be causing skipping to step 1 when trying to navigate back to step 3
+    // using changeBuilderStep instead for now to address bug, not sure if we need this
     const navigateBuilderSteps = (step: number) => {
-        // this doesn't seem to be necessary since input types step is disabled if there are no inputs
-        // tested and this seems to be the only thing causing buggy behavior
-        // when enabled it skips to step one then shows blank step if clicked again
-
-        // still need to disable that step if there are no inputs set
-        // it is clickable and blank / broken if you are on Set Constraints step
-
-        // if (step === PROMPT_BUILDER_INPUT_TYPES_STEP) {
-        //     // moving back from step after input types step - if no input types, skip that step moving backwards
-        //     const hasInputs = (builder.inputs.value as Token[]).some(
-        //         (token: Token) => {
-        //             return token.type === TOKEN_TYPE_INPUT;
-        //         },
-        //     );
-        //     changeBuilderStep(currentBuilderStep - (hasInputs ? 1 : 2));
-        // } else {
-        //     changeBuilderStep(step);
-        // }
-
-        changeBuilderStep(step);
+        if (step === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+            // moving back from step after input types step - if no input types, skip that step moving backwards
+            const hasInputs = (builder.inputs.value as Token[]).some(
+                (token: Token) => {
+                    return token.type === TOKEN_TYPE_INPUT;
+                },
+            );
+            changeBuilderStep(currentBuilderStep - (hasInputs ? 1 : 2));
+        } else {
+            changeBuilderStep(step);
+        }
     };
 
     const isBuilderStepComplete = (step: number) => {
@@ -241,11 +245,8 @@ export const PromptBuilder = () => {
                             currentBuilderStep={currentBuilderStep}
                             isBuilderStepComplete={isBuilderStepComplete}
                             isBuildStepsComplete={isBuildStepsComplete}
-                            // changeBuilderStep={(step) => {
-                            //     navigateBuilderSteps(step);
-                            // }}
-
-                            // this seems to work fine cant find any bugs
+                            // using this instead of navigateBuilderSteps seems to haved desired behavior
+                            // had to add seperate handling for disabling Input Types step
                             changeBuilderStep={changeBuilderStep}
                         />
                     </StyledPaper>

@@ -50,7 +50,6 @@ const StyledListItemTypography = styled(Typography)(() => ({
 }));
 
 export const PromptBuilderSummary = (props: {
-    // builder: Builder; // not sure if this is used anywhere
     builder: Builder;
     currentBuilderStep: number;
     isBuilderStepComplete: (step: number) => boolean;
@@ -81,10 +80,6 @@ export const PromptBuilderSummary = (props: {
             : Math.round(100 / builderArray.length) *
                   completedStepsToCount.length;
     };
-
-    // useEffect(() => {
-    //     alert("useEffect")
-    // }, [currentBuilderStep])
 
     return (
         <List component="nav">
@@ -120,15 +115,7 @@ export const PromptBuilderSummary = (props: {
                     isStepComplete = false;
                 }
 
-                // to reproduce problem
-                // Go step by step
-                // after filling out the Define Input Steps click manually on previous Set Inputs
-                // it incorrectly opens step 1
-                // if you click Define Input Steps again it appears blank
-
-                // this is now working but its just always disabled
-                // need better way to track input types
-
+                // checks to see if inputs have been set properly and disables / enables step accordingly
                 if (i + 1 === PROMPT_BUILDER_INPUT_TYPES_STEP) {
                     const hasInputs = (
                         props.builder.inputs.value as Token[]

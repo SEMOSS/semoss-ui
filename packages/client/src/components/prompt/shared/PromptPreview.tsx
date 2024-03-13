@@ -11,7 +11,6 @@ export const PromptPreview = (props: {
             return null;
         } else {
             // optional chaining prevents crash after step 2 changes
-            // couldn't find any negative impacts
             return props.inputTypes[token?.linkedInputToken ?? token.index]
                 ?.type;
         }
