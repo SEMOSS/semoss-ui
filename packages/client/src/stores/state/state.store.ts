@@ -1,6 +1,13 @@
 import { makeAutoObservable, reaction, toJS } from 'mobx';
 
-import { runPixel } from '@/api';
+import {
+    runPixel,
+    runPixelAsync,
+    pixelConsole,
+    pixelResult,
+    PixelResult,
+    PixelConsoleResponse,
+} from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -1013,5 +1020,30 @@ export class StateStore {
      */
     async _runPixel<O extends unknown[] | []>(pixel: string) {
         return await runPixel<O>(pixel, this._store.insightId);
+    }
+
+    // Call Query Cells Independently --------------------------------
+    async _runPixelAsync(pixel): Promise<{
+        jobId: string;
+        results: PixelResult[];
+        messages: string[];
+        status: string;
+    }> {
+        const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+
+        if (!jobId) {
+            throw new Error('No Job Id to get console/results');
+        }
+
+        const { messages, status } = await pixelConsole(jobId);
+
+        const { results } = await pixelResult(jobId);
+
+        return {
+            jobId: jobId,
+            results: results,
+            messages: messages,
+            status: status,
+        };
     }
 }

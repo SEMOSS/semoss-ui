@@ -25,6 +25,7 @@ import {
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
+import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
 
 const StyledRow = styled(Stack)(() => ({
@@ -453,6 +454,9 @@ export const NotebookCell = observer(
                                 </Stack>
                                 {outputExpanded && (
                                     <>
+                                        <NotebookCellConsole
+                                            messages={cell.messages}
+                                        />
                                         {cell.isExecuted
                                             ? cell.operation.map((o, oIdx) => {
                                                   return (
