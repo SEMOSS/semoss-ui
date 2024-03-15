@@ -56,14 +56,23 @@ const TopButtonsContainer = styled('div')({
     marginLeft: 'auto',
 });
 
-const StyledTextButton = styled(Button)(({ theme }) => ({
+const ChangeAccessButton = styled(Button)({
     fontWeight: 'bold',
-}));
+});
+
+const ArrowButton = styled(Button)({
+    // display: 'flex',
+});
 
 const StyledArrowDropDownIcon = styled(ArrowDropDownIcon)({
     '&:first-child': {
         display: 'flex',
     },
+});
+
+const DepsHeadingWrapper = styled('div')({
+    display: 'flex',
+    justifyContent: 'space-between',
 });
 
 const StyledHeading2 = styled('h2')({
@@ -85,8 +94,8 @@ const Sections = styled('div')({
 
 const StyledMenuItem = styled(MenuItem)({
     color: 'rgb(0, 0, 0, 0.7)',
-    fontSize: 12,
     display: 'flex',
+    fontSize: 12,
     gap: '0.75rem',
     padding: '0.75rem',
 });
@@ -165,20 +174,19 @@ export function AppDetailPage() {
             <InnerContainer>
                 <Breadcrumbs>Breadcrumbs</Breadcrumbs>
                 <TopButtonsContainer>
-                    <StyledTextButton variant="text">
+                    <ChangeAccessButton variant="text">
                         Change Access
-                    </StyledTextButton>
+                    </ChangeAccessButton>
                     <ButtonGroup>
                         <Button variant="contained">Open</Button>
-                        <Button
+                        <ArrowButton
                             onClick={(event) =>
                                 setArrowAnchorEl(event.currentTarget)
                             }
                             variant="contained"
-                            sx={{ display: 'flex' }}
                         >
                             <StyledArrowDropDownIcon />
-                        </Button>
+                        </ArrowButton>
                         <Menu
                             anchorEl={arrowAnchorEl}
                             open={Boolean(arrowAnchorEl)}
@@ -220,37 +228,29 @@ export function AppDetailPage() {
                         </StyledMenuItem>
                     </Menu>
                 </TopButtonsContainer>
-                <Content
-                    style={{
-                        display: 'flex',
-                    }}
-                >
+                <Content>
                     <Sidebar />
                     <Sections>
-                        <div>
+                        <section>
                             {/* <div>{appInfoState.project_name}</div> */}
                             <div>Permission: {permissionState}</div>
                             <div>Description</div>
-                        </div>
-                        <StyledHeading2 id="#dependencies-app-detail-page">
-                            <div
-                                style={{
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                }}
-                            >
-                                <div>Dependencies</div>
-                                {dependenciesState?.length > 0
-                                    ? dependenciesState.map((dependency) => (
-                                          <div key={nanoid()}>{dependency}</div>
-                                      ))
-                                    : 'This app has no dependencies. (Prompt to add dependencies.)'}
-                                <IconButton sx={{ marginLeft: 'auto' }}>
+                        </section>
+                        <section>
+                            <DepsHeadingWrapper>
+                                <StyledHeading2 id="#dependencies-app-detail-page">
+                                    Dependencies
+                                </StyledHeading2>
+                                <IconButton>
                                     <EditIcon />
                                 </IconButton>
-                            </div>
-                        </StyledHeading2>
+                            </DepsHeadingWrapper>
+                            {dependenciesState?.length > 0
+                                ? dependenciesState.map((dependency) => (
+                                      <div key={nanoid()}>{dependency}</div>
+                                  ))
+                                : 'This app has no dependencies. (Prompt to add dependencies.)'}
+                        </section>
                         {/* {HEADINGS.map(({ id, text }) => (
                             <StyledHeading2
                                 key={nanoid()}
