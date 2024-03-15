@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ShareIcon from '@mui/icons-material/Share';
 import {
     Breadcrumbs,
     Button,
@@ -18,8 +20,6 @@ import { SettingsTiles } from '@/components/settings/SettingsTiles';
 import { AppSettings } from '@/components/app/AppSettings';
 import { usePixel, useRootStore } from '@/hooks';
 import { MonolithStore } from '@/stores';
-
-// TODO: Implement top drop-down menus.
 
 const HEADINGS = [
     { id: 'main-uses', text: 'Main Uses' },
@@ -52,7 +52,7 @@ const InnerContainer = styled('div')({
 
 const TopButtonsContainer = styled('div')({
     display: 'flex',
-    gap: '0.25rem',
+    gap: '0.6rem',
     marginLeft: 'auto',
 });
 
@@ -83,8 +83,21 @@ const Sections = styled('div')({
     width: '100%',
 });
 
+const StyledMenuItem = styled(MenuItem)({
+    color: 'rgb(0, 0, 0, 0.7)',
+    fontSize: 12,
+    display: 'flex',
+    gap: '0.75rem',
+    padding: '0.75rem',
+});
+
 export function AppDetailPage() {
-    // App ID Needed for pixel calls
+    const [permissionState, setPermissionState] = useState('');
+    const [appInfoState, setAppInfoState] = useState(null);
+    const [dependenciesState, setDependenciesState] = useState(null);
+    const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
+    const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
+
     const { appId } = useParams();
     const { configStore, monolithStore } = useRootStore();
 
@@ -96,9 +109,6 @@ export function AppDetailPage() {
     // const setDependencies = usePixel(
     //     `SetProjectDependencies(project="${appId}", dependencies="${dependencies})`,
     // );
-
-    const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
-    const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
 
     // async function onSetDependencies() {
     //     await setDependencies();
@@ -114,15 +124,8 @@ export function AppDetailPage() {
     // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
     // GetProjectDependencies()
 
-    // TODO: Explicitly set type based on expected options.
-    // TODO: Handle errors in pixel calls.
-    // TODO: Apply usePixel instead.
-    // TODO: Check out how we do this in legacy.
     // To run legacy, do `pnpm run dev:legacy`
     // Tend to pass reactors arrays, even if one arg.
-    const [permissionState, setPermissionState] = useState('');
-    const [appInfoState, setAppInfoState] = useState(null);
-    const [dependenciesState, setDependenciesState] = useState(null);
 
     async function getPermission() {
         const getUserProjectPermission =
@@ -167,13 +170,55 @@ export function AppDetailPage() {
                     </StyledTextButton>
                     <ButtonGroup>
                         <Button variant="contained">Open</Button>
-                        <Button variant="contained" sx={{ display: 'flex' }}>
+                        <Button
+                            onClick={(event) =>
+                                setArrowAnchorEl(event.currentTarget)
+                            }
+                            variant="contained"
+                            sx={{ display: 'flex' }}
+                        >
                             <StyledArrowDropDownIcon />
                         </Button>
+                        <Menu
+                            anchorEl={arrowAnchorEl}
+                            open={Boolean(arrowAnchorEl)}
+                            onClose={() => setArrowAnchorEl(null)}
+                        >
+                            <StyledMenuItem value={null}>
+                                <EditIcon fontSize="small" />
+                                Open in UI Builder
+                            </StyledMenuItem>
+                            <StyledMenuItem value={null}>
+                                <EditIcon fontSize="small" />
+                                Go to Code Editor
+                            </StyledMenuItem>
+                        </Menu>
                     </ButtonGroup>
-                    <IconButton>
+                    <IconButton
+                        onClick={(event) =>
+                            setMoreVertAnchorEl(event.currentTarget)
+                        }
+                    >
                         <MoreVertIcon />
                     </IconButton>
+                    <Menu
+                        anchorEl={moreVertAnchorEl}
+                        open={Boolean(moreVertAnchorEl)}
+                        onClose={() => setMoreVertAnchorEl(null)}
+                    >
+                        <StyledMenuItem value={null}>
+                            <EditIcon fontSize="small" />
+                            Edit App Details
+                        </StyledMenuItem>
+                        <StyledMenuItem value={null}>
+                            <ShareIcon fontSize="small" />
+                            Share
+                        </StyledMenuItem>
+                        <StyledMenuItem value={null}>
+                            <DeleteIcon fontSize="small" />
+                            Delete App
+                        </StyledMenuItem>
+                    </Menu>
                 </TopButtonsContainer>
                 <Content
                     style={{
@@ -223,9 +268,9 @@ export function AppDetailPage() {
                             navigate('..', { relative: 'path' });
                         }}
                     /> */}
-                        <pre id="#app-access">
-                            App Access section (components from Settings)
-                        </pre>
+                        <StyledHeading2 id="#app-access">
+                            App Access (from the `SettingsTiles` component)
+                        </StyledHeading2>
                     </Sections>
                 </Content>
             </InnerContainer>
@@ -245,8 +290,17 @@ const StyledSidebar = styled('div')(({ theme }) => ({
 
 const SidebarLink = styled(Link)({
     color: 'inherit',
+    textDecoration: 'none',
+    '&:visited': {
+        color: 'inherit',
+    },
+    whiteSpace: 'nowrap',
+});
+
+const SidebarMenuItem = styled(MenuItem)({
     fontSize: 13,
     fontWeight: 'bold',
+    color: 'inherit',
     textDecoration: 'none',
     '&:visited': {
         color: 'inherit',
@@ -259,7 +313,7 @@ function Sidebar() {
         <StyledSidebar>
             {HEADINGS.map(({ id, text }) => (
                 <SidebarLink key={nanoid()} to={`#${id}-app-detail-page`}>
-                    {text}
+                    <SidebarMenuItem value={null}>{text}</SidebarMenuItem>
                 </SidebarLink>
             ))}
         </StyledSidebar>
