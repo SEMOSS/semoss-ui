@@ -74,6 +74,6 @@ export const JoinTransformationCell: Cell<JoinTransformationCellDef> = {
             TransformationCellRunActionButton as CellComponent<JoinTransformationCellDef>,
     },
     toPixel: ({ transformation, targetCell }) => {
-        return `Frame(${targetCell.frameVariableName}) | QueryAll()|Distinct(true) | Merge(joins=[(${transformation.parameters.fromNameColumn?.name}, ${transformation.parameters.joinType},${transformation.parameters.toNameColumn?.name}, ${transformation.parameters.compareOperation},)], frame=[${targetCell.frameVariableName}]);`;
+        return `Frame(${targetCell.frameVariableName}) | QueryAll()|Distinct(true) | Merge(joins=[(${transformation.parameters.fromNameColumn?.name}, ${transformation.parameters.joinType.code}, ${transformation.parameters.toNameColumn?.name}, ${transformation.parameters.compareOperation})], frame=[${targetCell.frameVariableName}]);`;
     },
 };
