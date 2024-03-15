@@ -21,6 +21,7 @@ export const TransformationCellOutput: CellComponent<TransformationCellDef> = (
         case 'column-type':
         case 'date-difference':
         case 'timestamp':
+        case 'join':
             return (
                 <QueryPreviewCellOutput
                     cellOutput={cell.output}

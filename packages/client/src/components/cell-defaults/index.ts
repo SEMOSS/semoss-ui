@@ -21,6 +21,10 @@ import {
     TimestampTransformationCell,
     TimestampTransformationCellDef,
 } from './timestamp-transformation-cell';
+import {
+    JoinTransformationCell,
+    JoinTransformationCellDef,
+} from './join-transformation-cell';
 
 export type DefaultCellDefinitions =
     | CodeCellDef
@@ -29,7 +33,8 @@ export type DefaultCellDefinitions =
     | UpdateRowTransformationCellDef
     | ColumnTypeTransformationCellDef
     | DateDifferenceTransformationCellDef
-    | TimestampTransformationCellDef;
+    | TimestampTransformationCellDef
+    | JoinTransformationCellDef;
 
 export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [CodeCell.widget]: CodeCell,
@@ -39,4 +44,5 @@ export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
     [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
     [DateDifferenceTransformationCell.widget]: DateDifferenceTransformationCell,
     [TimestampTransformationCell.widget]: TimestampTransformationCell,
+    [JoinTransformationCell.widget]: JoinTransformationCell,
 };

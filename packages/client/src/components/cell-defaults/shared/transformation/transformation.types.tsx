@@ -2,11 +2,18 @@ import { CellDef } from '@/stores';
 
 export type operation = '==' | '<' | '>' | '!=' | '<=' | '>=' | '?like';
 
+export type comparator = '==' | '!=';
+
 export type columnTypes = 'STRING' | 'NUMBER' | 'DATE';
 
 export type dateUnit = 'day' | 'week' | 'month' | 'year';
 
 export type dateType = 'column' | 'custom';
+
+export type joinType = {
+    name: string;
+    code: string;
+};
 
 export type ColumnInfo = {
     name: string;
@@ -18,7 +25,8 @@ export type TransformationTypes =
     | 'update-row'
     | 'column-type'
     | 'date-difference'
-    | 'timestamp';
+    | 'timestamp'
+    | 'join';
 
 export interface TransformationDef<R extends string = string> {
     /** Unique transformation name */

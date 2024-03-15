@@ -2,8 +2,10 @@ import {
     TransformationDef,
     TransformationTypes,
     operation,
+    comparator,
     columnTypes,
     dateUnit,
+    joinType,
 } from './transformation.types';
 import {
     FontDownload,
@@ -11,6 +13,7 @@ import {
     ChangeCircleOutlined,
     TodayOutlined,
     DateRangeOutlined,
+    JoinInner,
 } from '@mui/icons-material';
 
 export const operations: operation[] = [
@@ -23,6 +26,8 @@ export const operations: operation[] = [
     '?like',
 ];
 
+export const comparators: comparator[] = ['==', '!='];
+
 export const transformationColumnTypes: columnTypes[] = [
     'STRING',
     'NUMBER',
@@ -30,6 +35,13 @@ export const transformationColumnTypes: columnTypes[] = [
 ];
 
 export const dateUnitTypes: dateUnit[] = ['day', 'week', 'month', 'year'];
+
+export const joinTypes: joinType[] = [
+    { name: 'Full Join', code: 'outer.join' },
+    { name: 'Inner Join', code: 'inner.join' },
+    { name: 'Left Join', code: 'left.outer.join' },
+    { name: 'Right Join', code: 'right.outer.join' },
+];
 
 export interface TransformationConfig<
     D extends TransformationDef = TransformationDef,
@@ -76,5 +88,11 @@ export const Transformations: Record<
         display: 'Timestamp',
         icon: TodayOutlined,
         widget: 'timestamp-transformation',
+    },
+    join: {
+        transformation: 'join',
+        display: 'Join',
+        icon: JoinInner,
+        widget: 'join-transformation',
     },
 };
