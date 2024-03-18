@@ -118,6 +118,7 @@ export class StateStore {
                     if (q.mode !== 'automatic') {
                         continue;
                     }
+
                     // run the query
                     this.runQuery(id);
                 }
@@ -300,17 +301,65 @@ export class StateStore {
         // remove the brackets
         cleaned = cleaned.slice(2, -2);
 
-        expression = this.replaceVariable(cleaned);
+        // get the keys in the path
+        const path = cleaned.split('.');
+
+        if (path[0] === 'query' && path[2] === 'cell') {
+            // check if the id is there
+            const queryId = path[1];
+            const cellId = path[3];
+
+            // get the query
+            const query = this._store.queries[queryId];
+            const cell = query ? query.getCell(cellId) : null;
+            if (cell) {
+                // if the key is a cell, calculate as a cell
+                const key = path[4];
+                if (key in cell._exposed) {
+                    // get the search path
+                    const s = path.slice(4).join('.');
+                    return getValueByPath(cell._exposed, s);
+                }
+            }
+        } else if (path[0] === 'query' && path[2] !== 'cell') {
+            // check if the id is there
+            const queryId = path[1];
+
+            // get the attribute key
+            const key = path[2];
+
+            // get the query
+            const query = this._store.queries[queryId];
+            if (query) {
+                if (key in query._exposed) {
+                    // get the search path
+                    const s = path.slice(2).join('.');
+                    return getValueByPath(query._exposed, s);
+                }
+            }
+        } else if (path[0] === 'block') {
+            // check if the id is there
+            const blockId = path[1];
+
+            // get the block
+            const block = this._store.blocks[blockId];
+            if (block) {
+                // get the search path
+                const s = path.slice(2).join('.');
+                return getValueByPath(block.data, s);
+            }
+        }
 
         return expression;
     };
 
-    parseMultiVariables = (expression: string): unknown => {
+    parseVariableBad = (expression: string): unknown => {
         // Use a regular expression to find all {{...}} patterns
         const regex = /\{\{([^}]+)\}\}/g;
         let match;
         // Copy the original expression to work with replacements
         let result = expression;
+
         while ((match = regex.exec(expression)) !== null) {
             // Extract the matched placeholder without the brackets
             const variable = match[1];
@@ -332,7 +381,7 @@ export class StateStore {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             // try to extract the variable
             const v = this.parseVariable(match);
-            // debugger
+
             // if it is not a string, convert to a string
             if (typeof v !== 'string') {
                 return JSON.stringify(v);

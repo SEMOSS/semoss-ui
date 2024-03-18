@@ -204,15 +204,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     const data = computed(() => {
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
-                const trimmed = instance.trim();
-                const isParammed = /^{{.+}}$/.test(trimmed);
-                // {{...}} starts with and ends with
-                // Treat JSON differently then other parramed strings
-                if (isParammed) {
-                    return state.parseVariable(trimmed);
-                } else {
-                    return state.parseMultiVariables(trimmed);
-                }
+                // try to extract the variable
+                return state.parseVariable(instance);
             }
 
             return instance;
