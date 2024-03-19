@@ -35,7 +35,6 @@ export const config: BlockConfig<SelectBlockDef> = {
     },
     render: SelectBlock,
     icon: ViewList,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

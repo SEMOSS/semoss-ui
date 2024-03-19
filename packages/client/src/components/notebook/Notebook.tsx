@@ -1,4 +1,4 @@
-import { Divider, Tooltip, styled } from '@semoss/ui';
+import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import {
     DashboardCustomizeRounded,
@@ -12,8 +12,12 @@ import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 import { NotebookQueriesMenu } from './NotebookQueriesMenu';
 import { NotebookTransformMenu } from './NotebookTransformMenu';
 import { NotebookSheet } from './NotebookSheet';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NotebookBlocksMenu } from './NotebookBlocksMenu';
+
+import { usePixel } from '@/hooks';
+
+import { LLMContext } from '@/contexts';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -59,10 +63,33 @@ export const Notebook = observer(() => {
         setView(v);
     };
 
+    const [modelId, setModelId] = useState<string>('');
+    const [models, setModels] = useState<
+        { app_id: string; app_name: string }[]
+    >([]);
+
+    const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
+    MyEngines(engineTypes=['MODEL']);
+    `);
+
+    useEffect(() => {
+        if (myModels.status !== 'SUCCESS') {
+            return;
+        }
+
+        setModels(
+            myModels.data.map((d) => ({
+                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                app_id: d.app_id,
+            })),
+        );
+
+        setModelId(myModels.data[0].app_id);
+    }, [myModels.status, myModels.data]);
+
     return (
         <StyledNotebook>
             <Sidebar>
-                <SidebarText>Build</SidebarText>
                 <SidebarItem
                     selected={view === 'queries'}
                     onClick={() => updateView('queries')}
@@ -70,6 +97,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Add'} placement="right">
                         <Layers color="inherit" />
                     </Tooltip>
+                    <SidebarText>Queries</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     disabled={false}
@@ -79,9 +107,8 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Transform'} placement="right">
                         <DashboardCustomizeRounded color="inherit" />
                     </Tooltip>
+                    <SidebarText>Transform</SidebarText>
                 </SidebarItem>
-                <Divider orientation="horizontal" />
-                <SidebarText>Connect</SidebarText>
                 <SidebarItem
                     disabled={false}
                     selected={view === 'catalog'}
@@ -90,6 +117,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Catalog'} placement="right">
                         <DataArrayRounded color="inherit" />
                     </Tooltip>
+                    <SidebarText>Catalog</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     selected={view === 'blocks'}
@@ -98,6 +126,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Blocks'} placement="right">
                         <SwipeRightAltRounded color="inherit" />
                     </Tooltip>
+                    <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
             </Sidebar>
             {view ? (
@@ -110,7 +139,17 @@ export const Notebook = observer(() => {
             ) : null}
 
             <StyledRightPanel>
-                <NotebookSheet />
+                <LLMContext.Provider
+                    value={{
+                        modelId: modelId,
+                        modelOptions: models,
+                        setModel: (id) => {
+                            setModelId(id);
+                        },
+                    }}
+                >
+                    <NotebookSheet />
+                </LLMContext.Provider>
             </StyledRightPanel>
         </StyledNotebook>
     );

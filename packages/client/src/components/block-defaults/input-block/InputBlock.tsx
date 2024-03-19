@@ -45,9 +45,6 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
             style={{
                 ...data.style,
             }}
-            InputLabelProps={{
-                shrink: true,
-            }}
             type={data.type}
             onChange={(e) => {
                 const value = e.target.value;

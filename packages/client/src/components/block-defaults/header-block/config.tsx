@@ -28,7 +28,6 @@ export const config: BlockConfig<HeaderBlockDef> = {
     },
     render: HeaderBlock,
     icon: BorderTop,
-    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         buildDimensionsSection(),

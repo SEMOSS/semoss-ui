@@ -34,7 +34,6 @@ export const config: BlockConfig<UploadBlockDef> = {
     slots: {},
     render: UploadBlock,
     icon: Upload,
-    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

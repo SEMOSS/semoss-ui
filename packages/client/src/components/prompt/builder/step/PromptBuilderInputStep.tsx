@@ -29,8 +29,9 @@ export const PromptBuilderInputStep = (props: {
                 ? props.builder.context.value.replace('\n', '\n ')
                 : '';
         // split by space except for what's in double brackets
+        // Match new line to keep multiline integrity
         const tokenArray = contextString.match(
-            /(?:[^\s\{\{\}\}]+|\{\{[^\{\{\}\}]*\}\})+/g,
+            /(?:[^\s\{\{\}\}]+|\{\{[^\{\{\}\}]*\}\})|\n/g,
         );
         const preconfiguredInputs = {};
         const tokenObjectArray: Token[] = [];
@@ -91,6 +92,7 @@ export const PromptBuilderInputStep = (props: {
         });
         setTokens(tokenObjectArray);
     }, []);
+
     const inputTokenKeys = () => {
         const inputTokens = tokens.filter(
             (token) =>

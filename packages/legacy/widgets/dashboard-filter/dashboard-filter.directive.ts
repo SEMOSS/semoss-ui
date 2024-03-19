@@ -1752,21 +1752,29 @@ function dashboardFilterDirective(
                 );
             } else if (scope.dashboardFilter.options.multiple) {
                 let cleanStartValue, cleanEndValue;
-
+                
                 if (scope.dashboardFilter.range.rendered[0]) {
                     const startValue = scope.dashboardFilter.range.rendered[0];
-                    const parsedStartDate = dayjs(startValue);
-                    cleanStartValue = dayjs(parsedStartDate).format(
-                        'YYYY-MM-DD HH:mm:ss'
-                    );
+                    if(scope.dashboardFilter.range.type === 'date') {
+                        const parsedStartDate = dayjs(startValue);
+                        cleanStartValue = dayjs(parsedStartDate).format(
+                            'YYYY-MM-DD HH:mm:ss'
+                        );
+                    } else {
+                        cleanStartValue = startValue
+                    }
                 }
 
                 if (scope.dashboardFilter.range.rendered[1]) {
                     const endValue = scope.dashboardFilter.range.rendered[1];
-                    const parsedEndDate = dayjs(endValue);
-                    cleanEndValue = dayjs(parsedEndDate).format(
-                        'YYYY-MM-DD HH:mm:ss'
-                    );
+                    if(scope.dashboardFilter.range.type === 'date') {
+                        const parsedEndDate = dayjs(endValue);
+                        cleanEndValue = dayjs(parsedEndDate).format(
+                            'YYYY-MM-DD HH:mm:ss'
+                            );
+                        } else {
+                        cleanEndValue = endValue
+                    }
                 }
 
                 components.push(
@@ -1804,6 +1812,7 @@ function dashboardFilterDirective(
             } else {
                 // singe date value for datepicker filter
                 const dateValue = scope.dashboardFilter.range.rendered[0];
+
                 const parsedDate = dayjs(dateValue);
                 const cleanDateValue = dayjs(parsedDate).format(
                     'YYYY-MM-DD HH:mm:ss'

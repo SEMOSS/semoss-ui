@@ -1,7 +1,6 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Button, Stack, useNotification } from '@semoss/ui';
-import { ShareRounded } from '@mui/icons-material';
-
+import { styled, Button, IconButton, Stack, useNotification } from '@semoss/ui';
+import { GetAppRounded, ShareRounded } from '@mui/icons-material';
 import { useWorkspace, useRootStore } from '@/hooks';
 import { ShareOverlay } from '@/components/workspace';
 
@@ -64,6 +63,16 @@ export const CodeWorkspaceActions = observer(() => {
 
     return (
         <Stack direction="row" spacing={1.25} alignItems={'center'}>
+            <IconButton
+                color="default"
+                size="small"
+                title="Download App"
+                onClick={() => {
+                    exportApp();
+                }}
+            >
+                <GetAppRounded />
+            </IconButton>
             <StyledShareButton
                 size={'small'}
                 color={'secondary'}

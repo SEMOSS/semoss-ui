@@ -34,7 +34,6 @@ export const config: BlockConfig<PageBlockDef> = {
     },
     render: PageBlock,
     icon: FileCopyOutlined,
-    isBlocksMenuEnabled: false,
     contentMenu: [],
     styleMenu: [
         buildLayoutSection(),

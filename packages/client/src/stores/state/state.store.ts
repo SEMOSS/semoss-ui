@@ -296,7 +296,7 @@ export class StateStore {
 
     /** Variable Methods */
     /**
-     * Parse a variable and return the value if it exists (otherwise return the expression)
+     * Parse a variables and return the value if it exists (otherwise return the expression)
      */
     parseVariable = (expression: string): unknown => {
         // trim the whitespace
@@ -360,6 +360,25 @@ export class StateStore {
         return expression;
     };
 
+    parseVariableBad = (expression: string): unknown => {
+        // Use a regular expression to find all {{...}} patterns
+        const regex = /\{\{([^}]+)\}\}/g;
+        let match;
+        // Copy the original expression to work with replacements
+        let result = expression;
+
+        while ((match = regex.exec(expression)) !== null) {
+            // Extract the matched placeholder without the brackets
+            const variable = match[1];
+
+            // Replace the current match in the result string with its evaluated value
+            const replacedValue = this.replaceVariable(variable);
+            result = result.replace(match[0], replacedValue);
+        }
+
+        return result;
+    };
+
     /**
      * Flatten a string containing multiple variables
      * @param expression - expression to flatten
@@ -377,6 +396,49 @@ export class StateStore {
 
             return v;
         });
+    };
+
+    replaceVariable = (placeholder) => {
+        const path = placeholder.split('.');
+        let value = placeholder; // Default to placeholder itself for unmatched cases
+
+        // Check for 'query' and 'cell' specific logic
+        if (path[0] === 'query' && path[2] === 'cell') {
+            const queryId = path[1];
+            const cellId = path[3];
+            const query = this._store.queries[queryId];
+            const cell = query ? query.getCell(cellId) : null;
+            if (cell) {
+                const key = path[4];
+                if (key in cell._exposed) {
+                    const s = path.slice(4).join('.');
+                    value = getValueByPath(cell._exposed, s);
+                }
+            }
+        }
+        // Check for 'query' but not 'cell'
+        else if (path[0] === 'query' && path[2] !== 'cell') {
+            const queryId = path[1];
+            const key = path[2];
+            const query = this._store.queries[queryId];
+            if (query && key in query._exposed) {
+                const s = path.slice(2).join('.');
+
+                value = getValueByPath(query._exposed, s);
+            }
+        }
+        // Check for 'block'
+        else if (path[0] === 'block') {
+            const blockId = path[1];
+            const block = this._store.blocks[blockId];
+            if (block) {
+                const s = path.slice(2).join('.');
+                value = getValueByPath(block.data, s);
+            }
+        }
+
+        // Return the evaluated value or the original placeholder
+        return value;
     };
 
     /**
@@ -557,7 +619,6 @@ export class StateStore {
     private setState = (state: SerializedState) => {
         // store the block information
         this._store.blocks = state.blocks;
-
         // load the queries
         this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
             acc[val] = new QueryState(state.queries[val], this);
