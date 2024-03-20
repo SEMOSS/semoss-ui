@@ -337,6 +337,8 @@ export class CellState<D extends CellDef = CellDef> {
                     output = last.value[0];
                 } else if (last.pixelType === 'INVALID_SYNTAX') {
                     output = last.value[0];
+                } else if (last.pixelType === 'FRAME') {
+                    output = last.value[0];
                 } else {
                     output = last.value;
                 }
