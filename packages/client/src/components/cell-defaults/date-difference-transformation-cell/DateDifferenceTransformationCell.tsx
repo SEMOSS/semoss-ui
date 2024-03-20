@@ -24,6 +24,7 @@ import {
 } from '../shared';
 import { QueryImportCellDef } from '../query-import-cell';
 import { CalendarMonth, TableChartOutlined } from '@mui/icons-material';
+import { observer } from 'mobx-react-lite';
 
 export interface DateDifferenceTransformationDef
     extends TransformationDef<'date-difference'> {
@@ -56,339 +57,292 @@ export interface DateDifferenceTransformationCellDef
     };
 }
 
-export const DateDifferenceTransformationCell: CellComponent<
-    DateDifferenceTransformationCellDef
-> = (props) => {
-    const { cell, isExpanded } = props;
-    const { state } = useBlocks();
+export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTransformationCellDef> =
+    observer((props) => {
+        const { cell, isExpanded } = props;
+        const { state } = useBlocks();
 
-    const targetCell: CellState<QueryImportCellDef> = computed(() => {
-        return cell.query.cells[
-            cell.parameters.targetCell.id
-        ] as CellState<QueryImportCellDef>;
-    }).get();
-
-    const cellTransformation: Transformation<DateDifferenceTransformationDef> =
-        computed(() => {
-            return cell.parameters
-                .transformation as Transformation<DateDifferenceTransformationDef>;
+        const targetCell: CellState<QueryImportCellDef> = computed(() => {
+            return cell.query.cells[
+                cell.parameters.targetCell.id
+            ] as CellState<QueryImportCellDef>;
         }).get();
 
-    const doesFrameExist: boolean = computed(() => {
-        return !!targetCell && (targetCell.isExecuted || !!targetCell.output);
-    }).get();
+        const cellTransformation: Transformation<DateDifferenceTransformationDef> =
+            computed(() => {
+                return cell.parameters
+                    .transformation as Transformation<DateDifferenceTransformationDef>;
+            }).get();
 
-    const helpText = cell.parameters.targetCell.id
-        ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
-        : 'A Python or R target frame variable must be defined in order to apply a transformation.';
+        const doesFrameExist: boolean = computed(() => {
+            return (
+                !!targetCell && (targetCell.isExecuted || !!targetCell.output)
+            );
+        }).get();
 
-    if (!doesFrameExist && !cellTransformation.parameters.columnName) {
+        const helpText = cell.parameters.targetCell.id
+            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
+            : 'A Python or R target frame variable must be defined in order to apply a transformation.';
+
+        if (!doesFrameExist && !cellTransformation.parameters.columnName) {
+            return (
+                <TransformationCellInput
+                    isExpanded={isExpanded}
+                    display={Transformations[cellTransformation.key].display}
+                    Icon={Transformations[cellTransformation.key].icon}
+                >
+                    <Stack width="100%" paddingY={0.75}>
+                        <Typography variant="caption">
+                            <em>{helpText}</em>
+                        </Typography>
+                    </Stack>
+                </TransformationCellInput>
+            );
+        }
+
         return (
             <TransformationCellInput
                 isExpanded={isExpanded}
                 display={Transformations[cellTransformation.key].display}
                 Icon={Transformations[cellTransformation.key].icon}
             >
-                <Stack width="100%" paddingY={0.75}>
+                <Stack spacing={2}>
                     <Typography variant="caption">
-                        <em>{helpText}</em>
+                        {!doesFrameExist ? (
+                            <em>{helpText}</em>
+                        ) : (
+                            'Compute the difference between dates and add the computed value as a new column'
+                        )}
                     </Typography>
-                </Stack>
-            </TransformationCellInput>
-        );
-    }
-
-    return (
-        <TransformationCellInput
-            isExpanded={isExpanded}
-            display={Transformations[cellTransformation.key].display}
-            Icon={Transformations[cellTransformation.key].icon}
-        >
-            <Stack spacing={2}>
-                <Typography variant="caption">
-                    {!doesFrameExist ? (
-                        <em>{helpText}</em>
-                    ) : (
-                        'Compute the difference between dates and add the computed value as a new column'
-                    )}
-                </Typography>
-                <Stack direction="row" spacing={2} width="100%">
-                    <Stack direction="row" spacing={1} minWidth="40%">
-                        <ToggleButtonGroup
-                            size="small"
-                            value={cellTransformation.parameters.startType}
-                            disabled={
-                                cellTransformation.parameters.endType ===
-                                'custom'
-                            }
-                        >
-                            <ToggleButton
-                                value="column"
-                                onClick={() => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.startType',
-                                            value: 'column',
-                                        },
-                                    });
-                                }}
-                            >
-                                <TableChartOutlined />
-                            </ToggleButton>
-                            <ToggleButton
-                                value="custom"
-                                onClick={() => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.startType',
-                                            value: 'custom',
-                                        },
-                                    });
-                                }}
-                            >
-                                <CalendarMonth />
-                            </ToggleButton>
-                        </ToggleButtonGroup>
-                        {cellTransformation.parameters.startType ===
-                        'column' ? (
-                            <ColumnTransformationField
-                                disabled={!doesFrameExist}
-                                label="Start Date Column"
-                                cell={cell}
-                                selectedColumns={
-                                    cellTransformation.parameters.startColumn
-                                }
-                                columnTypes={['DATE']}
-                                onChange={(newColumn: ColumnInfo) => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.startColumn',
-                                            value: newColumn,
-                                        },
-                                    });
-                                }}
-                            />
-                        ) : (
-                            <TextField
-                                type="date"
+                    <Stack direction="row" spacing={2} width="100%">
+                        <Stack direction="row" spacing={1} minWidth="40%">
+                            <ToggleButtonGroup
                                 size="small"
-                                label="Custom Start Date"
-                                value={
-                                    cellTransformation.parameters
-                                        .startCustomDate
+                                value={cellTransformation.parameters.startType}
+                                disabled={
+                                    cellTransformation.parameters.endType ===
+                                    'custom'
                                 }
-                                InputLabelProps={{
-                                    shrink: true,
-                                }}
-                                fullWidth
-                                onChange={(e) => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.startCustomDate',
-                                            value: e.target.value,
-                                        },
-                                    });
-                                }}
-                            />
-                        )}
-                    </Stack>
-                    <Stack direction="row" spacing={1} minWidth="40%">
-                        <ToggleButtonGroup
-                            size="small"
-                            value={cellTransformation.parameters.endType}
-                            disabled={
-                                cellTransformation.parameters.startType ===
-                                'custom'
-                            }
-                        >
-                            <ToggleButton
-                                value="column"
-                                onClick={() => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.endType',
-                                            value: 'column',
-                                        },
-                                    });
-                                }}
                             >
-                                <TableChartOutlined />
-                            </ToggleButton>
-                            <ToggleButton
-                                value="custom"
-                                onClick={() => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.endType',
-                                            value: 'custom',
-                                        },
-                                    });
-                                }}
-                            >
-                                <CalendarMonth />
-                            </ToggleButton>
-                        </ToggleButtonGroup>
-                        {cellTransformation.parameters.endType === 'column' ? (
-                            <ColumnTransformationField
-                                disabled={!doesFrameExist}
-                                label="End Date Column"
-                                cell={cell}
-                                selectedColumns={
-                                    cellTransformation.parameters.endColumn
-                                }
-                                columnTypes={['DATE']}
-                                onChange={(newColumn: ColumnInfo) => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.endColumn',
-                                            value: newColumn,
-                                        },
-                                    });
-                                }}
-                            />
-                        ) : (
-                            <TextField
-                                type="date"
+                                <ToggleButton
+                                    value="column"
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.startType',
+                                                value: 'column',
+                                            },
+                                        });
+                                    }}
+                                >
+                                    <TableChartOutlined />
+                                </ToggleButton>
+                                <ToggleButton
+                                    value="custom"
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.startType',
+                                                value: 'custom',
+                                            },
+                                        });
+                                    }}
+                                >
+                                    <CalendarMonth />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                            {cellTransformation.parameters.startType ===
+                            'column' ? (
+                                <ColumnTransformationField
+                                    disabled={!doesFrameExist}
+                                    label="Start Date Column"
+                                    cell={cell}
+                                    selectedColumns={
+                                        cellTransformation.parameters
+                                            .startColumn
+                                    }
+                                    columnTypes={['DATE']}
+                                    onChange={(newColumn: ColumnInfo) => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.startColumn',
+                                                value: newColumn,
+                                            },
+                                        });
+                                    }}
+                                />
+                            ) : (
+                                <TextField
+                                    type="date"
+                                    size="small"
+                                    label="Custom Start Date"
+                                    value={
+                                        cellTransformation.parameters
+                                            .startCustomDate
+                                    }
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    fullWidth
+                                    onChange={(e) => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.startCustomDate',
+                                                value: e.target.value,
+                                            },
+                                        });
+                                    }}
+                                />
+                            )}
+                        </Stack>
+                        <Stack direction="row" spacing={1} minWidth="40%">
+                            <ToggleButtonGroup
                                 size="small"
-                                label="Custom End Date"
-                                value={
-                                    cellTransformation.parameters.endCustomDate
+                                value={cellTransformation.parameters.endType}
+                                disabled={
+                                    cellTransformation.parameters.startType ===
+                                    'custom'
                                 }
-                                InputLabelProps={{
-                                    shrink: true,
-                                }}
-                                fullWidth
-                                onChange={(e) => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.transformation.parameters.endCustomDate',
-                                            value: e.target.value,
-                                        },
-                                    });
-                                }}
-                            />
-                        )}
+                            >
+                                <ToggleButton
+                                    value="column"
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.endType',
+                                                value: 'column',
+                                            },
+                                        });
+                                    }}
+                                >
+                                    <TableChartOutlined />
+                                </ToggleButton>
+                                <ToggleButton
+                                    value="custom"
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.endType',
+                                                value: 'custom',
+                                            },
+                                        });
+                                    }}
+                                >
+                                    <CalendarMonth />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                            {cellTransformation.parameters.endType ===
+                            'column' ? (
+                                <ColumnTransformationField
+                                    disabled={!doesFrameExist}
+                                    label="End Date Column"
+                                    cell={cell}
+                                    selectedColumns={
+                                        cellTransformation.parameters.endColumn
+                                    }
+                                    columnTypes={['DATE']}
+                                    onChange={(newColumn: ColumnInfo) => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.endColumn',
+                                                value: newColumn,
+                                            },
+                                        });
+                                    }}
+                                />
+                            ) : (
+                                <TextField
+                                    type="date"
+                                    size="small"
+                                    label="Custom End Date"
+                                    value={
+                                        cellTransformation.parameters
+                                            .endCustomDate
+                                    }
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    fullWidth
+                                    onChange={(e) => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.transformation.parameters.endCustomDate',
+                                                value: e.target.value,
+                                            },
+                                        });
+                                    }}
+                                />
+                            )}
+                        </Stack>
+                        <Autocomplete
+                            disableClearable
+                            disabled={!doesFrameExist}
+                            size="small"
+                            fullWidth
+                            value={cellTransformation.parameters.unit}
+                            onChange={(_, newOperation: string) => {
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.transformation.parameters.unit',
+                                        value: newOperation,
+                                    },
+                                });
+                            }}
+                            options={dateUnitTypes}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    variant="outlined"
+                                    label="Unit of Measure"
+                                />
+                            )}
+                        />
                     </Stack>
-                    <Autocomplete
-                        disableClearable
-                        disabled={!doesFrameExist}
+                    <TextField
                         size="small"
+                        label="Column Name"
+                        value={cellTransformation.parameters.columnName}
                         fullWidth
-                        value={cellTransformation.parameters.unit}
-                        onChange={(_, newOperation: string) => {
+                        onChange={(e) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.transformation.parameters.unit',
-                                    value: newOperation,
+                                    path: 'parameters.transformation.parameters.columnName',
+                                    value: e.target.value,
                                 },
                             });
                         }}
-                        options={dateUnitTypes}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                variant="outlined"
-                                label="Unit of Measure"
-                            />
-                        )}
                     />
                 </Stack>
-                <TextField
-                    size="small"
-                    label="Column Name"
-                    value={cellTransformation.parameters.columnName}
-                    fullWidth
-                    onChange={(e) => {
-                        state.dispatch({
-                            message: ActionMessages.UPDATE_CELL,
-                            payload: {
-                                queryId: cell.query.id,
-                                cellId: cell.id,
-                                path: 'parameters.transformation.parameters.columnName',
-                                value: e.target.value,
-                            },
-                        });
-                    }}
-                />
-            </Stack>
-        </TransformationCellInput>
-    );
-};
-
-DateDifferenceTransformationCell.config = {
-    name: 'Date Diference',
-    widget: 'date-difference-transformation',
-    parameters: {
-        transformation: {
-            key: 'date-difference',
-            parameters: {
-                startType: 'column',
-                startCustomDate: '',
-                startColumn: null,
-                endType: 'column',
-                endCustomDate: '',
-                endColumn: null,
-                unit: 'day',
-                columnName: '',
-            },
-        },
-        targetCell: {
-            id: '',
-            frameVariableName: '',
-        },
-    },
-    toPixel: ({ transformation, targetCell }) => {
-        const startColumn =
-            transformation.parameters.startType === 'column'
-                ? transformation.parameters.startColumn?.name
-                : transformation.parameters.endColumn?.name;
-        const endColumn =
-            transformation.parameters.endType === 'column'
-                ? transformation.parameters.endColumn?.name
-                : transformation.parameters.startColumn?.name;
-        const inputUse =
-            transformation.parameters.startType === 'column' &&
-            transformation.parameters.endType === 'column'
-                ? 'none'
-                : transformation.parameters.startType === 'custom'
-                ? 'start'
-                : 'end';
-        const inputDate =
-            transformation.parameters.startType === 'column' &&
-            transformation.parameters.endType === 'column'
-                ? 'null'
-                : transformation.parameters.startType === 'custom'
-                ? transformation.parameters.startCustomDate
-                : transformation.parameters.endCustomDate;
-        const unit = transformation.parameters.unit;
-        const name = transformation.parameters.columnName;
-        return `${targetCell.frameVariableName} | DateDifference( start_column = ["${startColumn}"], end_column = ["${endColumn}"], input_use = ["${inputUse}"], input_date = ["${inputDate}"], unit = ["${unit}"], newCol = ["${name}"] );`;
-    },
-};
+            </TransformationCellInput>
+        );
+    });

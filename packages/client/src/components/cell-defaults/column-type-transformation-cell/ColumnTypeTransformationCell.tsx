@@ -1,37 +1,40 @@
-import { computed } from 'mobx';
-import { observer } from 'mobx-react-lite';
-import { Stack, Typography } from '@semoss/ui';
-import { CellComponent, ActionMessages, CellState } from '@/stores';
 import { useBlocks } from '@/hooks';
-
+import { computed } from 'mobx';
+import { CellComponent, ActionMessages, CellState } from '@/stores';
+import { Stack, TextField, Typography } from '@semoss/ui';
+import { Autocomplete } from '@mui/material';
 import {
     Transformation,
+    TransformationDef,
+    TransformationCellDef,
     ColumnInfo,
     ColumnTransformationField,
     TransformationCellInput,
+    transformationColumnTypes,
     Transformations,
-    TransformationDef,
-    TransformationCellDef,
     TransformationTargetCell,
+    columnTypes,
 } from '../shared';
 import { QueryImportCellDef } from '../query-import-cell';
+import { observer } from 'mobx-react-lite';
 
-export interface UppercaseTransformationDef
-    extends TransformationDef<'uppercase'> {
-    key: 'uppercase';
+export interface ColumnTypeTransformationDef
+    extends TransformationDef<'column-type'> {
+    key: 'column-type';
     parameters: {
-        columns: ColumnInfo[];
+        column: ColumnInfo;
+        columnType: columnTypes;
     };
 }
 
-export interface UppercaseTransformationCellDef
-    extends TransformationCellDef<'uppercase-transformation'> {
-    widget: 'uppercase-transformation';
+export interface ColumnTypeTransformationCellDef
+    extends TransformationCellDef<'column-type-transformation'> {
+    widget: 'column-type-transformation';
     parameters: {
         /**
          * Routine type
          */
-        transformation: Transformation<UppercaseTransformationDef>;
+        transformation: Transformation<ColumnTypeTransformationDef>;
 
         /**
          * ID of the query cell that defines the frame we want to transform
@@ -40,7 +43,7 @@ export interface UppercaseTransformationCellDef
     };
 }
 
-export const UppercaseTransformationCell: CellComponent<UppercaseTransformationCellDef> =
+export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformationCellDef> =
     observer((props) => {
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
@@ -51,10 +54,10 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
             ] as CellState<QueryImportCellDef>;
         }).get();
 
-        const cellTransformation: Transformation<UppercaseTransformationDef> =
+        const cellTransformation: Transformation<ColumnTypeTransformationDef> =
             computed(() => {
                 return cell.parameters
-                    .transformation as Transformation<UppercaseTransformationDef>;
+                    .transformation as Transformation<ColumnTypeTransformationDef>;
             }).get();
 
         const doesFrameExist: boolean = computed(() => {
@@ -67,7 +70,7 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
             ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
             : 'A Python or R target frame variable must be defined in order to apply a transformation.';
 
-        if (!doesFrameExist && !cellTransformation.parameters.columns.length) {
+        if (!doesFrameExist && !cellTransformation.parameters.column) {
             return (
                 <TransformationCellInput
                     isExpanded={isExpanded}
@@ -94,28 +97,50 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
                         {!doesFrameExist ? (
                             <em>{helpText}</em>
                         ) : (
-                            'Change the values of the selected columns to uppercase'
+                            'Change the type of the selected column'
                         )}
                     </Typography>
                     <ColumnTransformationField
                         disabled={!doesFrameExist}
                         cell={cell}
-                        selectedColumns={
-                            cellTransformation.parameters.columns ?? []
-                        }
-                        multiple
-                        columnTypes={['STRING']}
-                        onChange={(newColumns: ColumnInfo[]) => {
+                        selectedColumns={cellTransformation.parameters.column}
+                        onChange={(newColumn: ColumnInfo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.transformation.parameters.columns',
-                                    value: newColumns,
+                                    path: 'parameters.transformation.parameters.column',
+                                    value: newColumn,
                                 },
                             });
                         }}
+                    />
+                    <Autocomplete
+                        disableClearable
+                        disabled={!doesFrameExist}
+                        size="small"
+                        value={cellTransformation.parameters.columnType}
+                        fullWidth
+                        onChange={(_, newOperation: string) => {
+                            state.dispatch({
+                                message: ActionMessages.UPDATE_CELL,
+                                payload: {
+                                    queryId: cell.query.id,
+                                    cellId: cell.id,
+                                    path: 'parameters.transformation.parameters.columnType',
+                                    value: newOperation,
+                                },
+                            });
+                        }}
+                        options={transformationColumnTypes}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                variant="outlined"
+                                label="Operation"
+                            />
+                        )}
                     />
                 </Stack>
             </TransformationCellInput>

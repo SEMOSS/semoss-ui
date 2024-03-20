@@ -12,7 +12,7 @@ import {
 import {
     Block,
     BlockJSON,
-    CellComponentRegistry,
+    CellRegistry,
     ListenerActions,
     SerializedState,
 } from './state.types';
@@ -33,7 +33,7 @@ interface StateStoreInterface {
     blocks: Record<string, Block>;
 
     /** Cells registered to the insight */
-    cellRegistry: CellComponentRegistry;
+    cellRegistry: CellRegistry;
 }
 
 export class StateStoreConfig {
@@ -47,7 +47,7 @@ export class StateStoreConfig {
     state: SerializedState;
 
     /** Cells registered to the insight */
-    cellRegistry: CellComponentRegistry;
+    cellRegistry: CellRegistry;
 }
 
 /**

@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+import { editor } from 'monaco-editor';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
 import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
 import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
@@ -17,7 +19,6 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
 import { PythonIcon, RIcon } from './icons';
-import { editor } from 'monaco-editor';
 
 export interface CodeCellDef extends CellDef<'code'> {
     widget: 'code';
@@ -111,7 +112,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
 let completionItemProviders = {};
 
 // TODO:: Refactor height to account for Layout
-export const CodeCell: CellComponent<CodeCellDef> = (props) => {
+export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
 
@@ -725,26 +726,4 @@ export const CodeCell: CellComponent<CodeCellDef> = (props) => {
             </Stack>
         </StyledContent>
     );
-};
-
-CodeCell.config = {
-    name: 'Code',
-    widget: 'code',
-    parameters: {
-        type: 'pixel',
-        code: '',
-    },
-    toPixel: ({ type, code }) => {
-        if (type === 'r') {
-            return `R("<encode>${code}</encode>");`;
-        } else if (type === 'py') {
-            return `Py("<encode>${code}</encode>");`;
-        } else if (type === 'pixel') {
-            return code;
-        } else {
-            throw new Error(
-                `Error converting toString ::: ${type} is not valid`,
-            );
-        }
-    },
-};
+});

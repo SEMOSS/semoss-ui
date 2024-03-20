@@ -1,5 +1,4 @@
 import { useState, createElement, useMemo } from 'react';
-import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -215,15 +214,13 @@ export const NotebookCell = observer(
 
         // render the view
         const rendered = useMemo(() => {
-            return computed(() => {
-                if (!cell.component) {
-                    return;
-                }
+            if (!cell.component) {
+                return;
+            }
 
-                return createElement(observer(cell.component), {
-                    cell: cell,
-                    isExpanded: contentExpanded,
-                });
+            return createElement(cell.component, {
+                cell: cell,
+                isExpanded: contentExpanded,
             });
         }, [cell.component ? cell.component : null, contentExpanded]);
 

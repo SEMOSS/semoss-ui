@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
 import { setValueByPath } from '@/utility';
 
-import { CellComponent, CellDef } from './state.types';
+import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
 import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
@@ -184,7 +184,7 @@ export class CellState<D extends CellDef = CellDef> {
      */
     get component(): CellComponent | null {
         if (this._state.cellRegistry[this._store.widget]) {
-            return this._state.cellRegistry[this._store.widget];
+            return this._state.cellRegistry[this._store.widget].view;
         }
 
         return null;
@@ -193,9 +193,9 @@ export class CellState<D extends CellDef = CellDef> {
     /**
      * Get the config associated with the cell
      */
-    get config(): CellComponent['config'] | null {
+    get config(): CellConfig | null {
         if (this._state.cellRegistry[this._store.widget]) {
-            return this._state.cellRegistry[this._store.widget].config;
+            return this._state.cellRegistry[this._store.widget];
         }
 
         return null;

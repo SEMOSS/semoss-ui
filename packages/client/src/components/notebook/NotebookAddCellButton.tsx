@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { styled, Button, Menu, MenuProps } from '@semoss/ui';
@@ -10,11 +11,12 @@ import {
     QueryState,
 } from '@/stores';
 import { Add } from '@mui/icons-material';
-import { DefaultCells } from '../cell-defaults';
-import { useState } from 'react';
-import { CodeCell } from '../cell-defaults/code-cell';
-import { QueryImportCell } from '../cell-defaults/query-import-cell';
-import { UppercaseTransformationCell } from '../cell-defaults/uppercase-transformation-cell';
+import {
+    DefaultCellDefinitions,
+    DefaultCells,
+} from '@/components/cell-defaults';
+import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
+import { CodeCellConfig } from '../cell-defaults/code-cell';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -48,20 +50,20 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
 
 interface AddCellOption {
     display: string;
-    defaultCellType: string;
+    defaultCellType: DefaultCellDefinitions['widget'];
 }
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Code',
-        defaultCellType: CodeCell.config.widget,
+        defaultCellType: 'code',
     },
     'query-import': {
         display: 'Query Import',
-        defaultCellType: QueryImportCell.config.widget,
+        defaultCellType: 'query-import',
     },
     transformation: {
         display: 'Transformation',
-        defaultCellType: UppercaseTransformationCell.config.widget, // TODO: figure out what the most popular transformation is and use as default
+        defaultCellType: 'uppercase-transformation', // TODO: figure out what the most popular transformation is and use as default
     },
 };
 
@@ -109,7 +111,7 @@ export const NotebookAddCellButton = observer(
                     parameters: DefaultCells[widget].config.parameters,
                 };
 
-                if (widget === QueryImportCell.config.widget) {
+                if (widget === QueryImportCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].config.parameters,
                         frameVariableName: `FRAME_${newCellId}`,
@@ -120,7 +122,7 @@ export const NotebookAddCellButton = observer(
                     previousCellId &&
                     state.queries[query.id].cells[previousCellId].config
                         .widget === widget &&
-                    widget === CodeCell.config.widget
+                    widget === CodeCellConfig.widget
                 ) {
                     const previousCellType =
                         state.queries[query.id].cells[previousCellId].parameters

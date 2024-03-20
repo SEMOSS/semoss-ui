@@ -1,1 +1,2 @@
-export * from './ColumnTypeTransformationCellInput';
+export * from './config';
+export * from './ColumnTypeTransformationCell';
