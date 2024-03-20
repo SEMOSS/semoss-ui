@@ -2,17 +2,6 @@ import axios from 'axios';
 
 import { Env } from '@/env';
 
-export interface PixelResult {
-    class: string[];
-    opType: string[];
-    pixelType: string;
-    value: unknown;
-}
-
-export interface PixelConsoleResponse {
-    messages: string[];
-    status: string;
-}
 /**
  * Run a pixel string
  *
@@ -79,8 +68,10 @@ export const runPixel = async <O extends unknown[] | []>(
 };
 
 /**
- * Hits RunPixelAsync endpoint
- * @returns Record<jobId, string>
+ * Asyncronously run a pixel string
+ *
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
  */
 export const runPixelAsync = async (pixel: string, insightId?: string) => {
     if (!pixel) {
@@ -120,10 +111,42 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
 };
 
 /**
- * Polls runPixelAsync for stdout
- * @param jobId
+ * Poll the console to get messages for a job
+ *
+ * @param jobId - id of the associated job
  */
 export const pixelConsole = async (jobId: string) => {
+    if (!jobId) {
+        throw Error('No job id provded to get pixel response');
+    }
+
+    // build the expression
+    let postData = '';
+
+    postData += 'jobId=' + encodeURIComponent(jobId);
+
+    const response = await axios.post<{
+        message: string[];
+        status: string;
+    }>(`${Env.MODULE}/api/engine/console`, postData, {
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+        },
+    });
+
+    return {
+        messages: response.data.message,
+        status: response.data.status,
+    };
+};
+
+/**
+ * Poll the console to get messages for a job
+ *
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
+ */
+export const pixelConsole2 = async (jobId: string) => {
     if (!jobId) {
         throw Error('No job id provded to get pixel response');
     }
@@ -139,15 +162,14 @@ export const pixelConsole = async (jobId: string) => {
     // Set up polling in order to get full stdout
     while (stillPolling) {
         try {
-            response = await axios.post<PixelConsoleResponse>(
-                `${Env.MODULE}/api/engine/console`,
-                postData,
-                {
-                    headers: {
-                        'content-type': 'application/x-www-form-urlencoded',
-                    },
+            response = await axios.post<{
+                messages: string[];
+                status: string;
+            }>(`${Env.MODULE}/api/engine/console`, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
                 },
-            );
+            });
 
             // Append new messages
             response.data.message.forEach((mess) => {
@@ -178,7 +200,7 @@ export const pixelConsole = async (jobId: string) => {
  * Gets Final result from runPixelAsync
  * @param jobId
  */
-export const pixelResult = async (jobId: string) => {
+export const pixelResult = async <O extends unknown[] | []>(jobId: string) => {
     if (!jobId) {
         throw Error('No job id provided to get pixel response');
     }
@@ -191,7 +213,12 @@ export const pixelResult = async (jobId: string) => {
     const response = await axios
         .post<{
             insight: Record<string, unknown>;
-            results: PixelResult[];
+            results: {
+                class: string[];
+                opType: string[];
+                pixelType: string;
+                value: O[number];
+            }[];
             returnPixelList: Record<string, unknown>;
         }>(`${Env.MODULE}/api/engine/result`, postData, {
             headers: {
@@ -203,7 +230,25 @@ export const pixelResult = async (jobId: string) => {
             throw Error(error.response.data.errorMessage);
         });
 
+    // there was no response, that is an error
+    if (!response) {
+        throw Error('No Pixel Response');
+    }
+
+    const errors: string[] = [];
+
+    // collect the errors
+    for (const p of response.data.results) {
+        const { value, opType } = p;
+
+        if (opType.indexOf('ERROR') > -1) {
+            errors.push(value as string);
+        }
+    }
+
     return {
+        errors: errors,
+        insightId: response.data.insight.insightID,
         results: response.data.results,
     };
 };

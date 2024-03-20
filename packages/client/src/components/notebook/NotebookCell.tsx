@@ -256,6 +256,7 @@ export const NotebookCell = observer(
                 return 'disabled';
             }
         };
+
         const getCellChipLabel = () => {
             if (cell.isLoading) {
                 return 'Loading';
@@ -269,6 +270,7 @@ export const NotebookCell = observer(
                 return 'Pending Execution';
             }
         };
+
         const getCellChipIcon = () => {
             if (cell.isLoading) {
                 return <CircularProgress size="0.75rem" />;

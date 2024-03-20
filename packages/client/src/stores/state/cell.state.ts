@@ -5,6 +5,7 @@ import { setValueByPath } from '@/utility';
 import { Cell, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
+import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -12,9 +13,6 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 
     /** Track if the cell is loading */
     isLoading: boolean;
-
-    /** Track when the cell began */
-    executionStart: string | undefined;
 
     /** Track how long the cell took */
     executionDurationMilliseconds: number | undefined;
@@ -55,7 +53,6 @@ export class CellState<D extends CellDef = CellDef> {
     private _store: CellStateStoreInterface<D> = {
         id: '',
         isLoading: false,
-        executionStart: undefined,
         executionDurationMilliseconds: undefined,
         operation: [],
         output: undefined,
@@ -100,11 +97,6 @@ export class CellState<D extends CellDef = CellDef> {
      */
     get isLoading() {
         return this._store.isLoading;
-    }
-
-    /** Track when the cell began */
-    get executionStart() {
-        return this._store.executionStart;
     }
 
     /** Track how long the cell took */
@@ -248,54 +240,11 @@ export class CellState<D extends CellDef = CellDef> {
      * Process State
      */
     /**
-     * Update the parameters of the cell
-     * @param operation - new operationType of the cell
-     * @param output - new output of the cell
-     */
-    _sync(
-        /** operation associated with the cell */
-        operation: string[],
-
-        /** Output associated with the cell */
-        output: unknown,
-
-        /** Messages, logs and prints */
-        message?: string[],
-
-        resetExecutionTracking?: boolean,
-    ) {
-        this._store.operation = operation;
-
-        // Prints and messages
-        this._store.messages = message;
-
-        // Let Operations handle how things get interpretted
-        this._store.output = output;
-
-        // // if we are dealing with a CODE_EXECUTION operation, modify output
-        // if (operation.includes('CODE_EXECUTION') && output != undefined) {
-        //     this._store.output = Array.isArray(output)
-        //         ? output.length > 0
-        //             ? output[0].output
-        //             : null
-        //         : output;
-        // } else {
-        //     this._store.output = output;
-        // }
-
-        // syncing from query - we don't have granular information about execution
-        if (resetExecutionTracking) {
-            this._store.executionStart = undefined;
-            this._store.executionDurationMilliseconds = undefined;
-        }
-    }
-
-    /**
      * Process running of the cell
-     *
-     * @param parameters - Run the cell with these parameters. They will be saved if successful
      */
-    async _processRun(parameters: Partial<Record<string, unknown>> = {}) {
+    async _processRun() {
+        const start = new Date();
+
         try {
             // check the loading state
             if (this._store.isLoading) {
@@ -303,20 +252,7 @@ export class CellState<D extends CellDef = CellDef> {
             }
 
             // start the loading screen
-            runInAction(() => {
-                this._store.isLoading = true;
-            });
-
-            const now = new Date();
-            this._store.executionStart = `${now.toDateString()} ${now.toLocaleTimeString(
-                'en-US',
-            )}`;
-
-            // merge the options
-            const merged = {
-                ...this._store.parameters,
-                ...parameters,
-            };
+            this._store.isLoading = true;
 
             // convert the cells to the raw pixel
             const raw = this.toPixel();
@@ -324,55 +260,106 @@ export class CellState<D extends CellDef = CellDef> {
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenVariable(raw);
 
-            const { jobId, status, messages, results } =
-                await this._state._runPixelAsync(filled);
+            console.log('TODO: Remove - starting pixel');
 
-            // How do we want results to be mapped to cell
-            // We currently can have multiple results per cell which I'm not sure if thats ideal
-            // Do we want one output per cell
-            // For example if I chain: MyEngines(); MyProjects(); -> results will give me results for both
-            // Will it be expected they run these two independently
+            // clear the previous messages + operation + output
+            this._store.messages = [];
+            this._store.operation = [];
+            this._store.output = undefined;
 
-            if (!results) {
-                throw new Error('Unable to parse pixel results');
+            // start polling
+            const { jobId } = await runPixelAsync(
+                filled,
+                this._state.insightId,
+            );
+
+            console.log('TODO: Remove - starting poll');
+
+            // Set up polling in order to get full stdout
+            let isPolling = true;
+            while (isPolling) {
+                try {
+                    // get the reponse from the job id
+                    const { messages, status } = await pixelConsole(jobId);
+
+                    // add the new messages
+                    runInAction(() => {
+                        messages.forEach((mess) => {
+                            this._store.messages.push(mess);
+                        });
+                    });
+
+                    // Currently console does not get pass STREAMING
+                    if (status === 'Complete') {
+                        isPolling = false;
+                    } else if (status === 'Streaming') {
+                        isPolling = false;
+                    } else {
+                        // poll
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 2000),
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error during polling:', error.message);
+
+                    // turn it off
+                    isPolling = false;
+                }
             }
-            let output;
 
-            // Set output per operation
-            if (results[1].pixelType === 'CUSTOM_DATA_STRUCTURE') {
-                output = results[1].value;
-            } else if (results[1].pixelType === 'FORMATTED_DATA_SET') {
-                output = results[1].value[0];
-            } else if (results[1].pixelType === 'CODE') {
-                output = results[1].value[0].value[0];
-            } else if (results[1].pixelType === 'ERROR') {
-                output = results[1].value[0];
-            } else if (results[1].pixelType === 'CONST_STRING') {
-                output = results[1].value[0];
-            } else if (results[1].pixelType === 'INVALID_SYNTAX') {
-                output = results[1].value[0];
-            } else {
-                output = results[1].value;
+            console.log('TODO: Remove - stopping poll');
+
+            console.log('TODO: Remove - getting result');
+            const { errors, results } = await pixelResult(jobId);
+            if (errors.length > 0) {
+                throw new Error(errors.join(''));
             }
+
+            const last = results[results.length - 1];
 
             runInAction(() => {
-                // update the parameters
-                if (results[1].opType.indexOf('ERROR') > -1) {
-                    this._store.parameters = merged;
+                // set the output per operation
+                let output: unknown;
+                if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
+                    output = last.value;
+                } else if (last.pixelType === 'FORMATTED_DATA_SET') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'CODE') {
+                    output = last.value[0].value[0];
+                } else if (last.pixelType === 'ERROR') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'CONST_STRING') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'INVALID_SYNTAX') {
+                    output = last.value[0];
+                } else {
+                    output = last.value;
                 }
 
-                // any previous errors will be cleared on operation type sync
-                this._sync(results[1].opType, output, messages);
+                // store the operation and output
+                this._store.operation = last.opType;
+
+                // save the last output
+                this._store.output = output;
             });
+
+            console.log('TODO: Remove - done');
         } catch (e) {
-            // catch and set errors
-            this._sync(['ERROR'], e.message);
-        } finally {
-            const end = new Date();
-            const start = new Date(this._store.executionStart);
             runInAction(() => {
+                // store the operation and output
+                this._store.operation = ['ERROR'];
+
+                // save the last output
+                this._store.output = e.message;
+            });
+        } finally {
+            runInAction(() => {
+                const end = new Date();
+
                 this._store.executionDurationMilliseconds =
                     end.getTime() - start.getTime();
+
                 // stop the loading screen
                 this._store.isLoading = false;
             });

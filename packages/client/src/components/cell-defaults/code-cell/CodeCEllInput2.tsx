@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
-import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
+import { styled, Button, Menu, MenuProps, List, Grid, Stack } from '@semoss/ui';
 import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
 
 import { runPixel } from '@/api';
@@ -19,24 +19,21 @@ const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
 const EDITOR_TYPE = {
     py: {
-        name: 'Python',
+        display: 'Python',
         value: 'py',
-        language: 'python',
         icon: PythonIcon,
     },
     r: {
-        name: 'R',
+        display: 'R',
         value: 'r',
-        language: 'r',
         icon: RIcon,
     },
     pixel: {
-        name: 'Pixel',
+        display: 'Pixel',
         value: 'pixel',
-        language: 'pixel',
         icon: CodeOff,
     },
-} as const;
+};
 
 // best documentation on component versions of monaco editor and diffeditor
 // https://www.npmjs.com/package/@monaco-editor/react
@@ -96,8 +93,12 @@ let completionItemProviders = {};
 
 // TODO:: Refactor height to account for Layout
 export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
+    console.log('loading cell', props);
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
+
+    const selectionRef = useRef(null);
+    const LLMReturnRef = useRef('');
 
     // track the popover menu
     const [menuAnchorEle, setMenuAnchorEle] = useState<null | HTMLElement>(
@@ -117,18 +118,20 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const { modelId } = useLLM();
+    const modelIdRef = useRef('');
 
-    /**
-     * Ask a LLM a question to generate a response
-     * @param prompt - prompt passed to the LLM
-     * @returns LLM Response
-     */
-    const promptLLM = async (prompt: string) => {
+    useEffect(() => {
+        modelIdRef.current = modelId;
+        console.log({ modelId });
+    }, [modelId]);
+
+    const promptLLM = async (inputPrompt) => {
         setLLMLoading(true);
-        const pixel = `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {} ] );`;
+        const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
 
         try {
             const res = await runPixel(pixel);
+            setLLMLoading(false);
 
             const LLMResponse = res.pixelReturn[0].output['response'];
             let trimmedStarterCode = LLMResponse;
@@ -140,10 +143,9 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
             return trimmedStarterCode;
         } catch {
+            setLLMLoading(false);
             console.error('Failed response from AI Code Generator');
             return '';
-        } finally {
-            setLLMLoading(false);
         }
     };
 
@@ -218,6 +220,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             setIsLLMRejected(false);
         }
 
+        // first time you set the height based on content Height
         editorRef.current = editor;
 
         // add on change
@@ -293,15 +296,17 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
             run: async (editor) => {
                 const selection = editor.getSelection();
+                selectionRef.current = selection;
                 const selectedText = editor
                     .getModel()
                     .getValueInRange(selection);
 
                 const LLMReturnText = await promptLLM(
                     `Create a ${
-                        EDITOR_TYPE[cell.parameters.type].name
+                        EDITOR_TYPE[cell.parameters.type].display
                     } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
                 );
+                LLMReturnRef.current = LLMReturnText;
 
                 setOldContentDiffEdit(editor.getModel().getValue());
 
@@ -412,14 +417,14 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             // if suggestion already exist, dispose and re-add
             // this may be superfluous at times but we re-add instead of setting up suggestions once
             // so that we are pulling more real-time values off of the blocks/queries
-            if (completionItemProviders[language.name]) {
-                completionItemProviders[language.name].dispose();
+            if (completionItemProviders[language.value]) {
+                completionItemProviders[language.value].dispose();
             }
             completionItemProviders = {
                 ...completionItemProviders,
-                [language.name]:
+                [language.value]:
                     monaco.languages.registerCompletionItemProvider(
-                        language.name,
+                        language.value,
                         {
                             provideCompletionItems: (model, position) => {
                                 const word =
@@ -560,7 +565,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 <LoadingScreen.Trigger description="Generating..." />
             )}
 
-            <Stack direction="column" spacing={1}>
+            <Stack direction="column" spacing={2}>
                 <Stack direction="row">
                     <StyledButton
                         aria-haspopup="true"
@@ -586,7 +591,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                         title="Select Language"
                     >
                         <StyledButtonLabel>
-                            {EDITOR_TYPE[cell.parameters.type].name}
+                            {EDITOR_TYPE[cell.parameters.type].display}
                         </StyledButtonLabel>
                     </StyledButton>
                 </Stack>
@@ -599,29 +604,19 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                         {Array.from(Object.values(EDITOR_TYPE), (language) => (
                             <List.Item
                                 disablePadding
-                                key={`${cell.id}-${language.name}`}
+                                key={`${cell.id}-${language.value}`}
                             >
                                 <List.ItemButton
                                     onClick={() => {
-                                        if (
-                                            language.value !==
-                                            EDITOR_TYPE[cell.parameters.type]
-                                                .value
-                                        ) {
-                                            console.log(language.value);
-
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.UPDATE_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                    path: 'parameters.type',
-                                                    value: language.value,
-                                                },
-                                            });
-                                        }
-
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.type',
+                                                value: language.value,
+                                            },
+                                        });
                                         handleMenuClose();
                                     }}
                                 >
@@ -631,7 +626,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                                             fontSize="small"
                                         />
                                     </StyledListIcon>
-                                    <List.ItemText primary={language.name} />
+                                    <List.ItemText primary={language.display} />
                                 </List.ItemButton>
                             </List.Item>
                         ))}
@@ -641,6 +636,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     {diffEditMode && (
                         <>
                             <DiffEditor
+                                key={modelIdRef.current}
                                 original={oldContentDiffEdit}
                                 modified={newContentDiffEdit}
                                 language={
@@ -687,10 +683,9 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
                     {!diffEditMode && (
                         <Editor
+                            key={modelIdRef.current}
                             value={cell.parameters.code}
-                            language={
-                                EDITOR_TYPE[cell.parameters.type].language
-                            }
+                            language={EDITOR_TYPE[cell.parameters.type].value}
                             options={{
                                 lineNumbers: 'on',
                                 readOnly: false,

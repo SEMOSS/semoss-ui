@@ -15,13 +15,13 @@ import {
     DriveFileRenameOutline,
     KeyboardArrowDown,
 } from '@mui/icons-material';
+import { editor } from 'monaco-editor';
 
 import { ActionMessages, CellComponent } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
 import { QueryImportCellDef } from './config';
-import { editor } from 'monaco-editor';
 
-const EDITOR_LINEHEIGHT = 19;
+const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
 const FRAME_TYPES = {
@@ -96,7 +96,6 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
     props,
 ) => {
     const editorRef = useRef(null);
-    const [editorHeight, setEditorHeight] = useState<number>(null);
 
     const { cell, isExpanded } = props;
     const { state } = useBlocks();
@@ -150,11 +149,33 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
         }
     }, [myDbs.status, myDbs.data]);
 
-    const handleMount = (
+    /**
+     * Handle mounting of the editor
+     *
+     * @param editor - editor that mounted
+     * @param monaco - monaco instance
+     */
+    const handleEditorMount = (
         editor: editor.IStandaloneCodeEditor,
         monaco: Monaco,
     ) => {
         editorRef.current = editor;
+
+        // add on change
+        let ignoreResize = false;
+        editor.onDidContentSizeChange(() => {
+            try {
+                // set the ignoreResize flag
+                if (ignoreResize) {
+                    return;
+                }
+                ignoreResize = true;
+
+                resizeEditor();
+            } finally {
+                ignoreResize = false;
+            }
+        });
 
         // update the action
         editor.addAction({
@@ -185,30 +206,40 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
             },
         });
 
+        // resize the editor
+        resizeEditor();
+    };
+
+    /**
+     * Resize the editor
+     */
+    const resizeEditor = () => {
         // set the initial height
         let height = 0;
 
         // if expanded scale to lines, but do not go over the max height
         if (isExpanded) {
-            height = Math.max(editor.getContentHeight(), EDITOR_MAX_HEIGHT);
+            height = Math.min(
+                editorRef.current.getContentHeight(),
+                EDITOR_MAX_HEIGHT,
+            );
         }
 
         // add the trailing line
-        setEditorHeight(height + EDITOR_LINEHEIGHT);
+        height += EDITOR_LINE_HEIGHT;
+
+        editorRef.current.layout({
+            width: editorRef.current.getContainerDomNode().clientWidth,
+            height: height,
+        });
     };
 
-    const handleChange = (newValue: string) => {
-        // TODO: we should probably disable when running
-
-        // get the height
-        const height = Math.min(
-            editorRef.current.getContentHeight(),
-            EDITOR_MAX_HEIGHT,
-        );
-
-        // add the trailing line
-        setEditorHeight(height + EDITOR_LINEHEIGHT);
-
+    /**
+     * Handle changes in the editor
+     * @param newValue - newValue
+     * @returns
+     */
+    const handleEditorChange = (newValue: string) => {
         if (cell.isLoading) {
             return;
         }
@@ -233,7 +264,7 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
 
     return (
         <StyledContent disabled={!isExpanded}>
-            <Stack direction="column" spacing={2}>
+            <Stack direction="column" spacing={1}>
                 <Stack direction="row">
                     <StyledButton
                         aria-haspopup="true"
@@ -260,44 +291,27 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
                 </Stack>
                 <StyledContainer>
                     <Editor
-                        width="100%"
-                        height={isExpanded ? editorHeight : EDITOR_LINEHEIGHT}
                         value={cell.parameters.selectQuery}
                         defaultValue="--SELECT * FROM..."
-                        language="sql" /** todo: language support? can we tell this from the database type? */
+                        language="sql" /** TODO: language support? can we tell this from the database type? */
                         options={{
                             lineNumbers: 'on',
                             readOnly: false,
                             minimap: { enabled: false },
                             automaticLayout: true,
                             scrollBeyondLastLine: false,
-                            lineHeight: EDITOR_LINEHEIGHT,
+                            lineHeight: EDITOR_LINE_HEIGHT,
                             overviewRulerBorder: false,
                         }}
-                        onChange={handleChange}
-                        onMount={handleMount}
+                        onChange={handleEditorChange}
+                        onMount={handleEditorMount}
                     />
                 </StyledContainer>
-                <Stack direction="row" alignItems={'center'}>
-                    <StyledButton
-                        aria-haspopup="true"
-                        aria-expanded={isMenuOpen ? 'true' : undefined}
-                        variant="outlined"
-                        disableElevation
-                        disabled={cell.isLoading}
-                        size="small"
-                        onClick={(event: React.MouseEvent<HTMLElement>) => {
-                            event.preventDefault();
-                            setMenuType('variable');
-                            setMenuAnchorEle(event.currentTarget);
-                        }}
-                        startIcon={<DriveFileRenameOutline />}
-                        title="Set Frame Variable Name"
-                    >
-                        <StyledButtonLabel width={14}>
-                            {cell.parameters.frameVariableName ?? ''}
-                        </StyledButtonLabel>
-                    </StyledButton>
+                <Stack
+                    direction="row"
+                    alignItems={'center'}
+                    justifyContent={'flex-end'}
+                >
                     <StyledButton
                         aria-haspopup="true"
                         aria-expanded={isMenuOpen ? 'true' : undefined}
@@ -317,6 +331,25 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
                         <StyledButtonLabel width={6}>
                             {FRAME_TYPES[cell.parameters.frameType]?.display ??
                                 ''}
+                        </StyledButtonLabel>
+                    </StyledButton>
+                    <StyledButton
+                        aria-haspopup="true"
+                        aria-expanded={isMenuOpen ? 'true' : undefined}
+                        variant="outlined"
+                        disableElevation
+                        disabled={cell.isLoading}
+                        size="small"
+                        onClick={(event: React.MouseEvent<HTMLElement>) => {
+                            event.preventDefault();
+                            setMenuType('variable');
+                            setMenuAnchorEle(event.currentTarget);
+                        }}
+                        startIcon={<DriveFileRenameOutline />}
+                        title="Set Frame Variable Name"
+                    >
+                        <StyledButtonLabel width={14}>
+                            {cell.parameters.frameVariableName ?? ''}
                         </StyledButtonLabel>
                     </StyledButton>
                 </Stack>
