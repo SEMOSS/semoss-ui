@@ -17,9 +17,8 @@ import {
 } from '@mui/icons-material';
 import { editor } from 'monaco-editor';
 
-import { ActionMessages, CellComponent } from '@/stores';
+import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
-import { QueryImportCellDef } from './config';
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -91,10 +90,25 @@ const StyledContainer = styled('div')(({ theme }) => ({
     padding: theme.spacing(0.5),
 }));
 
+export interface QueryImportCellDef extends CellDef<'query-import'> {
+    widget: 'query-import';
+    parameters: {
+        /** Database associated with the cell */
+        databaseId: string;
+
+        /** Output frame type */
+        frameType: 'NATIVE' | 'PY' | 'R' | 'GRID';
+
+        /** Ouput variable name */
+        frameVariableName: string;
+
+        /** Select query rendered in the cell */
+        selectQuery: string;
+    };
+}
+
 // TODO:: Refactor height to account for Layout
-export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
-    props,
-) => {
+export const QueryImportCell: CellComponent<QueryImportCellDef> = (props) => {
     const editorRef = useRef(null);
 
     const { cell, isExpanded } = props;
@@ -136,7 +150,7 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
             display: dbDisplay,
         });
 
-        if (!cell.cellType.parameters.databaseId && dbIds.length) {
+        if (!cell.parameters.databaseId && dbIds.length) {
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
                 payload: {
@@ -451,4 +465,18 @@ export const QueryImportCellInput: CellComponent<QueryImportCellDef> = (
             </StyledMenu>
         </StyledContent>
     );
+};
+
+QueryImportCell.config = {
+    name: 'Import',
+    widget: 'query-import',
+    parameters: {
+        databaseId: '',
+        frameType: 'PY',
+        frameVariableName: '',
+        selectQuery: '',
+    },
+    toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
+        return `Database( database=["${databaseId}"] ) | Query("<encode>${selectQuery}</encode>") | Import(frame=[CreateFrame(frameType=[${frameType}], override=[true]).as(["${frameVariableName}"])]);`;
+    },
 };

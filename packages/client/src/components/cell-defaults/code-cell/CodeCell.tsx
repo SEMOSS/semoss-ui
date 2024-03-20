@@ -4,15 +4,31 @@ import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
 import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
 
 import { runPixel } from '@/api';
-import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
+import {
+    ActionMessages,
+    Block,
+    CellComponent,
+    QueryState,
+    CellDef,
+} from '@/stores';
 import { useBlocks, useLLM } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
-import { CodeCellDef } from './config';
 import { PythonIcon, RIcon } from './icons';
 import { editor } from 'monaco-editor';
+
+export interface CodeCellDef extends CellDef<'code'> {
+    widget: 'code';
+    parameters: {
+        /** Type of code in the cell */
+        type: 'r' | 'py' | 'pixel';
+
+        /** Code rendered in the cell */
+        code: string;
+    };
+}
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -95,7 +111,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
 let completionItemProviders = {};
 
 // TODO:: Refactor height to account for Layout
-export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
+export const CodeCell: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
 
@@ -709,4 +725,26 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             </Stack>
         </StyledContent>
     );
+};
+
+CodeCell.config = {
+    name: 'Code',
+    widget: 'code',
+    parameters: {
+        type: 'pixel',
+        code: '',
+    },
+    toPixel: ({ type, code }) => {
+        if (type === 'r') {
+            return `R("<encode>${code}</encode>");`;
+        } else if (type === 'py') {
+            return `Py("<encode>${code}</encode>");`;
+        } else if (type === 'pixel') {
+            return code;
+        } else {
+            throw new Error(
+                `Error converting toString ::: ${type} is not valid`,
+            );
+        }
+    },
 };

@@ -12,7 +12,7 @@ import {
 import {
     Block,
     BlockJSON,
-    CellTypeRegistry,
+    CellComponentRegistry,
     ListenerActions,
     SerializedState,
 } from './state.types';
@@ -33,7 +33,7 @@ interface StateStoreInterface {
     blocks: Record<string, Block>;
 
     /** Cells registered to the insight */
-    cellTypeRegistry: CellTypeRegistry;
+    cellRegistry: CellComponentRegistry;
 }
 
 export class StateStoreConfig {
@@ -47,7 +47,7 @@ export class StateStoreConfig {
     state: SerializedState;
 
     /** Cells registered to the insight */
-    cellTypeRegistry: CellTypeRegistry;
+    cellRegistry: CellComponentRegistry;
 }
 
 /**
@@ -59,7 +59,7 @@ export class StateStore {
         insightId: '',
         queries: {},
         blocks: {},
-        cellTypeRegistry: {},
+        cellRegistry: {},
     };
 
     /**
@@ -82,7 +82,7 @@ export class StateStore {
         this._store.insightId = config.insightId;
 
         // register the cells
-        this._store.cellTypeRegistry = config.cellTypeRegistry || {};
+        this._store.cellRegistry = config.cellRegistry || {};
 
         // make it observable
         makeAutoObservable(this);
@@ -167,8 +167,8 @@ export class StateStore {
      * Get the cell type registry
      * @returns the cell type registry
      */
-    get cellTypeRegistry() {
-        return this._store.cellTypeRegistry;
+    get cellRegistry() {
+        return this._store.cellRegistry;
     }
 
     /**

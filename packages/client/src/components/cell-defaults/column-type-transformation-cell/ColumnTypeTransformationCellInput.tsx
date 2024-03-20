@@ -5,19 +5,44 @@ import { Stack, TextField, Typography } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import {
     Transformation,
+    TransformationDef,
+    TransformationCellDef,
     ColumnInfo,
     ColumnTransformationField,
     TransformationCellInput,
     transformationColumnTypes,
     Transformations,
+    TransformationTargetCell,
+    columnTypes,
 } from '../shared';
-import {
-    ColumnTypeTransformationCellDef,
-    ColumnTypeTransformationDef,
-} from './config';
 import { QueryImportCellDef } from '../query-import-cell';
 
-export const ColumnTypeTransformationCellInput: CellComponent<
+export interface ColumnTypeTransformationDef
+    extends TransformationDef<'column-type'> {
+    key: 'column-type';
+    parameters: {
+        column: ColumnInfo;
+        columnType: columnTypes;
+    };
+}
+
+export interface ColumnTypeTransformationCellDef
+    extends TransformationCellDef<'column-type-transformation'> {
+    widget: 'column-type-transformation';
+    parameters: {
+        /**
+         * Routine type
+         */
+        transformation: Transformation<ColumnTypeTransformationDef>;
+
+        /**
+         * ID of the query cell that defines the frame we want to transform
+         */
+        targetCell: TransformationTargetCell;
+    };
+}
+
+export const ColumnTypeTransformationCell: CellComponent<
     ColumnTypeTransformationCellDef
 > = (props) => {
     const { cell, isExpanded } = props;
@@ -118,4 +143,25 @@ export const ColumnTypeTransformationCellInput: CellComponent<
             </Stack>
         </TransformationCellInput>
     );
+};
+
+ColumnTypeTransformationCell.config = {
+    name: 'Change Column Type',
+    widget: 'column-type-transformation',
+    parameters: {
+        transformation: {
+            key: 'column-type',
+            parameters: {
+                column: null,
+                columnType: null,
+            },
+        },
+        targetCell: {
+            id: '',
+            frameVariableName: '',
+        },
+    },
+    toPixel: ({ transformation, targetCell }) => {
+        return `${targetCell.frameVariableName} | ChangeColumnType( column=[${transformation.parameters.column?.name}], dataType=["${transformation.parameters.columnType}"]);`;
+    },
 };

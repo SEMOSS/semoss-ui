@@ -6,18 +6,42 @@ import {
     Transformation,
     TransformationCellInput,
     Transformations,
+    TransformationDef,
+    TransformationCellDef,
+    TransformationTargetCell,
 } from '../shared';
-import {
-    TimestampTransformationCellDef,
-    TimestampTransformationDef,
-} from './config';
 import { QueryImportCellDef } from '../query-import-cell';
 
 const StyledTypography = styled(Typography)(() => ({
     textWrap: 'nowrap',
 }));
 
-export const TimestampTransformationCellInput: CellComponent<
+export interface TimestampTransformationDef
+    extends TransformationDef<'timestamp'> {
+    key: 'timestamp';
+    parameters: {
+        columnName: string;
+        includeTime: boolean;
+    };
+}
+
+export interface TimestampTransformationCellDef
+    extends TransformationCellDef<'timestamp-transformation'> {
+    widget: 'timestamp-transformation';
+    parameters: {
+        /**
+         * Routine type
+         */
+        transformation: Transformation<TimestampTransformationDef>;
+
+        /**
+         * ID of the query cell that defines the frame we want to transform
+         */
+        targetCell: TransformationTargetCell;
+    };
+}
+
+export const TimestampTransformationCell: CellComponent<
     TimestampTransformationCellDef
 > = (props) => {
     const { cell, isExpanded } = props;
@@ -116,4 +140,25 @@ export const TimestampTransformationCellInput: CellComponent<
             </Stack>
         </TransformationCellInput>
     );
+};
+
+TimestampTransformationCell.config = {
+    name: 'Timestamp',
+    widget: 'timestamp-transformation',
+    parameters: {
+        transformation: {
+            key: 'timestamp',
+            parameters: {
+                columnName: '',
+                includeTime: false,
+            },
+        },
+        targetCell: {
+            id: '',
+            frameVariableName: '',
+        },
+    },
+    toPixel: ({ transformation, targetCell }) => {
+        return `${targetCell.frameVariableName} | TimestampData(newCol=["${transformation.parameters.columnName}"],time=["${transformation.parameters.includeTime}"]);`;
+    },
 };

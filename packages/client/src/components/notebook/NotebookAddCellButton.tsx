@@ -10,7 +10,7 @@ import {
     QueryState,
 } from '@/stores';
 import { Add } from '@mui/icons-material';
-import { DefaultCellTypes } from '../cell-defaults';
+import { DefaultCells } from '../cell-defaults';
 import { useState } from 'react';
 import { CodeCell } from '../cell-defaults/code-cell';
 import { QueryImportCell } from '../cell-defaults/query-import-cell';
@@ -53,15 +53,15 @@ interface AddCellOption {
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Code',
-        defaultCellType: CodeCell.widget,
+        defaultCellType: CodeCell.config.widget,
     },
     'query-import': {
         display: 'Query Import',
-        defaultCellType: QueryImportCell.widget,
+        defaultCellType: QueryImportCell.config.widget,
     },
     transformation: {
         display: 'Transformation',
-        defaultCellType: UppercaseTransformationCell.widget, // TODO: figure out what the most popular transformation is and use as default
+        defaultCellType: UppercaseTransformationCell.config.widget, // TODO: figure out what the most popular transformation is and use as default
     },
 };
 
@@ -73,7 +73,7 @@ export const NotebookAddCellButton = observer(
         const { state, notebook } = useBlocks();
 
         const cellTypeOptions = computed(() => {
-            let options = { ...AddCellOptions };
+            const options = { ...AddCellOptions };
             // transformation cell types can only be added if there exists a query-import cell before it
             if (!previousCellId) {
                 delete options['transformation'];
@@ -82,7 +82,7 @@ export const NotebookAddCellButton = observer(
                 let hasFrameVariable = false;
                 for (let index = 0; index <= previousCellIndex; index++) {
                     if (
-                        query.cells[query.list[index]].cellType.widget ===
+                        query.cells[query.list[index]].config.widget ===
                         'query-import'
                     ) {
                         hasFrameVariable = true;
@@ -104,29 +104,29 @@ export const NotebookAddCellButton = observer(
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
-                let config: NewCellAction['payload']['config'] = {
-                    widget: DefaultCellTypes[widget].widget,
-                    parameters: DefaultCellTypes[widget].parameters,
+                const config: NewCellAction['payload']['config'] = {
+                    widget: DefaultCells[widget].config.widget,
+                    parameters: DefaultCells[widget].config.parameters,
                 };
 
-                if (widget === QueryImportCell.widget) {
+                if (widget === QueryImportCell.config.widget) {
                     config.parameters = {
-                        ...DefaultCellTypes[widget].parameters,
+                        ...DefaultCells[widget].config.parameters,
                         frameVariableName: `FRAME_${newCellId}`,
                     };
                 }
 
                 if (
                     previousCellId &&
-                    state.queries[query.id].cells[previousCellId].cellType
+                    state.queries[query.id].cells[previousCellId].config
                         .widget === widget &&
-                    widget === CodeCell.widget
+                    widget === CodeCell.config.widget
                 ) {
                     const previousCellType =
                         state.queries[query.id].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
                     config.parameters = {
-                        ...DefaultCellTypes[widget].parameters,
+                        ...DefaultCells[widget].config.parameters,
                         type: previousCellType,
                     };
                 }

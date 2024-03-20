@@ -8,14 +8,37 @@ import {
     ColumnTransformationField,
     TransformationCellInput,
     Transformations,
+    TransformationDef,
+    TransformationCellDef,
+    TransformationTargetCell,
 } from '../shared';
-import {
-    UppercaseTransformationCellDef,
-    UppercaseTransformationDef,
-} from './config';
 import { QueryImportCellDef } from '../query-import-cell';
 
-export const UppercaseTransformationCellInput: CellComponent<
+export interface UppercaseTransformationDef
+    extends TransformationDef<'uppercase'> {
+    key: 'uppercase';
+    parameters: {
+        columns: ColumnInfo[];
+    };
+}
+
+export interface UppercaseTransformationCellDef
+    extends TransformationCellDef<'uppercase-transformation'> {
+    widget: 'uppercase-transformation';
+    parameters: {
+        /**
+         * Routine type
+         */
+        transformation: Transformation<UppercaseTransformationDef>;
+
+        /**
+         * ID of the query cell that defines the frame we want to transform
+         */
+        targetCell: TransformationTargetCell;
+    };
+}
+
+export const UppercaseTransformationCell: CellComponent<
     UppercaseTransformationCellDef
 > = (props) => {
     const { cell, isExpanded } = props;
@@ -94,4 +117,29 @@ export const UppercaseTransformationCellInput: CellComponent<
             </Stack>
         </TransformationCellInput>
     );
+};
+
+UppercaseTransformationCell.config = {
+    name: 'Uppercase',
+    widget: 'uppercase-transformation',
+    parameters: {
+        transformation: {
+            key: 'uppercase',
+            parameters: {
+                columns: [],
+            },
+        },
+        targetCell: {
+            id: '',
+            frameVariableName: '',
+        },
+    },
+    toPixel: ({ transformation, targetCell }) => {
+        const columnNames = transformation.parameters.columns.map(
+            (column) => column.name,
+        );
+        return `${
+            targetCell.frameVariableName
+        } | ToUpperCase ( columns = ${JSON.stringify(columnNames)} ) ;`;
+    },
 };

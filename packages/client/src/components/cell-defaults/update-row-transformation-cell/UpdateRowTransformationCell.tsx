@@ -10,14 +10,42 @@ import {
     TransformationCellInput,
     Transformations,
     operations,
+    TransformationDef,
+    TransformationCellDef,
+    TransformationTargetCell,
+    operation,
 } from '../shared';
 import { QueryImportCellDef } from '../query-import-cell';
-import {
-    UpdateRowTransformationCellDef,
-    UpdateRowTransformationDef,
-} from './config';
 
-export const UpdateRowTransformationCellInput: CellComponent<
+export interface UpdateRowTransformationDef
+    extends TransformationDef<'update-row'> {
+    key: 'update-row';
+    parameters: {
+        compareColumn: ColumnInfo;
+        compareOperation: operation;
+        compareValue: string;
+        targetColumn: ColumnInfo;
+        targetValue: string;
+    };
+}
+
+export interface UpdateRowTransformationCellDef
+    extends TransformationCellDef<'update-row-transformation'> {
+    widget: 'update-row-transformation';
+    parameters: {
+        /**
+         * Routine type
+         */
+        transformation: Transformation<UpdateRowTransformationDef>;
+
+        /**
+         * ID of the query cell that defines the frame we want to transform
+         */
+        targetCell: TransformationTargetCell;
+    };
+}
+
+export const UpdateRowTransformationCell: CellComponent<
     UpdateRowTransformationCellDef
 > = (props) => {
     const { cell, isExpanded } = props;
@@ -231,4 +259,35 @@ export const UpdateRowTransformationCellInput: CellComponent<
             </Stack>
         </TransformationCellInput>
     );
+};
+
+UpdateRowTransformationCell.config = {
+    name: 'Update Row',
+    widget: 'update-row-transformation',
+    parameters: {
+        transformation: {
+            key: 'update-row',
+            parameters: {
+                compareColumn: {
+                    name: '',
+                    dataType: '',
+                },
+                compareOperation: '==',
+                compareValue: '',
+                targetColumn: {
+                    name: '',
+                    dataType: '',
+                },
+                targetValue: '',
+            },
+        },
+        targetCell: {
+            id: '',
+            frameVariableName: '',
+        },
+    },
+
+    toPixel: ({ transformation, targetCell }) => {
+        return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;
+    },
 };

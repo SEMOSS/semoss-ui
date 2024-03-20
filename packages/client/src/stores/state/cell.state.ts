@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
 import { setValueByPath } from '@/utility';
 
-import { Cell, CellDef } from './state.types';
+import { CellComponent, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
 import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
@@ -180,11 +180,22 @@ export class CellState<D extends CellDef = CellDef> {
     }
 
     /**
-     * Get the cell type associated with the cell
+     * Get the component associated with the cell
      */
-    get cellType(): Cell | null {
-        if (this._state.cellTypeRegistry[this._store.widget]) {
-            return this._state.cellTypeRegistry[this._store.widget];
+    get component(): CellComponent | null {
+        if (this._state.cellRegistry[this._store.widget]) {
+            return this._state.cellRegistry[this._store.widget];
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the config associated with the cell
+     */
+    get config(): CellComponent['config'] | null {
+        if (this._state.cellRegistry[this._store.widget]) {
+            return this._state.cellRegistry[this._store.widget].config;
         }
 
         return null;
@@ -219,11 +230,11 @@ export class CellState<D extends CellDef = CellDef> {
     toPixel(
         parameters: Record<string, unknown> = this._store.parameters,
     ): string {
-        const cellType = this.cellType;
+        const cellConfig = this.config;
 
         // use the toPixel from the cell
-        if (cellType) {
-            return cellType.toPixel(parameters);
+        if (cellConfig) {
+            return cellConfig.toPixel(parameters);
         }
 
         return Object.keys(parameters)
@@ -260,8 +271,6 @@ export class CellState<D extends CellDef = CellDef> {
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenVariable(raw);
 
-            console.log('TODO: Remove - starting pixel');
-
             // clear the previous messages + operation + output
             this._store.messages = [];
             this._store.operation = [];
@@ -272,8 +281,6 @@ export class CellState<D extends CellDef = CellDef> {
                 filled,
                 this._state.insightId,
             );
-
-            console.log('TODO: Remove - starting poll');
 
             // Set up polling in order to get full stdout
             let isPolling = true;
@@ -308,9 +315,6 @@ export class CellState<D extends CellDef = CellDef> {
                 }
             }
 
-            console.log('TODO: Remove - stopping poll');
-
-            console.log('TODO: Remove - getting result');
             const { errors, results } = await pixelResult(jobId);
             if (errors.length > 0) {
                 throw new Error(errors.join(''));
@@ -343,8 +347,6 @@ export class CellState<D extends CellDef = CellDef> {
                 // save the last output
                 this._store.output = output;
             });
-
-            console.log('TODO: Remove - done');
         } catch (e) {
             runInAction(() => {
                 // store the operation and output

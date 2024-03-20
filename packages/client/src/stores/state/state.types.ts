@@ -188,37 +188,10 @@ export interface CellDef<W extends string = string> {
 }
 
 /**
- * Cell configuration
- */
-export interface Cell<D extends CellDef = CellDef> {
-    /** Nmae of the Cell */
-    name: string;
-
-    /** Unique widget name */
-    widget: D['widget'];
-
-    /** Parameters associated with the cell */
-    parameters: D['parameters'];
-
-    /** View associated with the cell */
-    view: {
-        /** Input view of the cell */
-        input: CellComponent<D>;
-    };
-
-    /** Method that to convert the cell into pixel */
-    toPixel: (
-        /** Parameters associated with the cell */
-        parameters: D['parameters'],
-    ) => string;
-}
-
-/**
  * Cell Registry
  */
-export type CellTypeRegistry<D extends CellDef = CellDef> = D extends CellDef
-    ? Record<D['widget'], Cell<D>>
-    : never;
+export type CellComponentRegistry<D extends CellDef = CellDef> =
+    D extends CellDef ? Record<D['widget'], CellComponent<D>> : never;
 /**
  * Component Information
  */
@@ -228,7 +201,24 @@ export type CellComponent<D extends CellDef = CellDef> =
         cell: CellState<D>;
         /** Whether the content is expanded */
         isExpanded?: boolean;
-    }>;
+    }> & {
+        config: {
+            /** Nmae of the Cell */
+            name: string;
+
+            /** Unique widget name */
+            widget: D['widget'];
+
+            /** Parameters associated with the cell */
+            parameters: D['parameters'];
+
+            /** Method that to convert the cell into pixel */
+            toPixel: (
+                /** Parameters associated with the cell */
+                parameters: D['parameters'],
+            ) => string;
+        };
+    };
 
 export type Template = {
     /** Name of the template */

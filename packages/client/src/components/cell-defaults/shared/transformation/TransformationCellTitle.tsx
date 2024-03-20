@@ -3,7 +3,7 @@ import { computed } from 'mobx';
 import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
 import {
     ActionMessages,
-    CellComponent,
+    CellState,
     CellStateConfig,
     NewCellAction,
 } from '@/stores';
@@ -15,7 +15,7 @@ import {
 } from '@mui/icons-material';
 import { Transformations } from './transformation.constants';
 import { TransformationCellDef } from './transformation.types';
-import { DefaultCellTypes } from '../..';
+import { DefaultCells } from '../..';
 
 const StyledButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -60,9 +60,12 @@ const StyledMenu = styled((props: MenuProps) => (
     },
 }));
 
-export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
-    props,
-) => {
+export const TransformationCellTitle = (props: {
+    /** Cell that is controlling the cell */
+    cell: CellState<TransformationCellDef>;
+    /** Whether the content is expanded */
+    isExpanded?: boolean;
+}) => {
     const { cell } = props;
     const { state, notebook } = useBlocks();
 
@@ -98,10 +101,10 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
         if (currentCellIndex > 0) {
             previousCellId = cell.query.list[currentCellIndex - 1];
         }
-        let config: NewCellAction['payload']['config'] = {
-            widget: DefaultCellTypes[newTransformationWidget].widget,
+        const config: NewCellAction['payload']['config'] = {
+            widget: DefaultCells[newTransformationWidget].widget,
             parameters: {
-                ...DefaultCellTypes[newTransformationWidget].parameters,
+                ...DefaultCells[newTransformationWidget].parameters,
                 targetCell: { ...cell.parameters.targetCell },
             },
         };
@@ -119,7 +122,7 @@ export const TransformationCellTitle: CellComponent<TransformationCellDef> = (
     };
 
     useEffect(() => {
-        if (!!cell.parameters.targetCell.id) {
+        if (cell.parameters.targetCell.id) {
             // if the cell that is the target changes frame type or is delete, clear the targetCell
             if (!cell.query.list.includes(cell.parameters.targetCell.id)) {
                 state.dispatch({

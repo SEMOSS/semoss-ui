@@ -1,4 +1,4 @@
-import { CellTypeRegistry } from '@/stores';
+import { CellComponentRegistry } from '@/stores';
 import { CodeCell, CodeCellDef } from './code-cell';
 import { QueryImportCell, QueryImportCellDef } from './query-import-cell';
 import {
@@ -31,12 +31,13 @@ export type DefaultCellDefinitions =
     | DateDifferenceTransformationCellDef
     | TimestampTransformationCellDef;
 
-export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
-    [CodeCell.widget]: CodeCell,
-    [QueryImportCell.widget]: QueryImportCell,
-    [UppercaseTransformationCell.widget]: UppercaseTransformationCell,
-    [UpdateRowTransformationCell.widget]: UpdateRowTransformationCell,
-    [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
-    [DateDifferenceTransformationCell.widget]: DateDifferenceTransformationCell,
-    [TimestampTransformationCell.widget]: TimestampTransformationCell,
-};
+export const DefaultCells: CellComponentRegistry<DefaultCellDefinitions> = {
+    [CodeCell.config.widget]: CodeCell,
+    [QueryImportCell.config.widget]: QueryImportCell,
+    [UppercaseTransformationCell.config.widget]: UppercaseTransformationCell,
+    [UpdateRowTransformationCell.config.widget]: UpdateRowTransformationCell,
+    [ColumnTypeTransformationCell.config.widget]: ColumnTypeTransformationCell,
+    [DateDifferenceTransformationCell.config.widget]:
+        DateDifferenceTransformationCell,
+    [TimestampTransformationCell.config.widget]: TimestampTransformationCell,
+} as const;

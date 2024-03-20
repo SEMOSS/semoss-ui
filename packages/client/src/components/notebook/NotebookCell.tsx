@@ -1,4 +1,5 @@
 import { useState, createElement, useMemo } from 'react';
+import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -212,20 +213,19 @@ export const NotebookCell = observer(
             }
         };
 
-        // get the view
-        const cellType = cell.cellType;
+        // render the view
+        const rendered = useMemo(() => {
+            return computed(() => {
+                if (!cell.component) {
+                    return;
+                }
 
-        // render the input
-        const renderedInput = useMemo(() => {
-            if (!cellType) {
-                return;
-            }
-
-            return createElement(observer(cellType.view.input), {
-                cell: cell,
-                isExpanded: contentExpanded,
+                return createElement(observer(cell.component), {
+                    cell: cell,
+                    isExpanded: contentExpanded,
+                });
             });
-        }, [cellType ? cellType.view.input : null, contentExpanded]);
+        }, [cell.component ? cell.component : null, contentExpanded]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
@@ -302,7 +302,9 @@ export const NotebookCell = observer(
         return (
             <>
                 <StyledRow direction="row" width="100%" spacing={1}>
-                    <StyledName variant="subtitle2">{cellType.name}</StyledName>
+                    <StyledName variant="subtitle2">
+                        {cell.config.name}
+                    </StyledName>
                     <StyledSidebar>
                         <Stack
                             direction="row"
@@ -358,7 +360,7 @@ export const NotebookCell = observer(
                             >
                                 <PlayCircle fontSize="inherit" />
                             </StyledRunIconButton>
-                            <StyledCardInput>{renderedInput}</StyledCardInput>
+                            <StyledCardInput>{rendered}</StyledCardInput>
                         </StyledCardContent>
                         <Divider />
                         <StyledCardActions>
