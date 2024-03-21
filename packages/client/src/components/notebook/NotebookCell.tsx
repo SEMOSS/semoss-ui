@@ -71,7 +71,6 @@ const StyledCardContent = styled(Card.Content)(({ theme }) => ({
 
 const StyledCardInput = styled('div')(() => ({
     width: '100%',
-    overflow: 'hidden',
 }));
 
 const StyledCardActions = styled(Card.Actions)(({ theme }) => ({

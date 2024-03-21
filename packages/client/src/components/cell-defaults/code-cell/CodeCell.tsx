@@ -561,7 +561,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 <Stack direction="row">
                     <StyledSelect
                         size={'small'}
-                        fullWidth
                         disabled={cell.isLoading}
                         title={'Select Language'}
                         value={EDITOR_TYPE[cell.parameters.type].value}

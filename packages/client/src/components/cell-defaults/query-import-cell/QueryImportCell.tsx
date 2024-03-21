@@ -306,9 +306,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                     <Stack direction="row">
                         <StyledSelect
                             size={'small'}
-                            fullWidth
                             disabled={cell.isLoading}
-                            title={'Select Language'}
+                            title={'Select Database'}
                             value={cell.parameters.databaseId}
                             SelectProps={{
                                 IconComponent: KeyboardArrowDown,
@@ -349,28 +348,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                 ),
                             )}
                         </StyledSelect>
-                        {/* <StyledButton
-                            aria-haspopup="true"
-                            aria-expanded={isMenuOpen ? 'true' : undefined}
-                            variant="outlined"
-                            disableElevation
-                            disabled={cell.isLoading}
-                            size="small"
-                            onClick={(event: React.MouseEvent<HTMLElement>) => {
-                                event.preventDefault();
-                                setMenuType('database');
-                                setMenuAnchorEle(event.currentTarget);
-                            }}
-                            startIcon={<AccountTree />}
-                            endIcon={<KeyboardArrowDown />}
-                            title="Select Database"
-                        >
-                            <StyledButtonLabel width={8}>
-                                {cfgLibraryDatabases.display[
-                                    cell.parameters.databaseId as string
-                                ] ?? ''}
-                            </StyledButtonLabel>
-                        </StyledButton> */}
                     </Stack>
                     <StyledContainer>
                         <Editor
@@ -394,28 +371,47 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                         direction="row"
                         alignItems={'center'}
                         justifyContent={'flex-end'}
+                        borderColor={'red'}
                     >
-                        <StyledButton
-                            aria-haspopup="true"
-                            aria-expanded={isMenuOpen ? 'true' : undefined}
-                            variant="outlined"
-                            disableElevation
+                        <StyledSelect
+                            size={'small'}
                             disabled={cell.isLoading}
-                            size="small"
-                            onClick={(event: React.MouseEvent<HTMLElement>) => {
-                                event.preventDefault();
-                                setMenuType('frame');
-                                setMenuAnchorEle(event.currentTarget);
+                            title={'Select Type'}
+                            value={cell.parameters.frameType}
+                            SelectProps={{
+                                IconComponent: KeyboardArrowDown,
+                                style: {
+                                    height: '30px',
+                                    width: '140px',
+                                },
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <CropFree />
+                                    </InputAdornment>
+                                ),
                             }}
-                            startIcon={<CropFree />}
-                            endIcon={<KeyboardArrowDown />}
-                            title="Select Frame Type"
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.frameType',
+                                        value: value,
+                                    },
+                                });
+                            }}
                         >
-                            <StyledButtonLabel width={6}>
-                                {FRAME_TYPES[cell.parameters.frameType]
-                                    ?.display ?? ''}
-                            </StyledButtonLabel>
-                        </StyledButton>
+                            {Object.values(FRAME_TYPES).map((frame, i) => (
+                                <StyledSelectItem
+                                    key={`${i}-${cell.id}-${frame.value}`}
+                                    value={frame.value}
+                                >
+                                    {frame.display}
+                                </StyledSelectItem>
+                            ))}
+                        </StyledSelect>
                         <StyledButton
                             aria-haspopup="true"
                             aria-expanded={isMenuOpen ? 'true' : undefined}
@@ -442,73 +438,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                     open={isMenuOpen}
                     onClose={handleMenuClose}
                 >
-                    {/* {menuType === 'database' && (
-                        <List dense>
-                            {Array.from(
-                                cfgLibraryDatabases.ids,
-                                (databaseId) => (
-                                    <List.Item
-                                        disablePadding
-                                        key={`${cell.id}-${databaseId}`}
-                                    >
-                                        <List.ItemButton
-                                            onClick={() => {
-                                                state.dispatch({
-                                                    message:
-                                                        ActionMessages.UPDATE_CELL,
-                                                    payload: {
-                                                        queryId: cell.query.id,
-                                                        cellId: cell.id,
-                                                        path: 'parameters.databaseId',
-                                                        value: databaseId,
-                                                    },
-                                                });
-                                                handleMenuClose();
-                                            }}
-                                        >
-                                            <List.ItemText
-                                                primary={
-                                                    cfgLibraryDatabases.display[
-                                                        databaseId
-                                                    ] ?? ''
-                                                }
-                                            />
-                                        </List.ItemButton>
-                                    </List.Item>
-                                ),
-                            )}
-                        </List>
-                    )} */}
-                    {menuType === 'frame' && (
-                        <List dense>
-                            {Object.values(FRAME_TYPES).map((frame) => (
-                                <List.Item
-                                    disablePadding
-                                    key={`${cell.id}-${frame.value}`}
-                                >
-                                    <List.ItemButton
-                                        onClick={() => {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.UPDATE_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                    path: 'parameters.frameType',
-                                                    value: frame.value,
-                                                },
-                                            });
-                                            handleMenuClose();
-                                        }}
-                                    >
-                                        <List.ItemText
-                                            primary={frame.display}
-                                        />
-                                    </List.ItemButton>
-                                </List.Item>
-                            ))}
-                        </List>
-                    )}
                     {menuType === 'variable' && (
                         <Stack
                             direction="row"
