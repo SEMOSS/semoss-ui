@@ -3,6 +3,7 @@ import {
     SxProps,
     InternalStandardProps as StandardProps,
 } from "@mui/material";
+import { InputAdornment } from "../InputAdornment";
 
 export interface SelectProps {
     /**
@@ -100,11 +101,19 @@ export interface SelectProps {
      */
     SelectProps?: {
         IconComponent?: React.ElementType;
+        startAdornment?:
+            | React.ElementType
+            | React.ReactElement<typeof InputAdornment>;
         style?: React.CSSProperties;
         multiple?: boolean;
         value?: string[];
         onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     };
+
+    /**
+     * Tooltip text
+     */
+    title?: string;
 
     /**
      * The size of the component.

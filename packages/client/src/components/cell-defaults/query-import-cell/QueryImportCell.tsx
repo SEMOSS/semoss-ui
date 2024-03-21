@@ -1,6 +1,8 @@
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
+// import InputAdornment from '@mui/material/InputAdornment';
+
 import {
     styled,
     Button,
@@ -8,7 +10,9 @@ import {
     MenuProps,
     List,
     TextField,
+    Select,
     Stack,
+    InputAdornment,
 } from '@semoss/ui';
 import {
     AccountTree,
@@ -83,6 +87,24 @@ const StyledMenu = styled((props: MenuProps) => (
     '.MuiList-root': {
         padding: 0,
     },
+}));
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+    '& .MuiSelect-select': {
+        color: theme.palette.text.secondary,
+        display: 'flex',
+        gap: theme.spacing(1),
+        alignItems: 'center',
+        textOverflow: 'ellipsis',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+    },
+}));
+
+const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(1),
+    color: theme.palette.text.secondary,
 }));
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -282,7 +304,52 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
             <StyledContent disabled={!isExpanded}>
                 <Stack direction="column" spacing={1}>
                     <Stack direction="row">
-                        <StyledButton
+                        <StyledSelect
+                            size={'small'}
+                            fullWidth
+                            disabled={cell.isLoading}
+                            title={'Select Language'}
+                            value={cell.parameters.databaseId}
+                            SelectProps={{
+                                IconComponent: KeyboardArrowDown,
+                                style: {
+                                    height: '30px',
+                                    width: '180px',
+                                },
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <AccountTree />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.databaseId',
+                                        value: value,
+                                    },
+                                });
+                            }}
+                        >
+                            {Array.from(
+                                cfgLibraryDatabases.ids,
+                                (databaseId, i) => (
+                                    <StyledSelectItem
+                                        key={`${i}-${cell.id}-${databaseId}`}
+                                        value={databaseId}
+                                    >
+                                        {cfgLibraryDatabases.display[
+                                            databaseId
+                                        ] ?? ''}
+                                    </StyledSelectItem>
+                                ),
+                            )}
+                        </StyledSelect>
+                        {/* <StyledButton
                             aria-haspopup="true"
                             aria-expanded={isMenuOpen ? 'true' : undefined}
                             variant="outlined"
@@ -303,7 +370,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                     cell.parameters.databaseId as string
                                 ] ?? ''}
                             </StyledButtonLabel>
-                        </StyledButton>
+                        </StyledButton> */}
                     </Stack>
                     <StyledContainer>
                         <Editor
@@ -375,7 +442,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                     open={isMenuOpen}
                     onClose={handleMenuClose}
                 >
-                    {menuType === 'database' && (
+                    {/* {menuType === 'database' && (
                         <List dense>
                             {Array.from(
                                 cfgLibraryDatabases.ids,
@@ -411,7 +478,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                 ),
                             )}
                         </List>
-                    )}
+                    )} */}
                     {menuType === 'frame' && (
                         <List dense>
                             {Object.values(FRAME_TYPES).map((frame) => (
