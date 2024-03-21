@@ -2,7 +2,16 @@ import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { editor } from 'monaco-editor';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
-import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
+import {
+    Autocomplete,
+    styled,
+    Button,
+    Menu,
+    MenuProps,
+    List,
+    Stack,
+    Select,
+} from '@semoss/ui';
 import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
 
 import { runPixel } from '@/api';
@@ -65,47 +74,25 @@ const StyledContent = styled('div', {
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
-const StyledButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-    border: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledButtonLabel = styled('span')(({ theme }) => ({
-    width: theme.spacing(5.5),
-    display: 'block',
-    textAlign: 'start',
-}));
-
-const StyledMenu = styled((props: MenuProps) => (
-    <Menu
-        anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-        }}
-        transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-        }}
-        {...props}
-    />
-))(({ theme }) => ({
-    '& .MuiPaper-root': {
-        marginTop: theme.spacing(1),
-    },
-    '.MuiList-root': {
-        padding: 0,
-    },
-}));
-
-const StyledListIcon = styled(List.Icon)(({ theme }) => ({
-    width: theme.spacing(4),
-    minWidth: 'unset',
-}));
-
 const StyledContainer = styled('div')(({ theme }) => ({
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(0.5),
+}));
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+    '& .MuiSelect-select': {
+        color: theme.palette.text.secondary,
+        display: 'flex',
+        gap: theme.spacing(1),
+        alignItems: 'center',
+    },
+}));
+
+const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(1),
+    color: theme.palette.text.secondary,
 }));
 
 // track completion providers outside of render context
@@ -564,13 +551,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         setDiffEditMode(false);
     };
 
-    /**
-     * Close the Language menu
-     */
-    const handleMenuClose = () => {
-        setMenuAnchorEle(null);
-    };
-
     return (
         <StyledContent disabled={!isExpanded}>
             {LLMLoading && (
@@ -579,81 +559,56 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
             <Stack direction="column" spacing={1}>
                 <Stack direction="row">
-                    <StyledButton
-                        aria-haspopup="true"
-                        aria-expanded={isMenuOpen ? 'true' : undefined}
-                        variant="outlined"
-                        disableElevation
+                    <StyledSelect
+                        size={'small'}
+                        fullWidth
                         disabled={cell.isLoading}
-                        size="small"
-                        onClick={(event: React.MouseEvent<HTMLElement>) => {
-                            event.preventDefault();
-                            setMenuAnchorEle(event.currentTarget);
+                        title={'Select Language'}
+                        value={EDITOR_TYPE[cell.parameters.type].value}
+                        SelectProps={{
+                            IconComponent: KeyboardArrowDown,
+                            style: {
+                                height: '30px',
+                                width: '180px',
+                            },
                         }}
-                        startIcon={
-                            cell.parameters.type === 'py' ? (
-                                <PythonIcon color="inherit" fontSize="small" />
-                            ) : cell.parameters.type === 'r' ? (
-                                <RIcon color="inherit" fontSize="small" />
-                            ) : (
-                                <CodeOff color="inherit" fontSize="small" />
-                            )
-                        }
-                        endIcon={<KeyboardArrowDown />}
-                        title="Select Language"
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            if (
+                                value !==
+                                EDITOR_TYPE[cell.parameters.type].value
+                            ) {
+                                console.log(value);
+
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.type',
+                                        value: value,
+                                    },
+                                });
+                            }
+                        }}
                     >
-                        <StyledButtonLabel>
-                            {EDITOR_TYPE[cell.parameters.type].name}
-                        </StyledButtonLabel>
-                    </StyledButton>
-                </Stack>
-                <StyledMenu
-                    anchorEl={menuAnchorEle}
-                    open={isMenuOpen}
-                    onClose={handleMenuClose}
-                >
-                    <List dense>
-                        {Array.from(Object.values(EDITOR_TYPE), (language) => (
-                            <List.Item
-                                disablePadding
-                                key={`${cell.id}-${language.name}`}
-                            >
-                                <List.ItemButton
-                                    onClick={() => {
-                                        if (
-                                            language.value !==
-                                            EDITOR_TYPE[cell.parameters.type]
-                                                .value
-                                        ) {
-                                            console.log(language.value);
-
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.UPDATE_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                    path: 'parameters.type',
-                                                    value: language.value,
-                                                },
-                                            });
-                                        }
-
-                                        handleMenuClose();
-                                    }}
+                        {Array.from(
+                            Object.values(EDITOR_TYPE),
+                            (language, i) => (
+                                <StyledSelectItem
+                                    key={`${i}-${cell.id}-${language.name}`}
+                                    value={language.value}
                                 >
-                                    <StyledListIcon>
-                                        <language.icon
-                                            color="inherit"
-                                            fontSize="small"
-                                        />
-                                    </StyledListIcon>
-                                    <List.ItemText primary={language.name} />
-                                </List.ItemButton>
-                            </List.Item>
-                        ))}
-                    </List>
-                </StyledMenu>
+                                    <language.icon
+                                        color="inherit"
+                                        fontSize="small"
+                                    />
+                                    {language.name}
+                                </StyledSelectItem>
+                            ),
+                        )}
+                    </StyledSelect>
+                </Stack>
                 <StyledContainer>
                     {diffEditMode && (
                         <>

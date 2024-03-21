@@ -99,9 +99,11 @@ export interface SelectProps {
      * @default false
      */
     SelectProps?: {
-        multiple: boolean;
-        value: string[];
-        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+        IconComponent?: React.ElementType;
+        style?: React.CSSProperties;
+        multiple?: boolean;
+        value?: string[];
+        onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     };
 
     /**
