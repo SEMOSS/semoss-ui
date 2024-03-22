@@ -14,3 +14,7 @@ index.html
 index.html.gz
 !packages/**/index.html
 !packages/**/index.html.gz
+
+# Project teams keep pushing their module into app.constants.js
+# will gitignore this now
+packages/legacy/app.constants.js
