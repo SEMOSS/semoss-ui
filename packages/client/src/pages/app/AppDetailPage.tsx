@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -23,15 +23,6 @@ import { AppSettings } from '@/components/app/AppSettings';
 import { usePixel, useRootStore } from '@/hooks';
 import { MonolithStore } from '@/stores';
 import { dividerClasses } from '@mui/material';
-
-const HEADINGS = [
-    { id: 'main-uses', text: 'Main Uses' },
-    { id: 'tags', text: 'Tags' },
-    { id: 'videos', text: 'Videos' },
-    { id: 'dependencies', text: 'Dependencies' },
-    { id: 'app-access', text: 'App Access' },
-    { id: 'member-access', text: 'Member Access' },
-];
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -126,6 +117,14 @@ export function AppDetailPage() {
     );
     const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
+
+    const titleRef = useRef<HTMLElement>(null);
+    const mainUsesRef = useRef<HTMLElement>(null);
+    const tagsRef = useRef<HTMLElement>(null);
+    const videosRef = useRef<HTMLElement>(null);
+    const dependenciesRef = useRef<HTMLElement>(null);
+    const appAccessRef = useRef<HTMLElement>(null);
+    const memberAccessRef = useRef<HTMLElement>(null);
 
     const { appId } = useParams();
     const { configStore, monolithStore } = useRootStore();
@@ -238,14 +237,20 @@ export function AppDetailPage() {
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
-                    <Sidebar />
+                    <Sidebar
+                        refs={[
+                            mainUsesRef,
+                            tagsRef,
+                            videosRef,
+                            dependenciesRef,
+                            appAccessRef,
+                            memberAccessRef,
+                        ]}
+                    />
 
                     <Sections>
-                        <TitleSection>
-                            <SectionHeading
-                                id="#main-uses-app-detail-page"
-                                variant="h1"
-                            >
+                        <TitleSection ref={titleRef}>
+                            <SectionHeading variant="h1">
                                 {appInfoState?.project_name}
                             </SectionHeading>
                             {permissionState === 'OWNER' ? (
@@ -254,38 +259,29 @@ export function AppDetailPage() {
                                     Author Access
                                 </TitleSectionContent>
                             ) : null}
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </TitleSection>
 
-                        <section>
+                        <section ref={mainUsesRef}>
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
-                        <section>
-                            <SectionHeading
-                                id="#tags-app-detail-page"
-                                variant="h2"
-                            >
-                                Tags
-                            </SectionHeading>
+                        <section ref={tagsRef}>
+                            <SectionHeading variant="h2">Tags</SectionHeading>
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
-                        <section>
-                            <SectionHeading
-                                id="#videos-app-detail-page"
-                                variant="h2"
-                            >
-                                Videos
-                            </SectionHeading>
+                        <section ref={videosRef}>
+                            <SectionHeading variant="h2">Videos</SectionHeading>
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
-                        <section id="#dependencies-app-detail-page">
+                        <section ref={dependenciesRef}>
                             <DepsHeadingWrapper>
-                                <SectionHeading
-                                    id="#dependencies-app-detail-page"
-                                    variant="h2"
-                                >
+                                <SectionHeading variant="h2">
                                     Dependencies
                                 </SectionHeading>
                                 <IconButton
@@ -309,46 +305,22 @@ export function AppDetailPage() {
                                       <div key={nanoid()}>{dependency}</div>
                                   ))
                                 : 'This app has no dependencies. (Prompt to add dependencies.)'}
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
-                        <section>
-                            <SectionHeading
-                                id="#app-access-app-detail-page"
-                                variant="h2"
-                            >
+                        <section ref={appAccessRef}>
+                            <SectionHeading variant="h2">
                                 App Access (from the `SettingsTiles` component)
                             </SectionHeading>
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
-                        <section>
-                            <SectionHeading
-                                id="#member-access-app-detail-page"
-                                variant="h2"
-                            >
+                        <section ref={memberAccessRef}>
+                            <SectionHeading variant="h2">
                                 Member Access
                             </SectionHeading>
+                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
-
-                        {/* {HEADINGS.map(({ id, text }) => (
-                            <SectionHeading
-                                key={nanoid()}
-                                id={`#${id}-app-detail-page`}
-                            >
-                                {text}
-                            </SectionHeading>
-                        ))} */}
-                        {/* <AppSettings id={appId} /> */}
-                        {/* <SettingsTiles
-                        id={appId}
-                        mode={'app'}
-                        name={'app'}
-                        onDelete={() => {
-                            navigate('..', { relative: 'path' });
-                        }}
-                    /> */}
-                        <SectionHeading id="#app-access" variant="h2">
-                            App Access (from the `SettingsTiles` component)
-                        </SectionHeading>
                     </Sections>
                 </SidebarAndSectionsContainer>
             </InnerContainer>
@@ -386,12 +358,41 @@ const SidebarMenuItem = styled(MenuItem)({
     whiteSpace: 'nowrap',
 });
 
-function Sidebar() {
+interface SidebarProps {
+    refs: React.MutableRefObject<HTMLElement>[];
+}
+
+function Sidebar({ refs }: SidebarProps) {
+    const [
+        mainUsesRef,
+        tagsRef,
+        videosRef,
+        dependenciesRef,
+        appAccessRef,
+        memberAccessRef,
+    ] = refs;
+    const headings = [
+        { id: 'main-uses', text: 'Main Uses', ref: mainUsesRef },
+        { id: 'tags', text: 'Tags', ref: tagsRef },
+        { id: 'videos', text: 'Videos', ref: videosRef },
+        { id: 'dependencies', text: 'Dependencies', ref: dependenciesRef },
+        { id: 'app-access', text: 'App Access', ref: appAccessRef },
+        { id: 'member-access', text: 'Member Access', ref: memberAccessRef },
+    ];
+
     return (
         <StyledSidebar>
-            {HEADINGS.map(({ id, text }) => (
+            {headings.map(({ id, text, ref }) => (
                 <SidebarLink key={nanoid()} to={`#${id}-app-detail-page`}>
-                    <SidebarMenuItem value={null}>{text}</SidebarMenuItem>
+                    <SidebarMenuItem
+                        onClick={() =>
+                            ref.current.scrollIntoView({ behavior: 'smooth' })
+                        }
+                        key={nanoid()}
+                        value={null}
+                    >
+                        {text}
+                    </SidebarMenuItem>
                 </SidebarLink>
             ))}
         </StyledSidebar>
