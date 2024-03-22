@@ -160,7 +160,7 @@ export function AppDetailPage() {
     }
 
     async function runSetDependenciesQuery(testSelectedDeps) {
-        // async function setDependenciesQuery(selectedDependenciesState) {
+        // async function setDependenciesQuery(selectedDependenciesState)
         const response = await monolithStore.runQuery(
             `SetProjectDependencies(project="${appId}", dependencies="${testSelectedDeps}")`,
             // `SetProjectDependencies(project="${appId}", dependencies=${selectedDependenciesState})`,
@@ -371,6 +371,7 @@ function Sidebar({ refs }: SidebarProps) {
         appAccessRef,
         memberAccessRef,
     ] = refs;
+
     const headings = [
         { id: 'main-uses', text: 'Main Uses', ref: mainUsesRef },
         { id: 'tags', text: 'Tags', ref: tagsRef },
@@ -383,17 +384,15 @@ function Sidebar({ refs }: SidebarProps) {
     return (
         <StyledSidebar>
             {headings.map(({ id, text, ref }) => (
-                <SidebarLink key={nanoid()} to={`#${id}-app-detail-page`}>
-                    <SidebarMenuItem
-                        onClick={() =>
-                            ref.current.scrollIntoView({ behavior: 'smooth' })
-                        }
-                        key={nanoid()}
-                        value={null}
-                    >
-                        {text}
-                    </SidebarMenuItem>
-                </SidebarLink>
+                <SidebarMenuItem
+                    onClick={() =>
+                        ref.current.scrollIntoView({ behavior: 'smooth' })
+                    }
+                    key={nanoid()}
+                    value={null}
+                >
+                    {text}
+                </SidebarMenuItem>
             ))}
         </StyledSidebar>
     );
