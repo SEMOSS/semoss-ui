@@ -111,7 +111,7 @@ const StyledMenuItem = styled(MenuItem)({
 export function AppDetailPage() {
     const [permissionState, setPermissionState] = useState('');
     const [appInfoState, setAppInfoState] = useState(null);
-    const [dependenciesState, setDependenciesState] = useState(null);
+    const [dependenciesState, setDependenciesState] = useState([]);
     const [selectedDependenciesState, setSelectedDependenciesState] = useState(
         [],
     );
@@ -287,7 +287,7 @@ export function AppDetailPage() {
                                 <IconButton
                                     onClick={() => {
                                         runSetDependenciesQuery([
-                                            ...dependenciesState,
+                                            // ...dependenciesState,
                                             '7df19c33-8551-4397-8d14-27418cde9d9d',
                                         ]);
                                     }}
