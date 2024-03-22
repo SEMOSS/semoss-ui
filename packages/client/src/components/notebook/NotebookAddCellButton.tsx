@@ -107,28 +107,28 @@ export const NotebookAddCellButton = observer(
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
                 const config: NewCellAction['payload']['config'] = {
-                    widget: DefaultCells[widget].config.widget,
-                    parameters: DefaultCells[widget].config.parameters,
+                    widget: DefaultCells[widget].widget,
+                    parameters: DefaultCells[widget].parameters,
                 };
 
                 if (widget === QueryImportCellConfig.widget) {
                     config.parameters = {
-                        ...DefaultCells[widget].config.parameters,
+                        ...DefaultCells[widget].parameters,
                         frameVariableName: `FRAME_${newCellId}`,
                     };
                 }
 
                 if (
                     previousCellId &&
-                    state.queries[query.id].cells[previousCellId].config
-                        .widget === widget &&
+                    state.queries[query.id].cells[previousCellId].widget ===
+                        widget &&
                     widget === CodeCellConfig.widget
                 ) {
                     const previousCellType =
                         state.queries[query.id].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
                     config.parameters = {
-                        ...DefaultCells[widget].config.parameters,
+                        ...DefaultCells[widget].parameters,
                         type: previousCellType,
                     };
                 }
