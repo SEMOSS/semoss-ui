@@ -121,6 +121,9 @@ export function AppDetailPage() {
     const [permissionState, setPermissionState] = useState('');
     const [appInfoState, setAppInfoState] = useState(null);
     const [dependenciesState, setDependenciesState] = useState(null);
+    const [selectedDependenciesState, setSelectedDependenciesState] = useState(
+        [],
+    );
     const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
 
@@ -130,27 +133,6 @@ export function AppDetailPage() {
     const notification = useNotification();
     const navigate = useNavigate();
 
-    // const setDependencies = usePixel(
-    //     `SetProjectDependencies(project="${appId}", dependencies="${dependencies})`,
-    // );
-
-    // async function onSetDependencies() {
-    //     await setDependencies();
-    // }
-
-    // const { status, data, refresh } = usePixel<
-    //     {
-    //         database_name: string;
-    //         database_id: string;
-    //     }[]
-    // >(`SimilarCatalog(database=["${id}"])`);
-
-    // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
-    // GetProjectDependencies()
-
-    // To run legacy, do `pnpm run dev:legacy`
-    // Tend to pass reactors arrays, even if one arg.
-
     async function getPermission() {
         const getUserProjectPermission =
             await monolithStore.getUserProjectPermission(appId);
@@ -159,7 +141,7 @@ export function AppDetailPage() {
 
     async function getAppInfo() {
         const response = await monolithStore.runQuery(
-            `ProjectInfo(project=["${appId}"])`,
+            `ProjectInfo(project="${appId}")`,
         );
         console.log('response: ', response);
         const appInfo = response.pixelReturn[0].output;
@@ -176,6 +158,16 @@ export function AppDetailPage() {
         console.log('deps: ', dependencies);
         setDependenciesState(dependencies);
         return dependencies;
+    }
+
+    async function runSetDependenciesQuery(testSelectedDeps) {
+        // async function setDependenciesQuery(selectedDependenciesState) {
+        const response = await monolithStore.runQuery(
+            `SetProjectDependencies(project="${appId}", dependencies="${testSelectedDeps}")`,
+            // `SetProjectDependencies(project="${appId}", dependencies=${selectedDependenciesState})`,
+        );
+        // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
+        console.log('🚀 ~ setDependenciesQuery ~ response:', response);
     }
 
     useEffect(() => {
@@ -297,6 +289,12 @@ export function AppDetailPage() {
                                     Dependencies
                                 </SectionHeading>
                                 <IconButton
+                                    onClick={() => {
+                                        runSetDependenciesQuery([
+                                            ...dependenciesState,
+                                            '7df19c33-8551-4397-8d14-27418cde9d9d',
+                                        ]);
+                                    }}
                                     sx={{
                                         position: 'absolute',
                                         right: 0,
