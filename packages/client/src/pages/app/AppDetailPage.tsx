@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import HdrAutoIcon from '@mui/icons-material/HdrAuto';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -14,12 +15,14 @@ import {
     Menu,
     MenuItem,
     styled,
+    Typography,
     useNotification,
 } from '@semoss/ui';
 import { SettingsTiles } from '@/components/settings/SettingsTiles';
 import { AppSettings } from '@/components/app/AppSettings';
 import { usePixel, useRootStore } from '@/hooks';
 import { MonolithStore } from '@/stores';
+import { dividerClasses } from '@mui/material';
 
 const HEADINGS = [
     { id: 'main-uses', text: 'Main Uses' },
@@ -70,18 +73,7 @@ const StyledArrowDropDownIcon = styled(ArrowDropDownIcon)({
     },
 });
 
-const DepsHeadingWrapper = styled('div')({
-    display: 'flex',
-    justifyContent: 'space-between',
-});
-
-const StyledHeading2 = styled('h2')({
-    fontSize: 18,
-    fontWeight: '550',
-    margin: '0.5rem 0',
-});
-
-const Content = styled('div')({
+const SidebarAndSectionsContainer = styled('div')({
     display: 'flex',
 });
 
@@ -90,6 +82,31 @@ const Sections = styled('div')({
     flexDirection: 'column',
     fontWeight: 'bold',
     width: '100%',
+    gap: '0.5rem',
+});
+
+const SectionHeading = styled(Typography)({
+    fontSize: 20,
+    fontWeight: '550',
+    marginBottom: '0.75rem',
+});
+
+const TitleSection = styled('section')({
+    paddingBottom: '3rem',
+});
+
+const TitleSectionContent = styled('div')({
+    alignItems: 'center',
+    color: 'rgb(0, 0, 0, 0.54)',
+    display: 'flex',
+    gap: '0.25rem',
+});
+
+const DepsHeadingWrapper = styled('div')({
+    alignItems: 'start',
+    display: 'flex',
+    justifyContent: 'space-between',
+    position: 'relative',
 });
 
 const StyledMenuItem = styled(MenuItem)({
@@ -112,8 +129,6 @@ export function AppDetailPage() {
 
     const notification = useNotification();
     const navigate = useNavigate();
-
-    const dependencies = usePixel(`GetProjectDependencies(project="${appId}")`);
 
     // const setDependencies = usePixel(
     //     `SetProjectDependencies(project="${appId}", dependencies="${dependencies})`,
@@ -173,6 +188,7 @@ export function AppDetailPage() {
         <OuterContainer>
             <InnerContainer>
                 <Breadcrumbs>Breadcrumbs</Breadcrumbs>
+
                 <TopButtonsContainer>
                     <ChangeAccessButton variant="text">
                         Change Access
@@ -228,20 +244,65 @@ export function AppDetailPage() {
                         </StyledMenuItem>
                     </Menu>
                 </TopButtonsContainer>
-                <Content>
+
+                <SidebarAndSectionsContainer>
                     <Sidebar />
+
                     <Sections>
+                        <TitleSection>
+                            <SectionHeading
+                                id="#main-uses-app-detail-page"
+                                variant="h1"
+                            >
+                                {appInfoState?.project_name}
+                            </SectionHeading>
+                            {permissionState === 'OWNER' ? (
+                                <TitleSectionContent>
+                                    <HdrAutoIcon />
+                                    Author Access
+                                </TitleSectionContent>
+                            ) : null}
+                        </TitleSection>
+
                         <section>
-                            {/* <div>{appInfoState.project_name}</div> */}
-                            <div>Permission: {permissionState}</div>
-                            <div>Description</div>
+                            <SectionHeading variant="h2">
+                                Main uses
+                            </SectionHeading>
                         </section>
+
                         <section>
+                            <SectionHeading
+                                id="#tags-app-detail-page"
+                                variant="h2"
+                            >
+                                Tags
+                            </SectionHeading>
+                        </section>
+
+                        <section>
+                            <SectionHeading
+                                id="#videos-app-detail-page"
+                                variant="h2"
+                            >
+                                Videos
+                            </SectionHeading>
+                        </section>
+
+                        <section id="#dependencies-app-detail-page">
                             <DepsHeadingWrapper>
-                                <StyledHeading2 id="#dependencies-app-detail-page">
+                                <SectionHeading
+                                    id="#dependencies-app-detail-page"
+                                    variant="h2"
+                                >
                                     Dependencies
-                                </StyledHeading2>
-                                <IconButton>
+                                </SectionHeading>
+                                <IconButton
+                                    sx={{
+                                        position: 'absolute',
+                                        right: 0,
+                                        top: '-0.4rem',
+                                    }}
+                                >
                                     <EditIcon />
                                 </IconButton>
                             </DepsHeadingWrapper>
@@ -251,13 +312,32 @@ export function AppDetailPage() {
                                   ))
                                 : 'This app has no dependencies. (Prompt to add dependencies.)'}
                         </section>
+
+                        <section>
+                            <SectionHeading
+                                id="#app-access-app-detail-page"
+                                variant="h2"
+                            >
+                                App Access (from the `SettingsTiles` component)
+                            </SectionHeading>
+                        </section>
+
+                        <section>
+                            <SectionHeading
+                                id="#member-access-app-detail-page"
+                                variant="h2"
+                            >
+                                Member Access
+                            </SectionHeading>
+                        </section>
+
                         {/* {HEADINGS.map(({ id, text }) => (
-                            <StyledHeading2
+                            <SectionHeading
                                 key={nanoid()}
                                 id={`#${id}-app-detail-page`}
                             >
                                 {text}
-                            </StyledHeading2>
+                            </SectionHeading>
                         ))} */}
                         {/* <AppSettings id={appId} /> */}
                         {/* <SettingsTiles
@@ -268,11 +348,11 @@ export function AppDetailPage() {
                             navigate('..', { relative: 'path' });
                         }}
                     /> */}
-                        <StyledHeading2 id="#app-access">
+                        <SectionHeading id="#app-access" variant="h2">
                             App Access (from the `SettingsTiles` component)
-                        </StyledHeading2>
+                        </SectionHeading>
                     </Sections>
-                </Content>
+                </SidebarAndSectionsContainer>
             </InnerContainer>
         </OuterContainer>
     );
