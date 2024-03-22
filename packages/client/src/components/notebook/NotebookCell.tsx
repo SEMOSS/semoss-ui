@@ -24,9 +24,13 @@ import {
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { NotebookAddCellButton } from './NotebookAddCellButton';
+import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+    paddingBottom: theme.spacing(1),
+}));
 
 const StyledRow = styled(Stack)(() => ({
     position: 'relative',
@@ -136,6 +140,11 @@ const StyledExpandArrow = styled(KeyboardArrowRight, {
     transform: rotated ? 'rotate(90deg)' : '',
 }));
 
+const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
+    marginLeft: '40px !important',
+    height: '40px',
+}));
+
 interface NotebookCellProps {
     /** Id of the  the query */
     queryId: string;
@@ -157,6 +166,7 @@ export const NotebookCell = observer(
 
         const [contentExpanded, setContentExpanded] = useState(true);
         const [outputExpanded, setOutputExpanded] = useState(true);
+        const [hoveredActions, setHoveredActions] = useState(false);
 
         // get the cell
         const query = state.getQuery(queryId);
@@ -296,7 +306,7 @@ export const NotebookCell = observer(
         };
 
         return (
-            <>
+            <StyledStack direction={'column'} gap={1}>
                 <StyledRow direction="row" width="100%" spacing={1}>
                     <StyledName variant="subtitle2">
                         {cell.config.name}
@@ -474,20 +484,27 @@ export const NotebookCell = observer(
                         </StyledCardActions>
                     </StyledCard>
                 </StyledRow>
-                <Collapse in={(notebook?.selectedCell?.id ?? '') === cell.id}>
-                    <Stack
-                        direction="row"
-                        spacing={1}
-                        paddingX={2}
-                        marginTop={2}
+                <StyledAddCellContainer
+                    onMouseEnter={() => {
+                        setHoveredActions(true);
+                    }}
+                    onMouseLeave={() => {
+                        setHoveredActions(false);
+                    }}
+                >
+                    <Collapse
+                        in={
+                            (notebook?.selectedCell?.id ?? '') === cell.id ||
+                            hoveredActions
+                        }
                     >
-                        <NotebookAddCellButton
+                        <NotebookAddCell
                             query={cell.query}
                             previousCellId={cell.id}
                         />
-                    </Stack>
-                </Collapse>
-            </>
+                    </Collapse>
+                </StyledAddCellContainer>
+            </StyledStack>
         );
     },
 );

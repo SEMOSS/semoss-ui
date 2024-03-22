@@ -46,3 +46,15 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [TimestampTransformationCellConfig.widget]:
         TimestampTransformationCellConfig,
 } as const;
+
+const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
+    {};
+
+// Iterate through the data object and filter out the cell types that have 'transformation' key
+Object.entries(DefaultCells).forEach(([key, value]) => {
+    if (value.parameters && value.parameters.transformation) {
+        filteredTransformations[key] = value;
+    }
+});
+
+export const TransformationCells = filteredTransformations;

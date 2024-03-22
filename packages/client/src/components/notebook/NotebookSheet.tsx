@@ -28,7 +28,6 @@ const StyledCell = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
-    paddingBottom: theme.spacing(5),
 }));
 
 const StyledContainedButton = styled(Button)(() => ({

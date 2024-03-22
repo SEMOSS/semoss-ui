@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { styled, Button, Menu, MenuProps } from '@semoss/ui';
+import { styled, Button, Divider, Menu, MenuProps, Stack } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
 import {
@@ -10,10 +10,11 @@ import {
     NewCellAction,
     QueryState,
 } from '@/stores';
-import { Add } from '@mui/icons-material';
+import { AccountTree, Add, Functions } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
     DefaultCells,
+    TransformationCells,
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
@@ -21,6 +22,10 @@ import { CodeCellConfig } from '../cell-defaults/code-cell';
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
     backgroundColor: 'unset!important',
+}));
+
+const StyledDivider = styled(Divider)(({ theme }) => ({
+    flexGrow: 1,
 }));
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -50,54 +55,71 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
 
 interface AddCellOption {
     display: string;
-    defaultCellType: DefaultCellDefinitions['widget'];
+    icon: React.ReactNode;
+    defaultCellType?: DefaultCellDefinitions['widget'];
+    options?: {
+        display: string;
+        defaultCellType: DefaultCellDefinitions['widget'];
+    }[];
 }
+
+const Transformations = Array.from(Object.values(TransformationCells)).map(
+    (item) => ({
+        display: item.name,
+        defaultCellType: item.widget,
+    }),
+);
+
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
-        display: 'Code',
+        display: 'Cell',
         defaultCellType: 'code',
+        icon: <Add />,
     },
     'query-import': {
         display: 'Query Import',
         defaultCellType: 'query-import',
+        icon: <AccountTree />,
     },
     transformation: {
         display: 'Transformation',
-        defaultCellType: 'uppercase-transformation', // TODO: figure out what the most popular transformation is and use as default
+        icon: <Functions />,
+        options: Transformations,
     },
 };
 
-export const NotebookAddCellButton = observer(
+export const NotebookAddCell = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+        const [selectedAddCell, setSelectedAddCell] = useState<string>('');
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
-        const cellTypeOptions = computed(() => {
-            const options = { ...AddCellOptions };
-            // transformation cell types can only be added if there exists a query-import cell before it
-            if (!previousCellId) {
-                delete options['transformation'];
-            } else {
-                const previousCellIndex = query.list.indexOf(previousCellId);
-                let hasFrameVariable = false;
-                for (let index = 0; index <= previousCellIndex; index++) {
-                    if (
-                        query.cells[query.list[index]].config.widget ===
-                        'query-import'
-                    ) {
-                        hasFrameVariable = true;
-                        break;
-                    }
-                }
-                if (!hasFrameVariable) {
-                    delete options['transformation'];
-                }
-            }
+        // const cellTypeOptions = computed(() => {
+        //     const options = { ...AddCellOptions };
+        //     // transformation cell types can only be added if there exists a query-import cell before it
+        //     if (!previousCellId) {
+        //         delete options['transformation'];
+        //     } else {
+        //         const previousCellIndex = query.list.indexOf(previousCellId);
+        //         let hasFrameVariable = false;
+        //         for (let index = 0; index <= previousCellIndex; index++) {
+        //             if (
+        //                 query.cells[query.list[index]].config.widget ===
+        //                 'query-import'
+        //             ) {
+        //                 hasFrameVariable = true;
+        //                 break;
+        //             }
+        //         }
+        //         if (!hasFrameVariable) {
+        //             delete options['transformation'];
+        //         }
+        //     }
 
-            return Object.values(options);
-        }).get();
+        //     return Object.values(options);
+        // }).get();
 
         /**
          * Create a new cell
@@ -150,19 +172,31 @@ export const NotebookAddCellButton = observer(
         };
 
         return (
-            <>
-                <StyledButton
-                    title="Add new cell"
-                    variant="contained"
-                    size="small"
-                    disabled={query.isLoading}
-                    onClick={(e) => {
-                        setAnchorEl(e.currentTarget);
-                    }}
-                    startIcon={<Add />}
-                >
-                    Add Cell
-                </StyledButton>
+            <Stack direction={'row'} alignItems={'center'} gap={1}>
+                {Object.entries(AddCellOptions).map((add, i) => {
+                    const value = add[1];
+                    return (
+                        <StyledButton
+                            key={i}
+                            title={`Add ${value.display}`}
+                            variant="contained"
+                            size="small"
+                            disabled={query.isLoading}
+                            startIcon={value.icon}
+                            onClick={(e) => {
+                                if (value.options) {
+                                    setAnchorEl(e.currentTarget);
+                                    setSelectedAddCell(add[0]);
+                                } else {
+                                    appendCell(value.defaultCellType);
+                                }
+                            }}
+                        >
+                            Add {value.display}
+                        </StyledButton>
+                    );
+                })}
+                <StyledDivider />
                 <StyledMenu
                     anchorEl={anchorEl}
                     open={open}
@@ -171,7 +205,7 @@ export const NotebookAddCellButton = observer(
                     }}
                 >
                     {Array.from(
-                        cellTypeOptions,
+                        AddCellOptions[selectedAddCell]?.options || [],
                         ({ display, defaultCellType }, index) => {
                             return (
                                 <StyledMenuItem
@@ -188,7 +222,7 @@ export const NotebookAddCellButton = observer(
                         },
                     )}
                 </StyledMenu>
-            </>
+            </Stack>
         );
     },
 );

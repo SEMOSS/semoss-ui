@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { DefaultCells } from '../cell-defaults';
+import { TransformationCells } from '../cell-defaults';
 import AddIcon from '@mui/icons-material/Add';
 import { Typography, styled } from '@semoss/ui';
 
@@ -36,16 +36,13 @@ const StyledTileContent = styled('div')(({ theme }) => ({
 }));
 
 export const NotebookTransformMenu = observer((): JSX.Element => {
-    const filteredTransformations = useMemo(() => {
-        // Iterate through the data object and filter out the cell types that have 'transformation' key
-        return Object.values(DefaultCells).filter(
-            (obj) => obj.parameters && obj.parameters.transformation,
-        );
-    }, [DefaultCells]);
+    const transformations = useMemo(() => {
+        return Object.values(TransformationCells);
+    }, [TransformationCells]);
 
     return (
         <StyledList>
-            {filteredTransformations.map((transformation, i) => {
+            {transformations.map((transformation, i) => {
                 return (
                     <StyledTile key={i}>
                         <AddIcon />
