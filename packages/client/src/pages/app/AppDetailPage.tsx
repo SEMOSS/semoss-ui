@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import HdrAutoIcon from '@mui/icons-material/HdrAuto';
@@ -18,11 +18,11 @@ import {
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { SettingsTiles } from '@/components/settings/SettingsTiles';
-import { AppSettings } from '@/components/app/AppSettings';
+// import { SettingsTiles } from '@/components/settings/SettingsTiles';
+// import { AppSettings } from '@/components/app/AppSettings';
 import { usePixel, useRootStore } from '@/hooks';
-import { MonolithStore } from '@/stores';
-import { dividerClasses } from '@mui/material';
+// import { MonolithStore } from '@/stores';
+// import { dividerClasses } from '@mui/material';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -54,10 +54,6 @@ const ChangeAccessButton = styled(Button)({
     fontWeight: 'bold',
 });
 
-const ArrowButton = styled(Button)({
-    // display: 'flex',
-});
-
 const StyledArrowDropDownIcon = styled(ArrowDropDownIcon)({
     '&:first-child': {
         display: 'flex',
@@ -74,6 +70,7 @@ const Sections = styled('div')({
     fontWeight: 'bold',
     width: '100%',
     gap: '0.5rem',
+    marginLeft: '198px',
 });
 
 const SectionHeading = styled(Typography)({
@@ -118,13 +115,21 @@ export function AppDetailPage() {
     const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
 
-    const titleRef = useRef<HTMLElement>(null);
     const mainUsesRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
     const videosRef = useRef<HTMLElement>(null);
     const dependenciesRef = useRef<HTMLElement>(null);
     const appAccessRef = useRef<HTMLElement>(null);
     const memberAccessRef = useRef<HTMLElement>(null);
+
+    const refs = [
+        mainUsesRef,
+        tagsRef,
+        videosRef,
+        dependenciesRef,
+        appAccessRef,
+        memberAccessRef,
+    ];
 
     const { appId } = useParams();
     const { configStore, monolithStore } = useRootStore();
@@ -186,14 +191,14 @@ export function AppDetailPage() {
                     </ChangeAccessButton>
                     <ButtonGroup>
                         <Button variant="contained">Open</Button>
-                        <ArrowButton
+                        <Button
                             onClick={(event) =>
                                 setArrowAnchorEl(event.currentTarget)
                             }
                             variant="contained"
                         >
                             <StyledArrowDropDownIcon />
-                        </ArrowButton>
+                        </Button>
                         <Menu
                             anchorEl={arrowAnchorEl}
                             open={Boolean(arrowAnchorEl)}
@@ -237,19 +242,10 @@ export function AppDetailPage() {
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
-                    <Sidebar
-                        refs={[
-                            mainUsesRef,
-                            tagsRef,
-                            videosRef,
-                            dependenciesRef,
-                            appAccessRef,
-                            memberAccessRef,
-                        ]}
-                    />
+                    <Sidebar refs={refs} />
 
                     <Sections>
-                        <TitleSection ref={titleRef}>
+                        <TitleSection>
                             <SectionHeading variant="h1">
                                 {appInfoState?.project_name}
                             </SectionHeading>
@@ -335,17 +331,9 @@ const StyledSidebar = styled('div')(({ theme }) => ({
     fontWeight: 'bold',
     gap: '1rem',
     paddingRight: '0.7rem',
-    marginRight: '3rem',
+    position: 'fixed',
+    // marginRight: '3rem',
 }));
-
-const SidebarLink = styled(Link)({
-    color: 'inherit',
-    textDecoration: 'none',
-    '&:visited': {
-        color: 'inherit',
-    },
-    whiteSpace: 'nowrap',
-});
 
 const SidebarMenuItem = styled(MenuItem)({
     fontSize: 13,
@@ -373,17 +361,17 @@ function Sidebar({ refs }: SidebarProps) {
     ] = refs;
 
     const headings = [
-        { id: 'main-uses', text: 'Main Uses', ref: mainUsesRef },
-        { id: 'tags', text: 'Tags', ref: tagsRef },
-        { id: 'videos', text: 'Videos', ref: videosRef },
-        { id: 'dependencies', text: 'Dependencies', ref: dependenciesRef },
-        { id: 'app-access', text: 'App Access', ref: appAccessRef },
-        { id: 'member-access', text: 'Member Access', ref: memberAccessRef },
+        { text: 'Main Uses', ref: mainUsesRef },
+        { text: 'Tags', ref: tagsRef },
+        { text: 'Videos', ref: videosRef },
+        { text: 'Dependencies', ref: dependenciesRef },
+        { text: 'App Access', ref: appAccessRef },
+        { text: 'Member Access', ref: memberAccessRef },
     ];
 
     return (
         <StyledSidebar>
-            {headings.map(({ id, text, ref }) => (
+            {headings.map(({ text, ref }) => (
                 <SidebarMenuItem
                     onClick={() =>
                         ref.current.scrollIntoView({ behavior: 'smooth' })
