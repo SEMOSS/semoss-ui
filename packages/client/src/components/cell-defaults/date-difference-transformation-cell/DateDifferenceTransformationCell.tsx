@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useBlocks } from '@/hooks';
 import { computed } from 'mobx';
 import { CellComponent, ActionMessages, CellState } from '@/stores';
@@ -80,16 +81,39 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
             );
         }).get();
 
+        /**
+         * A list of cells that are query imports,
+         * Added here in case we want to show particular frames whether Grid, Py, R, etc
+         * TO-DO: Do we want to reference other queries
+         */
+        const frames = useMemo(() => {
+            const frameList = [];
+            Object.values(cell.query.cells).forEach((cell) => {
+                if (cell.widget === 'query-import') {
+                    frameList.push(cell);
+                }
+            });
+
+            return frameList;
+        }, []);
+
         const helpText = cell.parameters.targetCell.id
             ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
             : 'A Python or R target frame variable must be defined in order to apply a transformation.';
 
-        if (!doesFrameExist && !cellTransformation.parameters.columnName) {
+        if (
+            (!doesFrameExist && !cellTransformation.parameters.columnName) ||
+            !targetCell.isExecuted
+        ) {
             return (
                 <TransformationCellInput
                     isExpanded={isExpanded}
                     display={Transformations[cellTransformation.key].display}
                     Icon={Transformations[cellTransformation.key].icon}
+                    frame={{
+                        cell: cell,
+                        options: frames,
+                    }}
                 >
                     <Stack width="100%" paddingY={0.75}>
                         <Typography variant="caption">
@@ -105,6 +129,10 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
                 isExpanded={isExpanded}
                 display={Transformations[cellTransformation.key].display}
                 Icon={Transformations[cellTransformation.key].icon}
+                frame={{
+                    cell: cell,
+                    options: frames,
+                }}
             >
                 <Stack spacing={2}>
                     <Typography variant="caption">
