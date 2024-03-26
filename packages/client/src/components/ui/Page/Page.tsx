@@ -5,7 +5,7 @@ const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'scroll',
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
     paddingBottom: theme.spacing(2.5),
     paddingLeft: theme.spacing(3),
     paddingRight: theme.spacing(3),
@@ -28,7 +28,7 @@ const StyledPageHeader = styled('div', {
     zIndex: 10,
     borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
     // Set this in Theme
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
     minWidth: '100%',
     width: 'fit-content',
 }));

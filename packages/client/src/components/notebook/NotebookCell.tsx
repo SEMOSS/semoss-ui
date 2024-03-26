@@ -75,7 +75,7 @@ const StyledStatusChip = styled(Chip, {
         : 'unset',
     color:
         status && status !== 'disabled'
-            ? theme.palette.background.paper
+            ? theme.palette.background.paper1
             : 'unset',
     '.MuiChip-avatar': {
         color: 'unset',

@@ -197,7 +197,7 @@ const StyledTable = styled(Table)(({ theme }) => ({
 }));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
     padding: theme.spacing(2),
 }));
 

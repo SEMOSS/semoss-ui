@@ -75,7 +75,7 @@ const StyledSaveIconButton = styled(IconButton)(({ theme }) => ({
 }));
 
 const StyledActiveFilePath = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
     padding: theme.spacing(1),
     alignItems: 'center',
     display: 'flex',
@@ -87,7 +87,7 @@ const StyledTabsItem = styled(Tabs.Item, {
     /** Track if tab is selected */
     selected: boolean;
 }>(({ theme, selected }) => ({
-    backgroundColor: selected ? theme.palette.background.paper : 'inherit',
+    backgroundColor: selected ? theme.palette.background.paper1 : 'inherit',
 }));
 
 const StyledTabLabelContainer = styled('div')(({ theme }) => ({

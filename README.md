@@ -160,7 +160,7 @@ const StyledPageHeader = styled('div', {
     paddingBottom: theme.spacing(1),
     zIndex: 10,
     borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
 }));
 ```
 

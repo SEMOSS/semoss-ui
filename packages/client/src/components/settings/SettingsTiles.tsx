@@ -29,7 +29,7 @@ const StyledAlert = styled(Alert)(({ theme }) => ({
     flex: '1 0 0',
     alignSelf: 'stretch',
     borderRadius: '12px',
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper1,
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     '.MuiAlert-action': {
         paddingRight: '8px',

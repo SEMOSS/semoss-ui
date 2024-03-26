@@ -69,8 +69,11 @@ export const lightTheme: CustomThemeOptions = {
         primary: {
             // SEMOSS BLUE
             main: "#0471F0",
-            light: "#22A4FF",
             dark: "#1260DD",
+            light: "#22A4FF",
+            hover: "#F5F9FE",
+            selected: "#EBF4FE",
+            border: "#9FCFFF",
             // DELOITTE GREEN
             // main: "#26890D",
             // light: "#86BC25",
@@ -78,18 +81,31 @@ export const lightTheme: CustomThemeOptions = {
         },
         secondary: {
             main: "#D9D9D9",
+            dark: "#757575",
             light: "#F2F2F2",
-            dark: "#B5B5B5",
+            hover: "#F5F5F5",
+            selected: "#EBEBEB",
+            disabled: "#BDBDBD",
+            border: "#C4C4C4",
+            divider: "#E6E6E6",
+        },
+        text: {
+            primary: "#000000",
+            secondary: "#666666",
+            disabled: "#9E9E9E",
+            white: "#FFFFFF",
         },
         error: {
-            main: "#da291c",
-            light: "#FA3F20",
+            main: "#DA291C",
+            light: "#FBE9E8",
             dark: "#BF0D02",
+            text: "#57100B",
         },
         warning: {
             main: "#FA9F2C",
-            light: "#FF9800",
+            light: "#FDF0E5",
             dark: "#EF8326",
+            text: "#5F2B01",
         },
         info: {
             main: "#0471F0",
@@ -98,12 +114,17 @@ export const lightTheme: CustomThemeOptions = {
         },
         success: {
             main: "#348700",
-            light: "#4CAF50",
+            light: "#EAF2EA",
             dark: "#006500",
+            // Only use selected for custom stepper in agent/prompt builder
+            selected: "#E6EFE6",
+            text: "#123214",
         },
         background: {
-            default: "#FAFAFA",
-            paper: "#FFF",
+            paper1: "#FFFFFF",
+            paper2: "#FAFAFA",
+            // Backdrop Overlay must be a shade/percentage
+            backdropOverlay: "#000000",
         },
         primaryContrast: {
             // SEMOSS BLUE

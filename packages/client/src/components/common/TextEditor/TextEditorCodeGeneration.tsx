@@ -27,7 +27,7 @@ const StyledGenerateButton = styled(Button, {
 
     return {
         backgroundColor: palette.purple['400'],
-        color: theme.palette.background.paper,
+        color: theme.palette.background.paper1,
         gap: theme.spacing(1),
         width: full ? '100%' : '',
         '&:hover': {

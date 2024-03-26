@@ -45,7 +45,7 @@ const StyledFilter = styled('div')(({ theme }) => ({
     height: 'fit-content',
     width: '355px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper1,
 }));
 
 const StyledFilterList = styled(List)(({ theme }) => ({
@@ -104,7 +104,7 @@ const StyledChip = styled(Chip, {
 
     return {
         color: selected
-            ? palette.background.paper
+            ? palette.background.paper1
             : palette.primaryContrast['900'],
         backgroundColor: selected
             ? palette.primary.main
@@ -112,7 +112,7 @@ const StyledChip = styled(Chip, {
 
         '&:hover': {
             color: selected
-                ? palette.background.paper
+                ? palette.background.paper1
                 : palette.primaryContrast['900'],
             background: selected
                 ? palette.primaryContrast['900']

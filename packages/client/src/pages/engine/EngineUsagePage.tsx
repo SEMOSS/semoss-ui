@@ -9,7 +9,7 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     gap: '40px',
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper1,
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(2),
     margin: '0px',

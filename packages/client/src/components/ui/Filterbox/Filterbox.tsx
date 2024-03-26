@@ -30,7 +30,7 @@ const StyledFilter = styled('div')(({ theme }) => ({
     height: 'fit-content',
     width: '352px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper1,
 }));
 
 const StyledFilterList = styled(List)(({ theme }) => ({

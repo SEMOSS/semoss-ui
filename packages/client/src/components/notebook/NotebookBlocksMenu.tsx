@@ -23,7 +23,7 @@ const StyledMenu = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     paddingTop: theme.spacing(1),
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
 }));
 
 const StyledMenuTitle = styled(Typography)(() => ({

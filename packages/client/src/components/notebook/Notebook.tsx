@@ -28,7 +28,7 @@ const StyledNotebook = styled('div')(() => ({
 }));
 
 const StyledLeftPanel = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
     height: '100%',
     width: theme.spacing(45),
     overflow: 'hidden',

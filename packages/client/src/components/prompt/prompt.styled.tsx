@@ -44,7 +44,7 @@ export const StyledTooltip = styled(
     },
 )<StyledTooltipProps>(({ disableBorder, theme }) => ({
     [`& .${tooltipClasses.tooltip}`]: {
-        backgroundColor: theme.palette.background.default,
+        backgroundColor: theme.palette.background.paper2,
         color: 'inherit',
         border: disableBorder
             ? 'unset'
