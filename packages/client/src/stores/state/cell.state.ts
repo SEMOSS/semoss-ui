@@ -325,6 +325,7 @@ export class CellState<D extends CellDef = CellDef> {
             runInAction(() => {
                 // set the output per operation
                 let output: unknown;
+                let opType: string[] = last.opType;
                 if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
                     output = last.value;
                 } else if (last.pixelType === 'FORMATTED_DATA_SET') {
@@ -339,12 +340,14 @@ export class CellState<D extends CellDef = CellDef> {
                     output = last.value[0];
                 } else if (last.pixelType === 'FRAME') {
                     output = last.value[0];
+                    // Currently gives us 2 operations with a single output, do we want operation do determine if we show multiple outputs
+                    opType = [opType[0]];
                 } else {
                     output = last.value;
                 }
 
                 // store the operation and output
-                this._store.operation = last.opType;
+                this._store.operation = opType;
 
                 // save the last output
                 this._store.output = output;
