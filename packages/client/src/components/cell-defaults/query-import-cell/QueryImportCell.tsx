@@ -1,24 +1,22 @@
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
-// import InputAdornment from '@mui/material/InputAdornment';
-
+import { StyledSelect, StyledSelectItem } from '../shared';
 import {
     styled,
     Button,
     Menu,
     MenuProps,
-    List,
     TextField,
-    Select,
     Stack,
     InputAdornment,
 } from '@semoss/ui';
+
 import {
     AccountTree,
     CropFree,
-    DriveFileRenameOutline,
     KeyboardArrowDown,
+    DriveFileRenameOutlineRounded,
 } from '@mui/icons-material';
 import { editor } from 'monaco-editor';
 
@@ -89,22 +87,14 @@ const StyledMenu = styled((props: MenuProps) => (
     },
 }));
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-    '& .MuiSelect-select': {
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    '& .MuiInputBase-root': {
         color: theme.palette.text.secondary,
         display: 'flex',
         gap: theme.spacing(1),
-        alignItems: 'center',
-        textOverflow: 'ellipsis',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
+        height: '30px',
+        width: '200px',
     },
-}));
-
-const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
-    display: 'flex',
-    gap: theme.spacing(1),
-    color: theme.palette.text.secondary,
 }));
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -137,17 +127,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
-
-        const [frameVariableName, setFrameVariableName] = useState<string>('');
-
-        // track the popover menu
-        const [menuAnchorEle, setMenuAnchorEle] = useState<null | HTMLElement>(
-            null,
-        );
-        const isMenuOpen = Boolean(menuAnchorEle);
-        const [menuType, setMenuType] = useState<
-            'database' | 'frame' | 'variable'
-        >(null);
 
         const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
             loading: true,
@@ -293,13 +272,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
             });
         };
 
-        /**
-         * Close the Language menu
-         */
-        const handleMenuClose = () => {
-            setMenuAnchorEle(null);
-        };
-
         return (
             <StyledContent disabled={!isExpanded}>
                 <Stack direction="column" spacing={1}>
@@ -412,66 +384,29 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                 </StyledSelectItem>
                             ))}
                         </StyledSelect>
-                        <StyledButton
-                            aria-haspopup="true"
-                            aria-expanded={isMenuOpen ? 'true' : undefined}
-                            variant="outlined"
-                            disableElevation
-                            disabled={cell.isLoading}
-                            size="small"
-                            onClick={(event: React.MouseEvent<HTMLElement>) => {
-                                event.preventDefault();
-                                setMenuType('variable');
-                                setMenuAnchorEle(event.currentTarget);
-                            }}
-                            startIcon={<DriveFileRenameOutline />}
+                        <StyledTextField
                             title="Set Frame Variable Name"
-                        >
-                            <StyledButtonLabel width={14}>
-                                {cell.parameters.frameVariableName ?? ''}
-                            </StyledButtonLabel>
-                        </StyledButton>
+                            value={cell.parameters.frameVariableName}
+                            disabled={cell.isLoading}
+                            InputProps={{
+                                startAdornment: (
+                                    <DriveFileRenameOutlineRounded />
+                                ),
+                            }}
+                            onChange={(e) => {
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.frameVariableName',
+                                        value: e.target.value,
+                                    },
+                                });
+                            }}
+                        />
                     </Stack>
                 </Stack>
-                <StyledMenu
-                    anchorEl={menuAnchorEle}
-                    open={isMenuOpen}
-                    onClose={handleMenuClose}
-                >
-                    {menuType === 'variable' && (
-                        <Stack
-                            direction="row"
-                            alignItems="center"
-                            padding={1.5}
-                        >
-                            <TextField
-                                value={frameVariableName}
-                                size="small"
-                                label="Frame Variable Name"
-                                onChange={(e) =>
-                                    setFrameVariableName(e.target.value)
-                                }
-                            />
-                            <Button
-                                variant="text"
-                                onClick={() => {
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.frameVariableName',
-                                            value: frameVariableName,
-                                        },
-                                    });
-                                    handleMenuClose();
-                                }}
-                            >
-                                Save
-                            </Button>
-                        </Stack>
-                    )}
-                </StyledMenu>
             </StyledContent>
         );
     },

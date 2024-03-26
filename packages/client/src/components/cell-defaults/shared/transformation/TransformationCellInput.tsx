@@ -1,6 +1,18 @@
-import { Avatar, Chip, Stack, Typography, styled } from '@semoss/ui';
+import { StyledSelect, StyledSelectItem } from '../components';
+import {
+    Avatar,
+    Chip,
+    InputAdornment,
+    Stack,
+    Typography,
+    styled,
+} from '@semoss/ui';
 import { THEME } from '@/constants';
 import { blue, green } from '@mui/material/colors';
+import { QueryImportCellDef } from '../../query-import-cell';
+import { ActionMessages, CellState } from '@/stores';
+import { AccountTree, KeyboardArrowDown } from '@mui/icons-material';
+import { useBlocks } from '@/hooks';
 import React from 'react';
 
 const primaryLight = THEME.name === 'SEMOSS' ? blue[50] : green[50];
@@ -31,12 +43,20 @@ type TransformationCellInputComponent = React.FunctionComponent<{
     Icon: React.FunctionComponent;
     /** Main content slot */
     children: React.ReactNode;
+    /** Update frame Selection */
+    frame?: {
+        /**  */
+        cell: any;
+        /**  */
+        options: Record<string, any>[];
+    };
 }>;
 
 export const TransformationCellInput: TransformationCellInputComponent = (
     props,
 ) => {
-    const { children, display, Icon, isExpanded } = props;
+    const { children, frame, display, Icon, isExpanded } = props;
+    const { state } = useBlocks();
 
     if (!isExpanded) {
         return (
@@ -59,6 +79,51 @@ export const TransformationCellInput: TransformationCellInputComponent = (
 
     return (
         <Stack width="100%" paddingY={0.5}>
+            <StyledSelect
+                size={'small'}
+                value={frame.cell.parameters.targetCell.id}
+                SelectProps={{
+                    IconComponent: KeyboardArrowDown,
+                    style: {
+                        height: '30px',
+                        width: '200px',
+                    },
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <AccountTree />
+                        </InputAdornment>
+                    ),
+                }}
+                onChange={(e) => {
+                    const target = frame.options.find((f) => {
+                        if (f.id === e.target.value) {
+                            return f;
+                        }
+                    });
+
+                    state.dispatch({
+                        message: ActionMessages.UPDATE_CELL,
+                        payload: {
+                            queryId: frame.cell.query.id,
+                            cellId: frame.cell.id,
+                            path: 'parameters.targetCell',
+                            value: {
+                                id: target.id,
+                                frameVariableName:
+                                    target.parameters.frameVariableName,
+                            },
+                        },
+                    });
+                }}
+            >
+                {frame.options.map((c) => {
+                    return (
+                        <StyledSelectItem key={c.id} value={c.id}>
+                            {c.parameters.frameVariableName}
+                        </StyledSelectItem>
+                    );
+                })}
+            </StyledSelect>
             <StyledTypography variant="body1">{display}</StyledTypography>
             {children}
         </Stack>

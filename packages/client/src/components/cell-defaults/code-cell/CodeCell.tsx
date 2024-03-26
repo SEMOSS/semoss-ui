@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { editor } from 'monaco-editor';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
+import { StyledSelect, StyledSelectItem } from '../shared';
 import {
     Autocomplete,
     styled,
@@ -80,21 +81,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
     padding: theme.spacing(0.5),
 }));
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-    '& .MuiSelect-select': {
-        color: theme.palette.text.secondary,
-        display: 'flex',
-        gap: theme.spacing(1),
-        alignItems: 'center',
-    },
-}));
-
-const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
-    display: 'flex',
-    gap: theme.spacing(1),
-    color: theme.palette.text.secondary,
-}));
-
 // track completion providers outside of render context
 let completionItemProviders = {};
 
@@ -102,12 +88,6 @@ let completionItemProviders = {};
 export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
-
-    // track the popover menu
-    const [menuAnchorEle, setMenuAnchorEle] = useState<null | HTMLElement>(
-        null,
-    );
-    const isMenuOpen = Boolean(menuAnchorEle);
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
