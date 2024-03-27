@@ -1,4 +1,4 @@
-import { useState, createElement, useMemo } from 'react';
+import { useState, createElement, useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -12,6 +12,7 @@ import {
     useNotification,
     IconButton,
     Divider,
+    CustomShapeOptions,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -39,14 +40,22 @@ const StyledRow = styled(Stack)(() => ({
 const StyledName = styled(Typography)(({ theme }) => ({
     position: 'absolute',
     top: theme.spacing(-1.5),
-    left: theme.spacing(7.5),
+    left: theme.spacing(10.5),
     paddingLeft: theme.spacing(0.5),
     paddingRight: theme.spacing(0.5),
     zIndex: 1,
     color: theme.palette.text.disabled,
     borderRadius: theme.shape.borderRadius,
-    background: theme.palette.background.default,
+    background: theme.palette.background.paper,
     overflow: 'hidden',
+}));
+
+const StyledStatusIconContainer = styled('div')(({ theme }) => ({
+    height: '1.5em',
+    width: '1.5em',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
 }));
 
 const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
@@ -55,14 +64,25 @@ const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
-})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => ({
-    border: isCardCellSelected
-        ? `1px solid ${theme.palette.primary.main}`
-        : 'unset',
-    overflow: 'hidden',
-    flexGrow: 1,
-    cursor: isCardCellSelected ? 'inherit' : 'pointer',
-}));
+})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
+    const shape = theme.shape as CustomShapeOptions;
+
+    return {
+        overflow: 'hidden',
+        flexGrow: 1,
+        cursor: isCardCellSelected ? 'inherit' : 'pointer',
+        border: isCardCellSelected
+            ? `1px solid ${theme.palette.secondary.main}`
+            : 'unset',
+        backgroundColor: theme.palette.background.default,
+        borderRadius: shape.borderRadiusSm,
+        boxShadow: 'none',
+        '&:hover': {
+            boxShadow: 'none',
+        },
+    };
+});
 
 const StyledCardContent = styled(Card.Content)(({ theme }) => ({
     display: 'flex',
@@ -80,6 +100,7 @@ const StyledCardInput = styled('div')(() => ({
 const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
     padding: theme.spacing(2),
     margin: '0',
+    backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledButtonLabel = styled('div')(() => ({
@@ -114,24 +135,14 @@ const StyledIdChip = styled(Chip)(({ theme }) => ({
     height: theme.spacing(3.5),
 }));
 
-const StyledSidebar = styled('div')(() => ({
+const StyledSidebar = styled('div')(({ theme }) => ({
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     cursor: 'pointer',
+    gap: theme.spacing(1),
+    paddingTop: theme.spacing(2),
+    // border: 'solid red',
 }));
-
-const StyledStatusSidebar = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'status',
-})<{ status: 'success' | 'error' | 'primary' | 'disabled' }>(
-    ({ theme, status }) => ({
-        height: '100%',
-        width: theme.spacing(0.5),
-        backgroundColor:
-            status === 'disabled'
-                ? theme.palette.grey[400]
-                : theme.palette[status].main,
-    }),
-);
 
 const StyledExpandArrow = styled(KeyboardArrowRight, {
     shouldForwardProp: (prop) => prop !== 'rotated',
@@ -279,29 +290,27 @@ export const NotebookCell = observer(
 
         const getCellChipIcon = () => {
             if (cell.isLoading) {
-                return <CircularProgress size="0.75rem" />;
+                return <CircularProgress size=".75rem" />;
             } else if (cell.query.isLoading) {
-                return <PendingOutlined color="inherit" />;
+                return <PendingOutlined color="secondary" />;
             } else if (cell.isSuccessful) {
                 return <CheckCircle color="inherit" />;
             } else if (cell.isError) {
                 return <Error color="inherit" />;
             } else {
-                return <PendingOutlined color="inherit" />;
+                return <PendingOutlined color="secondary" />;
             }
         };
 
-        const getSidebarStatus = () => {
+        const getCellStatusIcon = () => {
             if (cell.isLoading) {
-                return 'primary';
+                return <CircularProgress size="1em" />;
             } else if (cell.isSuccessful) {
-                return 'success';
+                return <CheckCircle color="success" />;
             } else if (cell.isError) {
-                return 'error';
-            } else if ((notebook?.selectedCell?.id ?? '') === cell.id) {
-                return 'primary';
+                return <Error color="error" />;
             } else {
-                return 'disabled';
+                return <PendingOutlined color="inherit" />;
             }
         };
 
@@ -312,33 +321,36 @@ export const NotebookCell = observer(
                         {cell.config.name}
                     </StyledName>
                     <StyledSidebar>
-                        <Stack
-                            direction="row"
-                            flex={1}
-                            alignItems="start"
-                            onClick={() => {
-                                setContentExpanded(!contentExpanded);
-                            }}
-                        >
-                            <StyledStatusSidebar status={getSidebarStatus()} />
-                            <StyledExpandArrow
-                                fontSize="small"
-                                rotated={contentExpanded}
-                            />
-                        </Stack>
-                        <Stack
-                            direction="row"
-                            flex={1}
-                            alignItems="start"
-                            onClick={() => {
-                                setOutputExpanded(!outputExpanded);
-                            }}
-                        >
-                            <StyledStatusSidebar status={getSidebarStatus()} />
-                            <StyledExpandArrow
-                                fontSize="small"
-                                rotated={outputExpanded}
-                            />
+                        <StyledStatusIconContainer>
+                            {getCellStatusIcon()}
+                        </StyledStatusIconContainer>
+                        <Stack>
+                            <Stack
+                                direction="row"
+                                flex={1}
+                                alignItems="start"
+                                onClick={() => {
+                                    setContentExpanded(!contentExpanded);
+                                }}
+                            >
+                                <StyledExpandArrow
+                                    fontSize="small"
+                                    rotated={contentExpanded}
+                                />
+                            </Stack>
+                            <Stack
+                                direction="row"
+                                flex={1}
+                                alignItems="start"
+                                onClick={() => {
+                                    setOutputExpanded(!outputExpanded);
+                                }}
+                            >
+                                <StyledExpandArrow
+                                    fontSize="small"
+                                    rotated={outputExpanded}
+                                />
+                            </Stack>
                         </Stack>
                     </StyledSidebar>
                     <StyledCard
@@ -368,7 +380,9 @@ export const NotebookCell = observer(
                             </StyledRunIconButton>
                             <StyledCardInput>{rendered}</StyledCardInput>
                         </StyledCardContent>
-                        <Divider />
+                        {(notebook?.selectedCell?.id ?? '') == cell.id && (
+                            <Divider />
+                        )}
                         <StyledCardActions>
                             <Stack
                                 id={`notebook-cell-actions-${queryId}-${cellId}`}
