@@ -81,7 +81,6 @@ const StyledCard = styled(Card, {
         border: isCardCellSelected
             ? `1px solid ${theme.palette.secondary.main}`
             : 'unset',
-        backgroundColor: theme.palette.background.default,
         borderRadius: shape.borderRadiusSm,
         boxShadow: 'none',
         '&:hover': {
@@ -97,6 +96,7 @@ const StyledCardContent = styled(Card.Content)(({ theme }) => ({
     gap: theme.spacing(2),
     margin: '0',
     padding: theme.spacing(2),
+    backgroundColor: theme.palette.background.default,
 }));
 
 const StyledCardInput = styled('div')(() => ({
@@ -356,6 +356,7 @@ export const NotebookCell = observer(
                         </StyledStatusIconContainer>
                         <Stack>
                             <StyledCollapseStack
+                                id={`${cell.query.id}-${cell.id}-content-collapse`}
                                 ref={targetContentCollapseRef}
                                 onClick={() => {
                                     setContentExpanded(!contentExpanded);
@@ -367,6 +368,7 @@ export const NotebookCell = observer(
                                 />
                             </StyledCollapseStack>
                             <StyledCollapseStack
+                                id={`${cell.query.id}-${cell.id}-actions-collapse`}
                                 ref={targetActionsCollapseRef}
                                 onClick={() => {
                                     setOutputExpanded(!outputExpanded);
@@ -387,7 +389,10 @@ export const NotebookCell = observer(
                             notebook.selectCell(cell.query.id, cell.id);
                         }}
                     >
-                        <StyledCardContent ref={cardContentRef}>
+                        <StyledCardContent
+                            id={`${cell.query.id}-${cell.id}-content`}
+                            ref={cardContentRef}
+                        >
                             <StyledRunIconButton
                                 title="Run cell"
                                 disabled={cell.isLoading}
@@ -409,7 +414,10 @@ export const NotebookCell = observer(
                         {(notebook?.selectedCell?.id ?? '') == cell.id && (
                             <Divider />
                         )}
-                        <StyledCardActions ref={cardActionsRef}>
+                        <StyledCardActions
+                            id={`${cell.query.id}-${cell.id}-actions`}
+                            ref={cardActionsRef}
+                        >
                             <Stack
                                 id={`notebook-cell-actions-${queryId}-${cellId}`}
                                 direction="column"
