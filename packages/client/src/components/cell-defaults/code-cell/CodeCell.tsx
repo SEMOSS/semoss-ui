@@ -218,12 +218,14 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             }
         });
 
+        // Theme is delayed
         monaco.editor.defineTheme('custom-theme', {
             base: 'vs-dark',
             inherit: false,
             rules: [],
             colors: {
-                'editor.background': '#292D3E', // Background color
+                'editor.background': '#FAFAFA', // Background color
+                'editor.lineHighlightBorder': '#FFF', // Border around selected line
             },
         });
 
@@ -668,7 +670,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                         </>
                     ) : (
                         <Editor
-                            theme={'custom-theme'}
+                            // theme={'custom-theme'}
                             value={cell.parameters.code}
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language

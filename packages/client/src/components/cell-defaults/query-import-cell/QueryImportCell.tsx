@@ -66,27 +66,6 @@ const StyledButtonLabel = styled('span', {
     textAlign: 'start',
 }));
 
-const StyledMenu = styled((props: MenuProps) => (
-    <Menu
-        anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-        }}
-        transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-        }}
-        {...props}
-    />
-))(({ theme }) => ({
-    '& .MuiPaper-root': {
-        marginTop: theme.spacing(1),
-    },
-    '.MuiList-root': {
-        padding: 0,
-    },
-}));
-
 const StyledTextField = styled(TextField)(({ theme }) => ({
     '& .MuiInputBase-root': {
         color: theme.palette.text.secondary,
@@ -275,52 +254,54 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
         return (
             <StyledContent disabled={!isExpanded}>
                 <Stack direction="column" spacing={1}>
-                    <Stack direction="row">
-                        <StyledSelect
-                            size={'small'}
-                            disabled={cell.isLoading}
-                            title={'Select Database'}
-                            value={cell.parameters.databaseId}
-                            SelectProps={{
-                                IconComponent: KeyboardArrowDown,
-                                style: {
-                                    height: '30px',
-                                    width: '180px',
-                                },
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <AccountTree />
-                                    </InputAdornment>
-                                ),
-                            }}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                state.dispatch({
-                                    message: ActionMessages.UPDATE_CELL,
-                                    payload: {
-                                        queryId: cell.query.id,
-                                        cellId: cell.id,
-                                        path: 'parameters.databaseId',
-                                        value: value,
+                    {isExpanded && (
+                        <Stack direction="row">
+                            <StyledSelect
+                                size={'small'}
+                                disabled={cell.isLoading}
+                                title={'Select Database'}
+                                value={cell.parameters.databaseId}
+                                SelectProps={{
+                                    IconComponent: KeyboardArrowDown,
+                                    style: {
+                                        height: '30px',
+                                        width: '180px',
                                     },
-                                });
-                            }}
-                        >
-                            {Array.from(
-                                cfgLibraryDatabases.ids,
-                                (databaseId, i) => (
-                                    <StyledSelectItem
-                                        key={`${i}-${cell.id}-${databaseId}`}
-                                        value={databaseId}
-                                    >
-                                        {cfgLibraryDatabases.display[
-                                            databaseId
-                                        ] ?? ''}
-                                    </StyledSelectItem>
-                                ),
-                            )}
-                        </StyledSelect>
-                    </Stack>
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <AccountTree />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    state.dispatch({
+                                        message: ActionMessages.UPDATE_CELL,
+                                        payload: {
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                            path: 'parameters.databaseId',
+                                            value: value,
+                                        },
+                                    });
+                                }}
+                            >
+                                {Array.from(
+                                    cfgLibraryDatabases.ids,
+                                    (databaseId, i) => (
+                                        <StyledSelectItem
+                                            key={`${i}-${cell.id}-${databaseId}`}
+                                            value={databaseId}
+                                        >
+                                            {cfgLibraryDatabases.display[
+                                                databaseId
+                                            ] ?? ''}
+                                        </StyledSelectItem>
+                                    ),
+                                )}
+                            </StyledSelect>
+                        </Stack>
+                    )}
                     <StyledContainer>
                         <Editor
                             value={cell.parameters.selectQuery}
@@ -339,73 +320,75 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                             onMount={handleEditorMount}
                         />
                     </StyledContainer>
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'flex-end'}
-                        borderColor={'red'}
-                    >
-                        <StyledSelect
-                            size={'small'}
-                            disabled={cell.isLoading}
-                            title={'Select Type'}
-                            value={cell.parameters.frameType}
-                            SelectProps={{
-                                IconComponent: KeyboardArrowDown,
-                                style: {
-                                    height: '30px',
-                                    width: '140px',
-                                },
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <CropFree />
-                                    </InputAdornment>
-                                ),
-                            }}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                state.dispatch({
-                                    message: ActionMessages.UPDATE_CELL,
-                                    payload: {
-                                        queryId: cell.query.id,
-                                        cellId: cell.id,
-                                        path: 'parameters.frameType',
-                                        value: value,
-                                    },
-                                });
-                            }}
+                    {isExpanded && (
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            justifyContent={'flex-end'}
+                            borderColor={'red'}
                         >
-                            {Object.values(FRAME_TYPES).map((frame, i) => (
-                                <StyledSelectItem
-                                    key={`${i}-${cell.id}-${frame.value}`}
-                                    value={frame.value}
-                                >
-                                    {frame.display}
-                                </StyledSelectItem>
-                            ))}
-                        </StyledSelect>
-                        <StyledTextField
-                            title="Set Frame Variable Name"
-                            value={cell.parameters.frameVariableName}
-                            disabled={cell.isLoading}
-                            InputProps={{
-                                startAdornment: (
-                                    <DriveFileRenameOutlineRounded />
-                                ),
-                            }}
-                            onChange={(e) => {
-                                state.dispatch({
-                                    message: ActionMessages.UPDATE_CELL,
-                                    payload: {
-                                        queryId: cell.query.id,
-                                        cellId: cell.id,
-                                        path: 'parameters.frameVariableName',
-                                        value: e.target.value,
+                            <StyledSelect
+                                size={'small'}
+                                disabled={cell.isLoading}
+                                title={'Select Type'}
+                                value={cell.parameters.frameType}
+                                SelectProps={{
+                                    IconComponent: KeyboardArrowDown,
+                                    style: {
+                                        height: '30px',
+                                        width: '140px',
                                     },
-                                });
-                            }}
-                        />
-                    </Stack>
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <CropFree />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    state.dispatch({
+                                        message: ActionMessages.UPDATE_CELL,
+                                        payload: {
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                            path: 'parameters.frameType',
+                                            value: value,
+                                        },
+                                    });
+                                }}
+                            >
+                                {Object.values(FRAME_TYPES).map((frame, i) => (
+                                    <StyledSelectItem
+                                        key={`${i}-${cell.id}-${frame.value}`}
+                                        value={frame.value}
+                                    >
+                                        {frame.display}
+                                    </StyledSelectItem>
+                                ))}
+                            </StyledSelect>
+                            <StyledTextField
+                                title="Set Frame Variable Name"
+                                value={cell.parameters.frameVariableName}
+                                disabled={cell.isLoading}
+                                InputProps={{
+                                    startAdornment: (
+                                        <DriveFileRenameOutlineRounded />
+                                    ),
+                                }}
+                                onChange={(e) => {
+                                    state.dispatch({
+                                        message: ActionMessages.UPDATE_CELL,
+                                        payload: {
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                            path: 'parameters.frameVariableName',
+                                            value: e.target.value,
+                                        },
+                                    });
+                                }}
+                            />
+                        </Stack>
+                    )}
                 </Stack>
             </StyledContent>
         );
