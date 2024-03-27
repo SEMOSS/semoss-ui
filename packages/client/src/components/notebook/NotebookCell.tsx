@@ -1,4 +1,4 @@
-import { useState, createElement, useMemo, useRef } from 'react';
+import { useEffect, useState, createElement, useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -51,11 +51,17 @@ const StyledName = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledStatusIconContainer = styled('div')(({ theme }) => ({
-    height: '1.5em',
+    height: '100%',
     width: '1.5em',
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: theme.spacing(2),
+}));
+
+const StyledCollapseStack = styled('div')(({ theme }) => ({
+    paddingTop: theme.spacing(2),
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'start',
 }));
 
 const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
@@ -140,8 +146,6 @@ const StyledSidebar = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     cursor: 'pointer',
     gap: theme.spacing(1),
-    paddingTop: theme.spacing(2),
-    // border: 'solid red',
 }));
 
 const StyledExpandArrow = styled(KeyboardArrowRight, {
@@ -179,9 +183,35 @@ export const NotebookCell = observer(
         const [outputExpanded, setOutputExpanded] = useState(true);
         const [hoveredActions, setHoveredActions] = useState(false);
 
+        const cardContentRef = useRef(null);
+        const cardActionsRef = useRef(null);
+        const targetContentCollapseRef = useRef(null);
+        const targetActionsCollapseRef = useRef(null);
+
         // get the cell
         const query = state.getQuery(queryId);
         const cell = query.getCell(cellId);
+
+        useEffect(() => {
+            if (cardContentRef.current) {
+                const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
+                if (targetContentCollapseRef.current) {
+                    targetContentCollapseRef.current.style.height = `${cardContentHeight}px`;
+                }
+            }
+
+            if (cardActionsRef.current) {
+                const cardActionsHeight = cardActionsRef.current.offsetHeight; // Consider offsetHeight for borders
+                if (targetActionsCollapseRef.current) {
+                    targetActionsCollapseRef.current.style.height = `${cardActionsHeight}px`;
+                }
+            }
+        }, [
+            cardContentRef.current,
+            contentExpanded,
+            cardActionsRef.current,
+            outputExpanded,
+        ]);
 
         /**
          * Create a duplicate cell
@@ -325,10 +355,8 @@ export const NotebookCell = observer(
                             {getCellStatusIcon()}
                         </StyledStatusIconContainer>
                         <Stack>
-                            <Stack
-                                direction="row"
-                                flex={1}
-                                alignItems="start"
+                            <StyledCollapseStack
+                                ref={targetContentCollapseRef}
                                 onClick={() => {
                                     setContentExpanded(!contentExpanded);
                                 }}
@@ -337,11 +365,9 @@ export const NotebookCell = observer(
                                     fontSize="small"
                                     rotated={contentExpanded}
                                 />
-                            </Stack>
-                            <Stack
-                                direction="row"
-                                flex={1}
-                                alignItems="start"
+                            </StyledCollapseStack>
+                            <StyledCollapseStack
+                                ref={targetActionsCollapseRef}
                                 onClick={() => {
                                     setOutputExpanded(!outputExpanded);
                                 }}
@@ -350,7 +376,7 @@ export const NotebookCell = observer(
                                     fontSize="small"
                                     rotated={outputExpanded}
                                 />
-                            </Stack>
+                            </StyledCollapseStack>
                         </Stack>
                     </StyledSidebar>
                     <StyledCard
@@ -361,7 +387,7 @@ export const NotebookCell = observer(
                             notebook.selectCell(cell.query.id, cell.id);
                         }}
                     >
-                        <StyledCardContent>
+                        <StyledCardContent ref={cardContentRef}>
                             <StyledRunIconButton
                                 title="Run cell"
                                 disabled={cell.isLoading}
@@ -383,7 +409,7 @@ export const NotebookCell = observer(
                         {(notebook?.selectedCell?.id ?? '') == cell.id && (
                             <Divider />
                         )}
-                        <StyledCardActions>
+                        <StyledCardActions ref={cardActionsRef}>
                             <Stack
                                 id={`notebook-cell-actions-${queryId}-${cellId}`}
                                 direction="column"
