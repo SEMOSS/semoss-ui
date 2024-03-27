@@ -218,14 +218,18 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             }
         });
 
-        // Theme is delayed
+        /**
+         * ISSUE: HAPPENS ON OLD VERSION, BOTH THEMES HAVE TO BE APPLIED
+         * CODE CELL AND QUERY_CELL
+         * https://github.com/Microsoft/monaco-editor/issues/338
+         */
         monaco.editor.defineTheme('custom-theme', {
-            base: 'vs-dark',
+            base: 'vs',
             inherit: false,
             rules: [],
             colors: {
                 'editor.background': '#FAFAFA', // Background color
-                'editor.lineHighlightBorder': '#FFF', // Border around selected line
+                // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
             },
         });
 
@@ -676,7 +680,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
                             options={{
-                                lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
@@ -684,6 +687,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
+                                lineNumbers: 'on',
+                                // lineNumbers: function (lineNumber) {
+                                //     return `<span style="width:'auto'">${lineNumber}</span>`;
+                                // },
                             }}
                             onChange={handleEditorChange}
                             onMount={handleEditorMount}

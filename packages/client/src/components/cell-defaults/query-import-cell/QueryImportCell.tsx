@@ -76,11 +76,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     },
 }));
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(0.5),
-}));
+const StyledContainer = styled('div')(({ theme }) => ({}));
 
 export interface QueryImportCellDef extends CellDef<'query-import'> {
     widget: 'query-import';
@@ -202,6 +198,23 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                 },
             });
 
+            /**
+             * ISSUE: HAPPENS ON OLD VERSION, BOTH THEMES HAVE TO BE APPLIED
+             * CODE CELL AND QUERY_CELL
+             * https://github.com/Microsoft/monaco-editor/issues/338
+             */
+            monaco.editor.defineTheme('custom-theme', {
+                base: 'vs',
+                inherit: false,
+                rules: [],
+                colors: {
+                    'editor.background': '#FAFAFA', // Background color
+                    // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
+                },
+            });
+
+            monaco.editor.setTheme('custom-theme');
+
             // resize the editor
             resizeEditor();
         };
@@ -308,13 +321,16 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                             defaultValue="--SELECT * FROM..."
                             language="sql" /** TODO: language support? can we tell this from the database type? */
                             options={{
-                                lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
                                 scrollBeyondLastLine: false,
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
+                                lineNumbers: 'on',
+                                // lineNumbers: function (lineNumber) {
+                                //     return `<span style="width:'auto'">${lineNumber}</span>`;
+                                // },
                             }}
                             onChange={handleEditorChange}
                             onMount={handleEditorMount}
