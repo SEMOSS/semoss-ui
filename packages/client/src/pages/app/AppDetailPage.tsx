@@ -164,10 +164,12 @@ export function AppDetailPage() {
         return dependencies;
     }
 
-    async function runSetDependenciesQuery(testSelectedDeps) {
+    async function runSetDependenciesQuery(testSelectedDeps: string[]) {
         // async function setDependenciesQuery(selectedDependenciesState)
         const response = await monolithStore.runQuery(
-            `SetProjectDependencies(project="${appId}", dependencies="${testSelectedDeps}")`,
+            `SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
+                testSelectedDeps,
+            )})`,
             // `SetProjectDependencies(project="${appId}", dependencies=${selectedDependenciesState})`,
         );
         // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
@@ -283,8 +285,7 @@ export function AppDetailPage() {
                                 <IconButton
                                     onClick={() => {
                                         runSetDependenciesQuery([
-                                            // ...dependenciesState,
-                                            '7df19c33-8551-4397-8d14-27418cde9d9d',
+                                            '38e13c86-a6f3-4d2b-b42b-31c7ce26c147',
                                         ]);
                                     }}
                                     sx={{
