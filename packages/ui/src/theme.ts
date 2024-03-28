@@ -505,8 +505,8 @@ export const darkTheme: CustomThemeOptions = {
             dark: "#005A00",
         },
         background: {
-            default: "#FAFAFA",
-            paper: "#121212",
+            paper1: "#FAFAFA",
+            paper2: "#121212",
         },
         primaryContrast: {
             // SEMOSS BLUE
