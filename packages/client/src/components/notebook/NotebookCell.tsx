@@ -28,6 +28,7 @@ import { useBlocks } from '@/hooks';
 import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
+import { Fade } from '@mui/material';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -48,6 +49,15 @@ const StyledName = styled(Typography)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
     background: theme.palette.background.paper,
     overflow: 'hidden',
+}));
+
+const StyledCellActions = styled(Collapse)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(-2),
+    right: theme.spacing(2),
+    zIndex: 1,
+    borderRadius: theme.shape.borderRadius,
+    background: theme.palette.background.paper,
 }));
 
 const StyledStatusIconContainer = styled('div')(({ theme }) => ({
@@ -181,7 +191,9 @@ export const NotebookCell = observer(
 
         const [contentExpanded, setContentExpanded] = useState(true);
         const [outputExpanded, setOutputExpanded] = useState(true);
-        const [hoveredActions, setHoveredActions] = useState(false);
+        const [hoveredAddCellActions, setHoveredAddCellActions] =
+            useState(false);
+        const [showCellActions, setShowCellActions] = useState(false);
 
         const cardContentRef = useRef(null);
         const cardActionsRef = useRef(null);
@@ -321,11 +333,89 @@ export const NotebookCell = observer(
         };
 
         return (
-            <StyledStack direction={'column'} gap={1}>
+            <StyledStack
+                direction={'column'}
+                gap={1}
+                onMouseEnter={() => {
+                    setShowCellActions(true);
+                }}
+                onMouseLeave={() => {
+                    setShowCellActions(false);
+                }}
+            >
                 <StyledRow direction="row" width="100%" spacing={1}>
                     <StyledName variant="subtitle2">
                         {cell.config.name}
                     </StyledName>
+
+                    <StyledCellActions in={showCellActions}>
+                        <Stack gap={1} direction={'row'} alignItems={'center'}>
+                            <StyledIdChip
+                                label={
+                                    <Stack
+                                        direction="row"
+                                        spacing={0.5}
+                                        alignItems="center"
+                                    >
+                                        <span>{`${cell.id}`}</span>
+                                        <ContentCopy fontSize="inherit" />
+                                    </Stack>
+                                }
+                                title="Copy cell id"
+                                onClick={() => {
+                                    try {
+                                        navigator.clipboard.writeText(cell.id);
+
+                                        notification.add({
+                                            color: 'success',
+                                            message:
+                                                'Succesfully copied to clipboard',
+                                        });
+                                    } catch (e) {
+                                        notification.add({
+                                            color: 'error',
+                                            message: e.message,
+                                        });
+                                    }
+                                }}
+                            />
+                            <ButtonGroup variant="outlined">
+                                <StyledButtonGroupButton
+                                    title="Duplicate cell"
+                                    size="small"
+                                    disabled={cell.isLoading}
+                                    onClick={(e) => {
+                                        // stop propogation to card parent so newly created cell will be selected
+                                        e.stopPropagation();
+                                        duplicateCell();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <ContentCopy
+                                            fontSize="small"
+                                            sx={{
+                                                padding: '2px',
+                                            }}
+                                        />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                                <StyledButtonGroupButton
+                                    title="Delete cell"
+                                    disabled={cell.isLoading}
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteCell();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <DeleteOutlined fontSize="small" />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                            </ButtonGroup>
+                        </Stack>
+                    </StyledCellActions>
+
                     <StyledSidebar>
                         <StyledStatusIconContainer>
                             {getCellStatusIcon()}
@@ -410,71 +500,6 @@ export const NotebookCell = observer(
                                         >
                                             {getExecutionLabel()}
                                             <Stack flex={1}>&nbsp;</Stack>
-                                            <StyledIdChip
-                                                label={
-                                                    <Stack
-                                                        direction="row"
-                                                        spacing={0.5}
-                                                        alignItems="center"
-                                                    >
-                                                        <span>{`${cell.id}`}</span>
-                                                        <ContentCopy fontSize="inherit" />
-                                                    </Stack>
-                                                }
-                                                title="Copy cell id"
-                                                onClick={() => {
-                                                    try {
-                                                        navigator.clipboard.writeText(
-                                                            cell.id,
-                                                        );
-
-                                                        notification.add({
-                                                            color: 'success',
-                                                            message:
-                                                                'Succesfully copied to clipboard',
-                                                        });
-                                                    } catch (e) {
-                                                        notification.add({
-                                                            color: 'error',
-                                                            message: e.message,
-                                                        });
-                                                    }
-                                                }}
-                                            />
-                                            <ButtonGroup variant="outlined">
-                                                <StyledButtonGroupButton
-                                                    title="Duplicate cell"
-                                                    size="small"
-                                                    disabled={cell.isLoading}
-                                                    onClick={(e) => {
-                                                        // stop propogation to card parent so newly created cell will be selected
-                                                        e.stopPropagation();
-                                                        duplicateCell();
-                                                    }}
-                                                >
-                                                    <StyledButtonLabel>
-                                                        <ContentCopy
-                                                            fontSize="small"
-                                                            sx={{
-                                                                padding: '2px',
-                                                            }}
-                                                        />
-                                                    </StyledButtonLabel>
-                                                </StyledButtonGroupButton>
-                                                <StyledButtonGroupButton
-                                                    title="Delete cell"
-                                                    disabled={cell.isLoading}
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteCell();
-                                                    }}
-                                                >
-                                                    <StyledButtonLabel>
-                                                        <DeleteOutlined fontSize="small" />
-                                                    </StyledButtonLabel>
-                                                </StyledButtonGroupButton>
-                                            </ButtonGroup>
                                         </Stack>
                                         {outputExpanded && (
                                             <>
@@ -508,16 +533,16 @@ export const NotebookCell = observer(
                 </StyledRow>
                 <StyledAddCellContainer
                     onMouseEnter={() => {
-                        setHoveredActions(true);
+                        setHoveredAddCellActions(true);
                     }}
                     onMouseLeave={() => {
-                        setHoveredActions(false);
+                        setHoveredAddCellActions(false);
                     }}
                 >
                     <Collapse
                         in={
                             (notebook?.selectedCell?.id ?? '') === cell.id ||
-                            hoveredActions
+                            hoveredAddCellActions
                         }
                     >
                         <NotebookAddCell
