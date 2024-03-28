@@ -101,7 +101,7 @@ export const Notebook = observer(() => {
                     <SidebarText>Queries</SidebarText>
                 </SidebarItem>
                 <SidebarItem
-                    disabled={false}
+                    disabled={true}
                     selected={view === 'transform'}
                     onClick={() => updateView('transform')}
                 >
@@ -111,7 +111,7 @@ export const Notebook = observer(() => {
                     <SidebarText>Transform</SidebarText>
                 </SidebarItem>
                 <SidebarItem
-                    disabled={false}
+                    disabled={true}
                     selected={view === 'catalog'}
                     onClick={() => updateView('catalog')}
                 >
