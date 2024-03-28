@@ -91,8 +91,9 @@ export const EngineUsagePage = () => {
                         <StyledCodeBlock>
                             <StyledCodeContent>{text}</StyledCodeContent>
                             <Button
-                                size={'medium'}
+                                size="medium"
                                 variant="outlined"
+                                color="secondary"
                                 startIcon={
                                     <ContentCopyOutlined color={'inherit'} />
                                 }
