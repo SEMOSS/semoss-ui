@@ -332,7 +332,7 @@ export const NotebookCell = observer(
                         </StyledStatusIconContainer>
                         <Stack>
                             <StyledCollapseStack
-                                id={`${queryId}-${cellId}-content-collapse`}
+                                id={`notebook-cell-${queryId}-${cellId}-card-content-collapse`}
                                 ref={targetContentCollapseRef}
                                 onClick={() => {
                                     setContentExpanded(!contentExpanded);
@@ -345,7 +345,7 @@ export const NotebookCell = observer(
                             </StyledCollapseStack>
                             {cell.isExecuted && (
                                 <StyledCollapseStack
-                                    id={`${queryId}-${cellId}-actions-collapse`}
+                                    id={`notebook-cell-${queryId}-${cellId}-card-actions-collapse`}
                                     ref={targetActionsCollapseRef}
                                     onClick={() => {
                                         setOutputExpanded(!outputExpanded);
@@ -368,7 +368,7 @@ export const NotebookCell = observer(
                         }}
                     >
                         <StyledCardContent
-                            id={`${queryId}-${cellId}-content`}
+                            id={`notebook-cell-${queryId}-${cellId}-card-content`}
                             ref={cardContentRef}
                         >
                             <StyledRunIconButton
@@ -394,13 +394,12 @@ export const NotebookCell = observer(
                                 {(notebook?.selectedCell?.id ?? '') ==
                                     cell.id && <Divider />}
                                 <StyledCardActions
-                                    id={`${queryId}-${cellId}-actions`}
+                                    id={`notebook-cell-${queryId}-${cellId}-card-actions`}
                                     ref={cardActionsRef}
                                 >
                                     <Stack
                                         id={`notebook-cell-actions-${queryId}-${cellId}`}
                                         direction="column"
-                                        // spacing={2}
                                         width="100%"
                                     >
                                         <Stack

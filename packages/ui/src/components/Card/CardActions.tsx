@@ -14,6 +14,11 @@ export interface CardActionsProps extends ComponentPropsWithRef<"div"> {
      * @default false
      */
     disableSpacing?: boolean;
+
+    /**
+     * Unique identifier for dom element
+     */
+    id?: string;
 }
 
 export const _CardActions = (props: CardActionsProps, ref) => {

@@ -8,6 +8,11 @@ export interface CardContentProps extends ComponentPropsWithRef<"div"> {
 
     /** custom style object */
     sx?: SxProps;
+
+    /**
+     * Unique identifier for dom element
+     */
+    id?: string;
 }
 
 export const _CardContent = (props: CardContentProps, ref) => {
