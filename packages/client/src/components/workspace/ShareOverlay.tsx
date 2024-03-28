@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Alert,
     Button,
-    IconButton,
     Modal,
     TextField,
     Tabs,
@@ -12,8 +11,7 @@ import {
     Stack,
 } from '@semoss/ui';
 import { resolvePath } from 'react-router-dom';
-import { ContentCopyOutlined, WarningAmberOutlined } from '@mui/icons-material';
-import { useRootStore } from '@/hooks';
+import { Check, WarningAmberOutlined } from '@mui/icons-material';
 
 interface ShareOverlayProps {
     /** Id of the app to share */
@@ -32,6 +30,7 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
     const notification = useNotification();
 
     const [shareModalTab, setShareModalTab] = useState(0);
+    const [isCopied, setIsCopied] = useState(false);
 
     // create the url + iframe
     const base = window.location.href.replace(window.location.hash, '#');
@@ -51,6 +50,7 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
                 color: 'success',
                 message: 'Succesfully copied to clipboard',
             });
+            setIsCopied(true);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -79,28 +79,22 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
                         <Tabs.Item label="IFrame"></Tabs.Item>
                     </Tabs>
                     {shareModalTab === 0 && (
-                        <Stack>
-                            <Typography variant="subtitle1">
-                                Share a link for external use
-                            </Typography>
+                        <Stack direction="row">
                             <TextField
                                 size="small"
                                 value={url}
                                 fullWidth={true}
                                 InputProps={{
                                     readOnly: true,
-                                    endAdornment: (
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => {
-                                                copy(url);
-                                            }}
-                                        >
-                                            <ContentCopyOutlined fontSize="inherit" />
-                                        </IconButton>
-                                    ),
                                 }}
                             />
+                            <Button
+                                variant="outlined"
+                                startIcon={isCopied ? <Check /> : null}
+                                onClick={() => copy(url)}
+                            >
+                                {isCopied ? 'Copied' : 'Copy'}
+                            </Button>
                         </Stack>
                     )}
                     {shareModalTab === 1 && (
@@ -108,32 +102,29 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
                             <Typography variant="subtitle1">
                                 Embed the app as an iframe
                             </Typography>
-                            <TextField
-                                size="small"
-                                value={iframe}
-                                multiline={true}
-                                fullWidth={true}
-                                InputProps={{
-                                    readOnly: true,
-                                    endAdornment: (
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => {
-                                                copy(iframe);
-                                            }}
-                                        >
-                                            <ContentCopyOutlined fontSize="inherit" />
-                                        </IconButton>
-                                    ),
-                                }}
-                            />
+                            <Stack alignItems="center" direction="row">
+                                <TextField
+                                    size="small"
+                                    value={iframe}
+                                    multiline={true}
+                                    fullWidth={true}
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                />
+                                <Button
+                                    variant="outlined"
+                                    startIcon={isCopied ? <Check /> : null}
+                                    onClick={() => copy(iframe)}
+                                    sx={{ height: 'auto' }}
+                                >
+                                    {isCopied ? 'Copied' : 'Copy'}
+                                </Button>
+                            </Stack>
                         </Stack>
                     )}
                 </Stack>
             </Modal.Content>
-            <Modal.Actions>
-                <Button onClick={() => onClose()}>Cancel</Button>
-            </Modal.Actions>
         </>
     );
 });
