@@ -253,7 +253,9 @@ export class QueryState {
     _processRun = async () => {
         try {
             // check the loading state
-            if (this._store.isLoading) {
+            if (this._store.isLoading && this._store.mode !== 'automatic') {
+                // Temp Fix: Ignore Automatic queries
+                // Proposed fix, don't allow query to be ran automatically while in Notebook.  Do this in state store
                 throw new Error('Query is loading');
             }
 

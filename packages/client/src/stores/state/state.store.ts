@@ -114,6 +114,7 @@ export class StateStore {
                     }
 
                     // ignore if not automatic
+                    // PROBLEM: PK brought this up: ONLY WHILE IN NOTEBOOK, editting queries it may be best to have user manually run queries
                     if (q.mode !== 'automatic') {
                         continue;
                     }

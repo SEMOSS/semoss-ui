@@ -74,6 +74,10 @@ const StyledCollapseStack = styled('div')(({ theme }) => ({
     alignItems: 'start',
 }));
 
+const StyledActionsCollapseStack = styled(StyledCollapseStack)(({ theme }) => ({
+    marginTop: '0px !important',
+}));
+
 const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
     padding: 0,
 }));
@@ -129,23 +133,6 @@ const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
     border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledStatusChip = styled(Chip, {
-    shouldForwardProp: (prop) => prop !== 'status',
-})<{ status?: 'success' | 'error' | 'disabled' }>(({ theme, status }) => ({
-    backgroundColor: status
-        ? status === 'disabled'
-            ? theme.palette.grey[300]
-            : theme.palette[status].main
-        : 'unset',
-    color:
-        status && status !== 'disabled'
-            ? theme.palette.background.paper
-            : 'unset',
-    '.MuiChip-avatar': {
-        color: 'unset',
-    },
-}));
-
 const StyledIdChip = styled(Chip)(({ theme }) => ({
     backgroundColor: theme.palette.grey[300],
     height: theme.spacing(3.5),
@@ -156,6 +143,12 @@ const StyledSidebar = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     cursor: 'pointer',
     gap: theme.spacing(1),
+}));
+const StyledExpandContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '1.5em',
 }));
 
 const StyledExpandArrow = styled(KeyboardArrowRight, {
@@ -342,6 +335,14 @@ export const NotebookCell = observer(
                 onMouseLeave={() => {
                     setShowCellActions(false);
                 }}
+                onFocus={() => {
+                    // Keyboard Navigation
+                    setShowCellActions(true);
+                }}
+                onBlur={() => {
+                    // Keyboard Navigation
+                    setShowCellActions(false);
+                }}
             >
                 <StyledRow direction="row" width="100%" spacing={1}>
                     <StyledName variant="subtitle2">
@@ -427,25 +428,35 @@ export const NotebookCell = observer(
                                 onClick={() => {
                                     setContentExpanded(!contentExpanded);
                                 }}
+                                title={`${
+                                    contentExpanded ? 'Collapse' : 'Open'
+                                } cell ${cellId} input`}
                             >
-                                <StyledExpandArrow
-                                    fontSize="small"
-                                    rotated={contentExpanded}
-                                />
+                                <StyledExpandContainer>
+                                    <StyledExpandArrow
+                                        fontSize="small"
+                                        rotated={contentExpanded}
+                                    />
+                                </StyledExpandContainer>
                             </StyledCollapseStack>
                             {cell.isExecuted && (
-                                <StyledCollapseStack
+                                <StyledActionsCollapseStack
                                     id={`notebook-cell-${queryId}-${cellId}-card-actions-collapse`}
                                     ref={targetActionsCollapseRef}
                                     onClick={() => {
                                         setOutputExpanded(!outputExpanded);
                                     }}
+                                    title={`${
+                                        outputExpanded ? 'Collapse' : 'Open'
+                                    } cell ${cellId} output`}
                                 >
-                                    <StyledExpandArrow
-                                        fontSize="small"
-                                        rotated={outputExpanded}
-                                    />
-                                </StyledCollapseStack>
+                                    <StyledExpandContainer>
+                                        <StyledExpandArrow
+                                            fontSize="small"
+                                            rotated={outputExpanded}
+                                        />
+                                    </StyledExpandContainer>
+                                </StyledActionsCollapseStack>
                             )}
                         </Stack>
                     </StyledSidebar>
@@ -496,10 +507,9 @@ export const NotebookCell = observer(
                                             direction="row"
                                             alignItems="center"
                                             width="100%"
-                                            spacing={1}
+                                            // spacing={1}
                                         >
                                             {getExecutionLabel()}
-                                            <Stack flex={1}>&nbsp;</Stack>
                                         </Stack>
                                         {outputExpanded && (
                                             <>
@@ -536,6 +546,14 @@ export const NotebookCell = observer(
                         setHoveredAddCellActions(true);
                     }}
                     onMouseLeave={() => {
+                        setHoveredAddCellActions(false);
+                    }}
+                    onFocus={() => {
+                        // Keyboard Navigation
+                        setHoveredAddCellActions(true);
+                    }}
+                    onBlur={() => {
+                        // Keyboard Navigation
                         setHoveredAddCellActions(false);
                     }}
                 >
