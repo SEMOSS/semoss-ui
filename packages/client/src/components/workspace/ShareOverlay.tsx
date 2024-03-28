@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Alert,
+    IconButton,
     Button,
     Modal,
     TextField,
@@ -11,7 +12,7 @@ import {
     Stack,
 } from '@semoss/ui';
 import { resolvePath } from 'react-router-dom';
-import { Check, WarningAmberOutlined } from '@mui/icons-material';
+import { Check, Clear, WarningAmberOutlined } from '@mui/icons-material';
 
 interface ShareOverlayProps {
     /** Id of the app to share */
@@ -61,7 +62,19 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
 
     return (
         <>
-            <Modal.Title>Share</Modal.Title>
+            <Modal.Title>
+                <Stack direction="row" justifyContent="space-between">
+                    <span>Share</span>
+                    <IconButton
+                        size="small"
+                        title="close"
+                        aria-label="close"
+                        onClick={onClose}
+                    >
+                        <Clear />
+                    </IconButton>
+                </Stack>
+            </Modal.Title>
             <Modal.Content>
                 {diffs && (
                     <Alert severity="warning" icon={<WarningAmberOutlined />}>
