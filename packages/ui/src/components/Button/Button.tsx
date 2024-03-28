@@ -23,7 +23,7 @@ const StyledMuiButton = styled(MuiButton, {
     ...(variant === "outlined" &&
         color === "secondary" && {
             borderColor: theme.palette.secondary.border,
-            color: theme.palette.secondary.dark,
+            color: theme.palette.text.primary,
             "&:hover": {
                 backgroundColor: theme.palette.secondary.hover,
             },
@@ -31,6 +31,14 @@ const StyledMuiButton = styled(MuiButton, {
             ...(disabled && {
                 backgroundColor: theme.palette.secondary.border,
             }),
+        }),
+
+    ...(variant === "text" &&
+        color === "secondary" && {
+            color: theme.palette.text.primary,
+            "&:hover": {
+                backgroundColor: theme.palette.secondary.hover,
+            },
         }),
 }));
 
