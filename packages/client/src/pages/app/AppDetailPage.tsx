@@ -270,6 +270,11 @@ export function AppDetailPage() {
                                 <SectionHeading variant="h1">
                                     {appInfoState?.project_name}
                                 </SectionHeading>
+                                <Typography variant="body1">
+                                    {appInfoState?.project_description
+                                        ? appInfoState?.project_description
+                                        : 'No description available'}
+                                </Typography>
                                 {permissionState === 'OWNER' ? (
                                     <TitleSectionAccess>
                                         <HdrAutoIcon />
