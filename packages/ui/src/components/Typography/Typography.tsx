@@ -57,9 +57,11 @@ export const Typography = (props: TypographyProps) => {
             sx={sx}
             color={
                 color === "success"
-                    ? "success.dark"
+                    ? "success.main"
                     : color === "warning"
-                    ? "warning.dark"
+                    ? "warning.main"
+                    : color === "primary"
+                    ? "primary.main"
                     : color === "secondary"
                     ? "text.secondary"
                     : color
