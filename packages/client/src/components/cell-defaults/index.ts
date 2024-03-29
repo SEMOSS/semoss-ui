@@ -1,24 +1,25 @@
-import { CellTypeRegistry } from '@/stores';
-import { CodeCell, CodeCellDef } from './code-cell';
-import { QueryImportCell, QueryImportCellDef } from './query-import-cell';
+import { CellRegistry } from '@/stores';
+
+import { CodeCellConfig, CodeCellDef } from './code-cell';
+import { QueryImportCellConfig, QueryImportCellDef } from './query-import-cell';
 import {
-    UppercaseTransformationCell,
+    UppercaseTransformationCellConfig,
     UppercaseTransformationCellDef,
 } from './uppercase-transformation-cell';
 import {
-    UpdateRowTransformationCell,
+    UpdateRowTransformationCellConfig,
     UpdateRowTransformationCellDef,
 } from './update-row-transformation-cell';
 import {
-    ColumnTypeTransformationCell,
+    ColumnTypeTransformationCellConfig,
     ColumnTypeTransformationCellDef,
 } from './column-type-transformation-cell';
 import {
-    DateDifferenceTransformationCell,
+    DateDifferenceTransformationCellConfig,
     DateDifferenceTransformationCellDef,
 } from './date-difference-transformation-cell';
 import {
-    TimestampTransformationCell,
+    TimestampTransformationCellConfig,
     TimestampTransformationCellDef,
 } from './timestamp-transformation-cell';
 
@@ -31,12 +32,29 @@ export type DefaultCellDefinitions =
     | DateDifferenceTransformationCellDef
     | TimestampTransformationCellDef;
 
-export const DefaultCellTypes: CellTypeRegistry<DefaultCellDefinitions> = {
-    [CodeCell.widget]: CodeCell,
-    [QueryImportCell.widget]: QueryImportCell,
-    [UppercaseTransformationCell.widget]: UppercaseTransformationCell,
-    [UpdateRowTransformationCell.widget]: UpdateRowTransformationCell,
-    [ColumnTypeTransformationCell.widget]: ColumnTypeTransformationCell,
-    [DateDifferenceTransformationCell.widget]: DateDifferenceTransformationCell,
-    [TimestampTransformationCell.widget]: TimestampTransformationCell,
-};
+export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
+    [CodeCellConfig.widget]: CodeCellConfig,
+    [QueryImportCellConfig.widget]: QueryImportCellConfig,
+    [UppercaseTransformationCellConfig.widget]:
+        UppercaseTransformationCellConfig,
+    [UpdateRowTransformationCellConfig.widget]:
+        UpdateRowTransformationCellConfig,
+    [ColumnTypeTransformationCellConfig.widget]:
+        ColumnTypeTransformationCellConfig,
+    [DateDifferenceTransformationCellConfig.widget]:
+        DateDifferenceTransformationCellConfig,
+    [TimestampTransformationCellConfig.widget]:
+        TimestampTransformationCellConfig,
+} as const;
+
+const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
+    {};
+
+// Iterate through the data object and filter out the cell types that have 'transformation' key
+Object.entries(DefaultCells).forEach(([key, value]) => {
+    if (value.parameters && value.parameters.transformation) {
+        filteredTransformations[key] = value;
+    }
+});
+
+export const TransformationCells = filteredTransformations;

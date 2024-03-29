@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { useBlocks } from '@/hooks';
 import { ActionMessages, NewCellAction } from '@/stores';
-import { DefaultCellTypes } from '../cell-defaults';
+import { DefaultCells } from '../cell-defaults';
 
 type NewCellForm = {
     ID: string;
@@ -83,8 +83,8 @@ export const NewCellOverlay = observer(
             }
 
             let config: NewCellAction['payload']['config'] = {
-                widget: DefaultCellTypes['code'].widget,
-                parameters: DefaultCellTypes['code'].parameters,
+                widget: DefaultCells['code'].widget,
+                parameters: DefaultCells['code'].parameters,
             };
 
             if (previousCellId) {
@@ -97,16 +97,16 @@ export const NewCellOverlay = observer(
                         },
                     };
                 } else if (
-                    state.queries[queryId].cells[previousCellId].cellType
+                    state.queries[queryId].cells[previousCellId].config
                         .widget === 'code'
                 ) {
                     const previousCellType =
                         state.queries[queryId].cells[previousCellId].parameters
                             ?.type ?? 'pixel';
                     config = {
-                        widget: DefaultCellTypes['code'].widget,
+                        widget: DefaultCells['code'].widget,
                         parameters: {
-                            ...DefaultCellTypes['code'].parameters,
+                            ...DefaultCells['code'].parameters,
                             type: previousCellType,
                         },
                     };

@@ -42,7 +42,7 @@ export const ErrorPage = () => {
             <img src={Error} height="50%" />
             <Typography variant="h6">Something went wrong!</Typography>
             <Typography variant="body1">
-                We're working hard to fix it. If the issue persists, please
+                We&apos;re working hard to fix it. If the issue persists, please
                 reach out and let us know.
             </Typography>
             {!isOnHomepage && (

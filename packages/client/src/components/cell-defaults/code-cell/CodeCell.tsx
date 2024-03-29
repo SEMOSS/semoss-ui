@@ -1,55 +1,87 @@
-import { useEffect, useRef, useState } from 'react';
-
-import Editor from '@monaco-editor/react';
-import { DiffEditor } from '@monaco-editor/react';
-
-import { styled, Button, Grid } from '@semoss/ui';
-
+import { useMemo, useRef, useState } from 'react';
+import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
+import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
+import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
+import { CellDef } from '@/stores';
+import { runPixel } from '@/api';
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
-import { useBlocks } from '@/hooks';
-import { CodeCellDef } from './config';
+import { useBlocks, useLLM } from '@/hooks';
+import { LoadingScreen } from '@/components/ui';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
+import { StyledSelect, StyledSelectItem } from '../shared';
 
-import { useLLM } from '@/hooks';
-import { runPixel } from '@/api';
-import { LoadingScreen } from '@/components/ui';
-import * as monaco from 'monaco-editor';
+import { PythonIcon, RIcon } from './icons';
+import { editor } from 'monaco-editor';
+
+const EDITOR_LINE_HEIGHT = 19;
+const EDITOR_MAX_HEIGHT = 500; // ~25 lines
+
+const EDITOR_TYPE = {
+    py: {
+        name: 'Python',
+        value: 'py',
+        language: 'python',
+        icon: PythonIcon,
+    },
+    r: {
+        name: 'R',
+        value: 'r',
+        language: 'r',
+        icon: RIcon,
+    },
+    pixel: {
+        name: 'Pixel',
+        value: 'pixel',
+        language: 'pixel',
+        icon: CodeOff,
+    },
+} as const;
+
+export interface CodeCellDef extends CellDef<'code'> {
+    widget: 'code';
+    parameters: {
+        /** Type of code in the cell */
+        type: 'r' | 'py' | 'pixel';
+
+        /** Code rendered in the cell */
+        code: string;
+    };
+}
 
 // best documentation on component versions of monaco editor and diffeditor
 // https://www.npmjs.com/package/@monaco-editor/react
-
-const EditorLineHeight = 19;
-
 const StyledContent = styled('div', {
     shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled: boolean }>(({ theme, disabled }) => ({
-    paddingTop: theme.spacing(0.75),
-    margin: '0!important',
-    width: '100%',
+})<{ disabled: boolean }>(({ disabled }) => ({
     position: 'relative',
-    display: 'flex',
+    width: '100%',
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
+const StyledContainer = styled('div')(({ theme }) => ({}));
+
+// track completion providers outside of render context
+let completionItemProviders = {};
 const EditorLanguages = {
     py: 'python',
     pixel: 'pixel',
     r: 'r',
 };
 
-// track completion providers outside of render context
-let completionItemProviders = {};
-
-export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
-    const editorRef = useRef(null);
+const EditorLineHeight = 19;
+// TODO:: Refactor height to account for Layout
+export const CodeCell: CellComponent<CodeCellDef> = (props) => {
+    const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const monacoRef = useRef(null);
     const selectionRef = useRef(null);
     const LLMReturnRef = useRef('');
-    const [editorHeight, setEditorHeight] = useState<number>(null);
+
+    const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
+    const [editorHeight, setEditorHeight] = useState<number>(null);
 
     const [LLMLoading, setLLMLoading] = useState(false);
     const [diffEditMode, setDiffEditMode] = useState(false);
@@ -59,22 +91,20 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const [newContentDiffEdit, setNewContentDiffEdit] = useState('');
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
+    const [count, setCount] = useState(0);
     const { modelId } = useLLM();
-    const modelIdRef = useRef('');
 
-    useEffect(() => {
-        modelIdRef.current = modelId;
-        console.log({ modelId });
-    }, [modelId]);
-
-    const promptLLM = async (inputPrompt) => {
+    /**
+     * Ask a LLM a question to generate a response
+     * @param prompt - prompt passed to the LLM
+     * @returns LLM Response
+     */
+    const promptLLM = async (prompt: string) => {
         setLLMLoading(true);
-        const pixel = `LLM(engine = "${modelIdRef.current}", command = "${inputPrompt}", paramValues = [ {} ] );`;
-        console.log({ 'modelIdRef.current': modelIdRef.current });
+        const pixel = `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {} ] );`;
 
         try {
             const res = await runPixel(pixel);
-            setLLMLoading(false);
 
             const LLMResponse = res.pixelReturn[0].output['response'];
             let trimmedStarterCode = LLMResponse;
@@ -86,13 +116,26 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
             return trimmedStarterCode;
         } catch {
-            setLLMLoading(false);
             console.error('Failed response from AI Code Generator');
             return '';
+        } finally {
+            setLLMLoading(false);
         }
     };
 
-    const handleDiffEditorMount = (editor, monaco) => {
+    /**
+     * Handle mounting of the diff editor
+     *
+     * @param editor - editor that mounted
+     * @param monaco - monaco instance
+     */
+    const handleDiffEditorMount = (
+        editor: editor.IStandaloneDiffEditor,
+        monaco: Monaco,
+    ) => {
+        // save the editor
+        diffEditorRef.current = editor;
+
         editor.addAction({
             contextMenuGroupId: '1_modification',
             contextMenuOrder: 2,
@@ -106,6 +149,32 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     wordWrap: wordWrapRef.current ? 'on' : 'off',
                 });
             },
+        });
+
+        // resize the editor
+        resizeDiffEditor();
+    };
+
+    /**
+     * Resize the diff editor
+     */
+    const resizeDiffEditor = () => {
+        // set the height based ont the max content
+        let height = Math.min(
+            Math.max(
+                diffEditorRef.current.getModifiedEditor().getContentHeight(),
+                diffEditorRef.current.getOriginalEditor().getContentHeight(),
+            ),
+            EDITOR_MAX_HEIGHT,
+        );
+
+        // add the trailing line
+        height += EDITOR_LINE_HEIGHT;
+
+        // resize it
+        diffEditorRef.current.layout({
+            width: diffEditorRef.current.getContainerDomNode().clientWidth,
+            height: height,
         });
     };
 
@@ -292,6 +361,18 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             return suggestions;
         };
 
+        monaco.editor.defineTheme('custom-theme', {
+            base: 'vs',
+            inherit: false,
+            rules: [],
+            colors: {
+                'editor.background': '#FAFAFA', // Background color
+                // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
+            },
+        });
+
+        monaco.editor.setTheme('custom-theme');
+
         // register custom pixel language
         monaco.languages.register({ id: 'pixel' });
 
@@ -419,42 +500,111 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     };
 
     return (
-        <>
-            <StyledContent disabled={!isExpanded}>
-                {LLMLoading && (
-                    <LoadingScreen.Trigger description="Generating..." />
-                )}
+        <StyledContent disabled={!isExpanded}>
+            {LLMLoading && (
+                <LoadingScreen.Trigger description="Generating..." />
+            )}
 
-                <Grid container spacing={3}>
-                    {diffEditMode && (
-                        <Grid item sm={12}>
-                            <DiffEditor
-                                key={modelIdRef.current}
-                                width="100%"
-                                height={
-                                    isExpanded ? editorHeight : EditorLineHeight
+            <Stack direction="column" spacing={1}>
+                {isExpanded && (
+                    <Stack direction="row">
+                        <StyledSelect
+                            size={'small'}
+                            title={'Select Language'}
+                            value={EDITOR_TYPE[cell.parameters.type].value}
+                            SelectProps={{
+                                IconComponent: KeyboardArrowDown,
+                                style: {
+                                    height: '30px',
+                                    width: '180px',
+                                },
+                            }}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (
+                                    value !==
+                                    EDITOR_TYPE[cell.parameters.type].value
+                                ) {
+                                    console.log(value);
+                                    state.dispatch({
+                                        message: ActionMessages.UPDATE_CELL,
+                                        payload: {
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                            path: 'parameters.type',
+                                            value: value,
+                                        },
+                                    });
+
+                                    setCount(count + 1);
                                 }
+                            }}
+                        >
+                            {Array.from(
+                                Object.values(EDITOR_TYPE),
+                                (language, i) => (
+                                    <StyledSelectItem
+                                        key={`${i}-${cell.id}-${language.name}`}
+                                        value={language.value}
+                                    >
+                                        <language.icon
+                                            color="inherit"
+                                            fontSize="small"
+                                        />
+                                        {language.name}
+                                    </StyledSelectItem>
+                                ),
+                            )}
+                        </StyledSelect>
+                    </Stack>
+                )}
+                <StyledContainer>
+                    {!isExpanded ? (
+                        <Editor
+                            width="100%"
+                            height={getHeight()}
+                            language={
+                                EDITOR_TYPE[cell.parameters.type].language
+                            }
+                            value={cell.parameters.code}
+                            options={{
+                                lineNumbers: 'on',
+                                readOnly: false,
+                                minimap: { enabled: false },
+                                automaticLayout: true,
+                                scrollBeyondLastLine: false,
+                                lineHeight: EDITOR_LINE_HEIGHT,
+                                overviewRulerBorder: false,
+                                wordWrap: 'on',
+                            }}
+                            onChange={handleChange}
+                            onMount={handleMount}
+                        />
+                    ) : diffEditMode ? (
+                        <>
+                            <DiffEditor
                                 original={oldContentDiffEdit}
                                 modified={newContentDiffEdit}
-                                language={EditorLanguages[cell.parameters.type]}
+                                language={
+                                    EDITOR_TYPE[cell.parameters.type].value
+                                }
                                 options={{
                                     lineNumbers: 'on',
                                     readOnly: true,
                                     minimap: { enabled: false },
                                     automaticLayout: true,
                                     scrollBeyondLastLine: false,
-                                    lineHeight: EditorLineHeight,
+                                    lineHeight: EDITOR_LINE_HEIGHT,
                                     overviewRulerBorder: false,
                                     wordWrap: 'on',
                                 }}
                                 onMount={handleDiffEditorMount}
                             />
-                        </Grid>
-                    )}
-
-                    {diffEditMode && (
-                        <Grid item sm={12}>
-                            <div>
+                            <Stack
+                                direction="row"
+                                alignItems={'center'}
+                                justifyContent={'center'}
+                            >
                                 <Button
                                     title="Accept changes"
                                     size="small"
@@ -473,35 +623,32 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                                 >
                                     Reject
                                 </Button>
-                            </div>
-                        </Grid>
+                            </Stack>
+                        </>
+                    ) : (
+                        <Editor
+                            width="100%"
+                            height={getHeight()}
+                            language={
+                                EDITOR_TYPE[cell.parameters.type].language
+                            }
+                            value={cell.parameters.code}
+                            options={{
+                                lineNumbers: 'on',
+                                readOnly: false,
+                                minimap: { enabled: false },
+                                automaticLayout: true,
+                                scrollBeyondLastLine: false,
+                                lineHeight: EDITOR_LINE_HEIGHT,
+                                overviewRulerBorder: false,
+                                wordWrap: 'on',
+                            }}
+                            onChange={handleChange}
+                            onMount={handleMount}
+                        />
                     )}
-
-                    {!diffEditMode && (
-                        <Grid item sm={12}>
-                            <Editor
-                                key={modelIdRef.current}
-                                width="100%"
-                                height={getHeight()}
-                                value={cell.parameters.code}
-                                language={EditorLanguages[cell.parameters.type]}
-                                options={{
-                                    lineNumbers: 'on',
-                                    readOnly: false,
-                                    minimap: { enabled: false },
-                                    automaticLayout: true,
-                                    scrollBeyondLastLine: false,
-                                    lineHeight: EditorLineHeight,
-                                    overviewRulerBorder: false,
-                                    wordWrap: 'on',
-                                }}
-                                onChange={handleChange}
-                                onMount={handleMount}
-                            />
-                        </Grid>
-                    )}
-                </Grid>
-            </StyledContent>
-        </>
+                </StyledContainer>
+            </Stack>
+        </StyledContent>
     );
 };

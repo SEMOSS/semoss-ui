@@ -2,6 +2,15 @@ import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
 import { CellState } from './cell.state';
 import { QueryStateConfig } from './query.state';
+
+export type SerializedState = {
+    /** Queries rendered in the insight */
+    queries: Record<string, QueryStateConfig>;
+
+    /** Blocks rendered in the insight */
+    blocks: Record<string, Block>;
+};
+
 /**
  * Block
  */
@@ -179,45 +188,10 @@ export interface CellDef<W extends string = string> {
 }
 
 /**
- * Cell configuration
- */
-export interface Cell<D extends CellDef = CellDef> {
-    /** Unique widget name */
-    widget: D['widget'];
-
-    /** Parameters associated with the cell */
-    parameters: D['parameters'];
-
-    /** View associated with the cell */
-    view: {
-        /** Title view of the cell */
-        title: string | CellComponent<D>;
-
-        /** Input view of the cell */
-        input: CellComponent<D>;
-
-        /** Output view of the cell */
-        output: CellComponent<D>;
-
-        /** Detail view of the cell */
-        details?: CellComponent<D>;
-
-        /** Run action button for the cell */
-        runActionButton?: CellComponent<D>;
-    };
-
-    /** Method that to convert the cell into pixel */
-    toPixel: (
-        /** Parameters associated with the cell */
-        parameters: D['parameters'],
-    ) => string;
-}
-
-/**
  * Cell Registry
  */
-export type CellTypeRegistry<D extends CellDef = CellDef> = D extends CellDef
-    ? Record<D['widget'], Cell<D>>
+export type CellRegistry<D extends CellDef = CellDef> = D extends CellDef
+    ? Record<D['widget'], CellConfig<D>>
     : never;
 /**
  * Component Information
@@ -230,12 +204,27 @@ export type CellComponent<D extends CellDef = CellDef> =
         isExpanded?: boolean;
     }>;
 
-export type SerializedState = {
-    /** Queries rendered in the insight */
-    queries: Record<string, QueryStateConfig>;
+/**
+ * Config Information
+ */
+export type CellConfig<D extends CellDef = CellDef> = {
+    /** Nmae of the Cell */
+    name: string;
 
-    /** Blocks rendered in the insight */
-    blocks: Record<string, Block>;
+    /** Unique widget name */
+    widget: D['widget'];
+
+    /** Component rendered in the view */
+    view: CellComponent<D>;
+
+    /** Parameters associated with the cell */
+    parameters: D['parameters'];
+
+    /** Method that to convert the cell into pixel */
+    toPixel: (
+        /** Parameters associated with the cell */
+        parameters: D['parameters'],
+    ) => string;
 };
 
 export type Template = {

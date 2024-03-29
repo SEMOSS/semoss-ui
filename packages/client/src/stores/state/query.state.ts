@@ -1,8 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
+import { setValueByPath } from '@/utility';
+
 import { CellState, CellStateConfig } from './cell.state';
 import { StateStore } from './state.store';
-import { setValueByPath } from '@/utility';
 
 export interface QueryStateStoreInterface {
     /** Id of the query */
@@ -92,8 +93,8 @@ export class QueryState {
      * Track if the query is executed
      */
     get isExecuted() {
-        for (const s of this._store.list) {
-            const cell = this._store.cells[s];
+        for (const c of this._store.list) {
+            const cell = this._store.cells[c];
             if (!cell.isExecuted) {
                 return false;
             }
@@ -110,8 +111,8 @@ export class QueryState {
             return true;
         }
 
-        for (const s of this._store.list) {
-            const cell = this._store.cells[s];
+        for (const c of this._store.list) {
+            const cell = this._store.cells[c];
             if (cell.isLoading) {
                 return true;
             }
@@ -142,8 +143,8 @@ export class QueryState {
      * Track if the query successfully ran
      */
     get isSuccessful() {
-        for (const s of this._store.list) {
-            const cell = this._store.cells[s];
+        for (const c of this._store.list) {
+            const cell = this._store.cells[c];
             if (!cell.isExecuted || cell.isError) {
                 return false;
             }
@@ -252,49 +253,23 @@ export class QueryState {
     _processRun = async () => {
         try {
             // check the loading state
-            if (this._store.isLoading) {
+            if (this._store.isLoading && this._store.mode !== 'automatic') {
+                // Temp Fix: Ignore Automatic queries
+                // Proposed fix, don't allow query to be ran automatically while in Notebook.  Do this in state store
                 throw new Error('Query is loading');
             }
 
             // start the loading screen
             this._store.isLoading = true;
 
-            // convert the cells to the raw pixel
-            const raw = this.toPixel();
+            // run each synchronously
+            for (const s of this._store.list) {
+                const cell = this._store.cells[s];
 
-            // fill the braces {{ }} to create the final pixel
-            const filled = this._state.flattenVariable(raw);
-
-            // run as a single pixel block;
-            const { pixelReturn } = await this._state._runPixel(filled);
-
-            const cellLen = this._store.list.length;
-            if (pixelReturn.length !== cellLen) {
-                throw new Error(
-                    'Error processing pixel. Cells do not equal pixelReturn',
-                );
+                // run the cell
+                await cell._processRun();
             }
-
-            runInAction(() => {
-                // update the existing cells with the pixel blocks
-                // let data = undefined;
-                for (let cellIdx = 0; cellIdx < cellLen; cellIdx++) {
-                    const cellId = this._store.list[cellIdx];
-
-                    // get the cell
-                    const cell = this._store.cells[cellId];
-
-                    const { operationType, output } = pixelReturn[cellIdx];
-
-                    // sync step information
-                    cell._sync(operationType, output, true);
-                }
-
-                // clear the error
-                this._store.error = null;
-            });
         } catch (e) {
-            // TODO - because we use _sync cells instead of _processRun on them individually
             // if a cell errors out of the runPixel and causes a break/catch here,
             // we're unable to get granular information about which cell caused the error.
             runInAction(() => {

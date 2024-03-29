@@ -2,9 +2,10 @@ import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
 import { setValueByPath } from '@/utility';
 
-import { Cell, CellDef } from './state.types';
+import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
+import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -12,9 +13,6 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 
     /** Track if the cell is loading */
     isLoading: boolean;
-
-    /** Track when the cell began */
-    executionStart: string | undefined;
 
     /** Track how long the cell took */
     executionDurationMilliseconds: number | undefined;
@@ -24,6 +22,9 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 
     /** Output associated with the cell */
     output: unknown | undefined;
+
+    /** Prints and logs */
+    messages: string[] | undefined;
 
     /** Widget to bind the cell to */
     widget: D['widget'];
@@ -52,10 +53,10 @@ export class CellState<D extends CellDef = CellDef> {
     private _store: CellStateStoreInterface<D> = {
         id: '',
         isLoading: false,
-        executionStart: undefined,
         executionDurationMilliseconds: undefined,
         operation: [],
         output: undefined,
+        messages: [],
         widget: '',
         parameters: {},
     };
@@ -96,11 +97,6 @@ export class CellState<D extends CellDef = CellDef> {
      */
     get isLoading() {
         return this._store.isLoading;
-    }
-
-    /** Track when the cell began */
-    get executionStart() {
-        return this._store.executionStart;
     }
 
     /** Track how long the cell took */
@@ -170,6 +166,13 @@ export class CellState<D extends CellDef = CellDef> {
     }
 
     /**
+     * Get the messages of the cell
+     */
+    get messages() {
+        return this._store.messages;
+    }
+
+    /**
      * Get the widget associated with the cell
      */
     get widget() {
@@ -177,11 +180,22 @@ export class CellState<D extends CellDef = CellDef> {
     }
 
     /**
-     * Get the cell type associated with the cell
+     * Get the component associated with the cell
      */
-    get cellType(): Cell | null {
-        if (this._state.cellTypeRegistry[this._store.widget]) {
-            return this._state.cellTypeRegistry[this._store.widget];
+    get component(): CellComponent | null {
+        if (this._state.cellRegistry[this._store.widget]) {
+            return this._state.cellRegistry[this._store.widget].view;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the config associated with the cell
+     */
+    get config(): CellConfig | null {
+        if (this._state.cellRegistry[this._store.widget]) {
+            return this._state.cellRegistry[this._store.widget];
         }
 
         return null;
@@ -216,11 +230,11 @@ export class CellState<D extends CellDef = CellDef> {
     toPixel(
         parameters: Record<string, unknown> = this._store.parameters,
     ): string {
-        const cellType = this.cellType;
+        const cellConfig = this.config;
 
         // use the toPixel from the cell
-        if (cellType) {
-            return cellType.toPixel(parameters);
+        if (cellConfig) {
+            return cellConfig.toPixel(parameters);
         }
 
         return Object.keys(parameters)
@@ -237,45 +251,11 @@ export class CellState<D extends CellDef = CellDef> {
      * Process State
      */
     /**
-     * Update the parameters of the cell
-     * @param operation - new operationType of the cell
-     * @param output - new output of the cell
-     */
-    _sync(
-        /** operation associated with the cell */
-        operation: string[],
-
-        /** Output associated with the cell */
-        output: unknown,
-
-        resetExecutionTracking?: boolean,
-    ) {
-        this._store.operation = operation;
-
-        // if we are dealing with a CODE_EXECUTION operation, modify output
-        if (operation.includes('CODE_EXECUTION') && output != undefined) {
-            this._store.output = Array.isArray(output)
-                ? output.length > 0
-                    ? output[0].output
-                    : null
-                : output;
-        } else {
-            this._store.output = output;
-        }
-
-        // syncing from query - we don't have granular information about execution
-        if (resetExecutionTracking) {
-            this._store.executionStart = undefined;
-            this._store.executionDurationMilliseconds = undefined;
-        }
-    }
-
-    /**
      * Process running of the cell
-     *
-     * @param parameters - Run the cell with these parameters. They will be saved if successful
      */
-    async _processRun(parameters: Partial<Record<string, unknown>> = {}) {
+    async _processRun() {
+        const start = new Date();
+
         try {
             // check the loading state
             if (this._store.isLoading) {
@@ -283,20 +263,7 @@ export class CellState<D extends CellDef = CellDef> {
             }
 
             // start the loading screen
-            runInAction(() => {
-                this._store.isLoading = true;
-            });
-
-            const now = new Date();
-            this._store.executionStart = `${now.toDateString()} ${now.toLocaleTimeString(
-                'en-US',
-            )}`;
-
-            // merge the options
-            const merged = {
-                ...this._store.parameters,
-                ...parameters,
-            };
+            this._store.isLoading = true;
 
             // convert the cells to the raw pixel
             const raw = this.toPixel();
@@ -304,33 +271,102 @@ export class CellState<D extends CellDef = CellDef> {
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenVariable(raw);
 
-            // run the pixel
-            const { pixelReturn } = await this._state._runPixel(filled);
+            // clear the previous messages + operation + output
+            this._store.messages = [];
+            this._store.operation = [];
+            this._store.output = undefined;
 
-            if (pixelReturn.length !== 1) {
-                throw new Error('Unexpected number of pixel statements');
+            // start polling
+            const { jobId } = await runPixelAsync(
+                filled,
+                this._state.insightId,
+            );
+
+            // Set up polling in order to get full stdout
+            let isPolling = true;
+            while (isPolling) {
+                try {
+                    // get the reponse from the job id
+                    const { messages, status } = await pixelConsole(jobId);
+
+                    // add the new messages
+                    runInAction(() => {
+                        messages.forEach((mess) => {
+                            this._store.messages.push(mess);
+                        });
+                    });
+
+                    // Currently console does not get pass STREAMING
+                    if (status === 'Complete') {
+                        isPolling = false;
+                    } else if (status === 'Streaming') {
+                        isPolling = false;
+                    } else {
+                        // poll
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 2000),
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error during polling:', error.message);
+
+                    // turn it off
+                    isPolling = false;
+                }
             }
 
-            // assume there is 1 pixelReturn + cell
-            const { output, operationType } = pixelReturn[0];
+            const { errors, results } = await pixelResult(jobId);
+            if (errors.length > 0) {
+                throw new Error(errors.join(''));
+            }
+
+            const last = results[results.length - 1];
+
             runInAction(() => {
-                // update the parameters
-                if (operationType.indexOf('ERROR') > -1) {
-                    this._store.parameters = merged;
+                // set the output per operation
+                let output: unknown;
+                let opType: string[] = last.opType;
+                if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
+                    output = last.value;
+                } else if (last.pixelType === 'FORMATTED_DATA_SET') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'CODE') {
+                    output = last.value[0].value[0];
+                } else if (last.pixelType === 'ERROR') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'CONST_STRING') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'INVALID_SYNTAX') {
+                    output = last.value[0];
+                } else if (last.pixelType === 'FRAME') {
+                    output = last.value[0];
+                    // Currently gives us 2 operations with a single output, do we want operation do determine if we show multiple outputs
+                    opType = [opType[0]];
+                } else {
+                    output = last.value;
                 }
 
-                // any previous errors will be cleared on operation type sync
-                this._sync(operationType, output);
+                // store the operation and output
+                this._store.operation = opType;
+
+                // save the last output
+                this._store.output = output;
             });
         } catch (e) {
-            // catch and set errors
-            this._sync(['ERROR'], e.message);
-        } finally {
-            const end = new Date();
-            const start = new Date(this._store.executionStart);
             runInAction(() => {
+                // store the operation and output
+                this._store.operation = ['ERROR'];
+
+                // save the last output
+                this._store.output = e.message;
+            });
+        } finally {
+            runInAction(() => {
+                const end = new Date();
+
                 this._store.executionDurationMilliseconds =
                     end.getTime() - start.getTime();
+
                 // stop the loading screen
                 this._store.isLoading = false;
             });
@@ -365,6 +401,7 @@ export class CellState<D extends CellDef = CellDef> {
             isSuccessful: this.isSuccessful,
             error: this.error,
             output: this.output,
+            messages: this.messages,
             operation: this.operation,
         };
     }
