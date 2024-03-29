@@ -239,7 +239,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         <StyledPublishedByContainer>
                             <StyledPersonIcon />
                             <StyledPublishedByLabel variant={'body2'}>
-                                test123 Published by:{' '}
+                                Published by:{' '}
                                 {app.project_created_by || <>N/A</>}
                             </StyledPublishedByLabel>
                         </StyledPublishedByContainer>
