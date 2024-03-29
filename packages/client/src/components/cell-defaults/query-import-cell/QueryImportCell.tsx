@@ -198,11 +198,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                 },
             });
 
-            /**
-             * ISSUE: HAPPENS ON OLD VERSION, BOTH THEMES HAVE TO BE APPLIED
-             * CODE CELL AND QUERY_CELL
-             * https://github.com/Microsoft/monaco-editor/issues/338
-             */
             monaco.editor.defineTheme('custom-theme', {
                 base: 'vs',
                 inherit: false,

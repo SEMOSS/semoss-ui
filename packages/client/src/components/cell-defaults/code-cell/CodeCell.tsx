@@ -1,45 +1,18 @@
-import { useRef, useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import { editor } from 'monaco-editor';
+import { useMemo, useRef, useState } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
-import { StyledSelect, StyledSelectItem } from '../shared';
-import {
-    Autocomplete,
-    styled,
-    Button,
-    Menu,
-    MenuProps,
-    List,
-    Stack,
-    Select,
-} from '@semoss/ui';
+import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
 import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
-
+import { CellDef } from '@/stores';
 import { runPixel } from '@/api';
-import {
-    ActionMessages,
-    Block,
-    CellComponent,
-    QueryState,
-    CellDef,
-} from '@/stores';
+import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks, useLLM } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
+import { StyledSelect, StyledSelectItem } from '../shared';
 
 import { PythonIcon, RIcon } from './icons';
-
-export interface CodeCellDef extends CellDef<'code'> {
-    widget: 'code';
-    parameters: {
-        /** Type of code in the cell */
-        type: 'r' | 'py' | 'pixel';
-
-        /** Code rendered in the cell */
-        code: string;
-    };
-}
+import { editor } from 'monaco-editor';
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -65,6 +38,17 @@ const EDITOR_TYPE = {
     },
 } as const;
 
+export interface CodeCellDef extends CellDef<'code'> {
+    widget: 'code';
+    parameters: {
+        /** Type of code in the cell */
+        type: 'r' | 'py' | 'pixel';
+
+        /** Code rendered in the cell */
+        code: string;
+    };
+}
+
 // best documentation on component versions of monaco editor and diffeditor
 // https://www.npmjs.com/package/@monaco-editor/react
 const StyledContent = styled('div', {
@@ -75,20 +59,29 @@ const StyledContent = styled('div', {
     pointerEvents: disabled ? 'none' : 'unset',
 }));
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    // padding: theme.spacing(0.5),
-}));
+const StyledContainer = styled('div')(({ theme }) => ({}));
 
 // track completion providers outside of render context
 let completionItemProviders = {};
+const EditorLanguages = {
+    py: 'python',
+    pixel: 'pixel',
+    r: 'r',
+};
 
+const EditorLineHeight = 19;
 // TODO:: Refactor height to account for Layout
-export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
+export const CodeCell: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
+    const monacoRef = useRef(null);
+    const selectionRef = useRef(null);
+    const LLMReturnRef = useRef('');
+
     const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
+    const [editorHeight, setEditorHeight] = useState<number>(null);
 
     const [LLMLoading, setLLMLoading] = useState(false);
     const [diffEditMode, setDiffEditMode] = useState(false);
@@ -98,6 +91,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const [newContentDiffEdit, setNewContentDiffEdit] = useState('');
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
+    const [count, setCount] = useState(0);
     const { modelId } = useLLM();
 
     /**
@@ -184,58 +178,20 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         });
     };
 
-    /**
-     * Handle mounting of the editor
-     *
-     * @param editor - editor that mounted
-     * @param monaco - monaco instance
-     */
-    const handleEditorMount = (
-        editor: editor.IStandaloneCodeEditor,
-        monaco: Monaco,
-    ) => {
+    const handleMount = (editor, monaco) => {
         // if diffedit code has been rejected set to old editor content
         if (isLLMRejected) {
             editor.getModel().setValue(oldContentDiffEdit);
             setIsLLMRejected(false);
         }
 
+        // first time you set the height based on content Height
         editorRef.current = editor;
-
-        // add on change
-        let ignoreResize = false;
-        editor.onDidContentSizeChange(() => {
-            try {
-                // set the ignoreResize flag
-                if (ignoreResize) {
-                    return;
-                }
-                ignoreResize = true;
-
-                resizeEditor();
-            } finally {
-                ignoreResize = false;
-            }
-        });
-
-        /**
-         * ISSUE: HAPPENS ON OLD VERSION, BOTH THEMES HAVE TO BE APPLIED
-         * CODE CELL AND QUERY_CELL
-         * https://github.com/Microsoft/monaco-editor/issues/338
-         */
-        monaco.editor.defineTheme('custom-theme', {
-            base: 'vs',
-            inherit: false,
-            rules: [],
-            colors: {
-                'editor.background': '#FAFAFA', // Background color
-                // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
-            },
-        });
-
-        monaco.editor.setTheme('custom-theme');
-
+        monacoRef.current = monaco;
+        const contentHeight = editor.getContentHeight();
+        setEditorHeight(contentHeight);
         // update the action
+
         editor.addAction({
             contextMenuGroupId: '1_modification',
             contextMenuOrder: 2,
@@ -292,15 +248,17 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
             run: async (editor) => {
                 const selection = editor.getSelection();
+                selectionRef.current = selection;
                 const selectedText = editor
                     .getModel()
                     .getValueInRange(selection);
 
                 const LLMReturnText = await promptLLM(
-                    `Create a ${
-                        EDITOR_TYPE[cell.parameters.type].name
+                    `Create code for a .${
+                        EditorLanguages[cell.parameters.type]
                     } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
                 );
+                LLMReturnRef.current = LLMReturnText;
 
                 setOldContentDiffEdit(editor.getModel().getValue());
 
@@ -403,125 +361,116 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             return suggestions;
         };
 
+        monaco.editor.defineTheme('custom-theme', {
+            base: 'vs',
+            inherit: false,
+            rules: [],
+            colors: {
+                'editor.background': '#FAFAFA', // Background color
+                // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
+            },
+        });
+
+        monaco.editor.setTheme('custom-theme');
+
         // register custom pixel language
         monaco.languages.register({ id: 'pixel' });
 
         // add suggestions for each language
-        Object.values(EDITOR_TYPE).forEach((language) => {
+        Object.values(EditorLanguages).forEach((language) => {
             // if suggestion already exist, dispose and re-add
             // this may be superfluous at times but we re-add instead of setting up suggestions once
             // so that we are pulling more real-time values off of the blocks/queries
-            if (completionItemProviders[language.name]) {
-                completionItemProviders[language.name].dispose();
+            if (completionItemProviders[language]) {
+                completionItemProviders[language].dispose();
             }
             completionItemProviders = {
                 ...completionItemProviders,
-                [language.name]:
-                    monaco.languages.registerCompletionItemProvider(
-                        language.name,
-                        {
-                            provideCompletionItems: (model, position) => {
-                                const word =
-                                    model.getWordUntilPosition(position);
-                                // getWordUntilPosition doesn't track when words are led by special characters
-                                // we need to chack for wrapping curly brackets manually to know what to replace
+                [language]: monaco.languages.registerCompletionItemProvider(
+                    language,
+                    {
+                        provideCompletionItems: (model, position) => {
+                            const word = model.getWordUntilPosition(position);
+                            // getWordUntilPosition doesn't track when words are led by special characters
+                            // we need to chack for wrapping curly brackets manually to know what to replace
 
-                                // word is not empty, completion was triggered by a non-special character
-                                if (word.word !== '') {
-                                    // return empty suggestions to trigger built in typeahead
-                                    return {
-                                        suggestions: [],
-                                    };
-                                }
-
-                                // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-                                const specialCharacterStartRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.startColumn - 2,
-                                    endColumn: word.startColumn,
-                                };
-                                const preceedingTwoCharacters =
-                                    model.getValueInRange(
-                                        specialCharacterStartRange,
-                                    );
-                                const replaceRangeStartBuffer =
-                                    preceedingTwoCharacters === '{{' ? 2 : 1;
-                                // python editor will automatically add closed bracket when you type a start one
-                                // need to replace the closed brackets appropriately
-                                const specialCharacterEndRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.endColumn,
-                                    endColumn: word.endColumn + 2,
-                                };
-                                const followingTwoCharacters =
-                                    model.getValueInRange(
-                                        specialCharacterEndRange,
-                                    );
-                                const replaceRangeEndBuffer =
-                                    followingTwoCharacters === '}}'
-                                        ? 2
-                                        : followingTwoCharacters == '} ' ||
-                                          followingTwoCharacters == '}'
-                                        ? 1
-                                        : 0;
-
-                                // compose range that we want to replace with the suggestion
-                                const replaceRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn:
-                                        word.startColumn -
-                                        replaceRangeStartBuffer,
-                                    endColumn:
-                                        word.endColumn + replaceRangeEndBuffer,
-                                };
+                            // word is not empty, completion was triggered by a non-special character
+                            if (word.word !== '') {
+                                // return empty suggestions to trigger built in typeahead
                                 return {
-                                    suggestions:
-                                        generateSuggestions(replaceRange),
+                                    suggestions: [],
                                 };
-                            },
-                            triggerCharacters: ['{'],
+                            }
+
+                            // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+                            const specialCharacterStartRange = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn: word.startColumn - 2,
+                                endColumn: word.startColumn,
+                            };
+                            const preceedingTwoCharacters =
+                                model.getValueInRange(
+                                    specialCharacterStartRange,
+                                );
+                            const replaceRangeStartBuffer =
+                                preceedingTwoCharacters === '{{' ? 2 : 1;
+                            // python editor will automatically add closed bracket when you type a start one
+                            // need to replace the closed brackets appropriately
+                            const specialCharacterEndRange = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn: word.endColumn,
+                                endColumn: word.endColumn + 2,
+                            };
+                            const followingTwoCharacters =
+                                model.getValueInRange(specialCharacterEndRange);
+                            const replaceRangeEndBuffer =
+                                followingTwoCharacters === '}}'
+                                    ? 2
+                                    : followingTwoCharacters == '} ' ||
+                                      followingTwoCharacters == '}'
+                                    ? 1
+                                    : 0;
+
+                            // compose range that we want to replace with the suggestion
+                            const replaceRange = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn:
+                                    word.startColumn - replaceRangeStartBuffer,
+                                endColumn:
+                                    word.endColumn + replaceRangeEndBuffer,
+                            };
+                            return {
+                                suggestions: generateSuggestions(replaceRange),
+                            };
                         },
-                    ),
+                        triggerCharacters: ['{'],
+                    },
+                ),
             };
         });
 
-        // resize the editor
-        resizeEditor();
+        const lines = editor.getModel().getLineCount();
+        const lineContentHeight = lines * EditorLineHeight;
+        const singleLineNoOverflow =
+            lines === 1 && lineContentHeight == editor.getContentHeight();
+        setEditorHeight(
+            Math.max(
+                (singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
+                lineContentHeight,
+            ),
+        );
     };
 
-    /**
-     * Resize the editor
-     */
-    const resizeEditor = () => {
-        // set the initial height
-        let height = 0;
-
-        // if expanded scale to lines, but do not go over the max height
-        if (isExpanded) {
-            height = Math.min(
-                editorRef.current.getContentHeight(),
-                EDITOR_MAX_HEIGHT,
-            );
-        }
-
-        // add the trailing line
-        height += EDITOR_LINE_HEIGHT;
-
-        editorRef.current.layout({
-            width: editorRef.current.getContainerDomNode().clientWidth,
-            height: height,
-        });
-    };
-
-    /**
-     * Handle changes in the editor
-     * @param newValue - newValue
-     * @returns
-     */
-    const handleEditorChange = (newValue: string) => {
+    const handleChange = (newValue: string) => {
+        // set editor height to content height
+        // set max height to equivalent of 25 lines
+        const maxHeight = 25 * EditorLineHeight;
+        setEditorHeight(
+            Math.min(editorRef.current.getContentHeight(), maxHeight),
+        );
         if (cell.isLoading) {
             return;
         }
@@ -546,6 +495,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         setDiffEditMode(false);
     };
 
+    const getHeight = () => {
+        return isExpanded ? editorHeight : EditorLineHeight;
+    };
+
     return (
         <StyledContent disabled={!isExpanded}>
             {LLMLoading && (
@@ -557,7 +510,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     <Stack direction="row">
                         <StyledSelect
                             size={'small'}
-                            disabled={cell.isLoading}
                             title={'Select Language'}
                             value={EDITOR_TYPE[cell.parameters.type].value}
                             SelectProps={{
@@ -574,7 +526,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     EDITOR_TYPE[cell.parameters.type].value
                                 ) {
                                     console.log(value);
-
                                     state.dispatch({
                                         message: ActionMessages.UPDATE_CELL,
                                         payload: {
@@ -584,6 +535,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                             value: value,
                                         },
                                     });
+
+                                    setCount(count + 1);
                                 }
                             }}
                         >
@@ -608,11 +561,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 <StyledContainer>
                     {!isExpanded ? (
                         <Editor
-                            theme={'custom-theme'}
-                            value={cell.parameters.code}
+                            width="100%"
+                            height={getHeight()}
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
+                            value={cell.parameters.code}
                             options={{
                                 lineNumbers: 'on',
                                 readOnly: false,
@@ -623,13 +577,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
                             }}
-                            onChange={handleEditorChange}
-                            onMount={handleEditorMount}
+                            onChange={handleChange}
+                            onMount={handleMount}
                         />
                     ) : diffEditMode ? (
                         <>
                             <DiffEditor
-                                theme={'custom-theme'}
                                 original={oldContentDiffEdit}
                                 modified={newContentDiffEdit}
                                 language={
@@ -674,12 +627,14 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                         </>
                     ) : (
                         <Editor
-                            // theme={'custom-theme'}
-                            value={cell.parameters.code}
+                            width="100%"
+                            height={getHeight()}
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
+                            value={cell.parameters.code}
                             options={{
+                                lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
@@ -687,17 +642,13 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
-                                lineNumbers: 'on',
-                                // lineNumbers: function (lineNumber) {
-                                //     return `<span style="width:'auto'">${lineNumber}</span>`;
-                                // },
                             }}
-                            onChange={handleEditorChange}
-                            onMount={handleEditorMount}
+                            onChange={handleChange}
+                            onMount={handleMount}
                         />
                     )}
                 </StyledContainer>
             </Stack>
         </StyledContent>
     );
-});
+};
