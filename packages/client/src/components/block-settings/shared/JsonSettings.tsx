@@ -46,7 +46,7 @@ export const JsonSettings = observer(
                     return v;
                 }
 
-                return JSON.stringify(v);
+                return JSON.stringify(v, null, 2);
             });
         }, [data, path]).get();
 
@@ -70,8 +70,19 @@ export const JsonSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    // try to parse object, otherwise set string
+                    try {
+                        const specJson = JSON.parse(value);
+                        setData(
+                            path,
+                            specJson as PathValue<D['data'], typeof path>,
+                        );
+                    } catch (e) {
+                        setData(
+                            path,
+                            value as PathValue<D['data'], typeof path>,
+                        );
+                    }
                 } catch (e) {
                     console.log(e);
                 }
@@ -214,7 +225,7 @@ export const JsonSettings = observer(
                         suggestions: generateSuggestions(replaceRange),
                     };
                 },
-                triggerCharacters: ['{'],
+                triggerCharacters: ['"{'],
             });
         };
 
