@@ -91,17 +91,18 @@ const TitleSectionImg = styled('img')({
     borderRadius: '0.75rem',
 });
 
-const TitleSectionAccess = styled('div')({
-    alignItems: 'center',
-    color: 'rgb(0, 0, 0, 0.54)',
-    display: 'flex',
-    gap: '0.25rem',
-});
-
-const TitleSectionText = styled('div')({
+const TitleSectionBodyWrapper = styled('div')({
     display: 'flex',
     flexDirection: 'column',
+    gap: '0.5rem',
     justifyContent: 'center',
+});
+
+const TitleSectionBody = styled(Typography)({
+    alignItems: 'center',
+    color: 'rgb(0, 0, 0, 0.6)',
+    display: 'flex',
+    gap: '0.25rem',
 });
 
 const DepsHeadingWrapper = styled('div')({
@@ -266,23 +267,22 @@ export function AppDetailPage() {
                                 src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
                                 alt="App Image"
                             />
-                            <TitleSectionText>
+                            <TitleSectionBodyWrapper>
                                 <SectionHeading variant="h1">
                                     {appInfoState?.project_name}
                                 </SectionHeading>
-                                <Typography variant="body1">
+                                {permissionState === 'OWNER' ? (
+                                    <TitleSectionBody variant="body1">
+                                        <HdrAutoIcon />
+                                        Author Access
+                                    </TitleSectionBody>
+                                ) : null}
+                                <TitleSectionBody variant="body1">
                                     {appInfoState?.project_description
                                         ? appInfoState?.project_description
                                         : 'No description available'}
-                                </Typography>
-                                {permissionState === 'OWNER' ? (
-                                    <TitleSectionAccess>
-                                        <HdrAutoIcon />
-                                        Author Access
-                                    </TitleSectionAccess>
-                                ) : null}
-                                {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
-                            </TitleSectionText>
+                                </TitleSectionBody>
+                            </TitleSectionBodyWrapper>
                         </TitleSection>
 
                         <section ref={mainUsesRef}>
