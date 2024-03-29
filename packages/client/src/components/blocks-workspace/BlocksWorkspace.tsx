@@ -4,7 +4,7 @@ import { useNotification, styled, Typography, Stack } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import { SerializedState, StateStore, WorkspaceStore } from '@/stores';
-import { DefaultCellTypes } from '@/components/cell-defaults';
+import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
 import { Notebook } from '@/components/notebook';
@@ -78,7 +78,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     mode: 'static',
                     insightId: insightId,
                     state: output,
-                    cellTypeRegistry: DefaultCellTypes,
+                    cellRegistry: DefaultCells,
                 });
 
                 // set it

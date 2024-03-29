@@ -7,11 +7,12 @@ import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
 import { NotebookQueryModeButton } from './NotebookQueryModeButton';
 
-const StyledSheet = styled('div')(() => ({
+const StyledSheet = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     width: '100%',
+    backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -28,7 +29,6 @@ const StyledCell = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
-    paddingBottom: theme.spacing(5),
 }));
 
 const StyledContainedButton = styled(Button)(() => ({

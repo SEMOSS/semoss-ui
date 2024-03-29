@@ -1,6 +1,5 @@
 import { makeAutoObservable, reaction, toJS } from 'mobx';
 
-import { runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -13,7 +12,7 @@ import {
 import {
     Block,
     BlockJSON,
-    CellTypeRegistry,
+    CellRegistry,
     ListenerActions,
     SerializedState,
 } from './state.types';
@@ -34,7 +33,7 @@ interface StateStoreInterface {
     blocks: Record<string, Block>;
 
     /** Cells registered to the insight */
-    cellTypeRegistry: CellTypeRegistry;
+    cellRegistry: CellRegistry;
 }
 
 export class StateStoreConfig {
@@ -48,7 +47,7 @@ export class StateStoreConfig {
     state: SerializedState;
 
     /** Cells registered to the insight */
-    cellTypeRegistry: CellTypeRegistry;
+    cellRegistry: CellRegistry;
 }
 
 /**
@@ -60,7 +59,7 @@ export class StateStore {
         insightId: '',
         queries: {},
         blocks: {},
-        cellTypeRegistry: {},
+        cellRegistry: {},
     };
 
     /**
@@ -83,7 +82,7 @@ export class StateStore {
         this._store.insightId = config.insightId;
 
         // register the cells
-        this._store.cellTypeRegistry = config.cellTypeRegistry || {};
+        this._store.cellRegistry = config.cellRegistry || {};
 
         // make it observable
         makeAutoObservable(this);
@@ -115,6 +114,7 @@ export class StateStore {
                     }
 
                     // ignore if not automatic
+                    // PROBLEM: PK brought this up: ONLY WHILE IN NOTEBOOK, editting queries it may be best to have user manually run queries
                     if (q.mode !== 'automatic') {
                         continue;
                     }
@@ -168,8 +168,8 @@ export class StateStore {
      * Get the cell type registry
      * @returns the cell type registry
      */
-    get cellTypeRegistry() {
-        return this._store.cellTypeRegistry;
+    get cellRegistry() {
+        return this._store.cellRegistry;
     }
 
     /**
@@ -1066,13 +1066,4 @@ export class StateStore {
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
-
-    /**
-     * Run a pixel string
-     *
-     * @param pixel - pixel to execute
-     */
-    async _runPixel<O extends unknown[] | []>(pixel: string) {
-        return await runPixel<O>(pixel, this._store.insightId);
-    }
 }

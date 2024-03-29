@@ -1,2 +1,2 @@
 export * from './config';
-export * from './QueryImportCellInput';
+export * from './QueryImportCell';

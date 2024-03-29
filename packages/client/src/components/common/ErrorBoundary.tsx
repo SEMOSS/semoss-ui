@@ -1,10 +1,12 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { Stack, Typography, styled } from '@semoss/ui';
+import { Typography, styled } from '@semoss/ui';
 import Error from '@/assets/img/Error.svg';
 
-const StyledContainer = styled(Stack)(() => ({
-    width: '100vw',
-    height: '100vh',
+const StyledContainer = styled('div')(() => ({
+    position: 'fixed',
+    inset: '0',
+    display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
 }));
@@ -40,8 +42,8 @@ export class ErrorBoundary extends Component<Props, State> {
                     <img src={Error} height="50%" />
                     <Typography variant="h6">Something went wrong!</Typography>
                     <Typography variant="body1">
-                        We're working hard to fix it. If the issue persists,
-                        please reach out and let us know.
+                        We&apos;re working hard to fix it. If the issue
+                        persists, please reach out and let us know.
                     </Typography>
                 </StyledContainer>
             );
