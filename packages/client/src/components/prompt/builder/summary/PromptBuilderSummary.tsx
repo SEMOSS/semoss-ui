@@ -14,6 +14,11 @@ const StyledListItem = styled(List.Item)(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
+const StyledProgressSubtitle = styled(Typography)(({ theme }) => ({
+    color: theme.palette.success.main,
+    fontWeight: 'bold',
+}));
+
 const StyledStepListItem = styled(StyledListItem, {
     shouldForwardProp: (prop) =>
         prop !== 'disabled' && prop !== 'isStepComplete' && prop !== 'isActive',
@@ -100,13 +105,9 @@ export const PromptBuilderSummary = (props: {
                 <List.ItemText
                     disableTypography
                     primary={
-                        <Typography
-                            variant="subtitle2"
-                            color="success"
-                            sx={{ fontWeight: 'bold' }}
-                        >
+                        <StyledProgressSubtitle variant="subtitle2">
                             Overall Completion
-                        </Typography>
+                        </StyledProgressSubtitle>
                     }
                     secondary={
                         <PromptBuilderSummaryProgress
