@@ -131,9 +131,11 @@ export const PromptBuilderInputTypeStep = (props: {
         props.setBuilderValue('inputTypes', inputTypesDup);
     };
 
-    if (Object.keys(inputTypes).length !== inputTokens.length) {
-        return <></>;
-    }
+    // doesn't seem be necessary since the step is skipped if there are no inputs
+    // needed to be removed so going back to step 2 wouldn't crash the app
+    // if (Object.keys(inputTypes).length !== inputTokens.length) {
+    //     return <></>;
+    // }
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -144,12 +146,14 @@ export const PromptBuilderInputTypeStep = (props: {
                     inputs.
                 </Typography>
             </StyledBox>
+            make reset button / function for previous page
             <StyledStack spacing={3}>
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection
                         inputToken={inputToken}
-                        inputType={inputTypes[inputToken.index].type}
-                        inputTypeMeta={inputTypes[inputToken.index].meta}
+                        // optional chaining prevents crash after step 2 changes
+                        inputType={inputTypes[inputToken.index]?.type}
+                        inputTypeMeta={inputTypes[inputToken.index]?.meta}
                         key={inputToken.index}
                         cfgLibraryVectorDbs={cfgLibraryVectorDbs}
                         cfgLibraryDatabases={cfgLibraryDatabases}
