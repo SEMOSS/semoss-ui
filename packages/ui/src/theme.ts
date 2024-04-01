@@ -471,6 +471,8 @@ export const lightTheme: CustomThemeOptions = {
     },
 };
 
+// darkTheme is not currently in use or up to date with the new Color UI system from design.
+// Once the ability to use a dark theme is added, we will need to get the colors updated.
 export const darkTheme: CustomThemeOptions = {
     palette: {
         mode: "dark",
