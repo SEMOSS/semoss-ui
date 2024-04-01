@@ -1,12 +1,13 @@
 import { Cell, CellComponent } from '@/stores';
 import {
     TransformationDef,
-    TransformationCellTitle,
+    TransformationMultiCellDef,
+    TransformationMultiCellTitle,
     TransformationCellDef,
     TransformationCellOutput,
     Transformation,
     TransformationTargetCell,
-    TransformationCellRunActionButton,
+    TransformationMultiCellRunActionButton,
     ColumnInfo,
     comparator,
     joinType,
@@ -24,7 +25,7 @@ export interface JoinTransformationDef extends TransformationDef<'join'> {
 }
 
 export interface JoinTransformationCellDef
-    extends TransformationCellDef<'join-transformation'> {
+    extends TransformationMultiCellDef<'join-transformation'> {
     widget: 'join-transformation';
     parameters: {
         /**
@@ -35,7 +36,12 @@ export interface JoinTransformationCellDef
         /**
          * ID of the query cell that defines the frame we want to transform
          */
-        targetCell: TransformationTargetCell;
+        fromTargetCell: TransformationTargetCell;
+
+        /**
+         * ID of the query cell that defines the frame we want to transform
+         */
+        toTargetCell: TransformationTargetCell;
     };
 }
 
@@ -61,19 +67,23 @@ export const JoinTransformationCell: Cell<JoinTransformationCellDef> = {
                 compareOperation: '==',
             },
         },
-        targetCell: {
+        fromTargetCell: {
+            id: '',
+            frameVariableName: '',
+        },
+        toTargetCell: {
             id: '',
             frameVariableName: '',
         },
     },
     view: {
-        title: TransformationCellTitle as CellComponent<JoinTransformationCellDef>,
+        title: TransformationMultiCellTitle as CellComponent<JoinTransformationCellDef>,
         input: JoinTransformationCellInput,
-        output: TransformationCellOutput as CellComponent<JoinTransformationCellDef>,
+        output: null,
         runActionButton:
-            TransformationCellRunActionButton as CellComponent<JoinTransformationCellDef>,
+            TransformationMultiCellRunActionButton as CellComponent<JoinTransformationCellDef>,
     },
-    toPixel: ({ transformation, targetCell }) => {
-        return `Frame(${targetCell.frameVariableName}) | QueryAll()|Distinct(true) | Merge(joins=[(${transformation.parameters.fromNameColumn?.name}, ${transformation.parameters.joinType.code}, ${transformation.parameters.toNameColumn?.name}, ${transformation.parameters.compareOperation})], frame=[${targetCell.frameVariableName}]);`;
+    toPixel: ({ transformation, fromTargetCell, toTargetCell }) => {
+        return `Frame(${fromTargetCell.frameVariableName}) | QueryAll()|Distinct(true) | Merge(joins=[(${transformation.parameters.fromNameColumn?.name}, ${transformation.parameters.joinType.code}, ${transformation.parameters.toNameColumn?.name}, ${transformation.parameters.compareOperation})], frame=[${toTargetCell.frameVariableName}]);`;
     },
 };

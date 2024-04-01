@@ -16,6 +16,7 @@ import {
     joinTypes,
     comparators,
     joinType,
+    MultiCellColumnTransformationField,
 } from '../shared';
 import { JoinTransformationCellDef, JoinTransformationDef } from './config';
 import { QueryImportCellDef } from '../query-import-cell';
@@ -49,93 +50,20 @@ export const JoinTransformationCellInput: CellComponent<
         },
     ).get();
 
-    const targetCell: CellState<QueryImportCellDef> = computed(() => {
-        return cell.query.cells[
-            cell.parameters.targetCell.id
-        ] as CellState<QueryImportCellDef>;
-    }).get();
-
-    const doesFrameExist: boolean = computed(() => {
-        return !!targetCell && (targetCell.isExecuted || !!targetCell.output);
-    }).get();
-
-    const helpText = cell.parameters.targetCell.id
-        ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
-        : 'A Python or R target frame variable must be defined in order to apply a transformation.';
-    if (!doesFrameExist && cellTransformation.parameters.fromNameColumn) {
-        return (
-            <TransformationCellInput
-                isExpanded={isExpanded}
-                display={Transformations[cellTransformation.key].display}
-                Icon={Transformations[cellTransformation.key].icon}
-            >
-                <Stack width="100%" paddingY={0.75}>
-                    <Typography variant="caption">
-                        <em>{helpText}</em>
-                    </Typography>
-                </Stack>
-            </TransformationCellInput>
-        );
-    }
-    // Use this when we have more than one targetcell
-    // const isValidFrameTypeForTransformation = (frameType: string) => {
-    //     return frameType === 'PY' || frameType === 'R';
-    // };
-
-    // const availableFrameCells = computed(() => {
-    //     const currentCellIndex = cell.query.list.indexOf(cell.id);
-    //     return Object.values(cell.query.cells).filter((queryCell) => {
-    //         // ignore cells that occur after the current cell
-    //         if (cell.query.list.indexOf(queryCell.id) > currentCellIndex) {
-    //             return false;
-    //         }
-
-    //         // consider query import cells with PY or R frame types only
-    //         if (
-    //             queryCell.widget === 'query-import' &&
-    //             isValidFrameTypeForTransformation(
-    //                 queryCell.parameters.frameType as string,
-    //             )
-    //         ) {
-    //             return true;
-    //         }
-
-    //         return false;
-    //     });
+    // const targetCell: CellState<QueryImportCellDef> = computed(() => {
+    //     return cell.query.cells[
+    //         cell.parameters.targetCell.id
+    //     ] as CellState<QueryImportCellDef>;
     // }).get();
 
-    // const targetCells: CellState<QueryImportCellDef>[] = computed(() => {
-    //     return availableFrameCells.filter(
-    //         (item) => item.widget === 'query-import',
-    //     ) as CellState<QueryImportCellDef>[];
+    // const doesFrameExist: boolean = computed(() => {
+    //     return !!targetCell && (targetCell.isExecuted || !!targetCell.output);
     // }).get();
 
-    // const doFramesExist: boolean = computed(() => {
-    //     let count = 0;
-    //     for (const item of targetCells) {
-    //         if (!!item && (item.isExecuted || !!item.output)) {
-    //             count++;
-    //         }
-    //     }
-    //     return count >= 2;
-    // }).get();
-
-    // const doFramesExist: boolean = computed(() => {
-    //     let count = 0;
-    //     for (const item of targetCells) {
-    //         if (!!item && (item.isExecuted || !!item.output)) {
-    //             count++;
-    //         }
-    //     }
-    //     return count >= 2;
-    // }).get();
-
-    // const helpText =
-    //     availableFrameCells.length < 2
-    //         ? `Run at least two Query import Cells to define the target frame variables before applying a transformation.`
-    //         : 'At least two Python / R target frame variables must be defined in order to apply the join transformation.';
-
-    // if (!doFramesExist && cellTransformation.parameters.fromNameColumn) {
+    // const helpText = cell.parameters.targetCell.id
+    //     ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
+    //     : 'A Python or R target frame variable must be defined in order to apply a transformation.';
+    // if (!doesFrameExist && cellTransformation.parameters.fromNameColumn) {
     //     return (
     //         <TransformationCellInput
     //             isExpanded={isExpanded}
@@ -150,6 +78,79 @@ export const JoinTransformationCellInput: CellComponent<
     //         </TransformationCellInput>
     //     );
     // }
+    // Use this when we have more than one targetcell
+    const isValidFrameTypeForTransformation = (frameType: string) => {
+        return frameType === 'PY' || frameType === 'R';
+    };
+
+    const availableFrameCells = computed(() => {
+        const currentCellIndex = cell.query.list.indexOf(cell.id);
+        return Object.values(cell.query.cells).filter((queryCell) => {
+            // ignore cells that occur after the current cell
+            if (cell.query.list.indexOf(queryCell.id) > currentCellIndex) {
+                return false;
+            }
+
+            // consider query import cells with PY or R frame types only
+            if (
+                queryCell.widget === 'query-import' &&
+                isValidFrameTypeForTransformation(
+                    queryCell.parameters.frameType as string,
+                )
+            ) {
+                return true;
+            }
+
+            return false;
+        });
+    }).get();
+
+    const targetCells: CellState<QueryImportCellDef>[] = computed(() => {
+        return availableFrameCells.filter(
+            (item) => item.widget === 'query-import',
+        ) as CellState<QueryImportCellDef>[];
+    }).get();
+
+    // const doFramesExist: boolean = computed(() => {
+    //     let count = 0;
+    //     for (const item of targetCells) {
+    //         if (!!item && (item.isExecuted || !!item.output)) {
+    //             count++;
+    //         }
+    //     }
+    //     return count >= 2;
+    // }).get();
+
+    const doFramesExist: boolean = computed(() => {
+        let count = 0;
+        for (const item of targetCells) {
+            if (!!item && (item.isExecuted || !!item.output)) {
+                count++;
+            }
+        }
+        return count >= 2;
+    }).get();
+
+    const helpText =
+        availableFrameCells.length < 2
+            ? `Run at least two Query import Cells to define the target frame variables before applying a transformation.`
+            : 'At least two Python / R target frame variables must be defined in order to apply the join transformation.';
+
+    if (!doFramesExist && cellTransformation.parameters.fromNameColumn) {
+        return (
+            <TransformationCellInput
+                isExpanded={isExpanded}
+                display={Transformations[cellTransformation.key].display}
+                Icon={Transformations[cellTransformation.key].icon}
+            >
+                <Stack width="100%" paddingY={0.75}>
+                    <Typography variant="caption">
+                        <em>{helpText}</em>
+                    </Typography>
+                </Stack>
+            </TransformationCellInput>
+        );
+    }
 
     return (
         <TransformationCellInput
@@ -159,7 +160,7 @@ export const JoinTransformationCellInput: CellComponent<
         >
             <Stack spacing={2}>
                 <Typography variant="caption">
-                    {!doesFrameExist ? (
+                    {!doFramesExist ? (
                         <em>{helpText}</em>
                     ) : (
                         'Select columns from each database. Specify how you want to join the columns.'
@@ -171,9 +172,10 @@ export const JoinTransformationCellInput: CellComponent<
                         {' '}
                         From:{' '}
                     </StyledTitleTypography>
-                    <ColumnTransformationField
-                        disabled={!doesFrameExist}
+                    <MultiCellColumnTransformationField
+                        disabled={!doFramesExist}
                         cell={cell}
+                        cellTarget={cell.parameters.fromTargetCell}
                         selectedColumns={
                             cellTransformation.parameters.fromNameColumn ?? {
                                 name: '',
@@ -197,9 +199,10 @@ export const JoinTransformationCellInput: CellComponent<
                         {' '}
                         To:{' '}
                     </StyledTitleTypography>
-                    <ColumnTransformationField
-                        disabled={!doesFrameExist}
+                    <MultiCellColumnTransformationField
+                        disabled={!doFramesExist}
                         cell={cell}
+                        cellTarget={cell.parameters.toTargetCell}
                         selectedColumns={
                             cellTransformation.parameters.toNameColumn ?? {
                                 name: '',
@@ -224,7 +227,7 @@ export const JoinTransformationCellInput: CellComponent<
                         Type of Join:{' '}
                     </StyledTitleTypography>
                     <Autocomplete
-                        disabled={!doesFrameExist}
+                        disabled={!doFramesExist}
                         size="small"
                         value={cellTransformation.parameters.joinType}
                         fullWidth
@@ -262,7 +265,7 @@ export const JoinTransformationCellInput: CellComponent<
                         Comparator:{' '}
                     </StyledTitleTypography>
                     <Autocomplete
-                        disabled={!doesFrameExist}
+                        disabled={!doFramesExist}
                         size="small"
                         value={cellTransformation.parameters.compareOperation}
                         fullWidth
