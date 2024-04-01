@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import HdrAutoIcon from '@mui/icons-material/HdrAuto';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import HdrAutoIcon from '@mui/icons-material/HdrAuto';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import NoteAltIcon from '@mui/icons-material/NoteAlt';
 import ShareIcon from '@mui/icons-material/Share';
+// import { dividerClasses } from '@mui/material';
 import {
     Breadcrumbs,
     Button,
@@ -18,13 +21,12 @@ import {
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { Env } from '@/env';
 import { SettingsTiles } from '@/components/settings/SettingsTiles';
-import { SettingsContext } from '@/contexts';
 // import { AppSettings } from '@/components/app/AppSettings';
+import { SettingsContext } from '@/contexts';
+import { Env } from '@/env';
 import { usePixel, useRootStore } from '@/hooks';
 // import { MonolithStore } from '@/stores';
-// import { dividerClasses } from '@mui/material';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -148,9 +150,14 @@ export function AppDetailPage() {
 
     const { appId } = useParams();
     const { configStore, monolithStore } = useRootStore();
-
     const notification = useNotification();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        getPermission();
+        getAppInfo();
+        getDependencies();
+    }, []);
 
     async function getPermission() {
         const getUserProjectPermission =
@@ -191,11 +198,33 @@ export function AppDetailPage() {
         console.log('🚀 ~ setDependenciesQuery ~ response:', response);
     }
 
-    useEffect(() => {
-        getPermission();
-        getAppInfo();
-        getDependencies();
-    }, []);
+    function PermissionComponent(): JSX.Element {
+        switch (permissionState) {
+            case 'OWNER':
+                return (
+                    <>
+                        <HdrAutoIcon />
+                        Author Access
+                    </>
+                );
+            case 'EDITOR':
+                return (
+                    <>
+                        <NoteAltIcon />
+                        Editor Access
+                    </>
+                );
+            case 'DISCOVERABLE':
+                return (
+                    <>
+                        <AssignmentIcon />
+                        Read-Only Access
+                    </>
+                );
+            default:
+                return null;
+        }
+    }
 
     return (
         <OuterContainer>
@@ -271,12 +300,9 @@ export function AppDetailPage() {
                                 <SectionHeading variant="h1">
                                     {appInfoState?.project_name}
                                 </SectionHeading>
-                                {permissionState === 'OWNER' ? (
-                                    <TitleSectionBody variant="body1">
-                                        <HdrAutoIcon />
-                                        Author Access
-                                    </TitleSectionBody>
-                                ) : null}
+                                <TitleSectionBody variant="body1">
+                                    <PermissionComponent />
+                                </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
                                     {appInfoState?.project_description
                                         ? appInfoState?.project_description
@@ -289,17 +315,14 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
-                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
                         <section ref={tagsRef}>
                             <SectionHeading variant="h2">Tags</SectionHeading>
-                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
                         <section ref={videosRef}>
                             <SectionHeading variant="h2">Videos</SectionHeading>
-                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
                         <section ref={dependenciesRef}>
@@ -327,35 +350,32 @@ export function AppDetailPage() {
                                       <div key={nanoid()}>{dependency}</div>
                                   ))
                                 : 'This app has no dependencies. (Prompt to add dependencies.)'}
-                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
 
                         <section ref={appAccessRef}>
                             <SectionHeading variant="h2">
-                                App Access (from the `SettingsTiles` component)
-                                <SettingsContext.Provider
-                                    value={{
-                                        adminMode: false,
-                                    }}
-                                >
-                                    <SettingsTiles
-                                        mode={'app'}
-                                        name={'app'}
-                                        id={appId}
-                                        onDelete={() => {
-                                            navigate('/settings/app');
-                                        }}
-                                    />
-                                </SettingsContext.Provider>
+                                App Access
                             </SectionHeading>
-                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
+                            <SettingsContext.Provider
+                                value={{
+                                    adminMode: false,
+                                }}
+                            >
+                                <SettingsTiles
+                                    mode={'app'}
+                                    name={'app'}
+                                    id={appId}
+                                    onDelete={() => {
+                                        navigate('/settings/app');
+                                    }}
+                                />
+                            </SettingsContext.Provider>
                         </section>
 
                         <section ref={memberAccessRef}>
                             <SectionHeading variant="h2">
                                 Member Access
                             </SectionHeading>
-                            {/* <div>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel iste cumque porro facilis ea vero, est debitis beatae quis inventore, error officia ex magnam rerum at molestiae nobis excepturi numquam perferendis explicabo deleniti nisi consectetur illo tempore! Deleniti, quam optio inventore vitae ex provident consequuntur quo similique doloribus in reiciendis? Laborum quos saepe dignissimos dolorum voluptates officia, reiciendis excepturi corrupti maiores numquam provident nesciunt pariatur officiis, laboriosam labore quia quaerat. Fuga earum atque praesentium id molestias corporis illo iure quisquam, nam ipsum sint. Assumenda sapiente voluptatum ex autem unde fugiat ut optio rem maiores veritatis aliquid expedita illo esse molestias dolore dicta, officiis sunt reiciendis magni. Molestiae, voluptatum libero, dicta nam beatae est accusamus neque quae aspernatur dolore excepturi illo eaque minus quas. Unde, magnam rem voluptatum, natus delectus ducimus iusto sint quia minus sed possimus molestiae at, omnis cupiditate. Sint maxime cum esse voluptas libero eligendi praesentium similique reprehenderit necessitatibus sapiente ea iste laboriosam accusantium dolorem incidunt sequi consectetur tenetur, soluta in dignissimos deleniti? Quae perferendis, saepe exercitationem explicabo unde ducimus tempora quia at, consectetur aspernatur distinctio laborum, fugit veniam veritatis aliquam asperiores voluptatum nobis sapiente facilis. Est accusamus mollitia quis aut eveniet, aliquam quisquam quo ipsam dolorum. Nemo!</div> */}
                         </section>
                     </Sections>
                 </SidebarAndSectionsContainer>
