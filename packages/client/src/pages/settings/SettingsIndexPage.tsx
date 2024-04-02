@@ -23,6 +23,7 @@ import { Group } from '@/assets/img/Group';
 import { GroupRounded } from '@/assets/img/GroupRounded';
 import { Jobs } from '@/assets/img/Jobs';
 import { Link } from '@/assets/img/Link';
+import { MagnifyScan } from '@/assets/img/MagnifyScan';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { PaintRounded } from '@/assets/img/PaintRounded';
 import { PersonRounded } from '@/assets/img/PersonRounded';
@@ -100,6 +101,7 @@ const IconMapper = {
     Configuration: <Construction />,
     'Admin Query': <AdminPanel />,
     'External Connections': <Link />,
+    'Security Scanning Settings': <MagnifyScan />,
     Teams: <GroupRounded />,
     'Teams Management': <GroupRounded />,
     'Teams Permissions': <GroupRounded />,

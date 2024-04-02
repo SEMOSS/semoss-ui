@@ -5,6 +5,7 @@ import {
     mdiCog,
     mdiDatabase,
     mdiDatabaseSearch,
+    mdiMagnifyScan,
     mdiTabletCellphone,
     // mdiTextBoxMultipleOutline,
     mdiArchive,
@@ -183,5 +184,13 @@ export const SETTINGS_ROUTES: {
         icon: mdiDatabase,
         history: ['settings/'],
         admin: false,
+    },
+    {
+        title: 'Security Scanning Settings',
+        path: 'secscan',
+        description: 'View settings for security scanning.',
+        icon: mdiMagnifyScan,
+        history: ['settings/'],
+        admin: true,
     },
 ];

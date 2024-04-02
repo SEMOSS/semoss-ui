@@ -15,6 +15,7 @@ import { InsightSettingsPage } from './InsightSettingsPage';
 import { InsightSettingsDetailPage } from './InsightSettingsDetailPage';
 
 import { MemberSettingsPage } from './MemberSettingsPage';
+import { ScanSettingsPage } from './ScanSettingsPage';
 import { ConfigurationsPage } from './ConfigurationsPage';
 import { AdminQueryPage } from './AdminQueryPage';
 import { MyProfilePage } from './MyProfilePage';
@@ -31,6 +32,7 @@ const SETTINGS_COMPONETS = {
     'social-properties': ConfigurationsPage,
     'admin-query': AdminQueryPage,
     'my-profile': MyProfilePage,
+    secscan: ScanSettingsPage,
     jobs: JobsPage,
 
     // engine

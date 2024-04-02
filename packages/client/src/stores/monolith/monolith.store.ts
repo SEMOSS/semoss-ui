@@ -2097,4 +2097,40 @@ export class MonolithStore {
 
         return response.data;
     }
+
+    /**
+     * @name getScanningInfo
+     * @param admin - is admin user
+     * @returns dict with Scanning Info
+     */
+    async getScanningInfo(admin: boolean) {
+        let url = `${Env.MODULE}/api/auth/`;
+
+        if (admin) {
+            url += 'admin/';
+        } else {
+            return;
+        }
+
+        url += 'iap/getInfo';
+        // get the response
+        const response = await axios
+            .get<{
+                securityScanEnabled: boolean;
+                securityScanEnforced: boolean;
+                securityScanPromptURL: string;
+                securityScanOutputURL: string;
+                profileNames: string[];
+            }>(url)
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get Scanning Info');
+        }
+
+        return response.data;
+    }
 }
