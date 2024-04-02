@@ -1,4 +1,4 @@
-import React, { JSXElementConstructor, ReactElement } from "react";
+import React from "react";
 import {
     Tooltip as MuiTooltip,
     TooltipProps as MuiTooltipProps,
@@ -11,11 +11,6 @@ export interface TooltipProps extends MuiTooltipProps {
      * @default false
      */
     arrow?: boolean;
-
-    /**
-     * The content of the component.
-     */
-    children: ReactElement<string | JSXElementConstructor<React.ReactNode>>;
 
     /**
      * Makes a tooltip not interactive, i.e. it will close when the user hovers over the tooltip before the leaveDelay is expired.
@@ -43,17 +38,17 @@ export interface TooltipProps extends MuiTooltipProps {
     /**
      * Callback fired when the component requests to be closed.
      */
-    onClose?: (e: React.SyntheticEvent) => void;
+    onClose?: (e?: React.SyntheticEvent) => void;
 
     /**
      * Callback fired when the component requests to be Open.
      */
-    onOpen?: (e: React.SyntheticEvent) => void;
+    onOpen?: (e?: React.SyntheticEvent) => void;
 
     /**
      * if `true`, the component is shown.
      */
-    open: boolean;
+    open?: boolean;
 
     /**
      * tooltip placement.
