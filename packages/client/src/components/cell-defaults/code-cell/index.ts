@@ -1,2 +1,2 @@
 export * from './config';
-export * from './CodeCellInput';
+export * from './CodeCell';

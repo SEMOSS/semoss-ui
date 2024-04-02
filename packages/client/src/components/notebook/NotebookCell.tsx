@@ -1,4 +1,4 @@
-import { useState, createElement, useMemo, useEffect } from 'react';
+import { useEffect, useState, createElement, useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -12,6 +12,7 @@ import {
     useNotification,
     IconButton,
     Divider,
+    CustomShapeOptions,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -19,40 +20,107 @@ import {
     PlayCircle,
     CheckCircle,
     Error,
-    PendingOutlined,
+    Pending,
     KeyboardArrowRight,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { NotebookAddCellButton } from './NotebookAddCellButton';
+import { NotebookAddCell } from './NotebookAddCell';
+import { NotebookCellConsole } from './NotebookCellConsole';
+import { Operation } from './operations';
+import { Fade } from '@mui/material';
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+    paddingBottom: theme.spacing(2),
+}));
+
+const StyledRow = styled(Stack)(() => ({
+    position: 'relative',
+}));
+
+const StyledName = styled(Typography)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(-1.5),
+    left: theme.spacing(10.5),
+    paddingLeft: theme.spacing(0.5),
+    paddingRight: theme.spacing(0.5),
+    zIndex: 1,
+    color: theme.palette.text.disabled,
+    borderRadius: theme.shape.borderRadius,
+    background: theme.palette.background.paper,
+    overflow: 'hidden',
+}));
+
+const StyledCellActions = styled(Collapse)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(-2),
+    right: theme.spacing(2),
+    zIndex: 1,
+    borderRadius: theme.shape.borderRadius,
+    background: theme.palette.background.paper,
+}));
+
+const StyledStatusIconContainer = styled('div')(({ theme }) => ({
+    height: '100%',
+    width: '1.5em',
+    display: 'flex',
+    paddingTop: theme.spacing(2),
+}));
+
+const StyledCollapseStack = styled('div')(({ theme }) => ({
+    paddingTop: theme.spacing(2),
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'start',
+}));
+
+const StyledActionsCollapseStack = styled(StyledCollapseStack)(({ theme }) => ({
+    marginTop: '0px !important',
+}));
+
+const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
+    padding: 0,
+}));
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
-})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => ({
-    border: isCardCellSelected
-        ? `1px solid ${theme.palette.primary.main}`
-        : 'unset',
-    overflow: 'visible',
-    flexGrow: 1,
-    cursor: isCardCellSelected ? 'inherit' : 'pointer',
+})<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
+    const shape = theme.shape as CustomShapeOptions;
+
+    return {
+        overflow: 'hidden',
+        flexGrow: 1,
+        cursor: isCardCellSelected ? 'inherit' : 'pointer',
+        border: isCardCellSelected
+            ? `1px solid ${theme.palette.secondary.main}`
+            : 'unset',
+        borderRadius: shape.borderRadiusSm,
+        boxShadow: 'none',
+        '&:hover': {
+            boxShadow: 'none',
+        },
+    };
+});
+
+const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'start',
+    gap: theme.spacing(2),
+    margin: '0',
+    padding: theme.spacing(2),
+    backgroundColor: theme.palette.background.default,
 }));
 
-const StyledCardContent = styled(Card.Content, {
-    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
-})<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
-    margin: '0!important',
-    padding: '0!important',
-    pointerEvents: isCardCellSelected ? 'inherit' : 'none',
+const StyledCardInput = styled('div')(() => ({
+    width: '100%',
 }));
 
-const StyledCardActions = styled(Card.Actions, {
-    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
-})<{ isCardCellSelected: boolean }>(({ isCardCellSelected }) => ({
-    pointerEvents: isCardCellSelected ? 'inherit' : 'none',
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-    margin: `${theme.spacing(1)} 0`,
+const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
+    padding: theme.spacing(2),
+    margin: '0',
+    backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledButtonLabel = styled('div')(() => ({
@@ -65,50 +133,34 @@ const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
     border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledStatusChip = styled(Chip, {
-    shouldForwardProp: (prop) => prop !== 'status',
-})<{ status?: 'success' | 'error' | 'disabled' }>(({ theme, status }) => ({
-    backgroundColor: status
-        ? status === 'disabled'
-            ? theme.palette.grey[300]
-            : theme.palette[status].main
-        : 'unset',
-    color:
-        status && status !== 'disabled'
-            ? theme.palette.background.paper1
-            : 'unset',
-    '.MuiChip-avatar': {
-        color: 'unset',
-    },
-}));
-
 const StyledIdChip = styled(Chip)(({ theme }) => ({
     backgroundColor: theme.palette.grey[300],
     height: theme.spacing(3.5),
 }));
 
-const StyledSidebarStack = styled(Stack)(() => ({
+const StyledSidebar = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
     cursor: 'pointer',
+    gap: theme.spacing(1),
+}));
+const StyledExpandContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '1.5em',
 }));
 
-const StyledStatusSidebar = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'status',
-})<{ status: 'success' | 'error' | 'primary' | 'disabled' }>(
-    ({ theme, status }) => ({
-        height: '100%',
-        width: theme.spacing(0.5),
-        backgroundColor:
-            status === 'disabled'
-                ? theme.palette.grey[400]
-                : theme.palette[status].main,
-    }),
-);
-
-const StyledExpandArrow = styled(KeyboardArrowRight)(({ theme }) => ({
+const StyledExpandArrow = styled(KeyboardArrowRight, {
+    shouldForwardProp: (prop) => prop !== 'rotated',
+})<{ rotated: boolean }>(({ theme, rotated }) => ({
     color: theme.palette.grey[600],
-    '&.rotate': {
-        transform: 'rotate(90deg)',
-    },
+    transform: rotated ? 'rotate(90deg)' : '',
+}));
+
+const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
+    marginLeft: `${theme.spacing(9)} !important`,
+    height: theme.spacing(5),
 }));
 
 interface NotebookCellProps {
@@ -131,33 +183,40 @@ export const NotebookCell = observer(
         const notification = useNotification();
 
         const [contentExpanded, setContentExpanded] = useState(true);
-        const [actionsExpanded, setActionsExpanded] = useState(true);
-        const [actionsHeight, setActionsHeight] = useState(44);
+        const [outputExpanded, setOutputExpanded] = useState(true);
+        const [hoveredAddCellActions, setHoveredAddCellActions] =
+            useState(false);
+        const [showCellActions, setShowCellActions] = useState(false);
+
+        const cardContentRef = useRef(null);
+        const cardActionsRef = useRef(null);
+        const targetContentCollapseRef = useRef(null);
+        const targetActionsCollapseRef = useRef(null);
 
         // get the cell
         const query = state.getQuery(queryId);
         const cell = query.getCell(cellId);
 
-        // const contentElement = document.getElementById(`notebook-cell-actions-${queryId}-${cellId}`);
-
-        // calculate the height of the main card content so we know where to place the side expansions
         useEffect(() => {
-            if (!actionsExpanded) {
-                setActionsHeight(44);
+            if (cardContentRef.current) {
+                const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
+                if (targetContentCollapseRef.current) {
+                    targetContentCollapseRef.current.style.height = `${cardContentHeight}px`;
+                }
             }
-            const actionsElement = document.getElementById(
-                `notebook-cell-actions-${queryId}-${cellId}`,
-            );
-            if (actionsElement) {
-                const actionsElementHeight =
-                    actionsElement.getBoundingClientRect().height + 20;
-                setActionsHeight(
-                    actionsElementHeight + 20 < 50 ? 50 : actionsElementHeight,
-                );
-            } else {
-                setActionsHeight(50);
+
+            if (cardActionsRef.current) {
+                const cardActionsHeight = cardActionsRef.current.offsetHeight; // Consider offsetHeight for borders
+                if (targetActionsCollapseRef.current) {
+                    targetActionsCollapseRef.current.style.height = `${cardActionsHeight}px`;
+                }
             }
-        }, [cell.output, actionsExpanded]);
+        }, [
+            cardContentRef.current,
+            contentExpanded,
+            cardActionsRef.current,
+            outputExpanded,
+        ]);
 
         /**
          * Create a duplicate cell
@@ -208,92 +267,17 @@ export const NotebookCell = observer(
             }
         };
 
-        // get the view
-        const cellType = cell.cellType;
-
-        // render the title
-        const renderedTitle = useMemo(() => {
-            if (!cellType) {
+        // render the view
+        const rendered = useMemo(() => {
+            if (!cell.component) {
                 return;
             }
 
-            if (typeof cellType.view.title === 'string') {
-                return (
-                    <Typography variant="body2">
-                        {cellType.view.title}
-                    </Typography>
-                );
-            }
-
-            return createElement(observer(cellType.view.title), {
-                cell: cell,
-            });
-        }, [cellType ? cellType.view.title : null]);
-
-        // render the input
-        const renderedInput = useMemo(() => {
-            if (!cellType) {
-                return;
-            }
-
-            return createElement(observer(cellType.view.input), {
+            return createElement(cell.component, {
                 cell: cell,
                 isExpanded: contentExpanded,
             });
-        }, [cellType ? cellType.view.input : null, contentExpanded]);
-
-        // render the details
-        const renderedDetails = useMemo(() => {
-            if (!cellType || !cellType.view.details) {
-                return;
-            }
-
-            return createElement(observer(cellType.view.details), {
-                cell: cell,
-                isExpanded: contentExpanded,
-            });
-        }, [cellType ? cellType.view.details : null, contentExpanded]);
-
-        // render the action button
-        const renderedRunActionButton = useMemo(() => {
-            if (!cellType) {
-                return;
-            }
-            if (!cellType.view.runActionButton) {
-                return (
-                    <IconButton
-                        title="Run cell"
-                        disabled={cell.isLoading}
-                        size="small"
-                        onClick={() => {
-                            state.dispatch({
-                                message: ActionMessages.RUN_CELL,
-                                payload: {
-                                    queryId: cell.query.id,
-                                    cellId: cell.id,
-                                },
-                            });
-                        }}
-                    >
-                        <PlayCircle fontSize="small" />
-                    </IconButton>
-                );
-            }
-            return createElement(observer(cellType.view.runActionButton), {
-                cell: cell,
-            });
-        }, [cellType ? cellType.view.runActionButton : null, contentExpanded]);
-
-        // render the output
-        const renderedOutput = useMemo(() => {
-            if (!cellType || !cellType.view.output) {
-                return;
-            }
-
-            return createElement(observer(cellType.view.output), {
-                cell: cell,
-            });
-        }, [cellType ? cellType.view.output : null]);
+        }, [cell.component ? cell.component : null, contentExpanded]);
 
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
@@ -312,285 +296,280 @@ export const NotebookCell = observer(
             }
         };
 
-        // if we are able to get more granular cell loading info when running the full query, we can remove the cell.query.isLoading checks
-        const getCellChipStatus = () => {
-            if (cell.isLoading || cell.query.isLoading) {
-                return `disabled`;
-            } else if (cell.isSuccessful) {
-                return 'success';
-            } else if (cell.isError) {
-                return 'error';
-            } else {
-                return 'disabled';
-            }
-        };
-        const getCellChipLabel = () => {
+        const getExecutionLabel = () => {
+            let str = '';
             if (cell.isLoading) {
-                return 'Loading';
+                str = '';
             } else if (cell.query.isLoading) {
-                return 'Query Loading';
-            } else if (cell.isSuccessful) {
-                return 'Success';
-            } else if (cell.isError) {
-                return 'Error';
+                str = '';
+            } else if (cell.isSuccessful || cell.isError) {
+                str = getExecutionTimeString(
+                    cell.executionDurationMilliseconds,
+                );
             } else {
-                return 'Pending Execution';
+                str = 'Pending Execution';
             }
+
+            return <Typography variant="caption">{str}</Typography>;
         };
-        const getCellChipIcon = () => {
+
+        const getCellStatusIcon = () => {
             if (cell.isLoading) {
-                return <CircularProgress size="0.75rem" />;
-            } else if (cell.query.isLoading) {
-                return <PendingOutlined color="inherit" />;
+                return <CircularProgress size="1em" />;
             } else if (cell.isSuccessful) {
-                return <CheckCircle color="inherit" />;
+                return <CheckCircle color="success" />;
             } else if (cell.isError) {
-                return <Error color="inherit" />;
+                return <Error color="error" />;
             } else {
-                return <PendingOutlined color="inherit" />;
-            }
-        };
-        const getSidebarStatus = () => {
-            if (cell.isLoading) {
-                return 'primary';
-            } else if (cell.isSuccessful) {
-                return 'success';
-            } else if (cell.isError) {
-                return 'error';
-            } else if ((notebook?.selectedCell?.id ?? '') === cell.id) {
-                return 'primary';
-            } else {
-                return 'disabled';
+                return <Pending color="disabled" />;
             }
         };
 
         return (
-            <>
-                <Stack direction="row" width="100%">
-                    <StyledSidebarStack margin={0}>
-                        <Stack
-                            direction="row"
-                            flex={1}
-                            alignItems="start"
-                            onClick={() => {
-                                setContentExpanded(!contentExpanded);
-                            }}
-                        >
-                            <StyledStatusSidebar status={getSidebarStatus()} />
-                            <StyledExpandArrow
-                                fontSize="small"
-                                className={contentExpanded ? 'rotate' : ''}
+            <StyledStack
+                direction={'column'}
+                gap={1}
+                onMouseEnter={() => {
+                    setShowCellActions(true);
+                }}
+                onMouseLeave={() => {
+                    setShowCellActions(false);
+                }}
+                onFocus={() => {
+                    // Keyboard Navigation
+                    setShowCellActions(true);
+                }}
+                onBlur={() => {
+                    // Keyboard Navigation
+                    setShowCellActions(false);
+                }}
+            >
+                <StyledRow direction="row" width="100%" spacing={1}>
+                    <StyledName variant="subtitle2">
+                        {cell.config.name}
+                    </StyledName>
+
+                    <StyledCellActions in={showCellActions}>
+                        <Stack gap={1} direction={'row'} alignItems={'center'}>
+                            <StyledIdChip
+                                label={
+                                    <Stack
+                                        direction="row"
+                                        spacing={0.5}
+                                        alignItems="center"
+                                    >
+                                        <span>{`${cell.id}`}</span>
+                                        <ContentCopy fontSize="inherit" />
+                                    </Stack>
+                                }
+                                title="Copy cell id"
+                                onClick={() => {
+                                    try {
+                                        navigator.clipboard.writeText(cell.id);
+
+                                        notification.add({
+                                            color: 'success',
+                                            message:
+                                                'Succesfully copied to clipboard',
+                                        });
+                                    } catch (e) {
+                                        notification.add({
+                                            color: 'error',
+                                            message: e.message,
+                                        });
+                                    }
+                                }}
                             />
+                            <ButtonGroup variant="outlined">
+                                <StyledButtonGroupButton
+                                    title="Duplicate cell"
+                                    size="small"
+                                    disabled={cell.isLoading}
+                                    onClick={(e) => {
+                                        // stop propogation to card parent so newly created cell will be selected
+                                        e.stopPropagation();
+                                        duplicateCell();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <ContentCopy
+                                            fontSize="small"
+                                            sx={{
+                                                padding: '2px',
+                                            }}
+                                        />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                                <StyledButtonGroupButton
+                                    title="Delete cell"
+                                    disabled={cell.isLoading}
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteCell();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <DeleteOutlined fontSize="small" />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                            </ButtonGroup>
                         </Stack>
-                        <Stack
-                            direction="row"
-                            height={actionsExpanded ? actionsHeight : 50}
-                            marginTop="0!important"
-                            alignItems="start"
-                            onClick={() => {
-                                setActionsExpanded(!actionsExpanded);
-                            }}
-                        >
-                            <StyledStatusSidebar status={getSidebarStatus()} />
-                            <StyledExpandArrow
-                                fontSize="small"
-                                className={actionsExpanded ? 'rotate' : ''}
-                            />
+                    </StyledCellActions>
+
+                    <StyledSidebar>
+                        <StyledStatusIconContainer>
+                            {getCellStatusIcon()}
+                        </StyledStatusIconContainer>
+                        <Stack>
+                            <StyledCollapseStack
+                                id={`notebook-cell-${queryId}-${cellId}-card-content-collapse`}
+                                ref={targetContentCollapseRef}
+                                onClick={() => {
+                                    setContentExpanded(!contentExpanded);
+                                }}
+                                title={`${
+                                    contentExpanded ? 'Collapse' : 'Open'
+                                } cell ${cellId} input`}
+                            >
+                                <StyledExpandContainer>
+                                    <StyledExpandArrow
+                                        fontSize="small"
+                                        rotated={contentExpanded}
+                                    />
+                                </StyledExpandContainer>
+                            </StyledCollapseStack>
+                            {cell.isExecuted && (
+                                <StyledActionsCollapseStack
+                                    id={`notebook-cell-${queryId}-${cellId}-card-actions-collapse`}
+                                    ref={targetActionsCollapseRef}
+                                    onClick={() => {
+                                        setOutputExpanded(!outputExpanded);
+                                    }}
+                                    title={`${
+                                        outputExpanded ? 'Collapse' : 'Open'
+                                    } cell ${cellId} output`}
+                                >
+                                    <StyledExpandContainer>
+                                        <StyledExpandArrow
+                                            fontSize="small"
+                                            rotated={outputExpanded}
+                                        />
+                                    </StyledExpandContainer>
+                                </StyledActionsCollapseStack>
+                            )}
                         </Stack>
-                    </StyledSidebarStack>
+                    </StyledSidebar>
                     <StyledCard
                         isCardCellSelected={
                             (notebook?.selectedCell?.id ?? '') == cell.id
                         }
-                        onClick={(e) => {
+                        onClick={() => {
                             notebook.selectCell(cell.query.id, cell.id);
                         }}
                     >
                         <StyledCardContent
-                            isCardCellSelected={
-                                (notebook?.selectedCell?.id ?? '') == cell.id
-                            }
+                            id={`notebook-cell-${queryId}-${cellId}-card-content`}
+                            ref={cardContentRef}
                         >
-                            {renderedDetails}
-                            <Stack
-                                id={`notebook-cell-content-${queryId}-${cellId}`}
-                                direction="row"
-                                alignContent="start"
-                                paddingTop={0.5}
-                                paddingX={2}
+                            <StyledRunIconButton
+                                title="Run cell"
+                                disabled={cell.isLoading}
+                                size="medium"
+                                onClick={() =>
+                                    state.dispatch({
+                                        message: ActionMessages.RUN_CELL,
+                                        payload: {
+                                            queryId: cell.query.id,
+                                            cellId: cell.id,
+                                        },
+                                    })
+                                }
                             >
-                                <div>
-                                    <IconButton
-                                        title="Run cell"
-                                        disabled={cell.isLoading}
-                                        size="small"
-                                        onClick={() => {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.RUN_CELL,
-                                                payload: {
-                                                    queryId: cell.query.id,
-                                                    cellId: cell.id,
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        <PlayCircle fontSize="small" />
-                                    </IconButton>
-                                </div>
-                                <div
-                                    style={{
-                                        width: '100%',
-                                    }}
-                                >
-                                    {renderedInput}
-                                </div>
-                            </Stack>
+                                <PlayCircle fontSize="inherit" />
+                            </StyledRunIconButton>
+                            <StyledCardInput>{rendered}</StyledCardInput>
                         </StyledCardContent>
-                        <StyledDivider />
-                        <StyledCardActions
-                            isCardCellSelected={
-                                (notebook?.selectedCell?.id ?? '') == cell.id
-                            }
-                        >
-                            <Stack
-                                spacing={2}
-                                width="100%"
-                                id={`notebook-cell-actions-${queryId}-${cellId}`}
-                            >
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="space-between"
+                        {cell.isExecuted && (
+                            <>
+                                {(notebook?.selectedCell?.id ?? '') ==
+                                    cell.id && <Divider />}
+                                <StyledCardActions
+                                    id={`notebook-cell-${queryId}-${cellId}-card-actions`}
+                                    ref={cardActionsRef}
                                 >
                                     <Stack
-                                        direction="row"
-                                        spacing={2}
-                                        alignItems="center"
+                                        id={`notebook-cell-actions-${queryId}-${cellId}`}
+                                        direction="column"
+                                        width="100%"
                                     >
-                                        <StyledStatusChip
-                                            size="small"
-                                            avatar={getCellChipIcon()}
-                                            label={getCellChipLabel()}
-                                            status={getCellChipStatus()}
-                                        />
-                                        {cell.executionDurationMilliseconds ? (
-                                            <Typography variant="caption">
-                                                {getExecutionTimeString(
-                                                    cell.executionDurationMilliseconds,
-                                                )}
-                                            </Typography>
-                                        ) : (
-                                            <></>
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            width="100%"
+                                            // spacing={1}
+                                        >
+                                            {getExecutionLabel()}
+                                        </Stack>
+                                        {outputExpanded && (
+                                            <>
+                                                <NotebookCellConsole
+                                                    messages={cell.messages}
+                                                />
+                                                {cell.isExecuted
+                                                    ? cell.operation.map(
+                                                          (o, oIdx) => {
+                                                              return (
+                                                                  <Operation
+                                                                      key={oIdx}
+                                                                      operation={
+                                                                          o
+                                                                      }
+                                                                      output={
+                                                                          cell.output
+                                                                      }
+                                                                  />
+                                                              );
+                                                          },
+                                                      )
+                                                    : null}
+                                            </>
                                         )}
                                     </Stack>
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        alignItems="center"
-                                    >
-                                        <StyledIdChip
-                                            label={
-                                                <Stack
-                                                    direction="row"
-                                                    spacing={0.5}
-                                                    alignItems="center"
-                                                >
-                                                    <span>{`${cell.id}`}</span>
-                                                    <ContentCopy fontSize="inherit" />
-                                                </Stack>
-                                            }
-                                            title="Copy cell id"
-                                            onClick={() => {
-                                                try {
-                                                    navigator.clipboard.writeText(
-                                                        cell.id,
-                                                    );
-
-                                                    notification.add({
-                                                        color: 'success',
-                                                        message:
-                                                            'Succesfully copied to clipboard',
-                                                    });
-                                                } catch (e) {
-                                                    notification.add({
-                                                        color: 'error',
-                                                        message: e.message,
-                                                    });
-                                                }
-                                            }}
-                                        />
-                                        {renderedTitle}
-                                        <ButtonGroup variant="outlined">
-                                            <StyledButtonGroupButton
-                                                title="Duplicate cell"
-                                                size="small"
-                                                disabled={cell.isLoading}
-                                                onClick={(e) => {
-                                                    // stop propogation to card parent so newly created cell will be selected
-                                                    e.stopPropagation();
-                                                    duplicateCell();
-                                                }}
-                                            >
-                                                <StyledButtonLabel>
-                                                    <ContentCopy
-                                                        fontSize="small"
-                                                        sx={{ padding: '2px' }}
-                                                    />
-                                                </StyledButtonLabel>
-                                            </StyledButtonGroupButton>
-                                            <StyledButtonGroupButton
-                                                title="Delete cell"
-                                                disabled={cell.isLoading}
-                                                size="small"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    deleteCell();
-                                                }}
-                                            >
-                                                <StyledButtonLabel>
-                                                    <DeleteOutlined fontSize="small" />
-                                                </StyledButtonLabel>
-                                            </StyledButtonGroupButton>
-                                        </ButtonGroup>
-                                    </Stack>
-                                </Stack>
-                                {actionsExpanded && (
-                                    <>
-                                        {cell.isError ? (
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    padding: '16px',
-                                                    color: 'red',
-                                                }}
-                                            >
-                                                {cell.error}
-                                            </Typography>
-                                        ) : null}
-                                        {cell.isSuccessful
-                                            ? renderedOutput
-                                            : null}
-                                    </>
-                                )}
-                            </Stack>
-                        </StyledCardActions>
+                                </StyledCardActions>
+                            </>
+                        )}
                     </StyledCard>
-                </Stack>
-                <Collapse in={(notebook?.selectedCell?.id ?? '') === cell.id}>
-                    <Stack
-                        direction="row"
-                        spacing={1}
-                        paddingX={2}
-                        marginTop={2}
+                </StyledRow>
+                <StyledAddCellContainer
+                    onMouseEnter={() => {
+                        setHoveredAddCellActions(true);
+                    }}
+                    onMouseLeave={() => {
+                        setHoveredAddCellActions(false);
+                    }}
+                    onFocus={() => {
+                        // Keyboard Navigation
+                        setHoveredAddCellActions(true);
+                    }}
+                    onBlur={() => {
+                        // Keyboard Navigation
+                        setHoveredAddCellActions(false);
+                    }}
+                >
+                    <Collapse
+                        in={
+                            (notebook?.selectedCell?.id ?? '') === cell.id ||
+                            hoveredAddCellActions
+                        }
                     >
-                        <NotebookAddCellButton
+                        <NotebookAddCell
                             query={cell.query}
                             previousCellId={cell.id}
                         />
-                    </Stack>
-                </Collapse>
-            </>
+                    </Collapse>
+                </StyledAddCellContainer>
+            </StyledStack>
         );
     },
 );

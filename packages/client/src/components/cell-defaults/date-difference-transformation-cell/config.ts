@@ -1,53 +1,14 @@
-import { Cell, CellComponent } from '@/stores';
+import { CellConfig } from '@/stores';
 import {
-    ColumnInfo,
-    TransformationDef,
-    TransformationCellTitle,
-    TransformationCellDef,
-    TransformationCellOutput,
-    Transformation,
-    TransformationTargetCell,
-    TransformationCellRunActionButton,
-    dateUnit,
-    dateType,
-} from '../shared';
-import { DateDifferenceTransformationCellInput } from './DateDifferenceTransformationCellInput';
+    DateDifferenceTransformationCellDef,
+    DateDifferenceTransformationCell,
+} from './DateDifferenceTransformationCell';
 
-export interface DateDifferenceTransformationDef
-    extends TransformationDef<'date-difference'> {
-    key: 'date-difference';
-    parameters: {
-        startType: dateType;
-        startCustomDate: string;
-        startColumn: ColumnInfo;
-        endType: 'column' | 'custom';
-        endCustomDate: string;
-        endColumn: ColumnInfo;
-        unit: dateUnit;
-        columnName: string;
-    };
-}
-
-export interface DateDifferenceTransformationCellDef
-    extends TransformationCellDef<'date-difference-transformation'> {
-    widget: 'date-difference-transformation';
-    parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation<DateDifferenceTransformationDef>;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        targetCell: TransformationTargetCell;
-    };
-}
-
-// export the config for the block
-export const DateDifferenceTransformationCell: Cell<DateDifferenceTransformationCellDef> =
+export const DateDifferenceTransformationCellConfig: CellConfig<DateDifferenceTransformationCellDef> =
     {
+        name: 'Date Diference',
         widget: 'date-difference-transformation',
+        view: DateDifferenceTransformationCell,
         parameters: {
             transformation: {
                 key: 'date-difference',
@@ -66,13 +27,6 @@ export const DateDifferenceTransformationCell: Cell<DateDifferenceTransformation
                 id: '',
                 frameVariableName: '',
             },
-        },
-        view: {
-            title: TransformationCellTitle as CellComponent<DateDifferenceTransformationCellDef>,
-            input: DateDifferenceTransformationCellInput,
-            output: TransformationCellOutput as CellComponent<DateDifferenceTransformationCellDef>,
-            runActionButton:
-                TransformationCellRunActionButton as CellComponent<DateDifferenceTransformationCellDef>,
         },
         toPixel: ({ transformation, targetCell }) => {
             const startColumn =

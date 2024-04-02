@@ -2,12 +2,14 @@ import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     SUMMARY_STEPS,
+    TOKEN_TYPE_INPUT,
 } from '../../prompt.constants';
-import { Builder, BuilderStepItem } from '../../prompt.types';
+import { Builder, BuilderStepItem, Token } from '../../prompt.types';
 import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
+import { useEffect } from 'react';
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
@@ -128,6 +130,16 @@ export const PromptBuilderSummary = (props: {
                     const completedSteps = props.isBuildStepsComplete();
                     disabled = !completedSteps;
                     isStepComplete = false;
+                }
+
+                // checks to see if inputs have been set properly and disables / enables step accordingly
+                if (i + 1 === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+                    const hasInputs = (
+                        props.builder.inputs.value as Token[]
+                    )?.some((token: Token) => {
+                        return token.type === TOKEN_TYPE_INPUT;
+                    });
+                    disabled = !hasInputs;
                 }
 
                 return (
