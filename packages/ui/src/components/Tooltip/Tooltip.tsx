@@ -38,12 +38,12 @@ export interface TooltipProps extends MuiTooltipProps {
     /**
      * Callback fired when the component requests to be closed.
      */
-    onClose?: (e?: React.SyntheticEvent) => void;
+    // onClose?: (e?: React.SyntheticEvent) => void;
 
     /**
      * Callback fired when the component requests to be Open.
      */
-    onOpen?: (e?: React.SyntheticEvent) => void;
+    // onOpen?: (e?: React.SyntheticEvent) => void;
 
     /**
      * if `true`, the component is shown.
@@ -79,7 +79,7 @@ export interface TooltipProps extends MuiTooltipProps {
     title: string;
 }
 
-export const Tooltip = (props: TooltipProps) => {
+export const Tooltip = (props: MuiTooltipProps) => {
     const { children, ...rest } = props;
     return <MuiTooltip {...rest}>{children}</MuiTooltip>;
 };
