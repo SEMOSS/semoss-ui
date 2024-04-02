@@ -106,6 +106,18 @@ export const PromptBuilder = () => {
             ? 'Preview'
             : 'Create App';
 
+    // adds explanation to error message if input types are not set properly
+    const checkForInputTypesSkipped = (errorMessage) => {
+        if (
+            errorMessage ===
+            "Cannot read properties of undefined (reading 'type')"
+        ) {
+            return `${errorMessage}. Please define input types.`;
+        } else {
+            return errorMessage;
+        }
+    };
+
     const nextButtonAction = async () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             setCreateAppLoading(true);
@@ -119,7 +131,7 @@ export const PromptBuilder = () => {
             } catch (e) {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: checkForInputTypesSkipped(e.message),
                 });
                 setCreateAppLoading(false);
             }
@@ -154,6 +166,8 @@ export const PromptBuilder = () => {
         }
     };
 
+    // this seemed to be causing skipping to step 1 when trying to navigate back to step 3
+    // using changeBuilderStep instead for now to address bug, not sure if we need this
     const navigateBuilderSteps = (step: number) => {
         if (step === PROMPT_BUILDER_INPUT_TYPES_STEP) {
             // moving back from step after input types step - if no input types, skip that step moving backwards
@@ -231,9 +245,9 @@ export const PromptBuilder = () => {
                             currentBuilderStep={currentBuilderStep}
                             isBuilderStepComplete={isBuilderStepComplete}
                             isBuildStepsComplete={isBuildStepsComplete}
-                            changeBuilderStep={(step) => {
-                                navigateBuilderSteps(step);
-                            }}
+                            // using this instead of navigateBuilderSteps seems to haved desired behavior
+                            // had to add seperate handling for disabling Input Types step
+                            changeBuilderStep={changeBuilderStep}
                         />
                     </StyledPaper>
                 </Grid>

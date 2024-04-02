@@ -1,14 +1,17 @@
 import { computed } from 'mobx';
-import { ActionMessages, CellComponent, CellState } from '@/stores';
+import { ActionMessages, CellState } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { IconButton } from '@semoss/ui';
 import { PlayCircle } from '@mui/icons-material';
 import { QueryImportCellDef } from '../../query-import-cell';
 import { TransformationCellDef } from './transformation.types';
 
-export const TransformationCellRunActionButton: CellComponent<
-    TransformationCellDef
-> = (props) => {
+export const TransformationCellRunActionButton = (props: {
+    /** Cell that is controlling the cell */
+    cell: CellState<TransformationCellDef>;
+    /** Whether the content is expanded */
+    isExpanded?: boolean;
+}) => {
     const { cell } = props;
     const { state } = useBlocks();
 

@@ -13,10 +13,28 @@ export const PromptBuilderInputStep = (props: {
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
 
+    // PromptBuilderInputSettings
+    const builderInputSettings = props.builder.inputs.value as Token[];
+
+    const [initLoadComplete, setInitLoadComplete] = useState(false);
+
     useEffect(() => {
-        props.setBuilderValue('inputs', tokens);
-        // Anytime inputs change we should reset inputTypes
-        props.setBuilderValue('inputTypes', undefined);
+        // initial load only runs once but does not update tokens with empty loaded builderInputSettings
+        if (!initLoadComplete && builderInputSettings) {
+            // multiple setTokens running in event loop causing buggy behavior
+            // setTimeout forces setTokens to run on next tick of event loop this seems to be a somewhat common fix
+            setTimeout(() => {
+                setTokens(builderInputSettings);
+            }, 0);
+        }
+        setInitLoadComplete(true);
+    }, [builderInputSettings]);
+
+    useEffect(() => {
+        // updates after user changes input tokens
+        if (initLoadComplete) {
+            props.setBuilderValue('inputs', tokens);
+        }
     }, [tokens]);
 
     /**
@@ -164,7 +182,6 @@ export const PromptBuilderInputStep = (props: {
                 ...newTokens[tokenIndex],
                 linkedInputToken: linkedTokenIndex,
             };
-            console.log(newTokens);
             return newTokens;
         });
     };
@@ -226,6 +243,15 @@ export const PromptBuilderInputStep = (props: {
      * @param tokenIndex
      */
     const resetInputToken = (tokenIndex: number) => {
+        const inputTypes = props.builder.inputTypes.value;
+        // removes token from inputTypes so it doesn't end up in the app after preview
+        if (inputTypes) {
+            const { [tokenIndex]: _, ...newInputTypes } = {
+                ...Object(inputTypes),
+            };
+            props.setBuilderValue('inputTypes', newInputTypes);
+        }
+
         const phrase = tokens[tokenIndex].display;
         const phraseArray = phrase.split(' ');
         if (phrase.length === 1) {

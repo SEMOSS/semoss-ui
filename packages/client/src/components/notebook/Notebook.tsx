@@ -10,6 +10,7 @@ import {
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 
 import { NotebookQueriesMenu } from './NotebookQueriesMenu';
+import { NotebookTransformMenu } from './NotebookTransformMenu';
 import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookBlocksMenu } from './NotebookBlocksMenu';
@@ -28,11 +29,12 @@ const StyledNotebook = styled('div')(() => ({
 }));
 
 const StyledLeftPanel = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
     height: '100%',
     width: theme.spacing(45),
     overflow: 'hidden',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    backgroundColor: theme.palette.background.paper,
+    borderRight: `1px solid ${theme.palette.divider}`,
 }));
 
 const StyledRightPanel = styled('div')(() => ({
@@ -83,7 +85,7 @@ export const Notebook = observer(() => {
             })),
         );
 
-        setModelId(myModels.data[0].app_id);
+        setModelId(myModels.data.length ? myModels.data[0].app_id : '');
     }, [myModels.status, myModels.data]);
 
     return (
@@ -131,7 +133,7 @@ export const Notebook = observer(() => {
             {view ? (
                 <StyledLeftPanel>
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
-                    {view === 'transform' ? <div>Transform</div> : null}
+                    {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
                     {view === 'catalog' ? <div>Blocks</div> : null}
                 </StyledLeftPanel>

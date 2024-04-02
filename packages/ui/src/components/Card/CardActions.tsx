@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
+import { ComponentPropsWithRef, forwardRef, ForwardedRef } from "react";
 import { CardActions as MuiCardActions, SxProps } from "@mui/material";
 
-export interface CardActionsProps {
+export interface CardActionsProps extends ComponentPropsWithRef<"div"> {
     /** custom style object */
     sx?: SxProps;
 
@@ -13,13 +14,20 @@ export interface CardActionsProps {
      * @default false
      */
     disableSpacing?: boolean;
+
+    /**
+     * Unique identifier for dom element
+     */
+    id?: string;
 }
 
-export const CardActions = (props: CardActionsProps) => {
+export const _CardActions = (props: CardActionsProps, ref) => {
     const { sx, children } = props;
     return (
-        <MuiCardActions sx={sx} {...props}>
+        <MuiCardActions sx={sx} ref={ref} {...props}>
             {children}
         </MuiCardActions>
     );
 };
+
+export const CardActions = forwardRef(_CardActions);

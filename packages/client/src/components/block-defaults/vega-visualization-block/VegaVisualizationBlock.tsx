@@ -23,7 +23,7 @@ const StyledNoDataContainer = styled('div', {
 export interface VegaVisualizationBlockDef {
     widget: 'vega';
     data: {
-        specJson: string;
+        specJson: VisualizationSpec | string;
         variation?: undefined | string;
     };
     listeners: never;
@@ -40,22 +40,19 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
             </StyledNoDataContainer>
         );
     }
-    try {
-        const specJson: VisualizationSpec = JSON.parse(data.specJson);
-        const Chart = createClassFromSpec({ spec: specJson });
+    if (typeof data.specJson === 'string') {
+        return (
+            <StyledNoDataContainer error {...attrs}>
+                There was an issue parsing your JSON.
+            </StyledNoDataContainer>
+        );
+    } else {
+        const Chart = createClassFromSpec({ spec: data.specJson });
 
         return (
             <StyledChartContainer {...attrs}>
                 <Chart actions={false} />
             </StyledChartContainer>
-        );
-    } catch (e) {
-        // spec was unable to be parsed as object
-        console.error(e);
-        return (
-            <StyledNoDataContainer error {...attrs}>
-                There was an issue parsing your JSON.
-            </StyledNoDataContainer>
         );
     }
 });
