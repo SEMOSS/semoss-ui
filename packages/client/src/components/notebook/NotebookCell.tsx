@@ -47,7 +47,7 @@ const StyledName = styled(Typography)(({ theme }) => ({
     zIndex: 1,
     color: theme.palette.text.disabled,
     borderRadius: theme.shape.borderRadius,
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper1,
     overflow: 'hidden',
 }));
 
@@ -57,7 +57,7 @@ const StyledCellActions = styled(Collapse)(({ theme }) => ({
     right: theme.spacing(2),
     zIndex: 1,
     borderRadius: theme.shape.borderRadius,
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper1,
 }));
 
 const StyledStatusIconContainer = styled('div')(({ theme }) => ({
@@ -110,7 +110,7 @@ const StyledCardContent = styled(Card.Content)(({ theme }) => ({
     gap: theme.spacing(2),
     margin: '0',
     padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: theme.palette.background.paper2,
 }));
 
 const StyledCardInput = styled('div')(() => ({
@@ -120,7 +120,7 @@ const StyledCardInput = styled('div')(() => ({
 const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
     padding: theme.spacing(2),
     margin: '0',
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
 }));
 
 const StyledButtonLabel = styled('div')(() => ({

@@ -12,7 +12,7 @@ const StyledSheet = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     height: '100%',
     width: '100%',
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: theme.palette.background.paper1,
 }));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
