@@ -193,7 +193,7 @@ export const JobColumns: {
                         color="info"
                         size="medium"
                         onClick={() => {
-                            executeJob(job.jobId, job.jobGroup);
+                            // executeJob(job.jobId, job.jobGroup);
                         }}
                     >
                         <PlayArrow />
@@ -202,8 +202,8 @@ export const JobColumns: {
                         color="info"
                         size="medium"
                         onClick={() => {
-                            setSelectedJob(job);
-                            setShowJobModal(true);
+                            // setSelectedJob(job);
+                            // setShowJobModal(true);
                         }}
                         disabled // enable when edit page is built out
                     >
@@ -213,8 +213,8 @@ export const JobColumns: {
                         color="info"
                         size="medium"
                         onClick={() => {
-                            setSelectedJob(job);
-                            setShowDeleteModal(true);
+                            // setSelectedJob(job);
+                            // setShowDeleteModal(true);
                         }}
                     >
                         <Delete />

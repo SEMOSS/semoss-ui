@@ -1,6 +1,6 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Add, Bedtime, ErrorRounded } from '@mui/icons-material';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { Add, Bedtime, Delete, Edit, ErrorRounded, PlayArrow } from '@mui/icons-material';
 import {
     Button,
     Modal,
@@ -15,6 +15,8 @@ import {
     Popover,
     useNotification,
     Stack,
+    Chip,
+    IconButton,
 } from '@semoss/ui';
 
 import { useAPI, useRootStore, useSettings } from '@/hooks';
@@ -146,6 +148,99 @@ export function JobsPage() {
     const [jobTypeTemplate, setJobTypeTemplate] = useState({});
     const [placeholderData, setPlaceholderData] = useState([]);
 
+    const JobColumns: GridColDef[] = [
+        {
+            headerName: 'Name',
+            field: "jobName"
+        },
+        {
+            headerName: 'Type',
+            field: "jobType"
+        },
+        {
+            headerName: 'Frequency',
+            field: "frequency"
+        },
+        {
+            headerName: 'Tags',
+            field: 'tags',
+            renderCell: (props: {value: string}) => {
+                return (
+                    <>
+                        {
+                            props.value.split(',').map((tag, idx) => {
+                                return <Chip key={idx} label={tag} avatar={null} />;
+                            })
+                        }
+                    </>
+                );
+            },
+        },
+        {
+            headerName: 'Last Run',
+            field: 'PREV_FIRE_TIME',
+            renderCell: (props: {value: string}) => {
+                let time = ''
+                if (
+                    !(!props.value ||
+                    props.value === 'N/A' ||
+                    props.value === 'INACTIVE')
+                ) {
+                    time = convertTimetoDate(props.value);
+                }
+                return (
+                    <>
+                        {time}
+                    </>
+                )
+            }
+        },
+        {
+            headerName: 'Modified By',
+            field: 'USER_ID'
+        },
+        {
+            headerName: '',
+            field: 'jobId',
+            renderCell: () => {
+                return (
+                    <>
+                        <IconButton
+                            color="info"
+                            size="medium"
+                            onClick={() => {
+                                executeJob(job.jobId, job.jobGroup);
+                            }}
+                        >
+                            <PlayArrow />
+                        </IconButton>
+                        <IconButton
+                            color="info"
+                            size="medium"
+                            onClick={() => {
+                                setSelectedJob(job);
+                                setShowJobModal(true);
+                            }}
+                            disabled // enable when edit page is built out
+                        >
+                            <Edit />
+                        </IconButton>
+                        <IconButton
+                            color="info"
+                            size="medium"
+                            onClick={() => {
+                                setSelectedJob(job);
+                                setShowDeleteModal(true);
+                            }}
+                        >
+                            <Delete />
+                        </IconButton>
+                    </>
+                );
+            }
+        }
+    ];
+
     // pagination for jobs table
     const [jobsPage, setJobsPage] = useState<number>(0);
     const [jobsRowsPerPage, setJobsRowsPerPage] = useState<number>(5);
@@ -251,155 +346,6 @@ export function JobsPage() {
         });
     };
 
-    const getHistory = (jobTags: string[]) => {
-        let pixel = 'META|SchedulerHistory(';
-        if (jobTags.length > 0) {
-            pixel += 'jobTags=["';
-            for (let i = 0; i < jobTags.length; i++) {
-                pixel +=
-                    i === jobTags.length - 1
-                        ? jobTags[i] + '"] '
-                        : jobTags[i] + '", "';
-            }
-        }
-        pixel += ')';
-        monolithStore.runQuery(pixel).then((response) => {
-            const type = response.pixelReturn[0].operationType[0];
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message:
-                        'Something went wrong. Job history could not be retrieved.',
-                });
-            } else {
-                // map the headers
-                const historyData = [];
-                const output = response.pixelReturn[0].output;
-                const headers = {};
-                //let uniqueJobNames = []; // list of job names
-                for (
-                    let headerIdx = 0,
-                        headerLen = output['data'].headers.length;
-                    headerIdx < headerLen;
-                    headerIdx++
-                ) {
-                    headers[output['data'].headers[headerIdx]] = headerIdx;
-                }
-
-                for (
-                    let valueIdx = 0, valueLen = output['data'].values.length;
-                    valueIdx < valueLen;
-                    valueIdx++
-                ) {
-                    // Excluding the jobs that have not ran even once from history
-                    if (
-                        output['data'].values[valueIdx][headers['SUCCESS']] !==
-                        null
-                    ) {
-                        const job = {
-                            jobId: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'JOB_ID',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['JOB_ID']
-                                  ]
-                                : '',
-                            jobName: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'JOB_NAME',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['JOB_NAME']
-                                  ]
-                                : '',
-                            jobGroup: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'JOB_GROUP',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['JOB_GROUP']
-                                  ]
-                                : '',
-                            execStart:
-                                Object.prototype.hasOwnProperty.call(
-                                    headers,
-                                    'EXECUTION_START',
-                                ) &&
-                                output['data'].values[valueIdx][
-                                    headers['EXECUTION_START']
-                                ]
-                                    ? convertTimetoDate(
-                                          output['data'].values[valueIdx][
-                                              headers['EXECUTION_START']
-                                          ],
-                                      )
-                                    : '',
-                            execEnd: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'EXECUTION_END',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['EXECUTION_END']
-                                  ]
-                                : '',
-                            execDelta: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'EXECUTION_DELTA',
-                            )
-                                ? convertDeltaToRuntimeString(
-                                      output['data'].values[valueIdx][
-                                          headers['EXECUTION_DELTA']
-                                      ],
-                                  )
-                                : '',
-                            // Success will have 2 types of values True means passed and False means failed.
-                            success: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'SUCCESS',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['SUCCESS']
-                                  ]
-                                : '',
-                            // appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
-                            jobTags: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'JOB_TAG',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['JOB_TAG']
-                                  ]
-                                : '',
-                            // capture the latest record based on the IS_LATEST field stored
-                            isLatest: Object.prototype.hasOwnProperty.call(
-                                headers,
-                                'IS_LATEST',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['IS_LATEST']
-                                  ]
-                                : false,
-                            //capture scheduler output
-                            schedulerOutput:
-                                Object.prototype.hasOwnProperty.call(
-                                    headers,
-                                    'SCHEDULER_OUTPUT',
-                                )
-                                    ? output['data'].values[valueIdx][
-                                          headers['SCHEDULER_OUTPUT']
-                                      ]
-                                    : 'No Output.',
-                        };
-
-                        historyData.push(job);
-                    }
-                }
-                setHistory(historyData);
-            }
-        });
-    };
-
     const deleteJob = (jobId, jobGroup) => {
         let pixel = 'META | RemoveJobFromDB(';
         pixel += 'jobId=["' + jobId + '"], ';
@@ -425,35 +371,7 @@ export function JobsPage() {
         });
     };
 
-    function fillExistingParameters(json) {
-        if (Object.keys(jobTypeTemplate['insightParameters']).length > 0) {
-            let queryIdx, queryLen, paramIdx, paramLen;
-            for (
-                queryIdx = 0, queryLen = json.length;
-                queryIdx < queryLen;
-                queryIdx++
-            ) {
-                for (
-                    paramIdx = 0, paramLen = json[queryIdx].params.length;
-                    paramIdx < paramLen;
-                    paramIdx++
-                ) {
-                    if (
-                        jobTypeTemplate['insightParameters'].hasOwnProperty(
-                            json[queryIdx].params[paramIdx].paramName,
-                        )
-                    ) {
-                        // updating the default value with previously selected values during edit
-                        json[queryIdx].params[paramIdx].model.defaultValue =
-                            jobTypeTemplate['insightParameters'][
-                                json[queryIdx].params[paramIdx].paramName
-                            ];
-                    }
-                }
-            }
-        }
-    }
-
+    
     const filteredJobs = useMemo(() => {
         return jobs.filter((job) => job.jobName.includes(searchValue))
     }, [jobs]);
@@ -461,10 +379,6 @@ export function JobsPage() {
     useEffect(() => {
         // initial render to get all jobs
         getJobs();
-    }, []);
-
-    useEffect(() => {
-        getHistory(selectedTags);
     }, []);
 
     useEffect(() => {
@@ -574,7 +488,7 @@ export function JobsPage() {
                             onRowsPerPageChange={(e) => {
                                 setJobsRowsPerPage(Number(e.target.value));
                             }}
-                            count={.length}
+                            count={[].length}
                         />
                     </Table.Row>
                 </Table.Footer>
