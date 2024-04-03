@@ -13,6 +13,7 @@ import {
     ChangeCircleOutlined,
     TodayOutlined,
     DateRangeOutlined,
+    AddTaskOutlined,
     VpnKey,
     JoinInner,
 } from '@mui/icons-material';
@@ -89,6 +90,12 @@ export const Transformations: Record<
         display: 'Timestamp',
         icon: TodayOutlined,
         widget: 'timestamp-transformation',
+    },
+    'cumulative-sum': {
+        transformation: 'cumulative-sum',
+        display: 'Cumulative Sum',
+        icon: AddTaskOutlined,
+        widget: 'cumulative-sum-transformation',
     },
     'encode-column': {
         transformation: 'encode-column',

@@ -22,6 +22,12 @@ import {
     TimestampTransformationCellConfig,
     TimestampTransformationCellDef,
 } from './timestamp-transformation-cell';
+
+import {
+    CumulativeSumTransformationCellConfig,
+    CumulativeSumTransformationCellDef,
+} from './cumulative-sum-transformation-cell';
+
 import {
     EncodeColumnTransformationCellConfig,
     EncodeColumnTransformationCellDef,
@@ -41,6 +47,7 @@ export type DefaultCellDefinitions =
     | DateDifferenceTransformationCellDef
     | TimestampTransformationCellDef
     | JoinTransformationCellDef
+    | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
@@ -57,6 +64,8 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [TimestampTransformationCellConfig.widget]:
         TimestampTransformationCellConfig,
     [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
+    [CumulativeSumTransformationCellConfig.widget]:
+        CumulativeSumTransformationCellConfig,
     [EncodeColumnTransformationCellConfig.widget]:
         EncodeColumnTransformationCellConfig,
 } as const;
