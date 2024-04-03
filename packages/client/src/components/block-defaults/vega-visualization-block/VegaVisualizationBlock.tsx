@@ -5,7 +5,6 @@ import { BlockComponent } from '@/stores';
 
 import { VisualizationSpec, createClassFromSpec } from 'react-vega';
 import { styled } from '@mui/material';
-import { useEffect } from 'react';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -33,10 +32,6 @@ export interface VegaVisualizationBlockDef {
 
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
-
-    useEffect(() => {
-        console.log(data.specJson);
-    }, [data]);
 
     if (!data.specJson) {
         return (
