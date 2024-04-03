@@ -13,6 +13,7 @@ import {
     ChangeCircleOutlined,
     TodayOutlined,
     DateRangeOutlined,
+    CloseFullscreenOutlined,
     AddTaskOutlined,
     VpnKey,
     JoinInner,
@@ -90,6 +91,12 @@ export const Transformations: Record<
         display: 'Timestamp',
         icon: TodayOutlined,
         widget: 'timestamp-transformation',
+    },
+    collapse: {
+        transformation: 'collapse',
+        display: 'Collapse',
+        icon: CloseFullscreenOutlined,
+        widget: 'collapse-transformation',
     },
     'cumulative-sum': {
         transformation: 'cumulative-sum',
