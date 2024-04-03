@@ -81,7 +81,7 @@ export const TransformationCellInput: TransformationCellInputComponent = (
         <Stack width="100%" paddingY={0.5}>
             <StyledSelect
                 size={'small'}
-                value={frame.cell.parameters.targetCell.id}
+                value={frame ? frame.cell.parameters.targetCell.id : ''}
                 SelectProps={{
                     IconComponent: KeyboardArrowDown,
                     style: {
@@ -116,13 +116,14 @@ export const TransformationCellInput: TransformationCellInputComponent = (
                     });
                 }}
             >
-                {frame.options.map((c) => {
-                    return (
-                        <StyledSelectItem key={c.id} value={c.id}>
-                            {c.parameters.frameVariableName}
-                        </StyledSelectItem>
-                    );
-                })}
+                {frame &&
+                    frame.options.map((c) => {
+                        return (
+                            <StyledSelectItem key={c.id} value={c.id}>
+                                {c.parameters.frameVariableName}
+                            </StyledSelectItem>
+                        );
+                    })}
             </StyledSelect>
             <StyledTypography variant="body1">{display}</StyledTypography>
             {children}

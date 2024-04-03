@@ -23,6 +23,11 @@ import {
     TimestampTransformationCellDef,
 } from './timestamp-transformation-cell';
 import {
+    EncodeColumnTransformationCellConfig,
+    EncodeColumnTransformationCellDef,
+} from './encode-column-transformation-cell';
+
+import {
     JoinTransformationCellConfig,
     JoinTransformationCellDef,
 } from './join-transformation-cell';
@@ -35,7 +40,8 @@ export type DefaultCellDefinitions =
     | ColumnTypeTransformationCellDef
     | DateDifferenceTransformationCellDef
     | TimestampTransformationCellDef
-    | JoinTransformationCellDef;
+    | JoinTransformationCellDef
+    | EncodeColumnTransformationCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
@@ -51,6 +57,8 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [TimestampTransformationCellConfig.widget]:
         TimestampTransformationCellConfig,
     [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
+    [EncodeColumnTransformationCellConfig.widget]:
+        EncodeColumnTransformationCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
