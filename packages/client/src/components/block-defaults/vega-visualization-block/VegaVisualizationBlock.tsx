@@ -5,6 +5,7 @@ import { BlockComponent } from '@/stores';
 
 import { VisualizationSpec, createClassFromSpec } from 'react-vega';
 import { styled } from '@mui/material';
+import { useEffect } from 'react';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -33,6 +34,10 @@ export interface VegaVisualizationBlockDef {
 export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<VegaVisualizationBlockDef>(id);
 
+    useEffect(() => {
+        console.log(data.specJson);
+    }, [data]);
+
     if (!data.specJson) {
         return (
             <StyledNoDataContainer {...attrs}>
@@ -41,11 +46,25 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
         );
     }
     if (typeof data.specJson === 'string') {
-        return (
-            <StyledNoDataContainer error {...attrs}>
-                There was an issue parsing your JSON.
-            </StyledNoDataContainer>
-        );
+        // if it's a string, it's either invalid json or a query output that needs to be parsed
+        // try to parse, and show error otherwise
+        try {
+            const specJson = JSON.parse(data.specJson);
+
+            const Chart = createClassFromSpec({ spec: specJson });
+
+            return (
+                <StyledChartContainer {...attrs}>
+                    <Chart actions={false} />
+                </StyledChartContainer>
+            );
+        } catch (e) {
+            return (
+                <StyledNoDataContainer error {...attrs}>
+                    There was an issue parsing your JSON.
+                </StyledNoDataContainer>
+            );
+        }
     } else {
         const Chart = createClassFromSpec({ spec: data.specJson });
 
