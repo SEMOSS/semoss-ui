@@ -13,6 +13,7 @@ import {
     ChangeCircleOutlined,
     TodayOutlined,
     DateRangeOutlined,
+    VpnKey,
     JoinInner,
 } from '@mui/icons-material';
 
@@ -88,6 +89,12 @@ export const Transformations: Record<
         display: 'Timestamp',
         icon: TodayOutlined,
         widget: 'timestamp-transformation',
+    },
+    'encode-column': {
+        transformation: 'encode-column',
+        display: 'Encode Column',
+        icon: VpnKey,
+        widget: 'encode-column-transformation',
     },
     join: {
         transformation: 'join',

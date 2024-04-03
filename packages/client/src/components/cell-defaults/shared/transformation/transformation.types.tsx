@@ -26,6 +26,7 @@ export type TransformationTypes =
     | 'column-type'
     | 'date-difference'
     | 'timestamp'
+    | 'encode-column'
     | 'join';
 
 export interface TransformationDef<R extends string = string> {
