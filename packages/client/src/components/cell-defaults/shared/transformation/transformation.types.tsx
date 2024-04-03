@@ -26,6 +26,7 @@ export type TransformationTypes =
     | 'column-type'
     | 'date-difference'
     | 'timestamp'
+    | 'cumulative-sum'
     | 'encode-column'
     | 'join';
 
