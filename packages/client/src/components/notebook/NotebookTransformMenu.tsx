@@ -22,7 +22,7 @@ const StyledTile = styled('div')(({ theme }) => ({
     gap: '16px',
     borderRadius: '12px',
     border: `1px solid ${theme.palette.secondary.main}`,
-    background: theme.palette.background.paper1,
+    background: theme.palette.background.paper,
 
     /* Elevation - SEMOSS/2 */
     boxShadow: '0px 1px 5px 0px rgba(0, 0, 0, 0.08)',

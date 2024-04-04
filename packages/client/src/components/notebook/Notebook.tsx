@@ -33,7 +33,7 @@ const StyledLeftPanel = styled('div')(({ theme }) => ({
     width: theme.spacing(45),
     overflow: 'hidden',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    backgroundColor: theme.palette.background.paper1,
+    backgroundColor: theme.palette.background.paper,
     borderRight: `1px solid ${theme.palette.divider}`,
 }));
 

@@ -126,7 +126,7 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing(5),
-    background: theme.palette.background.paper2,
+    background: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(2),
     overflowX: 'scroll',

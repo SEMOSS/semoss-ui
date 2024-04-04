@@ -9,7 +9,7 @@ export const Sidebar = styled('div')(({ theme }) => ({
     height: '100%',
     width: theme.spacing(7),
     overflow: 'hidden',
-    backgroundColor: theme.palette.background.paper1,
+    backgroundColor: theme.palette.background.paper,
     borderRightWidth: '1px',
     borderRightStyle: 'solid',
     borderRightColor: theme.palette.divider,

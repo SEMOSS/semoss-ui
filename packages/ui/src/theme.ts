@@ -10,6 +10,17 @@ import {
 export { styled, useTheme, keyframes };
 export type { ThemeOptions };
 
+declare module "@mui/material" {
+    interface PaletteColor {
+        hover?: string;
+        selected?: string;
+        border?: string;
+        disabled?: string;
+        divider?: string;
+        text?: string;
+    }
+}
+
 export interface CustomPaletteColor {
     50?: string;
     100?: string;
@@ -23,6 +34,7 @@ export interface CustomPaletteColor {
     900?: string;
     shadow?: string;
 }
+
 export interface CustomPaletteOptions extends PaletteOptions {
     primaryContrast?: CustomPaletteColor;
     green?: CustomPaletteColor;
@@ -63,6 +75,42 @@ export interface CustomThemeOptions extends ThemeOptions {
     };
 }
 
+export interface CustomPaletteTheme {
+    palette: {
+        [key: string]: {
+            [token: string]: string;
+        };
+    };
+}
+
+export const customLightPaletteTokens: CustomPaletteTheme = {
+    palette: {
+        primary: {
+            hover: "#F5F9FE",
+            selected: "#EBF4FE",
+            border: "#9FCFFF",
+        },
+        secondary: {
+            hover: "#F5F5F5",
+            selected: "#EBEBEB",
+            disabled: "#BDBDBD",
+            border: "#C4C4C4",
+            divider: "#E6E6E6",
+        },
+        error: {
+            text: "#57100B",
+        },
+        warning: {
+            text: "#5F2B01",
+        },
+        success: {
+            text: "#123214",
+            // Only use selected for custom stepper in agent/prompt builder
+            selected: "#E6EFE6",
+        },
+    },
+};
+
 export const lightTheme: CustomThemeOptions = {
     palette: {
         mode: "light",
@@ -71,9 +119,6 @@ export const lightTheme: CustomThemeOptions = {
             main: "#0471F0",
             dark: "#1260DD",
             light: "#22A4FF",
-            hover: "#F5F9FE",
-            selected: "#EBF4FE",
-            border: "#9FCFFF",
             // DELOITTE GREEN
             // main: "#26890D",
             // light: "#86BC25",
@@ -83,11 +128,6 @@ export const lightTheme: CustomThemeOptions = {
             main: "#D9D9D9",
             dark: "#757575",
             light: "#F2F2F2",
-            hover: "#F5F5F5",
-            selected: "#EBEBEB",
-            disabled: "#BDBDBD",
-            border: "#C4C4C4",
-            divider: "#E6E6E6",
         },
         text: {
             primary: "#000000",
@@ -99,13 +139,11 @@ export const lightTheme: CustomThemeOptions = {
             main: "#DA291C",
             light: "#FBE9E8",
             dark: "#BF0D02",
-            text: "#57100B",
         },
         warning: {
             main: "#FA9F2C",
             light: "#FDF0E5",
             dark: "#EF8326",
-            text: "#5F2B01",
         },
         info: {
             main: "#0471F0",
@@ -116,13 +154,10 @@ export const lightTheme: CustomThemeOptions = {
             main: "#348700",
             light: "#EAF2EA",
             dark: "#006500",
-            // Only use selected for custom stepper in agent/prompt builder
-            selected: "#E6EFE6",
-            text: "#123214",
         },
         background: {
-            paper1: "#FFFFFF",
-            paper2: "#FAFAFA",
+            paper: "#FFFFFF", // Design references this color as "paper1"
+            default: "#FAFAFA", // Design references this color as "paper2"
             // Backdrop Overlay must be a shade/percentage
             backdropOverlay: "#000000",
         },
@@ -507,8 +542,8 @@ export const darkTheme: CustomThemeOptions = {
             dark: "#005A00",
         },
         background: {
-            paper1: "#FAFAFA",
-            paper2: "#121212",
+            paper: "#FAFAFA",
+            default: "#121212",
         },
         primaryContrast: {
             // SEMOSS BLUE

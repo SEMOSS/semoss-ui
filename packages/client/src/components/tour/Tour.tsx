@@ -54,13 +54,13 @@ const TourCard = styled(Card)(() => ({
 
 const TourCardHeader = styled(Card.Header)(({ theme }) => ({
     backgroundColor: theme.palette.primary.main,
-    color: theme.palette.background.paper1,
+    color: theme.palette.background.paper,
     margin: 0,
     padding: theme.spacing(2),
 }));
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
-    color: theme.palette.background.paper1,
+    color: theme.palette.background.paper,
 }));
 
 export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {

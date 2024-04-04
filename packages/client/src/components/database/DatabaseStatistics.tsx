@@ -18,7 +18,7 @@ import { usePixel } from '@/hooks';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     borderRadius: '12px',
-    background: theme.palette.background.paper1,
+    background: theme.palette.background.paper,
     boxShadow: `0px 4px 4px 0px rgba(0, 0, 0, 0.04)`,
 }));
 

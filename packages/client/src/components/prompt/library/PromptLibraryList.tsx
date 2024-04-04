@@ -20,7 +20,7 @@ const StyledListItem = styled(List.Item, {
 })<StyledListItemProps>(({ selected, theme }) => ({
     backgroundColor: selected
         ? theme.palette.grey[200]
-        : theme.palette.background.paper1,
+        : theme.palette.background.paper,
 }));
 const StyledListItemText = styled(List.ItemText)(() => ({
     textTransform: 'capitalize',

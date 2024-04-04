@@ -30,7 +30,7 @@ const StyledMain = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     height: '100vh',
     width: '100vw',
-    background: theme.palette.background.paper1,
+    background: theme.palette.background.paper,
 }));
 
 const StyledRow = styled('div')(() => ({
@@ -53,7 +53,7 @@ const StyledScroll = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     alignItems: 'center',
     zIndex: 1,
-    background: theme.palette.background.paper1,
+    background: theme.palette.background.paper,
     overflowY: 'auto',
     overflowX: 'hidden',
     [theme.breakpoints.down('md')]: {

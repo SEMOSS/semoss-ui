@@ -22,7 +22,7 @@ import { ENGINE_ROUTES } from './engine.constants';
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
     padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.paper2,
+    backgroundColor: theme.palette.background.default,
 }));
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(() => ({

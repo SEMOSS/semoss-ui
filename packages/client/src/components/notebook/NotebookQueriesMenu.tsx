@@ -34,8 +34,22 @@ const StyledMenu = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     paddingTop: theme.spacing(1),
-    backgroundColor: theme.palette.background.paper1,
+    backgroundColor: theme.palette.background.paper,
 }));
+
+// const StyledMenu = styled('div')(({ theme, disabled }) => {
+//     const palette = theme.palette as unknown as {
+//         background: Record<string, string>;
+//     };
+//     return {
+//         display: 'flex',
+//         flexDirection: 'column',
+//         height: '100%',
+//         width: '100%',
+//         paddingTop: theme.spacing(1),
+//         backgroundColor: palette.background["paper1"],
+//     };
+// });
 
 const StyledMenuTitle = styled(Typography)(() => ({
     fontWeight: 'bold',

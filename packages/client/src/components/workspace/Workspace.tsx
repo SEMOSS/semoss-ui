@@ -28,7 +28,7 @@ const StyledHeader = styled('div')(({ theme }) => ({
     paddingRight: theme.spacing(2),
     gap: theme.spacing(2),
     color: theme.palette.text.primary,
-    backgroundColor: theme.palette.background.paper1,
+    backgroundColor: theme.palette.background.paper,
     borderBottom: '1px',
     borderBottomStyle: 'solid',
     borderBottomColor: theme.palette.divider,

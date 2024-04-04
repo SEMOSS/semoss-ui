@@ -17,7 +17,7 @@ const StyledCard = styled(Card)(() => ({
 const StyledSidebar = styled(Stack)(({ theme }) => ({
     width: '30%',
     backgroundColor: '#121212',
-    color: theme.palette.background.paper1,
+    color: theme.palette.background.paper,
     justifyContent: 'space-between',
 }));
 
@@ -52,7 +52,7 @@ const VerticalSpacer = styled('div')(() => ({
 
 const StyledList = styled(List)(({ theme }) => ({
     height: '50%',
-    color: theme.palette.background.paper1,
+    color: theme.palette.background.paper,
 }));
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({

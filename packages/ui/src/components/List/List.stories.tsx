@@ -24,9 +24,7 @@ type Story = StoryObj<typeof List>;
 
 export const Default: Story = {
     render: (args) => (
-        <Box
-            sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper1" }}
-        >
+        <Box sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}>
             <List {...args}>
                 <List.Item
                     divider
