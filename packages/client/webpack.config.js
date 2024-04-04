@@ -71,6 +71,19 @@ const config = {
                 ],
             },
 
+            {
+                // when bundling application's own source code
+                // transpile using Babel which uses .babelrc file
+                // and instruments code using babel-plugin-istanbul
+                test: /\.js/,
+                exclude: /(node_modules|bower_components)/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                    },
+                ],
+            },
+
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],

@@ -1,0 +1,147 @@
+{
+    "C:\\workspace\\apache-tomcat-9.0.60\\webapps\\semoss-ui\\packages\\client\\cypress\\e2e\\application-testing\\settings\\settings-non-admin.test.cy.js": {
+        "path": "C:\\workspace\\apache-tomcat-9.0.60\\webapps\\semoss-ui\\packages\\client\\cypress\\e2e\\application-testing\\settings\\settings-non-admin.test.cy.js",
+        "statementMap": {
+            "0": {
+                "start": { "line": 2, "column": 0 },
+                "end": { "line": 33, "column": 3 }
+            },
+            "1": {
+                "start": { "line": 3, "column": 4 },
+                "end": { "line": 22, "column": 7 }
+            },
+            "2": {
+                "start": { "line": 8, "column": 8 },
+                "end": { "line": 10, "column": 10 }
+            },
+            "3": {
+                "start": { "line": 12, "column": 8 },
+                "end": { "line": 12, "column": 32 }
+            },
+            "4": {
+                "start": { "line": 14, "column": 8 },
+                "end": { "line": 14, "column": 56 }
+            },
+            "5": {
+                "start": { "line": 16, "column": 8 },
+                "end": { "line": 16, "column": 56 }
+            },
+            "6": {
+                "start": { "line": 18, "column": 8 },
+                "end": { "line": 18, "column": 56 }
+            },
+            "7": {
+                "start": { "line": 19, "column": 8 },
+                "end": { "line": 19, "column": 52 }
+            },
+            "8": {
+                "start": { "line": 20, "column": 8 },
+                "end": { "line": 20, "column": 56 }
+            },
+            "9": {
+                "start": { "line": 21, "column": 8 },
+                "end": { "line": 21, "column": 48 }
+            },
+            "10": {
+                "start": { "line": 23, "column": 4 },
+                "end": { "line": 32, "column": 7 }
+            },
+            "11": {
+                "start": { "line": 24, "column": 8 },
+                "end": { "line": 24, "column": 52 }
+            },
+            "12": {
+                "start": { "line": 25, "column": 8 },
+                "end": { "line": 25, "column": 57 }
+            },
+            "13": {
+                "start": { "line": 26, "column": 8 },
+                "end": { "line": 26, "column": 54 }
+            },
+            "14": {
+                "start": { "line": 27, "column": 8 },
+                "end": { "line": 27, "column": 57 }
+            },
+            "15": {
+                "start": { "line": 28, "column": 8 },
+                "end": { "line": 28, "column": 55 }
+            },
+            "16": {
+                "start": { "line": 29, "column": 8 },
+                "end": { "line": 29, "column": 56 }
+            },
+            "17": {
+                "start": { "line": 30, "column": 8 },
+                "end": { "line": 30, "column": 44 }
+            },
+            "18": {
+                "start": { "line": 31, "column": 8 },
+                "end": { "line": 31, "column": 50 }
+            }
+        },
+        "fnMap": {
+            "0": {
+                "name": "(anonymous_0)",
+                "decl": {
+                    "start": { "line": 2, "column": 26 },
+                    "end": { "line": 2, "column": 27 }
+                },
+                "loc": {
+                    "start": { "line": 2, "column": 32 },
+                    "end": { "line": 33, "column": 1 }
+                },
+                "line": 2
+            },
+            "1": {
+                "name": "(anonymous_1)",
+                "decl": {
+                    "start": { "line": 3, "column": 15 },
+                    "end": { "line": 3, "column": 16 }
+                },
+                "loc": {
+                    "start": { "line": 3, "column": 21 },
+                    "end": { "line": 22, "column": 5 }
+                },
+                "line": 3
+            },
+            "2": {
+                "name": "(anonymous_2)",
+                "decl": {
+                    "start": { "line": 23, "column": 35 },
+                    "end": { "line": 23, "column": 36 }
+                },
+                "loc": {
+                    "start": { "line": 23, "column": 41 },
+                    "end": { "line": 32, "column": 5 }
+                },
+                "line": 23
+            }
+        },
+        "branchMap": {},
+        "s": {
+            "0": 1,
+            "1": 1,
+            "2": 1,
+            "3": 1,
+            "4": 1,
+            "5": 1,
+            "6": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1,
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "18": 1
+        },
+        "f": { "0": 1, "1": 1, "2": 1 },
+        "b": {},
+        "_coverageSchema": "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+        "hash": "1ffdbde14c32a57884f1cc4c7caa328e908771d6"
+    }
+}
