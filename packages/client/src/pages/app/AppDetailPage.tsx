@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -13,7 +12,6 @@ import ShareIcon from '@mui/icons-material/Share';
 import {
     Breadcrumbs,
     Button,
-    ButtonGroup,
     IconButton,
     Menu,
     MenuItem,
@@ -56,12 +54,6 @@ const TopButtonsContainer = styled('div')({
 
 const ChangeAccessButton = styled(Button)({
     fontWeight: 'bold',
-});
-
-const StyledArrowDropDownIcon = styled(ArrowDropDownIcon)({
-    '&:first-child': {
-        display: 'flex',
-    },
 });
 
 const SidebarAndSectionsContainer = styled('div')({
@@ -235,31 +227,7 @@ export function AppDetailPage() {
                     <ChangeAccessButton variant="text">
                         Change Access
                     </ChangeAccessButton>
-                    <ButtonGroup>
-                        <Button variant="contained">Open</Button>
-                        <Button
-                            onClick={(event) =>
-                                setArrowAnchorEl(event.currentTarget)
-                            }
-                            variant="contained"
-                        >
-                            <StyledArrowDropDownIcon />
-                        </Button>
-                        <Menu
-                            anchorEl={arrowAnchorEl}
-                            open={Boolean(arrowAnchorEl)}
-                            onClose={() => setArrowAnchorEl(null)}
-                        >
-                            <StyledMenuItem value={null}>
-                                <EditIcon fontSize="small" />
-                                Open in UI Builder
-                            </StyledMenuItem>
-                            <StyledMenuItem value={null}>
-                                <EditIcon fontSize="small" />
-                                Go to Code Editor
-                            </StyledMenuItem>
-                        </Menu>
-                    </ButtonGroup>
+                    <Button variant="contained">Open</Button>
                     <IconButton
                         onClick={(event) =>
                             setMoreVertAnchorEl(event.currentTarget)
