@@ -59,7 +59,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
             ],
         },
         {
-            name: 'onClick',
+            name: 'on Click',
             children: [...buildListener('onClick')],
         },
     ],

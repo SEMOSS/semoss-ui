@@ -130,7 +130,6 @@ export const NotebookQueriesMenu = observer((): JSX.Element => {
                 payload: {
                     queryId: newQueryId,
                     config: {
-                        mode: json.mode,
                         cells: json.cells,
                     },
                 },

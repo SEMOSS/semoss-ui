@@ -982,7 +982,6 @@ export const DEFAULT_TEMPLATE: Template[] = [
             queries: {
                 ['ask-llm']: {
                     id: 'ask-llm',
-                    mode: 'manual',
                     cells: [
                         {
                             id: 'cell-1',
@@ -1158,7 +1157,6 @@ export const DEFAULT_TEMPLATE: Template[] = [
             queries: {
                 ['ask-model']: {
                     id: 'ask-model',
-                    mode: 'manual',
                     cells: [
                         {
                             id: 'file-read',
