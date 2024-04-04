@@ -17,13 +17,13 @@ import {
     MenuItem,
     styled,
     Typography,
-    useNotification,
 } from '@semoss/ui';
 import { SettingsTiles } from '@/components/settings/SettingsTiles';
 // import { AppSettings } from '@/components/app/AppSettings';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
-import { usePixel, useRootStore } from '@/hooks';
+import { useRootStore } from '@/hooks';
+// import { usePixel, useRootStore } from '@/hooks';
 // import { MonolithStore } from '@/stores';
 
 const OuterContainer = styled('div')({
@@ -63,10 +63,9 @@ const SidebarAndSectionsContainer = styled('div')({
 const Sections = styled('div')({
     display: 'flex',
     flexDirection: 'column',
-    fontWeight: 'bold',
     width: '100%',
-    gap: '0.5rem',
-    marginLeft: '198px',
+    gap: '1rem',
+    marginLeft: '12.4rem',
 });
 
 const SectionHeading = styled(Typography)({
@@ -92,12 +91,24 @@ const TitleSectionBodyWrapper = styled('div')({
     justifyContent: 'center',
 });
 
-const TitleSectionBody = styled(Typography)({
+const BodyText = styled(Typography)({
     alignItems: 'center',
     color: 'rgb(0, 0, 0, 0.6)',
     display: 'flex',
     gap: '0.25rem',
 });
+
+const TagsBodyWrapper = styled('div')({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+});
+
+const Tag = styled('span')(({ theme }) => ({
+    background: theme.palette.grey[300],
+    borderRadius: '1.5rem',
+    padding: '0.5em 1em',
+}));
 
 const DepsHeadingWrapper = styled('div')({
     alignItems: 'start',
@@ -118,9 +129,9 @@ export function AppDetailPage() {
     const [permissionState, setPermissionState] = useState('');
     const [appInfoState, setAppInfoState] = useState(null);
     const [dependenciesState, setDependenciesState] = useState([]);
-    const [selectedDependenciesState, setSelectedDependenciesState] = useState(
-        [],
-    );
+    // const [selectedDependenciesState, setSelectedDependenciesState] = useState(
+    //     [],
+    // );
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
 
     const mainUsesRef = useRef<HTMLElement>(null);
@@ -140,8 +151,7 @@ export function AppDetailPage() {
     ];
 
     const { appId } = useParams();
-    const { configStore, monolithStore } = useRootStore();
-    const notification = useNotification();
+    const { monolithStore } = useRootStore();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -267,14 +277,14 @@ export function AppDetailPage() {
                                 <SectionHeading variant="h1">
                                     {appInfoState?.project_name}
                                 </SectionHeading>
-                                <TitleSectionBody variant="body1">
+                                <BodyText variant="body1">
                                     <PermissionComponent />
-                                </TitleSectionBody>
-                                <TitleSectionBody variant="body1">
+                                </BodyText>
+                                <BodyText variant="body1">
                                     {appInfoState?.description
                                         ? appInfoState?.description
                                         : 'No description available'}
-                                </TitleSectionBody>
+                                </BodyText>
                             </TitleSectionBodyWrapper>
                         </TitleSection>
 
@@ -286,6 +296,17 @@ export function AppDetailPage() {
 
                         <section ref={tagsRef}>
                             <SectionHeading variant="h2">Tags</SectionHeading>
+                            {appInfoState?.tag ? (
+                                <TagsBodyWrapper>
+                                    {appInfoState?.tag.map((tag) => (
+                                        <Tag key={nanoid()}>{tag}</Tag>
+                                    ))}
+                                </TagsBodyWrapper>
+                            ) : (
+                                <BodyText variant="body1">
+                                    No tags available
+                                </BodyText>
+                            )}
                         </section>
 
                         <section ref={videosRef}>
