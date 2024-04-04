@@ -121,7 +121,6 @@ export function AppDetailPage() {
     const [selectedDependenciesState, setSelectedDependenciesState] = useState(
         [],
     );
-    const [arrowAnchorEl, setArrowAnchorEl] = useState(null);
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
 
     const mainUsesRef = useRef<HTMLElement>(null);
@@ -272,8 +271,8 @@ export function AppDetailPage() {
                                     <PermissionComponent />
                                 </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
-                                    {appInfoState?.project_description
-                                        ? appInfoState?.project_description
+                                    {appInfoState?.description
+                                        ? appInfoState?.description
                                         : 'No description available'}
                                 </TitleSectionBody>
                             </TitleSectionBodyWrapper>
