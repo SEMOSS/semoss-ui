@@ -101,7 +101,7 @@ const BodyText = styled(Typography)({
 const TagsBodyWrapper = styled('div')({
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '0.5rem',
+    gap: '0.6rem',
 });
 
 const Tag = styled('span')(({ theme }) => ({
