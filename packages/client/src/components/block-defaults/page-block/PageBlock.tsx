@@ -25,7 +25,9 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
 
     // when the page is mounted, trigger the onPageLoad event
     useEffect(() => {
-        listeners.onPageLoad();
+        if (listeners.onPageLoad) {
+            listeners.onPageLoad();
+        }
     }, []);
 
     return (

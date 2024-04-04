@@ -90,44 +90,6 @@ export class StateStore {
         // make it observable
         makeAutoObservable(this);
 
-        // auto update when a query or mode changes
-        // reaction(
-        //     () => {
-        //         return Object.keys(this._store.queries).reduce<
-        //             Record<string, string>
-        //         >((acc, val) => {
-        //             const q = this._store.queries[val];
-
-        //             // map id -> actual
-        //             acc[q.id] = `${this.flattenVariable(q.toPixel())}--${
-        //                 q.mode
-        //             }`;
-
-        //             return acc;
-        //         }, {});
-        //     },
-        //     (curr, prev) => {
-        //         for (const id in curr) {
-        //             // get the query
-        //             const q = this._store.queries[id];
-
-        //             // if they are the same ignore
-        //             if (!q || curr[id] === prev[id]) {
-        //                 continue;
-        //             }
-
-        //             // ignore if not automatic
-        //             // PROBLEM: PK brought this up: ONLY WHILE IN NOTEBOOK, editting queries it may be best to have user manually run queries
-        //             if (q.mode !== 'automatic') {
-        //                 continue;
-        //             }
-
-        //             // run the query
-        //             this.runQuery(id);
-        //         }
-        //     },
-        // );
-
         // set the initial state after reactive to invoke it
         this.setState(config.state);
     }
