@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+// import { useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -15,12 +16,13 @@ import {
     IconButton,
     Menu,
     MenuItem,
+    Modal,
     styled,
     Typography,
 } from '@semoss/ui';
-import { SettingsTiles } from '@/components/settings/SettingsTiles';
+// import { SettingsTiles } from '@/components/settings/SettingsTiles';
 // import { AppSettings } from '@/components/app/AppSettings';
-import { SettingsContext } from '@/contexts';
+// import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
 // import { usePixel, useRootStore } from '@/hooks';
@@ -134,6 +136,7 @@ export function AppDetailPage() {
     //     [],
     // );
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
+    const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
 
     const mainUsesRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
@@ -153,7 +156,7 @@ export function AppDetailPage() {
 
     const { appId } = useParams();
     const { monolithStore } = useRootStore();
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     useEffect(() => {
         getPermission();
@@ -192,11 +195,14 @@ export function AppDetailPage() {
         return dependencies;
     }
 
-    async function runSetProjectMetadata() {
+    async function runSetMainUses() {
         const response = await monolithStore.runQuery(
-            `SetProjectMetadata(project="${appId}", meta=[{"markdown":"Lorem Ipsum"}])`,
+            `SetProjectMetadata(project="${appId}", meta=[{"markdown":"test123test123"}])`,
         );
         console.log('🚀 ~ runSetProjectMetadata ~ response:', response);
+        if (response?.errors?.length === 0) {
+            getMainUses();
+        }
     }
 
     async function runSetDependenciesQuery(testSelectedDeps: string[]) {
@@ -261,7 +267,10 @@ export function AppDetailPage() {
                         open={Boolean(moreVertAnchorEl)}
                         onClose={() => setMoreVertAnchorEl(null)}
                     >
-                        <StyledMenuItem value={null}>
+                        <StyledMenuItem
+                            onClick={() => setIsEditDetailsModalOpen(true)}
+                            value={null}
+                        >
                             <EditIcon fontSize="small" />
                             Edit App Details
                         </StyledMenuItem>
@@ -274,10 +283,6 @@ export function AppDetailPage() {
                             Delete App
                         </StyledMenuItem>
                     </Menu>
-
-                    <Button onClick={() => runSetProjectMetadata()}>
-                        <pre>set test main uses</pre>
-                    </Button>
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
@@ -363,7 +368,7 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">
                                 App Access
                             </SectionHeading>
-                            <SettingsContext.Provider
+                            {/* <SettingsContext.Provider
                                 value={{
                                     adminMode: false,
                                 }}
@@ -376,7 +381,7 @@ export function AppDetailPage() {
                                         navigate('/settings/app');
                                     }}
                                 />
-                            </SettingsContext.Provider>
+                            </SettingsContext.Provider> */}
                         </section>
 
                         <section ref={memberAccessRef}>
@@ -387,6 +392,12 @@ export function AppDetailPage() {
                     </Sections>
                 </SidebarAndSectionsContainer>
             </InnerContainer>
+
+            <EditDetailsModal
+                isOpen={isEditDetailsModalOpen}
+                onClose={() => setIsEditDetailsModalOpen(false)}
+                runSetMainUses={runSetMainUses}
+            />
         </OuterContainer>
     );
 }
@@ -450,5 +461,27 @@ function Sidebar({ refs }: SidebarProps) {
                 </SidebarMenuItem>
             ))}
         </StyledSidebar>
+    );
+}
+
+interface EditDetailsModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    runSetMainUses: () => Promise<void>;
+}
+
+function EditDetailsModal({
+    isOpen,
+    onClose,
+    runSetMainUses,
+}: EditDetailsModalProps) {
+    return (
+        <Modal open={isOpen} fullWidth>
+            <Typography variant="h3">Edit App Details</Typography>
+            <Button onClick={() => runSetMainUses()}>
+                <pre>set test main uses</pre>
+            </Button>
+            <Button onClick={() => onClose()}>Cancel</Button>
+        </Modal>
     );
 }
