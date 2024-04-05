@@ -91,7 +91,7 @@ const TitleSectionBodyWrapper = styled('div')({
     justifyContent: 'center',
 });
 
-const BodyText = styled(Typography)({
+const TitleSectionBody = styled(Typography)({
     alignItems: 'center',
     color: 'rgb(0, 0, 0, 0.6)',
     display: 'flex',
@@ -277,14 +277,14 @@ export function AppDetailPage() {
                                 <SectionHeading variant="h1">
                                     {appInfoState?.project_name}
                                 </SectionHeading>
-                                <BodyText variant="body1">
+                                <TitleSectionBody variant="body1">
                                     <PermissionComponent />
-                                </BodyText>
-                                <BodyText variant="body1">
+                                </TitleSectionBody>
+                                <TitleSectionBody variant="body1">
                                     {appInfoState?.description
                                         ? appInfoState?.description
                                         : 'No description available'}
-                                </BodyText>
+                                </TitleSectionBody>
                             </TitleSectionBodyWrapper>
                         </TitleSection>
 
@@ -303,9 +303,9 @@ export function AppDetailPage() {
                                     ))}
                                 </TagsBodyWrapper>
                             ) : (
-                                <BodyText variant="body1">
+                                <Typography variant="body1">
                                     No tags available
-                                </BodyText>
+                                </Typography>
                             )}
                         </section>
 
