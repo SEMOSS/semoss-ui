@@ -128,6 +128,7 @@ const StyledMenuItem = styled(MenuItem)({
 export function AppDetailPage() {
     const [permissionState, setPermissionState] = useState('');
     const [appInfoState, setAppInfoState] = useState(null);
+    const [mainUsesState, setMainUsesState] = useState('');
     const [dependenciesState, setDependenciesState] = useState([]);
     // const [selectedDependenciesState, setSelectedDependenciesState] = useState(
     //     [],
@@ -157,34 +158,45 @@ export function AppDetailPage() {
     useEffect(() => {
         getPermission();
         getAppInfo();
+        getMainUses();
         getDependencies();
     }, []);
 
     async function getPermission() {
-        const getUserProjectPermission =
-            await monolithStore.getUserProjectPermission(appId);
-        setPermissionState(getUserProjectPermission.permission);
+        const response = await monolithStore.getUserProjectPermission(appId);
+        setPermissionState(response.permission);
     }
 
     async function getAppInfo() {
         const response = await monolithStore.runQuery(
             `ProjectInfo(project="${appId}")`,
         );
-        console.log('response: ', response);
         const appInfo = response.pixelReturn[0].output;
         setAppInfoState(appInfo);
         return appInfo;
+    }
+    async function getMainUses() {
+        const response = await monolithStore.runQuery(
+            `GetProjectMarkdown(project="${appId}")`,
+        );
+        const mainUses = response.pixelReturn[0].output;
+        setMainUsesState(mainUses);
     }
 
     async function getDependencies() {
         const response = await monolithStore.runQuery(
             `GetProjectDependencies(project="${appId}")`,
         );
-
         const dependencies = response.pixelReturn[0].output;
-        console.log('deps: ', dependencies);
         setDependenciesState(dependencies);
         return dependencies;
+    }
+
+    async function runSetProjectMetadata() {
+        const response = await monolithStore.runQuery(
+            `SetProjectMetadata(project="${appId}", meta=[{"markdown":"Lorem Ipsum"}])`,
+        );
+        console.log('🚀 ~ runSetProjectMetadata ~ response:', response);
     }
 
     async function runSetDependenciesQuery(testSelectedDeps: string[]) {
@@ -196,7 +208,7 @@ export function AppDetailPage() {
             // `SetProjectDependencies(project="${appId}", dependencies=${selectedDependenciesState})`,
         );
         // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
-        console.log('🚀 ~ setDependenciesQuery ~ response:', response);
+        // console.log('🚀 ~ setDependenciesQuery ~ response:', response);
     }
 
     function PermissionComponent(): JSX.Element {
@@ -262,6 +274,10 @@ export function AppDetailPage() {
                             Delete App
                         </StyledMenuItem>
                     </Menu>
+
+                    <Button onClick={() => runSetProjectMetadata()}>
+                        <pre>set test main uses</pre>
+                    </Button>
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
@@ -292,6 +308,9 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
+                            <Typography variant="body1">
+                                {mainUsesState}
+                            </Typography>
                         </section>
 
                         <section ref={tagsRef}>
