@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Button, Stack, TextField, useNotification } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks, usePixel, useRootStore } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
-import { BaseSettingSection } from '../BaseSettingSection';
 import { AutoAwesome } from '@mui/icons-material';
 import { Autocomplete } from '@mui/material';
+import { runPixel } from '@/api';
 
 type CfgLibraryEngineState = {
     loading: boolean;
@@ -63,6 +63,17 @@ export const AIGenerationSettings = observer(
         const [prompt, setPrompt] = useState('');
         const [responseLoading, setResponseLoading] = useState<boolean>(false);
 
+        const modelIdRef = useRef('');
+        const [modelId, setModelId] = useState<string>('');
+
+        const [models, setModels] = useState<
+            { app_id: string; app_name: string }[]
+        >([]);
+
+        useEffect(() => {
+            modelIdRef.current = modelId;
+        }, [modelId]);
+
         const [cfgLibraryModels, setCfgLibraryModels] =
             useState<CfgLibraryEngineState>({
                 loading: true,
@@ -97,43 +108,92 @@ export const AIGenerationSettings = observer(
             }
         }, [myModels.status, myModels.data]);
 
+        useEffect(() => {
+            if (myModels.status !== 'SUCCESS') {
+                return;
+            }
+
+            setModels(
+                myModels.data.map((d) => ({
+                    app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                    app_id: d.app_id,
+                })),
+            );
+
+            setModelId(myModels.data[0].app_id);
+        }, [myModels.status, myModels.data]);
+
+        useEffect(() => {
+            if (myModels.status !== 'SUCCESS') {
+                return;
+            }
+
+            setModels(
+                myModels.data.map((d) => ({
+                    app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                    app_id: d.app_id,
+                })),
+            );
+
+            setModelId(myModels.data[0].app_id);
+        }, [myModels.status, myModels.data]);
+
         const generateAIResponse = async () => {
             try {
                 setResponseLoading(true);
-                const flattenedPrompt = state.flattenVariable(prompt);
-                const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
-                    {
-                        max_new_tokens: 4000,
-                    },
-                )}]);`;
-                const { errors, pixelReturn } = await monolithStore.runQuery(
-                    pixel,
+
+                // re-wrote LLM prompting section previous approach was throwing error
+                let flattenedPrompt = `${state.flattenVariable(
+                    prompt,
+                )} ${appendPrompt}`;
+                flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
+                const pixel = `LLM(engine = "${modelIdRef.current}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
+                const res = await runPixel(pixel);
+                const LLMResponse = res.pixelReturn[0].output['response'];
+
+                let trimmedStarterCode = LLMResponse;
+                trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
+
+                trimmedStarterCode = trimmedStarterCode.substring(
+                    trimmedStarterCode.indexOf('\n') + 1,
                 );
 
-                let valueToSet = pixelReturn[0]?.output?.response;
+                setData(
+                    path,
+                    trimmedStarterCode as PathValue<D['data'], typeof path>,
+                );
 
-                if (errors.length > 0 || typeof valueToSet !== 'string') {
-                    throw new Error(errors.join(''));
-                }
-
-                if (valueAsObject) {
-                    valueToSet = !!pixelReturn[0].output?.response
-                        ? JSON.parse(
-                              pixelReturn[0].output?.response
-                                  .replaceAll('\\"', '"')
-                                  .replaceAll('\\n', ''),
-                          )
-                        : undefined;
-                    if (valueToSet === undefined) {
-                        notification.add({
-                            color: 'error',
-                            message:
-                                'There was an issue parsing the JSON in your response.',
-                        });
-                    }
-                }
-
-                setData(path, valueToSet as PathValue<D['data'], typeof path>);
+                // below is the previos LLM prompting code - not sure if we want or need any of this
+                // const flattenedPrompt = state.flattenVariable(prompt);
+                // const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
+                //     {
+                //         max_new_tokens: 4000,
+                //     },
+                // )}]);`;
+                // const { errors, pixelReturn } = await monolithStore.runQuery(
+                //     pixel,
+                // );
+                // let valueToSet = pixelReturn[0]?.output?.response;
+                // if (errors.length > 0 || typeof valueToSet !== 'string') {
+                //     throw new Error(errors.join(''));
+                // }
+                // if (valueAsObject) {
+                //     valueToSet = !!pixelReturn[0].output?.response
+                //         ? JSON.parse(
+                //               pixelReturn[0].output?.response
+                //                   .replaceAll('\\"', '"')
+                //                   .replaceAll('\\n', ''),
+                //           )
+                //         : undefined;
+                //     if (valueToSet === undefined) {
+                //         notification.add({
+                //             color: 'error',
+                //             message:
+                //                 'There was an issue parsing the JSON in your response.',
+                //         });
+                //     }
+                // }
+                // setData(path, "valueToSet" as PathValue<D['data'], typeof path>);
             } catch (e) {
                 console.error(e);
 
