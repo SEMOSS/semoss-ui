@@ -18,6 +18,8 @@ declare module "@mui/material" {
         disabled?: string;
         divider?: string;
         text?: string;
+        white?: string;
+        backdropOverlay?: string;
     }
 }
 
@@ -97,6 +99,9 @@ export const customLightPaletteTokens: CustomPaletteTheme = {
             border: "#C4C4C4",
             divider: "#E6E6E6",
         },
+        text: {
+            white: "#FFFFFF",
+        },
         error: {
             text: "#57100B",
         },
@@ -107,6 +112,10 @@ export const customLightPaletteTokens: CustomPaletteTheme = {
             text: "#123214",
             // Only use selected for custom stepper in agent/prompt builder
             selected: "#E6EFE6",
+        },
+        background: {
+            // Backdrop Overlay must be a shade/percentage
+            backdropOverlay: "#000000",
         },
     },
 };
@@ -133,7 +142,6 @@ export const lightTheme: CustomThemeOptions = {
             primary: "#000000",
             secondary: "#666666",
             disabled: "#9E9E9E",
-            white: "#FFFFFF",
         },
         error: {
             main: "#DA291C",
@@ -158,8 +166,6 @@ export const lightTheme: CustomThemeOptions = {
         background: {
             paper: "#FFFFFF", // Design references this color as "paper1"
             default: "#FAFAFA", // Design references this color as "paper2"
-            // Backdrop Overlay must be a shade/percentage
-            backdropOverlay: "#000000",
         },
         primaryContrast: {
             // SEMOSS BLUE
