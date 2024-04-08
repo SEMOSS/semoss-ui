@@ -32,6 +32,12 @@ const StyledTypography = styled(Typography)(() => ({
     fontWeight: 'bold',
 }));
 
+// const StyledTypographyNoAccordion = styled(Typography)(({ theme }) => ({
+//     textTransform: 'uppercase',
+//     fontWeight: 'bold',
+//     paddingLeft: theme.spacing(2),
+// }));
+
 const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
     minHeight: 'auto !important',
     height: theme.spacing(6),
@@ -79,6 +85,8 @@ export const SelectedMenuSection = observer(
                                         {s.name}
                                     </StyledTypography>
                                 </StyledMenuSectionTitle>
+                                {/* )} */}
+
                                 <Accordion.Content>
                                     {s.children.length > 0 ? (
                                         <Stack direction="column" spacing={1}>

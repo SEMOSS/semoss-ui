@@ -382,7 +382,7 @@ export const AppEditor = (props: AppEditorProps) => {
             })),
         );
 
-        setModelId(myModels.data[0].app_id);
+        setModelId(myModels.data.length ? myModels.data[0].app_id : '');
     }, [myModels.status, myModels.data]);
 
     /**
