@@ -2,7 +2,6 @@ import { useEffect, useState, useReducer, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Avatar,
-    Chip,
     Collapse,
     Divider,
     styled,
@@ -14,6 +13,7 @@ import {
     ToggleButtonGroup,
     Grid,
     List,
+    ButtonGroup,
 } from '@semoss/ui';
 import {
     ExpandLess,
@@ -48,27 +48,19 @@ const StyledFilter = styled('div')(({ theme }) => ({
     background: theme.palette.background.paper,
 }));
 
+const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+}));
+
 const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
     borderRadius: theme.shape.borderRadius,
     gap: theme.spacing(2),
 }));
 
-const StyledChipList = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    marginLeft: theme.spacing(2),
-    gap: theme.spacing(2),
-}));
-
 const StyledFilterSearchContainer = styled('div')(({ theme }) => ({
     marginTop: theme.spacing(2),
     marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-}));
-
-const StyledNestedFilterList = styled(List)(({ theme }) => ({
-    width: '100%',
     marginRight: theme.spacing(2),
 }));
 
@@ -87,39 +79,6 @@ const StyledContent = styled('div')(() => ({
     height: '100%',
     flex: '1',
 }));
-
-const StyledChip = styled(Chip, {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{
-    /** Track if the chip is selected */
-    selected: boolean;
-}>(({ theme, selected }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
-    // TODO: Fix typing
-    const palette = theme.palette as unknown as {
-        primary: Record<string, string>;
-        background: Record<string, string>;
-        primaryContrast: Record<string, string>;
-    };
-
-    return {
-        color: selected
-            ? palette.background.paper
-            : palette.primaryContrast['900'],
-        backgroundColor: selected
-            ? palette.primary.main
-            : palette.primaryContrast['50'],
-
-        '&:hover': {
-            color: selected
-                ? palette.background.paper
-                : palette.primaryContrast['900'],
-            background: selected
-                ? palette.primaryContrast['900']
-                : palette.primaryContrast['100'],
-        },
-    };
-});
 
 const StyledShowMore = styled(Typography)(({ theme }) => {
     // TODO: Fix typing
@@ -774,45 +733,6 @@ export const EngineCatalogPage = observer(
                             </List.Item>
 
                             <Collapse in={filterByVisibility}>
-                                <StyledChipList>
-                                    <StyledChip
-                                        label={`My ${
-                                            route
-                                                ? `${route.name}(s)`
-                                                : 'Engine(s)'
-                                        }`}
-                                        selected={mode === 'Mine'}
-                                        onClick={() => {
-                                            // Reset engines and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-                                            setMode('Mine');
-                                        }}
-                                    ></StyledChip>
-                                    <StyledChip
-                                        label={`Discoverable ${
-                                            route
-                                                ? `${route.name}(s)`
-                                                : 'Engine(s)'
-                                        }`}
-                                        selected={mode === 'Discoverable'}
-                                        onClick={() => {
-                                            // Reset engines and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-                                            setMode('Discoverable');
-                                        }}
-                                    ></StyledChip>
-                                </StyledChipList>
-
                                 {Object.entries(filterOptions).length ? (
                                     <StyledFilterSearchContainer>
                                         <Search
@@ -1018,6 +938,50 @@ export const EngineCatalogPage = observer(
                     </StyledFilter>
 
                     <StyledContent>
+                        <StyledButtonGroup>
+                            <Button
+                                color="secondary"
+                                variant={
+                                    mode === 'Mine' ? 'outlined' : 'contained'
+                                }
+                                onClick={() => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setOffset(0);
+                                    setMode('Mine');
+                                }}
+                            >
+                                {`My ${
+                                    route ? `${route.name}(s)` : 'Engine(s)'
+                                }`}
+                            </Button>
+                            <Button
+                                color="secondary"
+                                variant={
+                                    mode === 'Discoverable'
+                                        ? 'outlined'
+                                        : 'contained'
+                                }
+                                onClick={() => {
+                                    // Reset engines and reset offset
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setOffset(0);
+                                    setMode('Discoverable');
+                                }}
+                            >
+                                {`Discoverable ${
+                                    route ? `${route.name}(s)` : 'Engine(s)'
+                                }`}
+                            </Button>
+                        </StyledButtonGroup>
+
                         {databases.length ? (
                             <Grid container spacing={3}>
                                 {databases.map((db) => {
