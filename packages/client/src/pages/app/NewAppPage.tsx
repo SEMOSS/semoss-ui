@@ -122,6 +122,8 @@ export const NewAppPage = () => {
                 <AddAppModal
                     open={isUploadOpen}
                     handleClose={(appId) => {
+                        console.log('ok');
+                        debugger;
                         // if there is an appId navigate to it
                         if (appId) {
                             navigateApp(appId);
