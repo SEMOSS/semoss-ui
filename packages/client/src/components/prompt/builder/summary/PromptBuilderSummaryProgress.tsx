@@ -17,7 +17,11 @@ export const PromptBuilderSummaryProgress = (
     return (
         <FlexBox>
             <Box sx={{ width: '100%', mr: 1 }}>
-                <LinearProgress variant="determinate" value={props.progress} />
+                <LinearProgress
+                    variant="determinate"
+                    color="success"
+                    value={props.progress}
+                />
             </Box>
             <Box>
                 <Typography variant="body2">{`${Math.round(

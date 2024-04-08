@@ -7,13 +7,39 @@ import {
 
 const StyledMuiButton = styled(MuiButton, {
     shouldForwardProp: (prop) => prop !== "loading",
-})<{ loading?: boolean }>(({ loading }) => ({
+})<{
+    loading?: boolean;
+    variant: ButtonProps["variant"];
+    color: ButtonProps["color"];
+    diabled?: boolean;
+}>(({ loading, variant, color, disabled, theme }) => ({
     "& .MuiButton-endIcon svg": {
         visibility: loading === true ? "hidden" : "visible",
     },
     "& .MuiButton-startIcon svg": {
         visibility: loading === true ? "hidden" : "visible",
     },
+
+    ...(variant === "outlined" &&
+        color === "secondary" && {
+            borderColor: theme.palette.secondary.border,
+            color: theme.palette.text.primary,
+            "&:hover": {
+                backgroundColor: theme.palette.secondary.hover,
+            },
+
+            ...(disabled && {
+                backgroundColor: theme.palette.secondary.border,
+            }),
+        }),
+
+    ...(variant === "text" &&
+        color === "secondary" && {
+            color: theme.palette.text.primary,
+            "&:hover": {
+                backgroundColor: theme.palette.secondary.hover,
+            },
+        }),
 }));
 
 export interface ButtonProps
@@ -105,7 +131,8 @@ export interface ButtonProps
 }
 
 export const Button = (props: ButtonProps) => {
-    const muiButtonProps = { ...props };
+    const { variant = "text", color = "primary", ...rest } = props;
+    const muiButtonProps = { ...rest };
 
     if (muiButtonProps?.loading) {
         delete muiButtonProps.loading;
@@ -120,17 +147,19 @@ export const Button = (props: ButtonProps) => {
 
     return (
         <StyledMuiButton
-            {...props}
-            disabled={props?.disabled || props?.loading}
+            {...rest}
+            variant={variant}
+            color={color}
+            disabled={rest?.disabled || rest?.loading}
         >
             <span
                 style={{
-                    visibility: props?.loading ? "hidden" : "visible",
+                    visibility: rest?.loading ? "hidden" : "visible",
                 }}
             >
-                {props.children}
+                {rest.children}
             </span>
-            {props?.loading ? (
+            {rest?.loading ? (
                 <CircularProgress
                     color="inherit"
                     size={progressCircularSize}
