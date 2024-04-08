@@ -13,7 +13,6 @@ import {
     ToggleButtonGroup,
     Grid,
     List,
-    ButtonGroup,
 } from '@semoss/ui';
 import {
     ExpandLess,
@@ -48,7 +47,7 @@ const StyledFilter = styled('div')(({ theme }) => ({
     background: theme.palette.background.paper,
 }));
 
-const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
     marginBottom: theme.spacing(4),
 }));
 
@@ -938,49 +937,42 @@ export const EngineCatalogPage = observer(
                     </StyledFilter>
 
                     <StyledContent>
-                        <StyledButtonGroup>
-                            <Button
+                        <StyledToggleButtonGroup value={mode}>
+                            <ToggleButton
                                 color="secondary"
-                                variant={
-                                    mode === 'Mine' ? 'outlined' : 'contained'
-                                }
-                                onClick={() => {
+                                value="Mine"
+                                onClick={(e, v) => {
                                     dispatch({
                                         type: 'field',
                                         field: 'databases',
                                         value: [],
                                     });
                                     setOffset(0);
-                                    setMode('Mine');
+                                    setMode(v);
                                 }}
                             >
                                 {`My ${
                                     route ? `${route.name}(s)` : 'Engine(s)'
                                 }`}
-                            </Button>
-                            <Button
+                            </ToggleButton>
+                            <ToggleButton
                                 color="secondary"
-                                variant={
-                                    mode === 'Discoverable'
-                                        ? 'outlined'
-                                        : 'contained'
-                                }
-                                onClick={() => {
-                                    // Reset engines and reset offset
+                                value="Discoverable"
+                                onClick={(e, v) => {
                                     dispatch({
                                         type: 'field',
                                         field: 'databases',
                                         value: [],
                                     });
                                     setOffset(0);
-                                    setMode('Discoverable');
+                                    setMode(v);
                                 }}
                             >
                                 {`Discoverable ${
                                     route ? `${route.name}(s)` : 'Engine(s)'
                                 }`}
-                            </Button>
-                        </StyledButtonGroup>
+                            </ToggleButton>
+                        </StyledToggleButtonGroup>
 
                         {databases.length ? (
                             <Grid container spacing={3}>
