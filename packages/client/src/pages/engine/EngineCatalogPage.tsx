@@ -718,10 +718,10 @@ export const EngineCatalogPage = observer(
                                 <ToggleButtonGroup
                                     size={'small'}
                                     value={view}
-                                    color="primary"
+                                    color="secondary"
                                 >
                                     <ToggleButton
-                                        color="primary"
+                                        color="secondary"
                                         onClick={(e, v) => setView(v)}
                                         value={'tile'}
                                         aria-label={'Tile View'}
@@ -730,7 +730,7 @@ export const EngineCatalogPage = observer(
                                     </ToggleButton>
 
                                     <ToggleButton
-                                        color="primary"
+                                        color="secondary"
                                         onClick={(e, v) => setView(v)}
                                         value={'list'}
                                         aria-label={'List View'}
