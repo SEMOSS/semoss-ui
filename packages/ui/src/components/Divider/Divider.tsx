@@ -3,6 +3,15 @@ import {
     SxProps,
     DividerProps as MuiDividerProps,
 } from "@mui/material";
+import { styled } from "@mui/material";
+
+const StyledDivider = styled(MuiDivider)<{ light?: boolean }>(
+    ({ theme, light }) => ({
+        ...(light
+            ? { backgroundColor: theme.palette.secondary.light }
+            : { backgroundColor: theme.palette.secondary.main }),
+    }),
+);
 
 export interface DividerProps extends MuiDividerProps {
     /**
@@ -54,5 +63,5 @@ export interface DividerProps extends MuiDividerProps {
 
 export const Divider = (props: DividerProps) => {
     const { sx } = props;
-    return <MuiDivider sx={sx} {...props} />;
+    return <StyledDivider sx={sx} {...props} />;
 };
