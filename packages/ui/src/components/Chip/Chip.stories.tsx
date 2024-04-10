@@ -11,7 +11,7 @@ const meta: Meta<typeof Chip> = {
         variant: "outlined",
         clickable: true,
         disabled: false,
-        color: "green",
+        color: "default",
     },
     argTypes: {
         variant: {
@@ -45,20 +45,6 @@ export const Outlined: Story = {
     render: (args) => (
         <>
             <Chip label="Chip" {...args} />
-            <Chip label="Chip" color="indigo" variant="outlined" />
-            <Chip label="Chip" color="indigo" variant="filled" />
-            <Chip label="Chip" color="turqoise" variant="filled" />
-            <Chip label="Chip" color="turqoise" variant="outlined" />
-            <Chip label="Chip" color="green" variant="filled" />
-            <Chip label="Chip" color="green" variant="outlined" />
-            <Chip label="Chip" color="purple" variant="filled" />
-            <Chip label="Chip" color="lcpurple" variant="outlined" />
-            <Chip label="Chip" color="primary" variant="outlined" />
-            <Chip label="Chip" color="primary" variant="filled" />
-            <Chip label="Chip" color="pink" variant="filled" />
-            <Chip label="Chip" color="pink" variant="outlined" />
-            <Chip label="Chip" color="lcpink" variant="outlined" />
-            <Chip label="Chip" color="lcpink" variant="filled" />
         </>
     ),
 };

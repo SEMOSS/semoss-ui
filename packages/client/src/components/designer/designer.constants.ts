@@ -18,6 +18,7 @@ import BLOCK_IFRAME from '@/assets/img/BLOCK_IFRAME.png';
 import BLOCK_IMAGE from '@/assets/img/BLOCK_IMAGE.png';
 import BLOCK_LINK from '@/assets/img/BLOCK_LINK.png';
 import BLOCK_MARKDOWN from '@/assets/img/BLOCK_MARKDOWN.png';
+import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_PROGRESS_BAR from '@/assets/img/BLOCK_PROGRESS_BAR.png';
 import BLOCK_SELECT from '@/assets/img/BLOCK_SELECT.png';
 import BLOCK_TOGGLE_BUTTON from '@/assets/img/BLOCK_TOGGLE_BUTTON.png';
@@ -306,6 +307,24 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                     padding: '4px',
                 },
                 markdown: '**Hello world**',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: 'Element',
+        // image for html block from design team
+        image: HTML_BLOCK,
+        name: 'HTML',
+        json: {
+            widget: 'html',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                // default html includes place-holder text and basic styling
+                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

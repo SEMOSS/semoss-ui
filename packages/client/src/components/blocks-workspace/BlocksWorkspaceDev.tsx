@@ -176,6 +176,7 @@ export const BlocksWorkspaceDev = observer(() => {
                         <Button
                             size="small"
                             variant="outlined"
+                            color="secondary"
                             onClick={() => {
                                 copy(stateStr);
                             }}

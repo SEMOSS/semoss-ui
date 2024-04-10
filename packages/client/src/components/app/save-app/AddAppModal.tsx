@@ -8,6 +8,7 @@ import {
     Visibility,
 } from '@mui/icons-material';
 import {
+    ADD_APP_FORM_FIELD_APP_TYPE,
     ADD_APP_FORM_FIELD_DESCRIPTION,
     ADD_APP_FORM_FIELD_IS_GLOBAL,
     ADD_APP_FORM_FIELD_NAME,
@@ -24,6 +25,7 @@ import { AppTagsStep } from './AppTagsStep';
 
 type AddAppForm = {
     [ADD_APP_FORM_FIELD_NAME]: string;
+    [ADD_APP_FORM_FIELD_APP_TYPE]: string;
     [ADD_APP_FORM_FIELD_DESCRIPTION]: string;
     [ADD_APP_FORM_FIELD_TAGS]: string[];
     [ADD_APP_FORM_FIELD_UPLOAD]: File;
@@ -39,8 +41,8 @@ export type AddAppFormStep = {
         control: Control<any, any>;
         disabled: boolean;
         setAddAppFormSteps?: Dispatch<SetStateAction<AddAppFormStep[]>>;
-        defaultAddAppFormStep?: AddAppFormStep[];
-        assetAddAppFormStep?: AddAppFormStep[];
+        appZipFormSteps?: AddAppFormStep[];
+        projectZipFormSteps?: AddAppFormStep[];
     }>;
     requiredFields: string[];
 };
@@ -58,12 +60,12 @@ export const AddAppModal = (props: AddAppProps) => {
         <AppUploadStep
             control={props.control}
             setAddAppFormSteps={setAddAppFormSteps}
-            defaultAddAppFormStep={defaultAddAppFormStep}
-            assetAddAppFormStep={assetAddAppFormStep}
+            appZipFormSteps={appZipFormSteps}
+            projectZipFormSteps={projectZipFormSteps}
         />
     );
 
-    const defaultAddAppFormStep = [
+    const appZipFormSteps = [
         {
             name: 'Upload',
             icon: <OpenInBrowser />,
@@ -84,7 +86,7 @@ export const AddAppModal = (props: AddAppProps) => {
         },
     ];
 
-    const assetAddAppFormStep = [
+    const projectZipFormSteps = [
         {
             name: 'Upload',
             icon: <OpenInBrowser />,
@@ -121,9 +123,8 @@ export const AddAppModal = (props: AddAppProps) => {
         },
     ];
 
-    const [addAppFormSteps, setAddAppFormSteps] = useState<AddAppFormStep[]>(
-        defaultAddAppFormStep,
-    );
+    const [addAppFormSteps, setAddAppFormSteps] =
+        useState<AddAppFormStep[]>(appZipFormSteps);
 
     const { open, handleClose } = props;
 
@@ -133,6 +134,7 @@ export const AddAppModal = (props: AddAppProps) => {
     const defaultFormValues: AddAppForm = {
         [ADD_APP_FORM_FIELD_NAME]: '',
         [ADD_APP_FORM_FIELD_DESCRIPTION]: '',
+        [ADD_APP_FORM_FIELD_APP_TYPE]: '',
         [ADD_APP_FORM_FIELD_TAGS]: [],
         [ADD_APP_FORM_FIELD_UPLOAD]: null,
         [ADD_APP_FORM_FIELD_IS_GLOBAL]: false,
@@ -171,7 +173,7 @@ export const AddAppModal = (props: AddAppProps) => {
             handleClose(output.project_id);
         } else {
             const createProjectResponse = await monolithStore.runQuery(
-                `CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["CODE"], portal=["true"])`,
+                `CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["${data[ADD_APP_FORM_FIELD_APP_TYPE]}"], portal=["true"])`,
             );
 
             let createProjectOutput = undefined;

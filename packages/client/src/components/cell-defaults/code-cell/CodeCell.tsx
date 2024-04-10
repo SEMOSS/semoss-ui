@@ -10,6 +10,7 @@ import { LoadingScreen } from '@/components/ui';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 import { StyledSelect, StyledSelectItem } from '../shared';
+import { observer } from 'mobx-react-lite';
 
 import { PythonIcon, RIcon } from './icons';
 import { editor } from 'monaco-editor';
@@ -71,7 +72,7 @@ const EditorLanguages = {
 
 const EditorLineHeight = 19;
 // TODO:: Refactor height to account for Layout
-export const CodeCell: CellComponent<CodeCellDef> = (props) => {
+export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const monacoRef = useRef(null);
     const selectionRef = useRef(null);
@@ -506,58 +507,6 @@ export const CodeCell: CellComponent<CodeCellDef> = (props) => {
             )}
 
             <Stack direction="column" spacing={1}>
-                {isExpanded && (
-                    <Stack direction="row">
-                        <StyledSelect
-                            size={'small'}
-                            title={'Select Language'}
-                            value={EDITOR_TYPE[cell.parameters.type].value}
-                            SelectProps={{
-                                IconComponent: KeyboardArrowDown,
-                                style: {
-                                    height: '30px',
-                                    width: '180px',
-                                },
-                            }}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (
-                                    value !==
-                                    EDITOR_TYPE[cell.parameters.type].value
-                                ) {
-                                    console.log(value);
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.type',
-                                            value: value,
-                                        },
-                                    });
-
-                                    setCount(count + 1);
-                                }
-                            }}
-                        >
-                            {Array.from(
-                                Object.values(EDITOR_TYPE),
-                                (language, i) => (
-                                    <StyledSelectItem
-                                        key={`${i}-${cell.id}-${language.name}`}
-                                        value={language.value}
-                                    >
-                                        <language.icon
-                                            color="inherit"
-                                            fontSize="small"
-                                        />
-                                        {language.name}
-                                    </StyledSelectItem>
-                                ),
-                            )}
-                        </StyledSelect>
-                    </Stack>
-                )}
                 <StyledContainer>
                     {!isExpanded ? (
                         <Editor
@@ -626,29 +575,77 @@ export const CodeCell: CellComponent<CodeCellDef> = (props) => {
                             </Stack>
                         </>
                     ) : (
-                        <Editor
-                            width="100%"
-                            height={getHeight()}
-                            language={
-                                EDITOR_TYPE[cell.parameters.type].language
-                            }
-                            value={cell.parameters.code}
-                            options={{
-                                lineNumbers: 'on',
-                                readOnly: false,
-                                minimap: { enabled: false },
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                lineHeight: EDITOR_LINE_HEIGHT,
-                                overviewRulerBorder: false,
-                                wordWrap: 'on',
-                            }}
-                            onChange={handleChange}
-                            onMount={handleMount}
-                        />
+                        <Stack direction="row">
+                            <Editor
+                                width="95%"
+                                height={getHeight()}
+                                language={
+                                    EDITOR_TYPE[cell.parameters.type].language
+                                }
+                                value={cell.parameters.code}
+                                options={{
+                                    lineNumbers: 'on',
+                                    readOnly: false,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: EDITOR_LINE_HEIGHT,
+                                    overviewRulerBorder: false,
+                                    wordWrap: 'on',
+                                }}
+                                onChange={handleChange}
+                                onMount={handleMount}
+                            />
+                            <StyledSelect
+                                size={'small'}
+                                title={'Select Language'}
+                                value={EDITOR_TYPE[cell.parameters.type].value}
+                                SelectProps={{
+                                    IconComponent: KeyboardArrowDown,
+                                    style: {
+                                        height: '30px',
+                                    },
+                                }}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (
+                                        value !==
+                                        EDITOR_TYPE[cell.parameters.type].value
+                                    ) {
+                                        console.log(value);
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.type',
+                                                value: value,
+                                            },
+                                        });
+
+                                        setCount(count + 1);
+                                    }
+                                }}
+                            >
+                                {Array.from(
+                                    Object.values(EDITOR_TYPE),
+                                    (language, i) => (
+                                        <StyledSelectItem
+                                            key={`${i}-${cell.id}-${language.name}`}
+                                            value={language.value}
+                                        >
+                                            <language.icon
+                                                color="inherit"
+                                                fontSize="small"
+                                            />
+                                        </StyledSelectItem>
+                                    ),
+                                )}
+                            </StyledSelect>
+                        </Stack>
                     )}
                 </StyledContainer>
             </Stack>
         </StyledContent>
     );
-};
+});
