@@ -51,6 +51,24 @@ export interface TypographyProps {
 }
 
 export const Typography = (props: TypographyProps) => {
-    const { sx, ...otherProps } = props;
-    return <MuiTypography sx={sx} {...otherProps} />;
+    const { sx, color, ...otherProps } = props;
+    return (
+        <MuiTypography
+            sx={sx}
+            color={
+                color === "success"
+                    ? "success.text"
+                    : color === "warning"
+                    ? "warning.text"
+                    : color === "error"
+                    ? "error.text"
+                    : color === "primary"
+                    ? "primary.main"
+                    : color === "secondary"
+                    ? "text.secondary"
+                    : color
+            }
+            {...otherProps}
+        />
+    );
 };

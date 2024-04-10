@@ -212,6 +212,7 @@ export const TextEditorCodeGeneration = () => {
                                     <Button
                                         size={'medium'}
                                         variant="outlined"
+                                        color="secondary"
                                         startIcon={
                                             <ContentCopyOutlined
                                                 color={'inherit'}

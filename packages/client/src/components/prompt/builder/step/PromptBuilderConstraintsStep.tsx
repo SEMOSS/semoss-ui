@@ -124,6 +124,7 @@ export const PromptBuilderConstraint = (props: {
     ) => void;
 }) => {
     return (
+        // <StyledBox onClick={() => alert(props.constraintSettings[props.constraint.key])}>
         <StyledBox>
             <StyledSwitch
                 disableRipple
@@ -131,8 +132,18 @@ export const PromptBuilderConstraint = (props: {
                     props.constraintSettings[props.constraint.key] ?? false
                 }
                 onChange={(e) => {
+                    // console.log({"props.constraintSettings": props.constraintSettings});
+
+                    // copy the constraint settings
+                    // these are probably specific to this options page
                     const copy = props.constraintSettings;
+
+                    // key into the copy and flip the value for the switch
                     copy[props.constraint.key] = !copy[props.constraint.key];
+
+                    // reset the whole builder value with two args
+                    // 'constraints' indicates this page, can this be anything?
+                    // the copy, does this have all values for all pages?
                     props.setBuilderValue('constraints', copy);
                 }}
             />
@@ -173,6 +184,9 @@ export function PromptBuilderConstraintsStep(props: {
     if (!constraintSettings) {
         return <></>;
     }
+
+    console.log({ inputConstraintValues: Object.values(inputConstraints) });
+    console.log({ outputConstraintsValues: Object.values(outputConstraints) });
 
     return (
         <StyledStepPaper elevation={2} square>

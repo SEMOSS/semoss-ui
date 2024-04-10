@@ -267,6 +267,7 @@ export const SelectedMenu = observer(() => {
                     createElement(menu, {
                         id: block.id,
                     })}
+
                 {contentMenu.length ? (
                     <SelectedMenuSection
                         id={block.id}

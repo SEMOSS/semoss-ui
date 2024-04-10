@@ -41,11 +41,25 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
         );
     }
     if (typeof data.specJson === 'string') {
-        return (
-            <StyledNoDataContainer error {...attrs}>
-                There was an issue parsing your JSON.
-            </StyledNoDataContainer>
-        );
+        // if it's a string, it's either invalid json or a query output that needs to be parsed
+        // try to parse, and show error otherwise
+        try {
+            const specJson = JSON.parse(data.specJson);
+
+            const Chart = createClassFromSpec({ spec: specJson });
+
+            return (
+                <StyledChartContainer {...attrs}>
+                    <Chart actions={false} />
+                </StyledChartContainer>
+            );
+        } catch (e) {
+            return (
+                <StyledNoDataContainer error {...attrs}>
+                    There was an issue parsing your JSON.
+                </StyledNoDataContainer>
+            );
+        }
     } else {
         const Chart = createClassFromSpec({ spec: data.specJson });
 

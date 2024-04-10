@@ -1,4 +1,276 @@
-import { Chip as MuiChip, SxProps } from "@mui/material";
+import { Chip as MuiChip, SxProps, styled } from "@mui/material";
+
+const StyledMuiChip = styled(MuiChip, {
+    shouldForwardProp: (prop) => prop !== "chipColor",
+})<{ chipColor: ChipProps["color"]; variant: ChipProps["variant"] }>(
+    ({ chipColor, variant, theme }) => {
+        const palette = theme.palette as unknown as {
+            text: Record<string, string>;
+            green: Record<string, string>;
+            pink: Record<string, string>;
+            purple: Record<string, string>;
+            darkBlue: Record<string, string>;
+            primaryContrast: Record<string, string>;
+        };
+        return {
+            ...(chipColor === "default" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? theme.palette.secondary.main
+                        : palette.text.white,
+                color: theme.palette.text.secondary,
+                borderColor:
+                    variant === "outlined" ? theme.palette.secondary.main : "",
+                "& .MuiChip-deleteIcon": {
+                    color: theme.palette.text.secondary,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? theme.palette.secondary.main
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "primary" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? theme.palette.primary.main
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? theme.palette.primary.main
+                        : palette.text.white,
+                borderColor:
+                    variant === "outlined" ? theme.palette.primary.main : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? theme.palette.primary.main
+                            : palette.text.white,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? theme.palette.primary.main
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "green" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.green["700"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.green["700"]
+                        : palette.text.white,
+                borderColor: variant === "outlined" ? palette.green["700"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.green["700"]
+                            : palette.text.white,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.green["700"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "pink" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.pink["700"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.pink["700"]
+                        : palette.text.white,
+                borderColor: variant === "outlined" ? palette.pink["700"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.pink["700"]
+                            : palette.text.white,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.pink["700"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "purple" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.purple["500"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.purple["500"]
+                        : palette.text.white,
+                borderColor:
+                    variant === "outlined" ? palette.purple["500"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.purple["500"]
+                            : palette.text.white,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.purple["500"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "indigo" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.darkBlue["600"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.darkBlue["600"]
+                        : palette.text.white,
+                borderColor:
+                    variant === "outlined" ? palette.darkBlue["600"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.darkBlue["600"]
+                            : palette.text.white,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.darkBlue["600"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "lcprimary" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.primaryContrast["50"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.primaryContrast["700"]
+                        : "",
+                borderColor:
+                    variant === "outlined"
+                        ? palette.primaryContrast["500"]
+                        : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.primaryContrast["700"]
+                            : palette.text.white,
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.primaryContrast["50"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "turqoise" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.green["50"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.green["700"]
+                        : palette.green["900"],
+                borderColor: variant === "outlined" ? palette.green["50"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.green["700"]
+                            : palette.green["900"],
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.green["50"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "lcpink" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.pink["50"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.pink["700"]
+                        : palette.pink["900"],
+                borderColor: variant === "outlined" ? palette.pink["50"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.pink["700"]
+                            : palette.pink["900"],
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.pink["50"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "lcpurple" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.purple["50"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.purple["500"]
+                        : palette.purple["900"],
+                borderColor: variant === "outlined" ? palette.purple["50"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.purple["500"]
+                            : palette.purple["900"],
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.purple["50"]
+                            : palette.text.white,
+                },
+            }),
+            ...(chipColor === "lcindigo" && {
+                backgroundColor:
+                    variant !== "outlined"
+                        ? palette.darkBlue["50"]
+                        : palette.text.white,
+                color:
+                    variant === "outlined"
+                        ? palette.darkBlue["900"]
+                        : palette.purple["900"],
+                borderColor:
+                    variant === "outlined" ? palette.darkBlue["50"] : "",
+                "& .MuiChip-deleteIcon": {
+                    color:
+                        variant === "outlined"
+                            ? palette.darkBlue["900"]
+                            : palette.purple["900"],
+                },
+                "&&:hover": {
+                    backgroundColor:
+                        variant !== "outlined"
+                            ? palette.darkBlue["50"]
+                            : palette.text.white,
+                },
+            }),
+        };
+    },
+);
 
 export interface ChipProps {
     /**
@@ -89,109 +361,10 @@ export const Chip = (props: ChipProps) => {
         ...otherProps
     } = props;
 
-    const styledChips = {
-        default: {
-            backgroundColor: variant !== "outlined" ? "rgba(0, 0, 0, 0.2)" : "",
-            color: "rgba(0, 0, 0, 0.8)",
-            borderColor: variant === "outlined" ? "rgba(0, 0, 0, 0.2)" : "",
-            "& .MuiChip-deleteIcon": {
-                color: "#000",
-                opacity: 0.5,
-            },
-        },
-        primary: {
-            backgroundColor: variant !== "outlined" ? "#0471F0" : "",
-            color: variant === "outlined" ? "#0471F0" : "#fff",
-            borderColor: variant === "outlined" ? "#0471F0" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#0471F0" : "#fff",
-            },
-        },
-        green: {
-            backgroundColor: variant !== "outlined" ? "#008674" : "",
-            color: variant === "outlined" ? "#008674" : "#fff",
-            borderColor: variant === "outlined" ? "#008674" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#008674" : "#fff",
-            },
-        },
-        pink: {
-            backgroundColor: variant !== "outlined" ? "#D62C71" : "",
-            color: variant === "outlined" ? "#D62C71" : "#fff",
-            borderColor: variant === "outlined" ? "#D62C71" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#D62C71" : "#fff",
-            },
-        },
-        purple: {
-            backgroundColor: variant !== "outlined" ? "#8340DE" : "",
-            color: variant === "outlined" ? "#8340DE" : "#fff",
-            borderColor: variant === "outlined" ? "#8340DE" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#8340DE" : "#fff",
-            },
-        },
-        indigo: {
-            backgroundColor: variant !== "outlined" ? "#471F96" : "",
-            color: variant === "outlined" ? "#471F96" : "#fff",
-            borderColor: variant === "outlined" ? "#471F96" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#471F96" : "#fff",
-            },
-        },
-        lcprimary: {
-            backgroundColor: variant !== "outlined" ? "#E2F2FF" : "",
-            color: variant === "outlined" ? "#0471F0" : "",
-            borderColor: variant === "outlined" ? "#40A0FF" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#0471F0" : "#1C3FBE",
-                opacity: 0.5,
-            },
-        },
-        turqoise: {
-            backgroundColor: variant !== "outlined" ? "#DEF4F3" : "",
-            color: variant === "outlined" ? "#008674" : "#005946",
-            borderColor: variant === "outlined" ? "#DEF4F3" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#008674" : "#005946",
-                opacity: 0.5,
-            },
-        },
-        lcpink: {
-            backgroundColor: variant !== "outlined" ? "#FFE6F0" : "",
-            color: variant === "outlined" ? "#D62C71" : "#992263",
-            borderColor: variant === "outlined" ? "#FFE6F0" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#D62C71" : "#992263",
-                opacity: 0.5,
-            },
-        },
-        lcpurple: {
-            backgroundColor: variant !== "outlined" ? "#F1E9FB" : "",
-            color: variant === "outlined" ? "#8340DE" : "#481EB8",
-            borderColor: variant === "outlined" ? "#F1E9FB" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#8340DE" : "#5D2BC7",
-                opacity: 0.5,
-            },
-        },
-        lcindigo: {
-            backgroundColor: variant !== "outlined" ? "#EAE4F2" : "",
-            color: variant === "outlined" ? "#150578" : "#481EB8",
-            borderColor: variant === "outlined" ? "#EAE4F2" : "",
-            "& .MuiChip-deleteIcon": {
-                color: variant === "outlined" ? "#150578" : "#150578",
-                opacity: 0.5,
-            },
-        },
-    };
-
     return (
-        <MuiChip
-            sx={{
-                ...styledChips[color],
-                ...sx,
-            }}
+        <StyledMuiChip
+            sx={sx}
+            chipColor={color}
             variant={variant}
             {...otherProps}
         />

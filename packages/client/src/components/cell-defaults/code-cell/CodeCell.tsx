@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
+import { observer } from 'mobx-react-lite';
 import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
 import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef } from '@/stores';
@@ -71,7 +72,7 @@ const EditorLanguages = {
 
 const EditorLineHeight = 19;
 // TODO:: Refactor height to account for Layout
-export const CodeCell: CellComponent<CodeCellDef> = (props) => {
+export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
     const monacoRef = useRef(null);
     const selectionRef = useRef(null);
@@ -651,4 +652,4 @@ export const CodeCell: CellComponent<CodeCellDef> = (props) => {
             </Stack>
         </StyledContent>
     );
-};
+});

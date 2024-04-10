@@ -2,49 +2,71 @@ import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     SUMMARY_STEPS,
+    TOKEN_TYPE_INPUT,
 } from '../../prompt.constants';
-import { Builder, BuilderStepItem } from '../../prompt.types';
+import { Builder, BuilderStepItem, Token } from '../../prompt.types';
 import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
+import { useEffect } from 'react';
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
-    backgroundColor: theme.palette.grey[100],
     borderRadius: theme.shape.borderRadius,
     marginBottom: theme.spacing(1),
 }));
 
+const StyledProgressSubtitle = styled(Typography)(({ theme }) => ({
+    color: theme.palette.success.main,
+    fontWeight: 'bold',
+}));
+
 const StyledStepListItem = styled(StyledListItem, {
     shouldForwardProp: (prop) =>
-        prop !== 'disabled' && prop !== 'isStepComplete',
-})<{ disabled?: boolean; isStepComplete?: boolean }>(
-    ({ theme, disabled, isStepComplete }) => ({
+        prop !== 'disabled' && prop !== 'isStepComplete' && prop !== 'isActive',
+})<{ disabled?: boolean; isStepComplete?: boolean; isActive?: boolean }>(
+    ({ theme, disabled, isStepComplete, isActive }) => ({
         color: disabled
             ? theme.palette.grey[400]
             : isStepComplete
-            ? theme.palette.primary.main
+            ? theme.palette.success.main
             : theme.palette.grey[900],
 
         '&:hover': {
             cursor: !disabled ? 'pointer' : 'inherit',
+
+            ...(!isActive &&
+                !disabled && { backgroundColor: theme.palette.grey[100] }),
         },
+
+        ...(isActive && { backgroundColor: theme.palette.success.selected }),
     }),
 );
 
-const StyledAvatar = styled(Avatar)(() => ({
+const StyledAvatar = styled(Avatar, {
+    shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive: boolean }>(({ theme, isActive }) => ({
     backgroundColor: 'white',
-    color: 'inherit',
+
+    ...(isActive ? { color: theme.palette.grey[900] } : { color: 'inherit' }),
 }));
 
-const StyledCheckCircleOutlined = styled(CheckCircleOutlined)(({ theme }) => ({
-    color: theme.palette.primary.main,
+const StyledCheckCircleOutlined = styled(CheckCircleOutlined, {
+    shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive?: boolean }>(({ theme, isActive }) => ({
     marginTop: '8px',
+
+    ...(isActive
+        ? { color: theme.palette.grey[900] }
+        : { color: theme.palette.success.main }),
 }));
 
-const StyledListItemTypography = styled(Typography)(() => ({
-    color: 'inherit',
+const StyledListItemTypography = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive?: boolean }>(({ isActive, theme }) => ({
     fontWeight: 'bold',
+
+    ...(isActive ? { color: theme.palette.grey[900] } : { color: 'inherit' }),
 }));
 
 export const PromptBuilderSummary = (props: {
@@ -85,13 +107,9 @@ export const PromptBuilderSummary = (props: {
                 <List.ItemText
                     disableTypography
                     primary={
-                        <Typography
-                            variant="subtitle2"
-                            color="primary"
-                            sx={{ fontWeight: 'bold' }}
-                        >
+                        <StyledProgressSubtitle variant="subtitle2">
                             Overall Completion
-                        </Typography>
+                        </StyledProgressSubtitle>
                     }
                     secondary={
                         <PromptBuilderSummaryProgress
@@ -105,12 +123,23 @@ export const PromptBuilderSummary = (props: {
                 let isStepComplete = props.isBuilderStepComplete(i + 1);
                 let disabled =
                     i + 1 > props.currentBuilderStep && !isStepComplete;
+                const isActive = props.currentBuilderStep === i + 1;
 
                 // Preview Step, depends on completion of other steps
                 if (i === PROMPT_BUILDER_PREVIEW_STEP - 1) {
                     const completedSteps = props.isBuildStepsComplete();
                     disabled = !completedSteps;
                     isStepComplete = false;
+                }
+
+                // checks to see if inputs have been set properly and disables / enables step accordingly
+                if (i + 1 === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+                    const hasInputs = (
+                        props.builder.inputs.value as Token[]
+                    )?.some((token: Token) => {
+                        return token.type === TOKEN_TYPE_INPUT;
+                    });
+                    disabled = !hasInputs;
                 }
 
                 return (
@@ -125,9 +154,12 @@ export const PromptBuilderSummary = (props: {
                         <StyledStepListItem
                             disabled={disabled}
                             isStepComplete={isStepComplete}
+                            isActive={isActive}
                             secondaryAction={
                                 isStepComplete ? (
-                                    <StyledCheckCircleOutlined />
+                                    <StyledCheckCircleOutlined
+                                        isActive={isActive}
+                                    />
                                 ) : (
                                     <PendingOutlined
                                         sx={{ marginTop: '8px' }}
@@ -136,20 +168,23 @@ export const PromptBuilderSummary = (props: {
                             }
                         >
                             <List.ItemAvatar>
-                                <StyledAvatar>
+                                <StyledAvatar isActive={isActive}>
                                     <step.icon />
                                 </StyledAvatar>
                             </List.ItemAvatar>
                             <List.ItemText
                                 disableTypography
                                 primary={
-                                    <StyledListItemTypography variant="subtitle2">
+                                    <StyledListItemTypography
+                                        isActive={isActive}
+                                        variant="subtitle2"
+                                    >
                                         {step.title}
                                     </StyledListItemTypography>
                                 }
                             />
                         </StyledStepListItem>
-                        <Collapse in={props.currentBuilderStep === i + 1}>
+                        <Collapse in={isActive}>
                             <PromptBuilderSummaryStepItem
                                 builder={props.builder}
                                 currentBuilderStep={i + 1}

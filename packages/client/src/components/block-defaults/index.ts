@@ -19,6 +19,7 @@ import {
     config as MarkdownBlockConfig,
     MarkdownBlockDef,
 } from './markdown-block';
+import { config as HTMLBlockConfig, HTMLBlockDef } from './html-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
 import { config as TableBlockConfig, TableBlockDef } from './table-block';
@@ -54,6 +55,7 @@ export type DefaultBlockDefinitions =
     | ImageBlockDef
     | LinkBlockDef
     | MarkdownBlockDef
+    | HTMLBlockDef
     | PageBlockDef
     | ProgressBlockDef
     | QueryBlockDef
@@ -75,6 +77,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [HTMLBlockConfig.widget]: HTMLBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
@@ -101,6 +104,7 @@ export {
     ImageBlockConfig,
     InputBlockConfig,
     MarkdownBlockConfig,
+    HTMLBlockConfig,
     PageBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,

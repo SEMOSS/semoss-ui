@@ -10,6 +10,19 @@ import {
 export { styled, useTheme, keyframes };
 export type { ThemeOptions };
 
+declare module "@mui/material" {
+    interface PaletteColor {
+        hover?: string;
+        selected?: string;
+        border?: string;
+        disabled?: string;
+        divider?: string;
+        text?: string;
+        white?: string;
+        backdropOverlay?: string;
+    }
+}
+
 export interface CustomPaletteColor {
     50?: string;
     100?: string;
@@ -23,6 +36,7 @@ export interface CustomPaletteColor {
     900?: string;
     shadow?: string;
 }
+
 export interface CustomPaletteOptions extends PaletteOptions {
     primaryContrast?: CustomPaletteColor;
     green?: CustomPaletteColor;
@@ -63,14 +77,57 @@ export interface CustomThemeOptions extends ThemeOptions {
     };
 }
 
+export interface CustomPaletteTheme {
+    palette: {
+        [key: string]: {
+            [token: string]: string;
+        };
+    };
+}
+
+export const customLightPaletteTokens: CustomPaletteTheme = {
+    palette: {
+        primary: {
+            hover: "#F5F9FE",
+            selected: "#EBF4FE",
+            border: "#9FCFFF",
+        },
+        secondary: {
+            hover: "#F5F5F5",
+            selected: "#EBEBEB",
+            disabled: "#BDBDBD",
+            border: "#C4C4C4",
+            divider: "#E6E6E6",
+        },
+        text: {
+            white: "#FFFFFF",
+        },
+        error: {
+            text: "#57100B",
+        },
+        warning: {
+            text: "#5F2B01",
+        },
+        success: {
+            text: "#123214",
+            // Only use selected for custom stepper in agent/prompt builder
+            selected: "#E6EFE6",
+        },
+        background: {
+            // Backdrop Overlay must be a shade/percentage
+            backdropOverlay: "#000000",
+        },
+    },
+};
+
 export const lightTheme: CustomThemeOptions = {
     palette: {
         mode: "light",
         primary: {
             // SEMOSS BLUE
             main: "#0471F0",
-            light: "#22A4FF",
             dark: "#1260DD",
+            light: "#22A4FF",
             // DELOITTE GREEN
             // main: "#26890D",
             // light: "#86BC25",
@@ -78,17 +135,22 @@ export const lightTheme: CustomThemeOptions = {
         },
         secondary: {
             main: "#D9D9D9",
+            dark: "#757575",
             light: "#F2F2F2",
-            dark: "#B5B5B5",
+        },
+        text: {
+            primary: "#000000",
+            secondary: "#666666",
+            disabled: "#9E9E9E",
         },
         error: {
-            main: "#da291c",
-            light: "#FA3F20",
+            main: "#DA291C",
+            light: "#FBE9E8",
             dark: "#BF0D02",
         },
         warning: {
             main: "#FA9F2C",
-            light: "#FF9800",
+            light: "#FDF0E5",
             dark: "#EF8326",
         },
         info: {
@@ -98,12 +160,12 @@ export const lightTheme: CustomThemeOptions = {
         },
         success: {
             main: "#348700",
-            light: "#4CAF50",
+            light: "#EAF2EA",
             dark: "#006500",
         },
         background: {
-            default: "#FAFAFA",
-            paper: "#FFF",
+            paper: "#FFFFFF", // Design references this color as "paper1"
+            default: "#FAFAFA", // Design references this color as "paper2"
         },
         primaryContrast: {
             // SEMOSS BLUE
@@ -450,6 +512,8 @@ export const lightTheme: CustomThemeOptions = {
     },
 };
 
+// darkTheme is not currently in use or up to date with the new Color UI system from design.
+// Once the ability to use a dark theme is added, we will need to get the colors updated.
 export const darkTheme: CustomThemeOptions = {
     palette: {
         mode: "dark",
@@ -484,8 +548,8 @@ export const darkTheme: CustomThemeOptions = {
             dark: "#005A00",
         },
         background: {
-            default: "#FAFAFA",
-            paper: "#121212",
+            paper: "#FAFAFA",
+            default: "#121212",
         },
         primaryContrast: {
             // SEMOSS BLUE
