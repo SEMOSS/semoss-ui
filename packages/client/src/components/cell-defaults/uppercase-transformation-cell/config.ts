@@ -10,23 +10,22 @@ export const UppercaseTransformationCellConfig: CellConfig<UppercaseTransformati
         widget: 'uppercase-transformation',
         view: UppercaseTransformationCell,
         parameters: {
-            transformation: {
-                key: 'uppercase',
-                parameters: {
-                    columns: [],
-                },
-            },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
-            },
+            // transformation: {
+            //     key: 'uppercase',
+            //     parameters: {
+            //     },
+            // },
+            // targetCell: {
+            //     id: '',
+            //     frameVariableName: '',
+            // },
+            columns: [],
+            frame: '',
         },
-        toPixel: ({ transformation, targetCell }) => {
-            const columnNames = transformation.parameters.columns.map(
-                (column) => column.name,
-            );
-            return `${
-                targetCell.frameVariableName
-            } | ToUpperCase ( columns = ${JSON.stringify(columnNames)} ) ;`;
+        toPixel: ({ columns, frame }) => {
+            const columnNames = columns.map((column) => column.name);
+            return `${frame} | ToUpperCase ( columns = ${JSON.stringify(
+                columnNames,
+            )} ) ;`;
         },
     };

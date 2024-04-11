@@ -82,7 +82,7 @@ const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
 
 // Iterate through the data object and filter out the cell types that have 'transformation' key
 Object.entries(DefaultCells).forEach(([key, value]) => {
-    if (value.parameters && value.parameters.transformation) {
+    if (value.widget.includes('-transformation')) {
         filteredTransformations[key] = value;
     }
 });

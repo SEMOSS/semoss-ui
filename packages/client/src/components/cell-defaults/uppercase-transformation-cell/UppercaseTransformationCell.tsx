@@ -17,27 +17,20 @@ import {
 } from '../shared';
 import { QueryImportCellDef } from '../query-import-cell';
 
-export interface UppercaseTransformationDef
-    extends TransformationDef<'uppercase'> {
-    key: 'uppercase';
-    parameters: {
-        columns: ColumnInfo[];
-    };
-}
+// export interface UppercaseTransformationDef
+//     extends TransformationDef<'uppercase'> {
+//     key: 'uppercase';
+//     parameters: {
+//         columns: ColumnInfo[];
+//     };
+// }
 
 export interface UppercaseTransformationCellDef
     extends TransformationCellDef<'uppercase-transformation'> {
     widget: 'uppercase-transformation';
     parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation<UppercaseTransformationDef>;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        targetCell: TransformationTargetCell;
+        columns: ColumnInfo[];
+        frame: string;
     };
 }
 
