@@ -56,17 +56,17 @@ export interface TransformationConfig<
 export const Transformations: Record<
     TransformationTypes,
     {
-        transformation: TransformationTypes;
+        transformation?: TransformationTypes;
         display: string;
         icon: React.FunctionComponent;
-        widget: string;
+        widget?: string;
     }
 > = {
-    uppercase: {
-        transformation: 'uppercase',
+    'uppercase-transformation': {
         display: 'Uppercase',
         icon: FontDownload,
-        widget: 'uppercase-transformation',
+        // transformation: 'uppercase',
+        // widget: 'uppercase-transformation',
     },
     'update-row': {
         transformation: 'update-row',

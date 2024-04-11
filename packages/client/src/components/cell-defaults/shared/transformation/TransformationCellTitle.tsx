@@ -101,78 +101,78 @@ export const TransformationCellTitle = (props: {
         if (currentCellIndex > 0) {
             previousCellId = cell.query.list[currentCellIndex - 1];
         }
-        const config: NewCellAction['payload']['config'] = {
-            widget: DefaultCells[newTransformationWidget].widget,
-            parameters: {
-                ...DefaultCells[newTransformationWidget].parameters,
-                targetCell: { ...cell.parameters.targetCell },
-            },
-        };
+        // const config: NewCellAction['payload']['config'] = {
+        //     widget: DefaultCells[newTransformationWidget].widget,
+        //     parameters: {
+        //         ...DefaultCells[newTransformationWidget].parameters,
+        //         targetCell: { ...cell.parameters.targetCell },
+        //     },
+        // };
 
-        state.dispatch({
-            message: ActionMessages.NEW_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
-                previousCellId: previousCellId,
-                config: config as Omit<CellStateConfig, 'id'>,
-            },
-        });
+        // state.dispatch({
+        //     message: ActionMessages.NEW_CELL,
+        //     payload: {
+        //         queryId: cell.query.id,
+        //         cellId: cell.id,
+        //         previousCellId: previousCellId,
+        //         config: config as Omit<CellStateConfig, 'id'>,
+        //     },
+        // });
         notebook.selectCell(cell.query.id, cell.id);
     };
 
     useEffect(() => {
-        if (cell.parameters.targetCell.id) {
-            // if the cell that is the target changes frame type or is delete, clear the targetCell
-            if (!cell.query.list.includes(cell.parameters.targetCell.id)) {
-                state.dispatch({
-                    message: ActionMessages.UPDATE_CELL,
-                    payload: {
-                        queryId: cell.query.id,
-                        cellId: cell.id,
-                        path: 'parameters.targetCell',
-                        value: {
-                            id: '',
-                            frameVariableName: '',
-                        },
-                    },
-                });
-            }
-            if (
-                !cell.query.cells[cell.parameters.targetCell.id] ||
-                !isValidFrameTypeForTransformation(
-                    cell.query.cells[cell.parameters.targetCell.id].parameters
-                        .frameType as string,
-                )
-            ) {
-                state.dispatch({
-                    message: ActionMessages.UPDATE_CELL,
-                    payload: {
-                        queryId: cell.query.id,
-                        cellId: cell.id,
-                        path: 'parameters.targetCell',
-                        value: {
-                            id: '',
-                            frameVariableName: '',
-                        },
-                    },
-                });
-            }
-        } else if (availableFrameCells.length) {
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.targetCell',
-                    value: {
-                        id: availableFrameCells[0].id,
-                        frameVariableName:
-                            availableFrameCells[0].parameters.frameVariableName,
-                    },
-                },
-            });
-        }
+        // if (cell.parameters.targetCell.id) {
+        //     // if the cell that is the target changes frame type or is delete, clear the targetCell
+        //     if (!cell.query.list.includes(cell.parameters.targetCell.id)) {
+        //         state.dispatch({
+        //             message: ActionMessages.UPDATE_CELL,
+        //             payload: {
+        //                 queryId: cell.query.id,
+        //                 cellId: cell.id,
+        //                 path: 'parameters.targetCell',
+        //                 value: {
+        //                     id: '',
+        //                     frameVariableName: '',
+        //                 },
+        //             },
+        //         });
+        //     }
+        //     if (
+        //         !cell.query.cells[cell.parameters.targetCell.id] ||
+        //         !isValidFrameTypeForTransformation(
+        //             cell.query.cells[cell.parameters.targetCell.id].parameters
+        //                 .frameType as string,
+        //         )
+        //     ) {
+        //         state.dispatch({
+        //             message: ActionMessages.UPDATE_CELL,
+        //             payload: {
+        //                 queryId: cell.query.id,
+        //                 cellId: cell.id,
+        //                 path: 'parameters.targetCell',
+        //                 value: {
+        //                     id: '',
+        //                     frameVariableName: '',
+        //                 },
+        //             },
+        //         });
+        //     }
+        // } else if (availableFrameCells.length) {
+        //     state.dispatch({
+        //         message: ActionMessages.UPDATE_CELL,
+        //         payload: {
+        //             queryId: cell.query.id,
+        //             cellId: cell.id,
+        //             path: 'parameters.targetCell',
+        //             value: {
+        //                 id: availableFrameCells[0].id,
+        //                 frameVariableName:
+        //                     availableFrameCells[0].parameters.frameVariableName,
+        //             },
+        //         },
+        //     });
+        // }
     }, [cell.parameters.targetCell, availableFrameCells]);
 
     const [menuType, setMenuType] = useState<'routine' | 'frame'>(null);
@@ -206,9 +206,9 @@ export const TransformationCellTitle = (props: {
                 endIcon={<KeyboardArrowDown />}
                 title="Select Frame Variable"
             >
-                <StyledButtonLabel width={14}>
+                {/* <StyledButtonLabel width={14}>
                     {cell.parameters.targetCell.frameVariableName}
-                </StyledButtonLabel>
+                </StyledButtonLabel> */}
             </StyledButton>
             <StyledButton
                 aria-haspopup="true"
@@ -231,8 +231,8 @@ export const TransformationCellTitle = (props: {
                 title="Select Clean Routine"
             >
                 <StyledButtonLabel width={14}>
-                    {Transformations[cell.parameters.transformation.key]
-                        ?.display ?? ''}
+                    {/* {Transformations[cell.parameters.transformation.key]
+                        ?.display ?? ''} */}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
@@ -287,26 +287,26 @@ export const TransformationCellTitle = (props: {
                                             },
                                         });
                                         // reset the transformation info
-                                        state.dispatch({
-                                            message: ActionMessages.UPDATE_CELL,
-                                            payload: {
-                                                queryId: cell.query.id,
-                                                cellId: cell.id,
-                                                path: 'parameters.transformation',
-                                                value: {
-                                                    transformation:
-                                                        cell.parameters
-                                                            .transformation.key,
-                                                    parameters: {
-                                                        ...Transformations[
-                                                            cell.parameters
-                                                                .transformation
-                                                                .key
-                                                        ].config.parameters,
-                                                    },
-                                                },
-                                            },
-                                        });
+                                        // state.dispatch({
+                                        //     message: ActionMessages.UPDATE_CELL,
+                                        //     payload: {
+                                        //         queryId: cell.query.id,
+                                        //         cellId: cell.id,
+                                        //         path: 'parameters.transformation',
+                                        //         value: {
+                                        //             transformation:
+                                        //                 cell.parameters
+                                        //                     .transformation.key,
+                                        //             parameters: {
+                                        //                 ...Transformations[
+                                        //                     cell.parameters
+                                        //                         .transformation
+                                        //                         .key
+                                        //                 ].config.parameters,
+                                        //             },
+                                        //         },
+                                        //     },
+                                        // });
                                         handleClose();
                                     }}
                                 >

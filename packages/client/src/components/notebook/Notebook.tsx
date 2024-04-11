@@ -101,7 +101,7 @@ export const Notebook = observer(() => {
                     <SidebarText>Queries</SidebarText>
                 </SidebarItem>
                 <SidebarItem
-                    disabled={true}
+                    disabled={false}
                     selected={view === 'transform'}
                     onClick={() => updateView('transform')}
                 >

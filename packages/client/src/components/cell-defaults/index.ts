@@ -61,20 +61,20 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [QueryImportCellConfig.widget]: QueryImportCellConfig,
     [UppercaseTransformationCellConfig.widget]:
         UppercaseTransformationCellConfig,
-    [UpdateRowTransformationCellConfig.widget]:
-        UpdateRowTransformationCellConfig,
-    [ColumnTypeTransformationCellConfig.widget]:
-        ColumnTypeTransformationCellConfig,
-    [DateDifferenceTransformationCellConfig.widget]:
-        DateDifferenceTransformationCellConfig,
-    [TimestampTransformationCellConfig.widget]:
-        TimestampTransformationCellConfig,
-    [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
-    [CumulativeSumTransformationCellConfig.widget]:
-        CumulativeSumTransformationCellConfig,
-    [EncodeColumnTransformationCellConfig.widget]:
-        EncodeColumnTransformationCellConfig,
-    [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
+    // [UpdateRowTransformationCellConfig.widget]:
+    //     UpdateRowTransformationCellConfig,
+    // [ColumnTypeTransformationCellConfig.widget]:
+    //     ColumnTypeTransformationCellConfig,
+    // [DateDifferenceTransformationCellConfig.widget]:
+    //     DateDifferenceTransformationCellConfig,
+    // [TimestampTransformationCellConfig.widget]:
+    //     TimestampTransformationCellConfig,
+    // [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
+    // [CumulativeSumTransformationCellConfig.widget]:
+    //     CumulativeSumTransformationCellConfig,
+    // [EncodeColumnTransformationCellConfig.widget]:
+    //     EncodeColumnTransformationCellConfig,
+    // [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =

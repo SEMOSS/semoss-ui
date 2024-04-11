@@ -21,7 +21,7 @@ export type ColumnInfo = {
 };
 
 export type TransformationTypes =
-    | 'uppercase'
+    | 'uppercase-transformation'
     | 'update-row'
     | 'column-type'
     | 'date-difference'
@@ -42,38 +42,29 @@ export interface TransformationDef<R extends string = string> {
 export interface TransformationCellDef<W extends string = string>
     extends CellDef<W> {
     widget: W;
-    parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        targetCell: TransformationTargetCell;
-    };
+    parameters: Record<string, unknown>;
 }
 
 export interface TransformationMultiCellDef<W extends string = string>
     extends CellDef<W> {
     widget: W;
-    parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation;
+    parameters: Record<string, unknown>;
+    // ;    {
+    //         /**
+    //          * Routine type
+    //          */
+    //         transformation: Transformation;
 
-        /**
-         * ID of the From query cell that defines the frame we want to transform
-         */
-        fromTargetCell: TransformationTargetCell;
+    //         /**
+    //          * ID of the From query cell that defines the frame we want to transform
+    //          */
+    //         fromTargetCell: TransformationTargetCell;
 
-        /**
-         * ID of the To query cell that defines the frame we want to transform
-         */
-        toTargetCell: TransformationTargetCell;
-    };
+    //         /**
+    //          * ID of the To query cell that defines the frame we want to transform
+    //          */
+    //         toTargetCell: TransformationTargetCell;
+    //     };
 }
 
 export interface TransformationTargetCell {

@@ -15,15 +15,15 @@ export const TransformationCellRunActionButton = (props: {
     const { cell } = props;
     const { state } = useBlocks();
 
-    const targetCell: CellState<QueryImportCellDef> = computed(() => {
-        return cell.query.cells[
-            cell.parameters.targetCell.id
-        ] as CellState<QueryImportCellDef>;
-    }).get();
+    // const targetCell: CellState<QueryImportCellDef> = computed(() => {
+    //     return cell.query.cells[
+    //         cell.parameters.targetCell.id
+    //     ] as CellState<QueryImportCellDef>;
+    // }).get();
 
-    const doesFrameExist: boolean = computed(() => {
-        return !!targetCell && (targetCell.isExecuted || !!targetCell.output);
-    }).get();
+    // const doesFrameExist: boolean = computed(() => {
+    //     return !!targetCell && (targetCell.isExecuted || !!targetCell.output);
+    // }).get();
 
     const checkFieldsValid = (object: object): void | boolean => {
         for (const value of Object.values(object)) {
@@ -36,17 +36,17 @@ export const TransformationCellRunActionButton = (props: {
         }
     };
 
-    const hasRequiredFields: boolean = computed(() => {
-        return (
-            checkFieldsValid(cell.parameters.transformation.parameters) !==
-            false
-        );
-    }).get();
+    // const hasRequiredFields: boolean = computed(() => {
+    //     return (
+    //         checkFieldsValid(cell.parameters.transformation.parameters) !==
+    //         false
+    //     );
+    // }).get();
 
     return (
         <IconButton
             title="Run cell"
-            disabled={cell.isLoading || !doesFrameExist || !hasRequiredFields}
+            // disabled={cell.isLoading || !doesFrameExist || !hasRequiredFields}
             size="small"
             onClick={() =>
                 state.dispatch({

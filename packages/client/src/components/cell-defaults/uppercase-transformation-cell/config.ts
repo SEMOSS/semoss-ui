@@ -10,15 +10,6 @@ export const UppercaseTransformationCellConfig: CellConfig<UppercaseTransformati
         widget: 'uppercase-transformation',
         view: UppercaseTransformationCell,
         parameters: {
-            // transformation: {
-            //     key: 'uppercase',
-            //     parameters: {
-            //     },
-            // },
-            // targetCell: {
-            //     id: '',
-            //     frameVariableName: '',
-            // },
             columns: [],
             frame: '',
         },

@@ -6,3 +6,6 @@ export { MultiCellColumnTransformationField } from './MultiCellColumnTransformat
 export { TransformationCellInput } from './TransformationCellInput';
 export { TransformationMultiCellInput } from './TransformationMultiCellInput';
 export { TransformationCellRunActionButton } from './TransformationCellRunActionButton';
+
+export { TransformationCellInput2 } from './TransformationCellInput2';
+export { ColumnTransformationField2 } from './ColumnTransformationField2';
