@@ -169,50 +169,6 @@ export function getDaysOfMonth(month: string) {
     }
 }
 
-export function convertTimeToFrequencyString(job) {
-    let freq;
-    let timeStr;
-    if (!job.customCron) {
-        freq = job.frequency.computer;
-        timeStr = job.frequency.human;
-
-        if (freq === 2) {
-            // weekly
-            timeStr = timeStr + ' on ' + job.dayOfWeek;
-        }
-
-        if (freq === 3) {
-            // monthly
-            timeStr = timeStr + ' on the ' + job.dayOfMonth;
-            const monthLastDigit = job.dayOfMonth
-                    .toString()
-                    .substring(
-                        job.dayOfMonth.length - 1,
-                        job.dayOfMonth.length,
-                    ),
-                monthFirstDigit = job.dayOfMonth.toString().substring(0, 1);
-            if (
-                job.dayOfMonth.toString().length > 1 &&
-                (monthFirstDigit === '1' || monthLastDigit === '0')
-            )
-                timeStr += 'th ';
-            else if (monthLastDigit === '1') timeStr += 'st ';
-            else if (monthLastDigit === '2') timeStr += 'nd ';
-            else if (monthLastDigit === '3') timeStr += 'rd ';
-            else timeStr += 'th ';
-        }
-
-        if (freq >= 1) {
-            // daily
-            timeStr = timeStr + ' at ' + job.hour + ':' + job.minute + job.ampm;
-        }
-    } else {
-        timeStr = 'Custom';
-    }
-
-    return timeStr;
-}
-
 export function convertTimetoDate(time) {
     let today = new Date(),
         dd = String(today.getDate()).padStart(2, '0'),

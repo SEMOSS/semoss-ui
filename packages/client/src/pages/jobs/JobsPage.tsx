@@ -1,6 +1,13 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { Add, Bedtime, Delete, Edit, ErrorRounded, PlayArrow } from '@mui/icons-material';
+import {
+    Add,
+    Bedtime,
+    Delete,
+    Edit,
+    ErrorRounded,
+    PlayArrow,
+} from '@mui/icons-material';
 import {
     Button,
     Modal,
@@ -17,336 +24,97 @@ import {
     Stack,
     Chip,
     IconButton,
+    Typography,
 } from '@semoss/ui';
 
-import { useAPI, useRootStore, useSettings } from '@/hooks';
-import {
-    buildBackupDatabaseQuery,
-    buildETLQuery,
-    buildSyncDatabaseQuery,
-    convertDeltaToRuntimeString,
-    convertTimetoDate
-} from './JobsFunctions';
-import { JobData, Insight } from './JobsFunctions';
-import {
-    AvTimer
-} from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
+import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
-
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-}
-function TabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box
-                    sx={{
-                        p: 3,
-                    }}
-                >
-                    <div>{children}</div>
-                </Box>
-            )}
-        </div>
-    );
-}
-
-const defaultJob = {
-    // jobName: '',
-    // jobTags: '',
-    // onLoad: false,
-    // customCron: false,
-    // cronExpression: '',
-    // frequency: 'Daily',
-    // dayOfWeek: daysOfWeek[new Date().getDay()] as Day,
-    // hour: '12',
-    // minute: '00',
-    // ampm: 'PM',
-    // monthOfYear: monthsOfYear[new Date().getMonth()] as Month,
-    // dayOfMonth: new Date().getDate(),
-    // // export stuff
-    // openExport: false,
-    // fileName: '',
-    // filePathChecked: false,
-    // filePath: '',
-    // selectedApp: '',
-    // exportTemplate: '',
-    // exportAudit: false,
-};
-
-const JobTypes: {
-    title: string,
-    icon: ReactElement,
-    avatarColor: string,
-    iconColor: string,
-    countFunction: (array: any[]) => number; // TODO: better typescript
-}[] = [
-    {
-        title: "Active Jobs",
-        icon: <AvTimer fontSize="medium" />,
-        avatarColor: "#E2F2FF",
-        iconColor: "#0471F0",
-        countFunction: (jobs) => jobs.filter((job) => {
-            return (
-                job.NEXT_FIRE_TIME !== 'INACTIVE'
-            );
-        }).length
-    },
-    {
-        title: "Inactive Jobs",
-        icon: <Bedtime fontSize="medium" />,
-        avatarColor: "#F1E9FB",
-        iconColor: "#8340DE",
-        countFunction: (jobs) => jobs.filter((job) => {
-            return (
-                job.NEXT_FIRE_TIME === 'INACTIVE'
-            );
-        }).length
-    },
-    {
-        title: "Failed Jobs",
-        icon: <ErrorRounded fontSize="medium" />,
-        avatarColor: "#DEF4F3",
-        iconColor: "#00A593",
-        countFunction: (history) => history.filter((row) => {
-            return !row.success;
-        }).length
-    }
-];
+import { Job, JobUIState, PixelReturnJob } from './jobs.types';
+import { convertTimeToFrequencyString } from './job.utils';
+import { JobsTable } from './JobsTable';
 
 export function JobsPage() {
-    const { adminMode } = useSettings();
-    const { configStore, monolithStore } = useRootStore();
+    const { monolithStore } = useRootStore();
     const notification = useNotification();
 
     const tabs = ['All', 'Active', 'Inactive'];
 
     const [searchValue, setSearchValue] = useState('');
     const [selectedTab, setSelectedTab] = useState(tabs[0]);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showJobModal, setShowJobModal] = useState(false);
-    const [allChecked, setAllChecked] = useState(false);
 
-    const [jobs, setJobs] = useState([]);
+    const [failedJobCount, setFailedJobCount] = useState<number>(0);
 
-    const [selectedJob, setSelectedJob] = useState(null);
-    const [selectedTags, setSelectedTags] = useState([]);
-    const [jobsToPause, setJobsToPause] = useState([]);
-    const [jobsToResume, setJobsToResume] = useState([]);
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [jobsLoading, setJobsLoading] = useState<boolean>(false);
 
-    const [jobTypeTemplate, setJobTypeTemplate] = useState({});
-    const [placeholderData, setPlaceholderData] = useState([]);
-
-    const JobColumns: GridColDef[] = [
-        {
-            headerName: 'Name',
-            field: "jobName"
-        },
-        {
-            headerName: 'Type',
-            field: "jobType"
-        },
-        {
-            headerName: 'Frequency',
-            field: "frequency"
-        },
-        {
-            headerName: 'Tags',
-            field: 'tags',
-            renderCell: (props: {value: string}) => {
-                return (
-                    <>
-                        {
-                            props.value.split(',').map((tag, idx) => {
-                                return <Chip key={idx} label={tag} avatar={null} />;
-                            })
-                        }
-                    </>
-                );
-            },
-        },
-        {
-            headerName: 'Last Run',
-            field: 'PREV_FIRE_TIME',
-            renderCell: (props: {value: string}) => {
-                let time = ''
-                if (
-                    !(!props.value ||
-                    props.value === 'N/A' ||
-                    props.value === 'INACTIVE')
-                ) {
-                    time = convertTimetoDate(props.value);
-                }
-                return (
-                    <>
-                        {time}
-                    </>
-                )
-            }
-        },
-        {
-            headerName: 'Modified By',
-            field: 'USER_ID'
-        },
-        {
-            headerName: '',
-            field: 'jobId',
-            renderCell: () => {
-                return (
-                    <>
-                        <IconButton
-                            color="info"
-                            size="medium"
-                            onClick={() => {
-                                executeJob(job.jobId, job.jobGroup);
-                            }}
-                        >
-                            <PlayArrow />
-                        </IconButton>
-                        <IconButton
-                            color="info"
-                            size="medium"
-                            onClick={() => {
-                                setSelectedJob(job);
-                                setShowJobModal(true);
-                            }}
-                            disabled // enable when edit page is built out
-                        >
-                            <Edit />
-                        </IconButton>
-                        <IconButton
-                            color="info"
-                            size="medium"
-                            onClick={() => {
-                                setSelectedJob(job);
-                                setShowDeleteModal(true);
-                            }}
-                        >
-                            <Delete />
-                        </IconButton>
-                    </>
-                );
-            }
-        }
-    ];
-
-    // pagination for jobs table
-    const [jobsPage, setJobsPage] = useState<number>(0);
-    const [jobsRowsPerPage, setJobsRowsPerPage] = useState<number>(5);
-    const jobsStartIndex = jobsPage * jobsRowsPerPage;
-    const jobsEndIndex = jobsStartIndex + jobsRowsPerPage;
+    const [jobToDelete, setJobToDelete] = useState<Job>(null);
 
     const getJobs = () => {
+        setJobsLoading(true);
         let pixel = 'META|ListAllJobs()';
-        monolithStore.runQuery(pixel).then((response) => {
-            const type = response.pixelReturn[0].operationType[0];
+        monolithStore
+            .runQuery<[Record<string, PixelReturnJob>]>(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType[0];
 
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message:
-                        'Something went wrong. Jobs could not be retrieved.',
-                });
-            } else {
-                // jobs is a map or maps
-                // where the jobId is a unique id of the job inputs
-                const jobs = response.pixelReturn[0].output;
-
-                const allJobs = [];
-                const allTags = [];
-                for (const jobId in jobs as any) {
-                    if (Object.hasOwnProperty.call(jobs, jobId)) {
-                        const job = jobs[jobId];
-                        if (
-                            Object.prototype.hasOwnProperty.call(job, 'uiState')
-                        ) {
-                            // Parse the job back from the stringified version
-                            const jobJson = JSON.parse(
+                if (type.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message:
+                            'Something went wrong. Jobs could not be retrieved.',
+                    });
+                } else {
+                    const pixelJobs: Record<string, PixelReturnJob> =
+                        response.pixelReturn[0].output;
+                    const jobs: Job[] = Object.values(pixelJobs).map((job) => {
+                        let jobUIState: JobUIState;
+                        try {
+                            jobUIState = JSON.parse(
                                 job.uiState.replace(/\\"/g, "'"),
                             );
-
-                            // Also, need to decode the recipe again
-                            // jobJson.recipe = decodeURIComponent(jobJson.recipe);
-                            jobJson.checked = false;
-                            Object.prototype.hasOwnProperty.call(
-                                job,
-                                'PREV_FIRE_TIME',
-                            )
-                                ? (jobJson.PREV_FIRE_TIME = job.PREV_FIRE_TIME)
-                                : (jobJson.PREV_FIRE_TIME = '');
-                            Object.prototype.hasOwnProperty.call(
-                                job,
-                                'NEXT_FIRE_TIME',
-                            )
-                                ? (jobJson.NEXT_FIRE_TIME = job.NEXT_FIRE_TIME)
-                                : (jobJson.NEXT_FIRE_TIME = '');
-                            Object.prototype.hasOwnProperty.call(job, 'USER_ID')
-                                ? (jobJson.USER_ID = job.USER_ID)
-                                : (jobJson.USER_ID = '');
-                            Object.prototype.hasOwnProperty.call(job, 'jobId')
-                                ? (jobJson.jobId = job.jobId)
-                                : (jobJson.jobId = '');
-
-                            // Temporary fix while we wait for the backend to update jobType from 'Sync App'/'Sync Project'/'Backup App'/'Backup Project' to 'Sync Database'/'Backup Database'.
-                            // TODO: Remove this if / else if section once backend is updated
-                            if (jobJson.jobType.startsWith('Backup')) {
-                                jobJson.jobType = 'Backup Database';
-                            } else if (jobJson.jobType.startsWith('Sync')) {
-                                jobJson.jobType = 'Sync Database';
-                            }
-
-                            if (
-                                job.jobGroup === 'undefined' &&
-                                jobJson.jobType !== 'Custom Job' &&
-                                jobJson.jobType !== 'Send Email'
-                            ) {
-                                // legacy database-related job
-                                if (
-                                    jobJson.jobTypeTemplate.hasOwnProperty(
-                                        'app',
-                                    )
-                                ) {
-                                    jobJson.jobGroup =
-                                        jobJson.jobTypeTemplate.app; // grab db name from jobJson
-                                }
-                            }
-
-                            jobJson.jobTags = '';
-                            if (
-                                Object.prototype.hasOwnProperty.call(
-                                    job,
-                                    'jobTags',
-                                ) &&
-                                job.jobTags.length > 0
-                            ) {
-                                jobJson.jobTags = job.jobTags;
-                            }
-
-                            allJobs.push(jobJson);
-                        } else {
-                            job.checked = false;
-                            allJobs.push(job);
+                        } catch (e) {
+                            return {
+                                id: job.jobId,
+                                name: job.jobName,
+                                type: 'Custom',
+                                frequencyString: job.cronExpression,
+                                timeZone: job.cronTz,
+                                tags: job.jobTags.split(','),
+                                lastRun: job.PREV_FIRE_TIME,
+                                nextRun: job.NEXT_FIRE_TIME,
+                                ownerId: job.USER_ID,
+                                isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
+                                group: job.jobGroup,
+                            };
                         }
-                    }
-                }
 
-                setJobs(allJobs);
-            }
-        });
+                        return {
+                            id: job.jobId,
+                            name: job.jobName,
+                            type: jobUIState.jobType,
+                            frequencyString:
+                                convertTimeToFrequencyString(jobUIState),
+                            timeZone: jobUIState.cronTimeZone,
+                            tags: job.jobTags.split(','),
+                            lastRun: job.PREV_FIRE_TIME,
+                            nextRun: job.NEXT_FIRE_TIME,
+                            ownerId: job.USER_ID,
+                            isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
+                            group: job.jobGroup,
+                        };
+                    });
+
+                    setJobs(jobs);
+                }
+            })
+            .finally(() => {
+                setJobsLoading(false);
+            });
     };
 
-    const deleteJob = (jobId, jobGroup) => {
+    const deleteJob = (jobId: string, jobGroup: string) => {
         let pixel = 'META | RemoveJobFromDB(';
         pixel += 'jobId=["' + jobId + '"], ';
         pixel += 'jobGroup=["' + jobGroup + '"]) ';
@@ -358,10 +126,8 @@ export function JobsPage() {
                     color: 'success',
                     message: `Successfully deleted ${type}`,
                 });
-                setShowDeleteModal(false);
-                setSelectedJob(null);
-                getJobs(true, []);
-                setSelectedTags([]);
+                setJobToDelete(null);
+                getJobs();
             } else {
                 notification.add({
                     color: 'error',
@@ -371,45 +137,54 @@ export function JobsPage() {
         });
     };
 
-    
     const filteredJobs = useMemo(() => {
-        return jobs.filter((job) => job.jobName.includes(searchValue))
-    }, [jobs]);
+        const searchJobs = jobs.filter((job) => job.name.includes(searchValue));
+        if (selectedTab === 'Active') {
+            return searchJobs.filter((job) => job.isActive);
+        } else if (selectedTab === 'Inactive') {
+            return searchJobs.filter((job) => !job.isActive);
+        }
+        return searchJobs;
+    }, [jobs, searchValue, selectedTab]);
 
     useEffect(() => {
         // initial render to get all jobs
         getJobs();
     }, []);
 
-    useEffect(() => {
-        setJobsToResume([]);
-        setJobsToPause([]);
-        setAllChecked(false);
-    }, [selectedTab]);
-
     return (
         <Stack spacing={2}>
-            <Grid container spacing={3}>
-                {
-                    JobTypes.map((jobType, index) => {
-                        return (
-                            <Grid key={index} item>
-                                <JobCard
-                                    title={jobType.title}
-                                    icon={jobType.icon}
-                                    count={[].filter((job) => {
-                                        return (
-                                            job.NEXT_FIRE_TIME !== 'INACTIVE'
-                                        );
-                                    }).length}
-                                    avatarColor={jobType.avatarColor}
-                                    iconColor={jobType.iconColor}
-                                />
-                            </Grid>
-                        )
-                    })
-                }
-            </Grid>
+            <Stack direction="row" spacing={3}>
+                <JobCard
+                    title="Active Jobs"
+                    icon={<AvTimer fontSize="medium" />}
+                    count={
+                        jobs.filter((job) => {
+                            return job.isActive;
+                        }).length
+                    }
+                    avatarColor="#E2F2FF"
+                    iconColor="#0471F0"
+                />
+                <JobCard
+                    title="Inactive Jobs"
+                    icon={<Bedtime fontSize="medium" />}
+                    count={
+                        jobs.filter((job) => {
+                            return !job.isActive;
+                        }).length
+                    }
+                    avatarColor="#F1E9FB"
+                    iconColor="#8340DE"
+                />
+                <JobCard
+                    title="Failed Jobs"
+                    icon={<ErrorRounded fontSize="medium" />}
+                    count={failedJobCount}
+                    avatarColor="#DEF4F3"
+                    iconColor="#00A593"
+                />
+            </Stack>
             <Stack direction="row" width="100%" justifyContent="space-between">
                 <Tabs
                     value={selectedTab}
@@ -425,103 +200,42 @@ export function JobsPage() {
                 <Stack direction="row" spacing={2}>
                     <Search
                         size="small"
+                        value={searchValue}
                         onChange={(e) => setSearchValue(e.target.value)}
                     />
                     <span>
-                        <Button
-                            variant="contained"
-                            startIcon={<Add />}
-                        >
+                        <Button variant="contained" startIcon={<Add />}>
                             Add New
                         </Button>
                     </span>
                 </Stack>
             </Stack>
-            <Table>
-                <Table.Head>
-                    <Table.Row>
-                        {[].map((col) => {
-                            return (
-                                col.showColumn && (
-                                    <Table.Cell align="left">
-                                        {col.renderHeader()}
-                                    </Table.Cell>
-                                )
-                            );
-                        })}
-                    </Table.Row>
-                </Table.Head>
-                <Table.Body>
-                    {
-                        filteredJobs.map((job, index) => {
-                            return (
-                                <Table.Row key={index}>
-                                    {[].map((col) => {
-                                        return (
-                                            col.showColumn && (
-                                                <Table.Cell
-                                                    align="left"
-                                                    sx={col.sx}
-                                                >
-                                                    {col.renderData(job)}
-                                                </Table.Cell>
-                                            )
-                                        );
-                                    })}
-                                </Table.Row>
-                            )
-                        })
-                    }
-                </Table.Body>
-                <Table.Footer>
-                    <Table.Row>
-                        <Table.Pagination
-                            rowsPerPageOptions={[5, 10, 25]}
-                            onPageChange={(e, v) => {
-                                setJobsPage(v);
-                                setAllChecked(false);
-                                setJobsToResume([]);
-                                setJobsToPause([]);
-                            }}
-                            page={jobsPage}
-                            rowsPerPage={jobsRowsPerPage}
-                            onRowsPerPageChange={(e) => {
-                                setJobsRowsPerPage(Number(e.target.value));
-                            }}
-                            count={[].length}
-                        />
-                    </Table.Row>
-                </Table.Footer>
-            </Table>
-            <JobHistory />
+            <JobsTable
+                jobs={filteredJobs}
+                jobsLoading={jobsLoading}
+                showDeleteJobModal={(job: Job) => setJobToDelete(job)}
+            />
+            <JobHistory setFailedJobCount={setFailedJobCount} />
             <Modal
                 onClose={() => {
-                    setShowDeleteModal(false);
-                    setSelectedJob(null);
+                    setJobToDelete(null);
                 }}
-                open={showDeleteModal}
+                open={jobToDelete !== null}
             >
                 <Modal.Content>
-                    <Modal.Title>
-                        Delete Job ({selectedJob?.jobName})
-                    </Modal.Title>
+                    <Modal.Title>Delete Job</Modal.Title>
                     <Modal.Content>
-                        <p>
-                            Confirm Delete.{' '}
-                            <span
-                                style={{
-                                    color: 'red',
-                                }}
-                            >
-                                Warning: Action is Permanent
-                            </span>
-                        </p>
+                        {JSON.stringify(jobToDelete)}
+                        <Typography variant="body1">
+                            Are you sure you want to delete {jobToDelete?.name}?
+                            This action is permanent.
+                        </Typography>
                     </Modal.Content>
                     <Modal.Actions>
                         <Button
                             variant="text"
                             onClick={() => {
-                                setShowDeleteModal(false);
+                                setJobToDelete(null);
                             }}
                         >
                             Cancel
@@ -530,10 +244,7 @@ export function JobsPage() {
                             variant="contained"
                             color="error"
                             onClick={() => {
-                                deleteJob(
-                                    selectedJob.jobId,
-                                    selectedJob.jobGroup,
-                                );
+                                deleteJob(jobToDelete.id, jobToDelete.group);
                             }}
                         >
                             Delete

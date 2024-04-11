@@ -1,16 +1,14 @@
-import { Button } from "@semoss/ui";
-import { useState } from "react";
+import { Button, Menu } from '@semoss/ui';
+import { useState } from 'react';
 
-export const JobsTableColumnsButton = (props: {
-
-}) => {
+export const JobsTableColumnsButton = (props: {}) => {
     const [columnSelectorAnchorEl, setColumnSelectorAnchorEl] =
         useState<HTMLButtonElement | null>(null);
     const [searchColumnType, setSearchColumnType] = useState<string>('');
 
     return (
         <>
-            <Button
+            {/* <Button
                 variant="outlined"
                 onClick={(event) => {
                     setColumnSelectorAnchorEl(event.currentTarget);
@@ -63,7 +61,6 @@ export const JobsTableColumnsButton = (props: {
                         }}
                     />
                 </div>
-                {/* checklist of column names here */}
                 {jobColumns.map((col, i) => {
                     return (
                         col.hideable &&
@@ -98,7 +95,7 @@ export const JobsTableColumnsButton = (props: {
                         )
                     );
                 })}
-            </StyledPopover>
+            </StyledPopover> */}
         </>
-    )
+    );
 };
