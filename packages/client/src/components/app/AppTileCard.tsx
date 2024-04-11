@@ -12,9 +12,16 @@ import {
     Menu,
     useNotification,
 } from '@semoss/ui';
-import { AccessTime, MoreVert, Person } from '@mui/icons-material';
+import {
+    AccessTime,
+    MoreVert,
+    Person,
+    Bookmark,
+    BookmarkBorder,
+} from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { Env } from '@/env';
+// import { APP_IMAGES } from './app.images';
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -37,8 +44,8 @@ const StyledContainer = styled('div')({
 });
 
 const StyledOverlayContent = styled('div')(({ theme }) => ({
-    width: '100%',
-    height: '134px',
+    // width: '100%',
+    // height: '134px',
     position: 'absolute',
     top: '0',
     right: '0',
@@ -125,6 +132,19 @@ const StyledCardActions = styled(Card.Actions)({
     alignSelf: 'stretch',
 });
 
+const StyledIconButton = styled(IconButton)({
+    backgroundColor: '#FFFFFF',
+    height: '28px',
+    width: '28px',
+    radius: '24px',
+    '&:hover': {
+        backgroundColor: '#FFFFFF',
+        $icon: {
+            color: 'red',
+        },
+    },
+});
+
 interface AppTileCardProps {
     /**
      * App
@@ -145,12 +165,32 @@ interface AppTileCardProps {
      * Action that is triggered when clicked
      * aop - current selected app
      */
-    onAction?: () => void;
+    onClick?: () => void;
 
     /**
      * Link to navigate to
      */
     href?: string;
+
+    /**
+     * is app favorited
+     */
+    isFavorite?: boolean;
+
+    /**
+     * toggle favorite bookmark
+     */
+    favorite?: (value: boolean) => void;
+
+    /**
+     * type of app to match image
+     */
+    appType?: string;
+
+    /**
+     * is the app a default system app
+     */
+    systemApp?: boolean;
 }
 
 /**
@@ -172,8 +212,12 @@ export const AppTileCard = (props: AppTileCardProps) => {
         app,
         image,
         background = '#DAC9F5',
-        onAction = () => null,
+        onClick = () => null,
         href = null,
+        isFavorite,
+        favorite,
+        appType,
+        systemApp,
     } = props;
 
     const notification = useNotification();
@@ -207,28 +251,61 @@ export const AppTileCard = (props: AppTileCardProps) => {
         return `Published ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
 
+    // /**
+    //  * @name findAppImage
+    //  * @params appType
+    //  * @returns image
+    //  */
+    // const findAppImage = (appType: string) => {
+    //     const image: any = APP_IMAGES[appType];
+    //     return image.image;
+    // };
+
     return (
         <StyledTileCard disabled={!href}>
+            {!systemApp && (
+                <StyledContainer>
+                    <StyledOverlayContent>
+                        <StyledIconButton
+                            size={'small'}
+                            title={
+                                isFavorite
+                                    ? `Unbookmark ${
+                                          app.project_name
+                                              ? app.project_name
+                                              : ''
+                                      }`
+                                    : `Bookmark ${
+                                          app.project_name
+                                              ? app.project_name
+                                              : ''
+                                      }`
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+
+                                favorite(isFavorite);
+                            }}
+                        >
+                            {isFavorite ? (
+                                <Bookmark color="primary" />
+                            ) : (
+                                <BookmarkBorder />
+                            )}{' '}
+                        </StyledIconButton>
+                    </StyledOverlayContent>
+                </StyledContainer>
+            )}
             <Link
                 href={href}
                 rel="noopener noreferrer"
                 color="inherit"
                 underline="none"
             >
-                <StyledContainer>
-                    {image ? (
-                        <StyledTileCardMedia image={image} />
-                    ) : (
-                        <StyledTileCardImage
-                            src={`${Env.MODULE}/api/project-${app.project_id}/projectImage/download`}
-                        />
-                    )}
-                    <StyledOverlayContent>
-                        {/* <StyledAvatar variant={'circular'}>
-                                <BookmarkBorderOutlined />
-                            </StyledAvatar> */}
-                    </StyledOverlayContent>
-                </StyledContainer>
+                {/* <StyledTileCardMedia
+                    src="img"
+                    image={image ? image : findAppImage(appType)}
+                /> */}
                 <Card.Header
                     title={
                         <StyledName variant={'body1'}>
@@ -303,7 +380,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </Card.Content>
                 <StyledCardActions>
                     {!href ? (
-                        <Button onClick={onAction}>Open</Button>
+                        <Button onClick={onClick}>Open</Button>
                     ) : (
                         <Link
                             href={href}

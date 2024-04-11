@@ -113,7 +113,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
                             key={`default-template-${idx}`}
                             app={getAppMetadataFromTemplate(t)}
                             image={t.image}
-                            onAction={() => onUse(t)}
+                            // onAction={() => onUse(t)}
                         />
                     );
                 })}
