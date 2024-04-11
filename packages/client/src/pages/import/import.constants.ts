@@ -126,20 +126,6 @@ export const stepsOne = [
     },
 ];
 
-// {
-//     MODEL: {
-//         "View All Page Header": [{
-//             // id will get created on mount of import and held in Context.
-//             id: Model-View All Page Header-Open AI
-//             name: 'Open AI',
-//             disable: false,
-//             icon: OPEN_AI,
-//             fields: [] // FORM FIELDS
-//         }]
-//     },
-//     STORAGE: {},
-// }
-
 export type EngineFields = {
     name: string;
     fields: {
@@ -4318,9 +4304,173 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'Weaviate',
-                disable: true,
+                disable: false,
                 icon: WEVIATE,
-                fields: [],
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'WEAVIATE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'Connection URL',
+                        hidden: true,
+                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        hidden: true,
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'Squared Euclidean (L2) distance',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'Squared Euclidean (L2) distance',
+                                },
+                                {
+                                    display: 'cosine similarity',
+                                    value: 'cosine similarity',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'WEAVIATE_CLASSNAME',
+                        label: 'Weaviate Classname',
+                        defaultValue: 'Vector_Table',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Vector Table',
+                                    value: 'Vector_Table',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AUTOCUT_DEFAULT',
+                        label: 'Autocut default',
+                        defaultValue: '1',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                ],
             },
             {
                 name: 'Pinecone',

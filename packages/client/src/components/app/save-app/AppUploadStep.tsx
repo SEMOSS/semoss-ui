@@ -6,8 +6,9 @@ import {
     ADD_APP_FORM_FIELD_TYPE,
 } from './save-app.constants';
 import { Stack, Select } from '@semoss/ui';
-import { Dispatch, SetStateAction } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 import { AddAppFormStep } from './AddAppModal';
+import { valueArray } from 'vega-lite/build/src/channeldef';
 
 const FOLDER_TYPE_OPTIONS = [
     {
@@ -35,6 +36,8 @@ export const AppUploadStep = (props: {
         appZipFormSteps,
         projectZipFormSteps,
     } = props;
+
+    const [isZip, setIsZip] = useState(true);
 
     return (
         <Stack direction="column">
@@ -71,6 +74,12 @@ export const AppUploadStep = (props: {
                                         ? appZipFormSteps
                                         : projectZipFormSteps,
                                 );
+
+                                if (value.target.value === 'App Zip') {
+                                    setIsZip(true);
+                                } else {
+                                    setIsZip(false);
+                                }
                             }}
                         >
                             {FOLDER_TYPE_OPTIONS.map((option, idx) => (
@@ -82,12 +91,15 @@ export const AppUploadStep = (props: {
                     );
                 }}
             />
+
             <Controller
                 name={ADD_APP_FORM_FIELD_APP_TYPE}
                 control={control}
                 rules={{ required: true }}
                 render={({ field }) => {
-                    return (
+                    return isZip ? (
+                        <></>
+                    ) : (
                         <Select
                             label="App Type"
                             value={field.value}
