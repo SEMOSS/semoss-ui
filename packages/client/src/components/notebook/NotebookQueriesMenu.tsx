@@ -12,7 +12,7 @@ import {
     Menu,
     useNotification,
 } from '@semoss/ui';
-import { useBlocks, useWorkspace } from '@/hooks';
+import { useBlocks, useRootStore, useWorkspace } from '@/hooks';
 import {
     Add,
     Search,
@@ -24,6 +24,7 @@ import {
     ContentCopy,
     Delete,
     HourglassEmpty,
+    Download,
 } from '@mui/icons-material';
 import { NewQueryOverlay } from './NewQueryOverlay';
 import { ActionMessages } from '@/stores';
@@ -84,6 +85,8 @@ export const NotebookQueriesMenu = observer((): JSX.Element => {
     }>(null);
     const open = Boolean(anchorEl);
 
+    const { monolithStore, configStore } = useRootStore();
+
     const renderedQueries = useMemo(() => {
         const s = querySearch.toLowerCase();
 
@@ -103,6 +106,45 @@ export const NotebookQueriesMenu = observer((): JSX.Element => {
         const q = renderedQueries[0];
         notebook.selectQuery(q.id);
     }, []);
+
+    // requests download id with DownloadAppNotebook pixel and appId then downloads with monolithStore.download
+    const exportHandler = async () => {
+        workspace.setLoading(true);
+
+        try {
+            // export  the app
+            const response = await monolithStore.runQuery<[string]>(
+                `DownloadAppNotebook ( "${workspace.appId}" ) ;`,
+            );
+
+            const key = response.pixelReturn[0].output;
+            // throw an error if there is no key
+            // throw an error if index / size return as 0 indicating app is new and has not yet been saved
+            if (!key) {
+                throw new Error('Error downloading app notebook');
+            } else if (key == 'Index: 0, Size: 0') {
+                throw new Error(
+                    'Error downloading app notebook. Save new apps before downloading.',
+                );
+            } else {
+                // if no issues are indicated in the return download the app
+                await monolithStore.download(configStore.store.insightID, key);
+                notification.add({
+                    color: 'success',
+                    message: 'Success',
+                });
+            }
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            workspace.setLoading(false);
+        }
+    };
 
     /**
      * Edit or create a query
@@ -309,6 +351,17 @@ export const NotebookQueriesMenu = observer((): JSX.Element => {
                                     />
                                 </StyledListIcon>
                                 <List.ItemText primary="Duplicate" />
+                            </List.ItemButton>
+                        </List.Item>
+                        <List.Item disablePadding>
+                            <List.ItemButton onClick={exportHandler}>
+                                <StyledListIcon>
+                                    <Download
+                                        color="inherit"
+                                        fontSize="small"
+                                    />
+                                </StyledListIcon>
+                                <List.ItemText primary="Export" />
                             </List.ItemButton>
                         </List.Item>
                         <Divider />
