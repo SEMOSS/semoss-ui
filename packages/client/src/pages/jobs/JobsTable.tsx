@@ -9,6 +9,7 @@ import {
 import { Chip, IconButton, Stack, styled, LinearProgress } from '@semoss/ui';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Job } from './jobs.types';
+import { runPixel } from '@/api';
 
 const StyledDataGrid = styled(DataGrid)(() => ({
     '.MuiDataGrid-overlayWrapper': {
@@ -32,6 +33,12 @@ export const JobsTable = (props: {
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
+
+    const runJob = async (job: Job) => {
+        await runPixel(
+            `META | ExecuteScheduledJob ( jobId = [ \"${job.name}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
+        );
+    };
 
     const JobColumns: GridColDef[] = [
         {
