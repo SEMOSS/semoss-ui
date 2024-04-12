@@ -133,7 +133,7 @@ interface PendingMember {
     email: string;
     countrycode: string;
     phone: string;
-    extension: string;
+    phoneextension: string;
     id: string;
     name: string;
     type: string;
@@ -290,7 +290,7 @@ export const MemberSettingsPage = () => {
         );
     };
 
-    const createUser = handleSubmit((data) => {
+    const createUser = handleSubmit((data: PendingMember) => {
         monolithStore['createUser'](adminMode, data).then((resp) => {
             if (resp.data) {
                 const message = `You have successfully added new user(s)`;
