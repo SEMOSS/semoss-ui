@@ -1,12 +1,19 @@
 import { useState } from 'react';
-import { styled, Table, IconButton, Collapse, Box } from '@semoss/ui';
 import {
-    KeyboardArrowUp,
-    KeyboardArrowDown,
-    ChevronRight,
-} from '@mui/icons-material';
+    styled,
+    Table,
+    IconButton,
+    Collapse,
+    Box,
+    Stack,
+    Typography,
+} from '@semoss/ui';
+import { KeyboardArrowDown, ChevronRight } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 
+const StyledExpandTableCell = styled(Table.Cell)(({ theme }) => ({
+    padding: 0,
+}));
 const StyledBox = styled(Box)(({ theme }) => ({
     padding: theme.spacing(1),
     margin: theme.spacing(1),
@@ -47,12 +54,14 @@ export const HistoryRow = (props: {
                 </Table.Cell>
             </Table.Row>
             <Table.Row>
-                <Table.Cell colSpan={6}>
+                <StyledExpandTableCell colSpan={6}>
                     <Collapse in={open} timeout="auto">
-                        Output:
-                        <StyledBox>{row.schedulerOutput}</StyledBox>
+                        <Stack padding={2} spacing={2}>
+                            <Typography variant="subtitle1">Output:</Typography>
+                            <StyledBox>{row.schedulerOutput}</StyledBox>
+                        </Stack>
                     </Collapse>
-                </Table.Cell>
+                </StyledExpandTableCell>
             </Table.Row>
         </>
     );

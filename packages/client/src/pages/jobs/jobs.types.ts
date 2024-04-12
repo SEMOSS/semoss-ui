@@ -74,3 +74,16 @@ export interface Job {
     isActive: boolean;
     group: string;
 }
+
+export interface HistoryJob {
+    jobId: string;
+    jobName: string;
+    jobGroup: string;
+    execStart: string;
+    execEnd: string;
+    execDelta: string;
+    success: boolean;
+    jobTags: string[];
+    isLatest: boolean;
+    schedulerOutput: string;
+}

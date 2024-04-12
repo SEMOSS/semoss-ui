@@ -6,7 +6,14 @@ import {
     GridRowSelectionModel,
     GridSlots,
 } from '@mui/x-data-grid';
-import { Chip, IconButton, Stack, styled, LinearProgress } from '@semoss/ui';
+import {
+    Chip,
+    IconButton,
+    Stack,
+    styled,
+    LinearProgress,
+    CircularProgress,
+} from '@semoss/ui';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Job } from './jobs.types';
 import { runPixel } from '@/api';
@@ -27,17 +34,29 @@ const StyledDataGrid = styled(DataGrid)(() => ({
 export const JobsTable = (props: {
     jobs: Job[];
     jobsLoading: boolean;
+    rowSelectionModel: GridRowSelectionModel;
+    setRowSelectionModel: (value: GridRowSelectionModel) => void;
+    getHistory: () => void;
     showDeleteJobModal: (job: Job) => void;
 }) => {
-    const { jobs, jobsLoading, showDeleteJobModal } = props;
+    const {
+        jobs,
+        jobsLoading,
+        rowSelectionModel,
+        setRowSelectionModel,
+        getHistory,
+        showDeleteJobModal,
+    } = props;
 
-    const [rowSelectionModel, setRowSelectionModel] =
-        useState<GridRowSelectionModel>([]);
+    const [runJobLoading, setRunJobLoading] = useState<boolean>(false);
 
     const runJob = async (job: Job) => {
+        setRunJobLoading(true);
         await runPixel(
-            `META | ExecuteScheduledJob ( jobId = [ \"${job.name}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
+            `META | ExecuteScheduledJob ( jobId = [ \"${job.id}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
         );
+        await getHistory();
+        setRunJobLoading(false);
     };
 
     const JobColumns: GridColDef[] = [
@@ -122,13 +141,31 @@ export const JobsTable = (props: {
             renderCell: (params) => {
                 return (
                     <>
-                        <IconButton color="primary" size="medium">
-                            <PlayArrow />
+                        <IconButton
+                            disabled={runJobLoading}
+                            color="primary"
+                            size="medium"
+                            onClick={() => {
+                                const job = jobs.find(
+                                    (job) => (job.id = params.value),
+                                );
+                                runJob(job);
+                            }}
+                        >
+                            {runJobLoading ? (
+                                <CircularProgress
+                                    size="0.75em"
+                                    variant="indeterminate"
+                                />
+                            ) : (
+                                <PlayArrow />
+                            )}
                         </IconButton>
                         <IconButton color="primary" size="medium" disabled>
                             <Edit />
                         </IconButton>
                         <IconButton
+                            disabled={runJobLoading}
                             color="error"
                             size="medium"
                             onClick={() => {
@@ -156,6 +193,7 @@ export const JobsTable = (props: {
             columns={JobColumns}
             rows={jobs}
             checkboxSelection
+            disableRowSelectionOnClick
             rowSelectionModel={rowSelectionModel}
             onRowSelectionModelChange={(value) => setRowSelectionModel(value)}
             slots={{

@@ -1,11 +1,17 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
-import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import {
+    DataGrid,
+    GridColDef,
+    GridRenderCellParams,
+    GridRowSelectionModel,
+} from '@mui/x-data-grid';
 import {
     Add,
     Bedtime,
     Delete,
     Edit,
     ErrorRounded,
+    Pause,
     PlayArrow,
 } from '@mui/icons-material';
 import {
@@ -31,8 +37,12 @@ import { useRootStore } from '@/hooks';
 import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
-import { Job, JobUIState, PixelReturnJob } from './jobs.types';
-import { convertTimeToFrequencyString } from './job.utils';
+import { HistoryJob, Job, JobUIState, PixelReturnJob } from './jobs.types';
+import {
+    convertDeltaToRuntimeString,
+    convertTimeToFrequencyString,
+    convertTimetoDate,
+} from './job.utils';
 import { JobsTable } from './JobsTable';
 
 export function JobsPage() {
@@ -50,6 +60,12 @@ export function JobsPage() {
     const [jobsLoading, setJobsLoading] = useState<boolean>(false);
 
     const [jobToDelete, setJobToDelete] = useState<Job>(null);
+
+    const [rowSelectionModel, setRowSelectionModel] =
+        useState<GridRowSelectionModel>([]);
+
+    const [history, setHistory] = useState<HistoryJob[]>([]);
+    const [historyLoading, setHistoryLoading] = useState<boolean>(false);
 
     const getJobs = () => {
         setJobsLoading(true);
@@ -137,6 +153,168 @@ export function JobsPage() {
         });
     };
 
+    const getHistory = () => {
+        setHistoryLoading(true);
+        let pixel = 'META|SchedulerHistory()';
+        monolithStore
+            .runQuery<
+                [
+                    {
+                        data: {
+                            values: string[][];
+                            headers: string[];
+                        };
+                    },
+                ]
+            >(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType[0];
+                if (type.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message:
+                            'Something went wrong. Job history could not be retrieved.',
+                    });
+                } else {
+                    // map the headers
+                    const historyData: HistoryJob[] = [];
+                    const output = response.pixelReturn[0].output;
+                    const headers = {};
+                    for (
+                        let headerIdx = 0,
+                            headerLen = output['data'].headers.length;
+                        headerIdx < headerLen;
+                        headerIdx++
+                    ) {
+                        headers[output['data'].headers[headerIdx]] = headerIdx;
+                    }
+
+                    for (
+                        let valueIdx = 0,
+                            valueLen = output['data'].values.length;
+                        valueIdx < valueLen;
+                        valueIdx++
+                    ) {
+                        // Excluding the jobs that have not ran even once from history
+                        if (
+                            output['data'].values[valueIdx][
+                                headers['SUCCESS']
+                            ] !== null
+                        ) {
+                            const job = {
+                                jobId: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'JOB_ID',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['JOB_ID']
+                                      ]
+                                    : '',
+                                jobName: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'JOB_NAME',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['JOB_NAME']
+                                      ]
+                                    : '',
+                                jobGroup: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'JOB_GROUP',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['JOB_GROUP']
+                                      ]
+                                    : '',
+                                execStart:
+                                    Object.prototype.hasOwnProperty.call(
+                                        headers,
+                                        'EXECUTION_START',
+                                    ) &&
+                                    output['data'].values[valueIdx][
+                                        headers['EXECUTION_START']
+                                    ]
+                                        ? convertTimetoDate(
+                                              output['data'].values[valueIdx][
+                                                  headers['EXECUTION_START']
+                                              ],
+                                          )
+                                        : '',
+                                execEnd: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'EXECUTION_END',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['EXECUTION_END']
+                                      ]
+                                    : '',
+                                execDelta: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'EXECUTION_DELTA',
+                                )
+                                    ? convertDeltaToRuntimeString(
+                                          output['data'].values[valueIdx][
+                                              headers['EXECUTION_DELTA']
+                                          ],
+                                      )
+                                    : '',
+                                // TODO: validate return type/value
+                                success: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'SUCCESS',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['SUCCESS']
+                                      ] == 'true' ||
+                                      output['data'].values[valueIdx][
+                                          headers['SUCCESS']
+                                      ] == 'True'
+                                    : false,
+                                // appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
+                                jobTags: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'JOB_TAG',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['JOB_TAG']
+                                      ].split(',')
+                                    : [],
+                                // capture the latest record based on the IS_LATEST field stored
+                                isLatest: Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'IS_LATEST',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['IS_LATEST']
+                                      ] == 'true' ||
+                                      output['data'].values[valueIdx][
+                                          headers['IS_LATEST']
+                                      ] == 'True'
+                                    : false,
+                                //capture scheduler output
+                                schedulerOutput:
+                                    Object.prototype.hasOwnProperty.call(
+                                        headers,
+                                        'SCHEDULER_OUTPUT',
+                                    )
+                                        ? output['data'].values[valueIdx][
+                                              headers['SCHEDULER_OUTPUT']
+                                          ]
+                                        : 'No Output.',
+                            };
+
+                            historyData.push(job);
+                        }
+                    }
+                    setFailedJobCount(
+                        historyData.filter((job) => !job.success).length,
+                    );
+                    setHistory(historyData);
+                }
+            });
+        setHistoryLoading(false);
+    };
+
     const filteredJobs = useMemo(() => {
         const searchJobs = jobs.filter((job) => job.name.includes(searchValue));
         if (selectedTab === 'Active') {
@@ -148,8 +326,9 @@ export function JobsPage() {
     }, [jobs, searchValue, selectedTab]);
 
     useEffect(() => {
-        // initial render to get all jobs
+        // initial render to get all jobs/history
         getJobs();
+        getHistory();
     }, []);
 
     return (
@@ -204,8 +383,22 @@ export function JobsPage() {
                         onChange={(e) => setSearchValue(e.target.value)}
                     />
                     <span>
-                        <Button variant="contained" startIcon={<Add />}>
-                            Add New
+                        <Button
+                            disabled={rowSelectionModel.length === 0}
+                            variant="outlined"
+                            startIcon={<Pause />}
+                            size="medium"
+                        >
+                            Pause
+                        </Button>
+                    </span>
+                    <span>
+                        <Button
+                            size="medium"
+                            variant="contained"
+                            startIcon={<Add />}
+                        >
+                            Add
                         </Button>
                     </span>
                 </Stack>
@@ -213,9 +406,12 @@ export function JobsPage() {
             <JobsTable
                 jobs={filteredJobs}
                 jobsLoading={jobsLoading}
+                rowSelectionModel={rowSelectionModel}
+                setRowSelectionModel={setRowSelectionModel}
+                getHistory={getHistory}
                 showDeleteJobModal={(job: Job) => setJobToDelete(job)}
             />
-            <JobHistory setFailedJobCount={setFailedJobCount} />
+            <JobHistory history={history} historyLoading={historyLoading} />
             <Modal
                 onClose={() => {
                     setJobToDelete(null);
