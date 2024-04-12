@@ -26,12 +26,13 @@ const StyledBox = styled(Box, {
             theme.palette.mode === "dark"
                 ? "#0000000A"
                 : color === "primary"
-                ? `${theme.palette.primary.light}1D`
+                ? `#F2F2F2`
                 : "rgba(0, 0, 0, 0.04)",
         border: theme.palette.mode === "dark" ? "1px" : "0",
-        borderRadius: "12px",
+        borderRadius: ".5rem",
         width: "fit-content",
         borderColor: "rgba(4, 113, 240, 0.5)",
+        padding: "0 3px 0 3px",
     };
 });
 
@@ -50,7 +51,7 @@ const StyledToggleGroup = styled(Tabs, {
             theme.palette.mode === "dark"
                 ? "#8BCAFF"
                 : color === "primary"
-                ? theme.palette.primary.main
+                ? "#9E9E9E"
                 : theme.palette.text.disabled,
         fontWeight: 700,
     },
@@ -60,10 +61,8 @@ const StyledToggleGroup = styled(Tabs, {
                 ? `${theme.palette.primary.light}1D`
                 : "#FFFFFF",
         fontWeight: 700,
-        color:
-            color === "primary"
-                ? theme.palette.primary.dark
-                : theme.palette.text.secondary,
+        color: color === "primary" ? "#666666" : theme.palette.text.secondary,
+        boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
     },
 }));
 
