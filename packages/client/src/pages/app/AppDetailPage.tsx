@@ -21,9 +21,11 @@ import {
     styled,
     Typography,
 } from '@semoss/ui';
+// import { SettingsTiles } from '@/components/settings';
 // import { SettingsTiles } from '@/components/settings/SettingsTiles';
+import { MembersTable } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
-// import { SettingsContext } from '@/contexts';
+import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
 // import { usePixel, useRootStore } from '@/hooks';
@@ -389,6 +391,17 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">
                                 Member Access
                             </SectionHeading>
+                            <SettingsContext.Provider
+                                value={{
+                                    adminMode: false,
+                                }}
+                            >
+                                <MembersTable
+                                    id={appId}
+                                    mode={'app'}
+                                    name={'app'}
+                                />
+                            </SettingsContext.Provider>
                         </section>
                     </Sections>
                 </SidebarAndSectionsContainer>
@@ -507,7 +520,7 @@ function EditDetailsModal({
     runSetMainUses,
 }: EditDetailsModalProps) {
     return (
-        <Modal open={true} fullWidth>
+        <Modal open={isOpen} fullWidth>
             <EditModalInnerContainer>
                 <ModalHeaderWrapper>
                     <ModalHeading variant="h2">Edit App Details</ModalHeading>
