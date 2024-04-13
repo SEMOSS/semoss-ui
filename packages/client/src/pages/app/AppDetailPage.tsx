@@ -14,6 +14,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import {
     Breadcrumbs,
     Button,
+    Link,
     IconButton,
     Menu,
     MenuItem,
@@ -115,7 +116,7 @@ const Tag = styled('span')(({ theme }) => ({
     padding: '0.5em 1em',
 }));
 
-const DepsHeadingWrapper = styled('div')({
+const DependenciesHeadingWrapper = styled('div')({
     alignItems: 'start',
     display: 'flex',
     justifyContent: 'space-between',
@@ -191,7 +192,7 @@ export function AppDetailPage() {
 
     async function getDependencies() {
         const response = await monolithStore.runQuery(
-            `GetProjectDependencies(project="${appId}")`,
+            `GetProjectDependencies(project="${appId}", details=[true])`,
         );
         const dependencies = response.pixelReturn[0].output;
         setDependenciesState(dependencies);
@@ -236,7 +237,7 @@ export function AppDetailPage() {
                         Editor Access
                     </>
                 );
-            case 'DISCOVERABLE':
+            case 'READ_ONLY':
                 return (
                     <>
                         <AssignmentIcon />
@@ -245,6 +246,79 @@ export function AppDetailPage() {
                 );
             default:
                 return null;
+        }
+    }
+
+    const DependenciesTable = styled('div')({
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.25rem',
+    });
+
+    const DependencyRow = styled('div')({
+        display: 'flex',
+        width: '100%',
+    });
+
+    function DependenciesBody(): JSX.Element {
+        if (dependenciesState?.length > 0) {
+            return (
+                <>
+                    {permissionState === 'EDITOR' ||
+                    permissionState === 'READ_ONLY' ? (
+                        <pre
+                            style={{
+                                background: 'gray',
+                                padding: '1rem',
+                                textAlign: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            (Warning component)
+                        </pre>
+                    ) : null}
+                    <DependenciesTable>
+                        <DependencyRow>
+                            <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ width: '50%' }}
+                            >
+                                Dependency
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ width: '50%' }}
+                            >
+                                Current level of access
+                            </Typography>
+                        </DependencyRow>
+                        {dependenciesState?.map(
+                            ({ engine_id, engine_name, engine_type }) => (
+                                <DependencyRow key={nanoid()}>
+                                    <Link
+                                        href={`./#/engine/${engine_type}/${engine_id}`}
+                                        sx={{ width: '50%' }}
+                                    >
+                                        <Typography variant="body2">
+                                            {engine_name}
+                                        </Typography>
+                                    </Link>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ width: '50%' }}
+                                    >
+                                        {permissionState}
+                                    </Typography>
+                                </DependencyRow>
+                            ),
+                        )}
+                    </DependenciesTable>
+                </>
+            );
+        } else {
+            return <Typography variant="body1">No dependencies</Typography>;
         }
     }
 
@@ -289,7 +363,7 @@ export function AppDetailPage() {
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
-                    <Sidebar refs={refs} />
+                    <Sidebar permissionState={permissionState} refs={refs} />
 
                     <Sections>
                         <TitleSection>
@@ -340,32 +414,30 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">Videos</SectionHeading>
                         </section>
 
-                        <section ref={dependenciesRef}>
-                            <DepsHeadingWrapper>
-                                <SectionHeading variant="h2">
-                                    Dependencies
-                                </SectionHeading>
-                                <IconButton
-                                    onClick={() => {
-                                        runSetDependenciesQuery([
-                                            '38e13c86-a6f3-4d2b-b42b-31c7ce26c147',
-                                        ]);
-                                    }}
-                                    sx={{
-                                        position: 'absolute',
-                                        right: 0,
-                                        top: '-0.4rem',
-                                    }}
-                                >
-                                    <EditIcon />
-                                </IconButton>
-                            </DepsHeadingWrapper>
-                            {dependenciesState?.length > 0
-                                ? dependenciesState.map((dependency) => (
-                                      <div key={nanoid()}>{dependency}</div>
-                                  ))
-                                : 'This app has no dependencies. (Prompt to add dependencies.)'}
-                        </section>
+                        {permissionState === 'DISCOVERABLE' ? null : (
+                            <section ref={dependenciesRef}>
+                                <DependenciesHeadingWrapper>
+                                    <SectionHeading variant="h2">
+                                        Dependencies
+                                    </SectionHeading>
+                                    <IconButton
+                                        onClick={() => {
+                                            runSetDependenciesQuery([
+                                                '38e13c86-a6f3-4d2b-b42b-31c7ce26c147',
+                                            ]);
+                                        }}
+                                        sx={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            top: '-0.4rem',
+                                        }}
+                                    >
+                                        <EditIcon />
+                                    </IconButton>
+                                </DependenciesHeadingWrapper>
+                                <DependenciesBody />
+                            </section>
+                        )}
 
                         <section ref={appAccessRef}>
                             <SectionHeading variant="h2">
@@ -439,10 +511,11 @@ const SidebarMenuItem = styled(MenuItem)({
 });
 
 interface SidebarProps {
+    permissionState: string;
     refs: React.MutableRefObject<HTMLElement>[];
 }
 
-function Sidebar({ refs }: SidebarProps) {
+function Sidebar({ permissionState, refs }: SidebarProps) {
     const [
         mainUsesRef,
         tagsRef,
@@ -456,7 +529,9 @@ function Sidebar({ refs }: SidebarProps) {
         { text: 'Main Uses', ref: mainUsesRef },
         { text: 'Tags', ref: tagsRef },
         { text: 'Videos', ref: videosRef },
-        { text: 'Dependencies', ref: dependenciesRef },
+        permissionState === 'DISCOVERABLE'
+            ? null
+            : { text: 'Dependencies', ref: dependenciesRef },
         { text: 'App Access', ref: appAccessRef },
         { text: 'Member Access', ref: memberAccessRef },
     ];
