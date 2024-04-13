@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-// import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CloseIcon from '@mui/icons-material/Close';
@@ -22,9 +21,7 @@ import {
     styled,
     Typography,
 } from '@semoss/ui';
-// import { SettingsTiles } from '@/components/settings';
-// import { SettingsTiles } from '@/components/settings/SettingsTiles';
-import { MembersTable } from '@/components/settings';
+import { MembersTable, SettingsTiles } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
@@ -160,7 +157,7 @@ export function AppDetailPage() {
 
     const { appId } = useParams();
     const { monolithStore } = useRootStore();
-    // const navigate = useNavigate();
+    const navigate = useNavigate();
 
     useEffect(() => {
         getPermission();
@@ -443,7 +440,7 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">
                                 App Access
                             </SectionHeading>
-                            {/* <SettingsContext.Provider
+                            <SettingsContext.Provider
                                 value={{
                                     adminMode: false,
                                 }}
@@ -456,7 +453,7 @@ export function AppDetailPage() {
                                         navigate('/settings/app');
                                     }}
                                 />
-                            </SettingsContext.Provider> */}
+                            </SettingsContext.Provider>
                         </section>
 
                         <section ref={memberAccessRef}>
