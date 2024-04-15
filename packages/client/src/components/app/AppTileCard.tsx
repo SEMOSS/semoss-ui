@@ -289,7 +289,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ) : (
                                 <StyledTagChip
                                     key={`${app.project_id}0`}
-                                    variant="outlined"
                                     label={app.tag}
                                 />
                             ))}

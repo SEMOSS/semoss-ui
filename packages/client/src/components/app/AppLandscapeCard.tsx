@@ -275,7 +275,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                                         <StyledChip
                                             size="small"
                                             key={app.project_id + i}
-                                            variant={'outlined'}
                                             label={t}
                                         />
                                     );
@@ -290,7 +289,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             <StyledChip
                                 size="small"
                                 key={app.project_id + app.tag}
-                                variant={'outlined'}
                                 label={app.tag}
                             />
                         ))}

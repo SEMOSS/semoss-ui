@@ -157,7 +157,6 @@ export const SaveAppModal = (props: SaveAppProps) => {
                                 <StyledStepChip
                                     key={i}
                                     isStepSelected={isStepSelected(i)}
-                                    variant="outlined"
                                     size="small"
                                     color={
                                         isStepSelected(i)

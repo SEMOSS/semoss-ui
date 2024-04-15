@@ -96,7 +96,6 @@ export const PromptCard = (props: {
                                         <LocalOfferOutlined fontSize="small" />
                                     }
                                     label={tag}
-                                    variant="outlined"
                                 />
                             </Grid>
                         ))}
