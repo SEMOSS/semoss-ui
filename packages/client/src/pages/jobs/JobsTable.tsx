@@ -13,6 +13,7 @@ import {
     styled,
     LinearProgress,
     CircularProgress,
+    useNotification,
 } from '@semoss/ui';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Job } from './jobs.types';
@@ -47,15 +48,30 @@ export const JobsTable = (props: {
         getHistory,
         showDeleteJobModal,
     } = props;
+    const notification = useNotification();
 
     const [runJobLoading, setRunJobLoading] = useState<boolean>(false);
 
     const runJob = async (job: Job) => {
         setRunJobLoading(true);
-        await runPixel(
-            `META | ExecuteScheduledJob ( jobId = [ \"${job.id}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
-        );
-        await getHistory();
+        try {
+            await runPixel(
+                `META | ExecuteScheduledJob ( jobId = [ \"${job.id}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
+            );
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Job could not be executed.',
+            });
+        }
+        try {
+            await getHistory();
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Could not retrieve job history.',
+            });
+        }
         setRunJobLoading(false);
     };
 
@@ -100,7 +116,6 @@ export const JobsTable = (props: {
                                     key={idx}
                                     variant="outlined"
                                     label={tag}
-                                    avatar={null}
                                 />
                             );
                         })}
@@ -125,6 +140,14 @@ export const JobsTable = (props: {
                     time = dayjs(params.value).format('MM/DD/YYYY HH:MMA');
                 }
                 return <>{time}</>;
+            },
+        },
+        {
+            headerName: 'Status',
+            field: 'isActive',
+            flex: 1,
+            renderCell: (params) => {
+                return params.value ? 'Active' : 'Paused';
             },
         },
         {
@@ -161,9 +184,9 @@ export const JobsTable = (props: {
                                 <PlayArrow />
                             )}
                         </IconButton>
-                        <IconButton color="primary" size="medium" disabled>
+                        {/* <IconButton color="primary" size="medium" disabled>
                             <Edit />
-                        </IconButton>
+                        </IconButton> */}
                         <IconButton
                             disabled={runJobLoading}
                             color="error"

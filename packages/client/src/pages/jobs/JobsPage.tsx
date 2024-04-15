@@ -11,6 +11,7 @@ import {
     Delete,
     Edit,
     ErrorRounded,
+    NotStartedOutlined,
     Pause,
     PlayArrow,
 } from '@mui/icons-material';
@@ -44,6 +45,7 @@ import {
     convertTimetoDate,
 } from './job.utils';
 import { JobsTable } from './JobsTable';
+import { runPixel } from '@/api';
 
 export function JobsPage() {
     const { monolithStore } = useRootStore();
@@ -151,6 +153,23 @@ export function JobsPage() {
                 });
             }
         });
+    };
+
+    const pauseJobs = async () => {
+        let pixel = ``;
+        selectedPausedJobs.forEach((job) => {
+            pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["undefined"]);`;
+        });
+        try {
+            await runPixel(pixel);
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to paused jobs.',
+            });
+        } finally {
+            getJobs();
+        }
     };
 
     const getHistory = () => {
@@ -325,6 +344,18 @@ export function JobsPage() {
         return searchJobs;
     }, [jobs, searchValue, selectedTab]);
 
+    const selectedPausedJobs = useMemo(() => {
+        return jobs.filter((job) => {
+            return !job.isActive && rowSelectionModel.includes(job.id);
+        });
+    }, [rowSelectionModel]);
+
+    const selectedActiveJobs = useMemo(() => {
+        return jobs.filter((job) => {
+            return job.isActive && rowSelectionModel.includes(job.id);
+        });
+    }, [rowSelectionModel]);
+
     useEffect(() => {
         // initial render to get all jobs/history
         getJobs();
@@ -384,15 +415,26 @@ export function JobsPage() {
                     />
                     <span>
                         <Button
-                            disabled={rowSelectionModel.length === 0}
+                            disabled={selectedActiveJobs.length === 0}
                             variant="outlined"
                             startIcon={<Pause />}
                             size="medium"
+                            onClick={() => pauseJobs()}
                         >
                             Pause
                         </Button>
                     </span>
                     <span>
+                        <Button
+                            disabled={selectedPausedJobs.length === 0}
+                            variant="outlined"
+                            startIcon={<NotStartedOutlined />}
+                            size="medium"
+                        >
+                            Resume
+                        </Button>
+                    </span>
+                    {/* <span>
                         <Button
                             size="medium"
                             variant="contained"
@@ -400,7 +442,7 @@ export function JobsPage() {
                         >
                             Add
                         </Button>
-                    </span>
+                    </span> */}
                 </Stack>
             </Stack>
             <JobsTable
