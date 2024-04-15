@@ -133,7 +133,7 @@ interface PendingMember {
     email: string;
     countrycode: string;
     phone: string;
-    extension: string;
+    phoneextension: string;
     id: string;
     name: string;
     type: string;
