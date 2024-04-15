@@ -4,7 +4,7 @@ import { computed } from 'mobx';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { CellState } from '@/stores';
-import { ColumnInfo } from './transformation.types';
+import { ColumnInfoTwo } from './transformation.types';
 import { useBlocksPixel } from '@/hooks/useBlocksPixel';
 
 interface FrameHeaderInfo {
@@ -16,12 +16,12 @@ interface FrameHeaderInfo {
 
 export type ColumnTransformationFieldComponent = (props: {
     cell: CellState;
-    selectedColumns: ColumnInfo[] | ColumnInfo;
+    selectedColumns: ColumnInfoTwo[] | ColumnInfoTwo;
     columnTypes?: string[];
     multiple?: boolean;
     label?: string;
     disabled?: boolean;
-    onChange: (newColumns: ColumnInfo[] | ColumnInfo) => void;
+    onChange: (newColumns: ColumnInfoTwo[] | ColumnInfoTwo) => void;
 }) => JSX.Element;
 
 export const ColumnTransformationField2: ColumnTransformationFieldComponent =
@@ -73,7 +73,7 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
 
         const [frameHeaders, setFrameHeaders] = useState<{
             loading: boolean;
-            columns: ColumnInfo[];
+            columns: ColumnInfoTwo[];
         }>({
             loading: true,
             columns: [],
@@ -98,8 +98,8 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
 
             const columns = frameHeaderPixelReturn.data.headerInfo.headers.map(
                 (header) => ({
-                    name: header.alias,
-                    dataType: header.dataType,
+                    value: header.alias,
+                    type: header.dataType,
                 }),
             );
 
@@ -112,7 +112,7 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
         useEffect(() => {
             // Clear previously selected headers (only after first render)
             if (hasMounted.current) {
-                debugger;
+                // debugger;
                 onChange([]);
             }
 
@@ -122,7 +122,7 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
             if (executedFrame) {
                 frameHeaderPixelReturn.refresh();
             } else {
-                debugger;
+                // debugger;
                 setFrameHeaders({
                     loading: true,
                     columns: [],
@@ -138,22 +138,22 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
                 loading={frameHeaders.loading}
                 value={
                     multiple
-                        ? (selectedColumns as ColumnInfo[])
-                        : (selectedColumns as ColumnInfo)
+                        ? (selectedColumns as ColumnInfoTwo[])
+                        : (selectedColumns as ColumnInfoTwo)
                 }
                 fullWidth
                 multiple={multiple}
-                onChange={(_, newValue: ColumnInfo[] | ColumnInfo) => {
+                onChange={(_, newValue: ColumnInfoTwo[] | ColumnInfoTwo) => {
                     onChange(newValue);
                 }}
                 options={frameHeaders?.columns ?? []}
                 isOptionEqualToValue={(
-                    option: ColumnInfo,
-                    value: ColumnInfo,
+                    option: ColumnInfoTwo,
+                    value: ColumnInfoTwo,
                 ) => {
-                    return option.name === value.name;
+                    return option.value === value.value;
                 }}
-                getOptionLabel={(option: ColumnInfo) => option.name}
+                getOptionLabel={(option: ColumnInfoTwo) => option.value}
                 renderInput={(params) => (
                     <TextField
                         {...params}

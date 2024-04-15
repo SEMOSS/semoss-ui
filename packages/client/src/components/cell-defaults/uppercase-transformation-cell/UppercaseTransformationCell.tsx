@@ -1,41 +1,20 @@
-import { useMemo } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography } from '@semoss/ui';
-import { CellComponent, ActionMessages, CellState } from '@/stores';
+import { Stack } from '@semoss/ui';
+import { CellComponent, ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-import {
-    Transformation,
-    ColumnInfo,
-    ColumnTransformationField,
-    TransformationCellInput,
-    Transformations,
-    TransformationDef,
-    TransformationCellDef,
-    TransformationTargetCell,
-} from '../shared';
+import { ColumnInfoTwo, Transformations } from '../shared';
 
 import {
     ColumnTransformationField2,
     TransformationCellInput2,
 } from '../shared';
 
-import { QueryImportCellDef } from '../query-import-cell';
-
-// export interface UppercaseTransformationDef
-//     extends TransformationDef<'uppercase'> {
-//     key: 'uppercase';
-//     parameters: {
-//         columns: ColumnInfo[];
-//     };
-// }
-
-export interface UppercaseTransformationCellDef
-    extends TransformationCellDef<'uppercase-transformation'> {
+export interface UppercaseTransformationCellDef {
     widget: 'uppercase-transformation';
     parameters: {
-        columns: ColumnInfo[];
+        columns: ColumnInfoTwo[];
         frame: string;
     };
 }
@@ -83,7 +62,7 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
                         selectedColumns={cell.parameters.columns ?? []}
                         multiple
                         columnTypes={['STRING']}
-                        onChange={(newColumns: ColumnInfo[]) => {
+                        onChange={(newColumns: ColumnInfoTwo[]) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {

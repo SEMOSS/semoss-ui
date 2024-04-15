@@ -20,6 +20,11 @@ export type ColumnInfo = {
     dataType: string;
 };
 
+export type ColumnInfoTwo = {
+    type: string;
+    value: string;
+};
+
 export type TransformationTypes =
     | 'uppercase-transformation'
     | 'update-row'
