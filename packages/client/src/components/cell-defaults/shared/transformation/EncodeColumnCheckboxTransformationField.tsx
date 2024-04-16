@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { TextField, styled } from '@semoss/ui';
@@ -9,7 +9,11 @@ import {
     FormGroup,
 } from '@mui/material';
 import { CellState } from '@/stores';
-import { TransformationTargetCell, ColumnInfo } from './transformation.types';
+import {
+    TransformationTargetCell,
+    ColumnInfoTwo,
+    ColumnInfo,
+} from './transformation.types';
 import { useBlocksPixel } from '@/hooks/useBlocksPixel';
 
 const StyledContainer = styled('div')({
@@ -33,62 +37,72 @@ type ColumnStateType<T> = {
 
 export type ColumnCheckboxTransformationFieldComponent = (props: {
     cell: CellState;
+    selectedColumns: ColumnInfoTwo[];
     columnTypes?: string[];
     disabled?: boolean;
-    onChange: (newColumns: ColumnInfo[] | ColumnInfo) => void;
+    onChange: (newColumns: ColumnInfoTwo[] | ColumnInfoTwo) => void;
 }) => JSX.Element;
 
 export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformationFieldComponent =
     observer((props) => {
-        const { cell, disabled, onChange } = props;
+        const { cell, selectedColumns, disabled, onChange } = props;
 
         const [search, setSearch] = React.useState<string>('');
         const [columnState, setColumnState] = React.useState([]);
         const [selectAll, setSelectAll] = React.useState(false);
 
-        //for individual checkboxes
-        const handleChange = (
-            event: React.ChangeEvent<HTMLInputElement>,
-            index: number,
-        ) => {
-            if (selectAll) {
-                setSelectAll(false);
-            }
-            columnState[index][event.target.name] = event.target.checked;
-            setColumnState([...columnState]);
-        };
-
         //for selecting or deselecting all columns
-        const handleSelectAll = () => {
-            setSelectAll(!selectAll);
-            if (!selectAll) {
-                for (const key of columnState) {
-                    const firstKey = Object.keys(key)[0];
-                    key[firstKey] = true;
-                }
-            } else {
-                for (const key of columnState) {
-                    const firstKey = Object.keys(key)[0];
-                    key[firstKey] = false;
-                }
-            }
-            setColumnState([...columnState]);
-        };
+        // const handleSelectAll = () => {
+        //     setSelectAll(!selectAll);
+        //     if (!selectAll) {
+        //         for (const key of columnState) {
+        //             const firstKey = Object.keys(key)[0];
+        //             key[firstKey] = true;
+        //         }
+        //     } else {
+        //         for (const key of columnState) {
+        //             const firstKey = Object.keys(key)[0];
+        //             key[firstKey] = false;
+        //         }
+        //     }
+        //     setColumnState([...columnState]);
+        // };
 
-        const frameVariableName = computed(() => {
-            return (cell.parameters.targetCell as TransformationTargetCell)
-                .frameVariableName;
+        const frame = computed(() => {
+            return cell.parameters.frame;
         }).get();
 
-        const targetCell: CellState = computed(() => {
-            return cell.query.cells[
-                (cell.parameters.targetCell as TransformationTargetCell).id
-            ];
+        // Go get the cell that executes the frame. In order to see if Frame can be used to execute
+        // Need a eloquent way to check if frame is ready
+        const executedFrame = computed(() => {
+            const cellsWithFrames = [];
+            Object.values(cell.query.cells).forEach((c) => {
+                if (c.widget === 'query-import') {
+                    cellsWithFrames.push(c);
+                }
+            });
+
+            const cellFrameRelatives = [];
+            cellsWithFrames.forEach((c) => {
+                if (c.parameters.frameVariableName === cell.parameters.frame) {
+                    cellFrameRelatives.push(c);
+                }
+            });
+
+            let frameOutput = false;
+
+            cellFrameRelatives.forEach((c) => {
+                if (c.output) {
+                    frameOutput = true;
+                }
+            });
+
+            return frameOutput;
         }).get();
 
         const [frameHeaders, setFrameHeaders] = React.useState<{
             loading: boolean;
-            columns: ColumnInfo[];
+            columns: ColumnInfoTwo[];
         }>({
             loading: true,
             columns: [],
@@ -96,7 +110,7 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
 
         const frameHeaderPixelReturn = useBlocksPixel<{
             headerInfo: FrameHeaderInfo;
-        }>(`META | ${frameVariableName} | FrameHeaders ();`);
+        }>(executedFrame ? `META | ${frame} | FrameHeaders ();` : '');
 
         React.useEffect(() => {
             if (frameHeaderPixelReturn.status !== 'SUCCESS') {
@@ -105,8 +119,8 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
 
             const columns = frameHeaderPixelReturn.data.headerInfo.headers.map(
                 (header) => ({
-                    name: header.alias,
-                    dataType: header.dataType,
+                    value: header.alias,
+                    type: header.dataType,
                 }),
             );
 
@@ -118,60 +132,70 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
             //setting state obj for tracking column checked states
             const obj = [];
             for (let i = 0, colLength = columns.length; i < colLength; i++) {
-                obj.push({ [columns[i].name]: false, column: columns[i] });
+                obj.push({ [columns[i].value]: false, column: columns[i] });
             }
 
             setColumnState(obj);
         }, [frameHeaderPixelReturn.status, frameHeaderPixelReturn.data]);
-
-        React.useEffect(() => {
-            if (targetCell && targetCell.output) {
-                frameHeaderPixelReturn.refresh();
-            }
-        }, [targetCell ? targetCell.output : null]);
-
-        React.useEffect(() => {
-            if (targetCell && targetCell.output) {
-                frameHeaderPixelReturn.refresh();
-            }
-        }, [targetCell ? targetCell.output : null]);
-
-        //upon running pixel, ensure that selectAll is reset to it's default state
-        React.useEffect(() => {
-            const arr = [];
-            if (columnState.length) {
-                for (const key of columnState) {
-                    const firstKey = Object.keys(key)[0];
-                    if (key[firstKey] === false) {
-                        arr.push(key);
-                    }
-                }
-            }
-
-            if (arr.length === columnState.length) {
-                setSelectAll(false);
-            }
-        }, [columnState]);
 
         // columns that are returned when using search input
         const filteredResults =
             frameHeaders.columns &&
             React.useMemo(() => {
                 return frameHeaders?.columns.filter((val) =>
-                    val.name.toLowerCase().includes(search.toLowerCase()),
+                    val.value.toLowerCase().includes(search.toLowerCase()),
                 );
             }, [search, frameHeaders.columns]);
 
-        // function to update which items should be passed into the payload value array
-        const assignColumns = () => {
-            const arr = [];
-            columnState.forEach((column: ColumnStateType<boolean>) => {
-                if (Object.values(column)[0] === true) {
-                    arr.push(column.column);
-                }
+        const isSelected = (column: ColumnInfoTwo): boolean => {
+            const found = selectedColumns.find((selCol) => {
+                return selCol.value === column.value;
             });
-            onChange(arr);
+            if (found) {
+                return true;
+            }
+
+            return false;
         };
+
+        const columns = useMemo(() => {
+            return (
+                <>
+                    {filteredResults.map((col, idx) => {
+                        return (
+                            <FormControlLabel
+                                key={idx}
+                                control={
+                                    <Checkbox
+                                        checked={isSelected(col)}
+                                        onChange={(e) => {
+                                            let updated = selectedColumns;
+                                            if (isSelected(col)) {
+                                                updated = updated.filter(
+                                                    (selCol) => {
+                                                        return (
+                                                            selCol.value !==
+                                                            col.value
+                                                        );
+                                                    },
+                                                );
+                                            } else {
+                                                updated.push(col);
+                                            }
+
+                                            onChange(updated);
+                                        }}
+                                        name={col.value}
+                                        value={col}
+                                    />
+                                }
+                                label={col.value}
+                            />
+                        );
+                    })}
+                </>
+            );
+        }, [selectedColumns.length, filteredResults.length]);
 
         return (
             <React.Fragment>
@@ -197,13 +221,26 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
                                 <FormControlLabel
                                     control={
                                         <Checkbox
-                                            checked={selectAll}
+                                            checked={
+                                                selectedColumns.length ===
+                                                frameHeaders.columns.length
+                                            }
+                                            disabled={!executedFrame}
                                             onChange={() => {
-                                                handleSelectAll();
-                                                assignColumns();
+                                                if (
+                                                    selectedColumns.length ===
+                                                    frameHeaders.columns.length
+                                                ) {
+                                                    onChange([]);
+                                                } else {
+                                                    onChange(
+                                                        frameHeaders.columns,
+                                                    );
+                                                }
                                             }}
                                             name={
-                                                selectAll
+                                                selectedColumns.length ===
+                                                frameHeaders.columns.length
                                                     ? 'deselect all'
                                                     : 'select all'
                                             }
@@ -215,28 +252,23 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
                                             : 'select all'
                                     }
                                 />
-                                {filteredResults.map((col, idx) => {
-                                    return (
-                                        <FormControlLabel
-                                            key={idx}
-                                            control={
-                                                <Checkbox
-                                                    checked={
-                                                        columnState[idx][
-                                                            col.name
-                                                        ]
-                                                    }
-                                                    onChange={(e) => {
-                                                        handleChange(e, idx);
-                                                        assignColumns();
-                                                    }}
-                                                    name={col.name}
-                                                />
-                                            }
-                                            label={col.name}
-                                        />
-                                    );
-                                })}
+                                {!executedFrame
+                                    ? selectedColumns.map((c, idx) => {
+                                          return (
+                                              <FormControlLabel
+                                                  key={idx}
+                                                  control={
+                                                      <Checkbox
+                                                          disabled={true}
+                                                          checked={true}
+                                                          name={c.value}
+                                                      />
+                                                  }
+                                                  label={c.value}
+                                              />
+                                          );
+                                      })
+                                    : columns}
                             </FormGroup>
                         </FormControl>
                     )}

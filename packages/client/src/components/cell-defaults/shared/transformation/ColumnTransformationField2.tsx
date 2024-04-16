@@ -36,9 +36,6 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
             onChange,
         } = props;
 
-        // Used to not clear previously saved columns
-        const hasMounted = useRef(false);
-
         const frameVariableName = computed(() => {
             return cell.parameters.frame;
         }).get();
@@ -108,27 +105,6 @@ export const ColumnTransformationField2: ColumnTransformationFieldComponent =
                 columns: columns,
             });
         }, [frameHeaderPixelReturn.status, frameHeaderPixelReturn.data]);
-
-        useEffect(() => {
-            // Clear previously selected headers (only after first render)
-            if (hasMounted.current) {
-                // debugger;
-                onChange([]);
-            }
-
-            // Update flag on every render
-            hasMounted.current = true;
-
-            if (executedFrame) {
-                frameHeaderPixelReturn.refresh();
-            } else {
-                // debugger;
-                setFrameHeaders({
-                    loading: true,
-                    columns: [],
-                });
-            }
-        }, [executedFrame, cell.parameters.frame]);
 
         return (
             <Autocomplete

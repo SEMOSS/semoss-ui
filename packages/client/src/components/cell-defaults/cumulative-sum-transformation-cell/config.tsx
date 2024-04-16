@@ -10,34 +10,30 @@ export const CumulativeSumTransformationCellConfig: CellConfig<CumulativeSumTran
         name: 'Cumulative Sum',
         widget: 'cumulative-sum-transformation',
         parameters: {
-            transformation: {
-                key: 'cumulative-sum',
-                parameters: {
-                    newColumn: '',
-                    valueColumn: null,
-                    sortColumns: [],
-                    groupByColumns: [],
-                },
-            },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
-            },
+            frame: '',
+            newColumn: '',
+            valueColumn: null,
+            sortColumns: [],
+            groupByColumns: [],
         },
         view: CumulativeSumTransformationCell,
-        toPixel: ({ transformation, targetCell }) => {
-            const sortColumns = transformation.parameters.sortColumns.map(
-                (column) => column.name,
-            );
-            const groupByColumns = transformation.parameters.groupByColumns.map(
-                (column) => column.name,
+        toPixel: ({
+            frame,
+            newColumn,
+            valueColumn,
+            sortColumns,
+            groupByColumns,
+        }) => {
+            const sortColumnsValues = sortColumns.map((column) => column.value);
+            const groupByColumnsValues = groupByColumns.map(
+                (column) => column.value,
             );
 
-            return `${targetCell.frameVariableName} | 
-            Convert(frameType=[R]).as(["${targetCell.frameVariableName}"]) | 
-            CumulativeSum(newCol=["${transformation.parameters.newColumn}"], 
-                value=["${transformation.parameters.valueColumn.name}"],
-                sortCols=${JSON.stringify(sortColumns)},
-                groupByCols=${JSON.stringify(groupByColumns)});`;
+            return `${frame} | 
+            Convert(frameType=[R]).as(["${frame}"]) | 
+            CumulativeSum(newCol=["${newColumn}"], 
+                value=["${valueColumn.value}"],
+                sortCols=${JSON.stringify(sortColumnsValues)},
+                groupByCols=${JSON.stringify(groupByColumnsValues)});`;
         },
     };

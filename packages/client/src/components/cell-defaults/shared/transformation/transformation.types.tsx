@@ -1,5 +1,14 @@
 import { CellDef } from '@/stores';
 
+export type dataTypes = 'STRING' | 'NUMBER' | 'DATE';
+
+export type ColumnInfoTwo = {
+    type: string;
+    value: string;
+};
+
+// -------
+
 export type operation = '==' | '<' | '>' | '!=' | '<=' | '>=' | '?like';
 
 export type comparator = '==' | '!=';
@@ -20,20 +29,15 @@ export type ColumnInfo = {
     dataType: string;
 };
 
-export type ColumnInfoTwo = {
-    type: string;
-    value: string;
-};
-
 export type TransformationTypes =
     | 'uppercase-transformation'
+    | 'column-type-transformation'
+    | 'encode-column-transformation'
+    | 'cumulative-sum'
     | 'update-row'
-    | 'column-type'
     | 'date-difference'
     | 'timestamp'
     | 'collapse'
-    | 'cumulative-sum'
-    | 'encode-column'
     | 'join';
 
 export interface TransformationDef<R extends string = string> {

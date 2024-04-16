@@ -10,24 +10,14 @@ export const EncodeColumnTransformationCellConfig: CellConfig<EncodeColumnTransf
         name: 'Encode Column',
         widget: 'encode-column-transformation',
         parameters: {
-            transformation: {
-                key: 'encode-column',
-                parameters: {
-                    columns: [],
-                },
-            },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
-            },
+            frame: '',
+            columns: [],
         },
         view: EncodeColumnTransformationCell,
-        toPixel: ({ transformation, targetCell }) => {
-            const columnNames = transformation.parameters.columns.map(
-                (column) => column.name,
-            );
-            return `${
-                targetCell.frameVariableName
-            } | EncodeColumn ( columns = ${JSON.stringify(columnNames)} ) ;`;
+        toPixel: ({ frame, columns }) => {
+            const columnNames = columns.map((column) => column.value);
+            return `${frame} | EncodeColumn ( columns = ${JSON.stringify(
+                columnNames,
+            )} ) ;`;
         },
     };

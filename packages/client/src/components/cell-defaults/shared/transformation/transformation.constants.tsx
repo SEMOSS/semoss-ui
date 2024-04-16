@@ -6,6 +6,8 @@ import {
     dateUnit,
     comparator,
     joinType,
+    //
+    dataTypes,
 } from './transformation.types';
 import {
     FontDownload,
@@ -19,6 +21,25 @@ import {
     JoinInner,
 } from '@mui/icons-material';
 
+export const transformationColumnTypes2: {
+    type: string;
+    value: dataTypes;
+}[] = [
+    {
+        type: '',
+        value: 'STRING',
+    },
+    {
+        type: '',
+        value: 'NUMBER',
+    },
+    {
+        type: '',
+        value: 'DATE',
+    },
+];
+
+// ----
 export const operations: operation[] = [
     '==',
     '<',
@@ -56,29 +77,37 @@ export interface TransformationConfig<
 export const Transformations: Record<
     TransformationTypes,
     {
-        transformation?: TransformationTypes;
         display: string;
         icon: React.FunctionComponent;
+        transformation?: TransformationTypes;
         widget?: string;
     }
 > = {
     'uppercase-transformation': {
+        // X
         display: 'Uppercase',
         icon: FontDownload,
-        // transformation: 'uppercase',
-        // widget: 'uppercase-transformation',
+    },
+    'column-type-transformation': {
+        // X
+        display: 'Change Column Type',
+        icon: ChangeCircleOutlined,
+    },
+    'encode-column-transformation': {
+        // X
+        display: 'Encode Column',
+        icon: VpnKey,
+    },
+    //
+    'cumulative-sum': {
+        display: 'Cumulative Sum',
+        icon: AddTaskOutlined,
     },
     'update-row': {
         transformation: 'update-row',
         display: 'Update Row Values',
         icon: TableRows,
         widget: 'update-row-transformation',
-    },
-    'column-type': {
-        transformation: 'column-type',
-        display: 'Change Column Type',
-        icon: ChangeCircleOutlined,
-        widget: 'column-type-transformation',
     },
     'date-difference': {
         transformation: 'date-difference',
@@ -97,18 +126,6 @@ export const Transformations: Record<
         display: 'Collapse',
         icon: CloseFullscreenOutlined,
         widget: 'collapse-transformation',
-    },
-    'cumulative-sum': {
-        transformation: 'cumulative-sum',
-        display: 'Cumulative Sum',
-        icon: AddTaskOutlined,
-        widget: 'cumulative-sum-transformation',
-    },
-    'encode-column': {
-        transformation: 'encode-column',
-        display: 'Encode Column',
-        icon: VpnKey,
-        widget: 'encode-column-transformation',
     },
     join: {
         transformation: 'join',

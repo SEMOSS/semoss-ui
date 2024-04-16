@@ -4,11 +4,11 @@ import { Stack } from '@semoss/ui';
 import { CellComponent, ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-import { ColumnInfoTwo, Transformations } from '../shared';
-
 import {
+    ColumnInfoTwo,
     ColumnTransformationField2,
     TransformationCellInput2,
+    Transformations,
 } from '../shared';
 
 export interface UppercaseTransformationCellDef {
@@ -24,30 +24,12 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
-        // /**
-        //  * Cell that Transformation will be made to
-        //  */
-        // const targetCell: CellState<QueryImportCellDef> = computed(() => {
-        //     return cell.query.cells[
-        //         cell.parameters.targetCell.id
-        //     ] as CellState<QueryImportCellDef>;
-        // }).get();
-
         /**
          * Type of Transformation
          */
         const cellTransformation = computed(() => {
             return cell.widget;
         }).get();
-
-        // /**
-        //  * Determines if Target Cell is a frame and is executed
-        //  */
-        // const doesFrameExist: boolean = computed(() => {
-        //     return (
-        //         !!targetCell && (targetCell.isExecuted || !!targetCell.output)
-        //     );
-        // }).get();
 
         return (
             <TransformationCellInput2

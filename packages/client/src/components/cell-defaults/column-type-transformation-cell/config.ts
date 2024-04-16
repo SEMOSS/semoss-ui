@@ -10,19 +10,11 @@ export const ColumnTypeTransformationCellConfig: CellConfig<ColumnTypeTransforma
         widget: 'column-type-transformation',
         view: ColumnTypeTransformationCell,
         parameters: {
-            transformation: {
-                key: 'column-type',
-                parameters: {
-                    column: null,
-                    columnType: null,
-                },
-            },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
-            },
+            frame: '',
+            column: null,
+            dataType: null,
         },
-        toPixel: ({ transformation, targetCell }) => {
-            return `${targetCell.frameVariableName} | ChangeColumnType( column=[${transformation.parameters.column?.name}], dataType=["${transformation.parameters.columnType}"]);`;
+        toPixel: ({ frame, column, dataType }) => {
+            return `${frame} | ChangeColumnType( column=[${column.value}], dataType=["${dataType.value}"]);`;
         },
     };
