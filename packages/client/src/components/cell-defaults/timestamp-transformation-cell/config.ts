@@ -10,19 +10,11 @@ export const TimestampTransformationCellConfig: CellConfig<TimestampTransformati
         widget: 'timestamp-transformation',
         view: TimestampTransformationCell,
         parameters: {
-            transformation: {
-                key: 'timestamp',
-                parameters: {
-                    columnName: '',
-                    includeTime: false,
-                },
-            },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
-            },
+            frame: '',
+            newCol: null,
+            time: null,
         },
-        toPixel: ({ transformation, targetCell }) => {
-            return `${targetCell.frameVariableName} | TimestampData(newCol=["${transformation.parameters.columnName}"],time=["${transformation.parameters.includeTime}"]);`;
+        toPixel: ({ frame, newCol, time }) => {
+            return `${frame} | TimestampData(newCol=["${newCol.value}"],time=["${time.value}"]);`;
         },
     };

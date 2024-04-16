@@ -33,10 +33,10 @@ export type TransformationTypes =
     | 'uppercase-transformation'
     | 'column-type-transformation'
     | 'encode-column-transformation'
+    | 'timestamp-transformation'
     | 'cumulative-sum'
     | 'update-row'
     | 'date-difference'
-    | 'timestamp'
     | 'collapse'
     | 'join';
 

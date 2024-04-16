@@ -4,44 +4,26 @@ import { computed } from 'mobx';
 import { Checkbox, Stack, TextField, Typography, styled } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
-import { CellComponent, ActionMessages, CellState } from '@/stores';
+import { CellComponent, ActionMessages } from '@/stores';
 
 import {
-    Transformation,
-    TransformationCellInput,
     Transformations,
-    TransformationDef,
-    TransformationCellDef,
-    TransformationTargetCell,
+    TransformationCellInput2,
+    ColumnInfoTwo,
 } from '../shared';
-import { QueryImportCellDef } from '../query-import-cell';
-
 const StyledTypography = styled(Typography)(() => ({
     textWrap: 'nowrap',
 }));
 
-export interface TimestampTransformationDef
-    extends TransformationDef<'timestamp'> {
-    key: 'timestamp';
-    parameters: {
-        columnName: string;
-        includeTime: boolean;
-    };
-}
-
-export interface TimestampTransformationCellDef
-    extends TransformationCellDef<'timestamp-transformation'> {
+export interface TimestampTransformationCellDef {
     widget: 'timestamp-transformation';
     parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation<TimestampTransformationDef>;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        targetCell: TransformationTargetCell;
+        frame: string;
+        newCol: ColumnInfoTwo;
+        time: {
+            type: 'CONST_STRING';
+            value: string | boolean;
+        };
     };
 }
 
@@ -50,90 +32,23 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
-        const targetCell: CellState<QueryImportCellDef> = computed(() => {
-            return cell.query.cells[
-                cell.parameters.targetCell.id
-            ] as CellState<QueryImportCellDef>;
+        const cellTransformation = computed(() => {
+            return cell.widget;
         }).get();
-
-        const cellTransformation: Transformation<TimestampTransformationDef> =
-            computed(() => {
-                return cell.parameters
-                    .transformation as Transformation<TimestampTransformationDef>;
-            }).get();
-
-        const doesFrameExist: boolean = computed(() => {
-            return (
-                !!targetCell && (targetCell.isExecuted || !!targetCell.output)
-            );
-        }).get();
-
-        /**
-         * A list of cells that are query imports,
-         * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TO-DO: Do we want to reference other queries
-         */
-        const frames = useMemo(() => {
-            const frameList = [];
-            Object.values(cell.query.cells).forEach((cell) => {
-                if (cell.widget === 'query-import') {
-                    frameList.push(cell);
-                }
-            });
-
-            return frameList;
-        }, []);
-
-        const helpText = cell.parameters.targetCell.id
-            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
-            : 'A Python or R target frame variable must be defined in order to apply a transformation.';
-
-        if (
-            (!doesFrameExist && !cellTransformation.parameters.columnName) ||
-            !targetCell.isExecuted
-        ) {
-            return (
-                <TransformationCellInput
-                    isExpanded={isExpanded}
-                    display={Transformations[cellTransformation.key].display}
-                    Icon={Transformations[cellTransformation.key].icon}
-                    frame={{
-                        cell: cell,
-                        options: frames,
-                    }}
-                >
-                    <Stack width="100%" paddingY={0.75}>
-                        <Typography variant="caption">
-                            <em>{helpText}</em>
-                        </Typography>
-                    </Stack>
-                </TransformationCellInput>
-            );
-        }
 
         return (
-            <TransformationCellInput
+            <TransformationCellInput2
                 isExpanded={isExpanded}
-                display={Transformations[cellTransformation.key].display}
-                Icon={Transformations[cellTransformation.key].icon}
-                frame={{
-                    cell: cell,
-                    options: frames,
-                }}
+                display={Transformations[cellTransformation].display}
+                Icon={Transformations[cellTransformation].icon}
+                cell={cell}
             >
                 <Stack spacing={2}>
-                    <Typography variant="caption">
-                        {!doesFrameExist ? (
-                            <em>{helpText}</em>
-                        ) : (
-                            "Add a new column with today's date as the column value"
-                        )}
-                    </Typography>
                     <Stack direction="row" spacing={2} width="100%">
                         <TextField
                             size="small"
                             label="Column Name"
-                            value={cellTransformation.parameters.columnName}
+                            value={cell.parameters.newCol?.value ?? ''}
                             fullWidth
                             onChange={(e) => {
                                 state.dispatch({
@@ -141,8 +56,11 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.columnName',
-                                        value: e.target.value,
+                                        path: 'parameters.newCol',
+                                        value: {
+                                            type: 'CONST_STRING',
+                                            value: e.target.value,
+                                        },
                                     },
                                 });
                             }}
@@ -154,22 +72,24 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
                                     Include time
                                 </StyledTypography>
                             }
-                            value={cellTransformation.parameters.includeTime}
+                            checked={Boolean(cell.parameters.time?.value)}
                             onChange={() => {
+                                const isChecked = Boolean(
+                                    cell.parameters.time?.value,
+                                );
                                 state.dispatch({
                                     message: ActionMessages.UPDATE_CELL,
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.includeTime',
-                                        value: !cellTransformation.parameters
-                                            .includeTime,
+                                        path: 'parameters.time.value',
+                                        value: !isChecked,
                                     },
                                 });
                             }}
                         />
                     </Stack>
                 </Stack>
-            </TransformationCellInput>
+            </TransformationCellInput2>
         );
     });

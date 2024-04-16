@@ -98,6 +98,10 @@ export const Transformations: Record<
         display: 'Encode Column',
         icon: VpnKey,
     },
+    'timestamp-transformation': {
+        display: 'Timestamp',
+        icon: TodayOutlined,
+    },
     //
     'cumulative-sum': {
         display: 'Cumulative Sum',
@@ -114,12 +118,6 @@ export const Transformations: Record<
         display: 'Date Difference',
         icon: DateRangeOutlined,
         widget: 'date-difference-transformation',
-    },
-    timestamp: {
-        transformation: 'timestamp',
-        display: 'Timestamp',
-        icon: TodayOutlined,
-        widget: 'timestamp-transformation',
     },
     collapse: {
         transformation: 'collapse',
