@@ -69,14 +69,14 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
         TimestampTransformationCellConfig,
     [CumulativeSumTransformationCellConfig.widget]:
         CumulativeSumTransformationCellConfig,
+    [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
     // Issues
     [UpdateRowTransformationCellConfig.widget]:
         UpdateRowTransformationCellConfig,
     // Issues
     [DateDifferenceTransformationCellConfig.widget]:
         DateDifferenceTransformationCellConfig,
-    // [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
-    // [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
+    [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =

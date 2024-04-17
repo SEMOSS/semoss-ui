@@ -10,33 +10,19 @@ export const CollapseTransformationCellConfig: CellConfig<CollapseTransformation
         name: 'Collapse',
         widget: 'collapse-transformation',
         parameters: {
-            transformation: {
-                key: 'collapse',
-                parameters: {
-                    columns: [],
-                    value: null,
-                    delimiter: null,
-                    maintainColumns: [],
-                },
-            },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
-            },
+            frame: '',
+            groupByColumn: [],
+            value: null,
+            delimiter: null,
+            maintainCols: [],
         },
         view: CollapseTransformationCell,
-        toPixel: ({ transformation, targetCell }) => {
-            const columnNames = transformation.parameters.columns.map(
-                (column) => column.name,
-            );
-            const valueName = transformation.parameters.value.name;
-            const delimiterName = transformation.parameters.delimiter;
-            const maintainColNames =
-                transformation.parameters.maintainColumns.map(
-                    (column) => column.name,
-                );
-            return `${targetCell.frameVariableName} | 
-        Convert(frameType=[R]).as(["${targetCell.frameVariableName}"]) | 
+        toPixel: ({ frame, groupByColumn, value, delimiter, maintainCols }) => {
+            const columnNames = groupByColumn.map((column) => column.value);
+            const valueName = value.value;
+            const delimiterName = delimiter;
+            const maintainColNames = maintainCols.map((column) => column.value);
+            return `${frame} |
         Collapse(groupByColumn=${JSON.stringify(columnNames)}, 
             value=["${valueName}"], 
             delimiter=["${delimiterName}"], 

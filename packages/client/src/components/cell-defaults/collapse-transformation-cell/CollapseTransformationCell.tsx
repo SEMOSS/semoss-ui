@@ -6,48 +6,27 @@ import { Stack, TextField, Typography } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 
 import {
-    Transformation,
-    ColumnInfo,
-    ColumnTransformationField,
-    TransformationCellInput,
+    ColumnInfoTwo,
+    ColumnTransformationField2,
+    TransformationCellInput2,
     Transformations,
-    TransformationDef,
-    TransformationCellDef,
-    TransformationTargetCell,
 } from '../shared';
-import { QueryImportCellDef } from '../query-import-cell';
 
-export interface CollapseTransformationDef
-    extends TransformationDef<'collapse'> {
-    key: 'collapse';
+export interface CollapseTransformationCellDef {
+    widget: 'collapse-transformation';
     parameters: {
+        frame: string;
         //** Column(s) to group */
-        columns: ColumnInfo[];
+        groupByColumn: ColumnInfoTwo[];
 
         //** Value column */
-        value: ColumnInfo;
+        value: ColumnInfoTwo;
 
         //** String separator */
         delimiter: string;
 
         //** Colum(s) to maintain in new table */
-        maintainColumns?: ColumnInfo[];
-    };
-}
-
-export interface CollapseTransformationCellDef
-    extends TransformationCellDef<'collapse-transformation'> {
-    widget: 'collapse-transformation';
-    parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation<CollapseTransformationDef>;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        targetCell: TransformationTargetCell;
+        maintainCols?: ColumnInfoTwo[];
     };
 }
 
@@ -56,116 +35,46 @@ export const CollapseTransformationCell: CellComponent<CollapseTransformationCel
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
-        const targetCell: CellState<QueryImportCellDef> = computed(() => {
-            return cell.query.cells[
-                cell.parameters.targetCell.id
-            ] as CellState<QueryImportCellDef>;
+        const cellTransformation = computed(() => {
+            return cell.widget;
         }).get();
-
-        const cellTransformation: Transformation<CollapseTransformationDef> =
-            computed(() => {
-                return cell.parameters
-                    .transformation as Transformation<CollapseTransformationDef>;
-            }).get();
-
-        const doesFrameExist: boolean = computed(() => {
-            return (
-                !!targetCell && (targetCell.isExecuted || !!targetCell.output)
-            );
-        }).get();
-
-        /**
-         * A list of cells that are query imports,
-         * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TO-DO: Do we want to reference other queries
-         */
-        const frames = useMemo(() => {
-            const frameList = [];
-            Object.values(cell.query.cells).forEach((cell) => {
-                if (cell.widget === 'query-import') {
-                    frameList.push(cell);
-                }
-            });
-
-            return frameList;
-        }, []);
-
-        const helpText = cell.parameters.targetCell.id
-            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
-            : 'A Python or R target frame variable must be defined in order to apply a transformation.';
-
-        if (
-            (!doesFrameExist &&
-                !cellTransformation.parameters.columns.length) ||
-            !targetCell.isExecuted
-        ) {
-            return (
-                <TransformationCellInput
-                    isExpanded={isExpanded}
-                    display={Transformations[cellTransformation.key].display}
-                    Icon={Transformations[cellTransformation.key].icon}
-                    frame={{
-                        cell: cell,
-                        options: frames,
-                    }}
-                >
-                    <Stack width="100%" paddingY={0.75}>
-                        <Typography variant="caption">
-                            <em>{helpText}</em>
-                        </Typography>
-                    </Stack>
-                </TransformationCellInput>
-            );
-        }
 
         return (
-            <TransformationCellInput
+            <TransformationCellInput2
                 isExpanded={isExpanded}
-                display={Transformations[cellTransformation.key].display}
-                Icon={Transformations[cellTransformation.key].icon}
-                frame={{
-                    cell: cell,
-                    options: frames,
-                }}
+                display={Transformations[cellTransformation].display}
+                Icon={Transformations[cellTransformation].icon}
+                cell={cell}
             >
                 <Stack spacing={2}>
-                    <Typography variant="caption">
-                        {!doesFrameExist ? (
-                            <em>{helpText}</em>
-                        ) : (
-                            'Aggregate data for a group based on the delimiter'
-                        )}
-                    </Typography>
-                    <ColumnTransformationField
+                    <ColumnTransformationField2
                         label="Group by Column(s)"
-                        disabled={!doesFrameExist}
                         cell={cell}
-                        selectedColumns={cellTransformation.parameters.columns}
+                        selectedColumns={cell.parameters.groupByColumn ?? []}
                         multiple
-                        onChange={(newColumn: ColumnInfo) => {
+                        onChange={(newColumn: ColumnInfoTwo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.transformation.parameters.columns',
+                                    path: 'parameters.groupByColumn',
                                     value: newColumn,
                                 },
                             });
                         }}
                     />
-                    <ColumnTransformationField
+                    <ColumnTransformationField2
                         label="Value Column"
-                        disabled={!doesFrameExist}
                         cell={cell}
-                        selectedColumns={cellTransformation.parameters.value}
-                        onChange={(newColumn: ColumnInfo) => {
+                        selectedColumns={cell.parameters.value}
+                        onChange={(newColumn: ColumnInfoTwo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.transformation.parameters.value',
+                                    path: 'parameters.value',
                                     value: newColumn,
                                 },
                             });
@@ -173,9 +82,8 @@ export const CollapseTransformationCell: CellComponent<CollapseTransformationCel
                     />
                     <TextField
                         label="String Separator"
-                        disabled={!doesFrameExist}
                         variant="outlined"
-                        value={cellTransformation.parameters.delimiter}
+                        value={cell.parameters.delimiter}
                         fullWidth
                         size="small"
                         onChange={(e) => {
@@ -184,33 +92,30 @@ export const CollapseTransformationCell: CellComponent<CollapseTransformationCel
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.transformation.parameters.delimiter',
+                                    path: 'parameters.delimiter',
                                     value: e.target.value,
                                 },
                             });
                         }}
                     />
-                    <ColumnTransformationField
+                    <ColumnTransformationField2
                         label="Other Column(s) to Maintain"
-                        disabled={!doesFrameExist}
                         cell={cell}
-                        selectedColumns={
-                            cellTransformation.parameters.maintainColumns
-                        }
+                        selectedColumns={cell.parameters.maintainCols}
                         multiple
-                        onChange={(newColumn: ColumnInfo) => {
+                        onChange={(newColumn: ColumnInfoTwo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: 'parameters.transformation.parameters.maintainColumns',
+                                    path: 'parameters.maintainCols',
                                     value: newColumn,
                                 },
                             });
                         }}
                     />
                 </Stack>
-            </TransformationCellInput>
+            </TransformationCellInput2>
         );
     });

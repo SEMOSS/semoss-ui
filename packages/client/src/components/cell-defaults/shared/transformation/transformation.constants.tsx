@@ -104,8 +104,14 @@ export const Transformations: Record<
         icon: TodayOutlined,
     },
     'cumulative-sum-transformation': {
+        // X
         display: 'Cumulative Sum',
         icon: AddTaskOutlined,
+    },
+    'collapse-transformation': {
+        // X
+        display: 'Collapse',
+        icon: CloseFullscreenOutlined,
     },
     'update-row-transformation': {
         // X - Needs Testing
@@ -113,20 +119,13 @@ export const Transformations: Record<
         icon: TableRows,
     },
     'date-difference-transformation': {
+        // X - Issues, Needs Testing
         display: 'Date Difference',
         icon: DateRangeOutlined,
     },
     //
-    collapse: {
-        transformation: 'collapse',
-        display: 'Collapse',
-        icon: CloseFullscreenOutlined,
-        widget: 'collapse-transformation',
-    },
-    join: {
-        transformation: 'join',
+    'join-transformation': {
         display: 'Join',
         icon: JoinInner,
-        widget: 'join-transformation',
     },
 };

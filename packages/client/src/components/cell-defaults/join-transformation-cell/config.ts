@@ -11,34 +11,30 @@ export const JoinTransformationCellConfig: CellConfig<JoinTransformationCellDef>
         widget: 'join-transformation',
         view: JoinTransformationCell,
         parameters: {
-            transformation: {
-                key: 'join',
-                parameters: {
-                    fromNameColumn: {
-                        name: '',
-                        dataType: '',
-                    },
-                    toNameColumn: {
-                        name: '',
-                        dataType: '',
-                    },
-                    joinType: {
-                        name: '',
-                        code: '',
-                    },
-                    compareOperation: '==',
-                },
+            frame: '',
+            fromNameColumn: {
+                name: '',
+                dataType: '',
             },
-            fromTargetCell: {
-                id: '',
-                frameVariableName: '',
+            toNameColumn: {
+                name: '',
+                dataType: '',
             },
-            toTargetCell: {
-                id: '',
-                frameVariableName: '',
+            joinType: {
+                name: '',
+                code: '',
             },
+            compareOperation: '==',
+            toFrame: '',
         },
-        toPixel: ({ transformation, fromTargetCell, toTargetCell }) => {
-            return `Frame(${fromTargetCell.frameVariableName}) | QueryAll()|Distinct(true) | Merge(joins=[(${transformation.parameters.fromNameColumn?.name}, ${transformation.parameters.joinType.code}, ${transformation.parameters.toNameColumn?.name}, ${transformation.parameters.compareOperation})], frame=[${toTargetCell.frameVariableName}]);`;
+        toPixel: ({
+            frame,
+            fromNameColumn,
+            toNameColumn,
+            joinType,
+            compareOperation,
+            toFrame,
+        }) => {
+            return `Frame(${frame}) | QueryAll()|Distinct(true) | Merge(joins=[(${fromNameColumn?.name}, ${joinType.code}, ${toNameColumn?.name}, ${compareOperation})], frame=[${toFrame}]);`;
         },
     };

@@ -13,7 +13,8 @@ import { QueryImportCellDef } from '../../query-import-cell';
 import { ActionMessages, CellState } from '@/stores';
 import { AccountTree, KeyboardArrowDown } from '@mui/icons-material';
 import { useBlocks } from '@/hooks';
-import React from 'react';
+import React, { useMemo } from 'react';
+import { TransformationCellDef } from './transformation.types';
 
 const primaryLight = THEME.name === 'SEMOSS' ? blue[50] : green[50];
 export const TransformationChip = styled(Chip)(({ theme }) => ({
@@ -44,18 +45,13 @@ type TransformationCellInputComponent = React.FunctionComponent<{
     /** Main content slot */
     children: React.ReactNode;
     /** Update frame Selection */
-    frame?: {
-        /**  */
-        cell: any;
-        /**  */
-        options: Record<string, any>[];
-    };
+    cell: CellState<TransformationCellDef>;
 }>;
 
 export const TransformationMultiCellInput: TransformationCellInputComponent = (
     props,
 ) => {
-    const { children, frame, display, Icon, isExpanded } = props;
+    const { children, cell, display, Icon, isExpanded } = props;
     const { state } = useBlocks();
 
     if (!isExpanded) {
@@ -79,10 +75,11 @@ export const TransformationMultiCellInput: TransformationCellInputComponent = (
 
     return (
         <Stack width="100%" paddingY={0.5}>
+            <StyledTypography variant="body1">{display}</StyledTypography>
             <Stack direction="row" spacing={1}>
                 <StyledSelect
                     size={'small'}
-                    value={frame.cell.parameters.fromTargetCell.id}
+                    value={cell.parameters.frame ? cell.parameters.frame : ''}
                     SelectProps={{
                         IconComponent: KeyboardArrowDown,
                         style: {
@@ -96,38 +93,30 @@ export const TransformationMultiCellInput: TransformationCellInputComponent = (
                         ),
                     }}
                     onChange={(e) => {
-                        const target = frame.options.find((f) => {
-                            if (f.id === e.target.value) {
-                                return f;
-                            }
-                        });
-
                         state.dispatch({
                             message: ActionMessages.UPDATE_CELL,
                             payload: {
-                                queryId: frame.cell.query.id,
-                                cellId: frame.cell.id,
-                                path: 'parameters.fromTargetCell',
-                                value: {
-                                    id: target.id,
-                                    frameVariableName:
-                                        target.parameters.frameVariableName,
-                                },
+                                queryId: cell.query.id,
+                                cellId: cell.id,
+                                path: 'parameters.frame',
+                                value: e.target.value,
                             },
                         });
                     }}
                 >
-                    {frame.options.map((c) => {
+                    {frames.map((c) => {
                         return (
-                            <StyledSelectItem key={c.id} value={c.id}>
-                                {c.parameters.frameVariableName}
+                            <StyledSelectItem key={`${cell.id}-${c}`} value={c}>
+                                {c}
                             </StyledSelectItem>
                         );
                     })}
                 </StyledSelect>
                 <StyledSelect
                     size={'small'}
-                    value={frame.cell.parameters.toTargetCell.id}
+                    value={
+                        cell.parameters.toFrame ? cell.parameters.toFrame : ''
+                    }
                     SelectProps={{
                         IconComponent: KeyboardArrowDown,
                         style: {
@@ -141,37 +130,29 @@ export const TransformationMultiCellInput: TransformationCellInputComponent = (
                         ),
                     }}
                     onChange={(e) => {
-                        const target = frame.options.find((f) => {
-                            if (f.id === e.target.value) {
-                                return f;
-                            }
-                        });
-
                         state.dispatch({
                             message: ActionMessages.UPDATE_CELL,
                             payload: {
-                                queryId: frame.cell.query.id,
-                                cellId: frame.cell.id,
-                                path: 'parameters.toTargetCell',
-                                value: {
-                                    id: target.id,
-                                    frameVariableName:
-                                        target.parameters.frameVariableName,
-                                },
+                                queryId: cell.query.id,
+                                cellId: cell.id,
+                                path: 'parameters.toFrame',
+                                value: e.target.value,
                             },
                         });
                     }}
                 >
-                    {frame.options.map((c) => {
+                    {frames.map((c) => {
                         return (
-                            <StyledSelectItem key={c.id} value={c.id}>
-                                {c.parameters.frameVariableName}
+                            <StyledSelectItem
+                                key={`${cell.id}-${c}-toFrame`}
+                                value={c}
+                            >
+                                {c}
                             </StyledSelectItem>
                         );
                     })}
                 </StyledSelect>
             </Stack>
-            <StyledTypography variant="body1">{display}</StyledTypography>
             {children}
         </Stack>
     );

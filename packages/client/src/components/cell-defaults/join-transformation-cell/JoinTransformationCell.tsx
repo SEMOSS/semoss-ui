@@ -22,34 +22,16 @@ import { JoinFull, JoinInner, JoinLeft, JoinRight } from '@mui/icons-material';
 import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
-export interface JoinTransformationDef extends TransformationDef<'join'> {
-    key: 'join';
+export interface JoinTransformationCellDef {
+    widget: 'join-transformation';
     parameters: {
+        frame: string;
+        toFrame: string;
+
         fromNameColumn: ColumnInfo;
         toNameColumn: ColumnInfo;
         joinType: joinType;
         compareOperation: comparator;
-    };
-}
-
-export interface JoinTransformationCellDef
-    extends TransformationMultiCellDef<'join-transformation'> {
-    widget: 'join-transformation';
-    parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation<JoinTransformationDef>;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        fromTargetCell: TransformationTargetCell;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        toTargetCell: TransformationTargetCell;
     };
 }
 
@@ -73,101 +55,29 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
-        const cellTransformation: Transformation<JoinTransformationDef> =
-            computed(() => {
-                return cell.parameters
-                    .transformation as Transformation<JoinTransformationDef>;
-            }).get();
-
-        /**
-         * A list of cells that are query imports,
-         * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TO-DO: Do we want to reference other queries
-         */
-        const frames = useMemo(() => {
-            const frameList = [];
-            Object.values(cell.query.cells).forEach((cell) => {
-                if (cell.widget === 'query-import') {
-                    frameList.push(cell);
-                }
-            });
-
-            return frameList;
-        }, []);
-
-        const targetCells: CellState<QueryImportCellDef>[] = computed(() => {
-            return frames.filter(
-                (item) => item.widget === 'query-import',
-            ) as CellState<QueryImportCellDef>[];
+        const cellTransformation = computed(() => {
+            return cell.widget;
         }).get();
-
-        const doFramesExist: boolean = computed(() => {
-            let count = 0;
-            for (const item of targetCells) {
-                if (!!item && (item.isExecuted || !!item.output)) {
-                    count++;
-                }
-            }
-            return count >= 2;
-        }).get();
-
-        const helpText =
-            frames.length < 2
-                ? `Run at least two Query import Cells to define the target frame variables before applying a transformation.`
-                : 'At least two Python / R target frame variables must be defined in order to apply the join transformation.';
-
-        if (!doFramesExist && cellTransformation.parameters.fromNameColumn) {
-            return (
-                <TransformationMultiCellInput
-                    isExpanded={isExpanded}
-                    display={Transformations[cellTransformation.key].display}
-                    Icon={Transformations[cellTransformation.key].icon}
-                    frame={{
-                        cell: cell,
-                        options: frames,
-                    }}
-                >
-                    <Stack width="100%" paddingY={0.75}>
-                        <Typography variant="caption">
-                            <em>{helpText}</em>
-                        </Typography>
-                    </Stack>
-                </TransformationMultiCellInput>
-            );
-        }
 
         return (
             <TransformationMultiCellInput
                 isExpanded={isExpanded}
-                display={Transformations[cellTransformation.key].display}
-                Icon={Transformations[cellTransformation.key].icon}
-                frame={{
-                    cell: cell,
-                    options: frames,
-                }}
+                display={Transformations[cellTransformation].display}
+                Icon={Transformations[cellTransformation].icon}
+                cell={cell}
             >
                 <Stack spacing={2}>
-                    <Typography variant="caption">
-                        {!doFramesExist ? (
-                            <em>{helpText}</em>
-                        ) : (
-                            'Select columns from each table. Specify how you want to join the columns.'
-                        )}
-                    </Typography>
-
                     <Stack direction="column" spacing={2} width="100%">
                         <StyledTitleTypography variant={'body2'}>
                             {' '}
                             From:
-                            {` ${cell.parameters.fromTargetCell.frameVariableName}`}
+                            {` ${cell.parameters.frame}`}
                         </StyledTitleTypography>
                         <MultiCellColumnTransformationField
-                            disabled={!doFramesExist}
                             cell={cell}
-                            cellTarget={cell.parameters.fromTargetCell}
+                            cellTarget={cell.parameters.frame}
                             selectedColumns={
-                                cellTransformation.parameters
-                                    .fromNameColumn ?? {
+                                cell.parameters.fromNameColumn ?? {
                                     name: '',
                                     dataType: '',
                                 }
@@ -178,7 +88,7 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.fromNameColumn',
+                                        path: 'parameters.fromNameColumn',
                                         value: newColumn,
                                     },
                                 });
@@ -188,14 +98,13 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                         <StyledTitleTypography variant={'body2'}>
                             {' '}
                             To:
-                            {` ${cell.parameters.toTargetCell.frameVariableName}`}
+                            {` ${cell.parameters.toFrame}`}
                         </StyledTitleTypography>
                         <MultiCellColumnTransformationField
-                            disabled={!doFramesExist}
                             cell={cell}
-                            cellTarget={cell.parameters.toTargetCell}
+                            cellTarget={cell.parameters.toFrame}
                             selectedColumns={
-                                cellTransformation.parameters.toNameColumn ?? {
+                                cell.parameters.toNameColumn ?? {
                                     name: '',
                                     dataType: '',
                                 }
@@ -206,7 +115,7 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.toNameColumn',
+                                        path: 'parameters.toNameColumn',
                                         value: newColumn,
                                     },
                                 });
@@ -218,9 +127,8 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                             Type of Join:{' '}
                         </StyledTitleTypography>
                         <Autocomplete
-                            disabled={!doFramesExist}
                             size="small"
-                            value={cellTransformation.parameters.joinType}
+                            value={cell.parameters.joinType}
                             fullWidth
                             onChange={(_, newOperation: joinType) => {
                                 state.dispatch({
@@ -228,7 +136,7 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.joinType',
+                                        path: 'parameters.joinType',
                                         value: newOperation,
                                     },
                                 });
@@ -256,11 +164,8 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                             Comparator:{' '}
                         </StyledTitleTypography>
                         <Autocomplete
-                            disabled={!doFramesExist}
                             size="small"
-                            value={
-                                cellTransformation.parameters.compareOperation
-                            }
+                            value={cell.parameters.compareOperation}
                             fullWidth
                             onChange={(_, newOperation: string) => {
                                 state.dispatch({
@@ -268,7 +173,7 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.compareOperation',
+                                        path: 'parameters.compareOperation',
                                         value: newOperation,
                                     },
                                 });

@@ -34,11 +34,11 @@ export type TransformationTypes =
     | 'column-type-transformation'
     | 'encode-column-transformation'
     | 'timestamp-transformation'
-    | 'update-row-transformation'
     | 'cumulative-sum-transformation'
+    | 'collapse-transformation'
+    | 'update-row-transformation'
     | 'date-difference-transformation'
-    | 'collapse'
-    | 'join';
+    | 'join-transformation';
 
 export interface TransformationDef<R extends string = string> {
     /** Unique transformation name */
