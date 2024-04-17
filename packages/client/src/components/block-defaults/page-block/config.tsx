@@ -6,12 +6,16 @@ import {
     buildLayoutSection,
     buildColorSection,
     buildTypographySection,
+    buildListener,
 } from '../block-defaults.shared';
 
 import { PageBlockDef, PageBlock } from './PageBlock';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
-import { BorderSettings, SizeSettings } from '@/components/block-settings';
+import {
+    BorderSettings,
+    QuerySelectionSettings,
+    SizeSettings,
+} from '@/components/block-settings';
 
 export const DefaultStyles: CSSProperties = {
     display: 'flex',
@@ -27,14 +31,38 @@ export const config: BlockConfig<PageBlockDef> = {
     type: BLOCK_TYPE_LAYOUT,
     data: {
         style: DefaultStyles,
+        loading: false,
     },
-    listeners: {},
+    listeners: {
+        onPageLoad: [],
+    },
     slots: {
         content: [],
     },
     render: PageBlock,
     icon: FileCopyOutlined,
-    contentMenu: [],
+    contentMenu: [
+        {
+            name: 'General',
+            children: [
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                            queryPath="isLoading"
+                        />
+                    ),
+                },
+            ],
+        },
+        {
+            name: 'on Page Load',
+            children: [...buildListener('onPageLoad')],
+        },
+    ],
     styleMenu: [
         buildLayoutSection(),
         // root pages don't get margin for spacing

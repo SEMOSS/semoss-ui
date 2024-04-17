@@ -982,14 +982,13 @@ export const DEFAULT_TEMPLATE: Template[] = [
             queries: {
                 ['ask-llm']: {
                     id: 'ask-llm',
-                    mode: 'manual',
                     cells: [
                         {
                             id: 'cell-1',
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"])`,
+                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
                             },
                         },
                     ],
@@ -1158,7 +1157,6 @@ export const DEFAULT_TEMPLATE: Template[] = [
             queries: {
                 ['ask-model']: {
                     id: 'ask-model',
-                    mode: 'manual',
                     cells: [
                         {
                             id: 'file-read',
@@ -1173,7 +1171,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"])`,
+                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
                             },
                         },
                     ],

@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction, toJS } from 'mobx';
+import { makeAutoObservable, toJS } from 'mobx';
 
 import { cancellablePromise, getValueByPath } from '@/utility';
 
@@ -81,49 +81,14 @@ export class StateStore {
         // save the connected insight
         this._store.insightId = config.insightId;
 
+        // set the mode of the store based on how it is being used
+        this._store.mode = config.mode;
+
         // register the cells
         this._store.cellRegistry = config.cellRegistry || {};
 
         // make it observable
         makeAutoObservable(this);
-
-        // auto update when a query or mode changes
-        reaction(
-            () => {
-                return Object.keys(this._store.queries).reduce<
-                    Record<string, string>
-                >((acc, val) => {
-                    const q = this._store.queries[val];
-
-                    // map id -> actual
-                    acc[q.id] = `${this.flattenVariable(q.toPixel())}--${
-                        q.mode
-                    }`;
-
-                    return acc;
-                }, {});
-            },
-            (curr, prev) => {
-                for (const id in curr) {
-                    // get the query
-                    const q = this._store.queries[id];
-
-                    // if they are the same ignore
-                    if (!q || curr[id] === prev[id]) {
-                        continue;
-                    }
-
-                    // ignore if not automatic
-                    // PROBLEM: PK brought this up: ONLY WHILE IN NOTEBOOK, editting queries it may be best to have user manually run queries
-                    if (q.mode !== 'automatic') {
-                        continue;
-                    }
-
-                    // run the query
-                    this.runQuery(id);
-                }
-            },
-        );
 
         // set the initial state after reactive to invoke it
         this.setState(config.state);
@@ -734,21 +699,25 @@ export class StateStore {
         // get the block
         const block = this._store.blocks[id];
 
-        // remove the children
-        for (const slot in block.slots) {
-            const { children } = block.slots[slot];
-            // use copy of children so we can detach without breaking loop
-            for (const c of [...children]) {
-                this.removeBlock(c, false);
+        if (block) {
+            // remove the children
+            for (const slot in block.slots) {
+                const { children } = block.slots[slot];
+                // use copy of children so we can detach without breaking loop
+                for (const c of [...children]) {
+                    this.removeBlock(c, false);
+                }
             }
-        }
 
-        // detach the current block (this might not always be possible)
-        this.detachBlock(id);
+            // detach the current block (this might not always be possible)
+            this.detachBlock(id);
 
-        // delete it
-        if (!keep) {
-            delete this._store.blocks[id];
+            // delete it
+            if (!keep) {
+                delete this._store.blocks[id];
+            }
+        } else {
+            console.error("Block doesn't exist. Skipping.");
         }
     };
 
@@ -867,23 +836,6 @@ export class StateStore {
             },
             this,
         );
-
-        if (!config.cells.length) {
-            const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
-            this.newCell(
-                queryId,
-                newCellId,
-                {
-                    parameters: {
-                        code: '',
-                        type: 'pixel',
-                    },
-                    widget: 'code',
-                } as Omit<CellStateConfig, 'id'>,
-                '',
-            );
-        }
     };
 
     /**

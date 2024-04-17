@@ -84,7 +84,7 @@ export const config: BlockConfig<SelectBlockDef> = {
             ],
         },
         {
-            name: 'onChange',
+            name: 'on Change',
             children: [...buildListener('onChange')],
         },
     ],

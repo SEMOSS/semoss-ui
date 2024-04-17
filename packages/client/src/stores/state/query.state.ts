@@ -12,9 +12,6 @@ export interface QueryStateStoreInterface {
     /** Track if the cell is loading */
     isLoading: boolean;
 
-    /** Is the query automatically run or manully */
-    mode: 'automatic' | 'manual';
-
     /** Error associated with the Query */
     error: Error | null;
 
@@ -29,9 +26,6 @@ export interface QueryStateConfig {
     /** Id of the query */
     id: string;
 
-    /** Is the query automatically run or manully */
-    mode: 'automatic' | 'manual';
-
     /** Cells in the query */
     cells: CellStateConfig[];
 }
@@ -44,7 +38,6 @@ export class QueryState {
     private _store: QueryStateStoreInterface = {
         id: '',
         isLoading: false,
-        mode: 'manual',
         error: null,
         cells: {},
         list: [],
@@ -56,7 +49,6 @@ export class QueryState {
 
         // set the id
         this._store.id = config.id;
-        this._store.mode = config.mode;
 
         // create the cells
         const { cells, list } = config.cells.reduce(
@@ -154,13 +146,6 @@ export class QueryState {
     }
 
     /**
-     * Mode of the query
-     */
-    get mode() {
-        return this._store.mode;
-    }
-
-    /**
      * Data associateed with the query
      */
     get error() {
@@ -230,7 +215,6 @@ export class QueryState {
     toJSON = (): QueryStateConfig => {
         return {
             id: this._store.id,
-            mode: this._store.mode,
             cells: this._store.list.map((s) => this._store.cells[s].toJSON()),
         };
     };
@@ -253,9 +237,7 @@ export class QueryState {
     _processRun = async () => {
         try {
             // check the loading state
-            if (this._store.isLoading && this._store.mode !== 'automatic') {
-                // Temp Fix: Ignore Automatic queries
-                // Proposed fix, don't allow query to be ran automatically while in Notebook.  Do this in state store
+            if (this._store.isLoading) {
                 throw new Error('Query is loading');
             }
 
@@ -371,7 +353,6 @@ export class QueryState {
             isError: this.isError,
             isSuccessful: this.isSuccessful,
             error: this.error,
-            mode: this.mode,
             output: this.output,
             list: this.list,
         };
