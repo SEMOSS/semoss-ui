@@ -46,6 +46,7 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     paddingBottom: theme.spacing(1),
+    overflowY: 'auto',
 }));
 
 export const SelectedMenu = observer(() => {
