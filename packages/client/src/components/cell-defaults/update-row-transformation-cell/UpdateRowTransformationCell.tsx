@@ -6,44 +6,24 @@ import { CellComponent, ActionMessages, CellState } from '@/stores';
 import { Stack, TextField, Typography } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import {
-    ColumnInfo,
-    ColumnTransformationField,
+    ColumnInfoTwo,
+    ColumnTransformationField2,
     Transformation,
-    TransformationCellInput,
+    TransformationCellInput2,
     Transformations,
     operations,
-    TransformationDef,
-    TransformationCellDef,
-    TransformationTargetCell,
     operation,
 } from '../shared';
-import { QueryImportCellDef } from '../query-import-cell';
 
-export interface UpdateRowTransformationDef
-    extends TransformationDef<'update-row'> {
-    key: 'update-row';
-    parameters: {
-        compareColumn: ColumnInfo;
-        compareOperation: operation;
-        compareValue: string;
-        targetColumn: ColumnInfo;
-        targetValue: string;
-    };
-}
-
-export interface UpdateRowTransformationCellDef
-    extends TransformationCellDef<'update-row-transformation'> {
+export interface UpdateRowTransformationCellDef {
     widget: 'update-row-transformation';
     parameters: {
-        /**
-         * Routine type
-         */
-        transformation: Transformation<UpdateRowTransformationDef>;
-
-        /**
-         * ID of the query cell that defines the frame we want to transform
-         */
-        targetCell: TransformationTargetCell;
+        frame: string;
+        compareColumn: ColumnInfoTwo;
+        compareOperation: operation;
+        compareValue: string;
+        targetColumn: ColumnInfoTwo;
+        targetValue: string;
     };
 }
 
@@ -52,39 +32,9 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
-        const targetCell: CellState<QueryImportCellDef> = computed(() => {
-            return cell.query.cells[
-                cell.parameters.targetCell.id
-            ] as CellState<QueryImportCellDef>;
+        const cellTransformation = computed(() => {
+            return cell.widget;
         }).get();
-
-        const cellTransformation: Transformation<UpdateRowTransformationDef> =
-            computed(() => {
-                return cell.parameters
-                    .transformation as Transformation<UpdateRowTransformationDef>;
-            }).get();
-
-        const doesFrameExist: boolean = computed(() => {
-            return (
-                !!targetCell && (targetCell.isExecuted || !!targetCell.output)
-            );
-        }).get();
-
-        /**
-         * A list of cells that are query imports,
-         * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TO-DO: Do we want to reference other queries
-         */
-        const frames = useMemo(() => {
-            const frameList = [];
-            Object.values(cell.query.cells).forEach((cell) => {
-                if (cell.widget === 'query-import') {
-                    frameList.push(cell);
-                }
-            });
-
-            return frameList;
-        }, []);
 
         const getTextFieldType = (dataType: string): string => {
             switch (dataType) {
@@ -102,69 +52,30 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
             }
         };
 
-        const helpText = cell.parameters.targetCell.id
-            ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
-            : 'A Python or R target frame variable must be defined in order to apply a transformation.';
-
-        if (
-            (!doesFrameExist &&
-                !cellTransformation.parameters.compareColumn.name) ||
-            !targetCell.isExecuted
-        ) {
-            return (
-                <TransformationCellInput
-                    isExpanded={isExpanded}
-                    display={Transformations[cellTransformation.key].display}
-                    Icon={Transformations[cellTransformation.key].icon}
-                    frame={{
-                        cell: cell,
-                        options: frames,
-                    }}
-                >
-                    <Stack width="100%" paddingY={0.75}>
-                        <Typography variant="caption">
-                            <em>{helpText}</em>
-                        </Typography>
-                    </Stack>
-                </TransformationCellInput>
-            );
-        }
-
         return (
-            <TransformationCellInput
+            <TransformationCellInput2
                 isExpanded={isExpanded}
-                display={Transformations[cellTransformation.key].display}
-                Icon={Transformations[cellTransformation.key].icon}
-                frame={{
-                    cell: cell,
-                    options: frames,
-                }}
+                display={Transformations[cellTransformation].display}
+                Icon={Transformations[cellTransformation].icon}
+                cell={cell}
             >
                 <Stack spacing={2}>
-                    <Typography variant="caption">
-                        {!doesFrameExist ? (
-                            <em>{helpText}</em>
-                        ) : (
-                            'Replace values of a column by defining a conditional statement'
-                        )}
-                    </Typography>
                     <Stack direction="row" flex={1} spacing={2}>
-                        <ColumnTransformationField
-                            disabled={!doesFrameExist}
+                        <ColumnTransformationField2
                             cell={cell}
                             selectedColumns={
-                                cellTransformation.parameters.compareColumn ?? {
-                                    name: '',
-                                    dataType: '',
+                                cell.parameters.compareColumn ?? {
+                                    type: '',
+                                    value: '',
                                 }
                             }
-                            onChange={(newColumn: ColumnInfo) => {
+                            onChange={(newColumn: ColumnInfoTwo) => {
                                 state.dispatch({
                                     message: ActionMessages.UPDATE_CELL,
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.compareColumn',
+                                        path: 'parameters.compareColumn',
                                         value: newColumn,
                                     },
                                 });
@@ -173,11 +84,8 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
                         />
                         <Autocomplete
                             disableClearable
-                            disabled={!doesFrameExist}
                             size="small"
-                            value={
-                                cellTransformation.parameters.compareOperation
-                            }
+                            value={cell.parameters.compareOperation}
                             fullWidth
                             onChange={(_, newOperation: string) => {
                                 state.dispatch({
@@ -185,7 +93,7 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.compareOperation',
+                                        path: 'parameters.compareOperation',
                                         value: newOperation,
                                     },
                                 });
@@ -206,51 +114,46 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.compareValue',
+                                        path: 'parameters.compareValue',
                                         value: e.target.value,
                                     },
                                 });
                             }}
-                            disabled={!doesFrameExist}
                             variant="outlined"
                             label="Compare Value"
-                            value={cellTransformation.parameters.compareValue}
+                            value={cell.parameters.compareValue}
                             fullWidth
                             size="small"
                             InputLabelProps={{
                                 shrink: ['text', 'number'].includes(
                                     getTextFieldType(
-                                        cellTransformation.parameters
-                                            .compareColumn.dataType,
+                                        cell.parameters.compareColumn.type,
                                     ),
                                 )
-                                    ? !!cellTransformation.parameters
-                                          .compareValue
+                                    ? !!cell.parameters.compareValue
                                     : true,
                             }}
                             type={getTextFieldType(
-                                cellTransformation.parameters.compareColumn
-                                    .dataType,
+                                cell.parameters.compareColumn.type,
                             )}
                         />
                     </Stack>
                     <Stack direction="row" flex={1} spacing={2}>
-                        <ColumnTransformationField
-                            disabled={!doesFrameExist}
+                        <ColumnTransformationField2
                             cell={cell}
                             selectedColumns={
-                                cellTransformation.parameters.targetColumn ?? {
-                                    name: '',
-                                    dataType: '',
+                                cell.parameters.targetColumn ?? {
+                                    type: '',
+                                    value: '',
                                 }
                             }
-                            onChange={(newColumn: ColumnInfo) => {
+                            onChange={(newColumn: ColumnInfoTwo) => {
                                 state.dispatch({
                                     message: ActionMessages.UPDATE_CELL,
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.targetColumn',
+                                        path: 'parameters.targetColumn',
                                         value: newColumn,
                                     },
                                 });
@@ -264,35 +167,31 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
                                     payload: {
                                         queryId: cell.query.id,
                                         cellId: cell.id,
-                                        path: 'parameters.transformation.parameters.targetValue',
+                                        path: 'parameters.targetValue',
                                         value: e.target.value,
                                     },
                                 });
                             }}
-                            disabled={!doesFrameExist}
                             variant="outlined"
                             label="Update Value"
-                            value={cellTransformation.parameters.targetValue}
+                            value={cell.parameters.targetValue}
                             fullWidth
                             size="small"
                             InputLabelProps={{
                                 shrink: ['text', 'number'].includes(
                                     getTextFieldType(
-                                        cellTransformation.parameters
-                                            .targetColumn.dataType,
+                                        cell.parameters.targetColumn.type,
                                     ),
                                 )
-                                    ? !!cellTransformation.parameters
-                                          .targetValue
+                                    ? !!cell.parameters.targetValue
                                     : true,
                             }}
                             type={getTextFieldType(
-                                cellTransformation.parameters.targetColumn
-                                    .dataType,
+                                cell.parameters.targetColumn.type,
                             )}
                         />
                     </Stack>
                 </Stack>
-            </TransformationCellInput>
+            </TransformationCellInput2>
         );
     });

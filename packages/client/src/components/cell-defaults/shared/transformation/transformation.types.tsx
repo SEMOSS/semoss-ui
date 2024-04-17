@@ -34,8 +34,8 @@ export type TransformationTypes =
     | 'column-type-transformation'
     | 'encode-column-transformation'
     | 'timestamp-transformation'
+    | 'update-row-transformation'
     | 'cumulative-sum'
-    | 'update-row'
     | 'date-difference'
     | 'collapse'
     | 'join';
@@ -58,22 +58,6 @@ export interface TransformationMultiCellDef<W extends string = string>
     extends CellDef<W> {
     widget: W;
     parameters: Record<string, unknown>;
-    // ;    {
-    //         /**
-    //          * Routine type
-    //          */
-    //         transformation: Transformation;
-
-    //         /**
-    //          * ID of the From query cell that defines the frame we want to transform
-    //          */
-    //         fromTargetCell: TransformationTargetCell;
-
-    //         /**
-    //          * ID of the To query cell that defines the frame we want to transform
-    //          */
-    //         toTargetCell: TransformationTargetCell;
-    //     };
 }
 
 export interface TransformationTargetCell {

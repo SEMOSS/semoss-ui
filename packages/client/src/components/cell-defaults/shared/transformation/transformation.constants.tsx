@@ -99,20 +99,20 @@ export const Transformations: Record<
         icon: VpnKey,
     },
     'timestamp-transformation': {
+        // X
         display: 'Timestamp',
         icon: TodayOutlined,
     },
-    //
+    'update-row-transformation': {
+        // X - Needs Testing
+        display: 'Update Row Values',
+        icon: TableRows,
+    },
     'cumulative-sum': {
         display: 'Cumulative Sum',
         icon: AddTaskOutlined,
     },
-    'update-row': {
-        transformation: 'update-row',
-        display: 'Update Row Values',
-        icon: TableRows,
-        widget: 'update-row-transformation',
-    },
+    //
     'date-difference': {
         transformation: 'date-difference',
         display: 'Date Difference',

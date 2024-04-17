@@ -10,29 +10,28 @@ export const UpdateRowTransformationCellConfig: CellConfig<UpdateRowTransformati
         widget: 'update-row-transformation',
         view: UpdateRowTransformationCell,
         parameters: {
-            transformation: {
-                key: 'update-row',
-                parameters: {
-                    compareColumn: {
-                        name: '',
-                        dataType: '',
-                    },
-                    compareOperation: '==',
-                    compareValue: '',
-                    targetColumn: {
-                        name: '',
-                        dataType: '',
-                    },
-                    targetValue: '',
-                },
+            frame: '',
+            compareColumn: {
+                type: '',
+                value: '',
             },
-            targetCell: {
-                id: '',
-                frameVariableName: '',
+            compareOperation: '==',
+            compareValue: '',
+            targetColumn: {
+                type: '',
+                value: '',
             },
+            targetValue: '',
         },
 
-        toPixel: ({ transformation, targetCell }) => {
-            return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;
+        toPixel: ({
+            frame,
+            compareColumn,
+            compareOperation,
+            compareValue,
+            targetColumn,
+            targetValue,
+        }) => {
+            return `${frame} | UpdateRowValues (${targetColumn.value}, ${targetValue}, Filter (${compareColumn.value} ${compareOperation} "${compareValue}")) ;`;
         },
     };

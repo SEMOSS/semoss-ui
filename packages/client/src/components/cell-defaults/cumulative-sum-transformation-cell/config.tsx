@@ -30,7 +30,6 @@ export const CumulativeSumTransformationCellConfig: CellConfig<CumulativeSumTran
             );
 
             return `${frame} | 
-            Convert(frameType=[R]).as(["${frame}"]) | 
             CumulativeSum(newCol=["${newColumn}"], 
                 value=["${valueColumn.value}"],
                 sortCols=${JSON.stringify(sortColumnsValues)},

@@ -67,10 +67,10 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
         EncodeColumnTransformationCellConfig,
     [TimestampTransformationCellConfig.widget]:
         TimestampTransformationCellConfig,
+    [UpdateRowTransformationCellConfig.widget]:
+        UpdateRowTransformationCellConfig,
     // [CumulativeSumTransformationCellConfig.widget]:
     //     CumulativeSumTransformationCellConfig,
-    // [UpdateRowTransformationCellConfig.widget]:
-    //     UpdateRowTransformationCellConfig,
     // [DateDifferenceTransformationCellConfig.widget]:
     //     DateDifferenceTransformationCellConfig,
     // [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
