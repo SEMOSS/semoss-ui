@@ -21,7 +21,7 @@ export interface CumulativeSumTransformationCellDef {
         frame: string;
 
         //** New column title*/
-        newColumn: string;
+        newColumn: ColumnInfoTwo;
 
         //** Value to aggregate */
         valueColumn: ColumnInfoTwo;
@@ -39,61 +39,6 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
 
-        // const targetCell: CellState<QueryImportCellDef> = computed(() => {
-        //     return cell.query.cells[
-        //         cell.parameters.targetCell.id
-        //     ] as CellState<QueryImportCellDef>;
-        // }).get();
-
-        // const doesFrameExist: boolean = computed(() => {
-        //     return (
-        //         !!targetCell && (targetCell.isExecuted || !!targetCell.output)
-        //     );
-        // }).get();
-
-        // const helpText = cell.parameters.targetCell.id
-        //     ? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
-        //     : 'A Python or R target frame variable must be defined in order to apply a transformation.';
-
-        /**
-         * A list of cells that are query imports,
-         * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TO-DO: Do we want to reference other queries
-         */
-        // const frames = useMemo(() => {
-        //     const frameList = [];
-        //     Object.values(cell.query.cells).forEach((cell) => {
-        //         if (cell.widget === 'query-import') {
-        //             frameList.push(cell);
-        //         }
-        //     });
-
-        //     return frameList;
-        // }, []);
-
-        // if (
-        //     (!doesFrameExist && !cellTransformation.parameters.newColumn) ||
-        //     !targetCell.isExecuted
-        // ) {
-        //     return (
-        //         <TransformationCellInput
-        //             isExpanded={isExpanded}
-        //             display={Transformations[cellTransformation.key].display}
-        //             Icon={Transformations[cellTransformation.key].icon}
-        //             frame={{
-        //                 cell: cell,
-        //                 options: frames,
-        //             }}
-        //         >
-        //             <Stack width="100%" paddingY={0.75}>
-        //                 <Typography variant="caption">
-        //                     <em>{helpText}</em>
-        //                 </Typography>
-        //             </Stack>
-        //         </TransformationCellInput>
-        //     );
-        // }
-
         const cellTransformation = computed(() => {
             return cell.widget;
         }).get();
@@ -106,40 +51,31 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
                 cell={cell}
             >
                 <Stack spacing={2}>
-                    <Typography variant="caption">
-                        {/* {!doesFrameExist ? (
-                            <em>{helpText}</em>
-                        ) : (
-                            "Add a new column for the cumulative sum of another column's values"
-                        )} */}
-                    </Typography>
                     <TextField
-                        // disabled={!doesFrameExist}
-                        // value={cellTransformation.newColumn}
                         label="Column Name"
                         variant="outlined"
                         fullWidth
                         size="small"
+                        value={cell.parameters.newColumn.value}
                         onChange={(e) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
                                 payload: {
                                     queryId: cell.query.id,
                                     cellId: cell.id,
-                                    path: '.parameters.newColumn',
-                                    value: e.target.value,
+                                    path: 'parameters.newColumn',
+                                    value: {
+                                        type: 'NUMBER',
+                                        value: e.target.value,
+                                    },
                                 },
                             });
                         }}
                     />
                     <ColumnTransformationField2
-                        // disabled={!doesFrameExist}
-                        // selectedColumns={
-                        //     cellTransformation.parameters.valueColumn
-                        // }
+                        selectedColumns={cell.parameters.valueColumn}
                         label="Aggregate Value"
                         cell={cell}
-                        selectedColumns={[]}
                         onChange={(newColumn: ColumnInfoTwo) => {
                             state.dispatch({
                                 message: ActionMessages.UPDATE_CELL,
@@ -153,12 +89,8 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
                         }}
                     />
                     <ColumnTransformationField2
-                        // disabled={!doesFrameExist}
-                        // selectedColumns={
-                        //     cellTransformation.parameters.sortColumns
-                        // }
+                        selectedColumns={cell.parameters.sortColumns}
                         label="Sort by Column(s)"
-                        selectedColumns={[]}
                         cell={cell}
                         multiple
                         onChange={(newColumn: ColumnInfoTwo) => {
@@ -174,12 +106,9 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
                         }}
                     />
                     <ColumnTransformationField2
-                        // selectedColumns={
-                        //     cellTransformation.parameters.groupByColumns
-                        // }
+                        selectedColumns={cell.parameters.groupByColumns}
                         label="Group by Column(s)"
                         cell={cell}
-                        selectedColumns={[]}
                         multiple
                         onChange={(newColumn: ColumnInfoTwo) => {
                             state.dispatch({

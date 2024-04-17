@@ -35,7 +35,7 @@ export type TransformationTypes =
     | 'encode-column-transformation'
     | 'timestamp-transformation'
     | 'update-row-transformation'
-    | 'cumulative-sum'
+    | 'cumulative-sum-transformation'
     | 'date-difference'
     | 'collapse'
     | 'join';

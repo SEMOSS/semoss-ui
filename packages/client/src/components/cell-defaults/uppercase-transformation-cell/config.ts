@@ -10,8 +10,8 @@ export const UppercaseTransformationCellConfig: CellConfig<UppercaseTransformati
         widget: 'uppercase-transformation',
         view: UppercaseTransformationCell,
         parameters: {
-            frame: '', // All transformations will have this
-            columns: [], // All other parameters associated to specific transformation
+            frame: '',
+            columns: [],
         },
         toPixel: ({ columns, frame }) => {
             const columnNames = columns.map((column) => column.value);

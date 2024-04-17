@@ -11,7 +11,7 @@ export const CumulativeSumTransformationCellConfig: CellConfig<CumulativeSumTran
         widget: 'cumulative-sum-transformation',
         parameters: {
             frame: '',
-            newColumn: '',
+            newColumn: null,
             valueColumn: null,
             sortColumns: [],
             groupByColumns: [],
@@ -30,7 +30,7 @@ export const CumulativeSumTransformationCellConfig: CellConfig<CumulativeSumTran
             );
 
             return `${frame} | 
-            CumulativeSum(newCol=["${newColumn}"], 
+            CumulativeSum(newCol=["${newColumn.value}"], 
                 value=["${valueColumn.value}"],
                 sortCols=${JSON.stringify(sortColumnsValues)},
                 groupByCols=${JSON.stringify(groupByColumnsValues)});`;

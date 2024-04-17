@@ -108,7 +108,7 @@ export const Transformations: Record<
         display: 'Update Row Values',
         icon: TableRows,
     },
-    'cumulative-sum': {
+    'cumulative-sum-transformation': {
         display: 'Cumulative Sum',
         icon: AddTaskOutlined,
     },
