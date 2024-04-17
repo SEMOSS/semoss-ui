@@ -99,11 +99,12 @@ export function getBlockForInput(
                 token.index,
                 capitalizeLabel(token.key),
             );
-        case INPUT_TYPE_DATABASE:
+        case INPUT_TYPE_DATABASE: {
             const label = capitalizeLabel(token.key).includes('Query')
                 ? capitalizeLabel(token.key)
                 : `${capitalizeLabel(token.key)} Query`;
             return getTextFieldInputBlock(inputType, token.index, label);
+        }
         case INPUT_TYPE_SELECT:
             return getSelectInputBlock(
                 inputType,
@@ -372,12 +373,10 @@ export function getQueryForPrompt(
     const queryJson: Record<string, QueryStateConfig> = {
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
-            mode: 'automatic',
             cells: queryDefinitionCells,
         },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
-            mode: 'manual',
             cells: [
                 {
                     id: 'py-query',
@@ -411,8 +410,18 @@ export async function setBlocksAndOpenUIBuilder(
                     style: {
                         fontFamily: 'roboto',
                     },
+                    loading: `{{query.${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
                 },
-                listeners: {},
+                listeners: {
+                    onPageLoad: [
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: PROMPT_QUERY_DEFINITION_ID,
+                            },
+                        },
+                    ],
+                },
                 slots: {
                     content: {
                         name: 'content',

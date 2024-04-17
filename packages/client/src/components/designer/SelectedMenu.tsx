@@ -49,6 +49,15 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
+const StyledMessage = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+}));
+
 export const SelectedMenu = observer(() => {
     const { designer } = useDesigner();
     const { state, registry } = useBlocks();
@@ -72,7 +81,7 @@ export const SelectedMenu = observer(() => {
             return [];
         }
 
-        let m = registry[block.widget]?.contentMenu ?? [];
+        const m = registry[block.widget]?.contentMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -113,7 +122,7 @@ export const SelectedMenu = observer(() => {
             return [];
         }
 
-        let m = registry[block.widget]?.styleMenu ?? [];
+        const m = registry[block.widget]?.styleMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -198,11 +207,11 @@ export const SelectedMenu = observer(() => {
     // ignore if there is no menu
     if (!block) {
         return (
-            <StyledMenuHeader>
-                <Typography variant="body1">
-                    <em>Select a component to configure styling</em>
+            <StyledMessage>
+                <Typography variant="caption">
+                    Select a block to update
                 </Typography>
-            </StyledMenuHeader>
+            </StyledMessage>
         );
     }
 

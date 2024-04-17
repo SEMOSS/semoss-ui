@@ -75,8 +75,16 @@ export const NewQueryOverlay = observer(
                 payload: {
                     queryId: data.ID,
                     config: {
-                        mode: 'manual',
-                        cells: [],
+                        cells: [
+                            {
+                                id: `${Math.floor(Math.random() * 100000)}`,
+                                widget: 'code',
+                                parameters: {
+                                    code: '',
+                                    type: 'pixel',
+                                },
+                            },
+                        ],
                     },
                 },
             });
