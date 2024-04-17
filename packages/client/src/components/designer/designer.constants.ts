@@ -32,9 +32,32 @@ import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
 
+const SECTION_ELEMENT = 'Element';
+const SECTION_INPUT = 'Input';
+const SECTION_LAYOUT = 'Layout';
+const SECTION_PROGRESS = 'Progress';
+const SECTION_TEXT = 'Text';
+const SECTION_AREA_CHART = 'Area Chart';
+const SECTION_BAR_CHART = 'Bar Chart';
+const SECTION_GENERAL_VISUALIZATION = 'General';
+const SECTION_LINE_CHART = 'Line Chart';
+const SECTION_PIE_CHART = 'Pie Chart';
+const SECTION_SCATTER_PLOTS = 'Scatter Plot';
+
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
-    section: string;
+    section:
+        | 'Element'
+        | 'Input'
+        | 'Layout'
+        | 'Progress'
+        | 'Text'
+        | 'Area Chart'
+        | 'Bar Chart'
+        | 'General'
+        | 'Line Chart'
+        | 'Pie Chart'
+        | 'Scatter Plot';
 
     /** Name of the item to show in the tooltip */
     name: string;
@@ -51,7 +74,7 @@ export interface AddBlocksMenuItem {
  */
 export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     {
-        section: 'Input',
+        section: SECTION_INPUT,
         image: BLOCK_BUTTON,
         name: 'Button',
         json: {
@@ -71,7 +94,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Input',
+        section: SECTION_INPUT,
         image: BLOCK_CHECKBOX,
         name: 'Checkbox',
         json: {
@@ -92,7 +115,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Input',
+        section: SECTION_INPUT,
         image: BLOCK_INPUT,
         name: 'Input',
         json: {
@@ -121,7 +144,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Input',
+        section: SECTION_INPUT,
         image: BLOCK_SELECT,
         name: 'Select',
         json: {
@@ -147,7 +170,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Input',
+        section: SECTION_INPUT,
         image: BLOCK_FILE_UPLOAD,
         name: 'Upload',
         json: {
@@ -173,7 +196,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Layout',
+        section: SECTION_LAYOUT,
         image: BLOCK_CONTAINER,
         name: 'Container',
         json: {
@@ -194,7 +217,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Element',
+        section: SECTION_PROGRESS,
         image: BLOCK_PROGRESS_BAR,
         name: 'Progress',
         json: {
@@ -210,7 +233,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Element',
+        section: SECTION_ELEMENT,
         image: BLOCK_IFRAME,
         name: 'Iframe',
         json: {
@@ -226,7 +249,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Element',
+        section: SECTION_ELEMENT,
         image: BLOCK_IMAGE,
         name: 'Image',
         json: {
@@ -250,7 +273,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Progress',
+        section: SECTION_INPUT,
         image: BLOCK_TOGGLE_BUTTON,
         name: 'Toggle Button',
         json: {
@@ -278,7 +301,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_LINK,
         name: 'Link',
         json: {
@@ -297,7 +320,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_MARKDOWN,
         name: 'Markdown',
         json: {
@@ -313,7 +336,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Element',
+        section: SECTION_ELEMENT,
         // image for html block from design team
         image: HTML_BLOCK,
         name: 'HTML',
@@ -331,7 +354,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H1_STYLED,
         name: 'Text',
         json: {
@@ -352,7 +375,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H1,
         name: 'Text',
         json: {
@@ -371,7 +394,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H2,
         name: 'Text',
         json: {
@@ -390,7 +413,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H3,
         name: 'Text',
         json: {
@@ -409,7 +432,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H4,
         name: 'Text',
         json: {
@@ -428,7 +451,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H5,
         name: 'Text',
         json: {
@@ -447,7 +470,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_H6,
         name: 'Text',
         json: {
@@ -466,7 +489,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_P,
         name: 'Text',
         json: {
@@ -485,7 +508,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Text',
+        section: SECTION_TEXT,
         image: BLOCK_P_ITALICS,
         name: 'Text',
         json: {
@@ -511,7 +534,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
  */
 export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
-        section: 'Bar Chart',
+        section: SECTION_BAR_CHART,
         name: 'Bar Chart',
         image: BAR_CHART,
         json: {
@@ -553,7 +576,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Bar Chart',
+        section: SECTION_BAR_CHART,
         name: 'Grouped Bar Chart',
         image: GROUP_BAR_CHART,
         json: {
@@ -597,7 +620,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Pie Chart',
+        section: SECTION_PIE_CHART,
         name: 'Pie Chart',
         image: PIE_CHART,
         json: {
@@ -637,7 +660,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Pie Chart',
+        section: SECTION_PIE_CHART,
         name: 'Radial Plot',
         image: RADIAL_CHART,
         json: {
@@ -704,7 +727,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'General',
+        section: SECTION_GENERAL_VISUALIZATION,
         name: 'Vega',
         image: GENERAL_CHART,
         json: {
@@ -718,7 +741,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Line Chart',
+        section: SECTION_LINE_CHART,
         name: 'Line Chart',
         image: LINE_CHART,
         json: {
@@ -759,7 +782,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Area Chart',
+        section: SECTION_AREA_CHART,
         name: 'Area Chart',
         image: AREA_CHART,
         json: {
@@ -805,7 +828,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Area Chart',
+        section: SECTION_AREA_CHART,
         name: 'Area Chart with Gradient',
         image: GRADIENT_CHART,
         json: {
@@ -874,7 +897,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
-        section: 'Scatter Plots',
+        section: SECTION_SCATTER_PLOTS,
         name: 'Scatter Plot',
         image: SCATTER_PLOT,
         json: {
