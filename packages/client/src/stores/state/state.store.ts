@@ -734,21 +734,25 @@ export class StateStore {
         // get the block
         const block = this._store.blocks[id];
 
-        // remove the children
-        for (const slot in block.slots) {
-            const { children } = block.slots[slot];
-            // use copy of children so we can detach without breaking loop
-            for (const c of [...children]) {
-                this.removeBlock(c, false);
+        if (block) {
+            // remove the children
+            for (const slot in block.slots) {
+                const { children } = block.slots[slot];
+                // use copy of children so we can detach without breaking loop
+                for (const c of [...children]) {
+                    this.removeBlock(c, false);
+                }
             }
-        }
 
-        // detach the current block (this might not always be possible)
-        this.detachBlock(id);
+            // detach the current block (this might not always be possible)
+            this.detachBlock(id);
 
-        // delete it
-        if (!keep) {
-            delete this._store.blocks[id];
+            // delete it
+            if (!keep) {
+                delete this._store.blocks[id];
+            }
+        } else {
+            console.error("Block doesn't exist. Skipping.");
         }
     };
 
