@@ -103,22 +103,20 @@ export const Transformations: Record<
         display: 'Timestamp',
         icon: TodayOutlined,
     },
+    'cumulative-sum-transformation': {
+        display: 'Cumulative Sum',
+        icon: AddTaskOutlined,
+    },
     'update-row-transformation': {
         // X - Needs Testing
         display: 'Update Row Values',
         icon: TableRows,
     },
-    'cumulative-sum-transformation': {
-        display: 'Cumulative Sum',
-        icon: AddTaskOutlined,
-    },
-    //
-    'date-difference': {
-        transformation: 'date-difference',
+    'date-difference-transformation': {
         display: 'Date Difference',
         icon: DateRangeOutlined,
-        widget: 'date-difference-transformation',
     },
+    //
     collapse: {
         transformation: 'collapse',
         display: 'Collapse',

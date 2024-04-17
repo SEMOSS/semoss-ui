@@ -72,8 +72,9 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     // Issues
     [UpdateRowTransformationCellConfig.widget]:
         UpdateRowTransformationCellConfig,
-    // [DateDifferenceTransformationCellConfig.widget]:
-    //     DateDifferenceTransformationCellConfig,
+    // Issues
+    [DateDifferenceTransformationCellConfig.widget]:
+        DateDifferenceTransformationCellConfig,
     // [JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,
     // [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
 } as const;

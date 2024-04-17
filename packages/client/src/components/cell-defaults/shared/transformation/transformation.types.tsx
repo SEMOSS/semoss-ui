@@ -36,7 +36,7 @@ export type TransformationTypes =
     | 'timestamp-transformation'
     | 'update-row-transformation'
     | 'cumulative-sum-transformation'
-    | 'date-difference'
+    | 'date-difference-transformation'
     | 'collapse'
     | 'join';
 
