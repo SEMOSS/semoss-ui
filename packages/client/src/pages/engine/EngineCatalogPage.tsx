@@ -2,7 +2,6 @@ import { useEffect, useState, useReducer, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Avatar,
-    Chip,
     Collapse,
     Divider,
     styled,
@@ -10,23 +9,24 @@ import {
     Typography,
     Search,
     Button,
-    ToggleButton,
-    ToggleButtonGroup,
+    ToggleTabsGroup,
     Grid,
     List,
+    TextField,
+    IconButton,
 } from '@semoss/ui';
 import {
     ExpandLess,
     ExpandMore,
-    FormatListBulletedOutlined,
-    SpaceDashboardOutlined,
+    SearchOff,
+    Search as SearchIcon,
 } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 
 import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
-import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
+import { EngineLandscapeCard } from '@/components/engine';
 import { Page } from '@/components/ui';
 
 import { ENGINE_ROUTES } from './engine.constants';
@@ -54,21 +54,9 @@ const StyledFilterList = styled(List)(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledChipList = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    marginLeft: theme.spacing(2),
-    gap: theme.spacing(2),
-}));
-
 const StyledFilterSearchContainer = styled('div')(({ theme }) => ({
     marginTop: theme.spacing(2),
     marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-}));
-
-const StyledNestedFilterList = styled(List)(({ theme }) => ({
-    width: '100%',
     marginRight: theme.spacing(2),
 }));
 
@@ -81,45 +69,14 @@ const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
     background: theme.palette.secondary.main,
 }));
 
-const StyledContent = styled('div')(() => ({
+const StyledContent = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     flex: '1',
+    width: '100%',
+    gap: theme.spacing(3),
 }));
-
-const StyledChip = styled(Chip, {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{
-    /** Track if the chip is selected */
-    selected: boolean;
-}>(({ theme, selected }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
-    // TODO: Fix typing
-    const palette = theme.palette as unknown as {
-        primary: Record<string, string>;
-        background: Record<string, string>;
-        primaryContrast: Record<string, string>;
-    };
-
-    return {
-        color: selected
-            ? palette.background.paper
-            : palette.primaryContrast['900'],
-        backgroundColor: selected
-            ? palette.primary.main
-            : palette.primaryContrast['50'],
-
-        '&:hover': {
-            color: selected
-                ? palette.background.paper
-                : palette.primaryContrast['900'],
-            background: selected
-                ? palette.primaryContrast['900']
-                : palette.primaryContrast['100'],
-        },
-    };
-});
 
 const StyledShowMore = styled(Typography)(({ theme }) => {
     // TODO: Fix typing
@@ -138,11 +95,18 @@ const StyledShowMore = styled(Typography)(({ theme }) => {
     };
 });
 
+const StyledSectionLabel = styled(Typography)(() => ({
+    size: '16px',
+    fontWeight: '500',
+}));
+
 const initialState = {
     favoritedDbs: [],
     databases: [],
     filterSearch: '',
 };
+
+type MODE = 'Mine' | 'Discoverable';
 
 const reducer = (state, action) => {
     switch (action.type) {
@@ -216,10 +180,10 @@ export const EngineCatalogPage = observer(
 
         // save the search string
         const [search, setSearch] = useState<string>('');
+        const [showSearch, setShowSearch] = useState<boolean>(true);
 
         // which view we are on
-        const [mode, setMode] = useState<'Mine' | 'Discoverable'>('Mine');
-        const [view, setView] = useState<'list' | 'tile'>('tile');
+        const [mode, setMode] = useState<MODE>('Mine');
         const [filterByVisibility, setFilterByVisibility] = useState(true);
 
         const dbPixelPrefix: string =
@@ -666,30 +630,6 @@ export const EngineCatalogPage = observer(
                                 <Typography variant={'h4'}>
                                     {route ? route.name : ''} Catalog
                                 </Typography>
-                                <Search
-                                    size="small"
-                                    placeholder={`Search ${
-                                        route
-                                            ? `${route.name}${
-                                                  route.name === 'Storage'
-                                                      ? ''
-                                                      : 's'
-                                              }`
-                                            : ''
-                                    }`}
-                                    value={search}
-                                    onChange={(e) => {
-                                        // Reset databases and reset offset
-                                        dispatch({
-                                            type: 'field',
-                                            field: 'databases',
-                                            value: [],
-                                        });
-                                        setOffset(0);
-
-                                        setSearch(e.target.value);
-                                    }}
-                                />
                             </Stack>
                             <Stack
                                 direction="row"
@@ -714,30 +654,6 @@ export const EngineCatalogPage = observer(
                                 >
                                     Add {route ? route.name : 'Engine'}
                                 </Button>
-
-                                <ToggleButtonGroup
-                                    size={'small'}
-                                    value={view}
-                                    color="primary"
-                                >
-                                    <ToggleButton
-                                        color="primary"
-                                        onClick={(e, v) => setView(v)}
-                                        value={'tile'}
-                                        aria-label={'Tile View'}
-                                    >
-                                        <SpaceDashboardOutlined />
-                                    </ToggleButton>
-
-                                    <ToggleButton
-                                        color="primary"
-                                        onClick={(e, v) => setView(v)}
-                                        value={'list'}
-                                        aria-label={'List View'}
-                                    >
-                                        <FormatListBulletedOutlined />
-                                    </ToggleButton>
-                                </ToggleButtonGroup>
                             </Stack>
                         </Stack>
                     </Stack>
@@ -774,45 +690,6 @@ export const EngineCatalogPage = observer(
                             </List.Item>
 
                             <Collapse in={filterByVisibility}>
-                                <StyledChipList>
-                                    <StyledChip
-                                        label={`My ${
-                                            route
-                                                ? `${route.name}(s)`
-                                                : 'Engine(s)'
-                                        }`}
-                                        selected={mode === 'Mine'}
-                                        onClick={() => {
-                                            // Reset engines and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-                                            setMode('Mine');
-                                        }}
-                                    ></StyledChip>
-                                    <StyledChip
-                                        label={`Discoverable ${
-                                            route
-                                                ? `${route.name}(s)`
-                                                : 'Engine(s)'
-                                        }`}
-                                        selected={mode === 'Discoverable'}
-                                        onClick={() => {
-                                            // Reset engines and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-                                            setMode('Discoverable');
-                                        }}
-                                    ></StyledChip>
-                                </StyledChipList>
-
                                 {Object.entries(filterOptions).length ? (
                                     <StyledFilterSearchContainer>
                                         <Search
@@ -1018,101 +895,201 @@ export const EngineCatalogPage = observer(
                     </StyledFilter>
 
                     <StyledContent>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                        >
+                            <ToggleTabsGroup
+                                value={mode}
+                                color={'primary'}
+                                onChange={(e, v) => {
+                                    // Reset engines and reset offset
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setOffset(0);
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                <ToggleTabsGroup.Item
+                                    label={`My ${
+                                        route ? `${route.name}(s)` : 'Engine(s)'
+                                    }`}
+                                    value={'Mine'}
+                                />
+                                <ToggleTabsGroup.Item
+                                    label={`Discoverable ${
+                                        route ? `${route.name}(s)` : 'Engine(s)'
+                                    }`}
+                                    value={'Discoverable'}
+                                />
+                            </ToggleTabsGroup>
+                            <Stack
+                                direction="row"
+                                alignItems={'center'}
+                                justifyContent={'flex-end'}
+                            >
+                                <Collapse
+                                    orientation="horizontal"
+                                    in={showSearch}
+                                >
+                                    <TextField
+                                        size="small"
+                                        sx={{
+                                            width: '200px',
+                                        }}
+                                        value={search}
+                                        variant="outlined"
+                                        onChange={(e) => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
+
+                                            setSearch(e.target.value);
+                                        }}
+                                        placeholder={`Search ${
+                                            route
+                                                ? `${route.name}${
+                                                      route.name === 'Storage'
+                                                          ? ''
+                                                          : 's'
+                                                  }`
+                                                : ''
+                                        }`}
+                                    />
+                                </Collapse>
+                                <IconButton
+                                    color="default"
+                                    size="small"
+                                    onClick={() => {
+                                        setShowSearch(!showSearch);
+                                        setSearch('');
+                                    }}
+                                >
+                                    {showSearch ? (
+                                        <SearchOff fontSize="medium" />
+                                    ) : (
+                                        <SearchIcon fontSize="medium" />
+                                    )}
+                                </IconButton>
+                            </Stack>
+                        </Stack>
+
+                        {'bi'.includes(search.toLowerCase()) &&
+                            Object.entries(metaFilters).length === 0 &&
+                            'terminal'.includes(search.toLowerCase()) &&
+                            favoritedDbs.length > 0 && (
+                                <StyledSectionLabel variant="subtitle1">
+                                    Bookmarked
+                                </StyledSectionLabel>
+                            )}
+
+                        {favoritedDbs.length ? (
+                            <Grid container spacing={3}>
+                                {favoritedDbs.map((db) => {
+                                    return (
+                                        <Grid item key={db.database_id} sm={12}>
+                                            <EngineLandscapeCard
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                type={db.app_type}
+                                                id={db.database_id}
+                                                tag={db.tag}
+                                                owner={db.database_created_by}
+                                                description={db.description}
+                                                votes={db.upvotes}
+                                                views={db.views}
+                                                sub_type={db.app_subtype}
+                                                trending={db.trending}
+                                                isGlobal={db.database_global}
+                                                isUpvoted={db.hasUpvoted}
+                                                isFavorite={isFavorited(
+                                                    db.database_id,
+                                                )}
+                                                onClick={() => {
+                                                    navigate(
+                                                        `${db.database_id}`,
+                                                    );
+                                                }}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
+                                                upvote={() => {
+                                                    upvoteDb(db);
+                                                }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
+                                            />
+                                        </Grid>
+                                    );
+                                })}
+                            </Grid>
+                        ) : null}
+
+                        {'bi'.includes(search.toLowerCase()) &&
+                            Object.entries(metaFilters).length === 0 &&
+                            'terminal'.includes(search.toLowerCase()) &&
+                            databases.length > 0 && (
+                                <StyledSectionLabel variant="subtitle1">
+                                    All {route.name}s
+                                </StyledSectionLabel>
+                            )}
+
                         {databases.length ? (
                             <Grid container spacing={3}>
                                 {databases.map((db) => {
                                     return (
-                                        <Grid
-                                            item
-                                            key={db.database_id}
-                                            sm={view === 'list' ? 12 : 12}
-                                            md={view === 'list' ? 12 : 6}
-                                            lg={view === 'list' ? 12 : 4}
-                                            xl={view === 'list' ? 12 : 4}
-                                        >
-                                            {view === 'list' ? (
-                                                <EngineLandscapeCard
-                                                    name={formatDBName(
-                                                        db.database_name,
-                                                    )}
-                                                    id={db.database_id}
-                                                    tag={db.tag}
-                                                    owner={
-                                                        db.database_created_by
-                                                    }
-                                                    description={db.description}
-                                                    votes={db.upvotes}
-                                                    views={db.views}
-                                                    sub_type={db.app_subtype}
-                                                    trending={db.trending}
-                                                    isGlobal={
-                                                        db.database_global
-                                                    }
-                                                    isUpvoted={db.hasUpvoted}
-                                                    isFavorite={isFavorited(
-                                                        db.database_id,
-                                                    )}
-                                                    onClick={() => {
-                                                        navigate(
-                                                            `${db.database_id}`,
-                                                        );
-                                                    }}
-                                                    favorite={() => {
-                                                        favoriteDb(db);
-                                                    }}
-                                                    upvote={() => {
-                                                        upvoteDb(db);
-                                                    }}
-                                                    global={
-                                                        db.user_permission === 1
-                                                            ? () => {
-                                                                  setGlobal(db);
-                                                              }
-                                                            : null
-                                                    }
-                                                />
-                                            ) : (
-                                                <EngineTileCard
-                                                    name={formatDBName(
-                                                        db.database_name,
-                                                    )}
-                                                    id={db.database_id}
-                                                    tag={db.tag}
-                                                    sub_type={db.app_subtype}
-                                                    owner={
-                                                        db.database_created_by
-                                                    }
-                                                    description={db.description}
-                                                    votes={db.upvotes}
-                                                    views={db.views}
-                                                    trending={db.trending}
-                                                    isGlobal={
-                                                        db.database_global
-                                                    }
-                                                    isUpvoted={db.hasUpvoted}
-                                                    isFavorite={isFavorited(
-                                                        db.database_id,
-                                                    )}
-                                                    favorite={() => {
-                                                        favoriteDb(db);
-                                                    }}
-                                                    onClick={() => {
-                                                        navigate(
-                                                            `${db.database_id}`,
-                                                        );
-                                                    }}
-                                                    global={
-                                                        db.user_permission === 1
-                                                            ? () => {
-                                                                  setGlobal(db);
-                                                              }
-                                                            : null
-                                                    }
-                                                    upvote={() => {
-                                                        upvoteDb(db);
-                                                    }}
-                                                />
-                                            )}
+                                        <Grid item key={db.database_id} sm={12}>
+                                            <EngineLandscapeCard
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                type={db.app_type}
+                                                id={db.database_id}
+                                                tag={db.tag}
+                                                owner={db.database_created_by}
+                                                description={db.description}
+                                                votes={db.upvotes}
+                                                views={db.views}
+                                                sub_type={db.app_subtype}
+                                                trending={db.trending}
+                                                isGlobal={db.database_global}
+                                                isUpvoted={db.hasUpvoted}
+                                                isFavorite={isFavorited(
+                                                    db.database_id,
+                                                )}
+                                                onClick={() => {
+                                                    navigate(
+                                                        `${db.database_id}`,
+                                                    );
+                                                }}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
+                                                upvote={() => {
+                                                    upvoteDb(db);
+                                                }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
+                                            />
                                         </Grid>
                                     );
                                 })}

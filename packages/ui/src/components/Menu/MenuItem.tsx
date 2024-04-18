@@ -41,7 +41,7 @@ export interface MenuItemProps {
     /**
      on click function to fired
     */
-    onClick?: () => void;
+    onClick?: (event: React.MouseEvent) => void;
 
     /**
      * If `true`, the component is selected.

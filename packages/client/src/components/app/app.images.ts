@@ -10,6 +10,12 @@ import UPDATED_INSIGHT from '@/assets/img/updated_insight.png';
 //Default
 import UPDATED_FORMS from '@/assets/img/updated_forms.png';
 
+// Business Intelligence
+import UPDATED_BUSINESS_INTELLIGENCE from '@/assets/img/updated_business_intelligence.png';
+
+// Terminal
+import UPDATED_TERMINAL from '@/assets/img/updated_term.png';
+
 export const APP_IMAGES = {
     BLOCKS: {
         image: UPDATED_BLOCKS,
@@ -23,12 +29,10 @@ export const APP_IMAGES = {
     '': {
         image: UPDATED_FORMS,
     },
-    SYSTEM: {
-        bi: {
-            image: UPDATED_BLOCKS,
-        },
-        terminal: {
-            image: UPDATED_CODE,
-        },
+    BI: {
+        image: UPDATED_BUSINESS_INTELLIGENCE,
+    },
+    TERMINAL: {
+        image: UPDATED_TERMINAL,
     },
 };
