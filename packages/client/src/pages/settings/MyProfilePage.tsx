@@ -690,7 +690,7 @@ export const MyProfilePage = () => {
                 <Modal.Content>
                     <form onSubmit={handleSubmit(createAccessKey)}>
                         <Stack direction="column" spacing={2}>
-                            <Alert severity="info" variant="outlined">
+                            <Alert severity="info">
                                 Note: Your private key will only be generated
                                 once
                             </Alert>
