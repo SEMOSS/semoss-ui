@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
     Avatar,
     ButtonGroup,
@@ -7,24 +8,24 @@ import {
     Stack,
     Typography,
     styled,
+    Menu,
+    useNotification,
 } from '@semoss/ui';
-
 import {
     Person,
-    Visibility,
-    ShowChart,
     Star,
     StarOutlineOutlined,
     ArrowDropDown,
     ArrowDropUp,
     LockOpenRounded,
     LockRounded,
+    Bookmark,
+    BookmarkBorder,
+    MoreVert,
 } from '@mui/icons-material';
-
 import { Env } from '@/env';
-import defaultDbImage from '../../assets/img/placeholder.png';
-import { formatName } from '@/utils';
 import GOOGLE from '@/assets/img/google.png';
+import { ENGINE_IMAGES } from '../../pages/import/import.constants';
 
 const StyledCardImg = styled('img')({
     display: 'flex',
@@ -38,32 +39,32 @@ const StyledCardImg = styled('img')({
     objectFit: 'cover',
 });
 
-const StyledLandscapeCard = styled(Card)({
+const StyledLandscapeCard = styled(Card)(({ theme }) => ({
     display: 'flex',
-    paddingBottom: '8px',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: '8px',
+    gap: '16px',
     boxShadow:
         '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
-
     '&:hover': {
         cursor: 'pointer',
     },
-});
+    borderRadius: theme.shape.borderRadius,
+    padding: '16px',
+    height: '144px',
+}));
 
 const StyledLandscapeCardHeader = styled('div')({
     display: 'flex',
-    padding: '16px',
     alignItems: 'center',
     gap: '10px',
     alignSelf: 'stretch',
+    height: '32px',
 });
 
-const StyledLandscapeCardImg = styled('img')(({ theme }) => ({
-    display: 'flex',
-    width: '60px',
-    height: '60px',
+const StyledLandscapeCardImg = styled(Card.Media)(({ theme }) => ({
+    width: '32px',
+    height: '32px',
     borderRadius: theme.shape.borderRadius,
     justifyContent: 'center',
     alignItems: 'center',
@@ -71,30 +72,13 @@ const StyledLandscapeCardImg = styled('img')(({ theme }) => ({
 
 const StyledLandscapeCardHeaderDiv = styled('div')({
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '4px',
-    flex: '1 0 0',
-});
-
-const StyledLandscapeCardTitleDiv = styled('div')({
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '4px',
-    alignSelf: 'stretch',
-    justifyContent: 'space-between',
-});
-
-const StyledLandscapeCardPublishedDiv = styled('div')({
-    display: 'flex',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: '4px',
-    alignSelf: 'stretch',
+    flex: '1 0 0',
 });
 
 const StyledLandscapeCardDescriptionContainer = styled('div')({
     display: 'flex',
-    padding: '0px 16px',
     flexDirection: 'column',
     alignItems: 'flex-start',
     alignSelf: 'stretch',
@@ -121,16 +105,17 @@ const StyledLandscapeCardRowDiv = styled('div')({
     flex: '1 0 0',
 });
 
-const StyledLandscapeCardDescription = styled(Typography)({
+const StyledLandscapeCardDescription = styled(Typography)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
-    minHeight: '60px',
-    maxHeight: '60px',
+    minHeight: '24px',
+    maxHeight: '24px',
     overflow: 'hidden',
     whiteSpace: 'pre-wrap',
     textOverflow: 'ellipsis',
-});
+    color: theme.palette.text.secondary,
+}));
 
 const StyledAvatar = styled(Avatar)({
     display: 'flex',
@@ -154,14 +139,6 @@ const StyledPublishedByLabel = styled(Typography)({
     flex: '1 0 0',
 });
 
-const StyledTileCardActions = styled(Card.Actions)({
-    display: 'flex',
-    padding: '0px 8px 0px 16px',
-    alignItems: 'center',
-    gap: '4px',
-    alignSelf: 'stretch',
-});
-
 const StyledLeftActions = styled('div')({
     display: 'flex',
     alignItems: 'center',
@@ -169,30 +146,7 @@ const StyledLeftActions = styled('div')({
     flex: '1 0 0',
 });
 
-const StyledViewsTrendingDiv = styled('div')({
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '4px',
-});
-
-const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({}));
-
-const StyledButtonGroupItem = styled(ButtonGroup.Item)({});
-
-const StyledEyeIcon = styled(Visibility)({
-    display: 'flex',
-    alignItems: 'flex-start',
-    // Needs to reference theme grey
-    color: 'rgba(0, 0, 0, 0.54)',
-});
-
-const StyledTrendingIcon = styled(ShowChart)({
-    display: 'flex',
-    alignItems: 'flex-start',
-    // Needs to reference theme grey
-    color: 'rgba(0, 0, 0, 0.54)',
-});
+const StyledButtonGroup = styled(ButtonGroup)(() => ({}));
 
 const StyledLockButton = styled(IconButton)({
     display: 'flex',
@@ -219,30 +173,6 @@ const StyledTileCardContent = styled(Card.Content)({
     alignSelf: 'stretch',
 });
 
-const StyledCardRows = styled('div')({
-    display: 'flex',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-});
-
-const StyledCardRowsDiv = styled('div')({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flex: '1 0 0',
-});
-
-const StyledCardContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    overflow: 'hidden',
-    alignItems: 'flex-start',
-    // border: 'solid red',
-    gap: '8px',
-    flex: '1 0 0',
-});
-
 const StyledCardImage = styled('img')({
     display: 'flex',
     height: '134px',
@@ -255,13 +185,6 @@ const StyledCardImage = styled('img')({
     objectFit: 'cover',
     width: '100%',
     // aspectRatio: '1/1'
-});
-
-const StyledCardHeader = styled('div')({
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '4px',
-    alignSelf: 'stretch',
 });
 
 const StyledDbName = styled(Typography)({
@@ -298,12 +221,19 @@ const StyledTagChip = styled(Chip, {
     backgroundColor: theme.palette.grey[200],
 }));
 
-const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
+const UnstyledVoteCount = styled(ButtonGroup.Item)(() => ({
     '&:hover': {
         backgroundColor: 'transparent',
         borderColor: 'rgba(0, 0, 0, 0.54)',
     },
 }));
+
+const StyledCardIconsDiv = styled('div')({
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '8px',
+    flex: '1',
+});
 
 /**
  * @name formatDBName
@@ -317,6 +247,35 @@ const formatDBName = (str: string) => {
         frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
     }
     return frags.join(' ');
+};
+
+/**
+ * @name findDBImage
+ * @params appType & appSubType
+ * @returns image link for associated engine
+ */
+const findDBImage = (appType: string, appSubType: string) => {
+    const obj = ENGINE_IMAGES[appType].find((ele) => ele.name == appSubType);
+
+    if (!obj) {
+        // if (appType === 'DATABASE') {
+        //     return <DatabaseLayers />
+        // } else if(appType === 'FUNCTION') {
+
+        // } else if(appType === 'MODEL') {
+
+        // } else if(appType === 'VECTOR') {
+
+        // } else if(appType === 'STORAGE') {
+
+        // } else {
+
+        // }
+        console.warn(appType, appSubType);
+        return;
+    }
+
+    return obj.icon;
 };
 
 interface DatabaseCardProps {
@@ -334,6 +293,9 @@ interface DatabaseCardProps {
 
     /** Tag of the Database */
     tag?: string[] | string;
+
+    /** Database type */
+    type?: string;
 
     /** Subtype for Icon */
     sub_type?: string;
@@ -369,6 +331,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
         isGlobal,
         isFavorite,
         isUpvoted,
+        type,
         sub_type,
         owner = 'N/A',
         votes = '0',
@@ -380,58 +343,90 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
         global,
     } = props;
 
+    /** Menu toggle state */
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const notification = useNotification();
+
+    const copyId = (id: string) => {
+        try {
+            navigator.clipboard.writeText(id);
+
+            notification.add({
+                color: 'success',
+                message: 'Succesfully copied to clipboard',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
+
     return (
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
-                    src={`${Env.MODULE}/api/e-${id}/image/download`}
+                    src="img"
+                    image={findDBImage(type, sub_type)}
                 />
                 <StyledLandscapeCardHeaderDiv>
-                    <StyledLandscapeCardTitleDiv>
+                    <Typography variant={'body1'}>
                         <Typography variant={'body1'}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    gap: '8px',
-                                }}
-                            >
-                                <Typography variant={'body1'}>
-                                    {formatDBName(name)}
-                                </Typography>
-                                {sub_type === 'EMBEDDED' ? (
-                                    <StyledCardImg src={GOOGLE}></StyledCardImg>
-                                ) : null}
-                            </div>
+                            {formatDBName(name)}
                         </Typography>
+                        {sub_type === 'EMBEDDED' ? (
+                            <StyledCardImg src={GOOGLE}></StyledCardImg>
+                        ) : null}
+                    </Typography>
+                    <StyledCardIconsDiv>
                         <IconButton
                             size={'small'}
                             title={
                                 isFavorite
-                                    ? `Unfavorite ${name ? name : id}`
-                                    : `Favorite ${name ? name : id}`
+                                    ? `Unbookmark ${name ? name : id}`
+                                    : `Bookmark ${name ? name : id}`
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
-
                                 favorite(isFavorite);
                             }}
                         >
-                            {isFavorite ? <Star /> : <StarOutlineOutlined />}{' '}
+                            {isFavorite ? (
+                                <Bookmark color="primary" />
+                            ) : (
+                                <BookmarkBorder />
+                            )}{' '}
                         </IconButton>
-                    </StyledLandscapeCardTitleDiv>
-
-                    <StyledLandscapeCardPublishedDiv>
-                        <StyledAvatar>
-                            <StyledPersonIcon />
-                        </StyledAvatar>
-                        <StyledPublishedByLabel
-                            sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
-                            variant={'caption'}
+                        <IconButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setAnchorEl(e.currentTarget);
+                            }}
                         >
-                            Published by: {owner}
-                        </StyledPublishedByLabel>
-                    </StyledLandscapeCardPublishedDiv>
+                            <MoreVert />
+                        </IconButton>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={open}
+                            onClose={() => {
+                                setAnchorEl(null);
+                            }}
+                        >
+                            <Menu.Item
+                                value="copy"
+                                onClick={(event: React.MouseEvent) => {
+                                    copyId(id);
+                                    setAnchorEl(null);
+                                    event.stopPropagation();
+                                }}
+                            >
+                                Copy ID
+                            </Menu.Item>
+                        </Menu>
+                    </StyledCardIconsDiv>
                 </StyledLandscapeCardHeaderDiv>
             </StyledLandscapeCardHeader>
             <StyledLandscapeCardDescriptionContainer>
@@ -489,74 +484,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                     </StyledLandscapeCardRowContainer>
                 </StyledLandscapeCardRow>
             </StyledLandscapeCardDescriptionContainer>
-            <StyledTileCardActions>
-                <StyledLeftActions>
-                    <ButtonGroup size="small" color="secondary">
-                        <ButtonGroup.Item
-                            sx={{
-                                borderColor: 'rgba(0, 0, 0, 0.54)',
-                                color: 'rgba(0, 0, 0, 0.60)',
-                            }}
-                            title={
-                                isUpvoted
-                                    ? `Downvote ${name ? name : id}`
-                                    : `Upvote ${name ? name : id}`
-                            }
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                upvote(isUpvoted);
-                            }}
-                            aria-label={
-                                isUpvoted
-                                    ? `Downvote ${name ? name : id}`
-                                    : `Upvote ${name ? name : id}`
-                            }
-                        >
-                            {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
-                        </ButtonGroup.Item>
-                        <UnstyledVoteCount
-                            sx={{
-                                borderColor: 'rgba(0, 0, 0, 0.54)',
-                                color: 'rgba(0, 0, 0, 0.60)',
-                            }}
-                        >
-                            {votes}
-                        </UnstyledVoteCount>
-                    </ButtonGroup>
-                    {/* <StyledViewsTrendingDiv>
-                        <StyledEyeIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {views}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv>
-                    <StyledViewsTrendingDiv>
-                        <StyledTrendingIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {trending}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv> */}
-                </StyledLeftActions>
-                <StyledLockButton
-                    disabled={!global}
-                    title={
-                        isGlobal
-                            ? `Make ${name ? name : id} private`
-                            : `Make ${name ? name : id} public`
-                    }
-                    onClick={(e) => {
-                        e.stopPropagation();
-
-                        global(isGlobal);
-                    }}
-                    aria-label={
-                        isGlobal
-                            ? `Make ${name ? name : id} private`
-                            : `Make ${name ? name : id} public`
-                    }
-                >
-                    {isGlobal ? <LockOpenRounded /> : <LockRounded />}
-                </StyledLockButton>
-            </StyledTileCardActions>
         </StyledLandscapeCard>
     );
 };
@@ -584,6 +511,10 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
     return (
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
+            <Card.Media
+                src="img"
+                image={`${Env.MODULE}/api/e-${id}/image/download`}
+            />
             <StyledCardImage
                 src={`${Env.MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '134px' }}
@@ -623,8 +554,8 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                     <IconButton
                         title={
                             isFavorite
-                                ? `Unfavorite ${name ? name : id}`
-                                : `Favorite ${name ? name : id}`
+                                ? `Unbookmark ${name ? name : id}`
+                                : `Bookmark ${name ? name : id}`
                         }
                         onClick={(e) => {
                             e.stopPropagation();
@@ -769,6 +700,10 @@ export const PlainEngineCard = (props) => {
     const { id, name, onClick } = props;
     return (
         <StyledPlainTileCard onClick={onClick}>
+            <Card.Media
+                src="img"
+                image={`${Env.MODULE}/api/e-${id}/image/download`}
+            />
             <StyledCardImage
                 src={`${Env.MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '134px' }}
