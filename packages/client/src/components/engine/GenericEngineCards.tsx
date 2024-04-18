@@ -255,7 +255,7 @@ const formatDBName = (str: string) => {
  * @returns image link for associated engine
  */
 const findDBImage = (appType: string, appSubType: string) => {
-    const obj = ENGINE_IMAGES[appType].find((ele) => ele.name == appSubType);
+    const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
     if (!obj) {
         console.warn('No image found:', appType, appSubType);
