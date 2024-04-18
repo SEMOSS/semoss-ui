@@ -62,7 +62,6 @@ export const Primary: Story = {
                 <div style={{ width: "20px" }}>
                     <Chip
                         label="Chip"
-                        variant="outlined"
                         sx={{ marginTop: 1 }}
                         size="small"
                         clickable={true}

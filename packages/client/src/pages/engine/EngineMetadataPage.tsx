@@ -276,7 +276,6 @@ export const EngineMetadataPage = observer(() => {
                                     key={logicalName}
                                     label={logicalName}
                                     color={'primary'}
-                                    variant={'outlined'}
                                     size={'small'}
                                 ></Chip>
                             );
@@ -355,9 +354,6 @@ export const EngineMetadataPage = observer(() => {
                                                                     }
                                                                     color={
                                                                         'primary'
-                                                                    }
-                                                                    variant={
-                                                                        'outlined'
                                                                     }
                                                                     size={
                                                                         'small'

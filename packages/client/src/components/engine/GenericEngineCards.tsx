@@ -292,10 +292,9 @@ const StyledCardDescription = styled(Typography)({
 
 const StyledTagChip = styled(Chip, {
     shouldForwardProp: (prop) => prop !== 'maxWidth',
-})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+})<{ maxWidth?: string }>(({ maxWidth = '200px' }) => ({
     maxWidth: maxWidth,
     textOverflow: 'ellipsis',
-    backgroundColor: theme.palette.grey[200],
 }));
 
 const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
