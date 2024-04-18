@@ -420,6 +420,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             rel="noopener noreferrer"
                             color="inherit"
                             underline="none"
+                            target="_blank"
                         >
                             <StyledOpenButton>
                                 <p>Open</p>

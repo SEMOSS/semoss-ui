@@ -298,7 +298,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                     </StyledPublishedDate>
                 </Box>
                 <StyledIconRow>
-                    {/* <Button>Use as Template</Button> */}
                     <Box>
                         <Link
                             href={href}
@@ -309,9 +308,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             <Button>Open</Button>
                         </Link>
                     </Box>
-                    {/* <IconButton onClick={() => favoriteProject(app)}>
-                        <StyledBookmark />
-                    </IconButton> */}
                     <Box>
                         {app.project_created_by !== 'SYSTEM' ? (
                             <IconButton onClick={handleClick}>
