@@ -18,7 +18,6 @@ export const Primary: Story = {
             <div>Card Content</div>
             <Chip
                 label="Chip"
-                variant="outlined"
                 sx={{ marginTop: 1 }}
                 size="small"
                 clickable={true}

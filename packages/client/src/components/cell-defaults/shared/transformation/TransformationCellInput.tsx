@@ -8,27 +8,31 @@ import {
     styled,
 } from '@semoss/ui';
 import { THEME } from '@/constants';
-import { blue, green } from '@mui/material/colors';
-import { QueryImportCellDef } from '../../query-import-cell';
-import { ActionMessages, CellState } from '@/stores';
+import { green } from '@mui/material/colors';
+import { ActionMessages } from '@/stores';
 import { AccountTree, KeyboardArrowDown } from '@mui/icons-material';
 import { useBlocks } from '@/hooks';
 import React from 'react';
 
-const primaryLight = THEME.name === 'SEMOSS' ? blue[50] : green[50];
 export const TransformationChip = styled(Chip)(({ theme }) => ({
-    backgroundColor: primaryLight,
-    color: theme.palette.primary.main,
     paddingLeft: theme.spacing(0.5),
 }));
-export const TransformationChipAvatar = styled(Avatar)(({ theme }) => ({
-    color: `${theme.palette.primary.main}!important`,
-    backgroundColor: primaryLight,
+
+export const TransformationChipAvatar = styled(Avatar, {
+    shouldForwardProp: (prop) => prop !== 'color',
+})<{ color: string }>(({ theme, color }) => ({
     borderRadius: '4px',
     svg: {
         fontSize: '1.25rem',
     },
+    ...(color === 'primary' && {
+        backgroundColor: theme.palette.primary.main,
+    }),
+    ...(color === 'green' && {
+        backgroundColor: green[700],
+    }),
 }));
+
 export const StyledTypography = styled(Typography)(({ theme }) => ({
     lineHeight: '24px',
     fontWeight: theme.typography.fontWeightBold,
@@ -64,10 +68,17 @@ export const TransformationCellInput: TransformationCellInputComponent = (
                 <div>
                     <TransformationChip
                         size="small"
-                        color="primary"
+                        color={THEME.name === 'SEMOSS' ? 'primary' : 'green'}
                         label={display}
                         avatar={
-                            <TransformationChipAvatar variant="rounded">
+                            <TransformationChipAvatar
+                                color={
+                                    THEME.name === 'SEMOSS'
+                                        ? 'primary'
+                                        : 'green'
+                                }
+                                variant="rounded"
+                            >
                                 <Icon />
                             </TransformationChipAvatar>
                         }

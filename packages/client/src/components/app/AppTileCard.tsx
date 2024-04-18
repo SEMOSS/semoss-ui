@@ -113,7 +113,6 @@ const StyledTagChip = styled(Chip, {
 })<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
     maxWidth: maxWidth,
     textOverflow: 'ellipsis',
-    backgroundColor: theme.palette.grey[200],
 }));
 
 const StyledCardActions = styled(Card.Actions)({
@@ -397,7 +396,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ) : (
                                 <StyledTagChip
                                     key={`${app.project_id}0`}
-                                    variant="outlined"
                                     label={app.tag}
                                 />
                             ))}
