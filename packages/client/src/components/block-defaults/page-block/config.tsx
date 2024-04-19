@@ -58,10 +58,10 @@ export const config: BlockConfig<PageBlockDef> = {
                 },
             ],
         },
-        // {
-        //     name: 'on Page Load',
-        //     children: [...buildListener('onPageLoad')],
-        // },
+        {
+            name: 'on Page Load',
+            children: [...buildListener('onPageLoad')],
+        },
     ],
     styleMenu: [
         buildLayoutSection(),

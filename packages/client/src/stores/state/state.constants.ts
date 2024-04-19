@@ -268,7 +268,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             gap: '40px',
                         },
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [],
+                    },
                     parent: null,
                     id: 'page-1',
                 },
@@ -1003,7 +1005,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: PageBlockConfig.data.style,
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [],
+                    },
                     slots: {
                         content: {
                             name: 'content',
@@ -1187,7 +1191,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: PageBlockConfig.data.style,
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [],
+                    },
                     slots: {
                         content: {
                             name: 'content',
