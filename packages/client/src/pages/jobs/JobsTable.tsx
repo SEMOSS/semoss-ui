@@ -82,11 +82,6 @@ export const JobsTable = (props: {
             flex: 1,
         },
         {
-            headerName: 'Type',
-            field: 'type',
-            flex: 1,
-        },
-        {
             headerName: 'Frequency',
             field: 'frequencyString',
             flex: 1,

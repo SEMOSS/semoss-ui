@@ -1,20 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GridRowSelectionModel } from '@mui/x-data-grid';
 import {
+    Add,
     Bedtime,
     ErrorRounded,
     NotStartedOutlined,
     Pause,
 } from '@mui/icons-material';
-import {
-    Button,
-    Modal,
-    Tabs,
-    Search,
-    useNotification,
-    Stack,
-    Typography,
-} from '@semoss/ui';
+import { Button, Tabs, Search, useNotification, Stack } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { AvTimer } from '@mui/icons-material';
@@ -28,6 +21,8 @@ import {
 } from './job.utils';
 import { JobsTable } from './JobsTable';
 import { runPixel } from '@/api';
+import { AddJobModal } from './AddJobModal';
+import { DeleteJobModal } from './DeleteJobModal';
 
 export function JobsPage() {
     const { monolithStore } = useRootStore();
@@ -39,6 +34,8 @@ export function JobsPage() {
     const [selectedTab, setSelectedTab] = useState(tabs[0]);
 
     const [failedJobCount, setFailedJobCount] = useState<number>(0);
+
+    const [isAddJobModalOpen, setIsAddJobModalOpen] = useState<boolean>(false);
 
     const [jobs, setJobs] = useState<Job[]>([]);
     const [jobsLoading, setJobsLoading] = useState<boolean>(false);
@@ -81,7 +78,7 @@ export function JobsPage() {
                                 type: 'Custom',
                                 frequencyString: job.cronExpression,
                                 timeZone: job.cronTz,
-                                tags: job.jobTags.split(','),
+                                tags: (job?.jobTags ?? '').split(','),
                                 lastRun: job.PREV_FIRE_TIME,
                                 nextRun: job.NEXT_FIRE_TIME,
                                 ownerId: job.USER_ID,
@@ -97,7 +94,7 @@ export function JobsPage() {
                             frequencyString:
                                 convertTimeToFrequencyString(jobUIState),
                             timeZone: jobUIState.cronTimeZone,
-                            tags: job.jobTags.split(','),
+                            tags: (job?.jobTags ?? '').split(','),
                             lastRun: job.PREV_FIRE_TIME,
                             nextRun: job.NEXT_FIRE_TIME,
                             ownerId: job.USER_ID,
@@ -416,15 +413,16 @@ export function JobsPage() {
                             Resume
                         </Button>
                     </span>
-                    {/* <span>
+                    <span>
                         <Button
                             size="medium"
                             variant="contained"
                             startIcon={<Add />}
+                            onClick={() => setIsAddJobModalOpen(true)}
                         >
                             Add
                         </Button>
-                    </span> */}
+                    </span>
                 </Stack>
             </Stack>
             <JobsTable
@@ -436,42 +434,16 @@ export function JobsPage() {
                 showDeleteJobModal={(job: Job) => setJobToDelete(job)}
             />
             <JobHistory history={history} historyLoading={historyLoading} />
-            <Modal
-                onClose={() => {
-                    setJobToDelete(null);
-                }}
-                open={jobToDelete !== null}
-            >
-                <Modal.Content>
-                    <Modal.Title>Delete Job</Modal.Title>
-                    <Modal.Content>
-                        {JSON.stringify(jobToDelete)}
-                        <Typography variant="body1">
-                            Are you sure you want to delete {jobToDelete?.name}?
-                            This action is permanent.
-                        </Typography>
-                    </Modal.Content>
-                    <Modal.Actions>
-                        <Button
-                            variant="text"
-                            onClick={() => {
-                                setJobToDelete(null);
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="error"
-                            onClick={() => {
-                                deleteJob(jobToDelete.id, jobToDelete.group);
-                            }}
-                        >
-                            Delete
-                        </Button>
-                    </Modal.Actions>
-                </Modal.Content>
-            </Modal>
+            <DeleteJobModal
+                job={jobToDelete}
+                isOpen={jobToDelete !== null}
+                close={() => setJobToDelete(null)}
+                deleteJob={deleteJob}
+            />
+            <AddJobModal
+                isOpen={isAddJobModalOpen}
+                close={() => setIsAddJobModalOpen(false)}
+            />
         </Stack>
     );
 }
