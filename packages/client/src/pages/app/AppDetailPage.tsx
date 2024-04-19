@@ -9,7 +9,6 @@ import HdrAutoIcon from '@mui/icons-material/HdrAuto';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import NoteAltIcon from '@mui/icons-material/NoteAlt';
 import ShareIcon from '@mui/icons-material/Share';
-// import { dividerClasses } from '@mui/material';
 import {
     Breadcrumbs,
     Button,
@@ -28,6 +27,8 @@ import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
 // import { usePixel, useRootStore } from '@/hooks';
 // import { MonolithStore } from '@/stores';
+import { Role } from '@/types';
+import { formatPermission } from '@/utils';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -129,7 +130,7 @@ const StyledMenuItem = styled(MenuItem)({
 });
 
 export function AppDetailPage() {
-    const [permissionState, setPermissionState] = useState('');
+    const [permissionState, setPermissionState] = useState<Role | ''>('');
     const [appInfoState, setAppInfoState] = useState(null);
     const [mainUsesState, setMainUsesState] = useState('');
     const [dependenciesState, setDependenciesState] = useState([]);
@@ -138,6 +139,8 @@ export function AppDetailPage() {
     // );
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
+    const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
+        useState(false);
 
     const mainUsesRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
@@ -219,32 +222,23 @@ export function AppDetailPage() {
     }
 
     function PermissionComponent(): JSX.Element {
-        switch (permissionState) {
-            case 'OWNER':
-                return (
-                    <>
-                        <HdrAutoIcon />
-                        Author Access
-                    </>
-                );
-            case 'EDITOR':
-                return (
-                    <>
-                        <NoteAltIcon />
-                        Editor Access
-                    </>
-                );
-            case 'READ_ONLY':
-                return (
-                    <>
-                        <AssignmentIcon />
-                        Read-Only Access
-                    </>
-                );
-            default:
-                return null;
-        }
+        return (
+            <>
+                {permissionState === 'OWNER' ? <HdrAutoIcon /> : null}
+                {permissionState === 'EDIT' || permissionState === 'EDITOR' ? (
+                    <NoteAltIcon />
+                ) : null}
+                {permissionState === 'VIEWER' ||
+                permissionState === 'READ_ONLY' ||
+                permissionState === 'DISCOVERABLE' ? (
+                    <AssignmentIcon />
+                ) : null}
+                {`${formatPermission(permissionState)} Access`}
+            </>
+        );
     }
+
+    // TODO: Clean up naming between here and dependencies modal
 
     const DependenciesTable = styled('div')({
         display: 'flex',
@@ -261,8 +255,7 @@ export function AppDetailPage() {
         if (dependenciesState?.length > 0) {
             return (
                 <>
-                    {permissionState === 'EDITOR' ||
-                    permissionState === 'READ_ONLY' ? (
+                    {permissionState === 'OWNER' ? null : (
                         <pre
                             style={{
                                 background: 'gray',
@@ -273,7 +266,7 @@ export function AppDetailPage() {
                         >
                             (Warning component)
                         </pre>
-                    ) : null}
+                    )}
                     <DependenciesTable>
                         <DependencyRow>
                             <Typography
@@ -306,7 +299,7 @@ export function AppDetailPage() {
                                         variant="body2"
                                         sx={{ width: '50%' }}
                                     >
-                                        {permissionState}
+                                        {formatPermission(permissionState)}
                                     </Typography>
                                 </DependencyRow>
                             ),
@@ -318,6 +311,8 @@ export function AppDetailPage() {
             return <Typography variant="body1">No dependencies</Typography>;
         }
     }
+
+    // TODO: Close `MoreVert` menu on modal open
 
     return (
         <OuterContainer>
@@ -407,7 +402,7 @@ export function AppDetailPage() {
                             )}
                         </section>
 
-                        <section ref={videosRef}>
+                        <section ref={videosRef} style={{ display: 'none' }}>
                             <SectionHeading variant="h2">Videos</SectionHeading>
                         </section>
 
@@ -418,11 +413,9 @@ export function AppDetailPage() {
                                         Dependencies
                                     </SectionHeading>
                                     <IconButton
-                                        onClick={() => {
-                                            runSetDependenciesQuery([
-                                                '38e13c86-a6f3-4d2b-b42b-31c7ce26c147',
-                                            ]);
-                                        }}
+                                        onClick={() =>
+                                            setIsEditDependenciesModalOpen(true)
+                                        }
                                         sx={{
                                             position: 'absolute',
                                             right: 0,
@@ -481,6 +474,15 @@ export function AppDetailPage() {
                 onClose={() => setIsEditDetailsModalOpen(false)}
                 runSetMainUses={runSetMainUses}
             />
+
+            <EditDependenciesModal
+                isOpen={isEditDependenciesModalOpen}
+                onClose={() => setIsEditDependenciesModalOpen(false)}
+                dependenciesState={dependenciesState}
+                setDependenciesState={setDependenciesState}
+                getDependencies={getDependencies}
+                runSetDependenciesQuery={runSetDependenciesQuery}
+            />
         </OuterContainer>
     );
 }
@@ -516,7 +518,7 @@ function Sidebar({ permissionState, refs }: SidebarProps) {
     const [
         mainUsesRef,
         tagsRef,
-        videosRef,
+        // videosRef,
         dependenciesRef,
         appAccessRef,
         memberAccessRef,
@@ -525,7 +527,7 @@ function Sidebar({ permissionState, refs }: SidebarProps) {
     const headings = [
         { text: 'Main Uses', ref: mainUsesRef },
         { text: 'Tags', ref: tagsRef },
-        { text: 'Videos', ref: videosRef },
+        // { text: 'Videos', ref: videosRef },
         permissionState === 'DISCOVERABLE'
             ? null
             : { text: 'Dependencies', ref: dependenciesRef },
@@ -609,6 +611,100 @@ function EditDetailsModal({
                 </Button>
 
                 <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
+
+                <ModalFooter>
+                    <Button onClick={() => onClose()} variant="text">
+                        Cancel
+                    </Button>
+                    <Button onClick={null} variant="contained">
+                        Save
+                    </Button>
+                </ModalFooter>
+            </EditModalInnerContainer>
+        </Modal>
+    );
+}
+
+const ModalDependencyRow = styled('div')({
+    alignItems: 'center',
+    display: 'flex',
+    justifyContent: 'space-between',
+    margin: '0.5rem 0',
+});
+
+const ModalEngineName = styled(Typography)({
+    marginBottom: '0.5rem',
+});
+
+const ModalEngineTypeAndId = styled(Typography)({
+    fontSize: 12,
+});
+
+// TODO: Improve interface
+
+interface EditDependenciesModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    dependenciesState: any;
+    setDependenciesState: any;
+    getDependencies: any;
+    runSetDependenciesQuery: any;
+}
+
+function EditDependenciesModal({
+    isOpen,
+    onClose,
+    dependenciesState,
+    setDependenciesState,
+    getDependencies,
+    runSetDependenciesQuery,
+}: EditDependenciesModalProps) {
+    // TODO: Get dependency image
+    // TODO: Add search bar
+    // TODO: Add save functionality
+
+    return (
+        <Modal open={isOpen} fullWidth>
+            <EditModalInnerContainer>
+                <ModalHeaderWrapper>
+                    <ModalHeading variant="h2">
+                        Add and Edit Dependencies
+                    </ModalHeading>
+                    <IconButton onClick={() => onClose()}>
+                        <CloseIcon />
+                    </IconButton>
+                </ModalHeaderWrapper>
+
+                <Typography
+                    variant="h3"
+                    fontWeight="medium"
+                    sx={{ fontSize: '14px' }}
+                >
+                    Linked Dependencies
+                </Typography>
+
+                <pre>search bar</pre>
+
+                {dependenciesState?.map(
+                    ({ engine_id, engine_name, engine_type }) => (
+                        <ModalDependencyRow key={nanoid()}>
+                            <div>
+                                <ModalEngineName
+                                    variant="body1"
+                                    fontWeight="medium"
+                                >
+                                    {engine_name}
+                                </ModalEngineName>
+                                <ModalEngineTypeAndId variant="body2">
+                                    {engine_type} | Engine ID: {engine_id}
+                                </ModalEngineTypeAndId>
+                            </div>
+                            <IconButton onClick={() => null}>
+                                <CloseIcon />
+                            </IconButton>
+                        </ModalDependencyRow>
+                    ),
+                )}
 
                 <ModalFooter>
                     <Button onClick={() => onClose()} variant="text">
