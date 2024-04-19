@@ -8,6 +8,8 @@ import {
     styled,
     IconButton,
     ToggleTabsGroup,
+    ToggleButtonGroup,
+    ToggleButton,
     TextField,
 } from '@semoss/ui';
 
@@ -47,6 +49,10 @@ const StyledContentContainer = styled('div')(({ theme }) => ({
 const StyledSectionLabel = styled(Typography)(() => ({
     size: '16px',
     fontWeight: '500',
+}));
+
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
 }));
 
 type MODE = 'Mine' | 'Discoverable' | 'System';
@@ -301,31 +307,50 @@ export const HomePage = observer((): JSX.Element => {
                         alignItems={'center'}
                         justifyContent={'space-between'}
                     >
-                        <ToggleTabsGroup
-                            value={mode}
-                            color={'default'}
-                            onChange={(e, v) => {
-                                dispatch({
-                                    type: 'field',
-                                    field: 'apps',
-                                    value: [],
-                                });
-                                setMode(v as MODE);
-                            }}
-                        >
-                            <ToggleTabsGroup.Item
-                                label="My Apps"
-                                value={'Mine'}
-                            />
-                            <ToggleTabsGroup.Item
-                                label="Discoverable Apps"
-                                value={'Discoverable'}
-                            />
-                            <ToggleTabsGroup.Item
-                                label="System Apps"
-                                value={'System'}
-                            />
-                        </ToggleTabsGroup>
+                        <StyledToggleButtonGroup value={mode}>
+                            <ToggleButton
+                                color="secondary"
+                                value="Mine"
+                                onClick={(e, v) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                {'My Apps'}
+                            </ToggleButton>
+                            <ToggleButton
+                                color="secondary"
+                                value="Discoverable"
+                                onClick={(e, v) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                {'Discoverable Apps'}
+                            </ToggleButton>
+                            <ToggleButton
+                                color="secondary"
+                                value="System"
+                                onClick={(e, v) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                {'System Apps'}
+                            </ToggleButton>
+                        </StyledToggleButtonGroup>
                         <Stack
                             direction="row"
                             alignItems={'center'}
