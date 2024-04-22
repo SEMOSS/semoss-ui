@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
+// import { Controller, useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -323,7 +324,9 @@ export function AppDetailPage() {
                     <ChangeAccessButton variant="text">
                         Change Access
                     </ChangeAccessButton>
-                    <Button variant="contained">Open</Button>
+                    <Button onClick={() => navigate('../')} variant="contained">
+                        Open
+                    </Button>
                     <IconButton
                         onClick={(event) =>
                             setMoreVertAnchorEl(event.currentTarget)
@@ -488,8 +491,8 @@ export function AppDetailPage() {
 }
 
 const StyledSidebar = styled('div')(({ theme }) => ({
-    display: 'flex',
     borderRight: `2px solid ${theme.palette.secondary.main}`,
+    display: 'flex',
     flexDirection: 'column',
     fontWeight: 'bold',
     gap: '1rem',
