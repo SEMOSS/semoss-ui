@@ -1,3 +1,5 @@
+// InputForm
+
 import { useEffect, useState, useRef, useMemo, useReducer } from 'react';
 import {
     Button,
@@ -83,6 +85,8 @@ export const ImportForm = (props) => {
     const [openAdvanced, setOpenAdvanced] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
 
+    const [initScriptCallback, setInitScriptCallback] = useState(null);
+
     const watchedFieldRef = useRef({});
 
     const { control, handleSubmit, reset, watch, setValue } = useForm();
@@ -148,6 +152,28 @@ export const ImportForm = (props) => {
             setNewWatchedFieldReferences();
         }
     }, [...fieldsToWatch.map((field) => watch(field))]);
+
+    /**
+     * watch inputs used in init script
+     * update the init script when user changes input values
+     */
+    const watchedVarName = watch('VAR_NAME');
+    const watchedVarModelType = watch('MODEL_TYPE');
+    const watchedVarAPIKey = watch('OPEN_AI_KEY');
+
+    useEffect(() => {
+        if (initScriptCallback) {
+            const newInitScript = initScriptCallback(
+                watchedVarName,
+                watchedVarModelType,
+                watchedVarAPIKey,
+            );
+            const newInitScriptTrimmedSpaces = newInitScript
+                .replace(/\s+/g, ' ')
+                .trim();
+            setValue('INIT_MODEL_ENGINE', newInitScriptTrimmedSpaces);
+        }
+    }, [watchedVarName, watchedVarModelType, watchedVarAPIKey]);
 
     /**
      * 1. Set Default values for all fields, if default value is present
@@ -541,6 +567,17 @@ export const ImportForm = (props) => {
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 {defaultFields.map((val, i) => {
+                    // if this is the init model engine field and the update function hasn't been set yet
+                    if (
+                        val.fieldName === 'INIT_MODEL_ENGINE' &&
+                        !initScriptCallback
+                    ) {
+                        setInitScriptCallback(
+                            () =>
+                                (...args) =>
+                                    val.updateCallback(...args),
+                        );
+                    }
                     if (!val.hidden) {
                         return (
                             <StyledKeyValue key={i}>
@@ -551,6 +588,30 @@ export const ImportForm = (props) => {
                                     render={({ field, fieldState }) => {
                                         const hasError = fieldState.error;
                                         if (
+                                            val.fieldName ===
+                                            'INIT_MODEL_ENGINE'
+                                        ) {
+                                            console.log({ val });
+                                            return (
+                                                <TextField
+                                                    fullWidth
+                                                    required={
+                                                        val.rules.required
+                                                    }
+                                                    label={val.label}
+                                                    disabled={val.disabled}
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    helperText={val.helperText}
+                                                ></TextField>
+                                            );
+                                        } else if (
                                             val.options.component ===
                                             'text-field'
                                         ) {

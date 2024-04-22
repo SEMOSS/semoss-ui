@@ -224,10 +224,17 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
+                            updateCallback: (VAR_NAME, MODEL, API_KEY) => `
+                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
+                                model_name='${MODEL}', 
+                                chat_type = 'chat-completion', 
+                                api_key="${API_KEY}",
+                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
+                                template_name='mixtral.default.nocontext')`,
                             options: {
                                 component: 'text-field',
                             },
-                            disabled: false,
+                            disabled: true, // user updates with other inputs
                             rules: { required: true },
                         },
                         {
