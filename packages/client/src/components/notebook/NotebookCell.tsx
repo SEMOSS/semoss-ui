@@ -134,7 +134,6 @@ const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
 }));
 
 const StyledIdChip = styled(Chip)(({ theme }) => ({
-    backgroundColor: theme.palette.grey[300],
     height: theme.spacing(3.5),
 }));
 

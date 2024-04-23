@@ -2,275 +2,172 @@ import { Chip as MuiChip, SxProps, styled } from "@mui/material";
 
 const StyledMuiChip = styled(MuiChip, {
     shouldForwardProp: (prop) => prop !== "chipColor",
-})<{ chipColor: ChipProps["color"]; variant: ChipProps["variant"] }>(
-    ({ chipColor, variant, theme }) => {
-        const palette = theme.palette as unknown as {
-            text: Record<string, string>;
-            green: Record<string, string>;
-            pink: Record<string, string>;
-            purple: Record<string, string>;
-            darkBlue: Record<string, string>;
-            primaryContrast: Record<string, string>;
-        };
-        return {
-            ...(chipColor === "default" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? theme.palette.secondary.main
-                        : palette.text.white,
+})<{ chipColor: ChipProps["color"] }>(({ chipColor, theme }) => {
+    const palette = theme.palette as unknown as {
+        text: Record<string, string>;
+        green: Record<string, string>;
+        pink: Record<string, string>;
+        purple: Record<string, string>;
+        darkBlue: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
+    return {
+        ...(chipColor === "default" && {
+            backgroundColor: theme.palette.secondary.main,
+            color: theme.palette.text.secondary,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
                 color: theme.palette.text.secondary,
-                borderColor:
-                    variant === "outlined" ? theme.palette.secondary.main : "",
-                "& .MuiChip-deleteIcon": {
-                    color: theme.palette.text.secondary,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? theme.palette.secondary.main
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "primary" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? theme.palette.primary.main
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? theme.palette.primary.main
-                        : palette.text.white,
-                borderColor:
-                    variant === "outlined" ? theme.palette.primary.main : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? theme.palette.primary.main
-                            : palette.text.white,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? theme.palette.primary.main
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "green" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.green["700"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.green["700"]
-                        : palette.text.white,
-                borderColor: variant === "outlined" ? palette.green["700"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.green["700"]
-                            : palette.text.white,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.green["700"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "pink" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.pink["700"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.pink["700"]
-                        : palette.text.white,
-                borderColor: variant === "outlined" ? palette.pink["700"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.pink["700"]
-                            : palette.text.white,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.pink["700"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "purple" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.purple["500"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.purple["500"]
-                        : palette.text.white,
-                borderColor:
-                    variant === "outlined" ? palette.purple["500"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.purple["500"]
-                            : palette.text.white,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.purple["500"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "indigo" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.darkBlue["600"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.darkBlue["600"]
-                        : palette.text.white,
-                borderColor:
-                    variant === "outlined" ? palette.darkBlue["600"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.darkBlue["600"]
-                            : palette.text.white,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.darkBlue["600"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "lcprimary" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.primaryContrast["50"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.primaryContrast["700"]
-                        : "",
-                borderColor:
-                    variant === "outlined"
-                        ? palette.primaryContrast["500"]
-                        : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.primaryContrast["700"]
-                            : palette.text.white,
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.primaryContrast["50"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "turqoise" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.green["50"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.green["700"]
-                        : palette.green["900"],
-                borderColor: variant === "outlined" ? palette.green["50"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.green["700"]
-                            : palette.green["900"],
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.green["50"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "lcpink" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.pink["50"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.pink["700"]
-                        : palette.pink["900"],
-                borderColor: variant === "outlined" ? palette.pink["50"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.pink["700"]
-                            : palette.pink["900"],
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.pink["50"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "lcpurple" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.purple["50"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.purple["500"]
-                        : palette.purple["900"],
-                borderColor: variant === "outlined" ? palette.purple["50"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.purple["500"]
-                            : palette.purple["900"],
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.purple["50"]
-                            : palette.text.white,
-                },
-            }),
-            ...(chipColor === "lcindigo" && {
-                backgroundColor:
-                    variant !== "outlined"
-                        ? palette.darkBlue["50"]
-                        : palette.text.white,
-                color:
-                    variant === "outlined"
-                        ? palette.darkBlue["900"]
-                        : palette.purple["900"],
-                borderColor:
-                    variant === "outlined" ? palette.darkBlue["50"] : "",
-                "& .MuiChip-deleteIcon": {
-                    color:
-                        variant === "outlined"
-                            ? palette.darkBlue["900"]
-                            : palette.purple["900"],
-                },
-                "&&:hover": {
-                    backgroundColor:
-                        variant !== "outlined"
-                            ? palette.darkBlue["50"]
-                            : palette.text.white,
-                },
-            }),
-        };
-    },
-);
+            },
+            "& .MuiChip-deleteIcon": {
+                color: theme.palette.text.secondary,
+            },
+            "&&:hover": {
+                backgroundColor: theme.palette.secondary.main,
+            },
+        }),
+        ...(chipColor === "primary" && {
+            backgroundColor: theme.palette.primary.main,
+            color: palette.text.white,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: theme.palette.primary.main,
+            },
+        }),
+        ...(chipColor === "green" && {
+            backgroundColor: palette.green["700"],
+            color: palette.text.white,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: palette.green["700"],
+            },
+        }),
+        ...(chipColor === "pink" && {
+            backgroundColor: palette.pink["700"],
+            color: palette.text.white,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: palette.pink["700"],
+            },
+        }),
+        ...(chipColor === "purple" && {
+            backgroundColor: palette.purple["500"],
+            color: palette.text.white,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: palette.purple["500"],
+            },
+        }),
+        ...(chipColor === "indigo" && {
+            backgroundColor: palette.darkBlue["600"],
+            color: palette.text.white,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: palette.darkBlue["600"],
+            },
+        }),
+        ...(chipColor === "lcprimary" && {
+            backgroundColor: palette.primaryContrast["50"],
+            color: "",
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: palette.primaryContrast["50"],
+            },
+        }),
+        ...(chipColor === "turqoise" && {
+            backgroundColor: palette.green["50"],
+            color: palette.green["900"],
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.green["900"],
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.green["900"],
+            },
+            "&&:hover": {
+                backgroundColor: palette.green["50"],
+            },
+        }),
+        ...(chipColor === "lcpink" && {
+            backgroundColor: palette.pink["50"],
+            color: palette.pink["900"],
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.pink["900"],
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.pink["900"],
+            },
+            "&&:hover": {
+                backgroundColor: palette.pink["50"],
+            },
+        }),
+        ...(chipColor === "lcpurple" && {
+            backgroundColor: palette.purple["50"],
+            color: palette.purple["900"],
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.purple["900"],
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.purple["900"],
+            },
+            "&&:hover": {
+                backgroundColor: palette.purple["50"],
+            },
+        }),
+        ...(chipColor === "lcindigo" && {
+            backgroundColor: palette.darkBlue["50"],
+            color: palette.purple["900"],
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.purple["900"],
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.purple["900"],
+            },
+            "&&:hover": {
+                backgroundColor: palette.darkBlue["50"],
+            },
+        }),
+    };
+});
 
 export interface ChipProps {
     /**
@@ -346,9 +243,10 @@ export interface ChipProps {
 
     /**
      * The variant to use.
+     * DEV note: only the "filled" variant should be used according to design.
      * @default 'filled'
      */
-    variant?: "filled" | "outlined";
+    variant?: "filled";
 
     title?: string;
 }

@@ -98,7 +98,7 @@ export const ListenerSettings = observer(
         return (
             <>
                 <List disablePadding={true}>
-                    {listeners[listener].map((a, aIdx) => (
+                    {listeners[listener]?.map((a, aIdx) => (
                         <List.Item
                             dense={true}
                             key={aIdx}

@@ -290,7 +290,7 @@ export const MemberSettingsPage = () => {
         );
     };
 
-    const createUser = handleSubmit((data: PendingMember) => {
+    const createUser = handleSubmit((data) => {
         monolithStore['createUser'](adminMode, data).then((resp) => {
             if (resp.data) {
                 const message = `You have successfully added new user(s)`;

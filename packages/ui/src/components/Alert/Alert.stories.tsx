@@ -15,6 +15,10 @@ const meta: Meta<typeof Alert> = {
             options: ["success", "error", "info", "warning"],
             control: { type: "select" },
         },
+        colorOverride: {
+            options: ["secondary"],
+            control: { type: "select" },
+        },
     },
 };
 

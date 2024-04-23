@@ -1,19 +1,15 @@
 import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    Avatar,
     Collapse,
-    List,
     Stack,
     Typography,
     Button,
-    Grid,
     styled,
-    Divider,
     IconButton,
+    ToggleTabsGroup,
     ToggleButtonGroup,
     ToggleButton,
-    ToggleTabsGroup,
     TextField,
 } from '@semoss/ui';
 
@@ -21,19 +17,13 @@ import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-import { AppMetadata, AppTileCard, AppLandscapeCard } from '@/components/app';
+import { AppMetadata, AppTileCard } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
-import {
-    FormatListBulletedOutlined,
-    SpaceDashboardOutlined,
-    Search,
-    SearchOff,
-} from '@mui/icons-material';
+import { Search, SearchOff } from '@mui/icons-material';
 
 import { Filterbox } from '@/components/ui';
-
-import BUSINESS_INTELLIGENCE from '@/assets/img/Business_Intelligence.jpg';
-import TERMINAL from '@/assets/img/Terminal.jpg';
+import UPDATED_TERMINAL from '@/assets/img/updated_terminal.png';
+import UPDATED_BUSINESS_INTELLIGENCE from '@/assets/img/updated_business_intelligence.png';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -56,8 +46,33 @@ const StyledContentContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-type MODE = 'Mine' | 'Discoverable';
-type VIEW = 'list' | 'tile';
+const StyledSectionLabel = styled(Typography)(() => ({
+    size: '16px',
+    fontWeight: '500',
+}));
+
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+}));
+
+type MODE = 'Mine' | 'Discoverable' | 'System';
+
+const initialState = {
+    favoritedApps: [],
+    apps: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
     project_id: '',
@@ -108,18 +123,21 @@ const TERMINAL_APP: AppMetadata = {
     tag: [],
     description: 'Execute commands and see a response',
 };
+
 /**
  * Landing page
  */
 export const HomePage = observer((): JSX.Element => {
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
+
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { favoritedApps, apps } = state;
 
     const [search, setSearch] = useState<string>('');
     const [showSearch, setShowSearch] = useState<boolean>(true);
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
-    const [view, setView] = useState<VIEW>('tile');
 
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -149,8 +167,94 @@ export const HomePage = observer((): JSX.Element => {
         metaFilters,
     )}], filterWord=["${search}"], onlyPortals=[true]);`;
 
-    // get the projects
-    const myApps = usePixel<AppMetadata[]>(pixel);
+    /**
+     * @desc Get & Set Apps
+     */
+    const getApps = usePixel<AppMetadata[]>(pixel);
+
+    useEffect(() => {
+        if (getApps.status !== 'SUCCESS') {
+            return;
+        }
+
+        dispatch({
+            type: 'field',
+            field: 'apps',
+            value: getApps.data,
+        });
+    }, [getApps.status, getApps.data]);
+
+    /**
+     * @desc Get & Sets Favorited Apps
+     */
+    let favoritePixel =
+        mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
+    favoritePixel += `(onlyFavorites=[true]);`;
+    const getFavoritedApps = usePixel(favoritePixel);
+
+    useEffect(() => {
+        if (getFavoritedApps.status !== 'SUCCESS') {
+            return;
+        }
+
+        dispatch({
+            type: 'field',
+            field: 'favoritedApps',
+            value: getFavoritedApps.data,
+        });
+    }, [getFavoritedApps.status, getFavoritedApps.data]);
+
+    /**
+     * @name favoriteApp
+     * @desc action to favorite app
+     * @param app
+     */
+    const favoriteApp = (app) => {
+        const favorite = !isFavorited(app.project_id);
+        monolithStore
+            .setProjectFavorite(app.project_id, favorite)
+            .then(() => {
+                if (!favorite) {
+                    const newFavorites = favoritedApps;
+                    for (let i = newFavorites.length - 1; i >= 0; i--) {
+                        if (newFavorites[i].project_id === app.project_id) {
+                            newFavorites.splice(i, 1);
+                        }
+                        {
+                            newFavorites.splice(i, 1);
+                        }
+                    }
+
+                    dispatch({
+                        type: 'field',
+                        field: 'favoritedApps',
+                        value: newFavorites,
+                    });
+                } else {
+                    dispatch({
+                        type: 'field',
+                        field: 'favoritedApps',
+                        value: [...favoritedApps, app],
+                    });
+                }
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
+
+    /**
+     * @name isFavorited
+     * @param id
+     * @desc determines if card is favorited
+     */
+    const isFavorited = (id) => {
+        const favorites = favoritedApps;
+
+        if (!favorites) return false;
+        return favorites.some((el) => el.project_id === id);
+    };
 
     return (
         <Page
@@ -203,20 +307,50 @@ export const HomePage = observer((): JSX.Element => {
                         alignItems={'center'}
                         justifyContent={'space-between'}
                     >
-                        <ToggleTabsGroup
-                            value={mode}
-                            color={'primary'}
-                            onChange={(e, v) => setMode(v as MODE)}
-                        >
-                            <ToggleTabsGroup.Item
-                                label="My apps"
-                                value={'Mine'}
-                            />
-                            <ToggleTabsGroup.Item
-                                label="Discoverable apps"
-                                value={'Discoverable'}
-                            />
-                        </ToggleTabsGroup>
+                        <StyledToggleButtonGroup value={mode}>
+                            <ToggleButton
+                                color="secondary"
+                                value="Mine"
+                                onClick={(e, v) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                {'My Apps'}
+                            </ToggleButton>
+                            <ToggleButton
+                                color="secondary"
+                                value="Discoverable"
+                                onClick={(e, v) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                {'Discoverable Apps'}
+                            </ToggleButton>
+                            <ToggleButton
+                                color="secondary"
+                                value="System"
+                                onClick={(e, v) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(v as MODE);
+                                }}
+                            >
+                                {'System Apps'}
+                            </ToggleButton>
+                        </StyledToggleButtonGroup>
                         <Stack
                             direction="row"
                             alignItems={'center'}
@@ -248,112 +382,111 @@ export const HomePage = observer((): JSX.Element => {
                                     <Search fontSize="medium" />
                                 )}
                             </IconButton>
-                            <ToggleButtonGroup
-                                size={'small'}
-                                value={view}
-                                color="primary"
-                            >
-                                <ToggleButton
-                                    color="primary"
-                                    onClick={(e, v) => setView(v as VIEW)}
-                                    value={'tile'}
-                                    aria-label={'Tile View'}
-                                >
-                                    <SpaceDashboardOutlined />
-                                </ToggleButton>
-
-                                <ToggleButton
-                                    color="primary"
-                                    // disabled
-                                    onClick={(e, v) => setView(v)}
-                                    value={'list'}
-                                    aria-label={'List View'}
-                                >
-                                    <FormatListBulletedOutlined />
-                                </ToggleButton>
-                            </ToggleButtonGroup>
                         </Stack>
                     </Stack>
-                    {'bi'.includes(search.toLowerCase()) &&
-                        Object.entries(metaFilters).length === 0 &&
-                        'terminal'.includes(search.toLowerCase()) && (
-                            <StyledSection>
-                                {'bi'.includes(search.toLowerCase()) &&
-                                    (view === 'list' ? (
-                                        <AppLandscapeCard
-                                            image={BUSINESS_INTELLIGENCE}
-                                            app={BUSINESS_INTELLIGENCE_APP}
-                                            href="../../../"
-                                        />
-                                    ) : (
-                                        <AppTileCard
-                                            image={BUSINESS_INTELLIGENCE}
-                                            app={BUSINESS_INTELLIGENCE_APP}
-                                            background="#BADEFF"
-                                            href="../../../"
-                                            onAction={() =>
-                                                navigate('../../../')
-                                            }
-                                        />
-                                    ))}
 
-                                {'terminal'.includes(search.toLowerCase()) &&
-                                    (view === 'list' ? (
-                                        <AppLandscapeCard
-                                            image={TERMINAL}
-                                            app={TERMINAL_APP}
-                                            href="../../../#!/embed-terminal"
-                                        />
-                                    ) : (
-                                        <AppTileCard
-                                            image={TERMINAL}
-                                            app={TERMINAL_APP}
-                                            background="#BADEFF"
-                                            href="../../../#!/embed-terminal"
-                                            onAction={() =>
-                                                navigate(
-                                                    '../../../#!/embed-terminal',
-                                                )
-                                            }
-                                        />
-                                    ))}
-                            </StyledSection>
-                        )}
+                    {'bi'.includes(search.toLowerCase()) &&
+                    'terminal'.includes(search.toLowerCase()) &&
+                    favoritedApps.length > 0 ? (
+                        <StyledSectionLabel variant="subtitle1">
+                            Bookmarked
+                        </StyledSectionLabel>
+                    ) : null}
+
+                    {'bi'.includes(search.toLowerCase()) &&
+                    'terminal'.includes(search.toLowerCase()) &&
+                    favoritedApps.length > 0 ? (
+                        <StyledSection>
+                            {favoritedApps.map((app, i) => {
+                                return (
+                                    <AppTileCard
+                                        key={i}
+                                        app={app}
+                                        systemApp={false}
+                                        href={`#/app/${app.project_id}`}
+                                        onAction={() =>
+                                            navigate(`/app/${app.project_id}`)
+                                        }
+                                        appType={app.project_type}
+                                        isFavorite={isFavorited(app.project_id)}
+                                        favorite={() => {
+                                            favoriteApp(app);
+                                        }}
+                                    />
+                                );
+                            })}
+                        </StyledSection>
+                    ) : null}
 
                     {'bi'.includes(search.toLowerCase()) &&
                         Object.entries(metaFilters).length === 0 &&
-                        'terminal'.includes(search.toLowerCase()) && (
-                            <Divider light />
+                        'terminal'.includes(search.toLowerCase()) &&
+                        mode == 'System' && (
+                            <StyledSectionLabel variant="subtitle1">
+                                All Apps
+                            </StyledSectionLabel>
                         )}
 
-                    <StyledSection>
-                        {myApps.status === 'SUCCESS' && myApps.data.length > 0
-                            ? myApps.data.map((app, i) => {
-                                  if (view === 'list') {
-                                      return (
-                                          <AppLandscapeCard
-                                              key={i}
-                                              app={app}
-                                              href={`#/app/${app.project_id}`}
-                                          />
-                                      );
-                                  } else {
-                                      return (
-                                          <AppTileCard
-                                              key={i}
-                                              app={app}
-                                              href={`#/app/${app.project_id}`}
-                                              onAction={() =>
-                                                  navigate(
-                                                      `/app/${app.project_id}`,
-                                                  )
-                                              }
-                                          />
-                                      );
-                                  }
-                              })
-                            : null}
-                    </StyledSection>
+                    {mode == 'System' && (
+                        <StyledSection>
+                            {'bi'.includes(search.toLowerCase()) && (
+                                <AppTileCard
+                                    app={BUSINESS_INTELLIGENCE_APP}
+                                    background="#BADEFF"
+                                    href="../../../"
+                                    onAction={() => navigate('../../../')}
+                                    systemApp={true}
+                                    appType={'BI'}
+                                />
+                            )}
+
+                            {'terminal'.includes(search.toLowerCase()) && (
+                                <AppTileCard
+                                    // image={UPDATED_TERMINAL}
+                                    app={TERMINAL_APP}
+                                    background="#BADEFF"
+                                    href="../../../#!/embed-terminal"
+                                    onAction={() =>
+                                        navigate('../../../#!/embed-terminal')
+                                    }
+                                    systemApp={true}
+                                    appType={'TERMINAL'}
+                                />
+                            )}
+                        </StyledSection>
+                    )}
+
+                    {'bi'.includes(search.toLowerCase()) &&
+                    Object.entries(metaFilters).length === 0 &&
+                    'terminal'.includes(search.toLowerCase()) &&
+                    apps.length > 0 ? (
+                        <StyledSectionLabel variant="subtitle1">
+                            All Apps
+                        </StyledSectionLabel>
+                    ) : null}
+
+                    {apps.length > 0 ? (
+                        <StyledSection>
+                            {apps.map((app, i) => {
+                                return (
+                                    <AppTileCard
+                                        key={i}
+                                        app={app}
+                                        systemApp={false}
+                                        href={`#/app/${app.project_id}`}
+                                        onAction={() =>
+                                            navigate(`/app/${app.project_id}`)
+                                        }
+                                        appType={app.project_type}
+                                        isFavorite={isFavorited(app.project_id)}
+                                        favorite={() => {
+                                            favoriteApp(app);
+                                        }}
+                                    />
+                                );
+                            })}
+                        </StyledSection>
+                    ) : null}
                 </StyledContentContainer>
             </StyledContainer>
             <WelcomeModal />

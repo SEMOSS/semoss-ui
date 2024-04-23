@@ -268,7 +268,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             gap: '40px',
                         },
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [],
+                    },
                     parent: null,
                     id: 'page-1',
                 },
@@ -988,6 +990,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
+                                // Do we want to replace hardcoded LLM to a user default
                                 code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
                             },
                         },
@@ -1002,7 +1005,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: PageBlockConfig.data.style,
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [],
+                    },
                     slots: {
                         content: {
                             name: 'content',
@@ -1171,6 +1176,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
+                                // Do we want to replace hardcoded LLM to a user default
                                 code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
                             },
                         },
@@ -1185,7 +1191,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: PageBlockConfig.data.style,
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [],
+                    },
                     slots: {
                         content: {
                             name: 'content',
@@ -1338,7 +1346,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     },
                     data: {
                         style: TextBlockConfig.data.style,
-                        text: '{{query.ask-model.output.0.output.Query}}',
+                        text: '{{query.ask-model.output.value.0.Query}}',
                     },
                     listeners: {},
                     slots: {},

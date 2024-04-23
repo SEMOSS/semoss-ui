@@ -170,7 +170,6 @@ export const ENGINE_ROUTES: {
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
-            ,
             {
                 name: 'Files',
                 path: 'files',
