@@ -10,6 +10,7 @@ import {
     HistoryRounded,
     TuneRounded,
 } from '@mui/icons-material';
+import { LlmConfigureView } from './LlmConfigureView';
 
 const StyledSettings = styled('div')(() => ({
     display: 'flex',
@@ -165,6 +166,10 @@ export const Settings = observer(() => {
 
             <StyledRightPanel>
                 {view === 'access' && <SettingsView />}
+
+                {view === 'testing' && subView === 'configure' && (
+                    <LlmConfigureView />
+                )}
             </StyledRightPanel>
         </StyledSettings>
     );
