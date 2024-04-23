@@ -1,4 +1,5 @@
-import { styled, Container, Typography, Link } from '@semoss/ui';
+import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
+import { styled, Container, Typography, Link, Stack, Button } from '@semoss/ui';
 import { useState } from 'react';
 
 const StyledContainer = styled('section')(({ theme }) => ({
@@ -19,12 +20,31 @@ const StyledList = styled('ul')(({ theme }) => ({
     marginBottom: 0,
 }));
 
-const StyledModelContainer = styled('div')(({ theme }) => ({
+const StyledVariant = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(4),
 }));
 
+const StyledStack = styled(Stack)(({ theme }) => ({
+    paddingTop: theme.spacing(3),
+}));
+
+const StyledVariantBox = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{ selected?: boolean }>(({ theme, selected }) => ({
+    marginTop: theme.spacing(1),
+    backgroundColor: theme.palette.background.default,
+    borderRadius: theme.spacing(1.5),
+    padding: theme.spacing(2),
+
+    ...(selected && {
+        boxShadow: '0px 5px 8px 0px #00000014',
+    }),
+}));
+
 interface modelVariant {
-    llms: llmConfig[];
+    name: string;
+    models: llmConfig[];
+    isSelected: boolean;
 }
 
 interface llmConfig {
@@ -35,7 +55,7 @@ interface llmConfig {
 }
 
 const defaultLlmConfig: llmConfig = {
-    name: 'Dummy Data',
+    name: 'Dummy LLM',
     topP: 0,
     temperature: 0,
     length: 0,
@@ -44,9 +64,21 @@ const defaultLlmConfig: llmConfig = {
 export const LlmConfigureView = () => {
     const [application, setApplication] = useState<string>('');
     const [applicationOptions, setApplicationOptions] = useState<string[]>([]);
-    const [defaultModel, setDefaultModel] =
-        useState<llmConfig>(defaultLlmConfig);
-    const [variants, setVariants] = useState<modelVariant[]>([]);
+    const [variants, setVariants] = useState<modelVariant[]>([
+        { name: 'test var', models: [defaultLlmConfig], isSelected: true },
+    ]);
+
+    const handleAddVariant = (idx: number) => {
+        // TODO
+    };
+
+    const handleDuplicateVariant = (idx: number) => {
+        // TODO
+    };
+
+    const handleDeleteVariant = (idx: number) => {
+        // TODO
+    };
 
     return (
         <Container
@@ -89,11 +121,55 @@ export const LlmConfigureView = () => {
                     </Typography>
                 </div>
 
-                <StyledModelContainer>
-                    <Typography variant="body1" fontWeight="medium">
-                        Default ({defaultModel.name})
-                    </Typography>
-                </StyledModelContainer>
+                {variants.map((variant: modelVariant, idx: number) => {
+                    return (
+                        <StyledVariant key={idx}>
+                            <Typography variant="body1" fontWeight="medium">
+                                {idx === 0
+                                    ? `Default (${variant.name})`
+                                    : variant.name}
+                            </Typography>
+                            <StyledVariantBox selected={variant.isSelected}>
+                                Hello
+                            </StyledVariantBox>
+
+                            {variant.isSelected && (
+                                <StyledStack direction="row" spacing={2}>
+                                    <Button
+                                        variant="text"
+                                        color="secondary"
+                                        onClick={() => handleAddVariant(idx)}
+                                        startIcon={<Add />}
+                                    >
+                                        Add Variant
+                                    </Button>
+                                    <Button
+                                        variant="text"
+                                        color="secondary"
+                                        onClick={() =>
+                                            handleDuplicateVariant(idx)
+                                        }
+                                        startIcon={<ContentCopy />}
+                                    >
+                                        Duplicate
+                                    </Button>
+                                    {idx !== 0 && (
+                                        <Button
+                                            variant="text"
+                                            color="secondary"
+                                            onClick={() =>
+                                                handleDeleteVariant(idx)
+                                            }
+                                            startIcon={<DeleteOutline />}
+                                        >
+                                            Delete
+                                        </Button>
+                                    )}
+                                </StyledStack>
+                            )}
+                        </StyledVariant>
+                    );
+                })}
             </StyledContainer>
         </Container>
     );
