@@ -1,7 +1,7 @@
-import { styled, Container, Typography, Select, Link, List } from '@semoss/ui';
+import { styled, Container, Typography, Link } from '@semoss/ui';
 import { useState } from 'react';
 
-const StyledContainer = styled('div')(({ theme }) => ({
+const StyledContainer = styled('section')(({ theme }) => ({
     width: '100%',
     display: 'flex',
     alignSelf: 'stretch',
@@ -15,18 +15,38 @@ const StyledSectionHeader = styled(Typography)(({ theme }) => ({
     paddingBottom: theme.spacing(3),
 }));
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-    width: '488px',
-    marginTop: theme.spacing(2),
-}));
-
 const StyledList = styled('ul')(({ theme }) => ({
     marginBottom: 0,
 }));
 
+const StyledModelContainer = styled('div')(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+}));
+
+interface modelVariant {
+    llms: llmConfig[];
+}
+
+interface llmConfig {
+    name: string;
+    topP: number;
+    temperature: number;
+    length: number;
+}
+
+const defaultLlmConfig: llmConfig = {
+    name: 'Dummy Data',
+    topP: 0,
+    temperature: 0,
+    length: 0,
+};
+
 export const LlmConfigureView = () => {
     const [application, setApplication] = useState<string>('');
     const [applicationOptions, setApplicationOptions] = useState<string[]>([]);
+    const [defaultModel, setDefaultModel] =
+        useState<llmConfig>(defaultLlmConfig);
+    const [variants, setVariants] = useState<modelVariant[]>([]);
 
     return (
         <Container
@@ -38,32 +58,7 @@ export const LlmConfigureView = () => {
             }}
         >
             <StyledContainer>
-                <section>
-                    <StyledSectionHeader variant="h6">
-                        Application
-                    </StyledSectionHeader>
-                    <Typography variant="body1">
-                        Select an application to compare responses from multiple
-                        large language models
-                    </Typography>
-                    <StyledSelect
-                        label="Select an application"
-                        value={application}
-                    >
-                        {applicationOptions.map((app: string, idx: number) => {
-                            return (
-                                <Select.Item
-                                    key={`app-${app}-${idx}`}
-                                    value={app}
-                                >
-                                    {app}
-                                </Select.Item>
-                            );
-                        })}
-                    </StyledSelect>
-                </section>
-
-                <section>
+                <div>
                     <StyledSectionHeader variant="h6">
                         Configure
                     </StyledSectionHeader>
@@ -84,7 +79,7 @@ export const LlmConfigureView = () => {
                                 If you do not see a particular model, please
                                 browse and request access from the{' '}
                                 <Link
-                                    href="TODO: Need to figure out the URL"
+                                    href="../../../#!/engine/model"
                                     rel="noopener noreferrer"
                                 >
                                     Model Catalog Page
@@ -92,13 +87,13 @@ export const LlmConfigureView = () => {
                             </li>
                         </StyledList>
                     </Typography>
-                </section>
+                </div>
 
-                <section>
-                    <StyledSectionHeader variant="body1" fontWeight="medium">
-                        Default
-                    </StyledSectionHeader>
-                </section>
+                <StyledModelContainer>
+                    <Typography variant="body1" fontWeight="medium">
+                        Default ({defaultModel.name})
+                    </Typography>
+                </StyledModelContainer>
             </StyledContainer>
         </Container>
     );
