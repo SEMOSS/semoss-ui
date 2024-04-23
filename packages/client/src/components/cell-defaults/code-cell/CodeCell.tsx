@@ -524,6 +524,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
+                                glyphMargin: false,
+                                folding: false,
+                                lineNumbersMinChars: 2,
                             }}
                             onChange={handleChange}
                             onMount={handleMount}
@@ -537,7 +540,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     EDITOR_TYPE[cell.parameters.type].value
                                 }
                                 options={{
-                                    lineNumbers: 'on',
+                                    // lineNumbers: 'on',
                                     readOnly: true,
                                     minimap: { enabled: false },
                                     automaticLayout: true,
@@ -590,6 +593,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
+                                glyphMargin: false,
+                                folding: false,
+                                lineNumbersMinChars: 2,
                             }}
                             onChange={handleChange}
                             onMount={handleMount}

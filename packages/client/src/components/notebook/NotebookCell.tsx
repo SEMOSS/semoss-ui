@@ -114,7 +114,7 @@ const StyledCardContent = styled(Card.Content)(({ theme }) => ({
 }));
 
 const StyledCardInput = styled('div')(() => ({
-    width: '100%',
+    width: '98%',
 }));
 
 const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
