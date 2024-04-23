@@ -18,6 +18,7 @@ import { NotebookBlocksMenu } from './NotebookBlocksMenu';
 import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
+import { NotebookParametersMenu } from './NotebookParametersMenu';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -46,7 +47,7 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'queries' | 'catalog' | 'blocks' | 'transform' | ''
+        'queries' | 'catalog' | 'blocks' | 'transform' | 'parameters' | ''
     >('queries');
 
     /**
@@ -129,6 +130,15 @@ export const Notebook = observer(() => {
                     </Tooltip>
                     <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
+                <SidebarItem
+                    selected={view === 'parameters'}
+                    onClick={() => updateView('parameters')}
+                >
+                    <Tooltip title={'Parameters'} placement="right">
+                        <SwipeRightAltRounded color="inherit" />
+                    </Tooltip>
+                    <SidebarText>Parameters</SidebarText>
+                </SidebarItem>
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
@@ -136,6 +146,7 @@ export const Notebook = observer(() => {
                     {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
                     {view === 'catalog' ? <div>Blocks</div> : null}
+                    {view === 'parameters' ? <NotebookParametersMenu /> : null}
                 </StyledLeftPanel>
             ) : null}
 

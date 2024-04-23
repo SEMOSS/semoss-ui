@@ -12,6 +12,15 @@ export type SerializedState = {
 };
 
 /**
+ * Parameters
+ */
+export type Parameter = {
+    alias: string;
+    value: string;
+    type: string;
+};
+
+/**
  * Block
  */
 export type Block<D extends BlockDef = BlockDef> = D extends D

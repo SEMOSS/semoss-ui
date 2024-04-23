@@ -268,6 +268,9 @@ export class CellState<D extends CellDef = CellDef> {
             // convert the cells to the raw pixel
             const raw = this.toPixel();
 
+            console.log(raw);
+            // To get rid of braces and evaluate parameters in query, can we add to state a flattenPixel
+
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenVariable(raw);
 

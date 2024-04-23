@@ -43,6 +43,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
             console.error('Missing appId or state');
         }
 
+        debugger;
         // ignore if there is not pixel
         if (!pixel) {
             return;
@@ -70,11 +71,62 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     return;
                 }
 
+                const addedState = {
+                    ...s,
+                    parameters: {
+                        uuid1: {
+                            alias: 'database_id',
+                            value: 'id-289892',
+                            type: 'ENGINE_PARAMETER',
+                        },
+                        uuid2: {
+                            alias: 'llm_dependency_param',
+                            value: 'id-129019013',
+                            type: 'ENGINE_PARAMETER',
+                        },
+                        uuid3: {
+                            alias: 'ui-block-2',
+                            value: '{{ui-block-2.value}}',
+                            type: 'BLOCK_PARAMETER',
+                        },
+                        uuid4: {
+                            alias: 'query-parameter',
+                            value: '{{query-parameter.output}}',
+                            type: 'QUERY_PARAMETER',
+                        },
+
+                        // {
+                        //     state: {
+                        //         queries: {},
+                        //         blocks: {},
+                        //         parameters: {
+                        //             uuid1: {
+                        //                 alias: 'text-block',
+                        //                 type: 'BLOCK_PARAMETER',
+                        //                 // --> Look through blocks and get block.value or how do we intend to handle that, more types? it wont always be .value
+                        //             },
+                        //             uuid2: {
+                        //                 alias: 'llm-var',
+                        //                 type: 'ENGINE_PARAMETER',
+                        //                 // --> Should just point to an id, look at dependencies?  When you add an engine Parameter do i automatically add dependencies to app?
+                        //             },
+                        //             uuid3: {
+                        //                 alias: 'query-cell',
+                        //                 type: 'QUERY_PARAMETER',
+                        //                 // --> Reference the output of a query/cell
+                        //             },
+                        //         }
+                        //     }
+                        // }
+                    },
+                };
+
+                console.log('state: ', s);
                 // create a new state store
                 const store = new StateStore({
                     mode: 'interactive',
                     insightId: insightId,
-                    state: s,
+                    state: addedState,
                     cellRegistry: DefaultCells,
                 });
 

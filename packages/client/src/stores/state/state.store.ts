@@ -15,6 +15,7 @@ import {
     CellRegistry,
     ListenerActions,
     SerializedState,
+    Parameter,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -31,6 +32,9 @@ interface StateStoreInterface {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Parameters */
+    parameters: Record<string, Parameter>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
@@ -57,7 +61,39 @@ export class StateStore {
     private _store: StateStoreInterface = {
         mode: 'interactive',
         insightId: '',
-        queries: {},
+        queries: {
+            // {
+            //     'cell-123': 'LLM(engineId=[{{param_1}}], command={})'
+            // }
+        },
+        // params: {
+        //     // If they present model id in url, i will reference those replace with those params
+        //     param_1: { id: 'llm model' },
+        //     param_2: { id: 'database id' },
+        //     ui_block_2: { id: '' },
+        // },
+        parameters: {
+            parameter_1: {
+                alias: 'database_id',
+                value: 'id-289892',
+                type: 'ENGINE_PARAMETER',
+            },
+            parameter_2: {
+                alias: 'llm_dependency_param',
+                value: 'id-129019013',
+                type: 'ENGINE_PARAMETER',
+            },
+            parameter_3: {
+                alias: 'ui-block-2',
+                value: '{{ui-block-2.value}}',
+                type: 'BLOCK_PARAMETER',
+            },
+            parameter_4: {
+                alias: 'query-parameter',
+                value: '{{query-parameter.output}}',
+                type: 'QUERY_PARAMETER',
+            },
+        },
         blocks: {},
         cellRegistry: {},
     };
@@ -130,6 +166,15 @@ export class StateStore {
     }
 
     /**
+     * Gets all parameters
+     * @returns the parameters
+     */
+    get parameters() {
+        debugger;
+        return this._store.parameters;
+    }
+
+    /**
      * Get the cell type registry
      * @returns the cell type registry
      */
@@ -178,6 +223,8 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.message)),
             JSON.parse(JSON.stringify(action.payload)),
         );
+
+        console.log('parameters', this._store.parameters);
 
         try {
             // apply the action
