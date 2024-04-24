@@ -1,6 +1,7 @@
 import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
 import { styled, Container, Typography, Link, Stack, Button } from '@semoss/ui';
 import { useState } from 'react';
+import { TypeLlmConfig, TypeVariant } from './workspace.types';
 
 const StyledContainer = styled('section')(({ theme }) => ({
     width: '100%',
@@ -41,20 +42,7 @@ const StyledVariantBox = styled('div', {
     }),
 }));
 
-interface modelVariant {
-    name: string;
-    models: llmConfig[];
-    isSelected: boolean;
-}
-
-interface llmConfig {
-    name: string;
-    topP: number;
-    temperature: number;
-    length: number;
-}
-
-const defaultLlmConfig: llmConfig = {
+const defaultLlmConfig: TypeLlmConfig = {
     name: 'Dummy LLM',
     topP: 0,
     temperature: 0,
@@ -62,9 +50,7 @@ const defaultLlmConfig: llmConfig = {
 };
 
 export const LlmConfigureView = () => {
-    const [application, setApplication] = useState<string>('');
-    const [applicationOptions, setApplicationOptions] = useState<string[]>([]);
-    const [variants, setVariants] = useState<modelVariant[]>([
+    const [variants, setVariants] = useState<TypeVariant[]>([
         { name: 'test var', models: [defaultLlmConfig], isSelected: true },
     ]);
 
@@ -96,7 +82,7 @@ export const LlmConfigureView = () => {
                     </StyledSectionHeader>
                     <Typography variant="body1">
                         Select the models you want to evaluate and compare
-                        simultaneously tp define the most suitable model for
+                        simultaneously to define the most suitable model for
                         your application.
                         <StyledList>
                             <li>
@@ -121,7 +107,7 @@ export const LlmConfigureView = () => {
                     </Typography>
                 </div>
 
-                {variants.map((variant: modelVariant, idx: number) => {
+                {variants.map((variant: TypeVariant, idx: number) => {
                     return (
                         <StyledVariant key={idx}>
                             <Typography variant="body1" fontWeight="medium">
