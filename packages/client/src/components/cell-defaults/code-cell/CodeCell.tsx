@@ -52,15 +52,14 @@ export interface CodeCellDef extends CellDef<'code'> {
 
 // best documentation on component versions of monaco editor and diffeditor
 // https://www.npmjs.com/package/@monaco-editor/react
-const StyledContent = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled: boolean }>(({ disabled }) => ({
+const StyledContent = styled('div')(({ theme }) => ({
     position: 'relative',
     width: '100%',
-    pointerEvents: disabled ? 'none' : 'unset',
 }));
 
-const StyledContainer = styled('div')(({ theme }) => ({}));
+const StyledContainer = styled('div')(({ theme }) => ({
+    width: '98%',
+}));
 
 // track completion providers outside of render context
 let completionItemProviders = {};
@@ -501,64 +500,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     };
 
     return (
-        <StyledContent disabled={!isExpanded}>
+        <StyledContent>
             {LLMLoading && (
                 <LoadingScreen.Trigger description="Generating..." />
             )}
 
-            <Stack direction="column" spacing={1}>
-                {isExpanded && (
-                    <Stack direction="row">
-                        <StyledSelect
-                            size={'small'}
-                            title={'Select Language'}
-                            value={EDITOR_TYPE[cell.parameters.type].value}
-                            SelectProps={{
-                                IconComponent: KeyboardArrowDown,
-                                style: {
-                                    height: '30px',
-                                    width: '180px',
-                                },
-                            }}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (
-                                    value !==
-                                    EDITOR_TYPE[cell.parameters.type].value
-                                ) {
-                                    console.log(value);
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.type',
-                                            value: value,
-                                        },
-                                    });
-
-                                    setCount(count + 1);
-                                }
-                            }}
-                        >
-                            {Array.from(
-                                Object.values(EDITOR_TYPE),
-                                (language, i) => (
-                                    <StyledSelectItem
-                                        key={`${i}-${cell.id}-${language.name}`}
-                                        value={language.value}
-                                    >
-                                        <language.icon
-                                            color="inherit"
-                                            fontSize="small"
-                                        />
-                                        {language.name}
-                                    </StyledSelectItem>
-                                ),
-                            )}
-                        </StyledSelect>
-                    </Stack>
-                )}
+            <Stack direction="row" spacing={1}>
                 <StyledContainer>
                     {!isExpanded ? (
                         <Editor
@@ -577,6 +524,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
+                                glyphMargin: false,
+                                folding: false,
+                                lineNumbersMinChars: 2,
                             }}
                             onChange={handleChange}
                             onMount={handleMount}
@@ -590,7 +540,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     EDITOR_TYPE[cell.parameters.type].value
                                 }
                                 options={{
-                                    lineNumbers: 'on',
+                                    // lineNumbers: 'on',
                                     readOnly: true,
                                     minimap: { enabled: false },
                                     automaticLayout: true,
@@ -643,12 +593,66 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 wordWrap: 'on',
+                                glyphMargin: false,
+                                folding: false,
+                                lineNumbersMinChars: 2,
                             }}
                             onChange={handleChange}
                             onMount={handleMount}
                         />
                     )}
                 </StyledContainer>
+                {/* {isExpanded && ( */}
+                <Stack direction="row">
+                    <StyledSelect
+                        size={'small'}
+                        title={'Select Language'}
+                        variant="standard"
+                        value={EDITOR_TYPE[cell.parameters.type].value}
+                        InputProps={{
+                            disableUnderline: true,
+                        }}
+                        SelectProps={{
+                            IconComponent: KeyboardArrowDown,
+                        }}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            if (
+                                value !==
+                                EDITOR_TYPE[cell.parameters.type].value
+                            ) {
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.type',
+                                        value: value,
+                                    },
+                                });
+
+                                setCount(count + 1);
+                            }
+                        }}
+                    >
+                        {Array.from(
+                            Object.values(EDITOR_TYPE),
+                            (language, i) => (
+                                <StyledSelectItem
+                                    key={`${i}-${cell.id}-${language.name}`}
+                                    value={language.value}
+                                    title={language.name}
+                                >
+                                    <language.icon
+                                        color="inherit"
+                                        fontSize="small"
+                                    />
+                                </StyledSelectItem>
+                            ),
+                        )}
+                    </StyledSelect>
+                </Stack>
+                {/* )} */}
             </Stack>
         </StyledContent>
     );
