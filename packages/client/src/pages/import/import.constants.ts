@@ -153,26 +153,6 @@ export const CONNECTION_OPTIONS = {
                     disable: false,
                     icon: OPEN_AI,
                     fields: [
-                        // {
-                        //     fieldName: 'NEW_SELECT',
-                        //     label: 'New Select',
-                        //     defaultValue: 'false',
-                        //     options: {
-                        //         component: 'select',
-                        //         options: [
-                        //             {
-                        //                 display: 'true',
-                        //                 value: 'true',
-                        //             },
-                        //             {
-                        //                 display: 'false',
-                        //                 value: 'false',
-                        //             },
-                        //         ],
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
                         {
                             fieldName: 'NAME',
                             label: 'Name',
@@ -1631,17 +1611,427 @@ export const CONNECTION_OPTIONS = {
                         },
                     ],
                 },
+            ],
+            'NVidia NIM Models': [
                 {
-                    name: 'NIM | embed-qa-4',
-                    disable: true,
+                    name: 'embed-qa-4',
+                    disable: false,
                     icon: NEMO,
-                    fields: [],
+                    fields: [
+                        {
+                            fieldName: 'NAME',
+                            label: 'Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Type',
+                            defaultValue: 'OPEN_AI',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'Open AI',
+                                        value: 'OPEN_AI',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'OPEN_AI_KEY',
+                            label: 'Open AI Key',
+                            defaultValue: '',
+                            options: {
+                                component: 'password',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL',
+                            label: 'Model',
+                            defaultValue:
+                                'mistralai/mixtral-8x7b-instruct-v0.1',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display:
+                                            'mistralai/mixtral-8x7b-instruct-v0.1',
+                                        value: 'mistralai/mixtral-8x7b-instruct-v0.1',
+                                    },
+                                ],
+                            },
+                            disabled: true,
+                            hidden: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'VAR_NAME',
+                            label: 'Variable Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'INIT_MODEL_ENGINE',
+                            label: 'Init Script',
+                            defaultValue: '',
+                            updateValueFieldsToWatch: [
+                                'VAR_NAME',
+                                'MODEL_TYPE',
+                                'OPEN_AI_KEY',
+                                'CHAT_TYPE',
+                            ],
+                            updateCallback: ({
+                                VAR_NAME,
+                                MODEL_TYPE,
+                                OPEN_AI_KEY,
+                                CHAT_TYPE,
+                            }) => `
+                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
+                                model_name='${MODEL_TYPE}', 
+                                chat_type = '${CHAT_TYPE}', 
+                                api_key="${OPEN_AI_KEY}",
+                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
+                                template_name='mixtral.default.nocontext')`,
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: true, // user updates with other inputs
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENGINE',
+                            label: 'Engine',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENGINE_ALIAS',
+                            label: 'Engine Alias',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENGINE_TYPE',
+                            label: 'Engine Type',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_CONVERSATION_HISTORY',
+                            label: 'Keep Conversation History',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_INPUT_OUTPUT',
+                            label: 'Record Questions and Responses',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
+                            fieldName: 'MAX_INPUT_TOKENS',
+                            label: 'Max Input Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                    ],
                 },
                 {
-                    name: 'NIM | rerank-qa-mistral-4b',
-                    disable: true,
+                    name: 'rerank-qa-mistral-4b',
+                    disable: false,
                     icon: NEMO,
-                    fields: [],
+                    fields: [
+                        {
+                            fieldName: 'NAME',
+                            label: 'Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Type',
+                            defaultValue: 'OPEN_AI',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'Open AI',
+                                        value: 'OPEN_AI',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'OPEN_AI_KEY',
+                            label: 'Open AI Key',
+                            defaultValue: '',
+                            options: {
+                                component: 'password',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL',
+                            label: 'Model',
+                            defaultValue:
+                                'mistralai/mixtral-8x7b-instruct-v0.1',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display:
+                                            'mistralai/mixtral-8x7b-instruct-v0.1',
+                                        value: 'mistralai/mixtral-8x7b-instruct-v0.1',
+                                    },
+                                ],
+                            },
+                            disabled: true,
+                            hidden: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'VAR_NAME',
+                            label: 'Variable Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'INIT_MODEL_ENGINE',
+                            label: 'Init Script',
+                            defaultValue: '',
+                            updateValueFieldsToWatch: [
+                                'VAR_NAME',
+                                'MODEL_TYPE',
+                                'OPEN_AI_KEY',
+                                'CHAT_TYPE',
+                            ],
+                            updateCallback: ({
+                                VAR_NAME,
+                                MODEL_TYPE,
+                                OPEN_AI_KEY,
+                                CHAT_TYPE,
+                            }) => `
+                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
+                                model_name='${MODEL_TYPE}', 
+                                chat_type = '${CHAT_TYPE}', 
+                                api_key="${OPEN_AI_KEY}",
+                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
+                                template_name='mixtral.default.nocontext')`,
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: true, // user updates with other inputs
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENGINE',
+                            label: 'Engine',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENGINE_ALIAS',
+                            label: 'Engine Alias',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'ENGINE_TYPE',
+                            label: 'Engine Type',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_CONVERSATION_HISTORY',
+                            label: 'Keep Conversation History',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_INPUT_OUTPUT',
+                            label: 'Record Questions and Responses',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
+                            fieldName: 'MAX_INPUT_TOKENS',
+                            label: 'Max Input Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                    ],
                 },
             ],
         },
