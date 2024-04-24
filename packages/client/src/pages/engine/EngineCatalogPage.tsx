@@ -9,7 +9,8 @@ import {
     Typography,
     Search,
     Button,
-    ToggleTabsGroup,
+    ToggleButtonGroup,
+    ToggleButton,
     Grid,
     List,
     TextField,
@@ -46,6 +47,10 @@ const StyledFilter = styled('div')(({ theme }) => ({
     width: '355px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     background: theme.palette.background.paper,
+}));
+
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
 }));
 
 const StyledFilterList = styled(List)(({ theme }) => ({
@@ -732,7 +737,6 @@ export const EngineCatalogPage = observer(
                                                         }
                                                     />
                                                 </List.Item>
-                                                {/* <StyledNestedFilterList dense={true}> */}
                                                 {list.map((filterOption, i) => {
                                                     if (
                                                         shownListItems > 4 &&
@@ -876,7 +880,6 @@ export const EngineCatalogPage = observer(
                                                         </div>
                                                     </List.Item>
                                                 )}
-                                                {/* </StyledNestedFilterList> */}
                                                 {i + 1 !== totalFilters && (
                                                     <div
                                                         style={{
@@ -900,33 +903,42 @@ export const EngineCatalogPage = observer(
                             alignItems={'center'}
                             justifyContent={'space-between'}
                         >
-                            <ToggleTabsGroup
-                                value={mode}
-                                color={'primary'}
-                                onChange={(e, v) => {
-                                    // Reset engines and reset offset
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setOffset(0);
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                <ToggleTabsGroup.Item
-                                    label={`My ${
+                            <StyledToggleButtonGroup value={mode}>
+                                <ToggleButton
+                                    color="secondary"
+                                    value="Mine"
+                                    onClick={(e, v) => {
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'databases',
+                                            value: [],
+                                        });
+                                        setOffset(0);
+                                        setMode(v);
+                                    }}
+                                >
+                                    {`My ${
                                         route ? `${route.name}(s)` : 'Engine(s)'
                                     }`}
-                                    value={'Mine'}
-                                />
-                                <ToggleTabsGroup.Item
-                                    label={`Discoverable ${
+                                </ToggleButton>
+                                <ToggleButton
+                                    color="secondary"
+                                    value="Discoverable"
+                                    onClick={(e, v) => {
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'databases',
+                                            value: [],
+                                        });
+                                        setOffset(0);
+                                        setMode(v);
+                                    }}
+                                >
+                                    {`Discoverable ${
                                         route ? `${route.name}(s)` : 'Engine(s)'
                                     }`}
-                                    value={'Discoverable'}
-                                />
-                            </ToggleTabsGroup>
+                                </ToggleButton>
+                            </StyledToggleButtonGroup>
                             <Stack
                                 direction="row"
                                 alignItems={'center'}
@@ -1000,14 +1012,14 @@ export const EngineCatalogPage = observer(
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}
-                                                type={db.app_type}
+                                                type={db.database_type}
                                                 id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
-                                                sub_type={db.app_subtype}
+                                                sub_type={db.database_subtype}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasUpvoted}
@@ -1057,14 +1069,14 @@ export const EngineCatalogPage = observer(
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}
-                                                type={db.app_type}
+                                                type={db.database_type}
                                                 id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
-                                                sub_type={db.app_subtype}
+                                                sub_type={db.database_subtype}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasUpvoted}

@@ -113,7 +113,6 @@ const StyledTagChip = styled(Chip, {
 })<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
     maxWidth: maxWidth,
     textOverflow: 'ellipsis',
-    backgroundColor: theme.palette.grey[200],
 }));
 
 const StyledCardActions = styled(Card.Actions)({
@@ -302,7 +301,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     };
 
     const image = findAppImage(appType);
-
+    const appDetails = findAppDetails(appType);
     return (
         <StyledTileCard disabled={!href}>
             {!systemApp && (
@@ -351,7 +350,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             {formatName(app.project_name)}
                         </StyledName>
                     }
-                    subheader={appType && findAppDetails(appType)}
+                    subheader={appDetails && appDetails}
                 />
                 <Card.Content>
                     <StyledCardDescription variant={'body2'}>
@@ -397,7 +396,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             ) : (
                                 <StyledTagChip
                                     key={`${app.project_id}0`}
-                                    variant="outlined"
                                     label={app.tag}
                                 />
                             ))}
@@ -408,7 +406,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             {createdDate}
                         </StyledPublishedByLabel>
                     </StyledPublishedByContainer>
-                    {systemApp && <StyledPlaceholder></StyledPlaceholder>}
+                    {systemApp && !appDetails && <StyledPlaceholder />}
                 </Card.Content>
                 <StyledCardActions>
                     {!href ? (
@@ -422,6 +420,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                             rel="noopener noreferrer"
                             color="inherit"
                             underline="none"
+                            target="_blank"
                         >
                             <StyledOpenButton>
                                 <p>Open</p>

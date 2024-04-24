@@ -72,7 +72,6 @@ export const EngineIndexPage = observer(() => {
                                                 key={tag}
                                                 label={tag}
                                                 color={'primary'}
-                                                variant={'outlined'}
                                                 // size={'small'}
                                             ></Chip>
                                         );

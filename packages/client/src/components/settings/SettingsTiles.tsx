@@ -322,7 +322,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
         return (
             <Paper sx={{ width: '100%' }}>
                 <StyledAlert
-                    sx={{ width: '100%', boxShadow: 'none' }}
+                    sx={{ width: '100%' }}
                     icon={false}
                     action={
                         <Switch
@@ -354,7 +354,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         placement="top"
                     >
                         <StyledAlert
-                            sx={{ width: '100%', boxShadow: 'none' }}
+                            sx={{ width: '100%' }}
                             icon={false}
                             action={
                                 <Switch
@@ -386,7 +386,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     </Tooltip>
                 ) : (
                     <StyledAlert
-                        sx={{ width: '100%', boxShadow: 'none' }}
+                        sx={{ width: '100%' }}
                         icon={false}
                         action={
                             <Switch
@@ -417,7 +417,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     </StyledAlert>
                 )}
                 <StyledAlert
-                    sx={{ width: '100%', boxShadow: 'none' }}
+                    sx={{ width: '100%' }}
                     icon={false}
                     action={
                         <Button
@@ -461,7 +461,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     </Modal.Actions>
                 </Modal>
                 {/* <StyledAlert
-                    sx={{ width: '100%', boxShadow: 'none' }}
+                    sx={{ width: '100%' }}
                     icon={false}
                     action={
                         <Button

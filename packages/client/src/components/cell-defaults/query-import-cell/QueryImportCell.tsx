@@ -19,6 +19,7 @@ import {
     DriveFileRenameOutlineRounded,
 } from '@mui/icons-material';
 import { editor } from 'monaco-editor';
+import { DatabaseTables } from './DatabaseTables';
 
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
@@ -45,12 +46,9 @@ const FRAME_TYPES = {
     },
 };
 
-const StyledContent = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled: boolean }>(({ disabled }) => ({
+const StyledContent = styled('div')(({ theme }) => ({
     position: 'relative',
     width: '100%',
-    pointerEvents: disabled ? 'none' : 'unset',
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -102,6 +100,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
+
+        const [showTables, setShowTables] = useState(false);
 
         const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
             loading: true,
@@ -260,54 +260,71 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
         };
 
         return (
-            <StyledContent disabled={!isExpanded}>
+            <StyledContent>
                 <Stack direction="column" spacing={1}>
                     {isExpanded && (
-                        <Stack direction="row">
-                            <StyledSelect
-                                size={'small'}
-                                disabled={cell.isLoading}
-                                title={'Select Database'}
-                                value={cell.parameters.databaseId}
-                                SelectProps={{
-                                    IconComponent: KeyboardArrowDown,
-                                    style: {
-                                        height: '30px',
-                                        width: '180px',
-                                    },
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <AccountTree />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            path: 'parameters.databaseId',
-                                            value: value,
-                                        },
-                                    });
-                                }}
+                        <Stack direction={'column'}>
+                            <Stack
+                                direction="row"
+                                justifyContent={'space-between'}
                             >
-                                {Array.from(
-                                    cfgLibraryDatabases.ids,
-                                    (databaseId, i) => (
-                                        <StyledSelectItem
-                                            key={`${i}-${cell.id}-${databaseId}`}
-                                            value={databaseId}
-                                        >
-                                            {cfgLibraryDatabases.display[
-                                                databaseId
-                                            ] ?? ''}
-                                        </StyledSelectItem>
-                                    ),
-                                )}
-                            </StyledSelect>
+                                <StyledSelect
+                                    size={'small'}
+                                    variant="standard"
+                                    disabled={cell.isLoading}
+                                    title={'Select Database'}
+                                    value={cell.parameters.databaseId}
+                                    SelectProps={{
+                                        IconComponent: KeyboardArrowDown,
+                                    }}
+                                    InputProps={{
+                                        disableUnderline: true,
+                                    }}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_CELL,
+                                            payload: {
+                                                queryId: cell.query.id,
+                                                cellId: cell.id,
+                                                path: 'parameters.databaseId',
+                                                value: value,
+                                            },
+                                        });
+                                    }}
+                                >
+                                    {Array.from(
+                                        cfgLibraryDatabases.ids,
+                                        (databaseId, i) => (
+                                            <StyledSelectItem
+                                                key={`${i}-${cell.id}-${databaseId}`}
+                                                value={databaseId}
+                                            >
+                                                {cfgLibraryDatabases.display[
+                                                    databaseId
+                                                ] ?? ''}
+                                            </StyledSelectItem>
+                                        ),
+                                    )}
+                                </StyledSelect>
+                                <Button
+                                    variant={'text'}
+                                    color={'secondary'}
+                                    onClick={() => {
+                                        setShowTables(!showTables);
+                                    }}
+                                >
+                                    {showTables ? 'Hide' : 'Show'} Available
+                                    Columns
+                                </Button>
+                            </Stack>
+                            {showTables && cell.parameters.databaseId ? (
+                                <DatabaseTables
+                                    databaseId={cell.parameters.databaseId}
+                                />
+                            ) : (
+                                <></>
+                            )}
                         </Stack>
                     )}
                     <StyledContainer>
@@ -323,9 +340,9 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                 lineHeight: EDITOR_LINE_HEIGHT,
                                 overviewRulerBorder: false,
                                 lineNumbers: 'on',
-                                // lineNumbers: function (lineNumber) {
-                                //     return `<span style="width:'auto'">${lineNumber}</span>`;
-                                // },
+                                glyphMargin: false,
+                                folding: false,
+                                lineNumbersMinChars: 2,
                             }}
                             onChange={handleEditorChange}
                             onMount={handleEditorMount}

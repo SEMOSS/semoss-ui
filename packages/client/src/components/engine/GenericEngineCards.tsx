@@ -26,6 +26,7 @@ import {
 import { Env } from '@/env';
 import GOOGLE from '@/assets/img/google.png';
 import { ENGINE_IMAGES } from '../../pages/import/import.constants';
+import BRAIN from '@/assets/img/BRAIN.png';
 
 const StyledCardImg = styled('img')({
     display: 'flex',
@@ -215,10 +216,9 @@ const StyledCardDescription = styled(Typography)({
 
 const StyledTagChip = styled(Chip, {
     shouldForwardProp: (prop) => prop !== 'maxWidth',
-})<{ maxWidth?: string }>(({ theme, maxWidth = '200px' }) => ({
+})<{ maxWidth?: string }>(({ maxWidth = '200px' }) => ({
     maxWidth: maxWidth,
     textOverflow: 'ellipsis',
-    backgroundColor: theme.palette.grey[200],
 }));
 
 const UnstyledVoteCount = styled(ButtonGroup.Item)(() => ({
@@ -255,24 +255,11 @@ const formatDBName = (str: string) => {
  * @returns image link for associated engine
  */
 const findDBImage = (appType: string, appSubType: string) => {
-    const obj = ENGINE_IMAGES[appType].find((ele) => ele.name == appSubType);
+    const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
     if (!obj) {
-        // if (appType === 'DATABASE') {
-        //     return <DatabaseLayers />
-        // } else if(appType === 'FUNCTION') {
-
-        // } else if(appType === 'MODEL') {
-
-        // } else if(appType === 'VECTOR') {
-
-        // } else if(appType === 'STORAGE') {
-
-        // } else {
-
-        // }
-        console.warn(appType, appSubType);
-        return;
+        console.warn('No image found:', appType, appSubType);
+        return BRAIN;
     }
 
     return obj.icon;

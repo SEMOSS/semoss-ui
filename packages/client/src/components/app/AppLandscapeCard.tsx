@@ -124,7 +124,6 @@ const StyledIconRow = styled('div')({
 });
 
 const StyledChip = styled(Chip)({
-    color: 'rgba(0, 0, 0, 0.23)',
     maxWidth: '59px',
     textOverflow: 'ellipsis',
 });
@@ -275,7 +274,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                                         <StyledChip
                                             size="small"
                                             key={app.project_id + i}
-                                            variant={'outlined'}
                                             label={t}
                                         />
                                     );
@@ -290,7 +288,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             <StyledChip
                                 size="small"
                                 key={app.project_id + app.tag}
-                                variant={'outlined'}
                                 label={app.tag}
                             />
                         ))}
@@ -301,7 +298,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                     </StyledPublishedDate>
                 </Box>
                 <StyledIconRow>
-                    {/* <Button>Use as Template</Button> */}
                     <Box>
                         <Link
                             href={href}
@@ -312,9 +308,6 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                             <Button>Open</Button>
                         </Link>
                     </Box>
-                    {/* <IconButton onClick={() => favoriteProject(app)}>
-                        <StyledBookmark />
-                    </IconButton> */}
                     <Box>
                         {app.project_created_by !== 'SYSTEM' ? (
                             <IconButton onClick={handleClick}>

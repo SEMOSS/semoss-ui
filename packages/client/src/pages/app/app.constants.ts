@@ -12,7 +12,9 @@ export const BASE_PAGE_BLOCKS = {
                 fontFamily: 'roboto',
             },
         },
-        listeners: {},
+        listeners: {
+            onPageLoad: [],
+        },
         slots: {
             content: {
                 name: 'content',
