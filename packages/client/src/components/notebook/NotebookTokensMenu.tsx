@@ -2,32 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
-    List,
-    Divider,
-    TextField,
-    InputAdornment,
-    Typography,
+    Button,
     IconButton,
+    List,
+    Typography,
     Stack,
-    Menu,
-    useNotification,
 } from '@semoss/ui';
-import { useBlocks, useRootStore, useWorkspace } from '@/hooks';
-import {
-    Add,
-    Search,
-    CheckCircle,
-    MoreVert,
-    Error as ErrorIcon,
-    Pending,
-    Edit,
-    ContentCopy,
-    Delete,
-    HourglassEmpty,
-    Download,
-} from '@mui/icons-material';
-import { NewQueryOverlay } from './NewQueryOverlay';
-import { ActionMessages } from '@/stores';
+import { useBlocks, useRootStore } from '@/hooks';
+import { Search, ContentCopy } from '@mui/icons-material';
+import { AddTokenModal } from './AddTokenModal';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -72,45 +55,39 @@ const StyledListIcon = styled(List.Icon)(({ theme }) => ({
 /**
  * Render the queries menu of the nodebook
  */
-export const NotebookParametersMenu = observer((): JSX.Element => {
+export const NotebookTokensMenu = observer((): JSX.Element => {
     const { state, notebook } = useBlocks();
 
     const { monolithStore, configStore } = useRootStore();
 
-    const renderedQueries = useMemo(() => {
-        debugger;
-        return Object.entries(state.parameters);
-    }, [state.parameters]);
+    const [addTokenModal, setAddTokenModal] = useState(false);
+
+    const tokens = useMemo(() => {
+        return Object.entries(state.tokens);
+    }, [state.tokens]);
 
     return (
         <StyledMenu>
             <Stack spacing={2} padding={2}>
                 <Stack direction="row" justifyContent="space-between">
-                    <StyledMenuTitle variant="h6">Parameters</StyledMenuTitle>
+                    <StyledMenuTitle variant="h6">Tokens</StyledMenuTitle>
+                    <Button
+                        variant={'contained'}
+                        onClick={() => {
+                            setAddTokenModal(true);
+                        }}
+                    >
+                        Add Token
+                    </Button>
                 </Stack>
-                {/* <TextField
-                    type="text"
-                    size="small"
-                    placeholder="Search Queries"
-                    value={querySearch}
-                    onChange={(e) => setQuerySearch(e.target.value)}
-                    fullWidth
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <Search />
-                            </InputAdornment>
-                        ),
-                    }}
-                /> */}
             </Stack>
             <StyledMenuScroll>
                 <List disablePadding>
-                    {renderedQueries.map((qu, index) => {
-                        const q = qu[1];
+                    {tokens.map((t, index) => {
+                        const token = t[1];
                         return (
                             <List.Item
-                                key={q.alias}
+                                key={token.alias}
                                 disablePadding
                                 secondaryAction={
                                     <>
@@ -120,7 +97,16 @@ export const NotebookParametersMenu = observer((): JSX.Element => {
                                             alignItems="center"
                                             paddingY="8px"
                                         >
-                                            kjk
+                                            <IconButton
+                                                title="Open Menu"
+                                                onClick={() => {
+                                                    console.log(
+                                                        'Opening Window',
+                                                    );
+                                                }}
+                                            >
+                                                <ContentCopy />
+                                            </IconButton>
                                         </Stack>
                                     </>
                                 }
@@ -130,7 +116,7 @@ export const NotebookParametersMenu = observer((): JSX.Element => {
                                         disableTypography
                                         primary={
                                             <Typography variant="subtitle2">
-                                                {q.alias}
+                                                {token.alias} - {token.type}
                                             </Typography>
                                         }
                                     />
@@ -140,6 +126,12 @@ export const NotebookParametersMenu = observer((): JSX.Element => {
                     })}
                 </List>
             </StyledMenuScroll>
+            <AddTokenModal
+                open={addTokenModal}
+                onClose={() => {
+                    setAddTokenModal(false);
+                }}
+            />
         </StyledMenu>
     );
 });

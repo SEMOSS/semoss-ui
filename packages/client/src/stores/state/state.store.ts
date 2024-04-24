@@ -15,7 +15,7 @@ import {
     CellRegistry,
     ListenerActions,
     SerializedState,
-    Parameter,
+    Token,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -34,7 +34,7 @@ interface StateStoreInterface {
     blocks: Record<string, Block>;
 
     /** Parameters */
-    parameters: Record<string, Parameter>;
+    tokens: Record<string, Token>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
@@ -61,39 +61,19 @@ export class StateStore {
     private _store: StateStoreInterface = {
         mode: 'interactive',
         insightId: '',
-        queries: {
-            // {
-            //     'cell-123': 'LLM(engineId=[{{param_1}}], command={})'
-            // }
+        tokens: {
+            // uuid3: {
+            //     alias: 'Question',
+            //     to: 'input--4308',
+            //     type: 'BLOCK',
+            // },
+            // uuid4: {
+            //     alias: 'cell',
+            //     to: 'query-1.71655',
+            //     type: 'CELL',
+            // },
         },
-        // params: {
-        //     // If they present model id in url, i will reference those replace with those params
-        //     param_1: { id: 'llm model' },
-        //     param_2: { id: 'database id' },
-        //     ui_block_2: { id: '' },
-        // },
-        parameters: {
-            parameter_1: {
-                alias: 'database_id',
-                value: 'id-289892',
-                type: 'ENGINE_PARAMETER',
-            },
-            parameter_2: {
-                alias: 'llm_dependency_param',
-                value: 'id-129019013',
-                type: 'ENGINE_PARAMETER',
-            },
-            parameter_3: {
-                alias: 'ui-block-2',
-                value: '{{ui-block-2.value}}',
-                type: 'BLOCK_PARAMETER',
-            },
-            parameter_4: {
-                alias: 'query-parameter',
-                value: '{{query-parameter.output}}',
-                type: 'QUERY_PARAMETER',
-            },
-        },
+        queries: {},
         blocks: {},
         cellRegistry: {},
     };
@@ -166,12 +146,11 @@ export class StateStore {
     }
 
     /**
-     * Gets all parameters
-     * @returns the parameters
+     * Gets all tokens
+     * @returns the tokens
      */
-    get parameters() {
-        debugger;
-        return this._store.parameters;
+    get tokens() {
+        return this._store.tokens;
     }
 
     /**
@@ -224,7 +203,7 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.payload)),
         );
 
-        console.log('parameters', this._store.parameters);
+        console.log('tokens', this._store.tokens);
 
         try {
             // apply the action
@@ -293,6 +272,13 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
+            } else if (ActionMessages.ADD_TOKEN === action.message) {
+                const { alias, to, type } = action.payload;
+
+                this.addToken(alias, to, type);
+            } else if (ActionMessages.DELETE_TOKEN === action.message) {
+                // const { id } = action.payload;
+                // this.deleteToken(id);
             }
         } catch (e) {
             console.error(e);
@@ -1064,5 +1050,35 @@ export class StateStore {
 
         // dispatch the event to the window
         window.dispatchEvent(event);
+    };
+
+    /**
+     * Adds to tokens that can be referenced
+     * @param alias - referenced as
+     * @param to - points to
+     * @param type - type of token
+     */
+    private addToken = (alias, to, type) => {
+        console.log('existing tokens', this._store.tokens);
+
+        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+
+        // const token: Token = {
+        //     alias,
+        //     to,
+        //     type,
+        // };
+
+        // this._store.tokens[id] = token;
+        return '83289';
+    };
+
+    /**
+     * Deletes token that can be referenced
+     * @param id - id to delet
+     */
+    private deleteToken = (id) => {
+        // console.log('existing tokens', this._store.tokens);
+        // delete this._store.tokens[id];
     };
 }

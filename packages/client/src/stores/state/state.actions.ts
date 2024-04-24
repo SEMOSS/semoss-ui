@@ -20,6 +20,8 @@ export enum ActionMessages {
     UPDATE_CELL = 'UPDATE_CELL',
     RUN_CELL = 'RUN_CELL',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
+    ADD_TOKEN = 'ADD_TOKEN',
+    DELETE_TOKEN = 'DELETE_TOKEN',
 }
 
 export type Actions =
@@ -38,7 +40,9 @@ export type Actions =
     | DeleteCellAction
     | UpdateCellAction
     | RunCellAction
-    | DispatchEventAction;
+    | DispatchEventAction
+    | AddTokenAction
+    | DeleteTokenAction;
 
 export interface Action {
     message: string;
@@ -202,5 +206,21 @@ export interface DispatchEventAction extends Action {
     payload: {
         name: string;
         detail?: Record<string, unknown>;
+    };
+}
+
+export interface AddTokenAction extends Action {
+    message: ActionMessages.ADD_TOKEN;
+    payload: {
+        alias: string;
+        to: string;
+        type: string;
+    };
+}
+
+export interface DeleteTokenAction extends Action {
+    message: ActionMessages.DELETE_TOKEN;
+    payload: {
+        id: string;
     };
 }

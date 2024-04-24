@@ -18,7 +18,7 @@ import { NotebookBlocksMenu } from './NotebookBlocksMenu';
 import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
-import { NotebookParametersMenu } from './NotebookParametersMenu';
+import { NotebookTokensMenu } from './NotebookTokensMenu';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -47,7 +47,7 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'queries' | 'catalog' | 'blocks' | 'transform' | 'parameters' | ''
+        'queries' | 'catalog' | 'blocks' | 'transform' | 'tokens' | ''
     >('queries');
 
     /**
@@ -131,13 +131,13 @@ export const Notebook = observer(() => {
                     <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
                 <SidebarItem
-                    selected={view === 'parameters'}
-                    onClick={() => updateView('parameters')}
+                    selected={view === 'tokens'}
+                    onClick={() => updateView('tokens')}
                 >
-                    <Tooltip title={'Parameters'} placement="right">
+                    <Tooltip title={'Tokens'} placement="right">
                         <SwipeRightAltRounded color="inherit" />
                     </Tooltip>
-                    <SidebarText>Parameters</SidebarText>
+                    <SidebarText>Tokens</SidebarText>
                 </SidebarItem>
             </Sidebar>
             {view ? (
@@ -146,7 +146,7 @@ export const Notebook = observer(() => {
                     {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
                     {view === 'catalog' ? <div>Blocks</div> : null}
-                    {view === 'parameters' ? <NotebookParametersMenu /> : null}
+                    {view === 'tokens' ? <NotebookTokensMenu /> : null}
                 </StyledLeftPanel>
             ) : null}
 

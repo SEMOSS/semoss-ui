@@ -12,12 +12,18 @@ export type SerializedState = {
 };
 
 /**
- * Parameters
+ * Tokens
  */
-export type Parameter = {
+export type Token = {
     alias: string;
-    value: string;
-    type: string;
+    to: string;
+    type:
+        | 'BLOCK'
+        | 'CELL'
+        | 'STRING'
+        | 'NUMBER'
+        | 'DATABASE_ENGINE'
+        | 'MODEL_ENGINE';
 };
 
 /**

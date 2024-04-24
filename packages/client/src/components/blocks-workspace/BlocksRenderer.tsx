@@ -61,6 +61,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                 if (appId) {
                     s = pixelReturn[0].output;
                 } else if (state) {
+                    debugger;
                     s = state;
                 } else {
                     return;
