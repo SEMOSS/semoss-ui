@@ -6,6 +6,7 @@ export interface TypeVariant {
 
 export interface TypeLlmConfig {
     name: string;
+    icon: string;
     topP: number;
     temperature: number;
     length: number;

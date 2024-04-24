@@ -2,6 +2,7 @@ import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
 import { styled, Container, Typography, Link, Stack, Button } from '@semoss/ui';
 import { useState } from 'react';
 import { TypeLlmConfig, TypeVariant } from './workspace.types';
+import { LlmCard } from './LlmCard';
 
 const StyledContainer = styled('section')(({ theme }) => ({
     width: '100%',
@@ -44,6 +45,7 @@ const StyledVariantBox = styled('div', {
 
 const defaultLlmConfig: TypeLlmConfig = {
     name: 'Dummy LLM',
+    icon: 'testtesttest',
     topP: 0,
     temperature: 0,
     length: 0,
@@ -116,7 +118,17 @@ export const LlmConfigureView = () => {
                                     : variant.name}
                             </Typography>
                             <StyledVariantBox selected={variant.isSelected}>
-                                Hello
+                                {variant.models.map(
+                                    (model: TypeLlmConfig, mIdx: number) => {
+                                        return (
+                                            <LlmCard
+                                                key={`${variant.name}-${model.name}-${mIdx}`}
+                                                llm={model}
+                                                isSelected={variant.isSelected}
+                                            />
+                                        );
+                                    },
+                                )}
                             </StyledVariantBox>
 
                             {variant.isSelected && (
