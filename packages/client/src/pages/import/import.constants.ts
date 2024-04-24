@@ -241,6 +241,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -248,15 +268,17 @@ export const CONNECTION_OPTIONS = {
                                 'VAR_NAME',
                                 'MODEL_TYPE',
                                 'OPEN_AI_KEY',
+                                'CHAT_TYPE',
                             ],
                             updateCallback: ({
                                 VAR_NAME,
                                 MODEL_TYPE,
                                 OPEN_AI_KEY,
+                                CHAT_TYPE,
                             }) => `
                                 import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
                                 model_name='${MODEL_TYPE}', 
-                                chat_type = 'chat-completion', 
+                                chat_type = '${CHAT_TYPE}', 
                                 api_key="${OPEN_AI_KEY}",
                                 template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
                                 template_name='mixtral.default.nocontext')`,
@@ -392,6 +414,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -537,6 +579,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -672,6 +734,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -817,6 +899,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -977,6 +1079,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -1107,6 +1229,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -1245,6 +1387,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -1378,6 +1540,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -1449,6 +1631,18 @@ export const CONNECTION_OPTIONS = {
                         },
                     ],
                 },
+                {
+                    name: 'NIM | embed-qa-4',
+                    disable: true,
+                    icon: NEMO,
+                    fields: [],
+                },
+                {
+                    name: 'NIM | rerank-qa-mistral-4b',
+                    disable: true,
+                    icon: NEMO,
+                    fields: [],
+                },
             ],
         },
         'Locally Hosted': [
@@ -1513,6 +1707,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -1655,6 +1869,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -1787,6 +2021,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -1929,6 +2183,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2061,6 +2335,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2203,6 +2497,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2335,6 +2649,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2477,6 +2811,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2609,6 +2963,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2751,6 +3125,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2883,6 +3277,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -3025,6 +3439,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3157,6 +3591,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -3299,6 +3753,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3436,6 +3910,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3568,6 +4062,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -3714,6 +4228,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3847,6 +4381,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3975,6 +4529,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
