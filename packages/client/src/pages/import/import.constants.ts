@@ -153,6 +153,26 @@ export const CONNECTION_OPTIONS = {
                     disable: false,
                     icon: OPEN_AI,
                     fields: [
+                        // {
+                        //     fieldName: 'NEW_SELECT',
+                        //     label: 'New Select',
+                        //     defaultValue: 'false',
+                        //     options: {
+                        //         component: 'select',
+                        //         options: [
+                        //             {
+                        //                 display: 'true',
+                        //                 value: 'true',
+                        //             },
+                        //             {
+                        //                 display: 'false',
+                        //                 value: 'false',
+                        //             },
+                        //         ],
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
                         {
                             fieldName: 'NAME',
                             label: 'Name',
@@ -224,11 +244,20 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
-                            updateCallback: (VAR_NAME, MODEL, API_KEY) => `
+                            updateValueFieldsToWatch: [
+                                'VAR_NAME',
+                                'MODEL_TYPE',
+                                'OPEN_AI_KEY',
+                            ],
+                            updateCallback: ({
+                                VAR_NAME,
+                                MODEL_TYPE,
+                                OPEN_AI_KEY,
+                            }) => `
                                 import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
-                                model_name='${MODEL}', 
+                                model_name='${MODEL_TYPE}', 
                                 chat_type = 'chat-completion', 
-                                api_key="${API_KEY}",
+                                api_key="${OPEN_AI_KEY}",
                                 template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
                                 template_name='mixtral.default.nocontext')`,
                             options: {

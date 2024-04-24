@@ -84,12 +84,13 @@ export const ImportForm = (props) => {
     const { defaultFields, advancedFields } = state;
     const [openAdvanced, setOpenAdvanced] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
-
     const [initScriptCallback, setInitScriptCallback] = useState(null);
+    const [updateFieldName, setUpdateFieldName] = useState('');
 
     const watchedFieldRef = useRef({});
 
-    const { control, handleSubmit, reset, watch, setValue } = useForm();
+    const { control, handleSubmit, reset, watch, setValue, getValues } =
+        useForm();
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -112,6 +113,18 @@ export const ImportForm = (props) => {
                         f2w.push(strippedVal);
                     });
                 }
+            }
+        }
+        return f2w;
+    }, []);
+
+    const dynamicFieldsToWatch = useMemo(() => {
+        const f2w = [];
+        for (const f of fields) {
+            if (f.updateValueFieldsToWatch?.length) {
+                f.updateValueFieldsToWatch.forEach((f) => {
+                    f2w.push(f);
+                });
             }
         }
         return f2w;
@@ -154,26 +167,43 @@ export const ImportForm = (props) => {
     }, [...fieldsToWatch.map((field) => watch(field))]);
 
     /**
-     * watch inputs used in init script
-     * update the init script when user changes input values
+     * Anytime watched input fields defined in constants changes trigger this
+     * Checks to see that update callback has been loaded
+     * Creates params object with all watched input field names and current values
+     * Passes params object to update callback from import.constants.ts
+     * Removes whitespace from new init script string
+     * Updates init script field value
      */
-    const watchedVarName = watch('VAR_NAME');
-    const watchedVarModelType = watch('MODEL_TYPE');
-    const watchedVarAPIKey = watch('OPEN_AI_KEY');
-
     useEffect(() => {
-        if (initScriptCallback) {
-            const newInitScript = initScriptCallback(
-                watchedVarName,
-                watchedVarModelType,
-                watchedVarAPIKey,
-            );
-            const newInitScriptTrimmedSpaces = newInitScript
-                .replace(/\s+/g, ' ')
-                .trim();
-            setValue('INIT_MODEL_ENGINE', newInitScriptTrimmedSpaces);
-        }
-    }, [watchedVarName, watchedVarModelType, watchedVarAPIKey]);
+        if (!initScriptCallback) return;
+
+        const mappedValues = dynamicFieldsToWatch.reduce(
+            (acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
+            {},
+        );
+
+        const newInitScript = initScriptCallback(mappedValues);
+        const newInitScriptSpacesTrimmed = newInitScript.replace(/\s+/g, ' ');
+        setValue(updateFieldName, newInitScriptSpacesTrimmed);
+    }, [...dynamicFieldsToWatch.map((field) => watch(field))]);
+
+    /**
+     * On init load of default values iterate and look for updateCallback
+     * If it is present set it in useState var along with field name to be updated
+     * May be combinable with another useEffect
+     */
+    useEffect(() => {
+        defaultFields.forEach((val, i) => {
+            if (val.updateCallback) {
+                setUpdateFieldName(val.fieldName);
+                setInitScriptCallback(
+                    () =>
+                        (...args) =>
+                            val.updateCallback(...args),
+                );
+            }
+        });
+    }, [defaultFields]);
 
     /**
      * 1. Set Default values for all fields, if default value is present
@@ -567,17 +597,6 @@ export const ImportForm = (props) => {
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 {defaultFields.map((val, i) => {
-                    // if this is the init model engine field and the update function hasn't been set yet
-                    if (
-                        val.fieldName === 'INIT_MODEL_ENGINE' &&
-                        !initScriptCallback
-                    ) {
-                        setInitScriptCallback(
-                            () =>
-                                (...args) =>
-                                    val.updateCallback(...args),
-                        );
-                    }
                     if (!val.hidden) {
                         return (
                             <StyledKeyValue key={i}>
@@ -588,30 +607,6 @@ export const ImportForm = (props) => {
                                     render={({ field, fieldState }) => {
                                         const hasError = fieldState.error;
                                         if (
-                                            val.fieldName ===
-                                            'INIT_MODEL_ENGINE'
-                                        ) {
-                                            console.log({ val });
-                                            return (
-                                                <TextField
-                                                    fullWidth
-                                                    required={
-                                                        val.rules.required
-                                                    }
-                                                    label={val.label}
-                                                    disabled={val.disabled}
-                                                    value={
-                                                        field.value
-                                                            ? field.value
-                                                            : ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                    helperText={val.helperText}
-                                                ></TextField>
-                                            );
-                                        } else if (
                                             val.options.component ===
                                             'text-field'
                                         ) {
