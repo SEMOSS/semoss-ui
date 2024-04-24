@@ -125,7 +125,6 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                 },
             };
 
-            debugger;
             setPreviewState(s);
         }
     }, [tokenRef]);
@@ -216,6 +215,8 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                                 type: 'BLOCK',
                             },
                         });
+
+                        onClose();
                     }}
                 >
                     Add

@@ -277,8 +277,8 @@ export class StateStore {
 
                 this.addToken(alias, to, type);
             } else if (ActionMessages.DELETE_TOKEN === action.message) {
-                // const { id } = action.payload;
-                // this.deleteToken(id);
+                const { id } = action.payload;
+                this.deleteToken(id);
             }
         } catch (e) {
             console.error(e);
@@ -1059,26 +1059,23 @@ export class StateStore {
      * @param type - type of token
      */
     private addToken = (alias, to, type) => {
-        console.log('existing tokens', this._store.tokens);
+        const id = `${type}--${Math.floor(Math.random() * 10000)}`;
 
-        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+        const token: Token = {
+            alias,
+            to,
+            type,
+        };
 
-        // const token: Token = {
-        //     alias,
-        //     to,
-        //     type,
-        // };
-
-        // this._store.tokens[id] = token;
-        return '83289';
+        this._store.tokens[id] = token;
     };
 
     /**
      * Deletes token that can be referenced
-     * @param id - id to delet
+     * @param id - id to delete
      */
     private deleteToken = (id) => {
-        // console.log('existing tokens', this._store.tokens);
-        // delete this._store.tokens[id];
+        // Do i need to go throygh everything and delete token
+        delete this._store.tokens[id];
     };
 }

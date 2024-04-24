@@ -5,12 +5,15 @@ import {
     Button,
     IconButton,
     List,
+    Menu,
     Typography,
     Stack,
+    useNotification,
 } from '@semoss/ui';
 import { useBlocks, useRootStore } from '@/hooks';
-import { Search, ContentCopy } from '@mui/icons-material';
+import { Search, MoreVert } from '@mui/icons-material';
 import { AddTokenModal } from './AddTokenModal';
+import { ActionMessages } from '@/stores';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -20,20 +23,6 @@ const StyledMenu = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1),
     backgroundColor: theme.palette.background.paper,
 }));
-
-// const StyledMenu = styled('div')(({ theme, disabled }) => {
-//     const palette = theme.palette as unknown as {
-//         background: Record<string, string>;
-//     };
-//     return {
-//         display: 'flex',
-//         flexDirection: 'column',
-//         height: '100%',
-//         width: '100%',
-//         paddingTop: theme.spacing(1),
-//         backgroundColor: palette.background["paper1"],
-//     };
-// });
 
 const StyledMenuTitle = styled(Typography)(() => ({
     fontWeight: 'bold',
@@ -47,24 +36,35 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
-const StyledListIcon = styled(List.Icon)(({ theme }) => ({
-    width: theme.spacing(4),
-    minWidth: 'unset',
-}));
-
 /**
  * Render the queries menu of the nodebook
  */
 export const NotebookTokensMenu = observer((): JSX.Element => {
     const { state, notebook } = useBlocks();
-
-    const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
 
     const [addTokenModal, setAddTokenModal] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
 
     const tokens = useMemo(() => {
         return Object.entries(state.tokens);
-    }, [state.tokens]);
+    }, [Object.entries(state.tokens).length]);
+
+    const copyAlias = (projectId: string) => {
+        try {
+            navigator.clipboard.writeText(projectId);
+
+            notification.add({
+                color: 'success',
+                message: 'Succesfully copied to clipboard',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
 
     return (
         <StyledMenu>
@@ -99,14 +99,47 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                                         >
                                             <IconButton
                                                 title="Open Menu"
-                                                onClick={() => {
-                                                    console.log(
-                                                        'Opening Window',
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setAnchorEl(
+                                                        e.currentTarget,
                                                     );
                                                 }}
                                             >
-                                                <ContentCopy />
+                                                <MoreVert />
                                             </IconButton>
+                                            <Menu
+                                                anchorEl={anchorEl}
+                                                open={Boolean(anchorEl)}
+                                                onClose={() => {
+                                                    setAnchorEl(null);
+                                                }}
+                                            >
+                                                <Menu.Item
+                                                    value="copy"
+                                                    onClick={() => {
+                                                        copyAlias(token.alias);
+                                                        setAnchorEl(null);
+                                                    }}
+                                                >
+                                                    Copy Token
+                                                </Menu.Item>
+                                                <Menu.Item
+                                                    value="Delete"
+                                                    onClick={() => {
+                                                        state.dispatch({
+                                                            message:
+                                                                ActionMessages.DELETE_TOKEN,
+                                                            payload: {
+                                                                id: t[0],
+                                                            },
+                                                        });
+                                                        setAnchorEl(null);
+                                                    }}
+                                                >
+                                                    Delete Token
+                                                </Menu.Item>
+                                            </Menu>
                                         </Stack>
                                     </>
                                 }
