@@ -265,7 +265,7 @@ export const CONNECTION_OPTIONS = {
                             options: {
                                 component: 'text-field',
                             },
-                            disabled: true, // user updates with other inputs
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
@@ -1015,7 +1015,7 @@ export const CONNECTION_OPTIONS = {
                             options: {
                                 component: 'text-field',
                             },
-                            disabled: true,
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
@@ -1612,7 +1612,7 @@ export const CONNECTION_OPTIONS = {
                     ],
                 },
             ],
-            'NVidia NIM Models': [
+            'NVIDIA NIM Models': [
                 {
                     name: 'embed-qa-4',
                     disable: false,
@@ -1728,7 +1728,7 @@ export const CONNECTION_OPTIONS = {
                             options: {
                                 component: 'text-field',
                             },
-                            disabled: true, // user updates with other inputs
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
@@ -1938,7 +1938,7 @@ export const CONNECTION_OPTIONS = {
                             options: {
                                 component: 'text-field',
                             },
-                            disabled: true, // user updates with other inputs
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
