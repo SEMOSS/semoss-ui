@@ -177,15 +177,20 @@ export const ImportForm = (props) => {
     useEffect(() => {
         if (!initScriptCallback) return;
 
-        const mappedValues = dynamicFieldsToWatch.reduce(
+        const mappedValuesObject = dynamicFieldsToWatch.reduce(
             (acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
             {},
         );
 
-        const newInitScript = initScriptCallback(mappedValues);
+        const newInitScript = initScriptCallback(mappedValuesObject);
         const newInitScriptSpacesTrimmed = newInitScript.replace(/\s+/g, ' ');
         setValue(updateFieldName, newInitScriptSpacesTrimmed);
-    }, [...dynamicFieldsToWatch.map((field) => watch(field))]);
+
+        // additionally run this after update callback is initially loaded to populate script field
+    }, [
+        ...dynamicFieldsToWatch.map((field) => watch(field)),
+        initScriptCallback,
+    ]);
 
     /**
      * On init load of default values iterate and look for updateCallback
