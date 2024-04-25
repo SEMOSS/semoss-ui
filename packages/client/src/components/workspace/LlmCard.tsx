@@ -2,14 +2,26 @@ import { styled, Card, Stack, Typography, IconButton } from '@semoss/ui';
 import { TypeLlmConfig } from './workspace.types';
 import { Delete, Edit } from '@mui/icons-material';
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disableHover',
+})<{ disableHover?: boolean }>(({ theme, disableHover }) => ({
     width: '362px',
+}));
+
+const StyledCardHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
 }));
 
 const StyledCardContent = styled(Card.Content)(({ theme }) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+
+    ':last-child': {
+        paddingBottom: 0,
+    },
 }));
 
 interface LlmCardProps {
@@ -22,11 +34,11 @@ export const LlmCard = (props: LlmCardProps) => {
     const { name, topP, temperature, length } = llm;
 
     return (
-        <StyledCard>
+        <StyledCard disableHover={!isSelected}>
             <Card.Header
                 title={
-                    <StyledCardContent>
-                        <Stack direction="row" spacing={1}>
+                    <StyledCardHeader>
+                        <Stack direction="row">
                             <div>Icon</div>
                             <div>{name}</div>
                         </Stack>
@@ -41,7 +53,7 @@ export const LlmCard = (props: LlmCardProps) => {
                                 </IconButton>
                             </Stack>
                         )}
-                    </StyledCardContent>
+                    </StyledCardHeader>
                 }
             />
 

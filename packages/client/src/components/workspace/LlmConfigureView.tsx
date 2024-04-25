@@ -1,8 +1,7 @@
-import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
-import { styled, Container, Typography, Link, Stack, Button } from '@semoss/ui';
+import { styled, Container, Typography, Link } from '@semoss/ui';
 import { useState } from 'react';
 import { TypeLlmConfig, TypeVariant } from './workspace.types';
-import { LlmCard } from './LlmCard';
+import { ModelVariant } from './ModelVariant';
 
 const StyledContainer = styled('section')(({ theme }) => ({
     width: '100%',
@@ -20,31 +19,6 @@ const StyledSectionHeader = styled(Typography)(({ theme }) => ({
 
 const StyledList = styled('ul')(({ theme }) => ({
     marginBottom: 0,
-}));
-
-const StyledVariant = styled('div')(({ theme }) => ({
-    marginBottom: theme.spacing(2),
-}));
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-    paddingTop: theme.spacing(3),
-}));
-
-const StyledVariantBox = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{ selected?: boolean }>(({ theme, selected }) => ({
-    marginTop: theme.spacing(1),
-    backgroundColor: theme.palette.background.default,
-    borderRadius: theme.spacing(1.5),
-    padding: theme.spacing(2),
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(2),
-
-    ...(selected && {
-        boxShadow: '0px 5px 8px 0px #00000014',
-    }),
 }));
 
 const config1: TypeLlmConfig = {
@@ -77,18 +51,6 @@ export const LlmConfigureView = () => {
         { name: 'test var', models: [config1, config2, config3] },
         { name: 'test var2', models: [config1, config2] },
     ]);
-
-    const handleAddVariant = (idx: number) => {
-        // TODO
-    };
-
-    const handleDuplicateVariant = (idx: number) => {
-        // TODO
-    };
-
-    const handleDeleteVariant = (idx: number) => {
-        // TODO
-    };
 
     return (
         <Container
@@ -134,64 +96,13 @@ export const LlmConfigureView = () => {
                 {variants.map((variant: TypeVariant, idx: number) => {
                     const isSelected = selectedVariant === idx;
                     return (
-                        <StyledVariant
-                            key={idx}
-                            onClick={() => setSelectedVariant(idx)}
-                        >
-                            <Typography variant="body1" fontWeight="medium">
-                                {idx === 0
-                                    ? `Default (${variant.name})`
-                                    : variant.name}
-                            </Typography>
-                            <StyledVariantBox selected={isSelected}>
-                                {variant.models.map(
-                                    (model: TypeLlmConfig, mIdx: number) => {
-                                        return (
-                                            <LlmCard
-                                                key={`${variant.name}-${model.name}-${mIdx}`}
-                                                llm={model}
-                                                isSelected={isSelected}
-                                            />
-                                        );
-                                    },
-                                )}
-                            </StyledVariantBox>
-
-                            {isSelected && (
-                                <StyledStack direction="row" spacing={2}>
-                                    <Button
-                                        variant="text"
-                                        color="secondary"
-                                        onClick={() => handleAddVariant(idx)}
-                                        startIcon={<Add />}
-                                    >
-                                        Add Variant
-                                    </Button>
-                                    <Button
-                                        variant="text"
-                                        color="secondary"
-                                        onClick={() =>
-                                            handleDuplicateVariant(idx)
-                                        }
-                                        startIcon={<ContentCopy />}
-                                    >
-                                        Duplicate
-                                    </Button>
-                                    {idx !== 0 && (
-                                        <Button
-                                            variant="text"
-                                            color="secondary"
-                                            onClick={() =>
-                                                handleDeleteVariant(idx)
-                                            }
-                                            startIcon={<DeleteOutline />}
-                                        >
-                                            Delete
-                                        </Button>
-                                    )}
-                                </StyledStack>
-                            )}
-                        </StyledVariant>
+                        <ModelVariant
+                            key={`variant-${idx}`}
+                            isSelected={isSelected}
+                            variant={variant}
+                            index={idx}
+                            click={() => setSelectedVariant(idx)}
+                        />
                     );
                 })}
             </StyledContainer>
