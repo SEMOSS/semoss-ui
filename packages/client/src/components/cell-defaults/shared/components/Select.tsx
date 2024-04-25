@@ -9,6 +9,9 @@ export const StyledSelect = styled(Select)(({ theme }) => ({
         textOverflow: 'ellipsis',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
+        '&:focus': {
+            backgroundColor: 'inherit !important',
+        },
     },
 }));
 
