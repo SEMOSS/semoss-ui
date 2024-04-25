@@ -23,7 +23,7 @@ const StyledList = styled('ul')(({ theme }) => ({
 }));
 
 const StyledVariant = styled('div')(({ theme }) => ({
-    marginBottom: theme.spacing(4),
+    marginBottom: theme.spacing(2),
 }));
 
 const StyledStack = styled(Stack)(({ theme }) => ({
@@ -37,23 +37,45 @@ const StyledVariantBox = styled('div', {
     backgroundColor: theme.palette.background.default,
     borderRadius: theme.spacing(1.5),
     padding: theme.spacing(2),
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(2),
 
     ...(selected && {
         boxShadow: '0px 5px 8px 0px #00000014',
     }),
 }));
 
-const defaultLlmConfig: TypeLlmConfig = {
+const config1: TypeLlmConfig = {
     name: 'Dummy LLM',
     icon: 'testtesttest',
-    topP: 0,
+    topP: 1,
+    temperature: 0.2,
+    length: 2342,
+};
+
+const config2: TypeLlmConfig = {
+    name: 'LLM2',
+    icon: 'testtesttest',
+    topP: 0.4,
+    temperature: 0.9,
+    length: 10003,
+};
+
+const config3: TypeLlmConfig = {
+    name: 'LLM2',
+    icon: 'testtesttest',
+    topP: 0.3,
     temperature: 0,
-    length: 0,
+    length: 993,
 };
 
 export const LlmConfigureView = () => {
+    const [selectedVariant, setSelectedVariant] = useState(0);
     const [variants, setVariants] = useState<TypeVariant[]>([
-        { name: 'test var', models: [defaultLlmConfig], isSelected: true },
+        { name: 'test var', models: [config1, config2, config3] },
+        { name: 'test var2', models: [config1, config2] },
     ]);
 
     const handleAddVariant = (idx: number) => {
@@ -110,28 +132,32 @@ export const LlmConfigureView = () => {
                 </div>
 
                 {variants.map((variant: TypeVariant, idx: number) => {
+                    const isSelected = selectedVariant === idx;
                     return (
-                        <StyledVariant key={idx}>
+                        <StyledVariant
+                            key={idx}
+                            onClick={() => setSelectedVariant(idx)}
+                        >
                             <Typography variant="body1" fontWeight="medium">
                                 {idx === 0
                                     ? `Default (${variant.name})`
                                     : variant.name}
                             </Typography>
-                            <StyledVariantBox selected={variant.isSelected}>
+                            <StyledVariantBox selected={isSelected}>
                                 {variant.models.map(
                                     (model: TypeLlmConfig, mIdx: number) => {
                                         return (
                                             <LlmCard
                                                 key={`${variant.name}-${model.name}-${mIdx}`}
                                                 llm={model}
-                                                isSelected={variant.isSelected}
+                                                isSelected={isSelected}
                                             />
                                         );
                                     },
                                 )}
                             </StyledVariantBox>
 
-                            {variant.isSelected && (
+                            {isSelected && (
                                 <StyledStack direction="row" spacing={2}>
                                     <Button
                                         variant="text"

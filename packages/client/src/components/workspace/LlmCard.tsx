@@ -1,5 +1,6 @@
-import { styled, Card, Grid, Typography } from '@semoss/ui';
+import { styled, Card, Stack, Typography, IconButton } from '@semoss/ui';
 import { TypeLlmConfig } from './workspace.types';
+import { Delete, Edit } from '@mui/icons-material';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     width: '362px',
@@ -22,7 +23,27 @@ export const LlmCard = (props: LlmCardProps) => {
 
     return (
         <StyledCard>
-            <Card.Header title={name} />
+            <Card.Header
+                title={
+                    <StyledCardContent>
+                        <Stack direction="row" spacing={1}>
+                            <div>Icon</div>
+                            <div>{name}</div>
+                        </Stack>
+
+                        {isSelected && (
+                            <Stack direction="row" spacing={1}>
+                                <IconButton>
+                                    <Edit />
+                                </IconButton>
+                                <IconButton>
+                                    <Delete />
+                                </IconButton>
+                            </Stack>
+                        )}
+                    </StyledCardContent>
+                }
+            />
 
             <StyledCardContent>
                 <div>
