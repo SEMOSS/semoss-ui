@@ -16,6 +16,7 @@ import {
     ListenerActions,
     SerializedState,
     Token,
+    TokenType,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -27,14 +28,17 @@ interface StateStoreInterface {
     /** insightID to load */
     insightId: string;
 
+    /** token to reference (blocks, cells, dependencies) */
+    tokens: Record<string, Token>;
+
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 
-    /** Parameters */
-    tokens: Record<string, Token>;
+    /** engine dependencies */
+    // dependencies: Record<string, unknown>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
@@ -61,21 +65,12 @@ export class StateStore {
     private _store: StateStoreInterface = {
         mode: 'interactive',
         insightId: '',
-        tokens: {
-            // uuid3: {
-            //     alias: 'Question',
-            //     to: 'input--4308',
-            //     type: 'BLOCK',
-            // },
-            // uuid4: {
-            //     alias: 'cell',
-            //     to: 'query-1.71655',
-            //     type: 'CELL',
-            // },
-        },
+        tokens: {},
         queries: {},
         blocks: {},
         cellRegistry: {},
+
+        // dependencies: {},
     };
 
     /**
@@ -188,6 +183,33 @@ export class StateStore {
     }
 
     /**
+     * Gets the token by it's pointer
+     * @param pointer
+     * @param type
+     * @returns
+     */
+    getToken(pointer: string, type: TokenType): Token | string {
+        if (type === 'BLOCK') {
+            // Get Blocks Data (what we realistically want)
+            const block = this.getBlock(pointer);
+
+            // TO DO: Genericize this, is it always.value
+            return block.data.value as string;
+        } else if (type === 'CELL') {
+            //
+        } else if (type === 'STRING') {
+            //
+        } else if (type === 'NUMBER') {
+            //
+        } else if (type === 'DATABASE_ENGINE') {
+            //
+        } else if (type === 'MODEL_ENGINE') {
+            //
+        }
+        return '';
+    }
+
+    /**
      * Actions
      */
     /**
@@ -278,6 +300,7 @@ export class StateStore {
                 this.addToken(alias, to, type);
             } else if (ActionMessages.DELETE_TOKEN === action.message) {
                 const { id } = action.payload;
+                // TO DO: Does this work
                 this.deleteToken(id);
             }
         } catch (e) {
@@ -368,6 +391,41 @@ export class StateStore {
         }
 
         return result;
+    };
+
+    flattenToken = (expression: string): string => {
+        return expression.replace(/{{(.*?)}}/g, (match) => {
+            let v;
+            Object.values(this._store.tokens).forEach((token) => {
+                // Early return if we find token already
+                if (v) return;
+
+                // remove the brackets
+                if (match.startsWith('{{') && match.endsWith('}}')) {
+                    match = match.slice(2, -2);
+                }
+
+                if (token.alias === match) {
+                    v = this.getToken(token.to, token.type);
+                }
+            });
+
+            // Need to wrap in string for the code
+            if (v) {
+                return JSON.stringify(v);
+            }
+
+            // TODO: Handle old notebooks that don't use tokens
+            // try to extract the variable
+            v = this.parseVariable(match);
+
+            // if it is not a string, convert to a string
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
+            }
+
+            return v;
+        });
     };
 
     /**
@@ -1064,6 +1122,7 @@ export class StateStore {
     private addToken = (alias, to, type) => {
         const id = `${type}--${Math.floor(Math.random() * 10000)}`;
 
+        // TODO: Get unique ID and verify that it is a unique alias
         const token: Token = {
             alias,
             to,

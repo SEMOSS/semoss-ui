@@ -675,7 +675,9 @@ function EditDependenciesModal({
 
     const [dependency, setDependency] = useState(null);
 
-    const getEngines = usePixel<{ app_id: string; app_name: string }[]>(`
+    const getEngines = usePixel<
+        { app_id: string; app_name: string; app_type: string }[]
+    >(`
         MyEngines();
     `);
 
@@ -684,13 +686,16 @@ function EditDependenciesModal({
             return;
         }
 
+        const cleanedEngines = getEngines.data.map((d) => ({
+            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+            app_id: d.app_id,
+            app_type: d.app_type,
+        }));
+
         const newEngines = {
-            models: getEngines.data.map((d) => ({
-                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-                app_id: d.app_id,
-            })),
-            databases: [],
-            storages: [],
+            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
+            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
+            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
         };
 
         setEngines(newEngines);

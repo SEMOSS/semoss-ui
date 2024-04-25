@@ -10,7 +10,7 @@ import {
     Select,
     Typography,
 } from '@semoss/ui';
-import { useBlocks } from '@/hooks';
+import { useBlocks, usePixel } from '@/hooks';
 import { ActionMessages, SerializedState } from '@/stores';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
@@ -43,12 +43,24 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
     const { open, tokenReference, onClose } = props;
     const { state } = useBlocks();
 
+    const getEngines = usePixel<
+        { app_id: string; app_name: string; app_type: string }[]
+    >(`
+    MyEngines();
+    `);
+
     const [tokenAlias, setTokenAlias] = useState('');
     const [tokenRef, setTokenRef] = useState('');
     const [previewState, setPreviewState] = useState<SerializedState>({
         tokens: {},
         blocks: {},
         queries: {},
+    });
+
+    const [engines, setEngines] = useState({
+        models: [],
+        databases: [],
+        storages: [],
     });
 
     // get the input type blocks as an array
@@ -82,6 +94,24 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
 
         return cells;
     }, [state.queries]);
+
+    useEffect(() => {
+        if (getEngines.status !== 'SUCCESS') {
+            return;
+        }
+        const cleanedEngines = getEngines.data.map((d) => ({
+            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+            app_id: d.app_id,
+            app_type: d.app_type,
+        }));
+
+        const newEngines = {
+            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
+            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
+            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
+        };
+        setEngines(newEngines);
+    }, [getEngines.status, getEngines.data]);
 
     /**
      * For Block Preview
@@ -184,6 +214,57 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                                 </Select.Item>
                             );
                         })}
+                        <Stack ml={2}>
+                            <Typography variant="h6" color="secondary">
+                                Models
+                            </Typography>
+                        </Stack>
+                        {engines.models.map((model) => {
+                            return (
+                                <Select.Item
+                                    key={model.app_id}
+                                    value={model.app_id}
+                                >
+                                    <Typography variant="caption">
+                                        {model.app_name}
+                                    </Typography>
+                                </Select.Item>
+                            );
+                        })}
+                        <Stack ml={2}>
+                            <Typography variant="h6" color="secondary">
+                                Databases
+                            </Typography>
+                        </Stack>
+                        {engines.databases.map((model) => {
+                            return (
+                                <Select.Item
+                                    key={model.app_id}
+                                    value={model.app_id}
+                                >
+                                    <Typography variant="caption">
+                                        {model.app_name}
+                                    </Typography>
+                                </Select.Item>
+                            );
+                        })}
+                        <Stack ml={2}>
+                            <Typography variant="h6" color="secondary">
+                                Storages
+                            </Typography>
+                        </Stack>
+                        {engines.storages.map((storage) => {
+                            return (
+                                <Select.Item
+                                    key={storage.app_id}
+                                    value={storage}
+                                >
+                                    <Typography variant="caption">
+                                        {storage.app_name}
+                                    </Typography>
+                                </Select.Item>
+                            );
+                        })}
                     </Select>
 
                     <Typography variant={'h6'}>Preview</Typography>
@@ -213,7 +294,7 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                             message: ActionMessages.ADD_TOKEN,
                             payload: {
                                 alias: tokenAlias,
-                                to: tokenReference,
+                                to: tokenRef,
                                 type: 'BLOCK',
                             },
                         });

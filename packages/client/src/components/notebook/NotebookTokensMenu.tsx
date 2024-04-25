@@ -9,11 +9,13 @@ import {
     Typography,
     Stack,
     useNotification,
+    Tooltip,
 } from '@semoss/ui';
 import { useBlocks, useRootStore } from '@/hooks';
-import { Search, MoreVert } from '@mui/icons-material';
+import { Search, MoreVert, VisibilityRounded } from '@mui/icons-material';
 import { AddTokenModal } from './AddTokenModal';
 import { ActionMessages } from '@/stores';
+import { BlocksRenderer } from '../blocks-workspace';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -66,6 +68,34 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
         }
     };
 
+    const s = {
+        tokens: {},
+        queries: {},
+        blocks: {
+            'page-1': {
+                id: 'page-1',
+                widget: 'page',
+                parent: null,
+                data: {
+                    style: {
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    },
+                },
+                listeners: {
+                    onPageLoad: [],
+                },
+                slots: {
+                    content: {
+                        name: 'content',
+                        children: [],
+                    },
+                },
+            },
+        },
+    };
+
     return (
         <StyledMenu>
             <Stack spacing={2} padding={2}>
@@ -97,6 +127,39 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                                             alignItems="center"
                                             paddingY="8px"
                                         >
+                                            {process.env.NODE_ENV ===
+                                            'development' ? (
+                                                <Tooltip
+                                                    placement={'top'}
+                                                    sx={{
+                                                        background:
+                                                            'transparent !important',
+                                                        backgroundColor:
+                                                            'transparent !important',
+                                                    }}
+                                                    title={
+                                                        <div
+                                                            style={{
+                                                                width: '200px',
+                                                            }}
+                                                        >
+                                                            <BlocksRenderer
+                                                                state={s}
+                                                            />
+                                                        </div>
+                                                    }
+                                                    enterDelay={500}
+                                                    leaveDelay={200}
+                                                >
+                                                    <IconButton>
+                                                        <VisibilityRounded />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            ) : (
+                                                <IconButton>
+                                                    <VisibilityRounded />
+                                                </IconButton>
+                                            )}
                                             <IconButton
                                                 title="Open Menu"
                                                 onClick={(e) => {

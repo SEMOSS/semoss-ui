@@ -19,6 +19,7 @@ import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
 import { NotebookTokensMenu } from './NotebookTokensMenu';
+import { NotebookCatalogMenu } from './NotebookCatalogMenu';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -112,7 +113,7 @@ export const Notebook = observer(() => {
                     <SidebarText>Transform</SidebarText>
                 </SidebarItem>
                 <SidebarItem
-                    disabled={true}
+                    disabled={false}
                     selected={view === 'catalog'}
                     onClick={() => updateView('catalog')}
                 >
@@ -145,7 +146,7 @@ export const Notebook = observer(() => {
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
                     {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
-                    {view === 'catalog' ? <div>Blocks</div> : null}
+                    {view === 'catalog' ? <NotebookCatalogMenu /> : null}
                     {view === 'tokens' ? <NotebookTokensMenu /> : null}
                 </StyledLeftPanel>
             ) : null}

@@ -73,7 +73,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 // get the output (SerializedState)
                 const { output } = pixelReturn[0];
 
-                debugger;
                 // create a new state store
                 const s = new StateStore({
                     mode: 'static',

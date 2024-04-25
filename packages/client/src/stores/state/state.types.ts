@@ -15,18 +15,23 @@ export type SerializedState = {
 };
 
 /**
+ * Token Types
+ */
+export type TokenType =
+    | 'BLOCK'
+    | 'CELL' // Needed for UI not in notebook
+    | 'STRING'
+    | 'NUMBER'
+    | 'DATABASE_ENGINE'
+    | 'MODEL_ENGINE';
+
+/**
  * Tokens
  */
 export type Token = {
     alias: string;
     to: string;
-    type:
-        | 'BLOCK'
-        | 'CELL'
-        | 'STRING'
-        | 'NUMBER'
-        | 'DATABASE_ENGINE'
-        | 'MODEL_ENGINE';
+    type: TokenType;
 };
 
 /**
