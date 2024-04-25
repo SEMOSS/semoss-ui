@@ -86,6 +86,8 @@ export const ImportForm = (props) => {
     const [formLoading, setFormLoading] = useState(false);
     const [initScriptCallback, setInitScriptCallback] = useState(null);
     const [updateFieldName, setUpdateFieldName] = useState('');
+    const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
+        useState(false);
 
     const watchedFieldRef = useRef({});
 
@@ -617,6 +619,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     fullWidth
                                                     required={
                                                         val.rules.required
@@ -657,6 +660,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     type="password"
                                                     fullWidth
                                                     required={
@@ -719,6 +723,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     type="number"
                                                     fullWidth
                                                     required={
@@ -811,6 +816,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 fullWidth
                                                                 required={
                                                                     val.rules
@@ -846,6 +852,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 type="password"
                                                                 fullWidth
                                                                 required={
@@ -882,6 +889,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 type="number"
                                                                 fullWidth
                                                                 required={
