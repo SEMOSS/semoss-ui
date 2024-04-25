@@ -1,3 +1,5 @@
+// InputForm
+
 import { useEffect, useState, useRef, useMemo, useReducer } from 'react';
 import {
     Button,
@@ -82,10 +84,15 @@ export const ImportForm = (props) => {
     const { defaultFields, advancedFields } = state;
     const [openAdvanced, setOpenAdvanced] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [initScriptCallback, setInitScriptCallback] = useState(null);
+    const [updateFieldName, setUpdateFieldName] = useState('');
+    const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
+        useState(false);
 
     const watchedFieldRef = useRef({});
 
-    const { control, handleSubmit, reset, watch, setValue } = useForm();
+    const { control, handleSubmit, reset, watch, setValue, getValues } =
+        useForm();
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -108,6 +115,18 @@ export const ImportForm = (props) => {
                         f2w.push(strippedVal);
                     });
                 }
+            }
+        }
+        return f2w;
+    }, []);
+
+    const dynamicFieldsToWatch = useMemo(() => {
+        const f2w = [];
+        for (const f of fields) {
+            if (f.updateValueFieldsToWatch?.length) {
+                f.updateValueFieldsToWatch.forEach((f) => {
+                    f2w.push(f);
+                });
             }
         }
         return f2w;
@@ -148,6 +167,50 @@ export const ImportForm = (props) => {
             setNewWatchedFieldReferences();
         }
     }, [...fieldsToWatch.map((field) => watch(field))]);
+
+    /**
+     * Anytime watched input fields defined in constants changes trigger this
+     * Checks to see that update callback has been loaded
+     * Creates params object with all watched input field names and current values
+     * Passes params object to update callback from import.constants.ts
+     * Removes whitespace from new init script string
+     * Updates init script field value
+     */
+    useEffect(() => {
+        if (!initScriptCallback) return;
+
+        const mappedValuesObject = dynamicFieldsToWatch.reduce(
+            (acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
+            {},
+        );
+
+        const newInitScript = initScriptCallback(mappedValuesObject);
+        const newInitScriptSpacesTrimmed = newInitScript.replace(/\s+/g, ' ');
+        setValue(updateFieldName, newInitScriptSpacesTrimmed);
+
+        // additionally run this after update callback is initially loaded to populate script field
+    }, [
+        ...dynamicFieldsToWatch.map((field) => watch(field)),
+        initScriptCallback,
+    ]);
+
+    /**
+     * On init load of default values iterate and look for updateCallback
+     * If it is present set it in useState var along with field name to be updated
+     * May be combinable with another useEffect
+     */
+    useEffect(() => {
+        defaultFields.forEach((val, i) => {
+            if (val.updateCallback) {
+                setUpdateFieldName(val.fieldName);
+                setInitScriptCallback(
+                    () =>
+                        (...args) =>
+                            val.updateCallback(...args),
+                );
+            }
+        });
+    }, [defaultFields]);
 
     /**
      * 1. Set Default values for all fields, if default value is present
@@ -556,6 +619,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     fullWidth
                                                     required={
                                                         val.rules.required
@@ -596,6 +660,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     type="password"
                                                     fullWidth
                                                     required={
@@ -658,6 +723,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     type="number"
                                                     fullWidth
                                                     required={
@@ -750,6 +816,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 fullWidth
                                                                 required={
                                                                     val.rules
@@ -785,6 +852,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 type="password"
                                                                 fullWidth
                                                                 required={
@@ -821,6 +889,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 type="number"
                                                                 fullWidth
                                                                 required={
