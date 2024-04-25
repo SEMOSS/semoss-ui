@@ -20,6 +20,7 @@ import {
     Modal,
     styled,
     Typography,
+    Select,
 } from '@semoss/ui';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
@@ -30,6 +31,7 @@ import { useRootStore } from '@/hooks';
 // import { MonolithStore } from '@/stores';
 import { Role } from '@/types';
 import { formatPermission } from '@/utils';
+import { usePixel } from '@/hooks';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -128,6 +130,17 @@ const StyledMenuItem = styled(MenuItem)({
     fontSize: 12,
     gap: '0.75rem',
     padding: '0.75rem',
+});
+
+const DependenciesTable = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+});
+
+const DependencyRow = styled('div')({
+    display: 'flex',
+    width: '100%',
 });
 
 export function AppDetailPage() {
@@ -238,19 +251,6 @@ export function AppDetailPage() {
             </>
         );
     }
-
-    // TODO: Clean up naming between here and dependencies modal
-
-    const DependenciesTable = styled('div')({
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem',
-    });
-
-    const DependencyRow = styled('div')({
-        display: 'flex',
-        width: '100%',
-    });
 
     function DependenciesBody(): JSX.Element {
         if (dependenciesState?.length > 0) {
@@ -666,6 +666,41 @@ function EditDependenciesModal({
     // TODO: Add search bar
     // TODO: Add save functionality
 
+    // Temporary: I need all Engines
+    const [engines, setEngines] = useState({
+        models: [],
+        databases: [],
+        storages: [],
+    });
+
+    const [dependency, setDependency] = useState(null);
+
+    const getEngines = usePixel<{ app_id: string; app_name: string }[]>(`
+        MyEngines();
+    `);
+
+    useEffect(() => {
+        if (getEngines.status !== 'SUCCESS') {
+            return;
+        }
+
+        const newEngines = {
+            models: getEngines.data.map((d) => ({
+                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                app_id: d.app_id,
+            })),
+            databases: [],
+            storages: [],
+        };
+
+        setEngines(newEngines);
+    }, [getEngines.status, getEngines.data]);
+
+    const saveDependencies = () => {
+        debugger;
+        runSetDependenciesQuery([dependency]);
+    };
+
     return (
         <Modal open={isOpen} fullWidth>
             <EditModalInnerContainer>
@@ -687,6 +722,23 @@ function EditDependenciesModal({
                 </Typography>
 
                 <pre>search bar</pre>
+
+                <Select
+                    onChange={(e) => {
+                        setDependency(e.target.value);
+                    }}
+                >
+                    {engines.models.map((model, i) => {
+                        return (
+                            <Select.Item
+                                key={`select-item--${model}--${i}`}
+                                value={model.app_id}
+                            >
+                                {model.app_id}
+                            </Select.Item>
+                        );
+                    })}
+                </Select>
 
                 {dependenciesState?.map(
                     ({ engine_id, engine_name, engine_type }) => (
@@ -713,7 +765,7 @@ function EditDependenciesModal({
                     <Button onClick={() => onClose()} variant="text">
                         Cancel
                     </Button>
-                    <Button onClick={null} variant="contained">
+                    <Button onClick={saveDependencies} variant="contained">
                         Save
                     </Button>
                 </ModalFooter>
