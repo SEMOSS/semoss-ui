@@ -1731,36 +1731,36 @@ export const CONNECTION_OPTIONS = {
                             disabled: false,
                             rules: { required: true },
                         },
-                        {
-                            fieldName: 'ENGINE',
-                            label: 'Engine',
-                            defaultValue: '',
-                            options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'ENGINE_ALIAS',
-                            label: 'Engine Alias',
-                            defaultValue: '',
-                            options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'ENGINE_TYPE',
-                            label: 'Engine Type',
-                            defaultValue: '',
-                            options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
+                        // {
+                        //     fieldName: 'ENGINE',
+                        //     label: 'Engine',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_ALIAS',
+                        //     label: 'Engine Alias',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_TYPE',
+                        //     label: 'Engine Type',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
                         {
                             fieldName: 'KEEP_CONVERSATION_HISTORY',
                             label: 'Keep Conversation History',
@@ -1941,36 +1941,36 @@ export const CONNECTION_OPTIONS = {
                             disabled: false,
                             rules: { required: true },
                         },
-                        {
-                            fieldName: 'ENGINE',
-                            label: 'Engine',
-                            defaultValue: '',
-                            options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'ENGINE_ALIAS',
-                            label: 'Engine Alias',
-                            defaultValue: '',
-                            options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'ENGINE_TYPE',
-                            label: 'Engine Type',
-                            defaultValue: '',
-                            options: {
-                                component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
+                        // {
+                        //     fieldName: 'ENGINE',
+                        //     label: 'Engine',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_ALIAS',
+                        //     label: 'Engine Alias',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_TYPE',
+                        //     label: 'Engine Type',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
                         {
                             fieldName: 'KEEP_CONVERSATION_HISTORY',
                             label: 'Keep Conversation History',
