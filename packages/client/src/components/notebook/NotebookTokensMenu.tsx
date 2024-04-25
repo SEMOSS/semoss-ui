@@ -220,6 +220,11 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                             </List.Item>
                         );
                     })}
+                    <List.Item>
+                        <List.ItemText secondary="Grab from state.dependencies or state.blocks">
+                            hardcoded-token - MODEL
+                        </List.ItemText>
+                    </List.Item>
                 </List>
             </StyledMenuScroll>
             <AddTokenModal

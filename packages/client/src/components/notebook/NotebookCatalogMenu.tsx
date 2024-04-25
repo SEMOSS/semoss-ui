@@ -71,6 +71,10 @@ export const NotebookCatalogMenu = observer(() => {
                             <List.Item key={db.app_id} disablePadding>
                                 <List.ItemButton
                                     onClick={() => {
+                                        // 1.
+                                        // Add to dependencies in state
+                                        // Add token for it in state
+                                        // 2.
                                         // Create a Hidden Engine Block to reference in token
                                         // Create Token based on reference
                                         // state.dispatch({

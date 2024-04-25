@@ -669,7 +669,9 @@ export class StateStore {
     private setState = (state: SerializedState) => {
         // TODO: Things to think about-
         // How will my dependencies get loaded in as?
-        // Once we load those dependencies in, will i have to create a hidden block for them, or will BE do that
+        // A Special Block
+        // Or
+        // added to new construct dependencies
 
         // store the block information
         this._store.blocks = state.blocks;
