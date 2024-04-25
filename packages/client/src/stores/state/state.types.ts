@@ -9,6 +9,9 @@ export type SerializedState = {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Tokens used in notebook */
+    tokens: Record<string, Token>;
 };
 
 /**

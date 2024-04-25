@@ -697,7 +697,6 @@ function EditDependenciesModal({
     }, [getEngines.status, getEngines.data]);
 
     const saveDependencies = () => {
-        debugger;
         runSetDependenciesQuery([dependency]);
     };
 

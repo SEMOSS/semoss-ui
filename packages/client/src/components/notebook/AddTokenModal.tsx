@@ -11,7 +11,7 @@ import {
     Typography,
 } from '@semoss/ui';
 import { useBlocks } from '@/hooks';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, SerializedState } from '@/stores';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { DefaultBlocks, getIconForBlock } from '../block-defaults';
@@ -45,7 +45,8 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
 
     const [tokenAlias, setTokenAlias] = useState('');
     const [tokenRef, setTokenRef] = useState('');
-    const [previewState, setPreviewState] = useState({
+    const [previewState, setPreviewState] = useState<SerializedState>({
+        tokens: {},
         blocks: {},
         queries: {},
     });
@@ -91,6 +92,7 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
         if (tokenRef) {
             const block = state.getBlock(tokenRef);
             const s = {
+                tokens: {},
                 queries: {},
                 blocks: {
                     'page-1': {

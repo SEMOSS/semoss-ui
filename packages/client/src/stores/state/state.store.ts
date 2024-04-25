@@ -442,6 +442,7 @@ export class StateStore {
                 return acc;
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
+            tokens: toJS(this._store.tokens),
         };
     }
 
@@ -610,6 +611,8 @@ export class StateStore {
     private setState = (state: SerializedState) => {
         // store the block information
         this._store.blocks = state.blocks;
+        // store the tokens
+        this._store.tokens = state.tokens ? state.tokens : {};
         // load the queries
         this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
             acc[val] = new QueryState(state.queries[val], this);

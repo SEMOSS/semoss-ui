@@ -228,6 +228,7 @@ export const NewAppPage = () => {
                                             setNewAppOptions({
                                                 type: 'blocks',
                                                 state: {
+                                                    tokens: {},
                                                     queries: {},
                                                     blocks: BASE_PAGE_BLOCKS,
                                                 },
