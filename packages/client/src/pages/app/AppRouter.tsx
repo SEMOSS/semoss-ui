@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AppDetailPage } from './AppDetailPage';
 import { AppPage } from './AppPage';
 import { NewAppPage } from './NewAppPage';
 
@@ -21,6 +22,7 @@ export const AppRouter = observer(() => {
             <Route path=":appId" element={<HeaderLayout />}>
                 <Route index element={<AppPage />} />
                 <Route path="edit" element={<EditAppPage />} />
+                <Route path="detail" element={<AppDetailPage />} />
             </Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />
         </Routes>
