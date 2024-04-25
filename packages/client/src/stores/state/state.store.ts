@@ -667,15 +667,19 @@ export class StateStore {
      * @param state - pixel to execute
      */
     private setState = (state: SerializedState) => {
+        // TODO: Things to think about-
+        // How will my dependencies get loaded in as?
+        // Once we load those dependencies in, will i have to create a hidden block for them, or will BE do that
+
         // store the block information
         this._store.blocks = state.blocks;
-        // store the tokens
-        this._store.tokens = state.tokens ? state.tokens : {};
         // load the queries
         this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
             acc[val] = new QueryState(state.queries[val], this);
             return acc;
         }, {});
+        // store the tokens
+        this._store.tokens = state.tokens ? state.tokens : {};
     };
 
     /**

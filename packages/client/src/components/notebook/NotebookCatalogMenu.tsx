@@ -1,21 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Button,
-    IconButton,
-    List,
-    Menu,
-    Typography,
-    Stack,
-    useNotification,
-    Tooltip,
-} from '@semoss/ui';
+import { styled, List, Typography, Stack } from '@semoss/ui';
 import { useBlocks, useRootStore, usePixel } from '@/hooks';
-import { Search, MoreVert, VisibilityRounded } from '@mui/icons-material';
-import { AddTokenModal } from './AddTokenModal';
-import { ActionMessages } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -80,19 +66,20 @@ export const NotebookCatalogMenu = observer(() => {
             </Stack>
             <StyledMenuScroll>
                 <List disablePadding>
-                    {engines.databases.map((db, index) => {
+                    {engines.databases.map((db) => {
                         return (
                             <List.Item key={db.app_id} disablePadding>
                                 <List.ItemButton
                                     onClick={() => {
-                                        // Create a Hidden Engine Block to be able to directly reference
-                                        // add as a dependency
+                                        // Create a Hidden Engine Block to reference in token
+                                        // Create Token based on reference
                                         // state.dispatch({
                                         //     message: ActionMessages.ADD_BLOCK,
                                         //     payload: {
                                         //         json: {
                                         //             data: {
-                                        //                 value: db.app_id
+                                        //                 value: db.app_id,
+                                        //                 type: 'MODEL' || 'DATABASE' || 'VECTOR'
                                         //             },
                                         //             widget: 'ENGINE'
                                         //         },
@@ -102,6 +89,8 @@ export const NotebookCatalogMenu = observer(() => {
                                         //         },
                                         //     },
                                         // });
+                                        // Get ID from Block
+                                        // TODO Create Token off id
                                     }}
                                 >
                                     <List.ItemText
