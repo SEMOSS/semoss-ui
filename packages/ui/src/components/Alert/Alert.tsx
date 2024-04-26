@@ -1,7 +1,54 @@
 import { ReactNode } from "react";
-import { Alert as MuiAlert, SxProps } from "@mui/material";
+import { Alert as MuiAlert, SxProps, styled } from "@mui/material";
 
 export type AlertColor = "success" | "info" | "warning" | "error";
+
+const StyledAlert = styled(MuiAlert, {
+    shouldForwardProp: (prop) => prop !== "colorOverride",
+})<{ colorOverride: string }>(({ theme, severity, colorOverride }) => ({
+    boxShadow: "none",
+    borderRadius: "4px",
+
+    ...(severity === "success" && {
+        backgroundColor: theme.palette.success.light,
+        color: theme.palette.success.text,
+        "& .MuiAlert-icon": {
+            color: theme.palette.success.main,
+        },
+    }),
+
+    ...(severity === "info" && {
+        backgroundColor: theme.palette.primary.selected,
+        color: theme.palette.primary.main,
+        "& .MuiAlert-icon": {
+            color: theme.palette.primary.main,
+        },
+    }),
+
+    ...(severity === "warning" && {
+        backgroundColor: theme.palette.warning.light,
+        color: theme.palette.warning.text,
+        "& .MuiAlert-icon": {
+            color: theme.palette.warning.text,
+        },
+    }),
+
+    ...(severity === "error" && {
+        backgroundColor: theme.palette.error.light,
+        color: theme.palette.error.text,
+        "& .MuiAlert-icon": {
+            color: theme.palette.error.main,
+        },
+    }),
+
+    ...(colorOverride === "secondary" && {
+        backgroundColor: theme.palette.secondary.light,
+        color: theme.palette.text.primary,
+        "& .MuiAlert-icon": {
+            color: theme.palette.text.primary,
+        },
+    }),
+}));
 
 export interface AlertProps {
     /** children to be rendered */
@@ -31,6 +78,12 @@ export interface AlertProps {
     color?: AlertColor;
 
     /**
+     * ColorOverride is intended to act as a temporary replacement for the custom palette colors to be added to the 'color' prop;
+     * its custom types/options need to be enforced via the theme and the "AlertColor" type defined here.
+     */
+    colorOverride?: "secondary";
+
+    /**
      * The severity of the alert. This defines the color and icon used.
      * @default 'success'
      */
@@ -58,10 +111,10 @@ export interface AlertProps {
 }
 
 export const Alert = (props: AlertProps) => {
-    const { children, sx } = props;
+    const { children, colorOverride, sx } = props;
     return (
-        <MuiAlert sx={sx} {...props}>
+        <StyledAlert sx={sx} colorOverride={colorOverride} {...props}>
             {children}
-        </MuiAlert>
+        </StyledAlert>
     );
 };

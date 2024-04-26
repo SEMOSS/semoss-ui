@@ -41,7 +41,7 @@ export interface MenuItemProps {
     /**
      on click function to fired
     */
-    onClick?: () => void;
+    onClick?: (event: React.MouseEvent) => void;
 
     /**
      * If `true`, the component is selected.
@@ -56,6 +56,8 @@ export interface MenuItemProps {
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+
+    title?: string;
 }
 
 export const MenuItem = (props: MenuItemProps) => {

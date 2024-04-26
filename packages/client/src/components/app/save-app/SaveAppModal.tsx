@@ -13,24 +13,6 @@ import { useForm } from 'react-hook-form';
 import { KeyboardArrowRight, Close } from '@mui/icons-material';
 import { AppFormStep } from './save-app.types';
 
-const StyledStepChip = styled(Chip, {
-    shouldForwardProp: (prop) => prop !== 'isStepSelected',
-})<{ isStepSelected: boolean }>(({ theme, isStepSelected }) => ({
-    '.MuiSvgIcon-root': {
-        color: isStepSelected
-            ? theme.palette.primary.main
-            : theme.palette.grey[400],
-        paddingLeft: theme.spacing(0.5),
-        paddingBottom: theme.spacing(0.125),
-    },
-    color: isStepSelected
-        ? theme.palette.primary.main
-        : theme.palette.grey[400],
-    borderColor: isStepSelected
-        ? `1px solid ${theme.palette.secondary.main}`
-        : `1px solid ${theme.palette.grey[400]}`,
-}));
-
 const StyledModalContent = styled(Modal.Content)(() => ({
     height: '300px',
 }));
@@ -156,9 +138,8 @@ export const SaveAppModal = (props: SaveAppProps) => {
                     >
                         {Array.from(steps, (step, i) => {
                             return (
-                                <StyledStepChip
+                                <Chip
                                     key={i}
-                                    isStepSelected={isStepSelected(i)}
                                     size="small"
                                     color={
                                         isStepSelected(i)

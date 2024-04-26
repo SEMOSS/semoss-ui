@@ -5,7 +5,6 @@ import { useBlocks } from '@/hooks';
 import { NotebookCell } from './NotebookCell';
 import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
-import { NotebookQueryModeButton } from './NotebookQueryModeButton';
 
 const StyledSheet = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -68,9 +67,7 @@ export const NotebookSheet = observer((): JSX.Element => {
                 paddingY={1.25}
                 spacing={2}
             >
-                <Stack direction="row" alignItems="center" spacing={1}>
-                    <NotebookQueryModeButton query={notebook.selectedQuery} />
-                </Stack>
+                &nbsp;
                 <Stack direction="row" alignItems="center" spacing={1}>
                     <StyledContainedButton
                         title="Run all cells"

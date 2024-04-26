@@ -141,6 +141,21 @@ interface PendingMember {
     exporter: boolean;
 }
 
+interface EditUserForm {
+    id: string;
+    username: string;
+    name: string;
+    password: string;
+    email: string;
+    phone: string;
+    phoneextension: string;
+    countrycode: string;
+    admin: boolean;
+    exporter: boolean;
+    publisher: boolean;
+    type: string;
+}
+
 const capitalize = (input: string) => {
     return input.charAt(0).toUpperCase() + input.slice(1);
 };
@@ -290,7 +305,7 @@ export const MemberSettingsPage = () => {
         );
     };
 
-    const createUser = handleSubmit((data: PendingMember) => {
+    const createUser = handleSubmit((data: EditUserForm) => {
         monolithStore['createUser'](adminMode, data).then((resp) => {
             if (resp.data) {
                 const message = `You have successfully added new user(s)`;

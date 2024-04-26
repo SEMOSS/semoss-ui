@@ -221,9 +221,47 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
+                            updateValueFieldsToWatch: [
+                                'VAR_NAME',
+                                'MODEL_TYPE',
+                                'OPEN_AI_KEY',
+                                'CHAT_TYPE',
+                            ],
+                            updateCallback: ({
+                                VAR_NAME,
+                                MODEL_TYPE,
+                                OPEN_AI_KEY,
+                                CHAT_TYPE,
+                            }) => `
+                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
+                                model_name='${MODEL_TYPE}', 
+                                chat_type = '${CHAT_TYPE}', 
+                                api_key="${OPEN_AI_KEY}",
+                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
+                                template_name='mixtral.default.nocontext')`,
                             options: {
                                 component: 'text-field',
                             },
@@ -356,6 +394,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -501,6 +559,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -636,6 +714,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -786,6 +884,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -897,7 +1015,7 @@ export const CONNECTION_OPTIONS = {
                             options: {
                                 component: 'text-field',
                             },
-                            disabled: true,
+                            disabled: false,
                             rules: { required: true },
                         },
                         {
@@ -936,6 +1054,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -1076,6 +1214,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -1204,6 +1362,26 @@ export const CONNECTION_OPTIONS = {
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -1342,6 +1520,26 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue: '',
@@ -1351,6 +1549,428 @@ export const CONNECTION_OPTIONS = {
                             disabled: false,
                             rules: { required: true },
                         },
+                        {
+                            fieldName: 'KEEP_CONVERSATION_HISTORY',
+                            label: 'Keep Conversation History',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_INPUT_OUTPUT',
+                            label: 'Record Questions and Responses',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
+                            fieldName: 'MAX_INPUT_TOKENS',
+                            label: 'Max Input Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                    ],
+                },
+            ],
+            'NVIDIA NIM Models': [
+                {
+                    name: 'embed-qa-4',
+                    disable: false,
+                    icon: NEMO,
+                    fields: [
+                        {
+                            fieldName: 'NAME',
+                            label: 'Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Type',
+                            defaultValue: 'OPEN_AI',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'Open AI',
+                                        value: 'OPEN_AI',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'OPEN_AI_KEY',
+                            label: 'Open AI Key',
+                            defaultValue: '',
+                            options: {
+                                component: 'password',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL',
+                            label: 'Model',
+                            defaultValue:
+                                'mistralai/mixtral-8x7b-instruct-v0.1',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display:
+                                            'mistralai/mixtral-8x7b-instruct-v0.1',
+                                        value: 'mistralai/mixtral-8x7b-instruct-v0.1',
+                                    },
+                                ],
+                            },
+                            disabled: true,
+                            hidden: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'VAR_NAME',
+                            label: 'Variable Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'INIT_MODEL_ENGINE',
+                            label: 'Init Script',
+                            defaultValue: '',
+                            updateValueFieldsToWatch: [
+                                'VAR_NAME',
+                                'MODEL_TYPE',
+                                'OPEN_AI_KEY',
+                                'CHAT_TYPE',
+                            ],
+                            updateCallback: ({
+                                VAR_NAME,
+                                MODEL_TYPE,
+                                OPEN_AI_KEY,
+                                CHAT_TYPE,
+                            }) => `
+                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
+                                model_name='${MODEL_TYPE}', 
+                                chat_type = '${CHAT_TYPE}', 
+                                api_key="${OPEN_AI_KEY}",
+                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
+                                template_name='mixtral.default.nocontext')`,
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        // {
+                        //     fieldName: 'ENGINE',
+                        //     label: 'Engine',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_ALIAS',
+                        //     label: 'Engine Alias',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_TYPE',
+                        //     label: 'Engine Type',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        {
+                            fieldName: 'KEEP_CONVERSATION_HISTORY',
+                            label: 'Keep Conversation History',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'KEEP_INPUT_OUTPUT',
+                            label: 'Record Questions and Responses',
+                            defaultValue: 'false',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'true',
+                                        value: 'true',
+                                    },
+                                    {
+                                        display: 'false',
+                                        value: 'false',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MAX_TOKENS',
+                            label: 'Max Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                        {
+                            fieldName: 'MAX_INPUT_TOKENS',
+                            label: 'Max Input Tokens',
+                            rules: { required: false },
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                        },
+                    ],
+                },
+                {
+                    name: 'rerank-qa-mistral-4b',
+                    disable: false,
+                    icon: NEMO,
+                    fields: [
+                        {
+                            fieldName: 'NAME',
+                            label: 'Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL_TYPE',
+                            label: 'Type',
+                            defaultValue: 'OPEN_AI',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'Open AI',
+                                        value: 'OPEN_AI',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'OPEN_AI_KEY',
+                            label: 'Open AI Key',
+                            defaultValue: '',
+                            options: {
+                                component: 'password',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'MODEL',
+                            label: 'Model',
+                            defaultValue:
+                                'mistralai/mixtral-8x7b-instruct-v0.1',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display:
+                                            'mistralai/mixtral-8x7b-instruct-v0.1',
+                                        value: 'mistralai/mixtral-8x7b-instruct-v0.1',
+                                    },
+                                ],
+                            },
+                            disabled: true,
+                            hidden: true,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'VAR_NAME',
+                            label: 'Variable Name',
+                            defaultValue: '',
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'CHAT_TYPE',
+                            label: 'Chat Type',
+                            defaultValue: 'chat-completion',
+                            options: {
+                                component: 'select',
+                                options: [
+                                    {
+                                        display: 'chat-completion',
+                                        value: 'chat-completion',
+                                    },
+                                    {
+                                        display: 'completion',
+                                        value: 'completion',
+                                    },
+                                ],
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        {
+                            fieldName: 'INIT_MODEL_ENGINE',
+                            label: 'Init Script',
+                            defaultValue: '',
+                            updateValueFieldsToWatch: [
+                                'VAR_NAME',
+                                'MODEL_TYPE',
+                                'OPEN_AI_KEY',
+                                'CHAT_TYPE',
+                            ],
+                            updateCallback: ({
+                                VAR_NAME,
+                                MODEL_TYPE,
+                                OPEN_AI_KEY,
+                                CHAT_TYPE,
+                            }) => `
+                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
+                                model_name='${MODEL_TYPE}', 
+                                chat_type = '${CHAT_TYPE}', 
+                                api_key="${OPEN_AI_KEY}",
+                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
+                                template_name='mixtral.default.nocontext')`,
+                            options: {
+                                component: 'text-field',
+                            },
+                            disabled: false,
+                            rules: { required: true },
+                        },
+                        // {
+                        //     fieldName: 'ENGINE',
+                        //     label: 'Engine',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_ALIAS',
+                        //     label: 'Engine Alias',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
+                        // {
+                        //     fieldName: 'ENGINE_TYPE',
+                        //     label: 'Engine Type',
+                        //     defaultValue: '',
+                        //     options: {
+                        //         component: 'text-field',
+                        //     },
+                        //     disabled: false,
+                        //     rules: { required: true },
+                        // },
                         {
                             fieldName: 'KEEP_CONVERSATION_HISTORY',
                             label: 'Keep Conversation History',
@@ -1477,6 +2097,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -1619,6 +2259,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -1751,6 +2411,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -1893,6 +2573,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2025,6 +2725,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2167,6 +2887,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2299,6 +3039,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2441,6 +3201,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2573,6 +3353,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2715,6 +3515,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -2847,6 +3667,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -2989,6 +3829,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3121,6 +3981,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -3263,6 +4143,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3400,6 +4300,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3532,6 +4452,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -3678,6 +4618,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3811,6 +4771,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
                         defaultValue: '',
@@ -3939,6 +4919,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -9964,4 +10964,367 @@ export const CONNECTION_OPTIONS = {
             },
         ],
     },
+};
+
+export const ENGINE_IMAGES = {
+    MODEL: [
+        {
+            name: 'OPEN_AI',
+            icon: OPEN_AI,
+        },
+        {
+            name: 'GPT-3.5',
+            icon: OPEN_AI,
+        },
+        {
+            name: 'GPT-4',
+            icon: OPEN_AI,
+        },
+        {
+            name: 'Text-Davinci',
+            icon: OPEN_AI,
+        },
+        {
+            name: 'DALL E',
+            icon: OPEN_AI,
+        },
+        {
+            name: 'Azure Open AI',
+
+            icon: AZURE_OPEN_AI,
+        },
+        {
+            name: 'Claude',
+            icon: CLAUDE,
+        },
+        {
+            name: 'Palm Bison',
+            icon: VERTEX,
+        },
+        {
+            name: 'Palm Chat Bison',
+            icon: VERTEX,
+        },
+        {
+            name: 'Palm Code Bison',
+            icon: VERTEX,
+        },
+        {
+            name: 'Wizard 13B',
+            icon: BRAIN,
+        },
+        {
+            name: 'Llama2 7B',
+            icon: META,
+        },
+        {
+            name: 'Llama2 13B',
+            icon: META,
+        },
+        {
+            name: 'Llama2 70B',
+            icon: META,
+        },
+        {
+            name: 'Falcon',
+            icon: FALCON,
+        },
+        {
+            name: 'StableBeluga2',
+            icon: BRAIN,
+        },
+        {
+            name: 'Guanaco',
+            icon: BRAIN,
+        },
+        {
+            name: 'Vicuna',
+            icon: VICUNA,
+        },
+        {
+            name: 'Mosaic ML',
+            icon: MOSAIC,
+        },
+        {
+            name: 'Dolly',
+            icon: DOLLY,
+        },
+        {
+            name: 'Replit code model – 3b',
+            icon: REPLIT,
+        },
+        {
+            name: 'Flan T5 Large',
+            icon: FLAN,
+        },
+        {
+            name: 'Flan T5 XXL',
+            icon: FLAN,
+        },
+        {
+            name: 'Bert',
+            icon: BERT,
+        },
+        {
+            name: 'Eleuther GPTJ',
+            icon: ELEUTHER,
+        },
+        {
+            name: 'Wizard Coder',
+            icon: BRAIN,
+        },
+        {
+            name: 'NeMo',
+            icon: NEMO,
+        },
+        {
+            name: 'Orca',
+            icon: ORCA,
+        },
+        {
+            name: 'Stablity AI',
+            icon: STABILITY_AI,
+        },
+        {
+            name: 'Replit Code Model',
+            icon: REPLIT,
+        },
+        {
+            name: 'NeMo',
+            icon: NEMO,
+        },
+        {
+            name: 'ZIP',
+            icon: ZIP,
+        },
+    ],
+    FUNCTION: [
+        {
+            name: 'REST',
+            icon: RESTAPI,
+        },
+        {
+            name: 'ZIP',
+            icon: ZIP,
+        },
+    ],
+    VECTOR: [
+        {
+            name: 'FAISS',
+            icon: META,
+        },
+        {
+            name: 'WEAVIATE',
+            icon: WEVIATE,
+        },
+        {
+            name: 'PINECONE',
+            icon: PINECONE,
+        },
+        {
+            name: 'PGVECTOR',
+            icon: POSTGRES,
+        },
+        {
+            name: 'ZIP',
+            icon: ZIP,
+        },
+    ],
+    DATABASE: [
+        {
+            name: 'ZIP',
+            icon: ZIP,
+        },
+        {
+            name: 'CSV',
+            icon: CSV,
+        },
+        {
+            name: 'EXCEL',
+            icon: EXCEL,
+        },
+        {
+            name: 'TSV',
+            icon: TSV,
+        },
+        {
+            name: 'SQLITE',
+            icon: SQLITE,
+        },
+        {
+            name: 'H2_DB',
+            icon: H2_DB,
+        },
+        {
+            name: 'NEO4J',
+            icon: NEO4J,
+        },
+        {
+            name: 'TINKER',
+            icon: TINKER,
+        },
+        {
+            name: 'ASTER_DB',
+            icon: ASTER,
+        },
+        {
+            name: 'ATHENA',
+            icon: ATHENA,
+        },
+        {
+            name: 'BIG_QUERY',
+            icon: BIGQUERY,
+        },
+        {
+            name: 'CASSANDRA',
+            icon: CASSANDRA,
+        },
+        {
+            name: 'CLICKHOUSE',
+            icon: CLICKHOUSE,
+        },
+        {
+            name: 'DATABRICKS',
+            icon: DATABRICKS,
+        },
+        {
+            name: 'DATASTAX',
+            icon: DATASTAX,
+        },
+        {
+            name: 'DB2',
+            icon: DB2,
+        },
+
+        {
+            name: 'DERBY',
+            icon: DERBY,
+        },
+
+        {
+            name: 'ELASTIC_SEARCH',
+            icon: ELASTIC_SEARCH,
+        },
+        {
+            name: 'H2',
+            icon: H2_DB,
+        },
+
+        {
+            name: 'HIVE',
+            icon: HIVE,
+        },
+
+        {
+            name: 'IMPALA',
+            icon: IMPALA,
+        },
+        {
+            name: 'MARIA_DB',
+            icon: MARIA_DB,
+        },
+        {
+            name: 'MYSQL',
+            icon: MYSQL,
+        },
+        {
+            name: 'OPEN_SEARCH',
+            icon: OPEN_SEARCH,
+        },
+        {
+            name: 'ORACLE',
+            icon: ORACLE,
+        },
+        {
+            name: 'PHOENIX',
+            icon: PHOENIX,
+        },
+        {
+            name: 'POSTGRES',
+            icon: POSTGRES,
+        },
+        {
+            name: 'REDSHIFT',
+            icon: REDSHIFT,
+        },
+        {
+            name: 'SAP_HANA',
+            icon: SAP_HANA,
+        },
+        {
+            name: 'SEMOSS',
+            icon: SEMOSS,
+        },
+        {
+            name: 'SNOWFLAKE',
+            icon: SNOWFLAKE,
+        },
+        {
+            name: 'SQL_SERVER',
+            icon: SQL_SERVER,
+        },
+
+        {
+            name: 'SQLITE',
+            icon: SQLITE,
+        },
+        {
+            name: 'TERADATA',
+            icon: TERADATA,
+        },
+        {
+            name: 'TIBCO',
+            icon: TIBCO,
+        },
+        {
+            name: 'TRINO',
+            icon: TRINO,
+        },
+    ],
+    STORAGE: [
+        {
+            name: 'AMAZON_S3',
+            icon: AMAZON_S3,
+        },
+        {
+            name: 'CEPH',
+            icon: CEPH,
+        },
+        {
+            name: 'DREAMHOST',
+            icon: DREAMHOST,
+        },
+        {
+            name: 'DROPBOX',
+            icon: DROPBOX,
+        },
+        {
+            name: 'GOOGLE_CLOUD_STORAGE',
+            icon: GOOGLE_CLOUD,
+        },
+        {
+            name: 'GOOGLE_DRIVE_STORAGE',
+            icon: GOOGLE_DRIVE,
+        },
+        {
+            name: 'MICROSOFT_AZURE_BLOB_STORAGE',
+            icon: AZURE_BLOB,
+        },
+        {
+            name: 'MICROSOFT_ONEDRIVE',
+            icon: ONEDRIVE,
+        },
+        {
+            name: 'MINIO',
+            icon: MINIO,
+        },
+        {
+            name: 'SFTP',
+            icon: SFTP,
+        },
+        {
+            name: 'ZIP',
+            icon: ZIP,
+        },
+    ],
 };

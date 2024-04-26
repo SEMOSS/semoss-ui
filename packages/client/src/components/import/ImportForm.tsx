@@ -1,3 +1,5 @@
+// InputForm
+
 import { useEffect, useState, useRef, useMemo, useReducer } from 'react';
 import {
     Button,
@@ -82,10 +84,15 @@ export const ImportForm = (props) => {
     const { defaultFields, advancedFields } = state;
     const [openAdvanced, setOpenAdvanced] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [initScriptCallback, setInitScriptCallback] = useState(null);
+    const [updateFieldName, setUpdateFieldName] = useState('');
+    const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
+        useState(false);
 
     const watchedFieldRef = useRef({});
 
-    const { control, handleSubmit, reset, watch, setValue } = useForm();
+    const { control, handleSubmit, reset, watch, setValue, getValues } =
+        useForm();
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -108,6 +115,18 @@ export const ImportForm = (props) => {
                         f2w.push(strippedVal);
                     });
                 }
+            }
+        }
+        return f2w;
+    }, []);
+
+    const dynamicFieldsToWatch = useMemo(() => {
+        const f2w = [];
+        for (const f of fields) {
+            if (f.updateValueFieldsToWatch?.length) {
+                f.updateValueFieldsToWatch.forEach((f) => {
+                    f2w.push(f);
+                });
             }
         }
         return f2w;
@@ -148,6 +167,86 @@ export const ImportForm = (props) => {
             setNewWatchedFieldReferences();
         }
     }, [...fieldsToWatch.map((field) => watch(field))]);
+
+    /**
+     * Anytime watched input fields defined in constants changes trigger this
+     * Checks to see that update callback has been loaded
+     * Creates params object with all watched input field names and current values
+     * Passes params object to update callback from import.constants.ts
+     * Removes whitespace from new init script string
+     * Updates init script field value
+     */
+    useEffect(() => {
+        if (!initScriptCallback) return;
+        if (isDynamicInputChangedByUser) return;
+
+        const mappedValuesObject = dynamicFieldsToWatch.reduce(
+            (acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
+            {},
+        );
+
+        const newInitScript = initScriptCallback(mappedValuesObject);
+        const newInitScriptSpacesTrimmed = newInitScript.replace(/\s+/g, ' ');
+        setValue(updateFieldName, newInitScriptSpacesTrimmed);
+
+        // additionally run this after update callback is initially loaded to populate script field
+    }, [
+        ...dynamicFieldsToWatch.map((field) => watch(field)),
+        initScriptCallback,
+    ]);
+
+    /**
+     * This runs on input changes to check if the user has changed a dynamically updated field manually
+     * It sets a flag that will stop dynamic update from running if the user has manually changed it
+     * Allows the user to manually change the field back to re-enable dynamic updates
+     */
+    const checkForDynamicFieldChange = () => {
+        // check to see if this form has a dynamically updated field
+        if (updateFieldName && initScriptCallback && dynamicFieldsToWatch) {
+            // setTimeout sets this to occur after field values are updated
+            setTimeout(() => {
+                // get values from all dynamic fields
+                const mappedValuesObject = dynamicFieldsToWatch.reduce(
+                    (acc, fieldName) => ({
+                        ...acc,
+                        [fieldName]: getValues(fieldName),
+                    }),
+                    {},
+                );
+
+                // check if current value of initScript field matches what updateCallback would return
+                // if they do not match the user changed the initScript manually
+                const initScriptValueFromCallback = initScriptCallback(
+                    mappedValuesObject,
+                ).replace(/\s+/g, ' ');
+                const initScriptValueFromTextField = getValues(updateFieldName);
+
+                // if they do match the user has not changed the initScript or they manually changed it back
+                // this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
+                const isMatched =
+                    initScriptValueFromCallback == initScriptValueFromTextField;
+                setIsDynamicInputChangedByUser(!isMatched);
+            }, 0);
+        }
+    };
+
+    /**
+     * On init load of default values iterate and look for updateCallback
+     * If it is present set it in useState var along with field name to be updated
+     * May be combinable with another useEffect
+     */
+    useEffect(() => {
+        defaultFields.forEach((val, i) => {
+            if (val.updateCallback) {
+                setUpdateFieldName(val.fieldName);
+                setInitScriptCallback(
+                    () =>
+                        (...args) =>
+                            val.updateCallback(...args),
+                );
+            }
+        });
+    }, [defaultFields]);
 
     /**
      * 1. Set Default values for all fields, if default value is present
@@ -556,6 +655,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     fullWidth
                                                     required={
                                                         val.rules.required
@@ -567,9 +667,10 @@ export const ImportForm = (props) => {
                                                             ? field.value
                                                             : ''
                                                     }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
+                                                    onChange={(value) => {
+                                                        field.onChange(value);
+                                                        checkForDynamicFieldChange();
+                                                    }}
                                                     // InputProps={{
                                                     //     startAdornment:
                                                     //         val.helperText ? (
@@ -596,6 +697,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     type="password"
                                                     fullWidth
                                                     required={
@@ -658,6 +760,7 @@ export const ImportForm = (props) => {
                                         ) {
                                             return (
                                                 <TextField
+                                                    id={`${val.fieldName}`}
                                                     type="number"
                                                     fullWidth
                                                     required={
@@ -750,6 +853,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 fullWidth
                                                                 required={
                                                                     val.rules
@@ -785,6 +889,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 type="password"
                                                                 fullWidth
                                                                 required={
@@ -821,6 +926,7 @@ export const ImportForm = (props) => {
                                                     ) {
                                                         return (
                                                             <TextField
+                                                                id={`${val.fieldName}`}
                                                                 type="number"
                                                                 fullWidth
                                                                 required={

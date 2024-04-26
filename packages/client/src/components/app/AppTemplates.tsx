@@ -108,14 +108,18 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 
             <StyledContainer>
                 {DEFAULT_TEMPLATE.map((t, idx) => {
-                    return (
-                        <AppTileCard
-                            key={`default-template-${idx}`}
-                            app={getAppMetadataFromTemplate(t)}
-                            image={t.image}
-                            onAction={() => onUse(t)}
-                        />
-                    );
+                    const app = getAppMetadataFromTemplate(t);
+                    {
+                        return (
+                            <AppTileCard
+                                key={`default-template-${idx}`}
+                                app={getAppMetadataFromTemplate(t)}
+                                systemApp={true}
+                                appType={app.project_type}
+                                onAction={() => onUse(t)}
+                            />
+                        );
+                    }
                 })}
             </StyledContainer>
         </Stack>

@@ -8,14 +8,14 @@ const meta: Meta<typeof Chip> = {
     title: "Components/Chip",
     component: Chip,
     args: {
-        variant: "outlined",
+        variant: "filled",
         clickable: true,
         disabled: false,
         color: "default",
     },
     argTypes: {
         variant: {
-            options: ["outlined", "filled"],
+            options: ["filled"],
             control: { type: "radio" },
         },
         color: {
@@ -41,7 +41,7 @@ export default meta;
 
 type Story = StoryObj<typeof Chip>;
 
-export const Outlined: Story = {
+export const Default: Story = {
     render: (args) => (
         <>
             <Chip label="Chip" {...args} />
@@ -50,12 +50,5 @@ export const Outlined: Story = {
 };
 
 export const Delete: Story = {
-    render: () => (
-        <Chip
-            label="Chip"
-            variant="outlined"
-            clickable={true}
-            onDelete={onClick}
-        />
-    ),
+    render: () => <Chip label="Chip" clickable={true} onDelete={onClick} />,
 };
