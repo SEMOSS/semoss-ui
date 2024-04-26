@@ -14,8 +14,9 @@ import {
 import { useBlocks, useRootStore } from '@/hooks';
 import { Search, MoreVert, VisibilityRounded } from '@mui/icons-material';
 import { AddTokenModal } from './AddTokenModal';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, SerializedState } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
+import { dependencies } from 'webpack';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -68,7 +69,8 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
         }
     };
 
-    const s = {
+    const s: SerializedState = {
+        dependencies: {},
         tokens: {},
         queries: {},
         blocks: {

@@ -82,7 +82,6 @@ export const BlocksWorkspaceActions = observer(() => {
 
         // convert the state to json
         const json = state.toJSON();
-        debugger;
 
         try {
             // save the json

@@ -17,6 +17,7 @@ import { computed } from 'mobx';
 import { DefaultBlocks, getIconForBlock } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
+import { dependencies } from 'webpack';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
     height: '10vh',
@@ -52,6 +53,7 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
     const [tokenAlias, setTokenAlias] = useState('');
     const [tokenRef, setTokenRef] = useState('');
     const [previewState, setPreviewState] = useState<SerializedState>({
+        dependencies: {},
         tokens: {},
         blocks: {},
         queries: {},
@@ -121,7 +123,8 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
     useEffect(() => {
         if (tokenRef) {
             const block = state.getBlock(tokenRef);
-            const s = {
+            const s: SerializedState = {
+                dependencies: {},
                 tokens: {},
                 queries: {},
                 blocks: {
@@ -295,7 +298,7 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                             payload: {
                                 alias: tokenAlias,
                                 to: tokenRef,
-                                type: 'BLOCK',
+                                type: 'block',
                             },
                         });
 

@@ -12,18 +12,21 @@ export type SerializedState = {
 
     /** Tokens used in notebook */
     tokens: Record<string, Token>;
+
+    /** Dependencies in app */
+    dependencies: Record<string, unknown>;
 };
 
 /**
  * Token Types
  */
 export type TokenType =
-    | 'BLOCK'
-    | 'CELL' // Needed for UI not in notebook
-    | 'STRING'
-    | 'NUMBER'
-    | 'DATABASE_ENGINE'
-    | 'MODEL_ENGINE';
+    | 'block'
+    | 'cell' // Needed for UI not in notebook
+    | 'string'
+    | 'number'
+    | 'database'
+    | 'model';
 
 /**
  * Tokens

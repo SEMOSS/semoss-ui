@@ -1,4 +1,9 @@
-import { BlockJSON, ListenerActions, SerializedState } from './state.types';
+import {
+    BlockJSON,
+    ListenerActions,
+    SerializedState,
+    TokenType,
+} from './state.types';
 import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
 
@@ -22,6 +27,7 @@ export enum ActionMessages {
     DISPATCH_EVENT = 'DISPATCH_EVENT',
     ADD_TOKEN = 'ADD_TOKEN',
     DELETE_TOKEN = 'DELETE_TOKEN',
+    ADD_DEPENDENCY = 'ADD_DEPENDENCY',
 }
 
 export type Actions =
@@ -42,7 +48,8 @@ export type Actions =
     | RunCellAction
     | DispatchEventAction
     | AddTokenAction
-    | DeleteTokenAction;
+    | DeleteTokenAction
+    | AddDependencyAction;
 
 export interface Action {
     message: string;
@@ -214,7 +221,7 @@ export interface AddTokenAction extends Action {
     payload: {
         alias: string;
         to: string;
-        type: string;
+        type: TokenType;
     };
 }
 
@@ -222,5 +229,13 @@ export interface DeleteTokenAction extends Action {
     message: ActionMessages.DELETE_TOKEN;
     payload: {
         id: string;
+    };
+}
+
+export interface AddDependencyAction extends Action {
+    message: ActionMessages.ADD_DEPENDENCY;
+    payload: {
+        id: string;
+        type: TokenType;
     };
 }

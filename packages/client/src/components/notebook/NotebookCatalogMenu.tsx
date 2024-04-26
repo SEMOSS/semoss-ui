@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, List, Typography, Stack } from '@semoss/ui';
+import { styled, List, Typography, Stack, Tabs } from '@semoss/ui';
 import { useBlocks, useRootStore, usePixel } from '@/hooks';
+import { ActionMessages } from '@/stores';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -26,6 +27,8 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 
 export const NotebookCatalogMenu = observer(() => {
     const { state, notebook } = useBlocks();
+
+    const [catalogView, setCatalogView] = useState('model');
 
     const getEngines = usePixel<
         { app_id: string; app_name: string; app_type: string }[]
@@ -57,6 +60,46 @@ export const NotebookCatalogMenu = observer(() => {
         setEngines(newEngines);
     }, [getEngines.status, getEngines.data]);
 
+    const listItem = (engine, type): JSX.Element => {
+        return (
+            <List.Item key={engine.app_id} disablePadding>
+                <List.ItemButton
+                    onClick={async () => {
+                        // 1.
+                        // Add to dependencies in state
+                        // Add token for it in state
+                        const id = await state.dispatch({
+                            message: ActionMessages.ADD_DEPENDENCY,
+                            payload: {
+                                id: engine.app_id,
+                                type: type,
+                            },
+                        });
+
+                        // Add Token for DATABASE_ENGINE-db.app_id
+                        state.dispatch({
+                            message: ActionMessages.ADD_TOKEN,
+                            payload: {
+                                to: id,
+                                alias: `test-${engine.app_name}`,
+                                type: type,
+                            },
+                        });
+                    }}
+                >
+                    <List.ItemText
+                        disableTypography
+                        primary={
+                            <Typography variant="subtitle2">
+                                {engine.app_name}
+                            </Typography>
+                        }
+                    />
+                </List.ItemButton>
+            </List.Item>
+        );
+    };
+
     return (
         <StyledMenu>
             <Stack spacing={2} padding={2}>
@@ -64,51 +107,33 @@ export const NotebookCatalogMenu = observer(() => {
                     <StyledMenuTitle variant="h6">Catalog</StyledMenuTitle>
                 </Stack>
             </Stack>
+            <Tabs
+                value={catalogView}
+                onChange={(
+                    e: React.SyntheticEvent<Element, Event>,
+                    value: string,
+                ) => {
+                    setCatalogView(value);
+                }}
+            >
+                <Tabs.Item label={'Model'} value={'model'} />
+                <Tabs.Item label={'Database'} value={'database'} />
+                <Tabs.Item label={'Storage'} value={'storage'} />
+            </Tabs>
             <StyledMenuScroll>
                 <List disablePadding>
-                    {engines.databases.map((db) => {
-                        return (
-                            <List.Item key={db.app_id} disablePadding>
-                                <List.ItemButton
-                                    onClick={() => {
-                                        // 1.
-                                        // Add to dependencies in state
-                                        // Add token for it in state
-                                        // 2.
-                                        // Create a Hidden Engine Block to reference in token
-                                        // Create Token based on reference
-                                        // state.dispatch({
-                                        //     message: ActionMessages.ADD_BLOCK,
-                                        //     payload: {
-                                        //         json: {
-                                        //             data: {
-                                        //                 value: db.app_id,
-                                        //                 type: 'MODEL' || 'DATABASE' || 'VECTOR'
-                                        //             },
-                                        //             widget: 'ENGINE'
-                                        //         },
-                                        //         position: {
-                                        //             parent: null,
-                                        //             slot: null,
-                                        //         },
-                                        //     },
-                                        // });
-                                        // Get ID from Block
-                                        // TODO Create Token off id
-                                    }}
-                                >
-                                    <List.ItemText
-                                        disableTypography
-                                        primary={
-                                            <Typography variant="subtitle2">
-                                                {db.app_name}
-                                            </Typography>
-                                        }
-                                    />
-                                </List.ItemButton>
-                            </List.Item>
-                        );
-                    })}
+                    {catalogView === 'database' &&
+                        engines.databases.map((db) => {
+                            return listItem(db, catalogView);
+                        })}
+                    {catalogView === 'model' &&
+                        engines.models.map((db) => {
+                            return listItem(db, catalogView);
+                        })}
+                    {catalogView === 'storage' &&
+                        engines.models.map((db) => {
+                            return listItem(db, catalogView);
+                        })}
                 </List>
             </StyledMenuScroll>
         </StyledMenu>
