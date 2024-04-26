@@ -3,7 +3,8 @@ import { styled, Card, IconButton, Typography } from '@semoss/ui';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     width: '362px',
-    height: '116px',
+    minHeight: '116px',
+    alignSelf: 'stretch',
     display: 'flex',
     justifyContent: 'center',
 }));

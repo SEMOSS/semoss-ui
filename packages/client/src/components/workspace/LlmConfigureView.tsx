@@ -50,6 +50,7 @@ export const LlmConfigureView = () => {
     const [variants, setVariants] = useState<TypeVariant[]>([
         { name: 'test var', models: [config1, config2, config3] },
         { name: 'test var2', models: [config1, config2] },
+        { name: 'test var3', models: [] },
     ]);
 
     return (
