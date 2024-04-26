@@ -1107,7 +1107,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             id: '87071',
                             widget: 'code',
                             parameters: {
-                                code: "x = 'My favorite animal is: ' + '{{block.input--431.value}}'\r\n\r\nx",
+                                code: `x = 'My favorite animal is: ' + '{{block.input--431.value}}'\r\n\r\nx`,
                                 type: 'py',
                             },
                         },
@@ -1120,7 +1120,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             id: '80775',
                             widget: 'code',
                             parameters: {
-                                code: 'a = [\r\n    {\r\n        "a": "A",\r\n        "b": 28\r\n    },\r\n    {\r\n        "a": "B",\r\n        "b": 55\r\n    },\r\n    {\r\n        "a": "D",\r\n        "b": 91\r\n    },\r\n    {\r\n        "a": "E",\r\n        "b": 81\r\n    },\r\n    {\r\n        "a": "E",\r\n        "b": 81\r\n    },\r\n    {\r\n        "a": "G",\r\n        "b": 19\r\n    },\r\n    {\r\n        "a": "H",\r\n        "b": 87\r\n    }\r\n]\r\na',
+                                code: `a = \n[\r\n    {\r\n        "a": "A",\r\n        "b": 28\r\n    },\r\n    {\r\n        "a": "B",\r\n        "b": 55\r\n    },\r\n    {\r\n        "a": "D",\r\n        "b": 91\r\n    },\r\n    {\r\n        "a": "E",\r\n        "b": 81\r\n    },\r\n    {\r\n        "a": "E",\r\n        "b": 81\r\n    },\r\n    {\r\n        "a": "G",\r\n        "b": 19\r\n    },\r\n    {\r\n        "a": "H",\r\n        "b": 87\r\n    }\r\n]\r\na`,
                                 type: 'py',
                             },
                         },
@@ -1145,6 +1145,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             name: 'content',
                         },
                     },
+                    parent: null,
                     widget: 'page',
                     data: {
                         style: {
@@ -1155,7 +1156,76 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             gap: '8px',
                         },
                     },
-                    listeners: {},
+                    listeners: {
+                        onPageLoad: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'MyProjects',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'SampleText',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'Checkbox',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'LuckyNumber',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'Birthday',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'Plants',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'UploadFile',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'ToggleButton',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'VegaGraph',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'FavoriteAnimal',
+                                },
+                            },
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'AreaChart',
+                                },
+                            },
+                        ],
+                    },
                     id: 'page-1',
                 },
                 'text--3020': {
@@ -1296,6 +1366,10 @@ export const DEFAULT_TEMPLATE: Template[] = [
                 'container--8855': {
                     id: 'container--8855',
                     widget: 'container',
+                    parent: {
+                        id: 'container--555',
+                        slot: 'content',
+                    },
                     data: {
                         style: {
                             display: 'flex',
@@ -1848,7 +1922,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     listeners: {
                         onClick: [
                             {
-                                message: 'RUN_QUERY',
+                                message: ActionMessages.RUN_QUERY,
                                 payload: {
                                     queryId: 'MyProjects',
                                 },
