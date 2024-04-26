@@ -133,11 +133,12 @@ export interface SelectProps {
     /** style variant
      * @default outlined
      */
-    variant?: "outlined" | "standard" | "filled";
+    variant?: "outlined" | "standard";
 
     InputProps?: unknown;
 }
 
 export const Select = (props: SelectProps) => {
-    return <MuiTextField variant="outlined" select {...props} />;
+    const { variant = "outlined" } = props;
+    return <MuiTextField variant={variant} select {...props} />;
 };

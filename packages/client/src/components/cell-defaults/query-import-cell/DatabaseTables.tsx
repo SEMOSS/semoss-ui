@@ -34,16 +34,10 @@ const StyledList = styled(List)(({ theme }) => ({
     maxHeight: theme.spacing(15),
     overflow: 'auto',
 }));
-const StyledExpandArrow = styled(KeyboardArrowRight)(() => ({
-    '&.rotate': {
-        transform: 'rotate(90deg)',
-    },
-}));
 
 export const DatabaseTables = (props: { databaseId: string }) => {
     const [tables, setTables] = useState({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [showTableCards, setShowTableCards] = useState<boolean>(false);
 
     const databaseMetamodel = usePixel<{
         dataTypes: Record<string, 'INT' | 'DOUBLE' | 'STRING'>;
@@ -101,92 +95,49 @@ export const DatabaseTables = (props: { databaseId: string }) => {
     }
 
     return (
-        <>
+        <div>
             {isLoading && <LinearProgress variant="indeterminate" />}
             <Collapse in={!isLoading}>
-                <Stack
-                    padding={2}
-                    paddingBottom={showTableCards ? 2 : 0}
-                    spacing={showTableCards ? 2 : 0}
-                >
-                    <StyledHeader
-                        direction="row"
-                        justifyContent="space-between"
-                        width="100%"
-                        onClick={() => setShowTableCards(!showTableCards)}
-                    >
-                        <Typography variant="subtitle2">
-                            {`Tables (${Object.keys(tables).length})`}
-                        </Typography>
-                        <Stack
-                            direction="row"
-                            spacing={0.5}
-                            alignItems="center"
-                        >
-                            <Typography variant="subtitle2">
-                                {showTableCards ? 'Hide' : 'Show'}
-                            </Typography>
-                            <StyledExpandArrow
-                                fontSize="small"
-                                className={showTableCards ? 'rotate' : ''}
-                            />
-                        </Stack>
-                    </StyledHeader>
-                    <Collapse in={showTableCards}>
-                        <StyledTableScroll direction="row" spacing={2}>
-                            {Array.from(
-                                Object.keys(tables),
-                                (tableName, index) => {
-                                    return (
-                                        <StyledCard
-                                            key={`${tableName}-${index}`}
-                                        >
-                                            <List.Item>
-                                                <List.Icon>
-                                                    <TableChartOutlined />
-                                                </List.Icon>
-                                                <List.ItemText
-                                                    primary={tableName}
-                                                />
-                                            </List.Item>
-                                            <Divider />
-                                            <StyledList disablePadding dense>
-                                                {Array.from(
-                                                    tables[tableName]
-                                                        .columnNames,
-                                                    (columnName, index) => {
-                                                        return (
-                                                            <List.Item
-                                                                key={`${columnName}-${index}`}
-                                                            >
-                                                                <List.Icon>
-                                                                    {getIconForDataType(
-                                                                        tables[
-                                                                            tableName
-                                                                        ]
-                                                                            .columnTypes[
-                                                                            `${tableName}__${columnName}`
-                                                                        ],
-                                                                    )}
-                                                                </List.Icon>
-                                                                <List.ItemText
-                                                                    primary={
-                                                                        columnName
-                                                                    }
-                                                                />
-                                                            </List.Item>
-                                                        );
-                                                    },
-                                                )}
-                                            </StyledList>
-                                        </StyledCard>
-                                    );
-                                },
-                            )}
-                        </StyledTableScroll>
-                    </Collapse>
-                </Stack>
+                <StyledTableScroll direction="row" spacing={2}>
+                    {Array.from(Object.keys(tables), (tableName, index) => {
+                        return (
+                            <StyledCard key={`${tableName}-${index}`}>
+                                <List.Item>
+                                    <List.Icon>
+                                        <TableChartOutlined />
+                                    </List.Icon>
+                                    <List.ItemText primary={tableName} />
+                                </List.Item>
+                                <Divider />
+                                <StyledList disablePadding dense>
+                                    {Array.from(
+                                        tables[tableName].columnNames,
+                                        (columnName, index) => {
+                                            return (
+                                                <List.Item
+                                                    key={`${columnName}-${index}`}
+                                                >
+                                                    <List.Icon>
+                                                        {getIconForDataType(
+                                                            tables[tableName]
+                                                                .columnTypes[
+                                                                `${tableName}__${columnName}`
+                                                            ],
+                                                        )}
+                                                    </List.Icon>
+                                                    <List.ItemText
+                                                        primary={columnName}
+                                                    />
+                                                </List.Item>
+                                            );
+                                        },
+                                    )}
+                                </StyledList>
+                            </StyledCard>
+                        );
+                    })}
+                </StyledTableScroll>
             </Collapse>
-        </>
+        </div>
     );
 };
