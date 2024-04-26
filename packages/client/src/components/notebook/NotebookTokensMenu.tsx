@@ -11,12 +11,15 @@ import {
     useNotification,
     Tooltip,
 } from '@semoss/ui';
-import { useBlocks, useRootStore } from '@/hooks';
-import { Search, MoreVert, VisibilityRounded } from '@mui/icons-material';
+import { useBlocks } from '@/hooks';
+import { MoreVert, VisibilityRounded } from '@mui/icons-material';
 import { AddTokenModal } from './AddTokenModal';
 import { ActionMessages, SerializedState } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
-import { dependencies } from 'webpack';
+
+const StyledTooltip = styled(Tooltip)(() => ({
+    fontWeight: 'bold',
+}));
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -43,7 +46,7 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
  * Render the queries menu of the nodebook
  */
 export const NotebookTokensMenu = observer((): JSX.Element => {
-    const { state, notebook } = useBlocks();
+    const { state } = useBlocks();
     const notification = useNotification();
 
     const [addTokenModal, setAddTokenModal] = useState(false);
@@ -69,33 +72,54 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
         }
     };
 
-    const s: SerializedState = {
-        dependencies: {},
-        tokens: {},
-        queries: {},
-        blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    style: {
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
+    /**
+     * SHow Preview of Block
+     * @param to what block to render
+     * @returns Serialized State
+     */
+    const getStateWithBlock = (to: string) => {
+        const block = state.getBlock(to);
+
+        const s: SerializedState = {
+            dependencies: {},
+            tokens: {},
+            queries: {},
+            blocks: {
+                'page-1': {
+                    id: 'page-1',
+                    widget: 'page',
+                    parent: null,
+                    data: {
+                        style: {
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        },
+                    },
+                    listeners: {
+                        onPageLoad: [],
+                    },
+                    slots: {
+                        content: {
+                            name: 'content',
+                            children: [to],
+                        },
                     },
                 },
-                listeners: {
-                    onPageLoad: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
+                [to]: {
+                    id: block.id,
+                    widget: block.widget,
+                    data: block.data,
+                    parent: null,
+                    listeners: block.listeners,
+                    slots: block.slots,
                 },
             },
-        },
+        };
+
+        console.log('state', s);
+
+        return s;
     };
 
     return (
@@ -131,32 +155,48 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                                         >
                                             {process.env.NODE_ENV ===
                                             'development' ? (
-                                                <Tooltip
-                                                    placement={'top'}
-                                                    sx={{
-                                                        background:
-                                                            'transparent !important',
-                                                        backgroundColor:
-                                                            'transparent !important',
-                                                    }}
+                                                <StyledTooltip
+                                                    placement={'right'}
                                                     title={
-                                                        <div
-                                                            style={{
-                                                                width: '200px',
-                                                            }}
-                                                        >
-                                                            <BlocksRenderer
-                                                                state={s}
-                                                            />
-                                                        </div>
+                                                        token.type ===
+                                                        'block' ? (
+                                                            <div
+                                                                style={{
+                                                                    width: '200px',
+                                                                }}
+                                                            >
+                                                                <BlocksRenderer
+                                                                    state={getStateWithBlock(
+                                                                        token.to,
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            state.getToken(
+                                                                token.to,
+                                                                token.type,
+                                                            )
+                                                        )
                                                     }
+                                                    componentsProps={{
+                                                        tooltip: {
+                                                            sx: {
+                                                                bgcolor:
+                                                                    token.type ===
+                                                                    'block'
+                                                                        ? 'transparent'
+                                                                        : 'white',
+                                                                color: 'black',
+                                                            },
+                                                        },
+                                                    }}
                                                     enterDelay={500}
                                                     leaveDelay={200}
                                                 >
                                                     <IconButton>
                                                         <VisibilityRounded />
                                                     </IconButton>
-                                                </Tooltip>
+                                                </StyledTooltip>
                                             ) : (
                                                 <IconButton>
                                                     <VisibilityRounded />
@@ -222,11 +262,6 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                             </List.Item>
                         );
                     })}
-                    <List.Item>
-                        <List.ItemText secondary="Grab from state.dependencies or state.blocks">
-                            hardcoded-token - MODEL
-                        </List.ItemText>
-                    </List.Item>
                 </List>
             </StyledMenuScroll>
             <AddTokenModal

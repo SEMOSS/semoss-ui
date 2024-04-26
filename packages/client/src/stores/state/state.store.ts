@@ -686,12 +686,6 @@ export class StateStore {
      * @param state - pixel to execute
      */
     private setState = (state: SerializedState) => {
-        // TODO: Things to think about-
-        // How will my dependencies get loaded in as?
-        // A Special Block
-        // Or
-        // added to new construct dependencies -- X
-
         // store the block information
         this._store.blocks = state.blocks;
         // load the queries
@@ -699,8 +693,11 @@ export class StateStore {
             acc[val] = new QueryState(state.queries[val], this);
             return acc;
         }, {});
+
         // store the tokens
         this._store.tokens = state.tokens ? state.tokens : {};
+        // store the dependencies
+        this._store.dependencies = state.dependencies ? state.dependencies : {};
     };
 
     /**

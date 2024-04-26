@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, List, Typography, Stack, Tabs } from '@semoss/ui';
+import {
+    styled,
+    IconButton,
+    List,
+    Tooltip,
+    Typography,
+    Stack,
+    Tabs,
+} from '@semoss/ui';
 import { useBlocks, useRootStore, usePixel } from '@/hooks';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, Token } from '@/stores';
+import { VisibilityRounded } from '@mui/icons-material';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -13,16 +22,21 @@ const StyledMenu = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
 }));
 
+const StyledList = styled(List)(({ theme }) => ({
+    height: '100%',
+    width: '100%',
+    overflowY: 'auto',
+}));
 const StyledMenuTitle = styled(Typography)(() => ({
     fontWeight: 'bold',
 }));
 
 const StyledMenuScroll = styled('div')(({ theme }) => ({
-    flex: '1',
     width: '100%',
     paddingBottom: theme.spacing(1),
     overflowX: 'hidden',
     overflowY: 'auto',
+    height: '35%',
 }));
 
 export const NotebookCatalogMenu = observer(() => {
@@ -30,17 +44,20 @@ export const NotebookCatalogMenu = observer(() => {
 
     const [catalogView, setCatalogView] = useState('model');
 
-    const getEngines = usePixel<
-        { app_id: string; app_name: string; app_type: string }[]
-    >(`
-    MyEngines();
-    `);
+    const getEngines =
+        usePixel<{ app_id: string; app_name: string; app_type: string }[]>(
+            `MyEngines();`,
+        );
 
     const [engines, setEngines] = useState({
         models: [],
         databases: [],
         storages: [],
     });
+
+    const tokens = useMemo(() => {
+        return Object.entries(state.tokens);
+    }, [Object.entries(state.tokens).length]);
 
     useEffect(() => {
         if (getEngines.status !== 'SUCCESS') {
@@ -121,7 +138,7 @@ export const NotebookCatalogMenu = observer(() => {
                 <Tabs.Item label={'Storage'} value={'storage'} />
             </Tabs>
             <StyledMenuScroll>
-                <List disablePadding>
+                <StyledList disablePadding>
                     {catalogView === 'database' &&
                         engines.databases.map((db) => {
                             return listItem(db, catalogView);
@@ -131,10 +148,59 @@ export const NotebookCatalogMenu = observer(() => {
                             return listItem(db, catalogView);
                         })}
                     {catalogView === 'storage' &&
-                        engines.models.map((db) => {
+                        engines.storages.map((db) => {
                             return listItem(db, catalogView);
                         })}
-                </List>
+                </StyledList>
+            </StyledMenuScroll>
+            <Stack spacing={2} padding={2}>
+                <Stack direction="row" justifyContent="space-between">
+                    <StyledMenuTitle variant="h6">Tokens</StyledMenuTitle>
+                </Stack>
+            </Stack>
+            <StyledMenuScroll>
+                <StyledList disablePadding>
+                    {tokens.map(([key, token]) => {
+                        if (key.includes(catalogView)) {
+                            return (
+                                <List.Item
+                                    key={`token--${key}`}
+                                    secondaryAction={
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                            paddingY="8px"
+                                        >
+                                            <Tooltip
+                                                placement={'top'}
+                                                title={state.getToken(
+                                                    token.to,
+                                                    token.type,
+                                                )}
+                                                enterDelay={500}
+                                                leaveDelay={200}
+                                            >
+                                                <IconButton>
+                                                    <VisibilityRounded />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
+                                    }
+                                >
+                                    <List.ItemText
+                                        disableTypography
+                                        primary={
+                                            <Typography variant="subtitle2">
+                                                {token.alias}
+                                            </Typography>
+                                        }
+                                    />
+                                </List.Item>
+                            );
+                        }
+                    })}
+                </StyledList>
             </StyledMenuScroll>
         </StyledMenu>
     );
