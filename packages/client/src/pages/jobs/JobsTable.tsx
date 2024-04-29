@@ -106,7 +106,9 @@ export const JobsTable = (props: {
                         alignItems="center"
                     >
                         {params.value.map((tag, idx) => {
-                            return <Chip key={idx} label={tag} />;
+                            if (tag) {
+                                return <Chip key={idx} label={tag} />;
+                            }
                         })}
                     </Stack>
                 );

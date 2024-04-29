@@ -8,8 +8,10 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@semoss/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { timezones } from './job.constants';
+import { AddJobStandardFrequency } from './AddJobStandardFrequency';
+import { AddJobCustomFrequency } from './AddJobCustomFrequency';
 
 export interface JobBuilder {
     name: string;
@@ -29,12 +31,48 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
         name: '',
         pixel: '',
         tags: '',
-        cronExpression: '0 12 * * *',
+        cronExpression: '0 12 12 9 0',
         cronTz: 'Eastern Standard Time',
     });
     const setBuilderField = (field: string, value: string) => {
         setBuilder((previousBuilder) => ({ ...previousBuilder, field: value }));
     };
+
+    useEffect(() => {
+        const cronValues = builder.cronExpression.split(' ');
+        if (cronValues.length < 5) {
+            // invalid cron syntax, send to standard builder
+            setFrequencyType('standard');
+            return;
+        } else if (Number.isNaN(cronValues[0]) || Number.isNaN(cronValues[1])) {
+            // non-integer time values, must be custom
+            setFrequencyType('custom');
+            return;
+        }
+
+        // check daily
+        if (
+            cronValues[2] == '*' &&
+            cronValues[3] == '*' &&
+            cronValues[4] == '*'
+        ) {
+            setFrequencyType('standard');
+            return;
+        } else if (cronValues[2] == '*' && cronValues[3] == '*') {
+            setFrequencyType('standard');
+            return;
+        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
+            setFrequencyType('standard');
+            return;
+        } else if (cronValues[4] == '*') {
+            setFrequencyType('standard');
+            return;
+        } else {
+            console.log('setting custom for time');
+            setFrequencyType('custom');
+            return;
+        }
+    }, []);
 
     return (
         <Modal open={isOpen} maxWidth="md" fullWidth>
@@ -108,6 +146,11 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                             />
                         )}
                     />
+                    {frequencyType === 'standard' ? (
+                        <AddJobStandardFrequency builder={builder} />
+                    ) : (
+                        <AddJobCustomFrequency builder={builder} />
+                    )}
                 </Stack>
             </Modal.Content>
         </Modal>

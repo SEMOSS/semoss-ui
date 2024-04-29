@@ -1,3 +1,5 @@
+import { DayOfWeek, Frequencies, Month } from './jobs.types';
+
 export const timezones = [
     'Acre Time',
     'Afghanistan Time',
@@ -182,4 +184,117 @@ export const timezones = [
     'Xinjiang Standard Time',
     'Yakutsk Time',
     'Yekaterinburg Time',
+];
+
+export const DaysOfWeek: Array<{
+    day: DayOfWeek;
+    value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+}> = [
+    {
+        day: 'Sunday',
+        value: 0,
+    },
+    {
+        day: 'Monday',
+        value: 1,
+    },
+    {
+        day: 'Tuesday',
+        value: 2,
+    },
+    {
+        day: 'Wednesday',
+        value: 3,
+    },
+    {
+        day: 'Thursday',
+        value: 4,
+    },
+    {
+        day: 'Friday',
+        value: 5,
+    },
+    {
+        day: 'Saturday',
+        value: 6,
+    },
+];
+
+export const Months: Array<{
+    month: Month;
+    value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+    days: 28 | 30 | 31;
+}> = [
+    {
+        month: 'January',
+        value: 1,
+        days: 31,
+    },
+    {
+        month: 'February',
+        value: 2,
+        days: 29,
+    },
+    {
+        month: 'March',
+        value: 3,
+        days: 31,
+    },
+    {
+        month: 'April',
+        value: 4,
+        days: 30,
+    },
+    {
+        month: 'May',
+        value: 5,
+        days: 31,
+    },
+    {
+        month: 'June',
+        value: 6,
+        days: 30,
+    },
+    {
+        month: 'July',
+        value: 7,
+        days: 31,
+    },
+    {
+        month: 'August',
+        value: 8,
+        days: 31,
+    },
+    {
+        month: 'September',
+        value: 9,
+        days: 30,
+    },
+    {
+        month: 'October',
+        value: 10,
+        days: 31,
+    },
+    {
+        month: 'November',
+        value: 11,
+        days: 30,
+    },
+    {
+        month: 'December',
+        value: 12,
+        days: 31,
+    },
+];
+
+export const FrequencyDaily = 'Daily';
+export const FrequencyWeekly = 'Weekly';
+export const FrequencyMonthly = 'Monthly';
+export const FrequencyYearly = 'Yearly';
+
+export const FrequencyOptions: Frequencies[] = [
+    FrequencyDaily,
+    FrequencyWeekly,
+    FrequencyMonthly,
+    FrequencyYearly,
 ];

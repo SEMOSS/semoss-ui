@@ -87,3 +87,28 @@ export interface HistoryJob {
     isLatest: boolean;
     schedulerOutput: string;
 }
+
+export type Frequencies = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
+
+export type DayOfWeek =
+    | 'Sunday'
+    | 'Monday'
+    | 'Tuesday'
+    | 'Wednesday'
+    | 'Thursday'
+    | 'Friday'
+    | 'Saturday';
+
+export type Month =
+    | 'January'
+    | 'February'
+    | 'March'
+    | 'April'
+    | 'May'
+    | 'June'
+    | 'July'
+    | 'August'
+    | 'September'
+    | 'October'
+    | 'November'
+    | 'December';
