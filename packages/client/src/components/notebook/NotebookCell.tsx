@@ -16,12 +16,18 @@ import {
 } from '@semoss/ui';
 import {
     ContentCopy,
+    Delete,
     DeleteOutlined,
     PlayCircle,
     CheckCircle,
     Error,
     Pending,
     KeyboardArrowRight,
+    MoreVert,
+    Link,
+    ArrowUpward,
+    ArrowDownward,
+    PlayArrowRounded,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
@@ -130,6 +136,11 @@ const StyledButtonLabel = styled('div')(() => ({
 
 const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
     color: theme.palette.text.secondary,
+    // old border between icons not in figma
+    // border: `1px solid ${theme.palette.text.secondary}`,
+}));
+
+const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
     border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
@@ -160,6 +171,20 @@ const StyledExpandArrow = styled(KeyboardArrowRight, {
 const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
     marginLeft: `${theme.spacing(9)} !important`,
     height: theme.spacing(5),
+}));
+
+const StyledSmallArrowUpward = styled(ArrowUpward)(({ theme }) => ({
+    marginTop: '10px',
+    marginLeft: '15px',
+    position: 'absolute',
+    width: '10px',
+}));
+
+const StyledSmallArrowDownward = styled(ArrowDownward)(({ theme }) => ({
+    marginTop: '10px',
+    marginLeft: '15px',
+    position: 'absolute',
+    width: '10px',
 }));
 
 interface NotebookCellProps {
@@ -324,6 +349,61 @@ export const NotebookCell = observer(
             }
         };
 
+        const runCellAndBelowHandler = () => {
+            try {
+                const currentCellIndex = query.list.indexOf(cell.id);
+                const allCells = query.list;
+
+                allCells.slice(currentCellIndex).forEach((currCellId, idx) => {
+                    console.log({ currCellId, idx });
+
+                    state.dispatch({
+                        message: ActionMessages.RUN_CELL,
+                        payload: {
+                            queryId: cell.query.id,
+                            cellId: currCellId,
+                        },
+                    });
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        const runCellsAboveHandler = () => {
+            try {
+                const currentCellIndex = query.list.indexOf(cell.id);
+                const allCells = query.list;
+                allCells
+                    .slice(0, currentCellIndex)
+                    .forEach((currCellId, idx) => {
+                        console.log({ currCellId, idx });
+
+                        state.dispatch({
+                            message: ActionMessages.RUN_CELL,
+                            payload: {
+                                queryId: cell.query.id,
+                                cellId: currCellId,
+                            },
+                        });
+                    });
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        const copyCellIDHandler = () => {
+            console.log('copyCellIDHandler');
+        };
+
+        const moreOptionsHandler = () => {
+            console.log('moreOptionsHandler');
+        };
+
+        const generateWithAIHandler = () => {
+            console.log('generateWithAIHandler');
+        };
+
         return (
             <StyledStack
                 direction={'column'}
@@ -379,7 +459,85 @@ export const NotebookCell = observer(
                                     }
                                 }}
                             />
-                            <ButtonGroup variant="outlined">
+                            {/* <ButtonGroup variant="outlined"> */}
+                            <StyledButtonGroup variant="outlined">
+                                <StyledButtonGroupButton
+                                    title="Run this cell and below"
+                                    size="small"
+                                    disabled={cell.isLoading}
+                                    onClick={(e) => {
+                                        // stop propogation to card parent so newly created cell will be selected
+                                        e.stopPropagation();
+                                        runCellAndBelowHandler();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <PlayArrowRounded
+                                            fontSize="medium"
+                                            sx={{
+                                                padding: '2px',
+                                            }}
+                                        />
+                                        <ArrowDownward
+                                            fontSize="small"
+                                            // styles only applying correctly with sx
+                                            sx={{
+                                                marginTop: '10px',
+                                                marginLeft: '15px',
+                                                position: 'absolute',
+                                                width: '10px',
+                                            }}
+                                        />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                                <StyledButtonGroupButton
+                                    title="Run the cells above"
+                                    size="small"
+                                    disabled={cell.isLoading}
+                                    onClick={(e) => {
+                                        // stop propogation to card parent so newly created cell will be selected
+                                        e.stopPropagation();
+                                        runCellsAboveHandler();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <PlayArrowRounded
+                                            fontSize="medium"
+                                            sx={{
+                                                padding: '2px',
+                                            }}
+                                        />
+                                        <ArrowUpward
+                                            fontSize="small"
+                                            // styles only applying correctly with sx
+                                            sx={{
+                                                marginTop: '10px',
+                                                marginLeft: '15px',
+                                                position: 'absolute',
+                                                width: '10px',
+                                            }}
+                                        />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                                <StyledButtonGroupButton
+                                    title="Copy cell ID (create link)"
+                                    size="small"
+                                    disabled={cell.isLoading}
+                                    onClick={(e) => {
+                                        // stop propogation to card parent so newly created cell will be selected
+                                        e.stopPropagation();
+                                        copyCellIDHandler();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <Link
+                                            fontSize="medium"
+                                            sx={{
+                                                padding: '2px',
+                                            }}
+                                        />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
                                 <StyledButtonGroupButton
                                     title="Duplicate cell"
                                     size="small"
@@ -409,10 +567,23 @@ export const NotebookCell = observer(
                                     }}
                                 >
                                     <StyledButtonLabel>
-                                        <DeleteOutlined fontSize="small" />
+                                        <Delete fontSize="small" />
                                     </StyledButtonLabel>
                                 </StyledButtonGroupButton>
-                            </ButtonGroup>
+                                <StyledButtonGroupButton
+                                    title="Delete cell"
+                                    disabled={cell.isLoading}
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        moreOptionsHandler();
+                                    }}
+                                >
+                                    <StyledButtonLabel>
+                                        <MoreVert fontSize="small" />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                            </StyledButtonGroup>
                         </Stack>
                     </StyledCellActions>
 
