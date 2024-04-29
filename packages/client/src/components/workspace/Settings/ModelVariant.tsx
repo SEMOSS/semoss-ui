@@ -1,6 +1,6 @@
 import { styled, Typography, Button, Stack } from '@semoss/ui';
 import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
-import { TypeVariant, TypeLlmConfig } from './workspace.types';
+import { TypeVariant, TypeLlmConfig } from '../workspace.types';
 import { LlmCard } from './LlmCard';
 import { AddModelCard } from './AddModelCard';
 

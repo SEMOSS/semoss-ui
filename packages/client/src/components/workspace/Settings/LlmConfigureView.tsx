@@ -1,6 +1,6 @@
 import { styled, Container, Typography, Link } from '@semoss/ui';
 import { useState } from 'react';
-import { TypeLlmConfig, TypeVariant } from './workspace.types';
+import { TypeLlmConfig, TypeVariant } from '../workspace.types';
 import { ModelVariant } from './ModelVariant';
 
 const StyledContainer = styled('section')(({ theme }) => ({

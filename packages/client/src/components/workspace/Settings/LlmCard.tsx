@@ -1,5 +1,5 @@
 import { styled, Card, Stack, Typography, IconButton } from '@semoss/ui';
-import { TypeLlmConfig } from './workspace.types';
+import { TypeLlmConfig } from '../workspace.types';
 import { Delete, Edit } from '@mui/icons-material';
 
 const StyledCard = styled(Card, {
