@@ -91,7 +91,6 @@ const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
 })<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
     const shape = theme.shape as CustomShapeOptions;
 
     return {
@@ -355,8 +354,6 @@ export const NotebookCell = observer(
                 const allCells = query.list;
 
                 allCells.slice(currentCellIndex).forEach((currCellId, idx) => {
-                    console.log({ currCellId, idx });
-
                     state.dispatch({
                         message: ActionMessages.RUN_CELL,
                         payload: {
@@ -377,8 +374,6 @@ export const NotebookCell = observer(
                 allCells
                     .slice(0, currentCellIndex)
                     .forEach((currCellId, idx) => {
-                        console.log({ currCellId, idx });
-
                         state.dispatch({
                             message: ActionMessages.RUN_CELL,
                             payload: {
@@ -393,7 +388,19 @@ export const NotebookCell = observer(
         };
 
         const copyCellIDHandler = () => {
-            console.log('copyCellIDHandler');
+            try {
+                navigator.clipboard.writeText(cell.id);
+
+                notification.add({
+                    color: 'success',
+                    message: 'Succesfully copied to clipboard',
+                });
+            } catch (e) {
+                notification.add({
+                    color: 'error',
+                    message: e.message,
+                });
+            }
         };
 
         const moreOptionsHandler = () => {
@@ -430,7 +437,7 @@ export const NotebookCell = observer(
 
                     <StyledCellActions in={showCellActions}>
                         <Stack gap={1} direction={'row'} alignItems={'center'}>
-                            <StyledIdChip
+                            {/* <StyledIdChip
                                 label={
                                     <Stack
                                         direction="row"
@@ -458,7 +465,7 @@ export const NotebookCell = observer(
                                         });
                                     }
                                 }}
-                            />
+                            /> */}
                             {/* <ButtonGroup variant="outlined"> */}
                             <StyledButtonGroup variant="outlined">
                                 <StyledButtonGroupButton
@@ -520,7 +527,7 @@ export const NotebookCell = observer(
                                     </StyledButtonLabel>
                                 </StyledButtonGroupButton>
                                 <StyledButtonGroupButton
-                                    title="Copy cell ID (create link)"
+                                    title={`Copy cell ID (${cell.id})`}
                                     size="small"
                                     disabled={cell.isLoading}
                                     onClick={(e) => {

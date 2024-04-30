@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { styled, Button, Divider, Menu, MenuProps, Stack } from '@semoss/ui';
@@ -10,11 +10,24 @@ import {
     NewCellAction,
     QueryState,
 } from '@/stores';
-import { AccountTree, Add, Functions } from '@mui/icons-material';
+import {
+    AccountTree,
+    Add,
+    Functions,
+    ChangeCircleOutlined,
+    Storage,
+    Code,
+    ImportExport,
+    TextFields,
+    KeyboardArrowUp,
+    KeyboardArrowDown,
+    TableRows,
+} from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
     DefaultCells,
     TransformationCells,
+    // ImportDataCells, // need options for Import Data dropdown options
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
@@ -53,6 +66,13 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
 }));
 
+const StyledBorderDiv = styled('div')(({ theme }) => ({
+    // border: `1px solid ${theme.palette.text.secondary}`,
+    border: `1px solid ${theme.palette.secondary.main}`,
+    padding: '8px 16px',
+    borderRadius: '8px',
+}));
+
 interface AddCellOption {
     display: string;
     icon: React.ReactNode;
@@ -64,27 +84,57 @@ interface AddCellOption {
 }
 
 const Transformations = Array.from(Object.values(TransformationCells)).map(
-    (item) => ({
-        display: item.name,
-        defaultCellType: item.widget,
-    }),
+    (item) => {
+        return {
+            display: item.name,
+            defaultCellType: item.widget,
+        };
+    },
 );
+
+const ImportDataOptions = Array.from(Object.values(TransformationCells))
+    .map(
+        // const ImportDataOptions = Array.from(Object.values(ImportDataCells)).map( // need ImportDataCells options
+        (item, idx) => {
+            return {
+                display: `Sample Option ${idx}`, // placeholders
+                // display: item.name,
+                defaultCellType: item.widget,
+            };
+        },
+    )
+    .slice(0, 3); // placeholder to limit dropdown options
+// );
 
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
         defaultCellType: 'code',
-        icon: <Add />,
+        icon: <Code />,
     },
     'query-import': {
         display: 'Query Import',
         defaultCellType: 'query-import',
-        icon: <AccountTree />,
+        // Some MUI options - MUI doesn't seem to have a standard DB / hard drive stacked disk icon
+        // icon: <AccountTree />,
+        // icon: <Storage />,
+        icon: <TableRows />,
     },
     transformation: {
         display: 'Transformation',
-        icon: <Functions />,
+        icon: <ChangeCircleOutlined />,
         options: Transformations,
+    },
+    'import-data': {
+        display: 'Import Data',
+        icon: <ImportExport />,
+        options: ImportDataOptions,
+    },
+    text: {
+        display: 'Text',
+        // defaultCellType: 'text', // text type currently doesn't exist
+        defaultCellType: 'code',
+        icon: <TextFields />,
     },
 };
 
@@ -173,29 +223,42 @@ export const NotebookAddCell = observer(
 
         return (
             <Stack direction={'row'} alignItems={'center'} gap={1}>
-                {Object.entries(AddCellOptions).map((add, i) => {
-                    const value = add[1];
-                    return (
-                        <StyledButton
-                            key={i}
-                            title={`Add ${value.display}`}
-                            variant="contained"
-                            size="small"
-                            disabled={query.isLoading}
-                            startIcon={value.icon}
-                            onClick={(e) => {
-                                if (value.options) {
-                                    setAnchorEl(e.currentTarget);
-                                    setSelectedAddCell(add[0]);
-                                } else {
-                                    appendCell(value.defaultCellType);
+                <StyledDivider />
+                <StyledBorderDiv>
+                    {Object.entries(AddCellOptions).map((add, i) => {
+                        const value = add[1];
+                        return (
+                            <StyledButton
+                                key={i}
+                                // title={`Add ${value.display}`}
+                                title={`${value.display}`}
+                                variant="contained"
+                                size="small"
+                                disabled={query.isLoading}
+                                startIcon={value.icon}
+                                onClick={(e) => {
+                                    if (value.options) {
+                                        setAnchorEl(e.currentTarget);
+                                        setSelectedAddCell(add[0]);
+                                    } else {
+                                        appendCell(value.defaultCellType);
+                                    }
+                                }}
+                                endIcon={
+                                    value?.options?.length > 0 &&
+                                    (selectedAddCell == add[0] && open ? (
+                                        <KeyboardArrowDown />
+                                    ) : (
+                                        <KeyboardArrowUp />
+                                    ))
                                 }
-                            }}
-                        >
-                            Add {value.display}
-                        </StyledButton>
-                    );
-                })}
+                            >
+                                {/* Add {value.display} */}
+                                {value.display}
+                            </StyledButton>
+                        );
+                    })}
+                </StyledBorderDiv>
                 <StyledDivider />
                 <StyledMenu
                     anchorEl={anchorEl}
