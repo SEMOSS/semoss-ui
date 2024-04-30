@@ -174,7 +174,7 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
                     <TourCardHeader
                         action={
                             <StyledIconButton onClick={props.hideTour}>
-                                <Close />
+                                <Close data-testid="close-tour" />
                             </StyledIconButton>
                         }
                         title={`${currentStepIndex + 1}/${props.steps.length}`}
