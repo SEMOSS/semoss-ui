@@ -1,12 +1,9 @@
-import { styled, Typography, Button, Stack } from '@semoss/ui';
+import { styled, Typography, Button, Stack, Collapse } from '@semoss/ui';
 import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
 import { TypeVariant, TypeLlmConfig } from '../workspace.types';
+import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { AddModelCard } from './AddModelCard';
-
-const StyledVariant = styled('div')(({ theme }) => ({
-    marginBottom: theme.spacing(1),
-}));
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingTop: theme.spacing(3),
@@ -15,7 +12,6 @@ const StyledStack = styled(Stack)(({ theme }) => ({
 const StyledVariantBox = styled('div', {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{ selected?: boolean }>(({ theme, selected }) => ({
-    marginTop: theme.spacing(1),
     backgroundColor: theme.palette.background.default,
     borderRadius: theme.spacing(1.5),
     padding: theme.spacing(2),
@@ -29,6 +25,19 @@ const StyledVariantBox = styled('div', {
     }),
 }));
 
+const StyledRow = styled('div')(({ theme }) => ({
+    position: 'relative',
+    height: '50px',
+}));
+
+const StyledActionBar = styled(Collapse)(({ theme }) => ({
+    position: 'absolute',
+    paddingTop: theme.spacing(2),
+    top: theme.spacing(-2),
+    width: '100%',
+    zIndex: 1,
+}));
+
 interface ModelVariantProps {
     isSelected: boolean;
     variant: TypeVariant;
@@ -38,6 +47,7 @@ interface ModelVariantProps {
 
 export const ModelVariant = (props: ModelVariantProps) => {
     const { variant, isSelected, index, click } = props;
+    const [hovered, setHovered] = useState(false);
 
     const handleAddVariant = (idx: number) => {
         // TODO
@@ -52,7 +62,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
     };
 
     return (
-        <StyledVariant onClick={() => click(index)}>
+        <div onClick={() => click(index)}>
             <Typography variant="body1" fontWeight="medium">
                 {index === 0 ? `Default (${variant.name})` : variant.name}
             </Typography>
@@ -71,36 +81,43 @@ export const ModelVariant = (props: ModelVariantProps) => {
                 {variant.models.length < 1 && <AddModelCard />}
             </StyledVariantBox>
 
-            {isSelected && (
-                <StyledStack direction="row" spacing={2}>
-                    <Button
-                        variant="text"
-                        color="secondary"
-                        onClick={() => handleAddVariant(index)}
-                        startIcon={<Add />}
-                    >
-                        Add Variant
-                    </Button>
-                    <Button
-                        variant="text"
-                        color="secondary"
-                        onClick={() => handleDuplicateVariant(index)}
-                        startIcon={<ContentCopy />}
-                    >
-                        Duplicate
-                    </Button>
-                    {index !== 0 && (
+            <StyledRow
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                onFocus={() => setHovered(true)}
+                onBlur={() => setHovered(false)}
+            >
+                <StyledActionBar in={isSelected || hovered}>
+                    <StyledStack direction="row" gap={2}>
                         <Button
                             variant="text"
                             color="secondary"
-                            onClick={() => handleDeleteVariant(index)}
-                            startIcon={<DeleteOutline />}
+                            onClick={() => handleAddVariant(index)}
+                            startIcon={<Add />}
                         >
-                            Delete
+                            Add Variant
                         </Button>
-                    )}
-                </StyledStack>
-            )}
-        </StyledVariant>
+                        <Button
+                            variant="text"
+                            color="secondary"
+                            onClick={() => handleDuplicateVariant(index)}
+                            startIcon={<ContentCopy />}
+                        >
+                            Duplicate
+                        </Button>
+                        {index !== 0 && (
+                            <Button
+                                variant="text"
+                                color="secondary"
+                                onClick={() => handleDeleteVariant(index)}
+                                startIcon={<DeleteOutline />}
+                            >
+                                Delete
+                            </Button>
+                        )}
+                    </StyledStack>
+                </StyledActionBar>
+            </StyledRow>
+        </div>
     );
 };
