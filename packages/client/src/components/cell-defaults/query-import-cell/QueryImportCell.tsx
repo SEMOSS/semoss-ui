@@ -299,11 +299,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                             <StyledSelectItem
                                                 key={`${i}-${cell.id}-${databaseId}`}
                                                 value={databaseId}
-                                                title={
-                                                    cfgLibraryDatabases.display[
-                                                        databaseId
-                                                    ] ?? ''
-                                                }
                                             >
                                                 {cfgLibraryDatabases.display[
                                                     databaseId
