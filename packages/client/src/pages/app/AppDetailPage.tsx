@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { nanoid } from 'nanoid';
 // import { Controller, useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CloseIcon from '@mui/icons-material/Close';
@@ -287,7 +286,9 @@ export function AppDetailPage() {
                         </DependencyRow>
                         {dependenciesState?.map(
                             ({ engine_id, engine_name, engine_type }) => (
-                                <DependencyRow key={nanoid()}>
+                                <DependencyRow
+                                    key={`name-${engine_name}--id-${engine_id}`}
+                                >
                                     <Link
                                         href={`./#/engine/${engine_type}/${engine_id}`}
                                         sx={{ width: '50%' }}
@@ -394,8 +395,10 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">Tags</SectionHeading>
                             {appInfoState?.tag ? (
                                 <TagsBodyWrapper>
-                                    {appInfoState?.tag.map((tag) => (
-                                        <Tag key={nanoid()}>{tag}</Tag>
+                                    {appInfoState?.tag.map((tag, idx) => (
+                                        <Tag key={`tag-${tag}-${idx}`}>
+                                            {tag}
+                                        </Tag>
                                     ))}
                                 </TagsBodyWrapper>
                             ) : (
@@ -540,12 +543,12 @@ function Sidebar({ permissionState, refs }: SidebarProps) {
 
     return (
         <StyledSidebar>
-            {headings.map(({ text, ref }) => (
+            {headings.map(({ text, ref }, idx) => (
                 <SidebarMenuItem
                     onClick={() =>
                         ref.current.scrollIntoView({ behavior: 'smooth' })
                     }
-                    key={nanoid()}
+                    key={`sidebar-menu-${idx}`}
                     value={null}
                 >
                     {text}
@@ -745,8 +748,10 @@ function EditDependenciesModal({
                 </Select>
 
                 {dependenciesState?.map(
-                    ({ engine_id, engine_name, engine_type }) => (
-                        <ModalDependencyRow key={nanoid()}>
+                    ({ engine_id, engine_name, engine_type }, idx) => (
+                        <ModalDependencyRow
+                            key={`dependency-${engine_id}-${idx}`}
+                        >
                             <div>
                                 <ModalEngineName
                                     variant="body1"
