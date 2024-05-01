@@ -60,6 +60,12 @@ const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
     },
 }));
 
+const StyledPointerStack = styled(Stack)(({ theme }) => ({
+    '&:hover': {
+        cursor: 'pointer',
+    },
+}));
+
 interface NotebookTokenProps {
     /** Id of the token */
     id: string;
@@ -292,7 +298,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                             <CustomWrapper>
                                 <div>
                                     {!openRenameAlias ? (
-                                        <Stack
+                                        <StyledPointerStack
                                             // sx={{ border: 'solid red' }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -321,7 +327,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                     height: '2px',
                                                 }}
                                             ></div>
-                                        </Stack>
+                                        </StyledPointerStack>
                                     ) : (
                                         <Stack
                                             direction="column"
@@ -365,6 +371,15 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                             notification.add({
                                                                 color: 'success',
                                                                 message: `Succesfully renamed token ${token.alias} to ${newTokenAlias}, remember to save your app.`,
+                                                            });
+
+                                                            state.dispatch({
+                                                                message:
+                                                                    ActionMessages.RENAME_TOKEN,
+                                                                payload: {
+                                                                    to: token.to,
+                                                                    alias: newTokenAlias,
+                                                                },
                                                             });
                                                         }
                                                     }}

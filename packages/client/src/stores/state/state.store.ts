@@ -312,6 +312,10 @@ export class StateStore {
                 const { alias, to, type } = action.payload;
 
                 this.addToken(alias, to, type);
+            } else if (ActionMessages.RENAME_TOKEN === action.message) {
+                const { to, alias } = action.payload;
+                // TO DO: Does this work
+                this.renameToken(to, alias);
             } else if (ActionMessages.DELETE_TOKEN === action.message) {
                 const { id } = action.payload;
                 // TO DO: Does this work
@@ -1152,6 +1156,18 @@ export class StateStore {
         };
 
         this._store.tokens[to] = token;
+    };
+
+    /**
+     * Adds to tokens that can be referenced
+     * @param alias - referenced as
+     * @param to - points to
+     * @param type - type of token
+     */
+    private renameToken = (to, alias) => {
+        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+
+        this._store.tokens[to].alias = alias;
     };
 
     /**
