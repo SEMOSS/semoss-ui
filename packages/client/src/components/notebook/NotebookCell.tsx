@@ -13,6 +13,8 @@ import {
     IconButton,
     Divider,
     CustomShapeOptions,
+    Menu,
+    MenuProps,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -135,8 +137,6 @@ const StyledButtonLabel = styled('div')(() => ({
 
 const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
     color: theme.palette.text.secondary,
-    // old border between icons not in figma
-    // border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
@@ -172,18 +172,29 @@ const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
     height: theme.spacing(5),
 }));
 
-const StyledSmallArrowUpward = styled(ArrowUpward)(({ theme }) => ({
-    marginTop: '10px',
-    marginLeft: '15px',
-    position: 'absolute',
-    width: '10px',
+const StyledMenu = styled((props: MenuProps) => (
+    <Menu
+        anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+        }}
+        transformOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+        }}
+        {...props}
+    />
+))(({ theme }) => ({
+    '& .MuiPaper-root': {
+        marginTop: theme.spacing(1),
+    },
+    '.MuiList-root': {
+        padding: 0,
+    },
 }));
 
-const StyledSmallArrowDownward = styled(ArrowDownward)(({ theme }) => ({
-    marginTop: '10px',
-    marginLeft: '15px',
-    position: 'absolute',
-    width: '10px',
+const StyledMenuItem = styled(Menu.Item)(() => ({
+    textTransform: 'capitalize',
 }));
 
 interface NotebookCellProps {
@@ -210,6 +221,9 @@ export const NotebookCell = observer(
         const [hoveredAddCellActions, setHoveredAddCellActions] =
             useState(false);
         const [showCellActions, setShowCellActions] = useState(false);
+
+        const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+        const open = Boolean(anchorEl);
 
         const cardContentRef = useRef(null);
         const cardActionsRef = useRef(null);
@@ -403,10 +417,6 @@ export const NotebookCell = observer(
             }
         };
 
-        const moreOptionsHandler = () => {
-            console.log('moreOptionsHandler');
-        };
-
         const generateWithAIHandler = () => {
             console.log('generateWithAIHandler');
         };
@@ -435,7 +445,10 @@ export const NotebookCell = observer(
                         {cell.config.name}
                     </StyledName>
 
-                    <StyledCellActions in={showCellActions}>
+                    <StyledCellActions
+                        in={showCellActions}
+                        // sx={{border: "1px solid green"}}
+                    >
                         <Stack gap={1} direction={'row'} alignItems={'center'}>
                             {/* <StyledIdChip
                                 label={
@@ -583,7 +596,7 @@ export const NotebookCell = observer(
                                     size="small"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        moreOptionsHandler();
+                                        setAnchorEl(e.currentTarget);
                                     }}
                                 >
                                     <StyledButtonLabel>
@@ -591,6 +604,28 @@ export const NotebookCell = observer(
                                     </StyledButtonLabel>
                                 </StyledButtonGroupButton>
                             </StyledButtonGroup>
+
+                            {/**
+                             * more options menu
+                             * only showing one option currently with no attached function
+                             **/}
+                            <StyledMenu
+                                anchorEl={anchorEl}
+                                open={open}
+                                onClose={() => {
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                <StyledMenuItem
+                                    value={'generate-with-ai'}
+                                    onClick={() => {
+                                        setAnchorEl(null);
+                                        generateWithAIHandler();
+                                    }}
+                                >
+                                    Generate with AI
+                                </StyledMenuItem>
+                            </StyledMenu>
                         </Stack>
                     </StyledCellActions>
 

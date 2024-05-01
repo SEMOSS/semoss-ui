@@ -67,7 +67,6 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
 }));
 
 const StyledBorderDiv = styled('div')(({ theme }) => ({
-    // border: `1px solid ${theme.palette.text.secondary}`,
     border: `1px solid ${theme.palette.secondary.main}`,
     padding: '8px 16px',
     borderRadius: '8px',
@@ -92,20 +91,6 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
     },
 );
 
-const ImportDataOptions = Array.from(Object.values(TransformationCells))
-    .map(
-        // const ImportDataOptions = Array.from(Object.values(ImportDataCells)).map( // need ImportDataCells options
-        (item, idx) => {
-            return {
-                display: `Sample Option ${idx}`, // placeholders
-                // display: item.name,
-                defaultCellType: item.widget,
-            };
-        },
-    )
-    .slice(0, 3); // placeholder to limit dropdown options
-// );
-
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
@@ -115,10 +100,30 @@ const AddCellOptions: Record<string, AddCellOption> = {
     'query-import': {
         display: 'Query Import',
         defaultCellType: 'query-import',
-        // Some MUI options - MUI doesn't seem to have a standard DB / hard drive stacked disk icon
-        // icon: <AccountTree />,
-        // icon: <Storage />,
-        icon: <TableRows />,
+        // no DB MUI icon using the icon path from main menu
+        icon: (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+            >
+                <g clip-path="url(#clip0_2378_103062)">
+                    <path
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
+                        fill="#666666"
+                    ></path>
+                </g>
+                <defs>
+                    <clipPath id="clip0_2378_103062">
+                        <rect width="24" height="24" fill="#666666"></rect>
+                    </clipPath>
+                </defs>
+            </svg>
+        ),
     },
     transformation: {
         display: 'Transformation',
@@ -128,12 +133,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
     'import-data': {
         display: 'Import Data',
         icon: <ImportExport />,
-        options: ImportDataOptions,
+        options: [],
     },
     text: {
         display: 'Text',
         // defaultCellType: 'text', // text type currently doesn't exist
-        defaultCellType: 'code',
         icon: <TextFields />,
     },
 };
@@ -230,7 +234,6 @@ export const NotebookAddCell = observer(
                         return (
                             <StyledButton
                                 key={i}
-                                // title={`Add ${value.display}`}
                                 title={`${value.display}`}
                                 variant="contained"
                                 size="small"
@@ -245,7 +248,7 @@ export const NotebookAddCell = observer(
                                     }
                                 }}
                                 endIcon={
-                                    value?.options?.length > 0 &&
+                                    Array.isArray(value.options) &&
                                     (selectedAddCell == add[0] && open ? (
                                         <KeyboardArrowDown />
                                     ) : (
@@ -253,7 +256,6 @@ export const NotebookAddCell = observer(
                                     ))
                                 }
                             >
-                                {/* Add {value.display} */}
                                 {value.display}
                             </StyledButton>
                         );
@@ -262,7 +264,10 @@ export const NotebookAddCell = observer(
                 <StyledDivider />
                 <StyledMenu
                     anchorEl={anchorEl}
-                    open={open}
+                    open={
+                        open &&
+                        !!AddCellOptions[selectedAddCell]?.options?.length
+                    }
                     onClose={() => {
                         setAnchorEl(null);
                     }}
