@@ -325,9 +325,11 @@ export function AppDetailPage() {
                     <ChangeAccessButton variant="text">
                         Change Access
                     </ChangeAccessButton>
-                    <Button onClick={() => navigate('../')} variant="contained">
+
+                    <Button variant="contained" onClick={() => navigate('../')}>
                         Open
                     </Button>
+
                     <IconButton
                         onClick={(event) =>
                             setMoreVertAnchorEl(event.currentTarget)
@@ -340,21 +342,29 @@ export function AppDetailPage() {
                         open={Boolean(moreVertAnchorEl)}
                         onClose={() => setMoreVertAnchorEl(null)}
                     >
-                        <StyledMenuItem
-                            onClick={() => setIsEditDetailsModalOpen(true)}
-                            value={null}
-                        >
-                            <EditIcon fontSize="small" />
-                            Edit App Details
-                        </StyledMenuItem>
+                        {permissionState === 'OWNER' ||
+                            permissionState === 'EDIT' ||
+                            (permissionState === 'EDITOR' && (
+                                <StyledMenuItem
+                                    onClick={() =>
+                                        setIsEditDetailsModalOpen(true)
+                                    }
+                                    value={null}
+                                >
+                                    <EditIcon fontSize="small" />
+                                    Edit App Details
+                                </StyledMenuItem>
+                            ))}
                         <StyledMenuItem value={null}>
                             <ShareIcon fontSize="small" />
                             Share
                         </StyledMenuItem>
-                        <StyledMenuItem value={null}>
-                            <DeleteIcon fontSize="small" />
-                            Delete App
-                        </StyledMenuItem>
+                        {permissionState === 'OWNER' && (
+                            <StyledMenuItem value={null}>
+                                <DeleteIcon fontSize="small" />
+                                Delete App
+                            </StyledMenuItem>
+                        )}
                     </Menu>
                 </TopButtonsContainer>
 
