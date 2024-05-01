@@ -31,6 +31,7 @@ import { useRootStore } from '@/hooks';
 import { Role } from '@/types';
 import { formatPermission } from '@/utils';
 import { usePixel } from '@/hooks';
+import { DeleteAppModal } from './DeleteAppModal';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -154,6 +155,7 @@ export function AppDetailPage() {
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
+    const [isDeleteAppModalOpen, setIsDeleteAppModalOpen] = useState(false);
 
     const mainUsesRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
@@ -314,8 +316,6 @@ export function AppDetailPage() {
         }
     }
 
-    // TODO: Close `MoreVert` menu on modal open
-
     return (
         <OuterContainer>
             <InnerContainer>
@@ -346,9 +346,10 @@ export function AppDetailPage() {
                             permissionState === 'EDIT' ||
                             (permissionState === 'EDITOR' && (
                                 <StyledMenuItem
-                                    onClick={() =>
-                                        setIsEditDetailsModalOpen(true)
-                                    }
+                                    onClick={() => {
+                                        setIsEditDetailsModalOpen(true);
+                                        setMoreVertAnchorEl(null);
+                                    }}
                                     value={null}
                                 >
                                     <EditIcon fontSize="small" />
@@ -360,7 +361,13 @@ export function AppDetailPage() {
                             Share
                         </StyledMenuItem>
                         {permissionState === 'OWNER' && (
-                            <StyledMenuItem value={null}>
+                            <StyledMenuItem
+                                onClick={() => {
+                                    setIsDeleteAppModalOpen(true);
+                                    setMoreVertAnchorEl(null);
+                                }}
+                                value={null}
+                            >
                                 <DeleteIcon fontSize="small" />
                                 Delete App
                             </StyledMenuItem>
@@ -498,6 +505,14 @@ export function AppDetailPage() {
                 setDependenciesState={setDependenciesState}
                 getDependencies={getDependencies}
                 runSetDependenciesQuery={runSetDependenciesQuery}
+            />
+
+            <DeleteAppModal
+                isOpen={isDeleteAppModalOpen}
+                appId={appId}
+                appName="TODO"
+                onDelete={() => {}}
+                close={() => setIsDeleteAppModalOpen(false)}
             />
         </OuterContainer>
     );
