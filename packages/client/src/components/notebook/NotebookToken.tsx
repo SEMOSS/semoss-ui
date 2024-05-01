@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import {
     styled,
     Button,
+    Icon,
     IconButton,
     List,
     Menu,
@@ -11,7 +12,7 @@ import {
     useNotification,
     Tooltip,
     TextField,
-    Icon,
+    LinearProgress,
 } from '@semoss/ui';
 import { Token } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
@@ -19,6 +20,11 @@ import { CheckCircle, MoreVert, VisibilityRounded } from '@mui/icons-material';
 
 import { ActionMessages, SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
+
+import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
+import GestureIcon from '@mui/icons-material/Gesture';
+import WidgetsIcon from '@mui/icons-material/Widgets';
+import { ReactNode } from 'react';
 
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
@@ -43,6 +49,15 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     paddingBottom: theme.spacing(1),
     overflowX: 'hidden',
     overflowY: 'auto',
+}));
+
+const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
+    '&.MuiLinearProgress-root': {
+        height: '2px',
+        backgroundColor: 'transparent',
+        marginTop: '0px',
+        '.MuiLinearProgress-barColorDeterminate': {},
+    },
 }));
 
 interface NotebookTokenProps {
@@ -142,7 +157,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
     return (
         <List.Item
             key={token.alias}
-            // disablePadding
+            sx={{ borer: 'solid red' }}
             secondaryAction={
                 <>
                     <Stack
@@ -151,7 +166,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                         alignItems="center"
                         paddingY="8px"
                     >
-                        {process.env.NODE_ENV === 'development' ? (
+                        {/* {process.env.NODE_ENV === 'development' ? (
                             <StyledTooltip
                                 placement={'right'}
                                 title={
@@ -193,7 +208,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                             <IconButton>
                                 <VisibilityRounded />
                             </IconButton>
-                        )}
+                        )} */}
                         <IconButton
                             title="Open Menu"
                             onClick={(e) => {
@@ -238,62 +253,170 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                 </>
             }
         >
-            {/* <List.ItemButton sx={{width: '70%'}}> */}
             <List.ItemText
                 disableTypography
                 primary={
-                    !openRenameAlias ? (
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-
-                                setOpenRenameAlias(true);
-                            }}
-                        >
-                            <Typography variant="subtitle2">
-                                {token.alias} - {token.type}
-                            </Typography>
-                        </div>
-                    ) : (
-                        <Stack
-                            direction="row"
-                            sx={{ width: '150px' }}
-                            justifyContent="center"
-                            alignItems={'center'}
-                        >
-                            <TextField
-                                inputRef={(input) => input && input.focus()}
-                                focused={true}
-                                fullWidth
-                                size={'small'}
-                                variant="standard"
-                                value={newTokenAlias}
-                                onChange={(e) => {
-                                    setNewTokenAlias(e.target.value);
-                                }}
-                                onBlur={() => {
-                                    setOpenRenameAlias(false);
-                                    setNewTokenAlias(token.alias);
-                                }}
-                                InputProps={{
-                                    disableUnderline: true,
-                                }}
-                            />
-                            <IconButton>
-                                <Icon color="success">
-                                    <CheckCircle
-                                        onClick={() => {
-                                            console.log('rename');
+                    <Stack>
+                        <StyledTooltip
+                            // open={true}
+                            placement={'right'}
+                            title={
+                                token.type === 'block' ? (
+                                    <div
+                                        style={{
+                                            width: '200px',
                                         }}
-                                    />
-                                </Icon>
-                            </IconButton>
-                        </Stack>
-                    )
+                                    >
+                                        <BlocksRenderer
+                                            state={getStateWithBlock(token.to)}
+                                        />
+                                    </div>
+                                ) : (
+                                    state.getToken(token.to, token.type)
+                                )
+                            }
+                            componentsProps={{
+                                tooltip: {
+                                    sx: {
+                                        bgcolor:
+                                            token.type === 'block'
+                                                ? 'transparent'
+                                                : 'white',
+                                        color: 'black',
+                                    },
+                                },
+                            }}
+                            enterDelay={500}
+                            leaveDelay={200}
+                        >
+                            <CustomWrapper>
+                                <div>
+                                    {!openRenameAlias ? (
+                                        <Stack
+                                            // sx={{ border: 'solid red' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+
+                                                setOpenRenameAlias(true);
+                                            }}
+                                        >
+                                            <Stack
+                                                direction={'row'}
+                                                alignItems={'center'}
+                                                sx={{
+                                                    // border: 'solid blue',
+                                                    marginTop: '5px',
+                                                }}
+                                            >
+                                                <Icon color={'secondary'}>
+                                                    <WidgetsIcon />
+                                                </Icon>
+                                                <Typography variant="subtitle2">
+                                                    {token.alias} - {token.type}
+                                                </Typography>
+                                            </Stack>
+                                            <div
+                                                style={{
+                                                    height: '2px',
+                                                }}
+                                            ></div>
+                                        </Stack>
+                                    ) : (
+                                        <Stack
+                                            direction="column"
+                                            sx={{ width: '80%' }}
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                justifyContent={'space-between'}
+                                                alignItems={'center'}
+                                            >
+                                                <Icon color={'secondary'}>
+                                                    <WidgetsIcon />
+                                                </Icon>
+                                                <TextField
+                                                    inputRef={(input) =>
+                                                        input && input.focus()
+                                                    }
+                                                    focused={true}
+                                                    fullWidth
+                                                    size={'small'}
+                                                    variant="standard"
+                                                    value={newTokenAlias}
+                                                    onChange={(e) => {
+                                                        setNewTokenAlias(
+                                                            e.target.value,
+                                                        );
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            console.log(
+                                                                'Save alias',
+                                                            );
+
+                                                            setOpenRenameAlias(
+                                                                false,
+                                                            );
+                                                            setNewTokenAlias(
+                                                                newTokenAlias,
+                                                            );
+
+                                                            notification.add({
+                                                                color: 'success',
+                                                                message: `Succesfully renamed token ${token.alias} to ${newTokenAlias}, remember to save your app.`,
+                                                            });
+                                                        }
+                                                    }}
+                                                    onBlur={() => {
+                                                        setOpenRenameAlias(
+                                                            false,
+                                                        );
+                                                        setNewTokenAlias(
+                                                            token.alias,
+                                                        );
+
+                                                        notification.add({
+                                                            color: 'warning',
+                                                            message: `Unsuccesfully renamed token ${token.alias}, press enter to save.`,
+                                                        });
+                                                    }}
+                                                    InputProps={{
+                                                        disableUnderline: true,
+                                                    }}
+                                                />
+                                                {/* <IconButton>
+                                        <Icon color="success">
+                                            <CheckCircle
+                                                onClick={() => {
+                                                    console.log('rename');
+                                                }}
+                                            />
+                                        </Icon>
+                                    </IconButton> */}
+                                            </Stack>
+                                            <StyledLinearProgress
+                                                color={'secondary'}
+                                            />
+                                        </Stack>
+                                    )}
+                                </div>
+                            </CustomWrapper>
+                        </StyledTooltip>
+                    </Stack>
                 }
             />
-            {/* </List.ItemButton> */}
         </List.Item>
+    );
+});
+
+const CustomWrapper = React.forwardRef<HTMLDivElement>(function MyComponent(
+    props: { children: HTMLDivElement },
+    ref,
+) {
+    return (
+        <div {...props} ref={ref}>
+            {props.children}
+        </div>
     );
 });
