@@ -1,3 +1,4 @@
+import { useRootStore } from '@/hooks';
 import { Modal, Button, styled, useNotification } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,16 +13,20 @@ interface DeleteAppModalProps {
 }
 
 export const DeleteAppModal = (props: DeleteAppModalProps) => {
-    const { isOpen, appName, close } = props;
+    const { isOpen, appId, appName, close } = props;
+    const { monolithStore } = useRootStore();
     const notification = useNotification();
     const navigate = useNavigate();
 
-    const handleDelete = () => {
-        // TODO: add delete API call.
-        const success = true;
-        const output = 'todo';
+    const handleDelete = async () => {
+        const res = await monolithStore.runQuery(
+            `DeleteProject(project=['${appId}']);`,
+        );
 
-        if (success) {
+        const operationType = res.pixelReturn[0].operationType;
+        const output = res.pixelReturn[0].output;
+
+        if (operationType.indexOf('ERROR') === -1) {
             notification.add({
                 color: 'success',
                 message: `Successfully deleted ${appName}`,
