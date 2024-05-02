@@ -88,6 +88,10 @@ const StyledActionsCollapseStack = styled(StyledCollapseStack)(({ theme }) => ({
 
 const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
     padding: 0,
+    width: '35px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'start',
 }));
 
 const StyledCard = styled(Card, {
@@ -195,6 +199,16 @@ const StyledMenu = styled((props: MenuProps) => (
 
 const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
+}));
+
+const StyledPlayWrapper = styled('span')(() => ({
+    fontSize: '17px',
+    display: 'inline-block',
+}));
+
+const StyledPlaySpacer = styled('span')(() => ({
+    display: 'inline-block',
+    width: '17px',
 }));
 
 interface NotebookCellProps {
@@ -474,10 +488,7 @@ export const NotebookCell = observer(
                         {cell.config.name}
                     </StyledName>
 
-                    <StyledCellActions
-                        in={showCellActions}
-                        // sx={{border: "1px solid green"}}
-                    >
+                    <StyledCellActions in={showCellActions}>
                         <Stack gap={1} direction={'row'} alignItems={'center'}>
                             {/* <StyledIdChip
                                 label={
@@ -730,26 +741,15 @@ export const NotebookCell = observer(
                                 {showCellActions ? (
                                     <PlayCircle fontSize="inherit" />
                                 ) : (
-                                    <span
-                                        style={{
-                                            fontSize: '17px',
-                                        }}
-                                    >
+                                    <StyledPlayWrapper>
                                         {localCellPlayNumber ? (
-                                            `[${localCellPlayNumber}]`
+                                            `[ ${localCellPlayNumber} ]`
                                         ) : (
                                             <span>
-                                                [
-                                                <span
-                                                    style={{
-                                                        display: 'inline-block',
-                                                        width: '17px',
-                                                    }}
-                                                ></span>
-                                                ]
+                                                [<StyledPlaySpacer />]
                                             </span>
                                         )}
-                                    </span>
+                                    </StyledPlayWrapper>
                                 )}
                             </StyledRunIconButton>
                             <StyledCardInput>{rendered}</StyledCardInput>
