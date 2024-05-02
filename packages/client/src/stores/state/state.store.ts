@@ -15,6 +15,8 @@ import {
     CellRegistry,
     ListenerActions,
     SerializedState,
+    Token,
+    TokenType,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -26,11 +28,17 @@ interface StateStoreInterface {
     /** insightID to load */
     insightId: string;
 
+    /** token to reference (blocks, cells, dependencies) */
+    tokens: Record<string, Token>;
+
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** engine dependencies */
+    dependencies: Record<string, unknown>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
@@ -60,6 +68,17 @@ export class StateStore {
         queries: {},
         blocks: {},
         cellRegistry: {},
+
+        tokens: {},
+        dependencies: {
+            // These are our LLMs, Databases, Storages
+            // I set the dependencies on my app detail page,
+            // we sorta need to make sure they are aliasing this dependency.
+            // 'model-randomid': 'modelid',
+            // 'database-randomid': 'dbid',
+            // 'string-randomid': 'i am a string',
+            // 'number-randomid': 50,
+        },
     };
 
     /**
@@ -130,6 +149,14 @@ export class StateStore {
     }
 
     /**
+     * Gets all tokens
+     * @returns the tokens
+     */
+    get tokens() {
+        return this._store.tokens;
+    }
+
+    /**
      * Get the cell type registry
      * @returns the cell type registry
      */
@@ -164,6 +191,38 @@ export class StateStore {
     }
 
     /**
+     * Gets the token by it's pointer
+     * @param pointer
+     * @param type
+     * @returns
+     */
+    getToken(pointer: string, type: TokenType): Token | unknown {
+        if (type === 'block') {
+            // Get Blocks Data (what we realistically want)
+            const block = this.getBlock(pointer);
+
+            // TO DO: Genericize this, is it always.value
+            return block.data.value as string;
+        } else if (type === 'cell') {
+            //
+        } else if (type === 'string') {
+            //
+        } else if (type === 'number') {
+            //
+        } else if (type === 'database') {
+            // Finds Dependency from pointer
+            return this._store.dependencies[pointer];
+        } else if (type === 'model') {
+            // Find Dependency from pointer
+            return this._store.dependencies[pointer];
+        } else if (type === 'storage') {
+            // Find Dependency from pointer
+            return this._store.dependencies[pointer];
+        }
+        return '';
+    }
+
+    /**
      * Actions
      */
     /**
@@ -178,6 +237,9 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.message)),
             JSON.parse(JSON.stringify(action.payload)),
         );
+
+        console.log('tokens', this._store.tokens);
+        console.log('dependencies', this._store.dependencies);
 
         try {
             // apply the action
@@ -246,6 +308,22 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
+            } else if (ActionMessages.ADD_TOKEN === action.message) {
+                const { alias, to, type } = action.payload;
+
+                this.addToken(alias, to, type);
+            } else if (ActionMessages.RENAME_TOKEN === action.message) {
+                const { to, alias } = action.payload;
+                // TO DO: Does this work
+                this.renameToken(to, alias);
+            } else if (ActionMessages.DELETE_TOKEN === action.message) {
+                const { id } = action.payload;
+                // TO DO: Does this work
+                this.deleteToken(id);
+            } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
+                const { id, type } = action.payload;
+
+                return this.addDependency(id, type);
             }
         } catch (e) {
             console.error(e);
@@ -337,6 +415,41 @@ export class StateStore {
         return result;
     };
 
+    flattenToken = (expression: string): string => {
+        return expression.replace(/{{(.*?)}}/g, (match) => {
+            let v;
+            Object.values(this._store.tokens).forEach((token) => {
+                // Early return if we find token already
+                if (v) return;
+
+                // remove the brackets
+                if (match.startsWith('{{') && match.endsWith('}}')) {
+                    match = match.slice(2, -2);
+                }
+
+                if (token.alias === match) {
+                    v = this.getToken(token.to, token.type);
+                }
+            });
+
+            // Need to wrap in string for the code
+            if (v) {
+                return JSON.stringify(v);
+            }
+
+            // TODO: Handle old notebooks that don't use tokens
+            // try to extract the variable
+            v = this.parseVariable(match);
+
+            // if it is not a string, convert to a string
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
+            }
+
+            return v;
+        });
+    };
+
     /**
      * Flatten a string containing multiple variables
      * @param expression - expression to flatten
@@ -409,6 +522,8 @@ export class StateStore {
                 return acc;
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
+            tokens: toJS(this._store.tokens),
+            dependencies: toJS(this._store.dependencies),
         };
     }
 
@@ -582,6 +697,11 @@ export class StateStore {
             acc[val] = new QueryState(state.queries[val], this);
             return acc;
         }, {});
+
+        // store the tokens
+        this._store.tokens = state.tokens ? state.tokens : {};
+        // store the dependencies
+        this._store.dependencies = state.dependencies ? state.dependencies : {};
     };
 
     /**
@@ -1017,5 +1137,60 @@ export class StateStore {
 
         // dispatch the event to the window
         window.dispatchEvent(event);
+    };
+
+    // ---------------------------------
+    // REVIEW TOKEN AND DEPENDENCY CODE
+    // ---------------------------------
+    /**
+     * Adds to tokens that can be referenced
+     * @param alias - referenced as
+     * @param to - points to
+     * @param type - type of token
+     */
+    private addToken = (alias, to, type) => {
+        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+
+        // TODO: Get unique ID and verify that it is a unique alias
+        const token: Token = {
+            alias,
+            to,
+            type,
+        };
+
+        this._store.tokens[to] = token;
+    };
+
+    /**
+     * Adds to tokens that can be referenced
+     * @param alias - referenced as
+     * @param to - points to
+     * @param type - type of token
+     */
+    private renameToken = (to, alias) => {
+        this._store.tokens[to].alias = alias;
+    };
+
+    /**
+     * Deletes token that can be referenced
+     * @param id - id to delete
+     */
+    private deleteToken = (id) => {
+        // Do i need to go throygh everything and delete token
+        delete this._store.tokens[id];
+    };
+
+    /**
+     * Adds a constant/dependency to use as a token
+     * @param value can be an engine id, string, number, date, and etc
+     * @param type - what type of dependency, Model, Database, String, Date, Number
+     * @returns id of newly added dependency for token value
+     */
+    private addDependency = (value: unknown, type: string) => {
+        const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+
+        this._store.dependencies[id] = value;
+
+        return id;
     };
 }

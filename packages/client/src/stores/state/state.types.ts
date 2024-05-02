@@ -9,6 +9,32 @@ export type SerializedState = {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Tokens used in notebook */
+    tokens: Record<string, Token>;
+
+    /** Dependencies in app */
+    dependencies: Record<string, unknown>;
+};
+
+/**
+ * Token Types
+ */
+export type TokenType =
+    | 'block'
+    | 'cell' // Needed for UI not in notebook
+    | 'string'
+    | 'number'
+    | 'database'
+    | 'model';
+
+/**
+ * Tokens
+ */
+export type Token = {
+    alias: string;
+    to: string;
+    type: TokenType;
 };
 
 /**

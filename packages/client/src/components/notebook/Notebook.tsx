@@ -18,6 +18,8 @@ import { NotebookBlocksMenu } from './NotebookBlocksMenu';
 import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
+import { NotebookTokensMenu } from './NotebookTokensMenu';
+import { NotebookCatalogMenu } from './NotebookCatalogMenu';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -46,7 +48,7 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'queries' | 'catalog' | 'blocks' | 'transform' | ''
+        'queries' | 'catalog' | 'blocks' | 'transform' | 'tokens' | ''
     >('queries');
 
     /**
@@ -111,7 +113,7 @@ export const Notebook = observer(() => {
                     <SidebarText>Transform</SidebarText>
                 </SidebarItem>
                 <SidebarItem
-                    disabled={true}
+                    disabled={false}
                     selected={view === 'catalog'}
                     onClick={() => updateView('catalog')}
                 >
@@ -129,13 +131,23 @@ export const Notebook = observer(() => {
                     </Tooltip>
                     <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
+                <SidebarItem
+                    selected={view === 'tokens'}
+                    onClick={() => updateView('tokens')}
+                >
+                    <Tooltip title={'Tokens'} placement="right">
+                        <SwipeRightAltRounded color="inherit" />
+                    </Tooltip>
+                    <SidebarText>Tokens</SidebarText>
+                </SidebarItem>
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
                     {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
-                    {view === 'catalog' ? <div>Blocks</div> : null}
+                    {view === 'catalog' ? <NotebookCatalogMenu /> : null}
+                    {view === 'tokens' ? <NotebookTokensMenu /> : null}
                 </StyledLeftPanel>
             ) : null}
 

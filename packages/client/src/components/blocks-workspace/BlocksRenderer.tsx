@@ -70,6 +70,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     return;
                 }
 
+                console.log('state: ', s);
                 // create a new state store
                 const store = new StateStore({
                     mode: 'interactive',

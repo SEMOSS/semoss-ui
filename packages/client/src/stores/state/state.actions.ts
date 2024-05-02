@@ -1,4 +1,9 @@
-import { BlockJSON, ListenerActions, SerializedState } from './state.types';
+import {
+    BlockJSON,
+    ListenerActions,
+    SerializedState,
+    TokenType,
+} from './state.types';
 import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
 
@@ -20,6 +25,10 @@ export enum ActionMessages {
     UPDATE_CELL = 'UPDATE_CELL',
     RUN_CELL = 'RUN_CELL',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
+    ADD_TOKEN = 'ADD_TOKEN',
+    RENAME_TOKEN = 'RENAME_TOKEN',
+    DELETE_TOKEN = 'DELETE_TOKEN',
+    ADD_DEPENDENCY = 'ADD_DEPENDENCY',
 }
 
 export type Actions =
@@ -38,7 +47,11 @@ export type Actions =
     | DeleteCellAction
     | UpdateCellAction
     | RunCellAction
-    | DispatchEventAction;
+    | DispatchEventAction
+    | AddTokenAction
+    | RenameTokenAction
+    | DeleteTokenAction
+    | AddDependencyAction;
 
 export interface Action {
     message: string;
@@ -202,5 +215,37 @@ export interface DispatchEventAction extends Action {
     payload: {
         name: string;
         detail?: Record<string, unknown>;
+    };
+}
+
+export interface AddTokenAction extends Action {
+    message: ActionMessages.ADD_TOKEN;
+    payload: {
+        alias: string;
+        to: string;
+        type: TokenType;
+    };
+}
+
+export interface RenameTokenAction extends Action {
+    message: ActionMessages.RENAME_TOKEN;
+    payload: {
+        to: string;
+        alias: string;
+    };
+}
+
+export interface DeleteTokenAction extends Action {
+    message: ActionMessages.DELETE_TOKEN;
+    payload: {
+        id: string;
+    };
+}
+
+export interface AddDependencyAction extends Action {
+    message: ActionMessages.ADD_DEPENDENCY;
+    payload: {
+        id: string;
+        type: TokenType;
     };
 }

@@ -88,6 +88,8 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: [],
         state: {
+            dependencies: {},
+            tokens: {},
             queries: {},
             blocks: {
                 'text--584': {
@@ -981,6 +983,8 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: ['LLM'],
         state: {
+            tokens: {},
+            dependencies: {},
             queries: {
                 ['ask-llm']: {
                     id: 'ask-llm',
@@ -1159,6 +1163,8 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: ['NLP', 'SQL', 'LLM'],
         state: {
+            dependencies: {},
+            tokens: {},
             queries: {
                 ['ask-model']: {
                     id: 'ask-model',
