@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Container, Button, CircularProgress } from '@semoss/ui';
 
@@ -50,6 +51,7 @@ const StyledButtonLabel = styled('div')(() => ({
  */
 export const NotebookSheet = observer((): JSX.Element => {
     const { notebook, state } = useBlocks();
+    const [cellPlayCounter, setCellPlayCounter] = useState(null);
 
     // need a query to render the sheet
     if (!notebook.selectedQuery) {
@@ -125,6 +127,8 @@ export const NotebookSheet = observer((): JSX.Element => {
                         <NotebookCell
                             queryId={notebook.selectedQuery.id}
                             cellId={cellId}
+                            cellPlayCounter={cellPlayCounter}
+                            setCellPlayCounter={setCellPlayCounter}
                         ></NotebookCell>
                     </StyledCell>
                 ))}

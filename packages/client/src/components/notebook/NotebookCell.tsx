@@ -203,6 +203,12 @@ interface NotebookCellProps {
 
     /** Id of the cell of the query */
     cellId: string;
+
+    /** Id of the cell of the query */
+    cellPlayCounter: number;
+
+    /** Id of the cell of the query */
+    setCellPlayCounter: Function;
 }
 
 /**
@@ -210,7 +216,7 @@ interface NotebookCellProps {
  */
 export const NotebookCell = observer(
     (props: NotebookCellProps): JSX.Element => {
-        const { queryId, cellId } = props;
+        const { queryId, cellId, cellPlayCounter, setCellPlayCounter } = props;
 
         const { state, notebook } = useBlocks();
 
@@ -224,6 +230,8 @@ export const NotebookCell = observer(
 
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const open = Boolean(anchorEl);
+
+        const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
         const cardContentRef = useRef(null);
         const cardActionsRef = useRef(null);
@@ -254,6 +262,25 @@ export const NotebookCell = observer(
             cardActionsRef.current,
             outputExpanded,
         ]);
+
+        useEffect(() => {
+            // if (cellPlayCounter > 0) {
+            if (cell.isExecuted == false) {
+                setLocalCellPlayNumber(null);
+            } else {
+                const newPlayCount = cellPlayCounter + 1;
+                setCellPlayCounter(newPlayCount);
+                setLocalCellPlayNumber(newPlayCount);
+            }
+            // }
+        }, [cell.isExecuted]);
+
+        useEffect(() => {
+            if (cellPlayCounter == null) {
+                setLocalCellPlayNumber(null);
+                setCellPlayCounter(null);
+            }
+        }, [cellPlayCounter]);
 
         /**
          * Create a duplicate cell
@@ -432,10 +459,12 @@ export const NotebookCell = observer(
                     setShowCellActions(false);
                 }}
                 onFocus={() => {
+                    console.log('onFocus');
                     // Keyboard Navigation
                     setShowCellActions(true);
                 }}
                 onBlur={() => {
+                    console.log('onBlur');
                     // Keyboard Navigation
                     setShowCellActions(false);
                 }}
@@ -688,17 +717,40 @@ export const NotebookCell = observer(
                                 title="Run cell"
                                 disabled={cell.isLoading}
                                 size="medium"
-                                onClick={() =>
+                                onClick={() => {
                                     state.dispatch({
                                         message: ActionMessages.RUN_CELL,
                                         payload: {
                                             queryId: cell.query.id,
                                             cellId: cell.id,
                                         },
-                                    })
-                                }
+                                    });
+                                }}
                             >
-                                <PlayCircle fontSize="inherit" />
+                                {showCellActions ? (
+                                    <PlayCircle fontSize="inherit" />
+                                ) : (
+                                    <span
+                                        style={{
+                                            fontSize: '17px',
+                                        }}
+                                    >
+                                        {localCellPlayNumber ? (
+                                            `[${localCellPlayNumber}]`
+                                        ) : (
+                                            <span>
+                                                [
+                                                <span
+                                                    style={{
+                                                        display: 'inline-block',
+                                                        width: '17px',
+                                                    }}
+                                                ></span>
+                                                ]
+                                            </span>
+                                        )}
+                                    </span>
+                                )}
                             </StyledRunIconButton>
                             <StyledCardInput>{rendered}</StyledCardInput>
                         </StyledCardContent>
