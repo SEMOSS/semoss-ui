@@ -500,7 +500,7 @@ export const NotebookCell = observer(
                                         />
                                         <ArrowDownward
                                             fontSize="small"
-                                            // styles only applying correctly with sx
+                                            // styles only applying correctly with sx could not use styled
                                             sx={{
                                                 marginTop: '10px',
                                                 marginLeft: '15px',
