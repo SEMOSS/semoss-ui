@@ -1139,6 +1139,9 @@ export class StateStore {
         window.dispatchEvent(event);
     };
 
+    // ---------------------------------
+    // REVIEW TOKEN AND DEPENDENCY CODE
+    // ---------------------------------
     /**
      * Adds to tokens that can be referenced
      * @param alias - referenced as
@@ -1165,8 +1168,6 @@ export class StateStore {
      * @param type - type of token
      */
     private renameToken = (to, alias) => {
-        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
-
         this._store.tokens[to].alias = alias;
     };
 

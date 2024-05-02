@@ -59,14 +59,14 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
         <StyledMenu>
             <Stack spacing={2} padding={2}>
                 <Stack direction="row" justifyContent="space-between">
-                    <StyledMenuTitle variant="h6">Tokens</StyledMenuTitle>
+                    <StyledMenuTitle variant="h6">Variables</StyledMenuTitle>
                     <Button
                         variant={'contained'}
                         onClick={() => {
                             setAddTokenModal(true);
                         }}
                     >
-                        Add Token
+                        Add Variable
                     </Button>
                 </Stack>
             </Stack>

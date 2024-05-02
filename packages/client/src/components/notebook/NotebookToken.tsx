@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Alert,
     styled,
     Button,
     Icon,
     IconButton,
     List,
     Menu,
+    Modal,
     Typography,
     Stack,
     useNotification,
@@ -21,9 +23,14 @@ import { CheckCircle, MoreVert, VisibilityRounded } from '@mui/icons-material';
 import { ActionMessages, SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
-import GestureIcon from '@mui/icons-material/Gesture';
-import WidgetsIcon from '@mui/icons-material/Widgets';
+import {
+    ViewAgenda,
+    Gesture,
+    WarningAmberOutlined,
+    Widgets,
+    Clear,
+} from '@mui/icons-material';
+
 import { ReactNode } from 'react';
 
 const StyledTooltip = styled(Tooltip)(() => ({
@@ -82,6 +89,8 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
     const [openRenameAlias, setOpenRenameAlias] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const [newTokenAlias, setNewTokenAlias] = useState(token.alias);
+    const [openReassignModal, setOpenReassignModal] = useState(false);
+    const [newTokenType, setNewTokenType] = useState('');
 
     // useEffect(() => {
     //     console.log('here here')
@@ -254,6 +263,14 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                             >
                                 Delete Token
                             </Menu.Item>
+                            <Menu.Item
+                                value="Delete"
+                                onClick={() => {
+                                    setOpenReassignModal(true);
+                                }}
+                            >
+                                Reassign
+                            </Menu.Item>
                         </Menu>
                     </Stack>
                 </>
@@ -264,7 +281,6 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                 primary={
                     <Stack>
                         <StyledTooltip
-                            // open={true}
                             placement={'right'}
                             title={
                                 token.type === 'block' ? (
@@ -316,7 +332,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                 }}
                                             >
                                                 <Icon color={'secondary'}>
-                                                    <WidgetsIcon />
+                                                    <Widgets />
                                                 </Icon>
                                                 <Typography variant="subtitle2">
                                                     {token.alias} - {token.type}
@@ -339,7 +355,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                 alignItems={'center'}
                                             >
                                                 <Icon color={'secondary'}>
-                                                    <WidgetsIcon />
+                                                    <Widgets />
                                                 </Icon>
                                                 <TextField
                                                     inputRef={(input) =>
@@ -416,6 +432,214 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                         </Stack>
                                     )}
                                 </div>
+                                <Modal
+                                    open={openReassignModal}
+                                    onClose={() => {
+                                        setOpenReassignModal(false);
+                                    }}
+                                >
+                                    <Modal.Title>
+                                        <Stack
+                                            direction="row"
+                                            justifyContent="space-between"
+                                        >
+                                            {newTokenType ? (
+                                                'Change Reference'
+                                            ) : (
+                                                <div>
+                                                    <Typography
+                                                        variant="h6"
+                                                        sx={{
+                                                            display: 'inline',
+                                                        }}
+                                                    >
+                                                        What type of variable
+                                                        would you like to switch{' '}
+                                                        <Typography
+                                                            variant="h6"
+                                                            color="primary"
+                                                            fontWeight="bold"
+                                                            sx={{
+                                                                display:
+                                                                    'inline',
+                                                            }}
+                                                        >
+                                                            {token.alias}
+                                                        </Typography>{' '}
+                                                        to?
+                                                    </Typography>
+                                                </div>
+                                            )}
+                                        </Stack>
+                                    </Modal.Title>
+                                    <Modal.Content>
+                                        {!newTokenType ? (
+                                            <Stack
+                                                direction="row"
+                                                gap={1}
+                                                justifyContent={'center'}
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    onClick={() => {
+                                                        setNewTokenType(
+                                                            'block',
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon color={'primary'}>
+                                                        <Widgets />
+                                                    </Icon>
+                                                    <Typography variant="caption">
+                                                        Block
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack
+                                                    direction="row"
+                                                    onClick={() => {
+                                                        setNewTokenType(
+                                                            'block',
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon color={'primary'}>
+                                                        <Widgets />
+                                                    </Icon>
+                                                    <Typography variant="caption">
+                                                        Cell
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack
+                                                    direction="row"
+                                                    onClick={() => {
+                                                        setNewTokenType(
+                                                            'block',
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon color={'primary'}>
+                                                        <Widgets />
+                                                    </Icon>
+                                                    <Typography variant="caption">
+                                                        Database
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack
+                                                    direction="row"
+                                                    onClick={() => {
+                                                        setNewTokenType(
+                                                            'block',
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon color={'primary'}>
+                                                        <Widgets />
+                                                    </Icon>
+                                                    <Typography variant="caption">
+                                                        Vector
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack
+                                                    direction="row"
+                                                    onClick={() => {
+                                                        setNewTokenType(
+                                                            'block',
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon color={'primary'}>
+                                                        <Widgets />
+                                                    </Icon>
+                                                    <Typography variant="caption">
+                                                        LLM
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack
+                                                    direction="row"
+                                                    onClick={() => {
+                                                        setNewTokenType(
+                                                            'block',
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon color={'primary'}>
+                                                        <Widgets />
+                                                    </Icon>
+                                                    <Typography variant="caption">
+                                                        Storage
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
+                                        ) : (
+                                            <Stack direction={'column'}>
+                                                <Alert
+                                                    severity="warning"
+                                                    icon={
+                                                        <WarningAmberOutlined />
+                                                    }
+                                                >
+                                                    Any changes to variables,
+                                                    may cause breaking changes
+                                                    to your app. Please keep
+                                                    that in mind.
+                                                </Alert>
+                                                <Stack>
+                                                    <Typography
+                                                        variant={'body1'}
+                                                        fontWeight="bold"
+                                                    >
+                                                        From {token.type}:
+                                                    </Typography>
+                                                    {token.type === 'block' ? (
+                                                        <div
+                                                            style={{
+                                                                width: '100%',
+                                                            }}
+                                                        >
+                                                            <BlocksRenderer
+                                                                state={getStateWithBlock(
+                                                                    token.to,
+                                                                )}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        state.getToken(
+                                                            token.to,
+                                                            token.type,
+                                                        )
+                                                    )}
+
+                                                    <Typography
+                                                        variant={'body1'}
+                                                        fontWeight="bold"
+                                                    >
+                                                        To {newTokenType}:
+                                                    </Typography>
+                                                    <TextField />
+                                                </Stack>
+                                            </Stack>
+                                        )}
+                                    </Modal.Content>
+                                    <Modal.Actions>
+                                        <Button
+                                            disabled={!newTokenType}
+                                            onClick={() => {
+                                                setNewTokenType('');
+                                            }}
+                                        >
+                                            Back
+                                        </Button>
+                                        <Button
+                                            disabled={true}
+                                            variant={'contained'}
+                                            onClick={() => {
+                                                console.log('step');
+                                            }}
+                                        >
+                                            Set
+                                        </Button>
+                                    </Modal.Actions>
+                                </Modal>
                             </CustomWrapper>
                         </StyledTooltip>
                     </Stack>
