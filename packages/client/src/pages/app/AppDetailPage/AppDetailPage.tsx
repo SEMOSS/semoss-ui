@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 // import { Controller, useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import HdrAutoIcon from '@mui/icons-material/HdrAuto';
@@ -16,10 +15,8 @@ import {
     IconButton,
     Menu,
     MenuItem,
-    Modal,
     styled,
     Typography,
-    Select,
 } from '@semoss/ui';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
@@ -30,8 +27,9 @@ import { useRootStore } from '@/hooks';
 // import { MonolithStore } from '@/stores';
 import { Role } from '@/types';
 import { formatPermission } from '@/utils';
-import { usePixel } from '@/hooks';
 import { DeleteAppModal } from './DeleteAppModal';
+import { EditDetailsModal } from './EditDetailsModal';
+import { EditDependenciesModal } from './EditDependenciesModal';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -342,20 +340,20 @@ export function AppDetailPage() {
                         open={Boolean(moreVertAnchorEl)}
                         onClose={() => setMoreVertAnchorEl(null)}
                     >
-                        {permissionState === 'OWNER' ||
+                        {(permissionState === 'OWNER' ||
                             permissionState === 'EDIT' ||
-                            (permissionState === 'EDITOR' && (
-                                <StyledMenuItem
-                                    onClick={() => {
-                                        setIsEditDetailsModalOpen(true);
-                                        setMoreVertAnchorEl(null);
-                                    }}
-                                    value={null}
-                                >
-                                    <EditIcon fontSize="small" />
-                                    Edit App Details
-                                </StyledMenuItem>
-                            ))}
+                            permissionState === 'EDITOR') && (
+                            <StyledMenuItem
+                                onClick={() => {
+                                    setIsEditDetailsModalOpen(true);
+                                    setMoreVertAnchorEl(null);
+                                }}
+                                value={null}
+                            >
+                                <EditIcon fontSize="small" />
+                                Edit App Details
+                            </StyledMenuItem>
+                        )}
                         <StyledMenuItem value={null}>
                             <ShareIcon fontSize="small" />
                             Share
@@ -580,230 +578,5 @@ function Sidebar({ permissionState, refs }: SidebarProps) {
                 </SidebarMenuItem>
             ))}
         </StyledSidebar>
-    );
-}
-
-const EditModalInnerContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '20px',
-});
-
-const ModalHeaderWrapper = styled('div')({
-    alignItems: 'center',
-    display: 'flex',
-    marginBottom: '1rem',
-    justifyContent: 'space-between',
-});
-
-const ModalHeading = styled(Typography)({
-    fontSize: 20,
-    fontWeight: 500,
-});
-
-const ModalFooter = styled('div')({
-    display: 'flex',
-    gap: '0.5rem',
-    marginLeft: 'auto',
-});
-
-const ModalSectionHeading = styled(Typography)({
-    fontSize: 16,
-    fontWeight: 500,
-    margin: '1rem 0 0.5rem 0',
-});
-
-interface EditDetailsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    runSetMainUses: () => Promise<void>;
-}
-
-function EditDetailsModal({
-    isOpen,
-    onClose,
-    runSetMainUses,
-}: EditDetailsModalProps) {
-    return (
-        <Modal open={isOpen} fullWidth>
-            <EditModalInnerContainer>
-                <ModalHeaderWrapper>
-                    <ModalHeading variant="h2">Edit App Details</ModalHeading>
-                    <IconButton onClick={() => onClose()}>
-                        <CloseIcon />
-                    </IconButton>
-                </ModalHeaderWrapper>
-
-                <ModalSectionHeading variant="h3">
-                    Main Uses
-                </ModalSectionHeading>
-                <Button onClick={() => runSetMainUses()}>
-                    <pre>set test main uses</pre>
-                </Button>
-
-                <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
-
-                <ModalFooter>
-                    <Button onClick={() => onClose()} variant="text">
-                        Cancel
-                    </Button>
-                    <Button onClick={null} variant="contained">
-                        Save
-                    </Button>
-                </ModalFooter>
-            </EditModalInnerContainer>
-        </Modal>
-    );
-}
-
-const ModalDependencyRow = styled('div')({
-    alignItems: 'center',
-    display: 'flex',
-    justifyContent: 'space-between',
-    margin: '0.5rem 0',
-});
-
-const ModalEngineName = styled(Typography)({
-    marginBottom: '0.5rem',
-});
-
-const ModalEngineTypeAndId = styled(Typography)({
-    fontSize: 12,
-});
-
-// TODO: Improve interface
-
-interface EditDependenciesModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    dependenciesState: any;
-    setDependenciesState: any;
-    getDependencies: any;
-    runSetDependenciesQuery: any;
-}
-
-function EditDependenciesModal({
-    isOpen,
-    onClose,
-    dependenciesState,
-    setDependenciesState,
-    getDependencies,
-    runSetDependenciesQuery,
-}: EditDependenciesModalProps) {
-    // TODO: Get dependency image
-    // TODO: Add search bar
-    // TODO: Add save functionality
-
-    // Temporary: I need all Engines
-    const [engines, setEngines] = useState({
-        models: [],
-        databases: [],
-        storages: [],
-    });
-
-    const [dependency, setDependency] = useState(null);
-
-    const getEngines = usePixel<
-        { app_id: string; app_name: string; app_type: string }[]
-    >(`
-        MyEngines();
-    `);
-
-    useEffect(() => {
-        if (getEngines.status !== 'SUCCESS') {
-            return;
-        }
-
-        const cleanedEngines = getEngines.data.map((d) => ({
-            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            app_id: d.app_id,
-            app_type: d.app_type,
-        }));
-
-        const newEngines = {
-            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
-            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
-            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
-        };
-
-        setEngines(newEngines);
-    }, [getEngines.status, getEngines.data]);
-
-    const saveDependencies = () => {
-        runSetDependenciesQuery([dependency]);
-    };
-
-    return (
-        <Modal open={isOpen} fullWidth>
-            <EditModalInnerContainer>
-                <ModalHeaderWrapper>
-                    <ModalHeading variant="h2">
-                        Add and Edit Dependencies
-                    </ModalHeading>
-                    <IconButton onClick={() => onClose()}>
-                        <CloseIcon />
-                    </IconButton>
-                </ModalHeaderWrapper>
-
-                <Typography
-                    variant="h3"
-                    fontWeight="medium"
-                    sx={{ fontSize: '14px' }}
-                >
-                    Linked Dependencies
-                </Typography>
-
-                <pre>search bar</pre>
-
-                <Select
-                    onChange={(e) => {
-                        setDependency(e.target.value);
-                    }}
-                >
-                    {engines.models.map((model, i) => {
-                        return (
-                            <Select.Item
-                                key={`select-item--${model}--${i}`}
-                                value={model.app_id}
-                            >
-                                {model.app_id}
-                            </Select.Item>
-                        );
-                    })}
-                </Select>
-
-                {dependenciesState?.map(
-                    ({ engine_id, engine_name, engine_type }, idx) => (
-                        <ModalDependencyRow
-                            key={`dependency-${engine_id}-${idx}`}
-                        >
-                            <div>
-                                <ModalEngineName
-                                    variant="body1"
-                                    fontWeight="medium"
-                                >
-                                    {engine_name}
-                                </ModalEngineName>
-                                <ModalEngineTypeAndId variant="body2">
-                                    {engine_type} | Engine ID: {engine_id}
-                                </ModalEngineTypeAndId>
-                            </div>
-                            <IconButton onClick={() => null}>
-                                <CloseIcon />
-                            </IconButton>
-                        </ModalDependencyRow>
-                    ),
-                )}
-
-                <ModalFooter>
-                    <Button onClick={() => onClose()} variant="text">
-                        Cancel
-                    </Button>
-                    <Button onClick={saveDependencies} variant="contained">
-                        Save
-                    </Button>
-                </ModalFooter>
-            </EditModalInnerContainer>
-        </Modal>
     );
 }
