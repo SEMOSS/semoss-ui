@@ -161,7 +161,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                                     }
                                                     key={`${id}${i}`}
                                                     label={t}
-                                                    variant="outlined"
+                                                    variant="filled"
                                                 />
                                             );
                                         }
@@ -171,7 +171,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                 <StyledTagChip
                                     key={`${id}0`}
                                     label={tag}
-                                    variant="outlined"
+                                    variant="filled"
                                 />
                             ))}
                     </StyledChipContainer>
