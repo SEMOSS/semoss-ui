@@ -384,6 +384,8 @@ export class StateStore {
             // check if the id is there
             const blockId = path[1];
 
+            debugger;
+
             // get the block
             const block = this._store.blocks[blockId];
             if (block) {
@@ -396,25 +398,6 @@ export class StateStore {
         return expression;
     };
 
-    parseVariableBad = (expression: string): unknown => {
-        // Use a regular expression to find all {{...}} patterns
-        const regex = /\{\{([^}]+)\}\}/g;
-        let match;
-        // Copy the original expression to work with replacements
-        let result = expression;
-
-        while ((match = regex.exec(expression)) !== null) {
-            // Extract the matched placeholder without the brackets
-            const variable = match[1];
-
-            // Replace the current match in the result string with its evaluated value
-            const replacedValue = this.replaceVariable(variable);
-            result = result.replace(match[0], replacedValue);
-        }
-
-        return result;
-    };
-
     flattenToken = (expression: string): string => {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             let v;
@@ -422,12 +405,13 @@ export class StateStore {
                 // Early return if we find token already
                 if (v) return;
 
+                let copy = match;
                 // remove the brackets
-                if (match.startsWith('{{') && match.endsWith('}}')) {
-                    match = match.slice(2, -2);
+                if (copy.startsWith('{{') && copy.endsWith('}}')) {
+                    copy = copy.slice(2, -2);
                 }
 
-                if (token.alias === match) {
+                if (token.alias === copy) {
                     v = this.getToken(token.to, token.type);
                 }
             });
@@ -438,15 +422,10 @@ export class StateStore {
             }
 
             // TODO: Handle old notebooks that don't use tokens
-            // try to extract the variable
-            v = this.parseVariable(match);
+            v = this.flattenVariable(match);
 
-            // if it is not a string, convert to a string
-            if (typeof v !== 'string') {
-                return JSON.stringify(v);
-            }
-
-            return v;
+            // convert to a string
+            return JSON.stringify(v);
         });
     };
 

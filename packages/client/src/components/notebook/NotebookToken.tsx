@@ -18,44 +18,18 @@ import {
 } from '@semoss/ui';
 import { Token } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
-import { CheckCircle, MoreVert, VisibilityRounded } from '@mui/icons-material';
+import {
+    ContentCopy,
+    MoreVert,
+    WarningAmberOutlined,
+    Widgets,
+} from '@mui/icons-material';
 
 import { ActionMessages, SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-import {
-    ViewAgenda,
-    Gesture,
-    WarningAmberOutlined,
-    Widgets,
-    Clear,
-} from '@mui/icons-material';
-
-import { ReactNode } from 'react';
-
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
-}));
-
-const StyledMenu = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    width: '100%',
-    paddingTop: theme.spacing(1),
-    backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledMenuTitle = styled(Typography)(() => ({
-    fontWeight: 'bold',
-}));
-
-const StyledMenuScroll = styled('div')(({ theme }) => ({
-    flex: '1',
-    width: '100%',
-    paddingBottom: theme.spacing(1),
-    overflowX: 'hidden',
-    overflowY: 'auto',
 }));
 
 const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
@@ -85,22 +59,12 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
     const { state } = useBlocks();
     const notification = useNotification();
 
-    const textFieldRef = useRef(null);
     const [openRenameAlias, setOpenRenameAlias] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const [newTokenAlias, setNewTokenAlias] = useState(token.alias);
     const [openReassignModal, setOpenReassignModal] = useState(false);
     const [newTokenType, setNewTokenType] = useState('');
 
-    // useEffect(() => {
-    //     console.log('here here')
-    //     if (openRenameAlias) {
-    //         setTimeout(() => {
-    //             console.log('here')
-    //             textFieldRef.current.focus();
-    //         }, 3000);
-    //     }
-    // }, [openRenameAlias]);
     /**
      * Copys the alias to use in notebook
      * @param alias
@@ -181,49 +145,14 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                         alignItems="center"
                         paddingY="8px"
                     >
-                        {/* {process.env.NODE_ENV === 'development' ? (
-                            <StyledTooltip
-                                placement={'right'}
-                                title={
-                                    token.type === 'block' ? (
-                                        <div
-                                            style={{
-                                                width: '200px',
-                                            }}
-                                        >
-                                            <BlocksRenderer
-                                                state={getStateWithBlock(
-                                                    token.to,
-                                                )}
-                                            />
-                                        </div>
-                                    ) : (
-                                        state.getToken(token.to, token.type)
-                                    )
-                                }
-                                componentsProps={{
-                                    tooltip: {
-                                        sx: {
-                                            bgcolor:
-                                                token.type === 'block'
-                                                    ? 'transparent'
-                                                    : 'white',
-                                            color: 'black',
-                                        },
-                                    },
-                                }}
-                                enterDelay={500}
-                                leaveDelay={200}
-                            >
-                                <IconButton>
-                                    <VisibilityRounded />
-                                </IconButton>
-                            </StyledTooltip>
-                        ) : (
-                            <IconButton>
-                                <VisibilityRounded />
-                            </IconButton>
-                        )} */}
+                        <IconButton
+                            onClick={() => {
+                                copyAlias(token.alias);
+                                setAnchorEl(null);
+                            }}
+                        >
+                            <ContentCopy />
+                        </IconButton>
                         <IconButton
                             title="Open Menu"
                             onClick={(e) => {
@@ -241,15 +170,6 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                             }}
                         >
                             <Menu.Item
-                                value="copy"
-                                onClick={() => {
-                                    copyAlias(token.alias);
-                                    setAnchorEl(null);
-                                }}
-                            >
-                                Copy Token
-                            </Menu.Item>
-                            <Menu.Item
                                 value="Delete"
                                 onClick={() => {
                                     state.dispatch({
@@ -261,7 +181,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                     setAnchorEl(null);
                                 }}
                             >
-                                Delete Token
+                                Delete
                             </Menu.Item>
                             <Menu.Item
                                 value="Delete"

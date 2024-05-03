@@ -14,6 +14,7 @@ import { NotebookTransformMenu } from './NotebookTransformMenu';
 import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookBlocksMenu } from './NotebookBlocksMenu';
+import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
 import { usePixel } from '@/hooks';
 
@@ -100,17 +101,7 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Add'} placement="right">
                         <Layers color="inherit" />
                     </Tooltip>
-                    <SidebarText>Queries</SidebarText>
-                </SidebarItem>
-                <SidebarItem
-                    disabled={true}
-                    selected={view === 'transform'}
-                    onClick={() => updateView('transform')}
-                >
-                    <Tooltip title={'Transform'} placement="right">
-                        <DashboardCustomizeRounded color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Transform</SidebarText>
+                    <SidebarText>Notebook</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     disabled={false}
@@ -130,6 +121,16 @@ export const Notebook = observer(() => {
                         <SwipeRightAltRounded color="inherit" />
                     </Tooltip>
                     <SidebarText>Blocks</SidebarText>
+                </SidebarItem>
+                <SidebarItem
+                    disabled={true}
+                    selected={view === 'transform'}
+                    onClick={() => updateView('transform')}
+                >
+                    <Tooltip title={'Transform'} placement="right">
+                        <DashboardCustomizeRounded color="inherit" />
+                    </Tooltip>
+                    <SidebarText>Transform</SidebarText>
                 </SidebarItem>
                 {/* <SidebarItem
                     selected={view === 'tokens'}
@@ -161,6 +162,7 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
+                    <NotebookSheetsMenu />
                     <NotebookSheet />
                 </LLMContext.Provider>
             </StyledRightPanel>

@@ -63,10 +63,6 @@ export const NotebookCatalogMenu = observer(() => {
         storages: [],
     });
 
-    const tokens = useMemo(() => {
-        return Object.entries(state.tokens);
-    }, [Object.entries(state.tokens).length]);
-
     useEffect(() => {
         if (getEngines.status !== 'SUCCESS') {
             return;
@@ -108,19 +104,6 @@ export const NotebookCatalogMenu = observer(() => {
                     </Stack>
                 </Button>
             </Stack>
-            {/* <Tabs
-                value={catalogView}
-                onChange={(
-                    e: React.SyntheticEvent<Element, Event>,
-                    value: string,
-                ) => {
-                    setCatalogView(value);
-                }}
-            >
-                <Tabs.Item label={'Model'} value={'model'} />
-                <Tabs.Item label={'Database'} value={'database'} />
-                <Tabs.Item label={'Storage'} value={'storage'} />
-            </Tabs> */}
             <StyledMenuScroll>
                 <StyledList disablePadding>
                     {catalogView === 'database' &&
@@ -155,61 +138,12 @@ export const NotebookCatalogMenu = observer(() => {
                         })}
                 </StyledList>
             </StyledMenuScroll>
-            <Divider />
+            {/* <Divider />
             <Stack spacing={2} paddingLeft={2} paddingTop={2} paddingBottom={1}>
                 <Stack direction="row" justifyContent="space-between">
                     <StyledMenuTitle variant="h6">Variables</StyledMenuTitle>
                 </Stack>
-            </Stack>
-            {/* <Stack spacing={2} padding={2}>
-                <Stack direction="row" justifyContent="space-between">
-                    <StyledMenuTitle variant="h6">Tokens</StyledMenuTitle>
-                </Stack>
-            </Stack>
-            <StyledMenuScroll>
-                <StyledList disablePadding>
-                    {tokens.map(([key, token]) => {
-                        if (key.includes(catalogView)) {
-                            return (
-                                <List.Item
-                                    key={`token--${key}`}
-                                    secondaryAction={
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            alignItems="center"
-                                            paddingY="8px"
-                                        >
-                                            <Tooltip
-                                                placement={'top'}
-                                                title={state.getToken(
-                                                    token.to,
-                                                    token.type,
-                                                )}
-                                                enterDelay={500}
-                                                leaveDelay={200}
-                                            >
-                                                <IconButton>
-                                                    <VisibilityRounded />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Stack>
-                                    }
-                                >
-                                    <List.ItemText
-                                        disableTypography
-                                        primary={
-                                            <Typography variant="subtitle2">
-                                                {token.alias}
-                                            </Typography>
-                                        }
-                                    />
-                                </List.Item>
-                            );
-                        }
-                    })}
-                </StyledList>
-            </StyledMenuScroll> */}
+            </Stack> */}
         </StyledMenu>
     );
 });

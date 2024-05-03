@@ -1,23 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
-    Button,
     IconButton,
     List,
-    Menu,
     Typography,
     Stack,
-    useNotification,
     Tooltip,
-    TextField,
+    Search,
 } from '@semoss/ui';
 import { useBlocks } from '@/hooks';
-import { CheckCircle, MoreVert, VisibilityRounded } from '@mui/icons-material';
 import { AddTokenModal } from './AddTokenModal';
-import { ActionMessages, SerializedState } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
 import { NotebookToken } from './NotebookToken';
+import { Add } from '@mui/icons-material';
 
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
@@ -56,40 +51,51 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
     }, [Object.entries(state.tokens).length]);
 
     return (
-        <StyledMenu>
-            <Stack spacing={2} padding={2}>
-                <Stack direction="row" justifyContent="space-between">
-                    <StyledMenuTitle variant="h6">Variables</StyledMenuTitle>
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            setAddTokenModal(true);
-                        }}
-                    >
-                        Add Variable
-                    </Button>
-                </Stack>
+        <Stack direction={'column'} sx={{ maxHeight: '80%' }} spacing={0}>
+            <Stack
+                spacing={2}
+                paddingLeft={2}
+                paddingBottom={1}
+                paddingRight={2}
+            >
+                <Search size={'small'} placeholder="Search" />
             </Stack>
-            <StyledMenuScroll>
-                <List disablePadding>
-                    {tokens.map((t, index) => {
-                        const token = t[1];
-                        return (
-                            <NotebookToken
-                                key={token.alias}
-                                id={t[0]}
-                                token={token}
-                            />
-                        );
-                    })}
-                </List>
-            </StyledMenuScroll>
-            <AddTokenModal
-                open={addTokenModal}
-                onClose={() => {
-                    setAddTokenModal(false);
-                }}
-            />
-        </StyledMenu>
+            <StyledMenu>
+                <Stack spacing={2} padding={2}>
+                    <Stack direction="row" justifyContent="space-between">
+                        <StyledMenuTitle variant="h6">
+                            Variables
+                        </StyledMenuTitle>
+                        <IconButton
+                            onClick={() => {
+                                setAddTokenModal(true);
+                            }}
+                        >
+                            <Add />
+                        </IconButton>
+                    </Stack>
+                </Stack>
+                <StyledMenuScroll>
+                    <List disablePadding>
+                        {tokens.map((t, index) => {
+                            const token = t[1];
+                            return (
+                                <NotebookToken
+                                    key={token.alias}
+                                    id={t[0]}
+                                    token={token}
+                                />
+                            );
+                        })}
+                    </List>
+                </StyledMenuScroll>
+                <AddTokenModal
+                    open={addTokenModal}
+                    onClose={() => {
+                        setAddTokenModal(false);
+                    }}
+                />
+            </StyledMenu>
+        </Stack>
     );
 });

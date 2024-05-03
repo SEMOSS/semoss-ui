@@ -93,6 +93,10 @@ const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'start',
+    // removes gray hover background made visible by width added to accomodate brackets
+    '&:hover': {
+        backgroundColor: '#00000000',
+    },
 }));
 
 const StyledCard = styled(Card, {
@@ -730,7 +734,7 @@ export const NotebookCell = observer(
                                 title="Run cell"
                                 disabled={cell.isLoading}
                                 size="medium"
-                                onClick={() => {
+                                onMouseDown={() => {
                                     state.dispatch({
                                         message: ActionMessages.RUN_CELL,
                                         payload: {
