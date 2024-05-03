@@ -15,6 +15,7 @@ import {
     CustomShapeOptions,
     Menu,
     MenuProps,
+    Tooltip,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -222,7 +223,7 @@ interface NotebookCellProps {
     cellPlayCounter: number;
 
     /** Id of the cell of the query */
-    setCellPlayCounter: Function;
+    setCellPlayCounter: (count: number) => void;
 }
 
 /**
@@ -657,6 +658,7 @@ export const NotebookCell = observer(
                                 }}
                             >
                                 <StyledMenuItem
+                                    disabled={true}
                                     value={'generate-with-ai'}
                                     onClick={() => {
                                         setAnchorEl(null);
