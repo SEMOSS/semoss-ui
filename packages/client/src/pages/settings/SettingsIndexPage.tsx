@@ -10,7 +10,11 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
+import {
+    Search as SearchIcon,
+    MoreVert,
+    Diversity3,
+} from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -102,7 +106,7 @@ const IconMapper = {
     'External Connections': <Link />,
     Teams: <GroupRounded />,
     'Teams Management': <GroupRounded />,
-    'Teams Permissions': <GroupRounded />,
+    'Team Permissions': <Diversity3 />,
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
     Jobs: <Jobs />,

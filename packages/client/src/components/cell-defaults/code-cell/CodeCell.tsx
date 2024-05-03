@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
 import { observer } from 'mobx-react-lite';
 import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
-import { CodeOff, KeyboardArrowDown } from '@mui/icons-material';
+import { Code, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef } from '@/stores';
 import { runPixel } from '@/api';
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
@@ -35,7 +35,7 @@ const EDITOR_TYPE = {
         name: 'Pixel',
         value: 'pixel',
         language: 'pixel',
-        icon: CodeOff,
+        icon: Code,
     },
 } as const;
 
@@ -603,7 +603,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     )}
                 </StyledContainer>
                 {/* {isExpanded && ( */}
-                <Stack direction="row">
+                <Stack direction="row" sx={{ paddingLeft: '10px' }}>
                     <StyledSelect
                         size={'small'}
                         title={'Select Language'}
@@ -641,12 +641,13 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 <StyledSelectItem
                                     key={`${i}-${cell.id}-${language.name}`}
                                     value={language.value}
-                                    title={language.name}
+                                    // title={language.name} // throwing ts error
                                 >
                                     <language.icon
                                         color="inherit"
                                         fontSize="small"
                                     />
+                                    {language.name}
                                 </StyledSelectItem>
                             ),
                         )}
