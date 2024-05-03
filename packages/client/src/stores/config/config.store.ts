@@ -50,6 +50,7 @@ interface ConfigStoreInterface {
             metakey: string;
         }[];
         providers: string[];
+        loginsAllowed: string[];
         version: {
             datetime: string;
             version: string;
@@ -78,6 +79,7 @@ export class ConfigStore {
             databaseMetaKeys: [],
             projectMetaKeys: [],
             providers: [],
+            loginsAllowed: [],
             version: {
                 version: '',
                 datetime: '',
@@ -101,6 +103,13 @@ export class ConfigStore {
      */
     get store(): ConfigStoreInterface {
         return this._store;
+    }
+
+    /**
+     * Get data from the current store
+     */
+    get loginsAllowed() {
+        return this._store.config.loginsAllowed;
     }
 
     // *********************************************************
@@ -139,6 +148,11 @@ export class ConfigStore {
                 // set the user information
                 if (Object.keys(data.logins).length > 0) {
                     this._store.user.loggedIn = true;
+                }
+
+                //save loginsALlowed
+                for (const type in data.loginsAllowed) {
+                    this._store.config.loginsAllowed.push(type);
                 }
 
                 // save the providers
