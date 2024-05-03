@@ -26,7 +26,10 @@ export type TokenType =
     | 'string'
     | 'number'
     | 'database'
-    | 'model';
+    | 'model'
+    | 'vector'
+    | 'storage'
+    | 'function';
 
 /**
  * Tokens

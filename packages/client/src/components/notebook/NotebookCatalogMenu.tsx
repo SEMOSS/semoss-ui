@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Button,
+    Collapse,
+    Divider,
     styled,
     IconButton,
     List,
@@ -8,10 +11,15 @@ import {
     Typography,
     Stack,
     Tabs,
+    Search,
+    TextField,
+    useNotification,
 } from '@semoss/ui';
 import { useBlocks, useRootStore, usePixel } from '@/hooks';
 import { ActionMessages, Token } from '@/stores';
-import { VisibilityRounded } from '@mui/icons-material';
+import { VisibilityRounded, FilterListRounded } from '@mui/icons-material';
+
+import { TokenType } from '@/stores';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -36,7 +44,7 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     paddingBottom: theme.spacing(1),
     overflowX: 'hidden',
     overflowY: 'auto',
-    height: '35%',
+    maxHeight: '45%',
 }));
 
 export const NotebookCatalogMenu = observer(() => {
@@ -77,54 +85,30 @@ export const NotebookCatalogMenu = observer(() => {
         setEngines(newEngines);
     }, [getEngines.status, getEngines.data]);
 
-    const listItem = (engine, type): JSX.Element => {
-        return (
-            <List.Item key={engine.app_id} disablePadding>
-                <List.ItemButton
-                    onClick={async () => {
-                        // 1.
-                        // Add to dependencies in state
-                        // Add token for it in state
-                        const id = await state.dispatch({
-                            message: ActionMessages.ADD_DEPENDENCY,
-                            payload: {
-                                id: engine.app_id,
-                                type: type,
-                            },
-                        });
-
-                        // Add Token for DATABASE_ENGINE-db.app_id
-                        state.dispatch({
-                            message: ActionMessages.ADD_TOKEN,
-                            payload: {
-                                to: id,
-                                alias: `test-${engine.app_name}`,
-                                type: type,
-                            },
-                        });
-                    }}
-                >
-                    <List.ItemText
-                        disableTypography
-                        primary={
-                            <Typography variant="subtitle2">
-                                {engine.app_name}
-                            </Typography>
-                        }
-                    />
-                </List.ItemButton>
-            </List.Item>
-        );
-    };
-
     return (
         <StyledMenu>
-            <Stack spacing={2} padding={2}>
+            <Stack spacing={2} paddingLeft={2} paddingTop={2} paddingBottom={1}>
                 <Stack direction="row" justifyContent="space-between">
-                    <StyledMenuTitle variant="h6">Catalog</StyledMenuTitle>
+                    <StyledMenuTitle variant="h6">Sources</StyledMenuTitle>
                 </Stack>
             </Stack>
-            <Tabs
+            <Stack
+                spacing={2}
+                paddingLeft={2}
+                paddingBottom={1}
+                paddingRight={2}
+            >
+                <Search size={'small'} placeholder="Name, id, etc...." />
+            </Stack>
+            <Stack spacing={2} paddingLeft={2} paddingBottom={1}>
+                <Button color={'secondary'} sx={{ width: '100px' }}>
+                    <Stack direction={'row'} gap={1}>
+                        <FilterListRounded />
+                        Sources
+                    </Stack>
+                </Button>
+            </Stack>
+            {/* <Tabs
                 value={catalogView}
                 onChange={(
                     e: React.SyntheticEvent<Element, Event>,
@@ -136,24 +120,48 @@ export const NotebookCatalogMenu = observer(() => {
                 <Tabs.Item label={'Model'} value={'model'} />
                 <Tabs.Item label={'Database'} value={'database'} />
                 <Tabs.Item label={'Storage'} value={'storage'} />
-            </Tabs>
+            </Tabs> */}
             <StyledMenuScroll>
                 <StyledList disablePadding>
                     {catalogView === 'database' &&
-                        engines.databases.map((db) => {
-                            return listItem(db, catalogView);
+                        engines.databases.map((db, i) => {
+                            return (
+                                <EngineListItem
+                                    key={i}
+                                    engine={db}
+                                    type={catalogView}
+                                />
+                            );
                         })}
                     {catalogView === 'model' &&
-                        engines.models.map((db) => {
-                            return listItem(db, catalogView);
+                        engines.models.map((db, i) => {
+                            return (
+                                <EngineListItem
+                                    key={i}
+                                    engine={db}
+                                    type={catalogView}
+                                />
+                            );
                         })}
                     {catalogView === 'storage' &&
-                        engines.storages.map((db) => {
-                            return listItem(db, catalogView);
+                        engines.storages.map((db, i) => {
+                            return (
+                                <EngineListItem
+                                    key={i}
+                                    engine={db}
+                                    type={catalogView}
+                                />
+                            );
                         })}
                 </StyledList>
             </StyledMenuScroll>
-            <Stack spacing={2} padding={2}>
+            <Divider />
+            <Stack spacing={2} paddingLeft={2} paddingTop={2} paddingBottom={1}>
+                <Stack direction="row" justifyContent="space-between">
+                    <StyledMenuTitle variant="h6">Variables</StyledMenuTitle>
+                </Stack>
+            </Stack>
+            {/* <Stack spacing={2} padding={2}>
                 <Stack direction="row" justifyContent="space-between">
                     <StyledMenuTitle variant="h6">Tokens</StyledMenuTitle>
                 </Stack>
@@ -201,7 +209,128 @@ export const NotebookCatalogMenu = observer(() => {
                         }
                     })}
                 </StyledList>
-            </StyledMenuScroll>
+            </StyledMenuScroll> */}
         </StyledMenu>
     );
 });
+
+interface EngineListItemProps {
+    engine: any;
+
+    type: TokenType;
+}
+
+const EngineListItem = (props: EngineListItemProps) => {
+    const { engine, type } = props;
+    const [showSecondaryAction, setShowSecondaryAction] = useState(false);
+
+    const { state } = useBlocks();
+    const notification = useNotification();
+
+    const [createVariable, setCreateVariable] = useState(false);
+    const [variableName, setVariableName] = useState(engine.app_name);
+
+    return (
+        <List.Item
+            key={engine.app_id}
+            disablePadding
+            secondaryAction={
+                <Collapse in={showSecondaryAction}>
+                    <Button
+                        color="primary"
+                        onClick={async () => {
+                            setCreateVariable(true);
+                        }}
+                    >
+                        Create Variable
+                    </Button>
+                </Collapse>
+            }
+            onMouseOver={() => {
+                setShowSecondaryAction(true);
+            }}
+            onMouseLeave={() => {
+                setShowSecondaryAction(false);
+            }}
+        >
+            <List.ItemButton>
+                <List.ItemText
+                    disableTypography
+                    primary={
+                        createVariable ? (
+                            <TextField
+                                inputRef={(input) => input && input.focus()}
+                                focused={true}
+                                fullWidth
+                                size={'small'}
+                                variant="standard"
+                                value={variableName}
+                                onChange={(e) => {
+                                    setVariableName(e.target.value);
+                                }}
+                                onKeyDown={async (e) => {
+                                    if (e.key === 'Enter') {
+                                        console.log('Save alias');
+                                        setCreateVariable(false);
+
+                                        // 1.
+                                        // Add to dependencies in state
+                                        // Add token for it in state
+                                        const id = await state.dispatch({
+                                            message:
+                                                ActionMessages.ADD_DEPENDENCY,
+                                            payload: {
+                                                id: engine.app_id,
+                                                type: type,
+                                            },
+                                        });
+
+                                        // Add Token for DATABASE_ENGINE-db.app_id
+                                        state.dispatch({
+                                            message: ActionMessages.ADD_TOKEN,
+                                            payload: {
+                                                to: id,
+                                                alias: variableName,
+                                                type: type,
+                                            },
+                                        });
+
+                                        notification.add({
+                                            color: 'success',
+                                            message: `Succesfully added ${engine.app_name} as ${variableName}, remember to save your app.`,
+                                        });
+                                    }
+                                }}
+                                onBlur={() => {
+                                    setCreateVariable(false);
+                                    setVariableName(engine.app_name);
+
+                                    notification.add({
+                                        color: 'warning',
+                                        message: `Unsuccesfully added ${engine.app_name} as variable`,
+                                    });
+                                }}
+                                InputProps={{
+                                    disableUnderline: true,
+                                }}
+                            />
+                        ) : (
+                            <Stack
+                                direction={'column'}
+                                gap={0}
+                                sx={{ width: '150px' }}
+                            >
+                                <Typography variant="subtitle2">
+                                    {engine.app_name}
+                                </Typography>
+                                <Typography variant="caption">
+                                    {type}
+                                </Typography>
+                            </Stack>
+                        )
+                    }
+                />
+            </List.ItemButton>
+        </List.Item>
+    );
+};

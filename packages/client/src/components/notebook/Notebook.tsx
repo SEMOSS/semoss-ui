@@ -48,7 +48,7 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'queries' | 'catalog' | 'blocks' | 'transform' | 'tokens' | ''
+        'queries' | 'sources' | 'blocks' | 'transform' | ''
     >('queries');
 
     /**
@@ -114,13 +114,13 @@ export const Notebook = observer(() => {
                 </SidebarItem>
                 <SidebarItem
                     disabled={false}
-                    selected={view === 'catalog'}
-                    onClick={() => updateView('catalog')}
+                    selected={view === 'sources'}
+                    onClick={() => updateView('sources')}
                 >
                     <Tooltip title={'Catalog'} placement="right">
                         <DataArrayRounded color="inherit" />
                     </Tooltip>
-                    <SidebarText>Catalog</SidebarText>
+                    <SidebarText>Sources</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     selected={view === 'blocks'}
@@ -131,7 +131,7 @@ export const Notebook = observer(() => {
                     </Tooltip>
                     <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
-                <SidebarItem
+                {/* <SidebarItem
                     selected={view === 'tokens'}
                     onClick={() => updateView('tokens')}
                 >
@@ -139,15 +139,15 @@ export const Notebook = observer(() => {
                         <SwipeRightAltRounded color="inherit" />
                     </Tooltip>
                     <SidebarText>Tokens</SidebarText>
-                </SidebarItem>
+                </SidebarItem> */}
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
                     {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
-                    {view === 'catalog' ? <NotebookCatalogMenu /> : null}
-                    {view === 'tokens' ? <NotebookTokensMenu /> : null}
+                    {view === 'sources' ? <NotebookCatalogMenu /> : null}
+                    {/* {view === 'tokens' ? <NotebookTokensMenu /> : null} */}
                 </StyledLeftPanel>
             ) : null}
 

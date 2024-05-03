@@ -444,7 +444,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                             justifyContent="space-between"
                                         >
                                             {newTokenType ? (
-                                                'Change Reference'
+                                                'Change Value'
                                             ) : (
                                                 <div>
                                                     <Typography
