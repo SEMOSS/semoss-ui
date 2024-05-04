@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-// import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -17,6 +17,7 @@ import {
     MenuItem,
     styled,
     Typography,
+    useNotification,
 } from '@semoss/ui';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
@@ -30,6 +31,11 @@ import { formatPermission } from '@/utils';
 import { DeleteAppModal } from './DeleteAppModal';
 import { EditDetailsModal } from './EditDetailsModal';
 import { EditDependenciesModal } from './EditDependenciesModal';
+import {
+    fetchMainUses,
+    fetchAppInfo,
+    fetchDependencies,
+} from './appDetails.utility';
 
 const OuterContainer = styled('div')({
     display: 'flex',
@@ -141,14 +147,37 @@ const DependencyRow = styled('div')({
     width: '100%',
 });
 
+interface formTypes {
+    appId: string;
+    appInfo: any;
+    mainUses: string | ReactNode;
+    tags: string[];
+    dependencies: any[];
+}
+
+const formDefaultValues: formTypes = {
+    appId: '',
+    appInfo: null,
+    mainUses: '',
+    tags: [],
+    dependencies: [],
+};
+
 export function AppDetailPage() {
+    const { control, setValue, getValues, watch } = useForm<formTypes>({
+        defaultValues: formDefaultValues,
+    });
+
     const [permissionState, setPermissionState] = useState<Role | ''>('');
-    const [appInfoState, setAppInfoState] = useState(null);
-    const [mainUsesState, setMainUsesState] = useState('');
-    const [dependenciesState, setDependenciesState] = useState([]);
+    const appId = watch('appId');
+    const mainUses = watch('mainUses');
+    const appInfo = watch('appInfo');
+    const dependencies = watch('dependencies');
+
     // const [selectedDependenciesState, setSelectedDependenciesState] = useState(
     //     [],
     // );
+
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
@@ -171,15 +200,16 @@ export function AppDetailPage() {
         memberAccessRef,
     ];
 
-    const { appId } = useParams();
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
+    const notification = useNotification();
 
     useEffect(() => {
         getPermission();
-        getAppInfo();
-        getMainUses();
-        getDependencies();
+        const { appId } = useParams();
+        setValue('appId', appId);
+
+        fetchAllData(appId);
     }, []);
 
     async function getPermission() {
@@ -187,40 +217,46 @@ export function AppDetailPage() {
         setPermissionState(response.permission);
     }
 
-    async function getAppInfo() {
-        const response = await monolithStore.runQuery(
-            `ProjectInfo(project="${appId}")`,
+    const fetchAllData = async (id: string) => {
+        Promise.allSettled([
+            fetchMainUses(id),
+            fetchAppInfo(id),
+            fetchDependencies(id),
+        ]).then((results) =>
+            results.forEach((result, idx) => {
+                if (result.status === 'rejected') {
+                    emitMessage(true, result.reason);
+                } else {
+                    if (idx === 0) {
+                        if (result.value.type === 'error') {
+                            emitMessage(true, result.value.output);
+                        } else {
+                            setValue('mainUses', result.value.output);
+                        }
+                    } else if (idx === 1) {
+                        if (result.value.type === 'error') {
+                            emitMessage(true, result.value.output);
+                        } else {
+                            setValue('appInfo', result.value.output);
+                        }
+                    } else if (idx === 2) {
+                        if (result.value.type === 'error') {
+                            emitMessage(true, result.value.output);
+                        } else {
+                            setValue('dependencies', result.value.output);
+                        }
+                    }
+                }
+            }),
         );
-        const appInfo = response.pixelReturn[0].output;
-        setAppInfoState(appInfo);
-        return appInfo;
-    }
-    async function getMainUses() {
-        const response = await monolithStore.runQuery(
-            `GetProjectMarkdown(project="${appId}")`,
-        );
-        const mainUses = response.pixelReturn[0].output;
-        setMainUsesState(mainUses);
-    }
+    };
 
-    async function getDependencies() {
-        const response = await monolithStore.runQuery(
-            `GetProjectDependencies(project="${appId}", details=[true])`,
-        );
-        const dependencies = response.pixelReturn[0].output;
-        setDependenciesState(dependencies);
-        return dependencies;
-    }
-
-    async function runSetMainUses() {
-        const response = await monolithStore.runQuery(
-            `SetProjectMetadata(project="${appId}", meta=[{"markdown":"test123test123"}])`,
-        );
-        console.log('🚀 ~ runSetProjectMetadata ~ response:', response);
-        if (response?.errors?.length === 0) {
-            getMainUses();
-        }
-    }
+    const emitMessage = (isError: boolean, message: string) => {
+        notification.add({
+            color: isError ? 'error' : 'success',
+            message,
+        });
+    };
 
     async function runSetDependenciesQuery(testSelectedDeps: string[]) {
         // async function setDependenciesQuery(selectedDependenciesState)
@@ -252,7 +288,7 @@ export function AppDetailPage() {
     }
 
     function DependenciesBody(): JSX.Element {
-        if (dependenciesState?.length > 0) {
+        if (dependencies?.length > 0) {
             return (
                 <>
                     {permissionState === 'OWNER' ? null : (
@@ -284,7 +320,7 @@ export function AppDetailPage() {
                                 Current level of access
                             </Typography>
                         </DependencyRow>
-                        {dependenciesState?.map(
+                        {dependencies?.map(
                             ({ engine_id, engine_name, engine_type }) => (
                                 <DependencyRow
                                     key={`name-${engine_name}--id-${engine_id}`}
@@ -384,14 +420,14 @@ export function AppDetailPage() {
                             />
                             <TitleSectionBodyWrapper>
                                 <SectionHeading variant="h1">
-                                    {appInfoState?.project_name}
+                                    {appInfo?.project_name}
                                 </SectionHeading>
                                 <TitleSectionBody variant="body1">
                                     <PermissionComponent />
                                 </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
-                                    {appInfoState?.description
-                                        ? appInfoState?.description
+                                    {appInfo?.description
+                                        ? appInfo?.description
                                         : 'No description available'}
                                 </TitleSectionBody>
                             </TitleSectionBodyWrapper>
@@ -401,16 +437,14 @@ export function AppDetailPage() {
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
-                            <Typography variant="body1">
-                                {mainUsesState}
-                            </Typography>
+                            <Typography variant="body1">{mainUses}</Typography>
                         </section>
 
                         <section ref={tagsRef}>
                             <SectionHeading variant="h2">Tags</SectionHeading>
-                            {appInfoState?.tag ? (
+                            {appInfo?.tag ? (
                                 <TagsBodyWrapper>
-                                    {appInfoState?.tag.map((tag, idx) => (
+                                    {appInfo?.tag.map((tag, idx) => (
                                         <Tag key={`tag-${tag}-${idx}`}>
                                             {tag}
                                         </Tag>
@@ -493,15 +527,14 @@ export function AppDetailPage() {
             <EditDetailsModal
                 isOpen={isEditDetailsModalOpen}
                 onClose={() => setIsEditDetailsModalOpen(false)}
-                runSetMainUses={runSetMainUses}
+                control={control}
+                getValues={getValues}
             />
 
             <EditDependenciesModal
                 isOpen={isEditDependenciesModalOpen}
                 onClose={() => setIsEditDependenciesModalOpen(false)}
-                dependenciesState={dependenciesState}
-                setDependenciesState={setDependenciesState}
-                getDependencies={getDependencies}
+                dependencies={dependencies}
                 runSetDependenciesQuery={runSetDependenciesQuery}
             />
 
