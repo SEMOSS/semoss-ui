@@ -52,21 +52,12 @@ const ModalFooter = styled('div')({
 interface EditDependenciesModalProps {
     isOpen: boolean;
     onClose: () => void;
-    dependenciesState: any;
-    setDependenciesState: any;
-    getDependencies: any;
+    dependencies: any;
     runSetDependenciesQuery: any;
 }
 
 export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
-    const {
-        isOpen,
-        onClose,
-        dependenciesState,
-        setDependenciesState,
-        getDependencies,
-        runSetDependenciesQuery,
-    } = props;
+    const { isOpen, onClose, dependencies, runSetDependenciesQuery } = props;
     // TODO: Get dependency image
     // TODO: Add search bar
     // TODO: Add save functionality
@@ -149,7 +140,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                     })}
                 </Select>
 
-                {dependenciesState?.map(
+                {dependencies?.map(
                     ({ engine_id, engine_name, engine_type }, idx) => (
                         <ModalDependencyRow
                             key={`dependency-${engine_id}-${idx}`}

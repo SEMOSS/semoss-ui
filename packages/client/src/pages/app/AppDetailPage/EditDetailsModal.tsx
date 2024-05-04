@@ -1,5 +1,16 @@
-import { styled, Typography, Modal, IconButton, Button } from '@semoss/ui';
+import {
+    styled,
+    Typography,
+    Modal,
+    IconButton,
+    Button,
+    TextField,
+    useNotification,
+} from '@semoss/ui';
+import { useState } from 'react';
+import { Control, Controller } from 'react-hook-form';
 import CloseIcon from '@mui/icons-material/Close';
+import { fetchMainUses } from './appDetails.utility';
 
 const EditModalInnerContainer = styled('div')({
     display: 'flex',
@@ -34,11 +45,31 @@ const ModalSectionHeading = styled(Typography)({
 interface EditDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    runSetMainUses: () => Promise<void>;
+    control: Control<any, any>;
+    getValues: any;
 }
 
 export const EditDetailsModal = (props: EditDetailsModalProps) => {
-    const { isOpen, onClose, runSetMainUses } = props;
+    const { isOpen, onClose, control, getValues } = props;
+    const notification = useNotification();
+    const [mainUses, setMainUses] = useState('');
+
+    const runSetMainUses = async () => {
+        const appId = getValues('appId');
+        const res = await fetchMainUses(appId);
+
+        if (res.type === 'error') {
+            notification.add({
+                color: 'error',
+                message: res.output,
+            });
+        } else {
+            notification.add({
+                color: 'success',
+                message: res.output,
+            });
+        }
+    };
 
     return (
         <Modal open={isOpen} fullWidth>
@@ -53,9 +84,11 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                 <ModalSectionHeading variant="h3">
                     Main Uses
                 </ModalSectionHeading>
-                <Button onClick={() => runSetMainUses()}>
-                    <pre>set test main uses</pre>
-                </Button>
+                <TextField
+                    fullWidth
+                    value={mainUses}
+                    onChange={(e) => setMainUses(e.target.value)}
+                />
 
                 <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
 
