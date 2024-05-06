@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { styled, Button, Divider, Menu, MenuProps, Stack } from '@semoss/ui';
@@ -10,11 +10,24 @@ import {
     NewCellAction,
     QueryState,
 } from '@/stores';
-import { AccountTree, Add, Functions } from '@mui/icons-material';
+import {
+    AccountTree,
+    Add,
+    Functions,
+    ChangeCircleOutlined,
+    Storage,
+    Code,
+    ImportExport,
+    TextFields,
+    KeyboardArrowUp,
+    KeyboardArrowDown,
+    TableRows,
+} from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
     DefaultCells,
     TransformationCells,
+    // ImportDataCells, // need options for Import Data dropdown options
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
@@ -53,6 +66,12 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
 }));
 
+const StyledBorderDiv = styled('div')(({ theme }) => ({
+    border: `1px solid ${theme.palette.secondary.main}`,
+    padding: '8px 16px',
+    borderRadius: '8px',
+}));
+
 interface AddCellOption {
     display: string;
     icon: React.ReactNode;
@@ -61,30 +80,68 @@ interface AddCellOption {
         display: string;
         defaultCellType: DefaultCellDefinitions['widget'];
     }[];
+    disabled?: boolean;
 }
 
 const Transformations = Array.from(Object.values(TransformationCells)).map(
-    (item) => ({
-        display: item.name,
-        defaultCellType: item.widget,
-    }),
+    (item) => {
+        return {
+            display: item.name,
+            defaultCellType: item.widget,
+        };
+    },
 );
 
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
         defaultCellType: 'code',
-        icon: <Add />,
+        icon: <Code />,
     },
     'query-import': {
         display: 'Query Import',
         defaultCellType: 'query-import',
-        icon: <AccountTree />,
+        // no DB MUI icon using the icon path from main menu
+        icon: (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+            >
+                <g clipPath="url(#clip0_2378_103062)">
+                    <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
+                        fill="#666666"
+                    ></path>
+                </g>
+                <defs>
+                    <clipPath id="clip0_2378_103062">
+                        <rect width="24" height="24" fill="#666666"></rect>
+                    </clipPath>
+                </defs>
+            </svg>
+        ),
     },
     transformation: {
         display: 'Transformation',
-        icon: <Functions />,
+        icon: <ChangeCircleOutlined />,
         options: Transformations,
+    },
+    'import-data': {
+        display: 'Import Data',
+        icon: <ImportExport />,
+        options: [],
+        disabled: true,
+    },
+    text: {
+        display: 'Text',
+        // defaultCellType: 'text', // text type currently doesn't exist
+        icon: <TextFields />,
+        disabled: true,
     },
 };
 
@@ -173,33 +230,47 @@ export const NotebookAddCell = observer(
 
         return (
             <Stack direction={'row'} alignItems={'center'} gap={1}>
-                {Object.entries(AddCellOptions).map((add, i) => {
-                    const value = add[1];
-                    return (
-                        <StyledButton
-                            key={i}
-                            title={`Add ${value.display}`}
-                            variant="contained"
-                            size="small"
-                            disabled={query.isLoading}
-                            startIcon={value.icon}
-                            onClick={(e) => {
-                                if (value.options) {
-                                    setAnchorEl(e.currentTarget);
-                                    setSelectedAddCell(add[0]);
-                                } else {
-                                    appendCell(value.defaultCellType);
+                <StyledDivider />
+                <StyledBorderDiv>
+                    {Object.entries(AddCellOptions).map((add, i) => {
+                        const value = add[1];
+                        return (
+                            <StyledButton
+                                key={i}
+                                title={`${value.display}`}
+                                variant="contained"
+                                size="small"
+                                disabled={query.isLoading || value.disabled}
+                                startIcon={value.icon}
+                                onClick={(e) => {
+                                    if (value.options) {
+                                        setAnchorEl(e.currentTarget);
+                                        setSelectedAddCell(add[0]);
+                                    } else {
+                                        appendCell(value.defaultCellType);
+                                    }
+                                }}
+                                endIcon={
+                                    Array.isArray(value.options) &&
+                                    (selectedAddCell == add[0] && open ? (
+                                        <KeyboardArrowDown />
+                                    ) : (
+                                        <KeyboardArrowUp />
+                                    ))
                                 }
-                            }}
-                        >
-                            Add {value.display}
-                        </StyledButton>
-                    );
-                })}
+                            >
+                                {value.display}
+                            </StyledButton>
+                        );
+                    })}
+                </StyledBorderDiv>
                 <StyledDivider />
                 <StyledMenu
                     anchorEl={anchorEl}
-                    open={open}
+                    open={
+                        open &&
+                        !!AddCellOptions[selectedAddCell]?.options?.length
+                    }
                     onClose={() => {
                         setAnchorEl(null);
                     }}

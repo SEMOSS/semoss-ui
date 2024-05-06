@@ -14,6 +14,7 @@ import { NotebookTransformMenu } from './NotebookTransformMenu';
 import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookBlocksMenu } from './NotebookBlocksMenu';
+import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
 import { usePixel } from '@/hooks';
 
@@ -48,7 +49,7 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'queries' | 'catalog' | 'blocks' | 'transform' | 'tokens' | ''
+        'queries' | 'sources' | 'blocks' | 'transform' | ''
     >('queries');
 
     /**
@@ -100,27 +101,17 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Add'} placement="right">
                         <Layers color="inherit" />
                     </Tooltip>
-                    <SidebarText>Queries</SidebarText>
-                </SidebarItem>
-                <SidebarItem
-                    disabled={true}
-                    selected={view === 'transform'}
-                    onClick={() => updateView('transform')}
-                >
-                    <Tooltip title={'Transform'} placement="right">
-                        <DashboardCustomizeRounded color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Transform</SidebarText>
+                    <SidebarText>Notebook</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     disabled={false}
-                    selected={view === 'catalog'}
-                    onClick={() => updateView('catalog')}
+                    selected={view === 'sources'}
+                    onClick={() => updateView('sources')}
                 >
                     <Tooltip title={'Catalog'} placement="right">
                         <DataArrayRounded color="inherit" />
                     </Tooltip>
-                    <SidebarText>Catalog</SidebarText>
+                    <SidebarText>Sources</SidebarText>
                 </SidebarItem>
                 <SidebarItem
                     selected={view === 'blocks'}
@@ -132,6 +123,16 @@ export const Notebook = observer(() => {
                     <SidebarText>Blocks</SidebarText>
                 </SidebarItem>
                 <SidebarItem
+                    disabled={true}
+                    selected={view === 'transform'}
+                    onClick={() => updateView('transform')}
+                >
+                    <Tooltip title={'Transform'} placement="right">
+                        <DashboardCustomizeRounded color="inherit" />
+                    </Tooltip>
+                    <SidebarText>Transform</SidebarText>
+                </SidebarItem>
+                {/* <SidebarItem
                     selected={view === 'tokens'}
                     onClick={() => updateView('tokens')}
                 >
@@ -139,15 +140,15 @@ export const Notebook = observer(() => {
                         <SwipeRightAltRounded color="inherit" />
                     </Tooltip>
                     <SidebarText>Tokens</SidebarText>
-                </SidebarItem>
+                </SidebarItem> */}
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
                     {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
-                    {view === 'catalog' ? <NotebookCatalogMenu /> : null}
-                    {view === 'tokens' ? <NotebookTokensMenu /> : null}
+                    {view === 'sources' ? <NotebookCatalogMenu /> : null}
+                    {/* {view === 'tokens' ? <NotebookTokensMenu /> : null} */}
                 </StyledLeftPanel>
             ) : null}
 
@@ -161,6 +162,7 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
+                    <NotebookSheetsMenu />
                     <NotebookSheet />
                 </LLMContext.Provider>
             </StyledRightPanel>

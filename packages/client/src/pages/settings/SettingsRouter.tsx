@@ -10,7 +10,9 @@ import { EngineSettingsIndexPage } from './EngineSettingsIndexPage';
 import { EngineSettingsDetailPage } from './EngineSettingsDetailPage';
 import { DatabaseSettingsPage } from './DatabaseSettingsPage';
 import { ProjectSettingsPage } from './ProjectSettingsPage';
+import { TeamsSettingsPage } from './TeamsSettingsPage';
 import { AppSettingsDetailPage } from './AppSettingsDetailPage';
+import { TeamSettingsDetailPage } from './TeamSettingsDetailPage';
 import { InsightSettingsPage } from './InsightSettingsPage';
 import { InsightSettingsDetailPage } from './InsightSettingsDetailPage';
 
@@ -32,6 +34,8 @@ const SETTINGS_COMPONETS = {
     'admin-query': AdminQueryPage,
     'my-profile': MyProfilePage,
     jobs: JobsPage,
+    'team-permissions': TeamsSettingsPage,
+    'team-permissions/:id': TeamSettingsDetailPage,
 
     // engine
     database: () => <EngineSettingsIndexPage type="DATABASE" />,
