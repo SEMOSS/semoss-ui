@@ -530,7 +530,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
-                            value={cell.parameters.code as string}
+                            value={
+                                typeof cell.parameters.code === 'string'
+                                    ? cell.parameters.code
+                                    : cell.parameters.code.join('\n')
+                            }
                             options={{
                                 lineNumbers: 'on',
                                 readOnly: false,
