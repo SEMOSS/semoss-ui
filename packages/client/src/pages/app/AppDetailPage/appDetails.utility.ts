@@ -1,11 +1,7 @@
 /**
  * PIXEL CALLS -------------------------------------------------
  */
-import { useRootStore } from '@/hooks';
-
-export const fetchAppInfo = async (appId: string) => {
-    const { monolithStore } = useRootStore();
-
+export const fetchAppInfo = async (monolithStore: any, appId: string) => {
     const res = await monolithStore.runQuery(`ProjectInfo(project="${appId}")`);
 
     const type = res.pixelReturn[0].operationType;
@@ -24,9 +20,7 @@ export const fetchAppInfo = async (appId: string) => {
     }
 };
 
-export const fetchMainUses = async (appId: string) => {
-    const { monolithStore } = useRootStore();
-
+export const fetchMainUses = async (monolithStore: any, appId: string) => {
     const res = await monolithStore.runQuery(
         `GetProjectMarkdown(project="${appId}")`,
     );
@@ -47,9 +41,7 @@ export const fetchMainUses = async (appId: string) => {
     }
 };
 
-export const fetchDependencies = async (appId: string) => {
-    const { monolithStore } = useRootStore();
-
+export const fetchDependencies = async (monolithStore: any, appId: string) => {
     const res = await monolithStore.runQuery(
         `GetProjectDependencies(project="${appId}", details=[true])`,
     );

@@ -8,9 +8,11 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { useState } from 'react';
+import { useRootStore } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
 import CloseIcon from '@mui/icons-material/Close';
 import { fetchMainUses } from './appDetails.utility';
+import { Autocomplete } from '@mui/material';
 
 const EditModalInnerContainer = styled('div')({
     display: 'flex',
@@ -51,12 +53,13 @@ interface EditDetailsModalProps {
 
 export const EditDetailsModal = (props: EditDetailsModalProps) => {
     const { isOpen, onClose, control, getValues } = props;
+    const { monolithStore } = useRootStore();
     const notification = useNotification();
     const [mainUses, setMainUses] = useState('');
 
     const runSetMainUses = async () => {
         const appId = getValues('appId');
-        const res = await fetchMainUses(appId);
+        const res = await fetchMainUses(monolithStore, appId);
 
         if (res.type === 'error') {
             notification.add({
@@ -91,12 +94,28 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                 />
 
                 <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
+                <Controller
+                    name="tags"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <Autocomplete
+                                options={[]}
+                                value={field.value}
+                                fullWidth
+                                renderInput={(params) => (
+                                    <TextField {...params} label="Tags" />
+                                )}
+                            />
+                        );
+                    }}
+                />
 
                 <ModalFooter>
                     <Button onClick={() => onClose()} variant="text">
-                        Cancel
+                        Cancel4
                     </Button>
-                    <Button onClick={null} variant="contained">
+                    <Button onClick={runSetMainUses} variant="contained">
                         Save
                     </Button>
                 </ModalFooter>

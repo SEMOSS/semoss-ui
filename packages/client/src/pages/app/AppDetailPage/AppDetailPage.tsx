@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, ReactNode } from 'react';
+import React, { useEffect, useRef, useState, ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -24,8 +24,6 @@ import { MembersTable, SettingsTiles } from '@/components/settings';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
-// import { usePixel, useRootStore } from '@/hooks';
-// import { MonolithStore } from '@/stores';
 import { Role } from '@/types';
 import { formatPermission } from '@/utils';
 import { DeleteAppModal } from './DeleteAppModal';
@@ -163,13 +161,12 @@ const formDefaultValues: formTypes = {
     dependencies: [],
 };
 
-export function AppDetailPage() {
+export const AppDetailPage = () => {
     const { control, setValue, getValues, watch } = useForm<formTypes>({
         defaultValues: formDefaultValues,
     });
 
     const [permissionState, setPermissionState] = useState<Role | ''>('');
-    const appId = watch('appId');
     const mainUses = watch('mainUses');
     const appInfo = watch('appInfo');
     const dependencies = watch('dependencies');
@@ -203,10 +200,10 @@ export function AppDetailPage() {
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
+    const { appId } = useParams();
 
     useEffect(() => {
         getPermission();
-        const { appId } = useParams();
         setValue('appId', appId);
 
         fetchAllData(appId);
@@ -219,9 +216,9 @@ export function AppDetailPage() {
 
     const fetchAllData = async (id: string) => {
         Promise.allSettled([
-            fetchMainUses(id),
-            fetchAppInfo(id),
-            fetchDependencies(id),
+            fetchMainUses(monolithStore, id),
+            fetchAppInfo(monolithStore, id),
+            fetchDependencies(monolithStore, id),
         ]).then((results) =>
             results.forEach((result, idx) => {
                 if (result.status === 'rejected') {
@@ -542,12 +539,14 @@ export function AppDetailPage() {
                 isOpen={isDeleteAppModalOpen}
                 appId={appId}
                 appName="TODO"
-                onDelete={() => {}}
+                onDelete={() => {
+                    console.log('HELLO');
+                }}
                 close={() => setIsDeleteAppModalOpen(false)}
             />
         </OuterContainer>
     );
-}
+};
 
 const StyledSidebar = styled('div')(({ theme }) => ({
     borderRight: `2px solid ${theme.palette.secondary.main}`,
@@ -557,7 +556,6 @@ const StyledSidebar = styled('div')(({ theme }) => ({
     gap: '1rem',
     paddingRight: '0.7rem',
     position: 'fixed',
-    // marginRight: '3rem',
 }));
 
 const SidebarMenuItem = styled(MenuItem)({
@@ -576,7 +574,7 @@ interface SidebarProps {
     refs: React.MutableRefObject<HTMLElement>[];
 }
 
-function Sidebar({ permissionState, refs }: SidebarProps) {
+const Sidebar = ({ permissionState, refs }: SidebarProps) => {
     const [
         mainUsesRef,
         tagsRef,
@@ -612,4 +610,4 @@ function Sidebar({ permissionState, refs }: SidebarProps) {
             ))}
         </StyledSidebar>
     );
-}
+};
