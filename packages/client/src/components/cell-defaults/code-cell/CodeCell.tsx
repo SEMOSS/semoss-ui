@@ -46,7 +46,7 @@ export interface CodeCellDef extends CellDef<'code'> {
         type: 'r' | 'py' | 'pixel';
 
         /** Code rendered in the cell */
-        code: string;
+        code: string | string[];
     };
 }
 
@@ -499,6 +499,22 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         return isExpanded ? editorHeight : EditorLineHeight;
     };
 
+    const c1 = cell.parameters.code;
+    const c2 =
+        'j = 6\r\n\r\n# prints block token --- Good\r\nprint("UI COMPONENT 1: " + {{tellmeajoke}})\r\nprint("UI COMPONENT 2: " + {{anotherjoke}})';
+
+    const c3 = [
+        'j = 6',
+        '# prints block token --- Good',
+        'print("UI COMPONENT 1: " + {{tellmeajoke}})',
+        'print("UI COMPONENT 2: " + {{anotherjoke}})',
+    ].join('\n');
+
+    console.log('c1', c1);
+    console.log('c2', c2);
+    console.log('c3', c3);
+    console.log('-----------------');
+    console.log(cell.parameters.code);
     return (
         <StyledContent>
             {LLMLoading && (
@@ -514,7 +530,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
-                            value={cell.parameters.code}
+                            value={cell.parameters.code as string}
                             options={{
                                 lineNumbers: 'on',
                                 readOnly: false,
@@ -583,7 +599,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
-                            value={cell.parameters.code}
+                            value={
+                                typeof cell.parameters.code === 'string'
+                                    ? cell.parameters.code
+                                    : cell.parameters.code.join('\n')
+                            }
                             options={{
                                 lineNumbers: 'on',
                                 readOnly: false,

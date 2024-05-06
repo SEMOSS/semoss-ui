@@ -974,6 +974,108 @@ export const DEFAULT_TEMPLATE: Template[] = [
         },
     },
     {
+        name: 'Blocks Guide1',
+        description:
+            'A help guide on the Blocks within our drag and drop app builder',
+        image: LANDINGPAGE,
+        author: 'SYSTEM',
+        lastUpdatedDate: new Date().toISOString(),
+        tags: [],
+        state: {
+            blocks: {},
+            queries: {},
+        },
+    },
+    {
+        name: 'Blocks Guide2',
+        description:
+            'A help guide on the Blocks within our drag and drop app builder',
+        image: LANDINGPAGE,
+        author: 'SYSTEM',
+        lastUpdatedDate: new Date().toISOString(),
+        tags: [],
+        state: {
+            queries: {
+                'query-2': {
+                    id: 'query-2',
+                    cells: [
+                        {
+                            id: '13174',
+                            widget: 'code',
+                            parameters: {
+                                code: 'j = 6\r\n\r\n# prints block token --- Good\r\nprint("UI COMPONENT 1: " + {{tellmeajoke}})\r\nprint("UI COMPONENT 2: " + {{anotherjoke}})',
+                                type: 'py',
+                            },
+                        },
+                        {
+                            id: '13174',
+                            widget: 'code',
+                            parameters: {
+                                code: [
+                                    'j = 6',
+                                    '# prints block token --- Good',
+                                    'print("UI COMPONENT 1: " + "tell")',
+                                    'print("UI COMPONENT 2: " + "jokes")',
+                                ].join('\n'),
+                                type: 'py',
+                            },
+                        },
+                        {
+                            id: '13176',
+                            widget: 'code',
+                            parameters: {
+                                code: [
+                                    'j = 7',
+                                    '   # prints block token --- Good',
+                                    '       print("UI COMPONENT 1: " + "sell")',
+                                    'print("UI COMPONENT 2: " + "jokes")',
+                                ],
+                                type: 'py',
+                            },
+                        },
+                        // {
+                        //     id: '13176',
+                        //     widget: 'code',
+                        //     parameters: {
+                        //         code: `j = 6
+
+                        //         # prints block token --- Good
+                        //         print("UI COMPONENT 1: " + "hey")
+                        //         print("UI COMPONENT 2: " + "hi")`,
+                        //         type: 'py',
+                        //     },
+                        // },
+                    ],
+                },
+            },
+            blocks: {
+                'page-1': {
+                    slots: {
+                        content: {
+                            children: [],
+                            name: 'content',
+                        },
+                    },
+                    parent: null,
+                    widget: 'page',
+                    data: {
+                        style: {
+                            padding: '24px',
+                            fontFamily: 'roboto',
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: '8px',
+                        },
+                    },
+                    listeners: {
+                        onPageLoad: [],
+                    },
+                    id: 'page-1',
+                },
+            },
+        },
+    },
+    {
         name: 'Ask LLM',
         description: 'Ask an LLM a question',
         image: CHATAI,
