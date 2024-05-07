@@ -18,6 +18,7 @@ import {
     styled,
     Typography,
     useNotification,
+    Chip,
 } from '@semoss/ui';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
@@ -35,7 +36,8 @@ import {
     fetchDependencies,
 } from './appDetails.utility';
 
-const OuterContainer = styled('div')({
+const OuterContainer = styled('div')(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
@@ -43,7 +45,7 @@ const OuterContainer = styled('div')({
     overflow: 'scroll',
     padding: '0 1rem',
     width: '100%',
-});
+}));
 
 const InnerContainer = styled('div')({
     display: 'flex',
@@ -112,12 +114,6 @@ const TagsBodyWrapper = styled('div')({
     flexWrap: 'wrap',
     gap: '0.6rem',
 });
-
-const Tag = styled('span')(({ theme }) => ({
-    background: theme.palette.grey[300],
-    borderRadius: '1.5rem',
-    padding: '0.5em 1em',
-}));
 
 const DependenciesHeadingWrapper = styled('div')({
     alignItems: 'start',
@@ -442,9 +438,10 @@ export const AppDetailPage = () => {
                             {appInfo?.tag ? (
                                 <TagsBodyWrapper>
                                     {appInfo?.tag.map((tag, idx) => (
-                                        <Tag key={`tag-${tag}-${idx}`}>
-                                            {tag}
-                                        </Tag>
+                                        <Chip
+                                            key={`tag-${tag}-${idx}`}
+                                            label={tag}
+                                        />
                                     ))}
                                 </TagsBodyWrapper>
                             ) : (
