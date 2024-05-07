@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { styled, Button, Divider, Menu, MenuProps, Stack } from '@semoss/ui';
+import {
+    styled,
+    Button,
+    Divider,
+    Menu,
+    MenuProps,
+    Stack,
+    Typography,
+    Modal,
+} from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
 import {
@@ -92,6 +101,26 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
     },
 );
 
+const DataImportDropdownOptions = [
+    {
+        display: `From Data Catalog`,
+        defaultCellType: null,
+    },
+    {
+        display: `From CSV`,
+        defaultCellType: null,
+    },
+];
+
+// const DataImportDropdownOptions = Array.from(Object.values(TransformationCells)).map(
+//     (item) => {
+//         return {
+//             display: `Test ${item.name}`,
+//             defaultCellType: item.widget,
+//         };
+//     },
+// );
+
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
@@ -134,8 +163,8 @@ const AddCellOptions: Record<string, AddCellOption> = {
     'import-data': {
         display: 'Import Data',
         icon: <ImportExport />,
-        options: [],
-        disabled: true,
+        options: DataImportDropdownOptions,
+        disabled: false,
     },
     text: {
         display: 'Text',
@@ -149,9 +178,20 @@ export const NotebookAddCell = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const [selectedAddCell, setSelectedAddCell] = useState<string>('');
+        const [importModalType, setImportModalType] = useState<string>('');
+        const [isOpenDataImportModal, setIsOpenDataImportModal] =
+            useState<boolean>(false);
+        // const [isOpenImportDataOptions, setIsOpenImportDataOptions] = useState<Boolean>(false);
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
+
+        useEffect(() => {
+            console.log({
+                anchorEl,
+                type: typeof anchorEl,
+            });
+        }, [anchorEl]);
 
         // const cellTypeOptions = computed(() => {
         //     const options = { ...AddCellOptions };
@@ -234,6 +274,7 @@ export const NotebookAddCell = observer(
                 <StyledBorderDiv>
                     {Object.entries(AddCellOptions).map((add, i) => {
                         const value = add[1];
+                        console.log({ i, add });
                         return (
                             <StyledButton
                                 key={i}
@@ -275,24 +316,101 @@ export const NotebookAddCell = observer(
                         setAnchorEl(null);
                     }}
                 >
-                    {Array.from(
-                        AddCellOptions[selectedAddCell]?.options || [],
-                        ({ display, defaultCellType }, index) => {
-                            return (
-                                <StyledMenuItem
-                                    key={index}
-                                    value={display}
-                                    onClick={() => {
-                                        appendCell(defaultCellType);
-                                        setAnchorEl(null);
-                                    }}
-                                >
-                                    {display}
-                                </StyledMenuItem>
-                            );
-                        },
+                    {selectedAddCell === 'transformation' &&
+                        Array.from(
+                            AddCellOptions[selectedAddCell]?.options || [],
+                            ({ display, defaultCellType }, index) => {
+                                return (
+                                    <StyledMenuItem
+                                        key={index}
+                                        value={display}
+                                        onClick={() => {
+                                            appendCell(defaultCellType);
+                                            setAnchorEl(null);
+                                        }}
+                                    >
+                                        {display}
+                                    </StyledMenuItem>
+                                );
+                            },
+                        )}
+
+                    {selectedAddCell === 'import-data' && (
+                        <>
+                            <Typography
+                                variant="subtitle1"
+                                sx={{
+                                    paddingLeft: '15px',
+                                    paddingTop: '5px',
+                                    paddingBottom: '5px',
+                                    fontWeight: '600',
+                                }}
+                            >
+                                Import Data
+                            </Typography>
+                            {Array.from(
+                                AddCellOptions[selectedAddCell]?.options || [],
+                                ({ display }, index) => {
+                                    return (
+                                        <StyledMenuItem
+                                            key={index}
+                                            value={display}
+                                            onClick={() => {
+                                                // appendCell(defaultCellType);
+                                                setIsOpenDataImportModal(true);
+                                                setImportModalType(display);
+                                                setAnchorEl(null);
+                                            }}
+                                        >
+                                            {display}
+                                        </StyledMenuItem>
+                                    );
+                                },
+                            )}
+                        </>
                     )}
                 </StyledMenu>
+
+                {/* Import Data Modal */}
+                <Modal open={isOpenDataImportModal}>
+                    <Modal.Title>{importModalType}</Modal.Title>
+                    <Modal.Content>
+                        <Typography variant="body1">
+                            {`(modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content)`}
+                        </Typography>
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            paddingX={2}
+                            paddingBottom={2}
+                            justifyContent="end"
+                        >
+                            <Button
+                                variant="text"
+                                color="primary"
+                                onClick={() => {
+                                    // onClose();
+                                    setIsOpenDataImportModal(false);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                // disabled={!!errors?.ID?.message || !isFormValid}
+                                onClick={() => {
+                                    // onSubmit();
+                                    alert('submit');
+                                }}
+                            >
+                                Submit
+                            </Button>
+                        </Stack>
+                    </Modal.Actions>
+                </Modal>
             </Stack>
         );
     },
