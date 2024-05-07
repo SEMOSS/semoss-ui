@@ -10,6 +10,7 @@ export const CodeCellConfig: CellConfig<CodeCellDef> = {
     },
     view: CodeCell,
     toPixel: ({ type, code }) => {
+        code = typeof code === 'string' ? code : code.join('\n');
         if (type === 'r') {
             return `R("<encode>${code}</encode>");`;
         } else if (type === 'py') {

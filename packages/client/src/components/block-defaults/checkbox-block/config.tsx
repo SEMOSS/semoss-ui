@@ -3,6 +3,7 @@ import {
     InputSettings,
     SelectInputSettings,
 } from '@/components/block-settings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 
 import { CheckboxBlockDef, CheckboxBlock } from './CheckboxBlock';
 import { CheckBox } from '@mui/icons-material';
@@ -27,6 +28,18 @@ export const config: BlockConfig<CheckboxBlockDef> = {
     slots: {},
     render: CheckboxBlock,
     icon: CheckBox,
-    contentMenu: [],
+    contentMenu: [
+        {
+            name: 'General',
+            children: [
+                {
+                    description: 'Checked',
+                    render: ({ id }) => (
+                        <SwitchSettings id={id} label="Checked" path="value" />
+                    ),
+                },
+            ],
+        },
+    ],
     styleMenu: [],
 };
