@@ -6,13 +6,13 @@ import {
     Button,
     TextField,
     useNotification,
+    // Autocomplete,
 } from '@semoss/ui';
-import { useState } from 'react';
 import { useRootStore } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
 import CloseIcon from '@mui/icons-material/Close';
 import { fetchMainUses } from './appDetails.utility';
-import { Autocomplete } from '@mui/material';
+import { createFilterOptions, Autocomplete } from '@mui/material';
 
 const EditModalInnerContainer = styled('div')({
     display: 'flex',
@@ -55,23 +55,27 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
     const { isOpen, onClose, control, getValues } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
-    const [mainUses, setMainUses] = useState('');
 
-    const runSetMainUses = async () => {
-        const appId = getValues('appId');
-        const res = await fetchMainUses(monolithStore, appId);
+    const filter = createFilterOptions<string>();
 
-        if (res.type === 'error') {
-            notification.add({
-                color: 'error',
-                message: res.output,
-            });
-        } else {
-            notification.add({
-                color: 'success',
-                message: res.output,
-            });
-        }
+    const handleEditAppDetails = async () => {
+        const mainUses = getValues('mainUses');
+        const tags = getValues('tags');
+
+        // const appId = getValues('appId');
+        // const res = await fetchMainUses(monolithStore, appId);
+
+        // if (res.type === 'error') {
+        //     notification.add({
+        //         color: 'error',
+        //         message: res.output,
+        //     });
+        // } else {
+        //     notification.add({
+        //         color: 'success',
+        //         message: res.output,
+        //     });
+        // }
     };
 
     return (
@@ -87,10 +91,20 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                 <ModalSectionHeading variant="h3">
                     Main Uses
                 </ModalSectionHeading>
-                <TextField
-                    fullWidth
-                    value={mainUses}
-                    onChange={(e) => setMainUses(e.target.value)}
+                <Controller
+                    name="mainUses"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <TextField
+                                value={field.value}
+                                onChange={(val) => field.onChange(val)}
+                                fullWidth
+                                multiline
+                                rows={7}
+                            />
+                        );
+                    }}
                 />
 
                 <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
@@ -103,9 +117,28 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                                 options={[]}
                                 value={field.value}
                                 fullWidth
+                                multiple
+                                freeSolo
+                                onChange={(_, val) => field.onChange(val)}
                                 renderInput={(params) => (
                                     <TextField {...params} label="Tags" />
                                 )}
+                                renderOption={(props, option) => (
+                                    <li {...props}>{option}</li>
+                                )}
+                                filterOptions={(options, params) => {
+                                    const filtered = filter(options, params);
+
+                                    const { inputValue } = params;
+                                    const isExisting = options.some(
+                                        (option) => inputValue === option,
+                                    );
+                                    if (inputValue !== '' && !isExisting) {
+                                        filtered.push(inputValue);
+                                    }
+
+                                    return filtered;
+                                }}
                             />
                         );
                     }}
@@ -113,9 +146,9 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
                 <ModalFooter>
                     <Button onClick={() => onClose()} variant="text">
-                        Cancel4
+                        Cancel
                     </Button>
-                    <Button onClick={runSetMainUses} variant="contained">
+                    <Button onClick={handleEditAppDetails} variant="contained">
                         Save
                     </Button>
                 </ModalFooter>
