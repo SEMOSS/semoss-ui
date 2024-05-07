@@ -26,3 +26,7 @@ export const lowercase = (str) => {
     const word = match[0].toLowerCase();
     return str.replace(regex, word);
 };
+
+export const capitalizeFirstLetter = (str) => {
+    return str.replace(/\w{1}/, (match) => match.toUpperCase());
+};

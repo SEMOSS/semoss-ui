@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Button,
+    Checkbox,
     styled,
     IconButton,
     List,
@@ -8,11 +10,13 @@ import {
     Stack,
     Tooltip,
     Search,
+    Popover,
 } from '@semoss/ui';
 import { useBlocks } from '@/hooks';
 import { AddTokenModal } from './AddTokenModal';
 import { NotebookToken } from './NotebookToken';
-import { Add } from '@mui/icons-material';
+import { Add, FilterListRounded } from '@mui/icons-material';
+import { VARIABLE_TYPES } from '@/stores';
 
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
@@ -45,19 +49,57 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 export const NotebookTokensMenu = observer((): JSX.Element => {
     const { state } = useBlocks();
     const [addTokenModal, setAddTokenModal] = useState(false);
+
     const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
         null,
     );
+    const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLElement | null>(
+        null,
+    );
 
-    // track if the popover is open
+    const [filterWord, setFilterWord] = useState('');
+    const [selectedFilter, setSelectedFilter] = useState(VARIABLE_TYPES);
+
+    const isFilterPopoverOpen = Boolean(filterAnchorEl);
     const isPopoverOpen = Boolean(popoverAnchorEle);
 
     const tokens = useMemo(() => {
-        return Object.entries(state.tokens);
-    }, [Object.entries(state.tokens).length]);
+        return Object.entries(state.tokens).filter((kv) => {
+            const val = kv[1];
+
+            if (val.alias.includes(filterWord)) return kv;
+        });
+    }, [Object.entries(state.tokens).length, filterWord]);
+
+    const filterList = useMemo(() => {
+        console.log(selectedFilter);
+        return VARIABLE_TYPES.map((type, i) => {
+            return (
+                <List key={i}>
+                    <List.Item>
+                        <Checkbox
+                            checked={selectedFilter.indexOf(type) > -1}
+                            onChange={(e) => {
+                                const index = selectedFilter.indexOf(type);
+                                let copy = selectedFilter;
+                                if (index > -1) {
+                                    copy = copy.splice(index, 1);
+                                } else {
+                                    copy.push(type);
+                                }
+
+                                setSelectedFilter(copy);
+                            }}
+                        />
+                        {type}
+                    </List.Item>
+                </List>
+            );
+        });
+    }, [selectedFilter.length]);
 
     return (
-        <Stack direction={'column'} sx={{ maxHeight: '80%' }} spacing={0}>
+        <Stack direction={'column'} sx={{ maxHeight: '100%' }} spacing={0}>
             <StyledMenu>
                 <Stack spacing={2} padding={2}>
                     <Stack direction="row" justifyContent="space-between">
@@ -79,7 +121,37 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                     paddingBottom={1}
                     paddingRight={2}
                 >
-                    <Search size={'small'} placeholder="Search" />
+                    <Search
+                        size={'small'}
+                        placeholder="Search"
+                        onChange={(e) => {
+                            setFilterWord(e.target.value);
+                        }}
+                    />
+                </Stack>
+                <Stack spacing={2} paddingLeft={2} paddingBottom={1}>
+                    <Button
+                        color={'secondary'}
+                        sx={{ width: '100px' }}
+                        onClick={(e) => {
+                            setFilterAnchorEl(e.currentTarget);
+                        }}
+                    >
+                        <Stack direction={'row'} gap={1}>
+                            <FilterListRounded />
+                            Types
+                        </Stack>
+                    </Button>
+                    <Popover
+                        id={'filter-variable-popover'}
+                        open={isFilterPopoverOpen}
+                        anchorEl={filterAnchorEl}
+                        onClose={() => {
+                            setFilterAnchorEl(null);
+                        }}
+                    >
+                        {filterList}
+                    </Popover>
                 </Stack>
                 <StyledMenuScroll>
                     <List disablePadding>

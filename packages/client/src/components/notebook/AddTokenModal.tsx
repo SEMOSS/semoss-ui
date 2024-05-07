@@ -19,8 +19,8 @@ import { computed } from 'mobx';
 import { DefaultBlocks, getIconForBlock } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
-import { Token } from '@/stores';
-import { lowercase, splitAtPeriod } from '@/utility';
+import { Token, VARIABLE_TYPES } from '@/stores';
+import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
 import { MoreSharp } from '@mui/icons-material';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
@@ -398,20 +398,10 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                             setVariableType(val);
                         }}
                     >
-                        {[
-                            'Block',
-                            'Query',
-                            'Cell',
-                            'Database',
-                            'Vector',
-                            'Storage',
-                            'Model',
-                            'Function',
-                            // 'string',
-                        ].map((val, i) => {
+                        {VARIABLE_TYPES.map((val, i) => {
                             return (
-                                <Select.Item key={i} value={lowercase(val)}>
-                                    {val}
+                                <Select.Item key={i} value={val}>
+                                    {capitalizeFirstLetter(val)}
                                 </Select.Item>
                             );
                         })}

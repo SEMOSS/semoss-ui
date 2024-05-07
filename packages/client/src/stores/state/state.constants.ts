@@ -14,6 +14,18 @@ import QUERY from '@/assets/img/query.jpeg';
 import CHATAI from '@/assets/img/chatai.jpeg';
 import LANDINGPAGE from '@/assets/img/LandingPage.jpeg';
 
+export const VARIABLE_TYPES = [
+    'block',
+    'cell',
+    'query',
+    'string',
+    'number',
+    'database',
+    'model',
+    'vector',
+    'storage',
+    'function',
+];
 export const ACTIONS_DISPLAY = {
     [ActionMessages.RUN_QUERY]: 'Run Query',
     [ActionMessages.DISPATCH_EVENT]: 'Dispatch Event',
