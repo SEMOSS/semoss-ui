@@ -10,7 +10,7 @@ import {
     Search,
     Button,
     ToggleButtonGroup,
-    ToggleButton,
+    ToggleTabsGroup,
     Grid,
     List,
     TextField,
@@ -103,6 +103,26 @@ const StyledShowMore = styled(Typography)(({ theme }) => {
 const StyledSectionLabel = styled(Typography)(() => ({
     size: '16px',
     fontWeight: '500',
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    border: '1px',
+    minHeight: '42px',
+    color: theme.palette.secondary.light,
+    borderRadius: theme.shape.borderRadius,
+    alignItems: 'center',
+    padding: '0px 3px',
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '38px',
+    padding: '8px 11px',
+    '&.MuiTab-root': {
+        borderRadius: theme.shape.borderRadius,
+    },
+    '&.Mui-selected': {
+        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+    },
 }));
 
 const initialState = {
@@ -903,42 +923,31 @@ export const EngineCatalogPage = observer(
                             alignItems={'center'}
                             justifyContent={'space-between'}
                         >
-                            <StyledToggleButtonGroup value={mode}>
-                                <ToggleButton
-                                    color="secondary"
+                            <StyledToggleTabsGroup
+                                value={mode}
+                                onChange={(e: React.SyntheticEvent, val) => {
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setMode(val as MODE);
+                                    setOffset(0);
+                                }}
+                            >
+                                <StyledToggleTabsGroupItem
                                     value="Mine"
-                                    onClick={(e, v) => {
-                                        dispatch({
-                                            type: 'field',
-                                            field: 'databases',
-                                            value: [],
-                                        });
-                                        setOffset(0);
-                                        setMode(v);
-                                    }}
-                                >
-                                    {`My ${
-                                        route ? `${route.name}(s)` : 'Engine(s)'
+                                    label={`My ${
+                                        route ? `${route.name}s` : 'Engines'
                                     }`}
-                                </ToggleButton>
-                                <ToggleButton
-                                    color="secondary"
+                                />
+                                <StyledToggleTabsGroupItem
                                     value="Discoverable"
-                                    onClick={(e, v) => {
-                                        dispatch({
-                                            type: 'field',
-                                            field: 'databases',
-                                            value: [],
-                                        });
-                                        setOffset(0);
-                                        setMode(v);
-                                    }}
-                                >
-                                    {`Discoverable ${
-                                        route ? `${route.name}(s)` : 'Engine(s)'
+                                    label={`Discoverable ${
+                                        route ? `${route.name}s` : 'Engines'
                                     }`}
-                                </ToggleButton>
-                            </StyledToggleButtonGroup>
+                                />
+                            </StyledToggleTabsGroup>
                             <Stack
                                 direction="row"
                                 alignItems={'center'}

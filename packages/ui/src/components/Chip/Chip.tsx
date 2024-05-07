@@ -13,8 +13,8 @@ const StyledMuiChip = styled(MuiChip, {
     };
     return {
         ...(chipColor === "default" && {
-            backgroundColor: theme.palette.secondary.main,
-            color: theme.palette.text.secondary,
+            backgroundColor: theme.palette.secondary.selected,
+            color: "#212121",
             borderColor: "",
             ".MuiSvgIcon-root": {
                 color: theme.palette.text.secondary,
