@@ -147,6 +147,9 @@ interface formTypes {
     mainUses: string | ReactNode;
     tags: string[];
     dependencies: any[];
+    userRole: Role | '';
+    newRole: Role | '';
+    roleChangeComment: string | ReactNode;
 }
 
 const formDefaultValues: formTypes = {
@@ -155,6 +158,9 @@ const formDefaultValues: formTypes = {
     mainUses: '',
     tags: [],
     dependencies: [],
+    userRole: '',
+    newRole: '',
+    roleChangeComment: '',
 };
 
 export const AppDetailPage = () => {
@@ -162,14 +168,11 @@ export const AppDetailPage = () => {
         defaultValues: formDefaultValues,
     });
 
-    const [permissionState, setPermissionState] = useState<Role | ''>('');
     const mainUses = watch('mainUses');
     const appInfo = watch('appInfo');
+    const userRole = watch('userRole');
+    console.log('APP INFO', appInfo);
     const dependencies = watch('dependencies');
-
-    // const [selectedDependenciesState, setSelectedDependenciesState] = useState(
-    //     [],
-    // );
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
@@ -207,7 +210,7 @@ export const AppDetailPage = () => {
 
     async function getPermission() {
         const response = await monolithStore.getUserProjectPermission(appId);
-        setPermissionState(response.permission);
+        setValue('userRole', response.permission);
     }
 
     const fetchAllData = async (id: string) => {
@@ -266,16 +269,16 @@ export const AppDetailPage = () => {
     function PermissionComponent(): JSX.Element {
         return (
             <>
-                {permissionState === 'OWNER' ? <HdrAutoIcon /> : null}
-                {permissionState === 'EDIT' || permissionState === 'EDITOR' ? (
+                {userRole === 'OWNER' ? <HdrAutoIcon /> : null}
+                {userRole === 'EDIT' || userRole === 'EDITOR' ? (
                     <NoteAltIcon />
                 ) : null}
-                {permissionState === 'VIEWER' ||
-                permissionState === 'READ_ONLY' ||
-                permissionState === 'DISCOVERABLE' ? (
+                {userRole === 'VIEWER' ||
+                userRole === 'READ_ONLY' ||
+                userRole === 'DISCOVERABLE' ? (
                     <AssignmentIcon />
                 ) : null}
-                {`${formatPermission(permissionState)} Access`}
+                {`${formatPermission(userRole)} Access`}
             </>
         );
     }
@@ -284,7 +287,7 @@ export const AppDetailPage = () => {
         if (dependencies?.length > 0) {
             return (
                 <>
-                    {permissionState === 'OWNER' ? null : (
+                    {userRole === 'OWNER' ? null : (
                         <pre
                             style={{
                                 background: 'gray',
@@ -330,7 +333,7 @@ export const AppDetailPage = () => {
                                         variant="body2"
                                         sx={{ width: '50%' }}
                                     >
-                                        {formatPermission(permissionState)}
+                                        {formatPermission(userRole)}
                                     </Typography>
                                 </DependencyRow>
                             ),
@@ -349,9 +352,11 @@ export const AppDetailPage = () => {
                 <Breadcrumbs>Breadcrumbs</Breadcrumbs>
 
                 <TopButtonsContainer>
-                    <ChangeAccessButton variant="text">
-                        Change Access
-                    </ChangeAccessButton>
+                    {userRole !== 'OWNER' && (
+                        <ChangeAccessButton variant="text">
+                            Change Access
+                        </ChangeAccessButton>
+                    )}
 
                     <Button variant="contained" onClick={() => navigate('../')}>
                         Open
@@ -369,9 +374,9 @@ export const AppDetailPage = () => {
                         open={Boolean(moreVertAnchorEl)}
                         onClose={() => setMoreVertAnchorEl(null)}
                     >
-                        {(permissionState === 'OWNER' ||
-                            permissionState === 'EDIT' ||
-                            permissionState === 'EDITOR') && (
+                        {(userRole === 'OWNER' ||
+                            userRole === 'EDIT' ||
+                            userRole === 'EDITOR') && (
                             <StyledMenuItem
                                 onClick={() => {
                                     setIsEditDetailsModalOpen(true);
@@ -387,7 +392,7 @@ export const AppDetailPage = () => {
                             <ShareIcon fontSize="small" />
                             Share
                         </StyledMenuItem>
-                        {permissionState === 'OWNER' && (
+                        {userRole === 'OWNER' && (
                             <StyledMenuItem
                                 onClick={() => {
                                     setIsDeleteAppModalOpen(true);
@@ -403,7 +408,7 @@ export const AppDetailPage = () => {
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
-                    <Sidebar permissionState={permissionState} refs={refs} />
+                    <Sidebar userRole={userRole} refs={refs} />
 
                     <Sections>
                         <TitleSection>
@@ -455,7 +460,7 @@ export const AppDetailPage = () => {
                             <SectionHeading variant="h2">Videos</SectionHeading>
                         </section>
 
-                        {permissionState === 'DISCOVERABLE' ? null : (
+                        {userRole === 'DISCOVERABLE' ? null : (
                             <section ref={dependenciesRef}>
                                 <DependenciesHeadingWrapper>
                                     <SectionHeading variant="h2">
@@ -567,11 +572,11 @@ const SidebarMenuItem = styled(MenuItem)({
 });
 
 interface SidebarProps {
-    permissionState: string;
+    userRole: string;
     refs: React.MutableRefObject<HTMLElement>[];
 }
 
-const Sidebar = ({ permissionState, refs }: SidebarProps) => {
+const Sidebar = ({ userRole, refs }: SidebarProps) => {
     const [
         mainUsesRef,
         tagsRef,
@@ -585,7 +590,7 @@ const Sidebar = ({ permissionState, refs }: SidebarProps) => {
         { text: 'Main Uses', ref: mainUsesRef },
         { text: 'Tags', ref: tagsRef },
         // { text: 'Videos', ref: videosRef },
-        permissionState === 'DISCOVERABLE'
+        userRole === 'DISCOVERABLE'
             ? null
             : { text: 'Dependencies', ref: dependenciesRef },
         { text: 'App Access', ref: appAccessRef },
