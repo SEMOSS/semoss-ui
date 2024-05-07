@@ -20,6 +20,7 @@ import {
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
+import { splitAtPeriod } from '@/utility';
 
 interface StateStoreInterface {
     /** Mode */
@@ -203,21 +204,30 @@ export class StateStore {
 
             // TO DO: Genericize this, is it always.value
             return block.data.value as string;
+        } else if (type === 'query') {
+            const query = this.getQuery(pointer);
+
+            // Return query output
+            return query.output;
         } else if (type === 'cell') {
-            //
+            const query = this.getQuery(splitAtPeriod(pointer, 'left'));
+            const cell = query.getCell(splitAtPeriod(pointer, 'right'));
+
+            // Return cells output
+            return cell.output;
+        } else if (
+            type === 'database' ||
+            type === 'model' ||
+            type === 'vector' ||
+            type === 'function' ||
+            type === 'storage'
+        ) {
+            // Finds Dependency from pointer
+            return this._store.dependencies[pointer];
         } else if (type === 'string') {
             //
         } else if (type === 'number') {
             //
-        } else if (type === 'database') {
-            // Finds Dependency from pointer
-            return this._store.dependencies[pointer];
-        } else if (type === 'model') {
-            // Find Dependency from pointer
-            return this._store.dependencies[pointer];
-        } else if (type === 'storage') {
-            // Find Dependency from pointer
-            return this._store.dependencies[pointer];
         }
         return '';
     }
@@ -383,8 +393,6 @@ export class StateStore {
         } else if (path[0] === 'block') {
             // check if the id is there
             const blockId = path[1];
-
-            debugger;
 
             // get the block
             const block = this._store.blocks[blockId];

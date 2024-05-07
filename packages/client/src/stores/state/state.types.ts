@@ -21,15 +21,16 @@ export type SerializedState = {
  * Token Types
  */
 export type TokenType =
-    | 'block'
-    | 'cell' // Needed for UI not in notebook
+    | 'block' // X
+    | 'cell'
+    | 'query'
     | 'string'
     | 'number'
-    | 'database'
-    | 'model'
-    | 'vector'
-    | 'storage'
-    | 'function';
+    | 'database' // X
+    | 'model' // X
+    | 'vector' // X
+    | 'storage' // X
+    | 'function'; // X
 
 /**
  * Tokens

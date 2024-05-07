@@ -101,9 +101,9 @@ export const Notebook = observer(() => {
                     <Tooltip title={'Add'} placement="right">
                         <Layers color="inherit" />
                     </Tooltip>
-                    <SidebarText>Notebook</SidebarText>
+                    <SidebarText>Variables</SidebarText>
                 </SidebarItem>
-                <SidebarItem
+                {/* <SidebarItem
                     disabled={false}
                     selected={view === 'sources'}
                     onClick={() => updateView('sources')}
@@ -131,7 +131,7 @@ export const Notebook = observer(() => {
                         <DashboardCustomizeRounded color="inherit" />
                     </Tooltip>
                     <SidebarText>Transform</SidebarText>
-                </SidebarItem>
+                </SidebarItem> */}
                 {/* <SidebarItem
                     selected={view === 'tokens'}
                     onClick={() => updateView('tokens')}
@@ -145,9 +145,9 @@ export const Notebook = observer(() => {
             {view ? (
                 <StyledLeftPanel>
                     {view === 'queries' ? <NotebookQueriesMenu /> : null}
-                    {view === 'transform' ? <NotebookTransformMenu /> : null}
+                    {/* {view === 'transform' ? <NotebookTransformMenu /> : null}
                     {view === 'blocks' ? <NotebookBlocksMenu /> : null}
-                    {view === 'sources' ? <NotebookCatalogMenu /> : null}
+                    {view === 'sources' ? <NotebookCatalogMenu /> : null} */}
                     {/* {view === 'tokens' ? <NotebookTokensMenu /> : null} */}
                 </StyledLeftPanel>
             ) : null}

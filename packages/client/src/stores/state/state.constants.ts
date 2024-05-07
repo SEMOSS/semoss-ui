@@ -984,6 +984,8 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: [],
         state: {
+            tokens: {},
+            dependencies: {},
             queries: {
                 MyProjects: {
                     id: 'MyProjects',

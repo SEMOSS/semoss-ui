@@ -45,6 +45,12 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 export const NotebookTokensMenu = observer((): JSX.Element => {
     const { state } = useBlocks();
     const [addTokenModal, setAddTokenModal] = useState(false);
+    const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
+        null,
+    );
+
+    // track if the popover is open
+    const isPopoverOpen = Boolean(popoverAnchorEle);
 
     const tokens = useMemo(() => {
         return Object.entries(state.tokens);
@@ -52,14 +58,6 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
 
     return (
         <Stack direction={'column'} sx={{ maxHeight: '80%' }} spacing={0}>
-            <Stack
-                spacing={2}
-                paddingLeft={2}
-                paddingBottom={1}
-                paddingRight={2}
-            >
-                <Search size={'small'} placeholder="Search" />
-            </Stack>
             <StyledMenu>
                 <Stack spacing={2} padding={2}>
                     <Stack direction="row" justifyContent="space-between">
@@ -67,13 +65,21 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                             Variables
                         </StyledMenuTitle>
                         <IconButton
-                            onClick={() => {
-                                setAddTokenModal(true);
+                            onClick={(e) => {
+                                setPopoverAnchorEl(e.currentTarget);
                             }}
                         >
                             <Add />
                         </IconButton>
                     </Stack>
+                </Stack>
+                <Stack
+                    spacing={2}
+                    paddingLeft={2}
+                    paddingBottom={1}
+                    paddingRight={2}
+                >
+                    <Search size={'small'} placeholder="Search" />
                 </Stack>
                 <StyledMenuScroll>
                     <List disablePadding>
@@ -90,9 +96,12 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                     </List>
                 </StyledMenuScroll>
                 <AddTokenModal
-                    open={addTokenModal}
+                    open={isPopoverOpen}
+                    anchorEl={popoverAnchorEle}
                     onClose={() => {
                         setAddTokenModal(false);
+
+                        setPopoverAnchorEl(null);
                     }}
                 />
             </StyledMenu>
