@@ -33,7 +33,7 @@ const StyledPopover = styled(Popover)(({ theme }) => ({
     marginLeft: theme.spacing(2),
 }));
 
-interface AddTokenModalProps {
+interface AddVariableModalProps {
     /**
      * modal open
      */
@@ -52,10 +52,15 @@ interface AddTokenModalProps {
     /**
      * Do we want to create token on the designer screen
      */
-    tokenReference?: string;
+    // tokenReference?: string;
 }
-export const AddTokenModal = observer((props: AddTokenModalProps) => {
-    const { open, tokenReference, anchorEl, onClose } = props;
+export const AddVariableModal = observer((props: AddVariableModalProps) => {
+    const {
+        open,
+        // tokenReference,
+        anchorEl,
+        onClose,
+    } = props;
     const { state } = useBlocks();
     const notification = useNotification();
 
@@ -206,7 +211,6 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                 );
             });
         } else if (variableType === 'query') {
-            debugger;
             return queries.map((q) => {
                 return (
                     <Select.Item key={q.id} value={q.id}>
@@ -449,7 +453,6 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                         variant={'contained'}
                         disabled={!variableType || !variableName}
                         onClick={async () => {
-                            debugger;
                             if (variableType) {
                                 // Dependency is already in struct
                                 if (
@@ -467,8 +470,6 @@ export const AddTokenModal = observer((props: AddTokenModalProps) => {
                                     });
                                 } else {
                                     // Need to add dependency
-
-                                    debugger;
                                     const id = await state.dispatch({
                                         message: ActionMessages.ADD_DEPENDENCY,
                                         payload: {

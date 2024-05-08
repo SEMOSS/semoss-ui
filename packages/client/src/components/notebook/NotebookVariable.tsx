@@ -48,20 +48,20 @@ const StyledPointerStack = styled(Stack)(({ theme }) => ({
 }));
 
 interface NotebookTokenProps {
-    /** Id of the token */
+    /** Id of the variable */
     id: string;
-    /** Token Value */
-    token: Token;
+    /** Variable Value */
+    variable: Token;
 }
 
-export const NotebookToken = observer((props: NotebookTokenProps) => {
-    const { id, token } = props;
+export const NotebookVariable = observer((props: NotebookTokenProps) => {
+    const { id, variable } = props;
     const { state } = useBlocks();
     const notification = useNotification();
 
     const [openRenameAlias, setOpenRenameAlias] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [newTokenAlias, setNewTokenAlias] = useState(token.alias);
+    const [newTokenAlias, setNewTokenAlias] = useState(variable.alias);
     const [openReassignModal, setOpenReassignModal] = useState(false);
     const [newTokenType, setNewTokenType] = useState('');
 
@@ -135,7 +135,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
 
     return (
         <List.Item
-            key={token.alias}
+            key={variable.alias}
             sx={{ borer: 'solid red' }}
             secondaryAction={
                 <>
@@ -147,7 +147,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                     >
                         <IconButton
                             onClick={() => {
-                                copyAlias(token.alias);
+                                copyAlias(variable.alias);
                                 setAnchorEl(null);
                             }}
                         >
@@ -203,25 +203,27 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                         <StyledTooltip
                             placement={'right'}
                             title={
-                                token.type === 'block' ? (
+                                variable.type === 'block' ? (
                                     <div
                                         style={{
                                             width: '200px',
                                         }}
                                     >
                                         <BlocksRenderer
-                                            state={getStateWithBlock(token.to)}
+                                            state={getStateWithBlock(
+                                                variable.to,
+                                            )}
                                         />
                                     </div>
                                 ) : (
-                                    state.getToken(token.to, token.type)
+                                    state.getToken(variable.to, variable.type)
                                 )
                             }
                             componentsProps={{
                                 tooltip: {
                                     sx: {
                                         bgcolor:
-                                            token.type === 'block'
+                                            variable.type === 'block'
                                                 ? 'transparent'
                                                 : 'white',
                                         color: 'black',
@@ -244,10 +246,10 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                             }}
                                         >
                                             <Typography variant="body1">
-                                                {token.alias}
+                                                {variable.alias}
                                             </Typography>
                                             <Typography variant="body2">
-                                                {token.type}
+                                                {variable.type}
                                             </Typography>
                                         </StyledPointerStack>
                                     ) : (
@@ -285,14 +287,14 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
 
                                                         notification.add({
                                                             color: 'success',
-                                                            message: `Succesfully renamed token ${token.alias} to ${newTokenAlias}, remember to save your app.`,
+                                                            message: `Succesfully renamed variable ${variable.alias} to ${newTokenAlias}, remember to save your app.`,
                                                         });
 
                                                         state.dispatch({
                                                             message:
                                                                 ActionMessages.RENAME_TOKEN,
                                                             payload: {
-                                                                to: token.to,
+                                                                to: variable.to,
                                                                 alias: newTokenAlias,
                                                             },
                                                         });
@@ -301,12 +303,12 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                 onBlur={() => {
                                                     setOpenRenameAlias(false);
                                                     setNewTokenAlias(
-                                                        token.alias,
+                                                        variable.alias,
                                                     );
 
                                                     notification.add({
                                                         color: 'warning',
-                                                        message: `Unsuccesfully renamed token ${token.alias}, press enter to save.`,
+                                                        message: `Unsuccesfully renamed variable ${variable.alias}, press enter to save.`,
                                                     });
                                                 }}
                                                 InputProps={{
@@ -351,7 +353,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                                     'inline',
                                                             }}
                                                         >
-                                                            {token.alias}
+                                                            {variable.alias}
                                                         </Typography>{' '}
                                                         to?
                                                     </Typography>
@@ -475,9 +477,10 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                         variant={'body1'}
                                                         fontWeight="bold"
                                                     >
-                                                        From {token.type}:
+                                                        From {variable.type}:
                                                     </Typography>
-                                                    {token.type === 'block' ? (
+                                                    {variable.type ===
+                                                    'block' ? (
                                                         <div
                                                             style={{
                                                                 width: '100%',
@@ -485,14 +488,14 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                         >
                                                             <BlocksRenderer
                                                                 state={getStateWithBlock(
-                                                                    token.to,
+                                                                    variable.to,
                                                                 )}
                                                             />
                                                         </div>
                                                     ) : (
                                                         state.getToken(
-                                                            token.to,
-                                                            token.type,
+                                                            variable.to,
+                                                            variable.type,
                                                         )
                                                     )}
 
