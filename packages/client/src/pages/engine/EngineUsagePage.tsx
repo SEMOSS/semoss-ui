@@ -13,11 +13,11 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(2),
     margin: '0px',
-    overflowX: 'scroll',
 }));
 
 const StyledCodeContent = styled('code')(() => ({
     flex: 1,
+    overflowX: 'scroll',
 }));
 
 /**
