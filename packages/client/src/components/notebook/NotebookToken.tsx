@@ -36,7 +36,7 @@ const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
     '&.MuiLinearProgress-root': {
         height: '2px',
         backgroundColor: 'transparent',
-        marginTop: '0px',
+        marginTop: '13px',
         '.MuiLinearProgress-barColorDeterminate': {},
     },
 }));
@@ -235,7 +235,7 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                 <div>
                                     {!openRenameAlias ? (
                                         <StyledPointerStack
-                                            // sx={{ border: 'solid red' }}
+                                            spacing={0}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 e.preventDefault();
@@ -243,111 +243,78 @@ export const NotebookToken = observer((props: NotebookTokenProps) => {
                                                 setOpenRenameAlias(true);
                                             }}
                                         >
-                                            <Stack
-                                                direction={'row'}
-                                                alignItems={'center'}
-                                                sx={{
-                                                    // border: 'solid blue',
-                                                    marginTop: '5px',
-                                                }}
-                                            >
-                                                <Icon color={'secondary'}>
-                                                    <Widgets />
-                                                </Icon>
-                                                <Typography variant="subtitle2">
-                                                    {token.alias} - {token.type}
-                                                </Typography>
-                                            </Stack>
-                                            <div
-                                                style={{
-                                                    height: '2px',
-                                                }}
-                                            ></div>
+                                            <Typography variant="body1">
+                                                {token.alias}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {token.type}
+                                            </Typography>
                                         </StyledPointerStack>
                                     ) : (
                                         <Stack
+                                            spacing={1}
                                             direction="column"
                                             sx={{ width: '80%' }}
                                         >
-                                            <Stack
-                                                direction="row"
-                                                justifyContent={'space-between'}
-                                                alignItems={'center'}
-                                            >
-                                                <Icon color={'secondary'}>
-                                                    <Widgets />
-                                                </Icon>
-                                                <TextField
-                                                    inputRef={(input) =>
-                                                        input && input.focus()
-                                                    }
-                                                    focused={true}
-                                                    fullWidth
-                                                    size={'small'}
-                                                    variant="standard"
-                                                    value={newTokenAlias}
-                                                    onChange={(e) => {
-                                                        setNewTokenAlias(
-                                                            e.target.value,
+                                            <TextField
+                                                inputRef={(input) =>
+                                                    input && input.focus()
+                                                }
+                                                focused={true}
+                                                fullWidth
+                                                size={'small'}
+                                                variant="standard"
+                                                value={newTokenAlias}
+                                                onChange={(e) => {
+                                                    setNewTokenAlias(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        console.log(
+                                                            'Save alias',
                                                         );
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            console.log(
-                                                                'Save alias',
-                                                            );
 
-                                                            setOpenRenameAlias(
-                                                                false,
-                                                            );
-                                                            setNewTokenAlias(
-                                                                newTokenAlias,
-                                                            );
-
-                                                            notification.add({
-                                                                color: 'success',
-                                                                message: `Succesfully renamed token ${token.alias} to ${newTokenAlias}, remember to save your app.`,
-                                                            });
-
-                                                            state.dispatch({
-                                                                message:
-                                                                    ActionMessages.RENAME_TOKEN,
-                                                                payload: {
-                                                                    to: token.to,
-                                                                    alias: newTokenAlias,
-                                                                },
-                                                            });
-                                                        }
-                                                    }}
-                                                    onBlur={() => {
                                                         setOpenRenameAlias(
                                                             false,
                                                         );
                                                         setNewTokenAlias(
-                                                            token.alias,
+                                                            newTokenAlias,
                                                         );
 
                                                         notification.add({
-                                                            color: 'warning',
-                                                            message: `Unsuccesfully renamed token ${token.alias}, press enter to save.`,
+                                                            color: 'success',
+                                                            message: `Succesfully renamed token ${token.alias} to ${newTokenAlias}, remember to save your app.`,
                                                         });
-                                                    }}
-                                                    InputProps={{
-                                                        disableUnderline: true,
-                                                    }}
-                                                />
-                                                {/* <IconButton>
-                                        <Icon color="success">
-                                            <CheckCircle
-                                                onClick={() => {
-                                                    console.log('rename');
+
+                                                        state.dispatch({
+                                                            message:
+                                                                ActionMessages.RENAME_TOKEN,
+                                                            payload: {
+                                                                to: token.to,
+                                                                alias: newTokenAlias,
+                                                            },
+                                                        });
+                                                    }
+                                                }}
+                                                onBlur={() => {
+                                                    setOpenRenameAlias(false);
+                                                    setNewTokenAlias(
+                                                        token.alias,
+                                                    );
+
+                                                    notification.add({
+                                                        color: 'warning',
+                                                        message: `Unsuccesfully renamed token ${token.alias}, press enter to save.`,
+                                                    });
+                                                }}
+                                                InputProps={{
+                                                    disableUnderline: true,
                                                 }}
                                             />
-                                        </Icon>
-                                    </IconButton> */}
-                                            </Stack>
                                             <StyledLinearProgress
-                                                color={'secondary'}
+                                                color={'warning'}
                                             />
                                         </Stack>
                                     )}

@@ -186,6 +186,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                             size={'small'}
                             onClick={(event: React.MouseEvent<HTMLElement>) => {
                                 setAnchorEl(event.currentTarget);
+                                event.stopPropagation();
                             }}
                         >
                             <MoreVert />

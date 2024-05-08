@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { TransformationCells } from '../cell-defaults';
+import { TransformationCells } from '../../cell-defaults';
 import AddIcon from '@mui/icons-material/Add';
 import { Typography, styled } from '@semoss/ui';
 

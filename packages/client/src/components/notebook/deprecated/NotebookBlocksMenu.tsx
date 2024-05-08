@@ -14,8 +14,8 @@ import {
 import { useBlocks } from '@/hooks';
 import { Search, ContentCopy } from '@mui/icons-material';
 import { computed } from 'mobx';
-import { DefaultBlocks, getIconForBlock } from '../block-defaults';
-import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
+import { DefaultBlocks, getIconForBlock } from '../../block-defaults';
+import { BLOCK_TYPE_INPUT } from '../../block-defaults/block-defaults.constants';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',

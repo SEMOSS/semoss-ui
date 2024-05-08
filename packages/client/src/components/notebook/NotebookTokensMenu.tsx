@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Button,
-    Checkbox,
+    Box,
+    Checklist,
     styled,
     IconButton,
     List,
@@ -43,6 +44,14 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
+const StyledBox = styled(Box)(({ theme }) => ({
+    height: '300px',
+    overflow: 'scroll',
+    marginLeft: theme.spacing(2),
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+}));
+
 /**
  * Render the tokens menu of the notebook
  */
@@ -64,39 +73,49 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
     const isPopoverOpen = Boolean(popoverAnchorEle);
 
     const tokens = useMemo(() => {
+        console.log(selectedFilter);
         return Object.entries(state.tokens).filter((kv) => {
             const val = kv[1];
 
-            if (val.alias.includes(filterWord)) return kv;
+            if (
+                val.alias.includes(filterWord) &&
+                selectedFilter.indexOf(val.type) > -1
+            )
+                return kv;
         });
-    }, [Object.entries(state.tokens).length, filterWord]);
+    }, [
+        Object.entries(state.tokens).length,
+        filterWord,
+        selectedFilter.length,
+    ]);
 
-    const filterList = useMemo(() => {
-        console.log(selectedFilter);
-        return VARIABLE_TYPES.map((type, i) => {
-            return (
-                <List key={i}>
-                    <List.Item>
-                        <Checkbox
-                            checked={selectedFilter.indexOf(type) > -1}
-                            onChange={(e) => {
-                                const index = selectedFilter.indexOf(type);
-                                let copy = selectedFilter;
-                                if (index > -1) {
-                                    copy = copy.splice(index, 1);
-                                } else {
-                                    copy.push(type);
-                                }
+    // const filterList = useMemo(() => {
+    //     console.log(selectedFilter);
+    //     return VARIABLE_TYPES.map((type, i) => {
+    //         return (
+    //             <List key={i}>
+    //                 <List.Item>
+    //                     <Checkbox
+    //                         // checked={selectedValues.includes(item.value)} onChange={() => handleCheckboxChange(item.value)}
+    //                         checked={selectedFilter.indexOf(type) > -1}
+    //                         onChange={(e) => {
+    //                             const index = selectedFilter.indexOf(type);
+    //                             let copy = selectedFilter;
+    //                             if (index > -1) {
+    //                                 copy = copy.splice(index, 1);
+    //                             } else {
+    //                                 copy.push(type);
+    //                             }
 
-                                setSelectedFilter(copy);
-                            }}
-                        />
-                        {type}
-                    </List.Item>
-                </List>
-            );
-        });
-    }, [selectedFilter.length]);
+    //                             setSelectedFilter(copy);
+    //                         }}
+    //                     />
+    //                     {type}
+    //                 </List.Item>
+    //             </List>
+    //         );
+    //     });
+    // }, [selectedFilter.length]);
 
     return (
         <Stack direction={'column'} sx={{ maxHeight: '100%' }} spacing={0}>
@@ -150,7 +169,17 @@ export const NotebookTokensMenu = observer((): JSX.Element => {
                             setFilterAnchorEl(null);
                         }}
                     >
-                        {filterList}
+                        <StyledBox>
+                            <Checklist
+                                direction={'column'}
+                                options={VARIABLE_TYPES}
+                                checked={selectedFilter}
+                                onChange={(selected) => {
+                                    setSelectedFilter(selected);
+                                }}
+                                sx={{}}
+                            />
+                        </StyledBox>
                     </Popover>
                 </Stack>
                 <StyledMenuScroll>

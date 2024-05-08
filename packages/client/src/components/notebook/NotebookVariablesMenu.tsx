@@ -5,6 +5,6 @@ import { NotebookTokensMenu } from './NotebookTokensMenu';
 /**
  * Render the queries menu of the nodebook
  */
-export const NotebookQueriesMenu = observer((): JSX.Element => {
+export const NotebookVariablesMenu = observer((): JSX.Element => {
     return <NotebookTokensMenu />;
 });
