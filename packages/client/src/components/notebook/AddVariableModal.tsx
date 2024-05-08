@@ -13,13 +13,13 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { useBlocks, usePixel } from '@/hooks';
-import { ActionMessages, SerializedState, TokenType } from '@/stores';
+import { ActionMessages, SerializedState, VariableType } from '@/stores';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { DefaultBlocks, getIconForBlock } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
-import { Token, VARIABLE_TYPES } from '@/stores';
+import { Variable, VARIABLE_TYPES } from '@/stores';
 import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
 import { MoreSharp } from '@mui/icons-material';
 
@@ -73,7 +73,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     const [tokenRef, setTokenRef] = useState('');
     const [previewState, setPreviewState] = useState<SerializedState>({
         dependencies: {},
-        tokens: {},
+        variables: {},
         blocks: {},
         queries: {},
     });
@@ -87,7 +87,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     });
 
     const [variableName, setVariableName] = useState('');
-    const [variableType, setVariableType] = useState<TokenType | ''>('');
+    const [variableType, setVariableType] = useState<VariableType | ''>('');
     const [variablePointer, setVariablePointer] = useState('');
     const [engine, setEngine] = useState<{
         app_id: string;
@@ -162,7 +162,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
             const block = state.getBlock(variablePointer);
             const s: SerializedState = {
                 dependencies: {},
-                tokens: {},
+                variables: {},
                 queries: {},
                 blocks: {
                     'page-1': {
@@ -290,7 +290,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 const block = state.getBlock(variablePointer);
                 const s: SerializedState = {
                     dependencies: {},
-                    tokens: {},
+                    variables: {},
                     queries: {},
                     blocks: {
                         'page-1': {
@@ -397,7 +397,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     <Typography variant={'body1'}>Type</Typography>
                     <Select
                         onChange={(e) => {
-                            const val = e.target.value as TokenType;
+                            const val = e.target.value as VariableType;
                             setVariablePointer('');
                             setVariableType(val);
                         }}
@@ -461,7 +461,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     variableType === 'cell'
                                 ) {
                                     state.dispatch({
-                                        message: ActionMessages.ADD_TOKEN,
+                                        message: ActionMessages.ADD_VARIABLE,
                                         payload: {
                                             alias: variableName,
                                             to: variablePointer,
@@ -479,7 +479,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     });
 
                                     state.dispatch({
-                                        message: ActionMessages.ADD_TOKEN,
+                                        message: ActionMessages.ADD_VARIABLE,
                                         payload: {
                                             alias: variableName,
                                             to: id,

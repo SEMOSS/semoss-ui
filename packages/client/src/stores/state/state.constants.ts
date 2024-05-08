@@ -101,7 +101,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
         tags: [],
         state: {
             dependencies: {},
-            tokens: {},
+            variables: {},
             queries: {},
             blocks: {
                 'text--584': {
@@ -996,7 +996,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: [],
         state: {
-            tokens: {},
+            variables: {},
             dependencies: {},
             queries: {
                 MyProjects: {
@@ -3799,7 +3799,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: ['LLM'],
         state: {
-            tokens: {},
+            variables: {},
             dependencies: {},
             queries: {
                 ['ask-llm']: {
@@ -3980,7 +3980,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
         tags: ['NLP', 'SQL', 'LLM'],
         state: {
             dependencies: {},
-            tokens: {},
+            variables: {},
             queries: {
                 ['ask-model']: {
                     id: 'ask-model',

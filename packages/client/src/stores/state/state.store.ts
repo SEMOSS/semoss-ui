@@ -15,8 +15,8 @@ import {
     CellRegistry,
     ListenerActions,
     SerializedState,
-    Token,
-    TokenType,
+    Variable,
+    VariableType,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -30,7 +30,7 @@ interface StateStoreInterface {
     insightId: string;
 
     /** token to reference (blocks, cells, dependencies) */
-    tokens: Record<string, Token>;
+    variables: Record<string, Variable>;
 
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
@@ -70,7 +70,7 @@ export class StateStore {
         blocks: {},
         cellRegistry: {},
 
-        tokens: {},
+        variables: {},
         dependencies: {
             // These are our LLMs, Databases, Storages
             // I set the dependencies on my app detail page,
@@ -153,8 +153,8 @@ export class StateStore {
      * Gets all tokens
      * @returns the tokens
      */
-    get tokens() {
-        return this._store.tokens;
+    get variables() {
+        return this._store.variables;
     }
 
     /**
@@ -197,7 +197,7 @@ export class StateStore {
      * @param type
      * @returns
      */
-    getToken(pointer: string, type: TokenType): Token | unknown {
+    getVariable(pointer: string, type: VariableType): Variable | unknown {
         if (type === 'block') {
             // Get Blocks Data (what we realistically want)
             const block = this.getBlock(pointer);
@@ -248,7 +248,7 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.payload)),
         );
 
-        console.log('tokens', this._store.tokens);
+        console.log('tokens', this._store.variables);
         console.log('dependencies', this._store.dependencies);
 
         try {
@@ -318,18 +318,18 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.ADD_TOKEN === action.message) {
+            } else if (ActionMessages.ADD_VARIABLE === action.message) {
                 const { alias, to, type } = action.payload;
 
                 this.addToken(alias, to, type);
-            } else if (ActionMessages.RENAME_TOKEN === action.message) {
+            } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { to, alias } = action.payload;
                 // TO DO: Does this work
-                this.renameToken(to, alias);
-            } else if (ActionMessages.DELETE_TOKEN === action.message) {
+                this.renameVariable(to, alias);
+            } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
                 // TO DO: Does this work
-                this.deleteToken(id);
+                this.deleteVariable(id);
             } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
                 const { id, type } = action.payload;
 
@@ -406,10 +406,10 @@ export class StateStore {
         return expression;
     };
 
-    flattenToken = (expression: string): string => {
+    flattenVar = (expression: string): string => {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             let v;
-            Object.values(this._store.tokens).forEach((token) => {
+            Object.values(this._store.variables).forEach((token) => {
                 // Early return if we find token already
                 if (v) return;
 
@@ -420,7 +420,7 @@ export class StateStore {
                 }
 
                 if (token.alias === copy) {
-                    v = this.getToken(token.to, token.type);
+                    v = this.getVariable(token.to, token.type);
                 }
             });
 
@@ -509,7 +509,7 @@ export class StateStore {
                 return acc;
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
-            tokens: toJS(this._store.tokens),
+            variables: toJS(this._store.variables),
             dependencies: toJS(this._store.dependencies),
         };
     }
@@ -685,8 +685,8 @@ export class StateStore {
             return acc;
         }, {});
 
-        // store the tokens
-        this._store.tokens = state.tokens ? state.tokens : {};
+        // store the variables
+        this._store.variables = state.variables ? state.variables : {};
         // store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
     };
@@ -1127,25 +1127,25 @@ export class StateStore {
     };
 
     // ---------------------------------
-    // REVIEW TOKEN AND DEPENDENCY CODE
+    // REVIEW VARIABLE AND DEPENDENCY CODE
     // ---------------------------------
     /**
-     * Adds to tokens that can be referenced
+     * Adds to variable that can be referenced
      * @param alias - referenced as
      * @param to - points to
-     * @param type - type of token
+     * @param type - type of variable
      */
     private addToken = (alias, to, type) => {
         // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
 
         // TODO: Get unique ID and verify that it is a unique alias
-        const token: Token = {
+        const token: Variable = {
             alias,
             to,
             type,
         };
 
-        this._store.tokens[to] = token;
+        this._store.variables[to] = token;
     };
 
     /**
@@ -1154,17 +1154,17 @@ export class StateStore {
      * @param to - points to
      * @param type - type of token
      */
-    private renameToken = (to, alias) => {
-        this._store.tokens[to].alias = alias;
+    private renameVariable = (to, alias) => {
+        this._store.variables[to].alias = alias;
     };
 
     /**
      * Deletes token that can be referenced
      * @param id - id to delete
      */
-    private deleteToken = (id) => {
-        // Do i need to go throygh everything and delete token
-        delete this._store.tokens[id];
+    private deleteVariable = (id) => {
+        // Do i need to go throygh everything and delete variable
+        delete this._store.variables[id];
     };
 
     /**

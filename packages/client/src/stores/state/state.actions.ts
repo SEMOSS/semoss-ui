@@ -2,7 +2,7 @@ import {
     BlockJSON,
     ListenerActions,
     SerializedState,
-    TokenType,
+    VariableType,
 } from './state.types';
 import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
@@ -25,9 +25,9 @@ export enum ActionMessages {
     UPDATE_CELL = 'UPDATE_CELL',
     RUN_CELL = 'RUN_CELL',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
-    ADD_TOKEN = 'ADD_TOKEN',
-    RENAME_TOKEN = 'RENAME_TOKEN',
-    DELETE_TOKEN = 'DELETE_TOKEN',
+    ADD_VARIABLE = 'ADD_VARIABLE',
+    RENAME_VARIABLE = 'RENAME_VARIABLE',
+    DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
 }
 
@@ -48,9 +48,9 @@ export type Actions =
     | UpdateCellAction
     | RunCellAction
     | DispatchEventAction
-    | AddTokenAction
-    | RenameTokenAction
-    | DeleteTokenAction
+    | AddVariableAction
+    | RenameVariableAction
+    | DeleteVariableAction
     | AddDependencyAction;
 
 export interface Action {
@@ -218,25 +218,25 @@ export interface DispatchEventAction extends Action {
     };
 }
 
-export interface AddTokenAction extends Action {
-    message: ActionMessages.ADD_TOKEN;
+export interface AddVariableAction extends Action {
+    message: ActionMessages.ADD_VARIABLE;
     payload: {
         alias: string;
         to: string;
-        type: TokenType;
+        type: VariableType;
     };
 }
 
-export interface RenameTokenAction extends Action {
-    message: ActionMessages.RENAME_TOKEN;
+export interface RenameVariableAction extends Action {
+    message: ActionMessages.RENAME_VARIABLE;
     payload: {
         to: string;
         alias: string;
     };
 }
 
-export interface DeleteTokenAction extends Action {
-    message: ActionMessages.DELETE_TOKEN;
+export interface DeleteVariableAction extends Action {
+    message: ActionMessages.DELETE_VARIABLE;
     payload: {
         id: string;
     };
@@ -246,6 +246,6 @@ export interface AddDependencyAction extends Action {
     message: ActionMessages.ADD_DEPENDENCY;
     payload: {
         id: string;
-        type: TokenType;
+        type: VariableType;
     };
 }

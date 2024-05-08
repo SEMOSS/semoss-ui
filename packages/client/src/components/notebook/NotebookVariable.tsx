@@ -16,7 +16,7 @@ import {
     TextField,
     LinearProgress,
 } from '@semoss/ui';
-import { Token } from '@/stores';
+import { Variable } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
 import {
     ContentCopy,
@@ -51,7 +51,7 @@ interface NotebookTokenProps {
     /** Id of the variable */
     id: string;
     /** Variable Value */
-    variable: Token;
+    variable: Variable;
 }
 
 export const NotebookVariable = observer((props: NotebookTokenProps) => {
@@ -95,7 +95,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
         const s: SerializedState = {
             dependencies: {},
-            tokens: {},
+            variables: {},
             queries: {},
             blocks: {
                 'page-1': {
@@ -173,7 +173,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                 value="Delete"
                                 onClick={() => {
                                     state.dispatch({
-                                        message: ActionMessages.DELETE_TOKEN,
+                                        message: ActionMessages.DELETE_VARIABLE,
                                         payload: {
                                             id: id,
                                         },
@@ -216,7 +216,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         />
                                     </div>
                                 ) : (
-                                    state.getToken(variable.to, variable.type)
+                                    state.getVariable(
+                                        variable.to,
+                                        variable.type,
+                                    )
                                 )
                             }
                             componentsProps={{
@@ -292,7 +295,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
                                                         state.dispatch({
                                                             message:
-                                                                ActionMessages.RENAME_TOKEN,
+                                                                ActionMessages.RENAME_VARIABLE,
                                                             payload: {
                                                                 to: variable.to,
                                                                 alias: newTokenAlias,
@@ -493,7 +496,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                             />
                                                         </div>
                                                     ) : (
-                                                        state.getToken(
+                                                        state.getVariable(
                                                             variable.to,
                                                             variable.type,
                                                         )

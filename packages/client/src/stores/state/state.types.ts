@@ -10,17 +10,17 @@ export type SerializedState = {
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 
-    /** Tokens used in notebook */
-    tokens: Record<string, Token>;
+    /** Variables used in notebook */
+    variables: Record<string, Variable>;
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
 };
 
 /**
- * Token Types
+ * Variable Types
  */
-export type TokenType =
+export type VariableType =
     | 'block' // X
     | 'cell'
     | 'query'
@@ -33,12 +33,12 @@ export type TokenType =
     | 'function'; // X
 
 /**
- * Tokens
+ * Variables
  */
-export type Token = {
+export type Variable = {
     alias: string;
     to: string;
-    type: TokenType;
+    type: VariableType;
 };
 
 /**

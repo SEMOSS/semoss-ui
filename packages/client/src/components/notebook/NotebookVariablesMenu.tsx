@@ -73,7 +73,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
 
     const variables = useMemo(() => {
         console.log(selectedFilter);
-        return Object.entries(state.tokens).filter((kv) => {
+        return Object.entries(state.variables).filter((kv) => {
             const val = kv[1];
 
             if (
@@ -83,7 +83,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                 return kv;
         });
     }, [
-        Object.entries(state.tokens).length,
+        Object.entries(state.variables).length,
         filterWord,
         selectedFilter.length,
     ]);
