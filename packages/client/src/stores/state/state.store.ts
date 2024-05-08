@@ -429,7 +429,7 @@ export class StateStore {
                 return JSON.stringify(v);
             }
 
-            // TODO: Handle old notebooks that don't use tokens
+            // TODO: Handle old notebooks that don't use variables
             v = this.flattenVariable(match);
 
             // convert to a string
