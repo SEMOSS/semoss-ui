@@ -1,5 +1,37 @@
+import { Role } from '@/types';
+import { ReactNode } from 'react';
+
 /**
- * PIXEL CALLS -------------------------------------------------
+ * -----------------------------------------------------------------------
+ * react-hook-form -----------------------------------------------------------
+ * -----------------------------------------------------------------------
+ */
+export interface AppDetailsFormTypes {
+    appId: string;
+    appInfo: any;
+    mainUses: string | ReactNode;
+    tags: string[];
+    dependencies: any[];
+    userRole: Role | '';
+    permission: 'author' | 'editor' | 'readOnly' | '';
+    roleChangeComment: string | ReactNode;
+}
+
+export const AppDetailsFormValues: AppDetailsFormTypes = {
+    appId: '',
+    appInfo: null,
+    mainUses: '',
+    tags: [],
+    dependencies: [],
+    userRole: '',
+    permission: '',
+    roleChangeComment: '',
+};
+
+/**
+ * -----------------------------------------------------------------------
+ * PIXEL CALLS -----------------------------------------------------------
+ * -----------------------------------------------------------------------
  */
 export const fetchAppInfo = async (monolithStore: any, appId: string) => {
     const res = await monolithStore.runQuery(`ProjectInfo(project="${appId}")`);
@@ -60,4 +92,28 @@ export const fetchDependencies = async (monolithStore: any, appId: string) => {
             output,
         };
     }
+};
+
+/**
+ * -----------------------------------------------------------------------
+ * OTHER UTILITY FUNCTIONS -----------------------------------------------
+ * -----------------------------------------------------------------------
+ */
+export type AppDetailPermission = 'author' | 'editor' | 'readOnly' | '';
+export const determineUserPermission = (role: Role): AppDetailPermission => {
+    let permission: AppDetailPermission = '';
+
+    if (role === 'OWNER') {
+        permission = 'author';
+    } else if (role === 'EDIT' || role === 'EDITOR') {
+        permission = 'editor';
+    } else if (
+        role === 'READ_ONLY' ||
+        role === 'DISCOVERABLE' ||
+        role === 'VIEWER'
+    ) {
+        permission = 'readOnly';
+    }
+
+    return permission;
 };

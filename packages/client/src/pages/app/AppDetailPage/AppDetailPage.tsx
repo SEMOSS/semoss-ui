@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, ReactNode } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -25,8 +25,12 @@ import { MembersTable, SettingsTiles } from '@/components/settings';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
-import { Role } from '@/types';
 import { formatPermission } from '@/utils';
+import {
+    AppDetailsFormTypes,
+    AppDetailsFormValues,
+} from './appDetails.utility';
+import { ChangeAccessModal } from './ChangeAccessModal';
 import { DeleteAppModal } from './DeleteAppModal';
 import { EditDetailsModal } from './EditDetailsModal';
 import { EditDependenciesModal } from './EditDependenciesModal';
@@ -34,6 +38,7 @@ import {
     fetchMainUses,
     fetchAppInfo,
     fetchDependencies,
+    determineUserPermission,
 } from './appDetails.utility';
 
 const OuterContainer = styled('div')(({ theme }) => ({
@@ -141,32 +146,9 @@ const DependencyRow = styled('div')({
     width: '100%',
 });
 
-interface formTypes {
-    appId: string;
-    appInfo: any;
-    mainUses: string | ReactNode;
-    tags: string[];
-    dependencies: any[];
-    userRole: Role | '';
-    newRole: Role | '';
-    roleChangeComment: string | ReactNode;
-}
-
-const formDefaultValues: formTypes = {
-    appId: '',
-    appInfo: null,
-    mainUses: '',
-    tags: [],
-    dependencies: [],
-    userRole: '',
-    newRole: '',
-    roleChangeComment: '',
-};
-
 export const AppDetailPage = () => {
-    const { control, setValue, getValues, watch } = useForm<formTypes>({
-        defaultValues: formDefaultValues,
-    });
+    const { control, setValue, getValues, watch } =
+        useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
     const mainUses = watch('mainUses');
     const appInfo = watch('appInfo');
@@ -175,6 +157,8 @@ export const AppDetailPage = () => {
     const dependencies = watch('dependencies');
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
+    const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
+        useState(true);
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
@@ -209,8 +193,14 @@ export const AppDetailPage = () => {
     }, []);
 
     async function getPermission() {
-        const response = await monolithStore.getUserProjectPermission(appId);
-        setValue('userRole', response.permission);
+        const { permission: role } =
+            await monolithStore.getUserProjectPermission(appId);
+
+        setValue('userRole', role);
+        const permission = determineUserPermission(role);
+        if (permission === 'author') setValue('permission', 'author');
+        if (permission === 'editor') setValue('permission', 'editor');
+        if (permission === 'readOnly') setValue('permission', 'readOnly');
     }
 
     const fetchAllData = async (id: string) => {
@@ -265,6 +255,10 @@ export const AppDetailPage = () => {
         // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
         // console.log('🚀 ~ setDependenciesQuery ~ response:', response);
     }
+
+    const handleCloseChangeAccessModal = () => {
+        setIsChangeAccessModalOpen(false);
+    };
 
     function PermissionComponent(): JSX.Element {
         return (
@@ -353,7 +347,10 @@ export const AppDetailPage = () => {
 
                 <TopButtonsContainer>
                     {userRole !== 'OWNER' && (
-                        <ChangeAccessButton variant="text">
+                        <ChangeAccessButton
+                            variant="text"
+                            onClick={() => setIsChangeAccessModalOpen(true)}
+                        >
                             Change Access
                         </ChangeAccessButton>
                     )}
@@ -522,6 +519,12 @@ export const AppDetailPage = () => {
                     </Sections>
                 </SidebarAndSectionsContainer>
             </InnerContainer>
+
+            <ChangeAccessModal
+                open={isChangeAccessModalOpen}
+                onClose={handleCloseChangeAccessModal}
+                control={control}
+            />
 
             <EditDetailsModal
                 isOpen={isEditDetailsModalOpen}
