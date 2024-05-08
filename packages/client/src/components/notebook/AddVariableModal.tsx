@@ -1,5 +1,6 @@
 import React, { createElement, useEffect, useState, useMemo } from 'react';
 import {
+    Alert,
     styled,
     Button,
     Divider,
@@ -21,7 +22,7 @@ import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
 import { Variable, VARIABLE_TYPES } from '@/stores';
 import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
-import { MoreSharp } from '@mui/icons-material';
+import { MoreSharp, WarningRounded } from '@mui/icons-material';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
     height: '10vh',
@@ -152,55 +153,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         setEngines(newEngines);
     }, [getEngines.status, getEngines.data]);
 
-    /**
-     * For Block Preview
-     * go through state, keep our queries
-     * just isolate the block we need
-     */
-    useEffect(() => {
-        if (variablePointer && variableType === 'block') {
-            const block = state.getBlock(variablePointer);
-            const s: SerializedState = {
-                dependencies: {},
-                variables: {},
-                queries: {},
-                blocks: {
-                    'page-1': {
-                        id: 'page-1',
-                        widget: 'page',
-                        parent: null,
-                        data: {
-                            style: {
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            },
-                        },
-                        listeners: {
-                            onPageLoad: [],
-                        },
-                        slots: {
-                            content: {
-                                name: 'content',
-                                children: [variablePointer],
-                            },
-                        },
-                    },
-                    [variablePointer]: {
-                        id: block.id,
-                        widget: block.widget,
-                        data: block.data,
-                        parent: null,
-                        listeners: block.listeners,
-                        slots: block.slots,
-                    },
-                },
-            };
-
-            setPreviewState(s);
-        }
-    }, [variablePointer]);
-
     const values = useMemo(() => {
         if (variableType === 'block') {
             return inputBlocks.map((block) => {
@@ -285,7 +237,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     }, [variableType]);
 
     const preview = useMemo(() => {
-        if (variableType && variablePointer) {
+        if (variableType && (variablePointer || engine)) {
             if (variableType === 'block') {
                 const block = state.getBlock(variablePointer);
                 const s: SerializedState = {
@@ -327,42 +279,77 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
                 return <BlocksRenderer state={s} />;
             } else if (variableType === 'query') {
-                return (
-                    <Typography variant="body2">
-                        {state.getQuery(variablePointer).output}{' '}
-                    </Typography>
-                );
+                const query = state.getQuery(variablePointer);
+
+                if (query.output) {
+                    return (
+                        <Typography variant={'body2'}>
+                            {query.output}
+                        </Typography>
+                    );
+                } else {
+                    return (
+                        <Alert severity="warning" icon={<WarningRounded />}>
+                            <Alert.Title>
+                                Sheet {variablePointer} has not been executed.
+                                Would you like to execute?
+                            </Alert.Title>
+                        </Alert>
+                    );
+                }
             } else if (variableType === 'cell') {
-                return (
-                    <Typography variant={'body2'}>
-                        {
-                            state
-                                .getQuery(
-                                    splitAtPeriod(variablePointer, 'left'),
-                                )
-                                .getCell(
-                                    splitAtPeriod(variablePointer, 'right'),
-                                ).output
-                        }
-                    </Typography>
+                const query = state.getQuery(
+                    splitAtPeriod(variablePointer, 'left'),
                 );
+
+                const cell = query.getCell(
+                    splitAtPeriod(variablePointer, 'right'),
+                );
+
+                if (cell.output) {
+                    return (
+                        <Typography variant={'body2'}>
+                            {
+                                state
+                                    .getQuery(
+                                        splitAtPeriod(variablePointer, 'left'),
+                                    )
+                                    .getCell(
+                                        splitAtPeriod(variablePointer, 'right'),
+                                    ).output
+                            }
+                        </Typography>
+                    );
+                } else {
+                    return (
+                        <Alert severity="warning" icon={<WarningRounded />}>
+                            <Alert.Title>
+                                Cell {splitAtPeriod(variablePointer, 'right')}{' '}
+                                has not been executed. Would you like to
+                                execute?
+                            </Alert.Title>
+                        </Alert>
+                    );
+                }
             } else {
                 return (
-                    <Stack>
+                    <Stack direction="row" alignItems="center">
                         <Icon>
                             <MoreSharp />
                         </Icon>
-                        <Typography variant="body2">
-                            {engine.app_name}
-                        </Typography>
-                        <Typography variant="caption">
-                            {engine.app_id}
-                        </Typography>
+                        <Stack direction="column">
+                            <Typography variant="body2">
+                                {engine.app_name}
+                            </Typography>
+                            <Typography variant="caption">
+                                {engine.app_id}
+                            </Typography>
+                        </Stack>
                     </Stack>
                 );
             }
         }
-    }, [variableType, variablePointer]);
+    }, [variableType, variablePointer, engine]);
 
     return (
         <StyledPopover
@@ -398,6 +385,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     <Select
                         onChange={(e) => {
                             const val = e.target.value as VariableType;
+                            setEngine(null);
                             setVariablePointer('');
                             setVariableType(val);
                         }}
@@ -434,7 +422,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     >
                         {values}
                     </Select>
-
                     <Typography variant={'h6'}>Preview</Typography>
                     {preview}
                 </Stack>

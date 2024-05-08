@@ -28,6 +28,13 @@ import {
 import { ActionMessages, SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
+const StyledListItem = styled(List.Item)(() => ({
+    '&.MuiListItem-root': {
+        paddingTop: '0px',
+        paddingBottom: '0px',
+    },
+}));
+
 const StyledTooltip = styled(Tooltip)(() => ({
     fontWeight: 'bold',
 }));
@@ -71,7 +78,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
      */
     const copyAlias = (alias: string) => {
         try {
-            navigator.clipboard.writeText(alias);
+            navigator.clipboard.writeText(`{{${alias}}}`);
 
             notification.add({
                 color: 'success',
@@ -134,9 +141,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
     };
 
     return (
-        <List.Item
+        <StyledListItem
+            sx={{}}
             key={variable.alias}
-            sx={{ borer: 'solid red' }}
             secondaryAction={
                 <>
                     <Stack
@@ -538,7 +545,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                     </Stack>
                 }
             />
-        </List.Item>
+        </StyledListItem>
     );
 });
 
