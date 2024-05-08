@@ -10,6 +10,7 @@ import {
     Stack,
     Typography,
     Modal,
+    Select,
 } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
@@ -31,6 +32,7 @@ import {
     KeyboardArrowUp,
     KeyboardArrowDown,
     TableRows,
+    Label,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -40,6 +42,7 @@ import {
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
+import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -186,6 +189,9 @@ export const NotebookAddCell = observer(
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
+        const { control, handleSubmit, reset, watch, setValue, getValues } =
+            useForm();
+
         useEffect(() => {
             console.log({
                 anchorEl,
@@ -268,6 +274,10 @@ export const NotebookAddCell = observer(
             }
         };
 
+        const onSubmit = (submitData) => {
+            console.log({ submitData });
+        };
+
         return (
             <Stack direction={'row'} alignItems={'center'} gap={1}>
                 <StyledDivider />
@@ -337,7 +347,7 @@ export const NotebookAddCell = observer(
 
                     {selectedAddCell === 'import-data' && (
                         <>
-                            <Typography
+                            {/* <Typography
                                 variant="subtitle1"
                                 sx={{
                                     paddingLeft: '15px',
@@ -347,7 +357,7 @@ export const NotebookAddCell = observer(
                                 }}
                             >
                                 Import Data
-                            </Typography>
+                            </Typography> */}
                             {Array.from(
                                 AddCellOptions[selectedAddCell]?.options || [],
                                 ({ display }, index) => {
@@ -355,10 +365,17 @@ export const NotebookAddCell = observer(
                                         <StyledMenuItem
                                             key={index}
                                             value={display}
+                                            disabled={display == 'From CSV'} // temporary
                                             onClick={() => {
-                                                // appendCell(defaultCellType);
                                                 setIsOpenDataImportModal(true);
-                                                setImportModalType(display);
+                                                if (
+                                                    display ==
+                                                    'From Data Catalog'
+                                                ) {
+                                                    setImportModalType(display);
+                                                } else {
+                                                    // open seperate modal for From CSV?
+                                                }
                                                 setAnchorEl(null);
                                             }}
                                         >
@@ -373,43 +390,69 @@ export const NotebookAddCell = observer(
 
                 {/* Import Data Modal */}
                 <Modal open={isOpenDataImportModal}>
-                    <Modal.Title>{importModalType}</Modal.Title>
-                    <Modal.Content>
-                        <Typography variant="body1">
-                            {`(modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content modal content)`}
-                        </Typography>
-                    </Modal.Content>
-                    <Modal.Actions>
+                    <form onSubmit={handleSubmit(onSubmit)}>
                         <Stack
-                            direction="row"
-                            spacing={1}
-                            paddingX={2}
-                            paddingBottom={2}
-                            justifyContent="end"
+                        // rowGap={2}
+                        // spacing={1}
+                        // direction="row"
                         >
-                            <Button
-                                variant="text"
-                                color="primary"
-                                onClick={() => {
-                                    // onClose();
-                                    setIsOpenDataImportModal(false);
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                // disabled={!!errors?.ID?.message || !isFormValid}
-                                onClick={() => {
-                                    // onSubmit();
-                                    alert('submit');
-                                }}
-                            >
-                                Submit
-                            </Button>
+                            <Modal.Title>
+                                Import Data
+                                <Controller
+                                    name={'Test Name'}
+                                    control={control}
+                                    // rules={null}
+                                    render={() => (
+                                        <Select
+                                            onChange={(e) => {
+                                                const newValue = e.target.value;
+                                                console.log({ newValue });
+                                            }}
+                                            // helperText={"Select Database..."}
+                                        >
+                                            <Menu.Item value={'test-1'}>
+                                                test 1
+                                            </Menu.Item>
+                                            <Menu.Item value={'test-2'}>
+                                                test 2
+                                            </Menu.Item>
+                                            <Menu.Item value={'test-3'}>
+                                                test 3
+                                            </Menu.Item>
+                                        </Select>
+                                    )}
+                                />
+                            </Modal.Title>
+                            <Modal.Content>{`[modal content]`}</Modal.Content>
+                            <Modal.Actions>
+                                <Button
+                                    type="submit"
+                                    variant="text"
+                                    color="secondary"
+                                    onClick={() =>
+                                        setIsOpenDataImportModal(false)
+                                    }
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                >
+                                    Import
+                                </Button>
+                            </Modal.Actions>
+                            {/* 
+                            <label>Import Data</label>
+                            <select>
+                                <option>test 1</option>
+                                <option>test 2</option>
+                                <option>test 3</option>
+                            </select>
+                             */}
                         </Stack>
-                    </Modal.Actions>
+                    </form>
                 </Modal>
             </Stack>
         );
