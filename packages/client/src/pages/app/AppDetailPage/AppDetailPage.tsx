@@ -158,7 +158,7 @@ export const AppDetailPage = () => {
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
-        useState(true);
+        useState(false);
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
@@ -492,6 +492,7 @@ export const AppDetailPage = () => {
                                 <SettingsTiles
                                     mode={'app'}
                                     name={'app'}
+                                    direction="row"
                                     id={appId}
                                     onDelete={() => {
                                         navigate('/settings/app');
