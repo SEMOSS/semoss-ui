@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Stack,
     IconButton,
@@ -64,6 +64,21 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+
+    /**
+     * Selects a sheet on mount
+     */
+    useEffect(() => {
+        if (notebook.selectedQuery) return;
+
+        let i = 0,
+            selected = false;
+        while (!selected) {
+            notebook.selectQuery(notebook.queriesList[i].id);
+            selected = true;
+            i++;
+        }
+    }, []);
 
     /**
      * Edit or create a query

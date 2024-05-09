@@ -27,6 +27,7 @@ import {
 
 import { ActionMessages, SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
+import { VariablePreview } from './VariablePreview';
 
 const StyledListItem = styled(List.Item)(() => ({
     '&.MuiListItem-root': {
@@ -209,34 +210,15 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                     <Stack>
                         <StyledTooltip
                             placement={'right'}
-                            title={
-                                variable.type === 'block' ? (
-                                    <div
-                                        style={{
-                                            width: '200px',
-                                        }}
-                                    >
-                                        <BlocksRenderer
-                                            state={getStateWithBlock(
-                                                variable.to,
-                                            )}
-                                        />
-                                    </div>
-                                ) : (
-                                    state.getVariable(
-                                        variable.to,
-                                        variable.type,
-                                    )
-                                )
-                            }
+                            title={<VariablePreview variable={variable} />}
                             componentsProps={{
                                 tooltip: {
                                     sx: {
-                                        bgcolor:
-                                            variable.type === 'block'
-                                                ? 'transparent'
-                                                : 'white',
+                                        bgcolor: 'white',
                                         color: 'black',
+                                        padding: '0px',
+                                        // width: '400px',
+                                        maxWidth: '600px',
                                     },
                                 },
                             }}
@@ -255,7 +237,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                 setOpenRenameAlias(true);
                                             }}
                                         >
-                                            <Typography variant="body1">
+                                            <Typography
+                                                variant="body1"
+                                                fontWeight="medium"
+                                            >
                                                 {variable.alias}
                                             </Typography>
                                             <Typography variant="body2">
