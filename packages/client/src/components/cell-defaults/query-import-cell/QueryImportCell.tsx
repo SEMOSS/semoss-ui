@@ -333,6 +333,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                             defaultValue="--SELECT * FROM..."
                             language="sql" /** TODO: language support? can we tell this from the database type? */
                             options={{
+                                scrollbar: { alwaysConsumeMouseWheel: false },
                                 readOnly: false,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
