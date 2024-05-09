@@ -155,6 +155,7 @@ export const AppDetailPage = () => {
         useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
     const mainUses = watch('mainUses');
+    const tags = watch('tags');
     const appInfo = watch('appInfo');
     const userRole = watch('userRole');
     console.log('APP INFO', appInfo);
@@ -222,12 +223,21 @@ export const AppDetailPage = () => {
                             emitMessage(true, result.value.output);
                         } else {
                             setValue('mainUses', result.value.output);
+                            setValue(
+                                'detailsForm.mainUses',
+                                result.value.output,
+                            );
                         }
                     } else if (idx === 1) {
                         if (result.value.type === 'error') {
                             emitMessage(true, result.value.output);
                         } else {
                             setValue('appInfo', result.value.output);
+                            setValue('tags', result.value.output.tag || []);
+                            setValue(
+                                'detailsForm.tags',
+                                result.value.output.tag || [],
+                            );
                         }
                     } else if (idx === 2) {
                         if (result.value.type === 'error') {
@@ -262,6 +272,17 @@ export const AppDetailPage = () => {
 
     const handleCloseChangeAccessModal = () => {
         setIsChangeAccessModalOpen(false);
+    };
+
+    const handleCloseEditDetailsModal = (reset?: boolean) => {
+        if (reset) {
+            setValue('detailsForm', {
+                mainUses,
+                tags,
+                videos: [], // TODO
+            });
+        }
+        setIsEditDetailsModalOpen(false);
     };
 
     function PermissionComponent(): JSX.Element {
@@ -441,9 +462,9 @@ export const AppDetailPage = () => {
 
                         <StyledSection ref={tagsRef}>
                             <SectionHeading variant="h2">Tags</SectionHeading>
-                            {appInfo?.tag ? (
+                            {tags ? (
                                 <TagsBodyWrapper>
-                                    {appInfo?.tag.map((tag, idx) => (
+                                    {tags.map((tag, idx) => (
                                         <Chip
                                             key={`tag-${tag}-${idx}`}
                                             label={tag}
@@ -536,9 +557,10 @@ export const AppDetailPage = () => {
 
             <EditDetailsModal
                 isOpen={isEditDetailsModalOpen}
-                onClose={() => setIsEditDetailsModalOpen(false)}
+                onClose={handleCloseEditDetailsModal}
                 control={control}
                 getValues={getValues}
+                setValue={setValue}
             />
 
             <EditDependenciesModal

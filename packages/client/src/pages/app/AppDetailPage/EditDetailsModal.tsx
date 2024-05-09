@@ -6,19 +6,12 @@ import {
     Button,
     TextField,
     useNotification,
-    // Autocomplete,
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
 import CloseIcon from '@mui/icons-material/Close';
-import { fetchMainUses } from './appDetails.utility';
+import { updateProjectDetails } from './appDetails.utility';
 import { createFilterOptions, Autocomplete } from '@mui/material';
-
-const EditModalInnerContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '20px',
-});
 
 const ModalHeaderWrapper = styled('div')({
     alignItems: 'center',
@@ -32,58 +25,65 @@ const ModalHeading = styled(Typography)({
     fontWeight: 500,
 });
 
-const ModalFooter = styled('div')({
-    display: 'flex',
-    gap: '0.5rem',
-    marginLeft: 'auto',
-});
-
 const ModalSectionHeading = styled(Typography)({
     fontSize: 16,
     fontWeight: 500,
-    margin: '1rem 0 0.5rem 0',
+    margin: '1rem 0 0.75rem 0',
+});
+
+const StyledModalFooter = styled(Modal.Actions)({
+    padding: '0 20px 20px',
 });
 
 interface EditDetailsModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose: (reset?: boolean) => void;
     control: Control<any, any>;
     getValues: any;
+    setValue: any;
 }
 
 export const EditDetailsModal = (props: EditDetailsModalProps) => {
-    const { isOpen, onClose, control, getValues } = props;
+    const { isOpen, onClose, control, getValues, setValue } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
     const filter = createFilterOptions<string>();
 
     const handleEditAppDetails = async () => {
-        const mainUses = getValues('mainUses');
-        const tags = getValues('tags');
+        const appId = getValues('appId');
+        const detailsForm = getValues('detailsForm');
 
-        // const appId = getValues('appId');
-        // const res = await fetchMainUses(monolithStore, appId);
+        const res = await updateProjectDetails(
+            monolithStore,
+            appId,
+            detailsForm.mainUses,
+            detailsForm.tags,
+        );
 
-        // if (res.type === 'error') {
-        //     notification.add({
-        //         color: 'error',
-        //         message: res.output,
-        //     });
-        // } else {
-        //     notification.add({
-        //         color: 'success',
-        //         message: res.output,
-        //     });
-        // }
+        if (res.type === 'error') {
+            notification.add({
+                color: 'error',
+                message: res.output,
+            });
+        } else {
+            notification.add({
+                color: 'success',
+                message: 'Successfully saved App Details.',
+            });
+
+            setValue('mainUses', detailsForm.mainUses);
+            setValue('tags', detailsForm.tags);
+            onClose();
+        }
     };
 
     return (
         <Modal open={isOpen} fullWidth>
-            <EditModalInnerContainer>
+            <Modal.Content>
                 <ModalHeaderWrapper>
                     <ModalHeading variant="h2">Edit App Details</ModalHeading>
-                    <IconButton onClick={() => onClose()}>
+                    <IconButton onClick={() => onClose(true)}>
                         <CloseIcon />
                     </IconButton>
                 </ModalHeaderWrapper>
@@ -92,7 +92,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                     Main Uses
                 </ModalSectionHeading>
                 <Controller
-                    name="mainUses"
+                    name="detailsForm.mainUses"
                     control={control}
                     render={({ field }) => {
                         return (
@@ -109,7 +109,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
                 <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
                 <Controller
-                    name="tags"
+                    name="detailsForm.tags"
                     control={control}
                     render={({ field }) => {
                         return (
@@ -143,16 +143,16 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                         );
                     }}
                 />
+            </Modal.Content>
 
-                <ModalFooter>
-                    <Button onClick={() => onClose()} variant="text">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleEditAppDetails} variant="contained">
-                        Save
-                    </Button>
-                </ModalFooter>
-            </EditModalInnerContainer>
+            <StyledModalFooter>
+                <Button onClick={() => onClose(true)} variant="text">
+                    Cancel
+                </Button>
+                <Button onClick={handleEditAppDetails} variant="contained">
+                    Save
+                </Button>
+            </StyledModalFooter>
         </Modal>
     );
 };

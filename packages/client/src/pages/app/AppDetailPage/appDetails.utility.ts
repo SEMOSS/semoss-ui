@@ -9,22 +9,38 @@ import { ReactNode } from 'react';
 export interface AppDetailsFormTypes {
     appId: string;
     appInfo: any;
-    mainUses: string | ReactNode;
-    tags: string[];
-    dependencies: any[];
     userRole: Role | '';
     permission: 'author' | 'editor' | 'readOnly' | '';
+
+    mainUses: string;
+    tags: string[];
+    videos: any[]; // TODO: type fixes
+    detailsForm: {
+        mainUses: string;
+        tags: string[];
+        videos: any[];
+    };
+
+    dependencies: any[];
     roleChangeComment: string | ReactNode;
 }
 
 export const AppDetailsFormValues: AppDetailsFormTypes = {
     appId: '',
     appInfo: null,
-    mainUses: '',
-    tags: [],
-    dependencies: [],
     userRole: '',
     permission: '',
+
+    mainUses: '',
+    tags: [],
+    videos: [],
+    detailsForm: {
+        mainUses: '',
+        tags: [],
+        videos: [],
+    },
+
+    dependencies: [],
     roleChangeComment: '',
 };
 
@@ -92,6 +108,29 @@ export const fetchDependencies = async (monolithStore: any, appId: string) => {
             output,
         };
     }
+};
+
+export const updateProjectDetails = async (
+    monolithStore: any,
+    appId: string,
+    markdown: string,
+    tags: string[],
+) => {
+    const res = await monolithStore.runQuery(
+        `SetProjectMetadata(project="${appId}", meta=[{"markdown": "${markdown}", "tag": [${tags.map(
+            (tag) => {
+                return `"${tag}"`;
+            },
+        )}]}])`,
+    );
+
+    const type = res.pixelReturn[0].operationType;
+    const output = res.pixelReturn[0].output;
+
+    return {
+        type: type.indexOf('ERROR') === -1 ? 'success' : 'error',
+        output,
+    };
 };
 
 /**
