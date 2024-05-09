@@ -51,9 +51,9 @@ interface AddVariableModalProps {
     anchorEl: Element;
 
     /**
-     * Do we want to create token on the designer screen
+     * Do we want edit variable
      */
-    // tokenReference?: string;
+    variable?: Variable;
 }
 export const AddVariableModal = observer((props: AddVariableModalProps) => {
     const {
@@ -61,6 +61,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         // tokenReference,
         anchorEl,
         onClose,
+        variable,
     } = props;
     const { state } = useBlocks();
     const notification = useNotification();
@@ -70,14 +71,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     >(`
     MyEngines();
     `);
-
-    const [tokenRef, setTokenRef] = useState('');
-    const [previewState, setPreviewState] = useState<SerializedState>({
-        dependencies: {},
-        variables: {},
-        blocks: {},
-        queries: {},
-    });
 
     const [engines, setEngines] = useState({
         models: [],
@@ -95,6 +88,12 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         app_name: string;
         app_type: string;
     } | null>(null);
+
+    /** To disable add button */
+    const tN = Boolean(variableType.length > 0 && variableName.length > 0);
+    const eP = Boolean(engine || variablePointer.length > 0);
+    const isTypeAlias = tN;
+    const isPointer = eP;
 
     // get the input type blocks as an array
     const inputBlocks = computed(() => {
@@ -150,6 +149,27 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
             functions: cleanedEngines.filter((e) => e.app_type === 'FUNCTION'),
             vectors: cleanedEngines.filter((e) => e.app_type === 'VECTOR'),
         };
+
+        if (variable) {
+            // debugger;
+            if (
+                variable.type !== 'cell' &&
+                variable.type !== 'query' &&
+                variable.type !== 'block'
+            ) {
+                const val = state.getVariable(variable.to, variable.type);
+                const eng = newEngines[`${variable.type}s`].find(
+                    (e) => e.app_id === val,
+                );
+                // console.log('Set Engine Preview', val);
+                // console.log(eng);
+                setEngine(eng);
+            }
+            setVariableType(variable.type);
+            setVariableName(variable.alias);
+            setVariablePointer(variable.to);
+        }
+
         setEngines(newEngines);
     }, [getEngines.status, getEngines.data]);
 
@@ -351,6 +371,14 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         }
     }, [variableType, variablePointer, engine]);
 
+    const disabled = useMemo(() => {
+        if (isTypeAlias && isPointer) {
+            return false;
+        } else {
+            return true;
+        }
+    }, [isTypeAlias, isPointer]);
+
     return (
         <StyledPopover
             id={'variable-popover'}
@@ -371,7 +399,17 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 padding={2}
                 sx={{ width: '500px' }}
             >
-                <Typography variant={'h6'}>Create Variable</Typography>
+                <Typography variant={'h6'}>
+                    {variable ? 'Edit' : 'Create'} Variable
+                </Typography>
+                {variable && (
+                    <Alert icon={<WarningRounded />} severity={'warning'}>
+                        <Alert.Title>
+                            Editing this variable may result in errors
+                            throughout your notebooks.
+                        </Alert.Title>
+                    </Alert>
+                )}
                 <Stack direction="column" mt={1} gap={1}>
                     <Typography variant={'body1'}>Variable Name</Typography>
                     <TextField
@@ -383,6 +421,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     />
                     <Typography variant={'body1'}>Type</Typography>
                     <Select
+                        value={variableType}
                         onChange={(e) => {
                             const val = e.target.value as VariableType;
                             setEngine(null);
@@ -401,6 +440,13 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     <Typography variant={'body1'}>Value</Typography>
                     <Select
                         disabled={!variableType}
+                        value={
+                            variableType === 'cell' ||
+                            variableType === 'query' ||
+                            variableType === 'block'
+                                ? variablePointer
+                                : engine
+                        }
                         onChange={(e) => {
                             const val = e.target.value as unknown;
                             if (
@@ -438,52 +484,59 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     <Button
                         color="primary"
                         variant={'contained'}
-                        disabled={!variableType || !variableName}
+                        disabled={disabled}
                         onClick={async () => {
-                            if (variableType) {
-                                // Dependency is already in struct
-                                if (
-                                    variableType === 'block' ||
-                                    variableType === 'query' ||
-                                    variableType === 'cell'
-                                ) {
-                                    state.dispatch({
-                                        message: ActionMessages.ADD_VARIABLE,
-                                        payload: {
-                                            alias: variableName,
-                                            to: variablePointer,
-                                            type: variableType,
-                                        },
-                                    });
-                                } else {
-                                    // Need to add dependency
-                                    const id = await state.dispatch({
-                                        message: ActionMessages.ADD_DEPENDENCY,
-                                        payload: {
-                                            id: engine.app_id,
-                                            type: variableType,
-                                        },
-                                    });
+                            if (variable) {
+                                console.log('rename');
+                            } else {
+                                if (variableType) {
+                                    // Dependency is already in struct
+                                    if (
+                                        variableType === 'block' ||
+                                        variableType === 'query' ||
+                                        variableType === 'cell'
+                                    ) {
+                                        state.dispatch({
+                                            message:
+                                                ActionMessages.ADD_VARIABLE,
+                                            payload: {
+                                                alias: variableName,
+                                                to: variablePointer,
+                                                type: variableType,
+                                            },
+                                        });
+                                    } else {
+                                        // Need to add dependency
+                                        const id = await state.dispatch({
+                                            message:
+                                                ActionMessages.ADD_DEPENDENCY,
+                                            payload: {
+                                                id: engine.app_id,
+                                                type: variableType,
+                                            },
+                                        });
 
-                                    state.dispatch({
-                                        message: ActionMessages.ADD_VARIABLE,
-                                        payload: {
-                                            alias: variableName,
-                                            to: id,
-                                            type: variableType,
-                                        },
+                                        state.dispatch({
+                                            message:
+                                                ActionMessages.ADD_VARIABLE,
+                                            payload: {
+                                                alias: variableName,
+                                                to: id,
+                                                type: variableType,
+                                            },
+                                        });
+                                    }
+
+                                    notification.add({
+                                        color: 'success',
+                                        message: `Succesfully added ${variableName}, remember to save your app.`,
                                     });
+                                    onClose();
                                 }
-
-                                notification.add({
-                                    color: 'success',
-                                    message: `Succesfully added ${variableName}, remember to save your app.`,
-                                });
-                                onClose();
                             }
                         }}
                     >
-                        Add
+                        {variable ? 'Edit' : 'Add'}
                     </Button>
                 </Stack>
             </Stack>

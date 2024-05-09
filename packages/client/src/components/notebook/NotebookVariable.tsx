@@ -1,14 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    Alert,
     styled,
-    Button,
     Icon,
     IconButton,
     List,
     Menu,
-    Modal,
     Typography,
     Stack,
     useNotification,
@@ -17,15 +14,10 @@ import {
     LinearProgress,
 } from '@semoss/ui';
 import { Variable } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
-import {
-    ContentCopy,
-    MoreVert,
-    WarningAmberOutlined,
-    Widgets,
-} from '@mui/icons-material';
+import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
+import { AddVariableModal } from './AddVariableModal';
 
-import { ActionMessages, SerializedState } from '@/stores';
+import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { VariablePreview } from './VariablePreview';
 
@@ -44,7 +36,7 @@ const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
     '&.MuiLinearProgress-root': {
         height: '2px',
         backgroundColor: 'transparent',
-        marginTop: '13px',
+        marginTop: '21px',
         '.MuiLinearProgress-barColorDeterminate': {},
     },
 }));
@@ -54,10 +46,12 @@ const StyledButton = styled('button')(({ theme }) => ({
     background: 'none',
     padding: 0,
     margin: 0,
-    cursor: 'pointer',
     outline: 'none',
     width: '100%',
     display: 'flex',
+    '&:hover': {
+        cursor: 'pointer',
+    },
 }));
 
 const StyledPointerStack = styled(Stack)(({ theme }) => ({
@@ -66,6 +60,21 @@ const StyledPointerStack = styled(Stack)(({ theme }) => ({
     '&:hover': {
         cursor: 'pointer',
     },
+}));
+
+const StyledListItemText = styled(List.ItemText)(({ theme }) => ({
+    // May not actually be needed, browser was being weird
+    '&:hover': {
+        cursor: 'pointer',
+    },
+}));
+
+const StyledIcon = styled(Icon)(({ theme }) => ({
+    color: 'rgb(0,0,0)',
+}));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.error.main,
 }));
 
 interface NotebookTokenProps {
@@ -83,9 +92,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
     const [openRenameAlias, setOpenRenameAlias] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const [newTokenAlias, setNewTokenAlias] = useState(variable.alias);
-    const [openReassignModal, setOpenReassignModal] = useState(false);
-    const [newTokenType, setNewTokenType] = useState('');
+    const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
+        null,
+    );
+    const isPopoverOpen = Boolean(popoverAnchorEle);
 
+    const spanRef = useRef();
     /**
      * Copys the alias to use in notebook
      * @param alias
@@ -106,54 +118,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
         }
     };
 
-    /**
-     * To show Preview of Block
-     * @param to what block to render
-     * @returns Serialized State
-     */
-    const getStateWithBlock = (to: string) => {
-        const block = state.getBlock(to);
-
-        const s: SerializedState = {
-            dependencies: {},
-            variables: {},
-            queries: {},
-            blocks: {
-                'page-1': {
-                    id: 'page-1',
-                    widget: 'page',
-                    parent: null,
-                    data: {
-                        style: {
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        },
-                    },
-                    listeners: {
-                        onPageLoad: [],
-                    },
-                    slots: {
-                        content: {
-                            name: 'content',
-                            children: [to],
-                        },
-                    },
-                },
-                [to]: {
-                    id: block.id,
-                    widget: block.widget,
-                    data: block.data,
-                    parent: null,
-                    listeners: block.listeners,
-                    slots: block.slots,
-                },
-            },
-        };
-
-        return s;
-    };
-
     return (
         <StyledListItem
             sx={{}}
@@ -166,6 +130,13 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                         alignItems="center"
                         paddingY="8px"
                     >
+                        {/* <Button
+                            onClick={(e) => {
+                                setPopoverAnchorEl(e.currentTarget);
+                            }}
+                        >
+                            hshs
+                        </Button> */}
                         <IconButton
                             onClick={() => {
                                 copyAlias(variable.alias);
@@ -183,6 +154,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                         >
                             <MoreVert />
                         </IconButton>
+                        <span ref={spanRef} />
                         <Menu
                             anchorEl={anchorEl}
                             open={Boolean(anchorEl)}
@@ -190,6 +162,22 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                 setAnchorEl(null);
                             }}
                         >
+                            <Menu.Item
+                                value="Delete"
+                                onClick={(e) => {
+                                    setPopoverAnchorEl(spanRef.current);
+                                    setAnchorEl(null);
+                                }}
+                            >
+                                <Stack direction="row" alignItems="center">
+                                    <StyledIcon color="secondary">
+                                        <Edit />
+                                    </StyledIcon>
+                                    <Typography variant="body2">
+                                        Edit
+                                    </Typography>
+                                </Stack>
+                            </Menu.Item>
                             <Menu.Item
                                 value="Delete"
                                 onClick={() => {
@@ -202,22 +190,19 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                     setAnchorEl(null);
                                 }}
                             >
-                                Delete
-                            </Menu.Item>
-                            <Menu.Item
-                                value="Delete"
-                                onClick={() => {
-                                    setOpenReassignModal(true);
-                                }}
-                            >
-                                Reassign
+                                <Stack direction="row" alignItems="center">
+                                    <Delete color="error" />
+                                    <StyledTypography variant="body2">
+                                        Delete
+                                    </StyledTypography>
+                                </Stack>
                             </Menu.Item>
                         </Menu>
                     </Stack>
                 </>
             }
         >
-            <List.ItemText
+            <StyledListItemText
                 disableTypography
                 primary={
                     <Stack>
@@ -323,215 +308,27 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         />
                                     </Stack>
                                 )}
-                                <Modal
-                                    open={openReassignModal}
-                                    onClose={() => {
-                                        setOpenReassignModal(false);
-                                    }}
-                                >
-                                    <Modal.Title>
-                                        <Stack
-                                            direction="row"
-                                            justifyContent="space-between"
-                                        >
-                                            {newTokenType ? (
-                                                'Change Value'
-                                            ) : (
-                                                <div>
-                                                    <Typography
-                                                        variant="h6"
-                                                        sx={{
-                                                            display: 'inline',
-                                                        }}
-                                                    >
-                                                        What type of variable
-                                                        would you like to switch{' '}
-                                                        <Typography
-                                                            variant="h6"
-                                                            color="primary"
-                                                            fontWeight="bold"
-                                                            sx={{
-                                                                display:
-                                                                    'inline',
-                                                            }}
-                                                        >
-                                                            {variable.alias}
-                                                        </Typography>{' '}
-                                                        to?
-                                                    </Typography>
-                                                </div>
-                                            )}
-                                        </Stack>
-                                    </Modal.Title>
-                                    <Modal.Content>
-                                        {!newTokenType ? (
-                                            <Stack
-                                                direction="row"
-                                                gap={1}
-                                                justifyContent={'center'}
-                                            >
-                                                <Stack
-                                                    direction="row"
-                                                    onClick={() => {
-                                                        setNewTokenType(
-                                                            'block',
-                                                        );
-                                                    }}
-                                                >
-                                                    <Icon color={'primary'}>
-                                                        <Widgets />
-                                                    </Icon>
-                                                    <Typography variant="caption">
-                                                        Block
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack
-                                                    direction="row"
-                                                    onClick={() => {
-                                                        setNewTokenType(
-                                                            'block',
-                                                        );
-                                                    }}
-                                                >
-                                                    <Icon color={'primary'}>
-                                                        <Widgets />
-                                                    </Icon>
-                                                    <Typography variant="caption">
-                                                        Cell
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack
-                                                    direction="row"
-                                                    onClick={() => {
-                                                        setNewTokenType(
-                                                            'block',
-                                                        );
-                                                    }}
-                                                >
-                                                    <Icon color={'primary'}>
-                                                        <Widgets />
-                                                    </Icon>
-                                                    <Typography variant="caption">
-                                                        Database
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack
-                                                    direction="row"
-                                                    onClick={() => {
-                                                        setNewTokenType(
-                                                            'block',
-                                                        );
-                                                    }}
-                                                >
-                                                    <Icon color={'primary'}>
-                                                        <Widgets />
-                                                    </Icon>
-                                                    <Typography variant="caption">
-                                                        Vector
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack
-                                                    direction="row"
-                                                    onClick={() => {
-                                                        setNewTokenType(
-                                                            'block',
-                                                        );
-                                                    }}
-                                                >
-                                                    <Icon color={'primary'}>
-                                                        <Widgets />
-                                                    </Icon>
-                                                    <Typography variant="caption">
-                                                        LLM
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack
-                                                    direction="row"
-                                                    onClick={() => {
-                                                        setNewTokenType(
-                                                            'block',
-                                                        );
-                                                    }}
-                                                >
-                                                    <Icon color={'primary'}>
-                                                        <Widgets />
-                                                    </Icon>
-                                                    <Typography variant="caption">
-                                                        Storage
-                                                    </Typography>
-                                                </Stack>
-                                            </Stack>
-                                        ) : (
-                                            <Stack direction={'column'}>
-                                                <Alert
-                                                    severity="warning"
-                                                    icon={
-                                                        <WarningAmberOutlined />
-                                                    }
-                                                >
-                                                    Any changes to variables,
-                                                    may cause breaking changes
-                                                    to your app. Please keep
-                                                    that in mind.
-                                                </Alert>
-                                                <Stack>
-                                                    <Typography
-                                                        variant={'body1'}
-                                                        fontWeight="bold"
-                                                    >
-                                                        From {variable.type}:
-                                                    </Typography>
-                                                    {variable.type ===
-                                                    'block' ? (
-                                                        <div
-                                                            style={{
-                                                                width: '100%',
-                                                            }}
-                                                        >
-                                                            <BlocksRenderer
-                                                                state={getStateWithBlock(
-                                                                    variable.to,
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        state.getVariable(
-                                                            variable.to,
-                                                            variable.type,
-                                                        )
-                                                    )}
-
-                                                    <Typography
-                                                        variant={'body1'}
-                                                        fontWeight="bold"
-                                                    >
-                                                        To {newTokenType}:
-                                                    </Typography>
-                                                    <TextField />
-                                                </Stack>
-                                            </Stack>
-                                        )}
-                                    </Modal.Content>
-                                    <Modal.Actions>
-                                        <Button
-                                            disabled={!newTokenType}
-                                            onClick={() => {
-                                                setNewTokenType('');
+                                {isPopoverOpen && (
+                                    <div
+                                        onMouseOver={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                        }}
+                                    >
+                                        <AddVariableModal
+                                            variable={variable}
+                                            open={isPopoverOpen}
+                                            anchorEl={popoverAnchorEle}
+                                            onClose={() => {
+                                                setPopoverAnchorEl(null);
                                             }}
-                                        >
-                                            Back
-                                        </Button>
-                                        <Button
-                                            disabled={true}
-                                            variant={'contained'}
-                                            onClick={() => {
-                                                console.log('step');
-                                            }}
-                                        >
-                                            Set
-                                        </Button>
-                                    </Modal.Actions>
-                                </Modal>
+                                        />
+                                    </div>
+                                )}
                             </StyledButton>
                         </StyledTooltip>
                     </Stack>

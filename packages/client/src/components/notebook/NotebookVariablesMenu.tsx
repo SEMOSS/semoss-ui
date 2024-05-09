@@ -167,13 +167,15 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                         })}
                     </List>
                 </StyledMenuScroll>
-                <AddVariableModal
-                    open={isPopoverOpen}
-                    anchorEl={popoverAnchorEle}
-                    onClose={() => {
-                        setPopoverAnchorEl(null);
-                    }}
-                />
+                {isPopoverOpen && (
+                    <AddVariableModal
+                        open={isPopoverOpen}
+                        anchorEl={popoverAnchorEle}
+                        onClose={() => {
+                            setPopoverAnchorEl(null);
+                        }}
+                    />
+                )}
             </StyledMenu>
         </Stack>
     );
