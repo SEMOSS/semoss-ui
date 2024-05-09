@@ -120,6 +120,10 @@ const TagsBodyWrapper = styled('div')({
     gap: '0.6rem',
 });
 
+const StyledSection = styled('section')(({ theme }) => ({
+    paddingBottom: theme.spacing(1),
+}));
+
 const DependenciesHeadingWrapper = styled('div')({
     alignItems: 'start',
     display: 'flex',
@@ -428,14 +432,14 @@ export const AppDetailPage = () => {
                             </TitleSectionBodyWrapper>
                         </TitleSection>
 
-                        <section ref={mainUsesRef}>
+                        <StyledSection ref={mainUsesRef}>
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
                             <Typography variant="body1">{mainUses}</Typography>
-                        </section>
+                        </StyledSection>
 
-                        <section ref={tagsRef}>
+                        <StyledSection ref={tagsRef}>
                             <SectionHeading variant="h2">Tags</SectionHeading>
                             {appInfo?.tag ? (
                                 <TagsBodyWrapper>
@@ -451,14 +455,15 @@ export const AppDetailPage = () => {
                                     No tags available
                                 </Typography>
                             )}
-                        </section>
+                        </StyledSection>
 
-                        <section ref={videosRef} style={{ display: 'none' }}>
+                        <StyledSection ref={videosRef}>
                             <SectionHeading variant="h2">Videos</SectionHeading>
-                        </section>
+                            <p>TODO</p>
+                        </StyledSection>
 
                         {userRole === 'DISCOVERABLE' ? null : (
-                            <section ref={dependenciesRef}>
+                            <StyledSection ref={dependenciesRef}>
                                 <DependenciesHeadingWrapper>
                                     <SectionHeading variant="h2">
                                         Dependencies
@@ -477,31 +482,33 @@ export const AppDetailPage = () => {
                                     </IconButton>
                                 </DependenciesHeadingWrapper>
                                 <DependenciesBody />
-                            </section>
+                            </StyledSection>
                         )}
 
-                        <section ref={appAccessRef}>
-                            <SectionHeading variant="h2">
-                                App Access
-                            </SectionHeading>
-                            <SettingsContext.Provider
-                                value={{
-                                    adminMode: false,
-                                }}
-                            >
-                                <SettingsTiles
-                                    mode={'app'}
-                                    name={'app'}
-                                    direction="row"
-                                    id={appId}
-                                    onDelete={() => {
-                                        navigate('/settings/app');
+                        {userRole === 'OWNER' && (
+                            <StyledSection ref={appAccessRef}>
+                                <SectionHeading variant="h2">
+                                    App Access
+                                </SectionHeading>
+                                <SettingsContext.Provider
+                                    value={{
+                                        adminMode: false,
                                     }}
-                                />
-                            </SettingsContext.Provider>
-                        </section>
+                                >
+                                    <SettingsTiles
+                                        mode="app"
+                                        name="app"
+                                        direction="row"
+                                        id={appId}
+                                        onDelete={() => {
+                                            navigate('/settings/app');
+                                        }}
+                                    />
+                                </SettingsContext.Provider>
+                            </StyledSection>
+                        )}
 
-                        <section ref={memberAccessRef}>
+                        <StyledSection ref={memberAccessRef}>
                             <SectionHeading variant="h2">
                                 Member Access
                             </SectionHeading>
@@ -512,11 +519,11 @@ export const AppDetailPage = () => {
                             >
                                 <MembersTable
                                     id={appId}
-                                    mode={'app'}
-                                    name={'app'}
+                                    mode="app"
+                                    name="app"
                                 />
                             </SettingsContext.Provider>
-                        </section>
+                        </StyledSection>
                     </Sections>
                 </SidebarAndSectionsContainer>
             </InnerContainer>
@@ -594,10 +601,11 @@ const Sidebar = ({ userRole, refs }: SidebarProps) => {
         { text: 'Main Uses', ref: mainUsesRef },
         { text: 'Tags', ref: tagsRef },
         // { text: 'Videos', ref: videosRef },
-        userRole === 'DISCOVERABLE'
-            ? null
-            : { text: 'Dependencies', ref: dependenciesRef },
-        { text: 'App Access', ref: appAccessRef },
+        userRole === 'DISCOVERABLE' && {
+            text: 'Dependencies',
+            ref: dependenciesRef,
+        },
+        userRole === 'OWNER' && { text: 'App Access', ref: appAccessRef },
         { text: 'Member Access', ref: memberAccessRef },
     ];
 
