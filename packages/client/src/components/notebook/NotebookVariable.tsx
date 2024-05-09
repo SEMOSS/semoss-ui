@@ -49,7 +49,20 @@ const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
     },
 }));
 
+const StyledButton = styled('button')(({ theme }) => ({
+    border: 'none',
+    background: 'none',
+    padding: 0,
+    margin: 0,
+    cursor: 'pointer',
+    outline: 'none',
+    width: '100%',
+    display: 'flex',
+}));
+
 const StyledPointerStack = styled(Stack)(({ theme }) => ({
+    width: '80%',
+    overflow: 'scroll',
     '&:hover': {
         cursor: 'pointer',
     },
@@ -217,7 +230,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         bgcolor: 'white',
                                         color: 'black',
                                         padding: '0px',
-                                        // width: '400px',
                                         maxWidth: '600px',
                                     },
                                 },
@@ -225,97 +237,92 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                             enterDelay={500}
                             leaveDelay={200}
                         >
-                            <CustomWrapper>
-                                <div>
-                                    {!openRenameAlias ? (
-                                        <StyledPointerStack
-                                            spacing={0}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
+                            <StyledButton>
+                                {!openRenameAlias ? (
+                                    <StyledPointerStack
+                                        alignItems="flex-start"
+                                        spacing={0}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
 
-                                                setOpenRenameAlias(true);
+                                            setOpenRenameAlias(true);
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body1"
+                                            fontWeight="medium"
+                                        >
+                                            {variable.alias}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {variable.type}
+                                        </Typography>
+                                    </StyledPointerStack>
+                                ) : (
+                                    <Stack
+                                        spacing={1}
+                                        direction="column"
+                                        sx={{ width: '80%' }}
+                                    >
+                                        <TextField
+                                            inputRef={(input) =>
+                                                input && input.focus()
+                                            }
+                                            focused={true}
+                                            fullWidth
+                                            size={'small'}
+                                            variant="standard"
+                                            value={newTokenAlias}
+                                            onChange={(e) => {
+                                                setNewTokenAlias(
+                                                    e.target.value,
+                                                );
                                             }}
-                                        >
-                                            <Typography
-                                                variant="body1"
-                                                fontWeight="medium"
-                                            >
-                                                {variable.alias}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                {variable.type}
-                                            </Typography>
-                                        </StyledPointerStack>
-                                    ) : (
-                                        <Stack
-                                            spacing={1}
-                                            direction="column"
-                                            sx={{ width: '80%' }}
-                                        >
-                                            <TextField
-                                                inputRef={(input) =>
-                                                    input && input.focus()
-                                                }
-                                                focused={true}
-                                                fullWidth
-                                                size={'small'}
-                                                variant="standard"
-                                                value={newTokenAlias}
-                                                onChange={(e) => {
-                                                    setNewTokenAlias(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        console.log(
-                                                            'Save alias',
-                                                        );
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    console.log('Save alias');
 
-                                                        setOpenRenameAlias(
-                                                            false,
-                                                        );
-                                                        setNewTokenAlias(
-                                                            newTokenAlias,
-                                                        );
-
-                                                        notification.add({
-                                                            color: 'success',
-                                                            message: `Succesfully renamed variable ${variable.alias} to ${newTokenAlias}, remember to save your app.`,
-                                                        });
-
-                                                        state.dispatch({
-                                                            message:
-                                                                ActionMessages.RENAME_VARIABLE,
-                                                            payload: {
-                                                                to: variable.to,
-                                                                alias: newTokenAlias,
-                                                            },
-                                                        });
-                                                    }
-                                                }}
-                                                onBlur={() => {
                                                     setOpenRenameAlias(false);
                                                     setNewTokenAlias(
-                                                        variable.alias,
+                                                        newTokenAlias,
                                                     );
 
                                                     notification.add({
-                                                        color: 'warning',
-                                                        message: `Unsuccesfully renamed variable ${variable.alias}, press enter to save.`,
+                                                        color: 'success',
+                                                        message: `Succesfully renamed variable ${variable.alias} to ${newTokenAlias}, remember to save your app.`,
                                                     });
-                                                }}
-                                                InputProps={{
-                                                    disableUnderline: true,
-                                                }}
-                                            />
-                                            <StyledLinearProgress
-                                                color={'warning'}
-                                            />
-                                        </Stack>
-                                    )}
-                                </div>
+
+                                                    state.dispatch({
+                                                        message:
+                                                            ActionMessages.RENAME_VARIABLE,
+                                                        payload: {
+                                                            to: variable.to,
+                                                            alias: newTokenAlias,
+                                                        },
+                                                    });
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                setOpenRenameAlias(false);
+                                                setNewTokenAlias(
+                                                    variable.alias,
+                                                );
+
+                                                notification.add({
+                                                    color: 'warning',
+                                                    message: `Unsuccesfully renamed variable ${variable.alias}, press enter to save.`,
+                                                });
+                                            }}
+                                            InputProps={{
+                                                disableUnderline: true,
+                                            }}
+                                        />
+                                        <StyledLinearProgress
+                                            color={'warning'}
+                                        />
+                                    </Stack>
+                                )}
                                 <Modal
                                     open={openReassignModal}
                                     onClose={() => {
@@ -525,22 +532,11 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         </Button>
                                     </Modal.Actions>
                                 </Modal>
-                            </CustomWrapper>
+                            </StyledButton>
                         </StyledTooltip>
                     </Stack>
                 }
             />
         </StyledListItem>
-    );
-});
-
-const CustomWrapper = React.forwardRef<HTMLDivElement>(function MyComponent(
-    props: { children: HTMLDivElement },
-    ref,
-) {
-    return (
-        <div {...props} ref={ref}>
-            {props.children}
-        </div>
     );
 });

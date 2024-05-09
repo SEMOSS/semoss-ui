@@ -1,38 +1,14 @@
 import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    Alert,
-    Box,
-    Divider,
-    styled,
-    Button,
-    Icon,
-    IconButton,
-    List,
-    Menu,
-    Modal,
-    Typography,
-    Stack,
-    useNotification,
-    Tooltip,
-    TextField,
-    LinearProgress,
-} from '@semoss/ui';
+import { Box, Divider, styled, Typography, Stack } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
-import {
-    ContentCopy,
-    MoreVert,
-    WarningAmberOutlined,
-    Widgets,
-} from '@mui/icons-material';
 
-import { ActionMessages, SerializedState } from '@/stores';
+import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-const StyledStack = styled(Stack)(({ theme }) => ({
-    // width: '400px',
-}));
+const StyledStack = styled(Stack)(({ theme }) => ({}));
+
 const StyledBox = styled(Box)(({ theme }) => ({
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
