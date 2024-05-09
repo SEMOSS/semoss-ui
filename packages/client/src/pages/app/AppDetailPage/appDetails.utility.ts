@@ -10,7 +10,7 @@ export interface AppDetailsFormTypes {
     appId: string;
     appInfo: any;
     userRole: Role | '';
-    permission: 'author' | 'editor' | 'readOnly' | '';
+    permission: 'author' | 'editor' | 'readOnly' | 'discoverable' | '';
 
     mainUses: string;
     tags: string[];
@@ -22,6 +22,8 @@ export interface AppDetailsFormTypes {
     };
 
     dependencies: any[];
+
+    requestedPermission: 'author' | 'editor' | 'readOnly' | '';
     roleChangeComment: string | ReactNode;
 }
 
@@ -41,6 +43,8 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
     },
 
     dependencies: [],
+
+    requestedPermission: '',
     roleChangeComment: '',
 };
 
@@ -138,20 +142,18 @@ export const updateProjectDetails = async (
  * OTHER UTILITY FUNCTIONS -----------------------------------------------
  * -----------------------------------------------------------------------
  */
-export type AppDetailPermission = 'author' | 'editor' | 'readOnly' | '';
-export const determineUserPermission = (role: Role): AppDetailPermission => {
-    let permission: AppDetailPermission = '';
+type AppPermission = 'author' | 'editor' | 'readOnly' | 'discoverable' | '';
+export const determineUserPermission = (role: Role): AppPermission => {
+    let permission: AppPermission = '';
 
     if (role === 'OWNER') {
         permission = 'author';
     } else if (role === 'EDIT' || role === 'EDITOR') {
         permission = 'editor';
-    } else if (
-        role === 'READ_ONLY' ||
-        role === 'DISCOVERABLE' ||
-        role === 'VIEWER'
-    ) {
+    } else if (role === 'READ_ONLY' || role === 'VIEWER') {
         permission = 'readOnly';
+    } else if (role === 'DISCOVERABLE') {
+        permission = 'discoverable';
     }
 
     return permission;

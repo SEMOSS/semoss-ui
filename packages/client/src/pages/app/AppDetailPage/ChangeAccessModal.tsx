@@ -59,7 +59,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
             <Modal.Content>
                 <Controller
-                    name="permission"
+                    name="requestedPermission"
                     control={control}
                     render={({ field }) => {
                         return (

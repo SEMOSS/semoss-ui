@@ -158,6 +158,7 @@ export const AppDetailPage = () => {
     const tags = watch('tags');
     const appInfo = watch('appInfo');
     const userRole = watch('userRole');
+    const permission = watch('permission');
     console.log('APP INFO', appInfo);
     const dependencies = watch('dependencies');
 
@@ -175,6 +176,7 @@ export const AppDetailPage = () => {
     const dependenciesRef = useRef<HTMLElement>(null);
     const appAccessRef = useRef<HTMLElement>(null);
     const memberAccessRef = useRef<HTMLElement>(null);
+    const similarAppsRef = useRef<HTMLElement>(null);
 
     const refs = [
         mainUsesRef,
@@ -183,6 +185,7 @@ export const AppDetailPage = () => {
         dependenciesRef,
         appAccessRef,
         memberAccessRef,
+        similarAppsRef,
     ];
 
     const { monolithStore } = useRootStore();
@@ -203,9 +206,18 @@ export const AppDetailPage = () => {
 
         setValue('userRole', role);
         const permission = determineUserPermission(role);
-        if (permission === 'author') setValue('permission', 'author');
-        if (permission === 'editor') setValue('permission', 'editor');
-        if (permission === 'readOnly') setValue('permission', 'readOnly');
+        if (permission === 'author') {
+            setValue('permission', 'author');
+            setValue('requestedPermission', 'author');
+        } else if (permission === 'editor') {
+            setValue('permission', 'editor');
+            setValue('requestedPermission', 'editor');
+        } else if (permission === 'readOnly') {
+            setValue('permission', 'readOnly');
+            setValue('requestedPermission', 'readOnly');
+        } else if (permission === 'discoverable') {
+            setValue('permission', 'discoverable');
+        }
     }
 
     const fetchAllData = async (id: string) => {
@@ -285,28 +297,11 @@ export const AppDetailPage = () => {
         setIsEditDetailsModalOpen(false);
     };
 
-    function PermissionComponent(): JSX.Element {
-        return (
-            <>
-                {userRole === 'OWNER' ? <HdrAutoIcon /> : null}
-                {userRole === 'EDIT' || userRole === 'EDITOR' ? (
-                    <NoteAltIcon />
-                ) : null}
-                {userRole === 'VIEWER' ||
-                userRole === 'READ_ONLY' ||
-                userRole === 'DISCOVERABLE' ? (
-                    <AssignmentIcon />
-                ) : null}
-                {`${formatPermission(userRole)} Access`}
-            </>
-        );
-    }
-
     function DependenciesBody(): JSX.Element {
         if (dependencies?.length > 0) {
             return (
                 <>
-                    {userRole === 'OWNER' ? null : (
+                    {permission === 'author' ? null : (
                         <pre
                             style={{
                                 background: 'gray',
@@ -371,7 +366,7 @@ export const AppDetailPage = () => {
                 <Breadcrumbs>Breadcrumbs</Breadcrumbs>
 
                 <TopButtonsContainer>
-                    {userRole !== 'OWNER' && (
+                    {permission !== 'author' && (
                         <ChangeAccessButton
                             variant="text"
                             onClick={() => setIsChangeAccessModalOpen(true)}
@@ -396,9 +391,8 @@ export const AppDetailPage = () => {
                         open={Boolean(moreVertAnchorEl)}
                         onClose={() => setMoreVertAnchorEl(null)}
                     >
-                        {(userRole === 'OWNER' ||
-                            userRole === 'EDIT' ||
-                            userRole === 'EDITOR') && (
+                        {(permission === 'author' ||
+                            permission === 'editor') && (
                             <StyledMenuItem
                                 onClick={() => {
                                     setIsEditDetailsModalOpen(true);
@@ -414,7 +408,7 @@ export const AppDetailPage = () => {
                             <ShareIcon fontSize="small" />
                             Share
                         </StyledMenuItem>
-                        {userRole === 'OWNER' && (
+                        {permission === 'author' && (
                             <StyledMenuItem
                                 onClick={() => {
                                     setIsDeleteAppModalOpen(true);
@@ -430,7 +424,7 @@ export const AppDetailPage = () => {
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
-                    <Sidebar userRole={userRole} refs={refs} />
+                    <Sidebar permission={permission} refs={refs} />
 
                     <Sections>
                         <TitleSection>
@@ -443,7 +437,16 @@ export const AppDetailPage = () => {
                                     {appInfo?.project_name}
                                 </SectionHeading>
                                 <TitleSectionBody variant="body1">
-                                    <PermissionComponent />
+                                    {() => {
+                                        if (permission === 'author') {
+                                            return <HdrAutoIcon />;
+                                        } else if (permission === 'editor') {
+                                            return <NoteAltIcon />;
+                                        } else {
+                                            return <AssignmentIcon />;
+                                        }
+                                    }}
+                                    {`${formatPermission(userRole)} Access`}
                                 </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
                                     {appInfo?.description
@@ -483,30 +486,35 @@ export const AppDetailPage = () => {
                             <p>TODO</p>
                         </StyledSection>
 
-                        {userRole === 'DISCOVERABLE' ? null : (
+                        {permission !== 'discoverable' && (
                             <StyledSection ref={dependenciesRef}>
                                 <DependenciesHeadingWrapper>
                                     <SectionHeading variant="h2">
                                         Dependencies
                                     </SectionHeading>
-                                    <IconButton
-                                        onClick={() =>
-                                            setIsEditDependenciesModalOpen(true)
-                                        }
-                                        sx={{
-                                            position: 'absolute',
-                                            right: 0,
-                                            top: '-0.4rem',
-                                        }}
-                                    >
-                                        <EditIcon />
-                                    </IconButton>
+                                    {(permission === 'author' ||
+                                        permission === 'editor') && (
+                                        <IconButton
+                                            onClick={() =>
+                                                setIsEditDependenciesModalOpen(
+                                                    true,
+                                                )
+                                            }
+                                            sx={{
+                                                position: 'absolute',
+                                                right: 0,
+                                                top: '-0.4rem',
+                                            }}
+                                        >
+                                            <EditIcon />
+                                        </IconButton>
+                                    )}
                                 </DependenciesHeadingWrapper>
                                 <DependenciesBody />
                             </StyledSection>
                         )}
 
-                        {userRole === 'OWNER' && (
+                        {permission === 'author' && (
                             <StyledSection ref={appAccessRef}>
                                 <SectionHeading variant="h2">
                                     App Access
@@ -529,22 +537,32 @@ export const AppDetailPage = () => {
                             </StyledSection>
                         )}
 
-                        <StyledSection ref={memberAccessRef}>
-                            <SectionHeading variant="h2">
-                                Member Access
-                            </SectionHeading>
-                            <SettingsContext.Provider
-                                value={{
-                                    adminMode: false,
-                                }}
-                            >
-                                <MembersTable
-                                    id={appId}
-                                    mode="app"
-                                    name="app"
-                                />
-                            </SettingsContext.Provider>
-                        </StyledSection>
+                        {permission !== 'discoverable' && (
+                            <StyledSection ref={memberAccessRef}>
+                                <SectionHeading variant="h2">
+                                    Member Access
+                                </SectionHeading>
+                                <SettingsContext.Provider
+                                    value={{
+                                        adminMode: false,
+                                    }}
+                                >
+                                    <MembersTable
+                                        id={appId}
+                                        mode="app"
+                                        name="app"
+                                    />
+                                </SettingsContext.Provider>
+                            </StyledSection>
+                        )}
+
+                        {permission === 'discoverable' && (
+                            <StyledSection ref={similarAppsRef}>
+                                <SectionHeading variant="h2">
+                                    Similar Apps
+                                </SectionHeading>
+                            </StyledSection>
+                        )}
                     </Sections>
                 </SidebarAndSectionsContainer>
             </InnerContainer>
@@ -605,45 +623,70 @@ const SidebarMenuItem = styled(MenuItem)({
 });
 
 interface SidebarProps {
-    userRole: string;
+    permission: string;
     refs: React.MutableRefObject<HTMLElement>[];
 }
 
-const Sidebar = ({ userRole, refs }: SidebarProps) => {
+const Sidebar = ({ permission, refs }: SidebarProps) => {
     const [
         mainUsesRef,
         tagsRef,
-        // videosRef,
         dependenciesRef,
         appAccessRef,
         memberAccessRef,
+        similarAppsRef,
     ] = refs;
 
-    const headings = [
-        { text: 'Main Uses', ref: mainUsesRef },
-        { text: 'Tags', ref: tagsRef },
-        // { text: 'Videos', ref: videosRef },
-        userRole === 'DISCOVERABLE' && {
-            text: 'Dependencies',
-            ref: dependenciesRef,
-        },
-        userRole === 'OWNER' && { text: 'App Access', ref: appAccessRef },
-        { text: 'Member Access', ref: memberAccessRef },
-    ];
+    const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
+        ref.current.scrollIntoView({ behavior: 'smooth' });
+    };
 
     return (
         <StyledSidebar>
-            {headings.map(({ text, ref }, idx) => (
+            <SidebarMenuItem
+                onClick={() => scrollIntoView(mainUsesRef)}
+                value={null}
+            >
+                Main Uses
+            </SidebarMenuItem>
+            <SidebarMenuItem
+                onClick={() => scrollIntoView(tagsRef)}
+                value={null}
+            >
+                Tags
+            </SidebarMenuItem>
+            {permission !== 'discoverable' && (
                 <SidebarMenuItem
-                    onClick={() =>
-                        ref.current.scrollIntoView({ behavior: 'smooth' })
-                    }
-                    key={`sidebar-menu-${idx}`}
+                    onClick={() => scrollIntoView(dependenciesRef)}
                     value={null}
                 >
-                    {text}
+                    Dependencies
                 </SidebarMenuItem>
-            ))}
+            )}
+            {permission === 'author' && (
+                <SidebarMenuItem
+                    onClick={() => scrollIntoView(appAccessRef)}
+                    value={null}
+                >
+                    App Access
+                </SidebarMenuItem>
+            )}
+            {permission !== 'discoverable' && (
+                <SidebarMenuItem
+                    onClick={() => scrollIntoView(memberAccessRef)}
+                    value={null}
+                >
+                    Member Access
+                </SidebarMenuItem>
+            )}
+            {permission === 'discoverable' && (
+                <SidebarMenuItem
+                    onClick={() => scrollIntoView(similarAppsRef)}
+                    value={null}
+                >
+                    Similar Apps
+                </SidebarMenuItem>
+            )}
         </StyledSidebar>
     );
 };
