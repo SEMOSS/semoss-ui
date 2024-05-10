@@ -289,10 +289,11 @@ export const FileTable = (props: FileTableProps) => {
                             </Button>
                         )}
                         <Button
+                            startIcon={<StyledIcon fontSize="small" />}
                             onClick={() => setOpen(true)}
                             variant="contained"
                         >
-                            <StyledIcon fontSize="small" /> Embed New Document
+                            Embed New Document
                         </Button>
                     </div>
                 </StyledTableTitleContainer>
@@ -325,86 +326,95 @@ export const FileTable = (props: FileTableProps) => {
                     </Table.Head>
                     <Table.Body>
                         {verifiedFiles.map((x, i) => {
-                            if (i >= (filePage * NUM_RESULTS_PER_PAGE - NUM_RESULTS_PER_PAGE) && i < (filePage * NUM_RESULTS_PER_PAGE)) {
-                            const file = verifiedFiles[i];
+                            if (
+                                i >=
+                                    filePage * NUM_RESULTS_PER_PAGE -
+                                        NUM_RESULTS_PER_PAGE &&
+                                i < filePage * NUM_RESULTS_PER_PAGE
+                            ) {
+                                const file = verifiedFiles[i];
 
-                            let isSelected = false;
+                                let isSelected = false;
 
-                            if (file) {
-                                isSelected = selectedFiles.some((value) => {
-                                    return value.fileName === file.fileName;
-                                });
-                            }
-                            if (file) {
-                                return (
-                                    <Table.Row key={i}>
-                                        <Table.Cell size="medium">
-                                            <Checkbox
-                                                checked={isSelected}
-                                                onChange={() => {
-                                                    if (isSelected) {
-                                                        const selFiles = [];
-                                                        selectedFiles.forEach(
-                                                            (u) => {
-                                                                if (
-                                                                    u.fileName !==
-                                                                    file.fileName
-                                                                ) {
-                                                                    selFiles.push(
-                                                                        u,
-                                                                    );
-                                                                }
-                                                            },
-                                                        );
-                                                        setSelectedFiles(
-                                                            selFiles,
-                                                        );
-                                                    } else {
-                                                        setSelectedFiles([
-                                                            ...selectedFiles,
-                                                            file,
-                                                        ]);
-                                                    }
-                                                }}
-                                            />
-                                        </Table.Cell>
-                                        <Table.Cell
-                                            size="medium"
-                                            component="td"
-                                            scope="row"
-                                        >
-                                            {file.fileName}
-                                        </Table.Cell>
-                                        <Table.Cell
-                                            size="medium"
-                                            component="td"
-                                            scope="row"
-                                        >
-                                            {file.lastModified}
-                                        </Table.Cell>
-                                        <Table.Cell
-                                            size="medium"
-                                            component="td"
-                                            scope="row"
-                                        >
-                                            {Math.round(file.fileSize * 10) /
-                                                10}{' '}
-                                            KB
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            <IconButton
-                                                onClick={() => {
-                                                    setDeleteFileModal(true);
-                                                    setFileToDelete(file);
-                                                }}
+                                if (file) {
+                                    isSelected = selectedFiles.some((value) => {
+                                        return value.fileName === file.fileName;
+                                    });
+                                }
+                                if (file) {
+                                    return (
+                                        <Table.Row key={i}>
+                                            <Table.Cell size="medium">
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onChange={() => {
+                                                        if (isSelected) {
+                                                            const selFiles = [];
+                                                            selectedFiles.forEach(
+                                                                (u) => {
+                                                                    if (
+                                                                        u.fileName !==
+                                                                        file.fileName
+                                                                    ) {
+                                                                        selFiles.push(
+                                                                            u,
+                                                                        );
+                                                                    }
+                                                                },
+                                                            );
+                                                            setSelectedFiles(
+                                                                selFiles,
+                                                            );
+                                                        } else {
+                                                            setSelectedFiles([
+                                                                ...selectedFiles,
+                                                                file,
+                                                            ]);
+                                                        }
+                                                    }}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell
+                                                size="medium"
+                                                component="td"
+                                                scope="row"
                                             >
-                                                <Delete />
-                                            </IconButton>
-                                        </Table.Cell>
-                                    </Table.Row>
-                                );
+                                                {file.fileName}
+                                            </Table.Cell>
+                                            <Table.Cell
+                                                size="medium"
+                                                component="td"
+                                                scope="row"
+                                            >
+                                                {file.lastModified}
+                                            </Table.Cell>
+                                            <Table.Cell
+                                                size="medium"
+                                                component="td"
+                                                scope="row"
+                                            >
+                                                {Math.round(
+                                                    file.fileSize * 10,
+                                                ) / 10}{' '}
+                                                KB
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <IconButton
+                                                    onClick={() => {
+                                                        setDeleteFileModal(
+                                                            true,
+                                                        );
+                                                        setFileToDelete(file);
+                                                    }}
+                                                >
+                                                    <Delete />
+                                                </IconButton>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    );
+                                }
                             }
-                        }})}
+                        })}
                     </Table.Body>
                     <Table.Footer>
                         <Table.Row>
