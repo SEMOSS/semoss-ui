@@ -18,7 +18,9 @@ import {
     Typography,
     useNotification,
     Chip,
+    Modal,
 } from '@semoss/ui';
+import { ShareOverlay } from '@/components/workspace';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 // import { AppSettings } from '@/components/app/AppSettings';
 import { SettingsContext } from '@/contexts';
@@ -174,6 +176,7 @@ export const AppDetailPage = () => {
     const dependencies = watch('dependencies');
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
+    const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
         useState(false);
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
@@ -418,7 +421,10 @@ export const AppDetailPage = () => {
                                 Edit App Details
                             </StyledMenuItem>
                         )}
-                        <StyledMenuItem value={null}>
+                        <StyledMenuItem
+                            value={null}
+                            onClick={() => setIsShareOverlayOpen(true)}
+                        >
                             <ShareIcon fontSize="small" />
                             Share
                         </StyledMenuItem>
@@ -563,6 +569,17 @@ export const AppDetailPage = () => {
                     </Sections>
                 </SidebarAndSectionsContainer>
             </InnerContainer>
+
+            <Modal
+                open={isShareOverlayOpen}
+                onClose={() => setIsShareOverlayOpen(false)}
+            >
+                <ShareOverlay
+                    appId={appId}
+                    diffs={false}
+                    onClose={() => setIsShareOverlayOpen(false)}
+                />
+            </Modal>
 
             <ChangeAccessModal
                 open={isChangeAccessModalOpen}
