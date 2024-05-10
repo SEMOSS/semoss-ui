@@ -75,6 +75,7 @@ interface FileExplorerProps {
 }
 
 export const FileTable = (props: FileTableProps) => {
+    const NUM_RESULTS_PER_PAGE = 5;
     // embed modal
     const [open, setOpen] = useState<boolean>(false);
 
@@ -100,7 +101,7 @@ export const FileTable = (props: FileTableProps) => {
 
     //for the pagination of the files page
     const paginationOptions = {
-        filePageCounts: [5],
+        filePageCounts: [NUM_RESULTS_PER_PAGE],
     };
 
     //adjusting for instance where there are more than 10 files
@@ -146,7 +147,7 @@ export const FileTable = (props: FileTableProps) => {
 
         //filter using search term
         const filteredFiles = files.filter((file) =>
-            file.fileName.includes(searchFilter),
+            file.fileName.toLowerCase().includes(searchFilter.toLowerCase()),
         );
         setValue('FILES', filteredFiles);
 
@@ -324,6 +325,7 @@ export const FileTable = (props: FileTableProps) => {
                     </Table.Head>
                     <Table.Body>
                         {verifiedFiles.map((x, i) => {
+                            if (i >= (filePage * NUM_RESULTS_PER_PAGE - NUM_RESULTS_PER_PAGE) && i < (filePage * NUM_RESULTS_PER_PAGE)) {
                             const file = verifiedFiles[i];
 
                             let isSelected = false;
@@ -402,14 +404,12 @@ export const FileTable = (props: FileTableProps) => {
                                     </Table.Row>
                                 );
                             }
-                        })}
+                        }})}
                     </Table.Body>
                     <Table.Footer>
                         <Table.Row>
                             <Table.Pagination
-                                rowsPerPageOptions={
-                                    paginationOptions.filePageCounts
-                                }
+                                rowsPerPageOptions={[]}
                                 onPageChange={(e, v) => {
                                     setFilePage(v + 1);
                                     setSelectedFiles([]);
