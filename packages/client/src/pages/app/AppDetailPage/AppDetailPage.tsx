@@ -48,19 +48,33 @@ const OuterContainer = styled('div')(({ theme }) => ({
     height: '100%',
     justifyContent: 'center',
     overflow: 'scroll',
-    padding: '0 1rem',
+    padding: `${theme.spacing(6)} 1rem 0`,
     width: '100%',
 }));
 
-const InnerContainer = styled('div')({
+const InnerContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    gap: '1rem',
+    gap: theme.spacing(3),
     margin: 'auto',
     maxWidth: '79rem',
     width: '100%',
-});
+}));
+
+const StyledLink = styled(Link)(({ theme }) => ({
+    textDecoration: 'none',
+}));
+
+const StyledCrumb = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled?: true }>(({ theme, disabled }) => ({
+    color: theme.palette.text.primary,
+
+    ...(disabled && {
+        color: theme.palette.text.disabled,
+    }),
+}));
 
 const TopButtonsContainer = styled('div')({
     display: 'flex',
@@ -159,7 +173,6 @@ export const AppDetailPage = () => {
     const appInfo = watch('appInfo');
     const userRole = watch('userRole');
     const permission = watch('permission');
-    console.log('APP INFO', appInfo);
     const dependencies = watch('dependencies');
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
@@ -363,7 +376,14 @@ export const AppDetailPage = () => {
     return (
         <OuterContainer>
             <InnerContainer>
-                <Breadcrumbs>Breadcrumbs</Breadcrumbs>
+                <Breadcrumbs separator="/">
+                    <StyledLink href="/">
+                        <StyledCrumb variant="body1">App Library</StyledCrumb>
+                    </StyledLink>
+                    <StyledCrumb variant="body1" disabled>
+                        {appInfo?.project_name}
+                    </StyledCrumb>
+                </Breadcrumbs>
 
                 <TopButtonsContainer>
                     {permission !== 'author' && (
