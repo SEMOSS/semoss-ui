@@ -14,11 +14,9 @@ export interface AppDetailsFormTypes {
 
     mainUses: string;
     tags: string[];
-    videos: any[]; // TODO: type fixes
     detailsForm: {
         mainUses: string;
         tags: string[];
-        videos: any[];
     };
 
     dependencies: any[];
@@ -35,11 +33,9 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
 
     mainUses: '',
     tags: [],
-    videos: [],
     detailsForm: {
         mainUses: '',
         tags: [],
-        videos: [],
     },
 
     dependencies: [],

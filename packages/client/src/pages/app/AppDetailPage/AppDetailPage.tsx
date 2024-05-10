@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import HdrAutoIcon from '@mui/icons-material/HdrAuto';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -31,7 +30,6 @@ import {
     AppDetailsFormValues,
 } from './appDetails.utility';
 import { ChangeAccessModal } from './ChangeAccessModal';
-import { DeleteAppModal } from './DeleteAppModal';
 import { EditDetailsModal } from './EditDetailsModal';
 import { EditDependenciesModal } from './EditDependenciesModal';
 import {
@@ -181,11 +179,9 @@ export const AppDetailPage = () => {
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
-    const [isDeleteAppModalOpen, setIsDeleteAppModalOpen] = useState(false);
 
     const mainUsesRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
-    const videosRef = useRef<HTMLElement>(null);
     const dependenciesRef = useRef<HTMLElement>(null);
     const appAccessRef = useRef<HTMLElement>(null);
     const memberAccessRef = useRef<HTMLElement>(null);
@@ -194,7 +190,6 @@ export const AppDetailPage = () => {
     const refs = [
         mainUsesRef,
         tagsRef,
-        videosRef,
         dependenciesRef,
         appAccessRef,
         memberAccessRef,
@@ -304,7 +299,6 @@ export const AppDetailPage = () => {
             setValue('detailsForm', {
                 mainUses,
                 tags,
-                videos: [], // TODO
             });
         }
         setIsEditDetailsModalOpen(false);
@@ -428,18 +422,6 @@ export const AppDetailPage = () => {
                             <ShareIcon fontSize="small" />
                             Share
                         </StyledMenuItem>
-                        {permission === 'author' && (
-                            <StyledMenuItem
-                                onClick={() => {
-                                    setIsDeleteAppModalOpen(true);
-                                    setMoreVertAnchorEl(null);
-                                }}
-                                value={null}
-                            >
-                                <DeleteIcon fontSize="small" />
-                                Delete App
-                            </StyledMenuItem>
-                        )}
                     </Menu>
                 </TopButtonsContainer>
 
@@ -499,11 +481,6 @@ export const AppDetailPage = () => {
                                     No tags available
                                 </Typography>
                             )}
-                        </StyledSection>
-
-                        <StyledSection ref={videosRef}>
-                            <SectionHeading variant="h2">Videos</SectionHeading>
-                            <p>TODO</p>
                         </StyledSection>
 
                         {permission !== 'discoverable' && (
@@ -606,16 +583,6 @@ export const AppDetailPage = () => {
                 onClose={() => setIsEditDependenciesModalOpen(false)}
                 dependencies={dependencies}
                 runSetDependenciesQuery={runSetDependenciesQuery}
-            />
-
-            <DeleteAppModal
-                isOpen={isDeleteAppModalOpen}
-                appId={appId}
-                appName="TODO"
-                onDelete={() => {
-                    console.log('HELLO');
-                }}
-                close={() => setIsDeleteAppModalOpen(false)}
             />
         </OuterContainer>
     );
