@@ -17,10 +17,6 @@ import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
-// import { NotebookTransformMenu } from './deprecated/NotebookTransformMenu';
-// import { NotebookBlocksMenu } from './deprecated/NotebookBlocksMenu';
-// import { NotebookTokensMenu } from './NotebookTokensMenu';
-// import { NotebookCatalogMenu } from './deprecated/NotebookCatalogMenu';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',

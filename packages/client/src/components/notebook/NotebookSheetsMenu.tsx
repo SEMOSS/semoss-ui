@@ -71,12 +71,36 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     useEffect(() => {
         if (notebook.selectedQuery) return;
 
-        let i = 0,
-            selected = false;
-        while (!selected) {
-            notebook.selectQuery(notebook.queriesList[i].id);
-            selected = true;
-            i++;
+        if (notebook.queriesList.length) {
+            let i = 0,
+                selected = false;
+            while (!selected) {
+                notebook.selectQuery(notebook.queriesList[i].id);
+                selected = true;
+                i++;
+            }
+        } else {
+            // Create a query for user
+            const id = state.dispatch({
+                message: ActionMessages.NEW_QUERY,
+                payload: {
+                    queryId: 'default',
+                    config: {
+                        cells: [
+                            {
+                                id: `${Math.floor(Math.random() * 100000)}`,
+                                widget: 'code',
+                                parameters: {
+                                    code: '',
+                                    type: 'py',
+                                },
+                            },
+                        ],
+                    },
+                },
+            });
+
+            notebook.selectQuery(id);
         }
     }, []);
 

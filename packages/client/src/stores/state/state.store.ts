@@ -245,9 +245,6 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.payload)),
         );
 
-        console.log('tokens', this._store.variables);
-        console.log('dependencies', this._store.dependencies);
-
         try {
             // apply the action
             if (ActionMessages.SET_STATE === action.message) {
@@ -281,7 +278,7 @@ export class StateStore {
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
-                this.newQuery(queryId, config);
+                return this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -943,7 +940,7 @@ export class StateStore {
     private newQuery = (
         queryId: string,
         config: Omit<QueryStateConfig, 'id'>,
-    ): void => {
+    ): string => {
         this._store.queries[queryId] = new QueryState(
             {
                 ...config,
@@ -951,6 +948,8 @@ export class StateStore {
             },
             this,
         );
+
+        return queryId;
     };
 
     /**
