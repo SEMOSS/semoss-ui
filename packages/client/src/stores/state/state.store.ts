@@ -22,6 +22,7 @@ import {
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 import { splitAtPeriod } from '@/utility';
+import { STATE_STORE_CURRENT_VERSION } from './state.constants';
 
 interface StateStoreInterface {
     /** Mode */
@@ -44,6 +45,9 @@ interface StateStoreInterface {
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
+
+    /** What version the state store we currently are on link: https://semver.org/ */
+    version: string;
 }
 
 export class StateStoreConfig {
@@ -67,13 +71,12 @@ export class StateStore {
     private _store: StateStoreInterface = {
         mode: 'interactive',
         insightId: '',
+        version: '',
         queries: {},
         blocks: {},
         cellRegistry: {},
-
         variables: {},
         dependencies: {},
-        // Add Version
     };
 
     /**
@@ -509,6 +512,7 @@ export class StateStore {
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
             dependencies: toJS(this._store.dependencies),
+            version: this._store.version,
         };
     }
 
@@ -685,8 +689,14 @@ export class StateStore {
 
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
+
         // store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
+
+        // store the version or the one we currently are on
+        this._store.version = state.version
+            ? state.version
+            : STATE_STORE_CURRENT_VERSION;
     };
 
     /**

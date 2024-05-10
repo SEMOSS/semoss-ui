@@ -15,6 +15,9 @@ export type SerializedState = {
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
+
+    /** What version the state store we currently are on link: https://semver.org/ */
+    version?: string;
 };
 
 /**
