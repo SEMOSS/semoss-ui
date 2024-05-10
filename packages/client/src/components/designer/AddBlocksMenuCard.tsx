@@ -65,8 +65,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             return;
         }
 
-        console.log('hello');
-
         // ID of newly added block
         let id = '';
 

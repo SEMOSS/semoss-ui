@@ -75,6 +75,9 @@ export interface ListItemProps {
      */
     onClick?: React.MouseEventHandler<HTMLLIElement>;
     onMouseDown?: React.MouseEventHandler<HTMLLIElement>;
+    onHover?: React.MouseEventHandler<HTMLLIElement>;
+    onMouseOver?: React.MouseEventHandler<HTMLLIElement>;
+    onMouseLeave?: React.MouseEventHandler<HTMLLIElement>;
     onFocus?: React.FocusEventHandler<HTMLLIElement>;
     onBlur?: React.FocusEventHandler<HTMLLIElement>;
 }

@@ -9,7 +9,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
 import { Notebook } from '@/components/notebook';
 import { Designer } from '@/components/designer';
-import { Workspace, SettingsView } from '@/components/workspace';
+import { Workspace, Settings } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
@@ -136,7 +136,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 <StyledMain>
                     {workspace.view === 'design' ? <Designer /> : null}
                     {workspace.view === 'data' ? <Notebook /> : null}
-                    {workspace.view === 'settings' ? <SettingsView /> : null}
+                    {workspace.view === 'settings' ? <Settings /> : null}
                 </StyledMain>
             </Workspace>
         </Blocks>

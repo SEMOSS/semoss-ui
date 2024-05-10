@@ -128,6 +128,8 @@ export interface ButtonProps
     variant?: "text" | "outlined" | "contained";
     title?: string;
     disableRipple?: boolean;
+
+    component?: unknown;
 }
 
 export const Button = (props: ButtonProps) => {
