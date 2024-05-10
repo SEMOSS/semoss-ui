@@ -34,21 +34,21 @@ export const Help = observer((): JSX.Element => {
     return (
         <StyledContainer>
             <Button
+                // aria-controls={open ? 'help-menu' : undefined}
+                // aria-haspopup="true"
+                // aria-expanded={open ? 'true' : undefined}
                 id="help-btn"
                 variant="outlined"
                 startIcon={<HelpRounded />}
                 color="inherit"
-                aria-controls={open ? 'help-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
                 onClick={handleHelpClick}
                 size="small"
             >
                 Help
             </Button>
             <Menu
-                id="help-menu"
-                aria-labelledby="help-btn"
+                // id="help-menu"
+                // aria-labelledby="help-btn"
                 anchorEl={anchorEl}
                 open={open}
                 onClose={handleHelpClose}
