@@ -19,8 +19,12 @@ import { NotebookVariable } from './NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
 import { VARIABLE_TYPES } from '@/stores';
 
-const StyledTooltip = styled(Tooltip)(() => ({
-    fontWeight: 'bold',
+const StyledStack = styled(Stack)(() => ({
+    maxHeight: '100%',
+}));
+
+const StyledButton = styled(Button)(() => ({
+    width: '100px',
 }));
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -86,10 +90,11 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
         Object.entries(state.variables).length,
         filterWord,
         selectedFilter.length,
+        Object.values(state.variables),
     ]);
 
     return (
-        <Stack direction={'column'} sx={{ maxHeight: '100%' }} spacing={0}>
+        <StyledStack direction={'column'} spacing={0}>
             <StyledMenu>
                 <Stack spacing={2} padding={2}>
                     <Stack direction="row" justifyContent="space-between">
@@ -120,9 +125,8 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                     />
                 </Stack>
                 <Stack spacing={2} paddingLeft={2} paddingBottom={1}>
-                    <Button
+                    <StyledButton
                         color={'secondary'}
-                        sx={{ width: '100px' }}
                         onClick={(e) => {
                             setFilterAnchorEl(e.currentTarget);
                         }}
@@ -131,7 +135,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                             <FilterListRounded />
                             Types
                         </Stack>
-                    </Button>
+                    </StyledButton>
                     <Popover
                         id={'filter-variable-popover'}
                         open={isFilterPopoverOpen}
@@ -148,7 +152,6 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                                 onChange={(selected) => {
                                     setSelectedFilter(selected);
                                 }}
-                                sx={{}}
                             />
                         </StyledBox>
                     </Popover>
@@ -177,6 +180,6 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                     />
                 )}
             </StyledMenu>
-        </Stack>
+        </StyledStack>
     );
 });

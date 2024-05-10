@@ -17,6 +17,7 @@ import {
     SerializedState,
     Variable,
     VariableType,
+    VariableWithId,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -71,15 +72,8 @@ export class StateStore {
         cellRegistry: {},
 
         variables: {},
-        dependencies: {
-            // These are our LLMs, Databases, Storages
-            // I set the dependencies on my app detail page,
-            // we sorta need to make sure they are aliasing this dependency.
-            // 'model-randomid': 'modelid',
-            // 'database-randomid': 'dbid',
-            // 'string-randomid': 'i am a string',
-            // 'number-randomid': 50,
-        },
+        dependencies: {},
+        // Add Version
     };
 
     /**
@@ -321,14 +315,18 @@ export class StateStore {
             } else if (ActionMessages.ADD_VARIABLE === action.message) {
                 const { alias, to, type } = action.payload;
 
-                this.addToken(alias, to, type);
+                this.addVariable(alias, to, type);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
-                const { to, alias } = action.payload;
-                // TO DO: Does this work
-                this.renameVariable(to, alias);
+                const { id, alias } = action.payload;
+
+                this.renameVariable(id, alias);
+            } else if (ActionMessages.EDIT_VARIABLE === action.message) {
+                const { from, to } = action.payload;
+
+                this.editVariable(from, to);
             } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
-                // TO DO: Does this work
+
                 this.deleteVariable(id);
             } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
                 const { id, type } = action.payload;
@@ -1126,51 +1124,81 @@ export class StateStore {
         window.dispatchEvent(event);
     };
 
-    // ---------------------------------
+    // -----------------------------------
     // REVIEW VARIABLE AND DEPENDENCY CODE
-    // ---------------------------------
+    // -----------------------------------
     /**
      * Adds to variable that can be referenced
      * @param alias - referenced as
      * @param to - points to
      * @param type - type of variable
      */
-    private addToken = (alias, to, type) => {
-        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+    private addVariable = (alias: string, to: string, type: VariableType) => {
+        let id = `${Math.floor(Math.random() * 10000)}`;
+        let uniq = false;
 
-        // TODO: Get unique ID and verify that it is a unique alias
+        while (!uniq) {
+            id = `${Math.floor(Math.random() * 10000)}`;
+            if (!this._store.variables[id]) {
+                uniq = true;
+            }
+        }
+
         const token: Variable = {
             alias,
             to,
             type,
         };
 
-        this._store.variables[to] = token;
+        this._store.variables[id] = token;
     };
 
     /**
-     * Adds to tokens that can be referenced
+     * Renames variable that can be referenced
      * @param alias - referenced as
      * @param to - points to
      * @param type - type of token
      */
-    private renameVariable = (to, alias) => {
-        this._store.variables[to].alias = alias;
+    private renameVariable = (id: string, alias: string) => {
+        this._store.variables[id].alias = alias;
     };
 
     /**
-     * Deletes token that can be referenced
+     * Replace old variable and remove old dependency
+     * @param from
+     * @param to
+     */
+    private editVariable = (oldVar: VariableWithId, newVar: Variable) => {
+        if (this._store.dependencies[oldVar.to]) {
+            console.log('----------------------------');
+            console.log('remove old engine dependency');
+            console.log('----------------------------');
+            delete this._store.dependencies[oldVar.to];
+        }
+
+        this._store.variables[oldVar.id] = newVar;
+    };
+
+    /**
+     * Deletes variable and corresponding dependency that can be referenced
      * @param id - id to delete
      */
-    private deleteVariable = (id) => {
-        // Do i need to go throygh everything and delete variable
+    private deleteVariable = (id: string) => {
+        const variable = this._store.variables[id];
+        if (
+            variable.type !== 'block' &&
+            variable.type !== 'query' &&
+            variable.type !== 'cell'
+        ) {
+            delete this._store.dependencies[variable.to];
+        }
         delete this._store.variables[id];
     };
 
     /**
      * Adds a constant/dependency to use as a token
      * @param value can be an engine id, string, number, date, and etc
-     * @param type - what type of dependency, Model, Database, String, Date, Number
+     * @param type - what type of dependency - Model, Database, String, Date, Number
      * @returns id of newly added dependency for token value
      */
     private addDependency = (value: unknown, type: string) => {

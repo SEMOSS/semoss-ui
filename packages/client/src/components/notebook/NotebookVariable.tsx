@@ -77,6 +77,15 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.error.main,
 }));
 
+const StyledAnchorSpan = styled('span')(({ theme }) => ({
+    position: 'absolute',
+    left: 100,
+}));
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+    width: '80%',
+}));
+
 interface NotebookTokenProps {
     /** Id of the variable */
     id: string;
@@ -120,7 +129,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
     return (
         <StyledListItem
-            sx={{}}
             key={variable.alias}
             secondaryAction={
                 <>
@@ -130,13 +138,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                         alignItems="center"
                         paddingY="8px"
                     >
-                        {/* <Button
-                            onClick={(e) => {
-                                setPopoverAnchorEl(e.currentTarget);
-                            }}
-                        >
-                            hshs
-                        </Button> */}
                         <IconButton
                             onClick={() => {
                                 copyAlias(variable.alias);
@@ -154,7 +155,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                         >
                             <MoreVert />
                         </IconButton>
-                        <span ref={spanRef} />
+                        <StyledAnchorSpan ref={spanRef} />
                         <Menu
                             anchorEl={anchorEl}
                             open={Boolean(anchorEl)}
@@ -163,7 +164,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                             }}
                         >
                             <Menu.Item
-                                value="Delete"
+                                value="Edit"
                                 onClick={(e) => {
                                     setPopoverAnchorEl(spanRef.current);
                                     setAnchorEl(null);
@@ -245,11 +246,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         </Typography>
                                     </StyledPointerStack>
                                 ) : (
-                                    <Stack
-                                        spacing={1}
-                                        direction="column"
-                                        sx={{ width: '80%' }}
-                                    >
+                                    <StyledStack spacing={1} direction="column">
                                         <TextField
                                             inputRef={(input) =>
                                                 input && input.focus()
@@ -282,7 +279,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                         message:
                                                             ActionMessages.RENAME_VARIABLE,
                                                         payload: {
-                                                            to: variable.to,
+                                                            id: id,
                                                             alias: newTokenAlias,
                                                         },
                                                     });
@@ -306,7 +303,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         <StyledLinearProgress
                                             color={'warning'}
                                         />
-                                    </Stack>
+                                    </StyledStack>
                                 )}
                                 {isPopoverOpen && (
                                     <div
@@ -320,7 +317,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         }}
                                     >
                                         <AddVariableModal
-                                            variable={variable}
+                                            variable={{
+                                                ...variable,
+                                                id: id,
+                                            }}
                                             open={isPopoverOpen}
                                             anchorEl={popoverAnchorEle}
                                             onClose={() => {

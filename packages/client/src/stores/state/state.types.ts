@@ -41,6 +41,11 @@ export type Variable = {
     type: VariableType;
 };
 
+// John merge with this, dont be lazy..... ^
+export interface VariableWithId extends Variable {
+    id: string;
+}
+
 /**
  * Block
  */

@@ -2,7 +2,9 @@ import {
     BlockJSON,
     ListenerActions,
     SerializedState,
+    Variable,
     VariableType,
+    VariableWithId,
 } from './state.types';
 import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
@@ -27,6 +29,7 @@ export enum ActionMessages {
     DISPATCH_EVENT = 'DISPATCH_EVENT',
     ADD_VARIABLE = 'ADD_VARIABLE',
     RENAME_VARIABLE = 'RENAME_VARIABLE',
+    EDIT_VARIABLE = 'EDIT_VARIABLE',
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
 }
@@ -50,6 +53,7 @@ export type Actions =
     | DispatchEventAction
     | AddVariableAction
     | RenameVariableAction
+    | EditVariableAction
     | DeleteVariableAction
     | AddDependencyAction;
 
@@ -218,19 +222,31 @@ export interface DispatchEventAction extends Action {
     };
 }
 
+export interface AddDependencyAction extends Action {
+    message: ActionMessages.ADD_DEPENDENCY;
+    payload: {
+        id: string;
+        type: VariableType;
+    };
+}
+
 export interface AddVariableAction extends Action {
     message: ActionMessages.ADD_VARIABLE;
+    payload: Variable;
+}
+
+export interface EditVariableAction extends Action {
+    message: ActionMessages.EDIT_VARIABLE;
     payload: {
-        alias: string;
-        to: string;
-        type: VariableType;
+        from: VariableWithId;
+        to: Variable;
     };
 }
 
 export interface RenameVariableAction extends Action {
     message: ActionMessages.RENAME_VARIABLE;
     payload: {
-        to: string;
+        id: string;
         alias: string;
     };
 }
@@ -239,13 +255,5 @@ export interface DeleteVariableAction extends Action {
     message: ActionMessages.DELETE_VARIABLE;
     payload: {
         id: string;
-    };
-}
-
-export interface AddDependencyAction extends Action {
-    message: ActionMessages.ADD_DEPENDENCY;
-    payload: {
-        id: string;
-        type: VariableType;
     };
 }
