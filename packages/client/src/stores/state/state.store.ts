@@ -199,6 +199,8 @@ export class StateStore {
             // Get Blocks Data (what we realistically want)
             const block = this.getBlock(pointer);
 
+            debugger;
+
             // TO DO: Genericize this, is it always.value
             return block.data.value as string;
         } else if (type === 'query') {

@@ -9,7 +9,7 @@ import { UploadBlockDef, UploadBlock } from './UploadBlock';
 import { Upload } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
-
+import { UploadSettings } from '@/components/block-settings/shared/UploadSettings';
 export const DefaultStyles: CSSProperties = {
     width: '100%',
     padding: '4px',
@@ -41,11 +41,7 @@ export const config: BlockConfig<UploadBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputModalSettings
-                            id={id}
-                            label="Value"
-                            path="value"
-                        />
+                        <UploadSettings id={id} label="Value" path={'value'} />
                     ),
                 },
                 {
