@@ -76,7 +76,7 @@ export class StateStore {
         blocks: {},
         cellRegistry: {},
         variables: {},
-        dependencies: {},
+        dependencies: {}, // Maher said change to constants
     };
 
     /**
@@ -1143,11 +1143,11 @@ export class StateStore {
      * @param type - type of variable
      */
     private addVariable = (alias: string, to: string, type: VariableType) => {
-        let id = `${Math.floor(Math.random() * 10000)}`;
+        let id = `variable--${Math.floor(Math.random() * 10000)}`;
         let uniq = false;
 
         while (!uniq) {
-            id = `${Math.floor(Math.random() * 10000)}`;
+            id = `variable--${Math.floor(Math.random() * 10000)}`;
             if (!this._store.variables[id]) {
                 uniq = true;
             }
