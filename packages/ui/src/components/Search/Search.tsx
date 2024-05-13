@@ -16,6 +16,8 @@ export const Search = (props: SearchFieldProps) => {
         return searchValue.length > 0;
     }, [props?.value]);
 
+    alert("Search > TextField");
+
     return (
         <TextField
             variant="outlined"
