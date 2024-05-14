@@ -13,7 +13,7 @@ import {
     Select,
 } from '@semoss/ui';
 
-import { useBlocks } from '@/hooks';
+import { useBlocks, usePixel } from '@/hooks';
 import {
     ActionMessages,
     CellStateConfig,
@@ -43,6 +43,16 @@ import {
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
+
+const StyledModalTitle = styled(Typography)(({ theme }) => ({
+    alignContent: 'center',
+    marginRight: '15px',
+}));
+
+const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
+    display: 'flex',
+    alignContent: 'center',
+}));
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -182,22 +192,24 @@ export const NotebookAddCell = observer(
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const [selectedAddCell, setSelectedAddCell] = useState<string>('');
         const [importModalType, setImportModalType] = useState<string>('');
-        const [isOpenDataImportModal, setIsOpenDataImportModal] =
+        const [isDataImportModalOpen, setIsDataImportModalOpen] =
             useState<boolean>(false);
-        // const [isOpenImportDataOptions, setIsOpenImportDataOptions] = useState<Boolean>(false);
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
         const { control, handleSubmit, reset, watch, setValue, getValues } =
             useForm();
+        const [userDatabases, setUserDatabases] = useState(null);
+
+        const getDatabases = usePixel('META | GetDatabaseList ( ) ;');
 
         useEffect(() => {
-            console.log({
-                anchorEl,
-                type: typeof anchorEl,
-            });
-        }, [anchorEl]);
+            if (getDatabases.status !== 'SUCCESS') {
+                return;
+            }
+            setUserDatabases(getDatabases.data);
+        }, [getDatabases.status, getDatabases.data]);
 
         // const cellTypeOptions = computed(() => {
         //     const options = { ...AddCellOptions };
@@ -347,17 +359,6 @@ export const NotebookAddCell = observer(
 
                     {selectedAddCell === 'import-data' && (
                         <>
-                            {/* <Typography
-                                variant="subtitle1"
-                                sx={{
-                                    paddingLeft: '15px',
-                                    paddingTop: '5px',
-                                    paddingBottom: '5px',
-                                    fontWeight: '600',
-                                }}
-                            >
-                                Import Data
-                            </Typography> */}
                             {Array.from(
                                 AddCellOptions[selectedAddCell]?.options || [],
                                 ({ display }, index) => {
@@ -367,14 +368,14 @@ export const NotebookAddCell = observer(
                                             value={display}
                                             disabled={display == 'From CSV'} // temporary
                                             onClick={() => {
-                                                setIsOpenDataImportModal(true);
+                                                setIsDataImportModalOpen(true);
                                                 if (
                                                     display ==
                                                     'From Data Catalog'
                                                 ) {
                                                     setImportModalType(display);
                                                 } else {
-                                                    // open seperate modal for From CSV?
+                                                    // open seperate modal / form for From CSV
                                                 }
                                                 setAnchorEl(null);
                                             }}
@@ -389,40 +390,37 @@ export const NotebookAddCell = observer(
                 </StyledMenu>
 
                 {/* Import Data Modal */}
-                <Modal open={isOpenDataImportModal}>
+                <Modal open={isDataImportModalOpen} fullWidth>
                     <form onSubmit={handleSubmit(onSubmit)}>
-                        <Stack
-                        // rowGap={2}
-                        // spacing={1}
-                        // direction="row"
-                        >
-                            <Modal.Title>
-                                Import Data
+                        <Stack>
+                            <StyledModalTitleWrapper>
+                                <StyledModalTitle variant="h6">
+                                    Import Data
+                                </StyledModalTitle>
                                 <Controller
-                                    name={'Test Name'}
+                                    name={'Select Database'}
                                     control={control}
-                                    // rules={null}
-                                    render={() => (
+                                    render={({ field }) => (
                                         <Select
-                                            onChange={(e) => {
-                                                const newValue = e.target.value;
-                                                console.log({ newValue });
+                                            onChange={(e) =>
+                                                field.onChange(e.target.value)
+                                            }
+                                            label={'Select Database...'}
+                                            value={field.value || null}
+                                            size={'small'}
+                                            sx={{
+                                                minWidth: '220px',
                                             }}
-                                            // helperText={"Select Database..."}
                                         >
-                                            <Menu.Item value={'test-1'}>
-                                                test 1
-                                            </Menu.Item>
-                                            <Menu.Item value={'test-2'}>
-                                                test 2
-                                            </Menu.Item>
-                                            <Menu.Item value={'test-3'}>
-                                                test 3
-                                            </Menu.Item>
+                                            {userDatabases?.map((ele) => (
+                                                <Menu.Item value={ele.app_name}>
+                                                    {ele.app_name}
+                                                </Menu.Item>
+                                            ))}
                                         </Select>
                                     )}
                                 />
-                            </Modal.Title>
+                            </StyledModalTitleWrapper>
                             <Modal.Content>{`[modal content]`}</Modal.Content>
                             <Modal.Actions>
                                 <Button
@@ -430,7 +428,7 @@ export const NotebookAddCell = observer(
                                     variant="text"
                                     color="secondary"
                                     onClick={() =>
-                                        setIsOpenDataImportModal(false)
+                                        setIsDataImportModalOpen(false)
                                     }
                                 >
                                     Cancel
@@ -443,14 +441,6 @@ export const NotebookAddCell = observer(
                                     Import
                                 </Button>
                             </Modal.Actions>
-                            {/* 
-                            <label>Import Data</label>
-                            <select>
-                                <option>test 1</option>
-                                <option>test 2</option>
-                                <option>test 3</option>
-                            </select>
-                             */}
                         </Stack>
                     </form>
                 </Modal>
