@@ -681,6 +681,17 @@ export const EngineCatalogPage = observer(
                                 </Button>
                             </Stack>
                         </Stack>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                            spacing={4}
+                            sx={{ paddingTop: '10px' }}
+                        >
+                            <Typography variant={'subtitle1'}>
+                                {route ? route.description : ''}
+                            </Typography>
+                        </Stack>
                     </Stack>
                 }
             >
