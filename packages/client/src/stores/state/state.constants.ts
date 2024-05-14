@@ -9,10 +9,24 @@ import {
     UploadBlockConfig,
 } from '@/components/block-defaults';
 
-import HELLOWORLD from '@/assets/img/helloworld.jpeg';
 import QUERY from '@/assets/img/query.jpeg';
 import CHATAI from '@/assets/img/chatai.jpeg';
 import LANDINGPAGE from '@/assets/img/LandingPage.jpeg';
+
+export const STATE_STORE_CURRENT_VERSION = '1.0.0-alpha';
+
+export const VARIABLE_TYPES = [
+    'block',
+    'cell',
+    'query',
+    'string',
+    'number',
+    'database',
+    'model',
+    'vector',
+    'storage',
+    'function',
+];
 
 export const ACTIONS_DISPLAY = {
     [ActionMessages.RUN_QUERY]: 'Run Query',
@@ -20,66 +34,6 @@ export const ACTIONS_DISPLAY = {
 };
 
 export const DEFAULT_TEMPLATE: Template[] = [
-    // {
-    //     name: 'Hello World',
-    //     description: 'A simple starter app',
-    //     image: HELLOWORLD,
-    //     author: 'SYSTEM',
-    //     lastUpdatedDate: new Date().toISOString(),
-    //     tags: [],
-    //     state: {
-    //         queries: {},
-    //         blocks: {
-    //             'page-1': {
-    //                 id: 'page-1',
-    //                 widget: 'page',
-    //                 parent: null,
-    //                 data: {
-    //                     style: PageBlockConfig.data.style,
-    //                 },
-    //                 listeners: {},
-    //                 slots: {
-    //                     content: {
-    //                         name: 'content',
-    //                         children: ['container-1'],
-    //                     },
-    //                 },
-    //             },
-    //             'container-1': {
-    //                 id: 'container-1',
-    //                 widget: 'container',
-    //                 parent: {
-    //                     id: 'page-1',
-    //                     slot: 'content',
-    //                 },
-    //                 data: {
-    //                     style: ContainerBlockConfig.data.style,
-    //                 },
-    //                 listeners: {},
-    //                 slots: {
-    //                     children: {
-    //                         name: 'children',
-    //                         children: ['text-1'],
-    //                     },
-    //                 },
-    //             },
-    //             'text-1': {
-    //                 id: 'text-1',
-    //                 widget: 'text',
-    //                 parent: {
-    //                     id: 'container-1',
-    //                     slot: 'children',
-    //                 },
-    //                 data: {
-    //                     style: TextBlockConfig.data.style,
-    //                     text: 'Hello World',
-    //                 },
-    //                 listeners: {},
-    //                 slots: {},
-    //             },
-    //         },
-    //     },
-    // },
     {
         name: 'Landing Page',
         description: 'A simple starter landing page with navigation cards',
@@ -88,6 +42,8 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: [],
         state: {
+            dependencies: {},
+            variables: {},
             queries: {},
             blocks: {
                 'text--584': {
@@ -982,6 +938,8 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: [],
         state: {
+            variables: {},
+            dependencies: {},
             queries: {
                 MyProjects: {
                     id: 'MyProjects',
@@ -3783,6 +3741,14 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: ['LLM'],
         state: {
+            variables: {
+                '1000': {
+                    alias: 'question',
+                    to: 'question',
+                    type: 'block',
+                },
+            },
+            dependencies: {},
             queries: {
                 ['ask-llm']: {
                     id: 'ask-llm',
@@ -3793,7 +3759,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             parameters: {
                                 type: 'pixel',
                                 // Do we want to replace hardcoded LLM to a user default
-                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
+                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=[{{question}}]);`,
                             },
                         },
                     ],
@@ -3961,6 +3927,19 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: ['NLP', 'SQL', 'LLM'],
         state: {
+            dependencies: {},
+            variables: {
+                '1000': {
+                    alias: 'file',
+                    to: 'file',
+                    type: 'block',
+                },
+                '1001': {
+                    alias: 'question',
+                    to: 'question',
+                    type: 'block',
+                },
+            },
             queries: {
                 ['ask-model']: {
                     id: 'ask-model',
@@ -3970,7 +3949,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `FileRead ( filePath = [ "{{block.file.value}}" ], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
+                                code: `FileRead ( filePath = [{{file}}], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
                             },
                         },
                         {
@@ -3978,8 +3957,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                // Do we want to replace hardcoded LLM to a user default
-                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
+                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=[{{block.question.value}}]);`,
                             },
                         },
                     ],

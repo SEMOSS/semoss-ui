@@ -9,11 +9,10 @@ import {
 
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 
-import { NotebookQueriesMenu } from './NotebookQueriesMenu';
-import { NotebookTransformMenu } from './NotebookTransformMenu';
+import { NotebookVariablesMenu } from './NotebookVariablesMenu';
 import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
-import { NotebookBlocksMenu } from './NotebookBlocksMenu';
+import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
 import { usePixel } from '@/hooks';
 
@@ -46,8 +45,8 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'queries' | 'catalog' | 'blocks' | 'transform' | ''
-    >('queries');
+        'variables' | 'sources' | 'blocks' | 'transform' | ''
+    >('variables');
 
     /**
      * Set the view. If it is the same, close it
@@ -92,50 +91,18 @@ export const Notebook = observer(() => {
         <StyledNotebook>
             <Sidebar>
                 <SidebarItem
-                    selected={view === 'queries'}
-                    onClick={() => updateView('queries')}
+                    selected={view === 'variables'}
+                    onClick={() => updateView('variables')}
                 >
                     <Tooltip title={'Add'} placement="right">
                         <Layers color="inherit" />
                     </Tooltip>
-                    <SidebarText>Queries</SidebarText>
-                </SidebarItem>
-                <SidebarItem
-                    disabled={true}
-                    selected={view === 'transform'}
-                    onClick={() => updateView('transform')}
-                >
-                    <Tooltip title={'Transform'} placement="right">
-                        <DashboardCustomizeRounded color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Transform</SidebarText>
-                </SidebarItem>
-                <SidebarItem
-                    disabled={true}
-                    selected={view === 'catalog'}
-                    onClick={() => updateView('catalog')}
-                >
-                    <Tooltip title={'Catalog'} placement="right">
-                        <DataArrayRounded color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Catalog</SidebarText>
-                </SidebarItem>
-                <SidebarItem
-                    selected={view === 'blocks'}
-                    onClick={() => updateView('blocks')}
-                >
-                    <Tooltip title={'Blocks'} placement="right">
-                        <SwipeRightAltRounded color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Blocks</SidebarText>
+                    <SidebarText>Variables</SidebarText>
                 </SidebarItem>
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
-                    {view === 'queries' ? <NotebookQueriesMenu /> : null}
-                    {view === 'transform' ? <NotebookTransformMenu /> : null}
-                    {view === 'blocks' ? <NotebookBlocksMenu /> : null}
-                    {view === 'catalog' ? <div>Blocks</div> : null}
+                    {view === 'variables' ? <NotebookVariablesMenu /> : null}
                 </StyledLeftPanel>
             ) : null}
 
@@ -149,6 +116,7 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
+                    <NotebookSheetsMenu />
                     <NotebookSheet />
                 </LLMContext.Provider>
             </StyledRightPanel>

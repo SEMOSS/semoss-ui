@@ -228,6 +228,8 @@ export const NewAppPage = () => {
                                             setNewAppOptions({
                                                 type: 'blocks',
                                                 state: {
+                                                    dependencies: {},
+                                                    variables: {},
                                                     queries: {},
                                                     blocks: BASE_PAGE_BLOCKS,
                                                 },

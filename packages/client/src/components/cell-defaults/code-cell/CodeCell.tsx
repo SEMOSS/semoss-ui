@@ -499,22 +499,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         return isExpanded ? editorHeight : EditorLineHeight;
     };
 
-    const c1 = cell.parameters.code;
-    const c2 =
-        'j = 6\r\n\r\n# prints block token --- Good\r\nprint("UI COMPONENT 1: " + {{tellmeajoke}})\r\nprint("UI COMPONENT 2: " + {{anotherjoke}})';
-
-    const c3 = [
-        'j = 6',
-        '# prints block token --- Good',
-        'print("UI COMPONENT 1: " + {{tellmeajoke}})',
-        'print("UI COMPONENT 2: " + {{anotherjoke}})',
-    ].join('\n');
-
-    console.log('c1', c1);
-    console.log('c2', c2);
-    console.log('c3', c3);
-    console.log('-----------------');
-    console.log(cell.parameters.code);
     return (
         <StyledContent>
             {LLMLoading && (
@@ -536,6 +520,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     : cell.parameters.code.join('\n')
                             }
                             options={{
+                                scrollbar: { alwaysConsumeMouseWheel: false },
                                 lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },
@@ -609,6 +594,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     : cell.parameters.code.join('\n')
                             }
                             options={{
+                                scrollbar: { alwaysConsumeMouseWheel: false },
                                 lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },

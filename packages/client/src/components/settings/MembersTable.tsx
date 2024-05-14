@@ -35,6 +35,7 @@ import { LoadingScreen } from '@/components/ui';
 import { SETTINGS_MODE, SETTINGS_ROLE } from './settings.types';
 
 import { PERMISSION_DESCRIPTION_MAP } from './member-permissions.constants';
+import { TextField } from '@mui/material';
 
 const colors = [
     '#22A4FF',
@@ -186,6 +187,75 @@ const StyledCheckbox = styled(Checkbox)({
     paddingBottom: '0px',
 });
 
+const StyledModalContentText = styled(Modal.ContentText)({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '.5rem',
+    marginTop: '12px',
+});
+
+const StyledCardHeader = styled(Card.Header)({
+    color: '#000',
+    width: '100%',
+});
+
+const StyledIconButton = styled(IconButton)({
+    marginTop: '16px',
+    color: 'rgba(0, 0, 0, 0.7)',
+    marginRight: '24px',
+});
+
+const StyledOuterBox = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'userLength',
+})<{
+    userLength: number;
+}>(({ userLength }) => ({
+    maxHeight: userLength > 2 ? '300px' : 'auto',
+    overflow: 'auto',
+    transition: 'max-height 0.3s ease',
+}));
+
+const StyledFlexBox = styled(Box, {
+    shouldForwardProp: (prop) => prop !== 'index',
+})<{
+    index: number;
+}>(({ index }) => ({
+    display: 'flex',
+    justifyContent: 'left',
+    alignItems: 'center',
+    backgroundColor: index % 2 !== 0 ? 'rgba(0, 0, 0, 0.03)' : 'transparent',
+}));
+
+const StyledCenterBox = styled(Box)({
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '6px',
+    marginLeft: '8px',
+    marginRight: '8px',
+});
+
+const StyledAvatarBox = styled(Box)({
+    display: 'flex',
+    height: '80px',
+    width: '80px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    border: '0.5px solid rgba(0, 0, 0, 0.05)',
+    borderRadius: '50%',
+});
+
+const StyledUserAvatar = styled(Avatar, {
+    shouldForwardProp: (prop) => prop !== 'userColor',
+})<{
+    userColor: string;
+}>(({ userColor }) => ({
+    display: 'flex',
+    width: '60px',
+    height: '60px',
+    fontSize: '24px',
+    backgroundColor: userColor,
+}));
+
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -210,13 +280,6 @@ interface Member {
     OG_PERMISSION?: string;
     CONFIRM_DELETE?: boolean;
 }
-
-const StyledModalContentText = styled(Modal.ContentText)({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '.5rem',
-    marginTop: '12px',
-});
 
 interface MembersTableProps {
     /**
@@ -1256,134 +1319,99 @@ export const MembersTable = (props: MembersTableProps) => {
                             onChange={(event, newValue: any) => {
                                 setSelectedNonCredentialedUsers([...newValue]);
                             }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    variant="outlined"
+                                    placeholder="Search users"
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        value: '',
+                                        startAdornment: null,
+                                    }}
+                                />
+                            )}
                         />
-
-                        {selectedNonCredentialedUsers &&
-                            selectedNonCredentialedUsers.map((user, idx) => {
-                                const space = user.name.indexOf(' ');
-                                const initial = user.name
-                                    ? space > -1
-                                        ? `${user.name[0].toUpperCase()}${user.name[
-                                              space + 1
-                                          ].toUpperCase()}`
-                                        : user.name[0].toUpperCase()
-                                    : user.id[0].toUpperCase();
-                                return (
-                                    <Box
-                                        key={idx}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'left',
-                                            align: 'center',
-                                            backgroundColor:
-                                                idx % 2 !== 0
-                                                    ? 'rgba(0, 0, 0, .03)'
-                                                    : '',
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                marginTop: '6px',
-                                                marginLeft: '8px',
-                                                marginRight: '8px',
-                                            }}
-                                        >
+                        <StyledOuterBox
+                            userLength={selectedNonCredentialedUsers.length}
+                        >
+                            {selectedNonCredentialedUsers.map((user, idx) => (
+                                <StyledFlexBox key={idx} index={idx}>
+                                    <StyledCenterBox>
+                                        <StyledAvatarBox>
+                                            <StyledUserAvatar
+                                                userColor={user.color}
+                                            >
+                                                {user.name[0].toUpperCase() +
+                                                    (user.name.indexOf(' ') > -1
+                                                        ? user.name[
+                                                              user.name.indexOf(
+                                                                  ' ',
+                                                              ) + 1
+                                                          ].toUpperCase()
+                                                        : '')}
+                                            </StyledUserAvatar>
+                                        </StyledAvatarBox>
+                                    </StyledCenterBox>
+                                    <StyledCardHeader
+                                        title={
+                                            <Typography variant="h5">
+                                                {user.name}
+                                            </Typography>
+                                        }
+                                        subheader={
                                             <Box
                                                 sx={{
                                                     display: 'flex',
-                                                    height: '80px',
-                                                    width: '80px',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                    borderRadius: '50%',
+                                                    gap: 2,
+                                                    marginTop: '4px',
                                                 }}
                                             >
-                                                <Avatar
-                                                    aria-label="avatar"
-                                                    sx={{
-                                                        display: 'flex',
-                                                        width: '60px',
-                                                        height: '60px',
-                                                        fontSize: '24px',
-                                                        backgroundColor:
-                                                            user.color,
+                                                <span
+                                                    style={{
+                                                        opacity: 0.9,
+                                                        fontSize: '14px',
                                                     }}
                                                 >
-                                                    {initial}
-                                                </Avatar>
-                                            </Box>
-                                        </Box>
-                                        <Card.Header
-                                            title={
-                                                <Typography variant="h5">
-                                                    {user.name}
-                                                </Typography>
-                                            }
-                                            sx={{
-                                                color: '#000',
-                                                width: '100%',
-                                            }}
-                                            subheader={
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        gap: 2,
-                                                        marginTop: '4px',
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            opacity: 0.9,
-                                                            fontSize: '14px',
-                                                        }}
+                                                    {`User ID: `}
+                                                    <Chip
+                                                        label={user.id}
+                                                        size="small"
+                                                    />
+                                                </span>
+                                                {`• `}
+                                                <span>
+                                                    {`Email: `}
+                                                    <Link
+                                                        href={`mailto:${user.email}`}
+                                                        underline="none"
                                                     >
-                                                        {`User ID: `}
-                                                        <Chip
-                                                            label={user.id}
-                                                            size="small"
-                                                        />
-                                                    </span>
-                                                    {`• `}
-                                                    <span>
-                                                        {`Email: `}
-                                                        <Link
-                                                            href={`mailto:${user.email}`}
-                                                            underline="none"
-                                                        >
-                                                            {user.email}
-                                                        </Link>
-                                                    </span>
-                                                </Box>
-                                            }
-                                            action={
-                                                <IconButton
-                                                    sx={{
-                                                        mt: '16px',
-                                                        color: 'rgba( 0, 0, 0, .7)',
-                                                        mr: '24px',
-                                                    }}
-                                                    onClick={() => {
-                                                        const filtered =
-                                                            selectedNonCredentialedUsers.filter(
-                                                                (val) =>
-                                                                    val.id !==
-                                                                    user.id,
-                                                            );
-                                                        setSelectedNonCredentialedUsers(
-                                                            filtered,
+                                                        {user.email}
+                                                    </Link>
+                                                </span>
+                                            </Box>
+                                        }
+                                        action={
+                                            <StyledIconButton
+                                                onClick={() => {
+                                                    const filtered =
+                                                        selectedNonCredentialedUsers.filter(
+                                                            (val) =>
+                                                                val.id !==
+                                                                user.id,
                                                         );
-                                                    }}
-                                                >
-                                                    <ClearRounded />
-                                                </IconButton>
-                                            }
-                                        />
-                                    </Box>
-                                );
-                            })}
+                                                    setSelectedNonCredentialedUsers(
+                                                        filtered,
+                                                    );
+                                                }}
+                                            >
+                                                <ClearRounded />
+                                            </StyledIconButton>
+                                        }
+                                    />
+                                </StyledFlexBox>
+                            ))}
+                        </StyledOuterBox>
 
                         <Typography
                             variant="subtitle1"
@@ -1414,7 +1442,7 @@ export const MembersTable = (props: MembersTableProps) => {
                             >
                                 <Stack spacing={1}>
                                     <StyledCard>
-                                        <Card.Header
+                                        <StyledCardHeader
                                             title={
                                                 <Box
                                                     sx={{
