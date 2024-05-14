@@ -10,35 +10,44 @@ export type SerializedState = {
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 
-    /** Tokens used in notebook */
-    tokens: Record<string, Token>;
+    /** Variables used in notebook */
+    variables: Record<string, Variable>;
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
+
+    /** What version the state store we currently are on link: https://semver.org/ */
+    version?: string;
 };
 
 /**
- * Token Types
+ * Variable Types
  */
-export type TokenType =
-    | 'block'
-    | 'cell' // Needed for UI not in notebook
+export type VariableType =
+    | 'block' // X
+    | 'cell'
+    | 'query'
     | 'string'
     | 'number'
-    | 'database'
-    | 'model'
-    | 'vector'
-    | 'storage'
-    | 'function';
+    | 'database' // X
+    | 'model' // X
+    | 'vector' // X
+    | 'storage' // X
+    | 'function'; // X
 
 /**
- * Tokens
+ * Variables
  */
-export type Token = {
+export type Variable = {
     alias: string;
     to: string;
-    type: TokenType;
+    type: VariableType;
 };
+
+// John merge with this, dont be lazy..... ^
+export interface VariableWithId extends Variable {
+    id: string;
+}
 
 /**
  * Block

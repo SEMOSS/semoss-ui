@@ -18,6 +18,7 @@ export * from "./components/Button";
 export * from "./components/ButtonGroup";
 export * from "./components/Card";
 export * from "./components/Checkbox";
+export * from "./components/Checklist";
 export * from "./components/Chip";
 export * from "./components/CircularProgress";
 export * from "./components/Collapse";

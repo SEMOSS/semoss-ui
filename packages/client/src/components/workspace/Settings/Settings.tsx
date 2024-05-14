@@ -101,6 +101,7 @@ export const Settings = observer(() => {
                 <SidebarItem
                     selected={view === 'testing'}
                     onClick={() => updateView('testing')}
+                    disabled={true}
                 >
                     <Tooltip title="Testing" placement="right">
                         <ModelTraining color="inherit" />

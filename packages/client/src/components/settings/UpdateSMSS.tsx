@@ -72,22 +72,31 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
      * @desc hit endpoint to update smss file
      */
     const updateSMSSProperties = () => {
-        monolithStore.updateDatabaseSmssProperties(id, value).then((resp) => {
-            const { data } = resp;
-            if (data.success) {
-                setReadOnly(true);
-                setInitialValue(value);
-                notification.add({
-                    color: 'success',
-                    message: `Successfully updated SMSS Properties`,
-                });
-            } else {
+        monolithStore
+            .updateDatabaseSmssProperties(id, value)
+            .then((resp) => {
+                const { data } = resp;
+
+                if (data.success) {
+                    setReadOnly(true);
+                    setInitialValue(value);
+                    notification.add({
+                        color: 'success',
+                        message: `Successfully updated SMSS Properties`,
+                    });
+                } else {
+                    notification.add({
+                        color: 'error',
+                        message: `Unable to update SMSS Properties for`,
+                    });
+                }
+            })
+            .catch((error) => {
                 notification.add({
                     color: 'error',
-                    message: `Unable to update SMSS Properties for`,
+                    message: ` ${error}: Unable to update SMSS Properties`,
                 });
-            }
-        });
+            });
     };
 
     return (

@@ -46,7 +46,7 @@ export interface CodeCellDef extends CellDef<'code'> {
         type: 'r' | 'py' | 'pixel';
 
         /** Code rendered in the cell */
-        code: string;
+        code: string | string[];
     };
 }
 
@@ -514,8 +514,13 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
-                            value={cell.parameters.code}
+                            value={
+                                typeof cell.parameters.code === 'string'
+                                    ? cell.parameters.code
+                                    : cell.parameters.code.join('\n')
+                            }
                             options={{
+                                scrollbar: { alwaysConsumeMouseWheel: false },
                                 lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },
@@ -583,8 +588,13 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             language={
                                 EDITOR_TYPE[cell.parameters.type].language
                             }
-                            value={cell.parameters.code}
+                            value={
+                                typeof cell.parameters.code === 'string'
+                                    ? cell.parameters.code
+                                    : cell.parameters.code.join('\n')
+                            }
                             options={{
+                                scrollbar: { alwaysConsumeMouseWheel: false },
                                 lineNumbers: 'on',
                                 readOnly: false,
                                 minimap: { enabled: false },

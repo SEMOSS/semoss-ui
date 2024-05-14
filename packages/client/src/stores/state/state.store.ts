@@ -15,11 +15,14 @@ import {
     CellRegistry,
     ListenerActions,
     SerializedState,
-    Token,
-    TokenType,
+    Variable,
+    VariableType,
+    VariableWithId,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
+import { splitAtPeriod } from '@/utility';
+import { STATE_STORE_CURRENT_VERSION } from './state.constants';
 
 interface StateStoreInterface {
     /** Mode */
@@ -29,7 +32,7 @@ interface StateStoreInterface {
     insightId: string;
 
     /** token to reference (blocks, cells, dependencies) */
-    tokens: Record<string, Token>;
+    variables: Record<string, Variable>;
 
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
@@ -42,6 +45,9 @@ interface StateStoreInterface {
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
+
+    /** What version the state store we currently are on link: https://semver.org/ */
+    version: string;
 }
 
 export class StateStoreConfig {
@@ -65,20 +71,12 @@ export class StateStore {
     private _store: StateStoreInterface = {
         mode: 'interactive',
         insightId: '',
+        version: '',
         queries: {},
         blocks: {},
         cellRegistry: {},
-
-        tokens: {},
-        dependencies: {
-            // These are our LLMs, Databases, Storages
-            // I set the dependencies on my app detail page,
-            // we sorta need to make sure they are aliasing this dependency.
-            // 'model-randomid': 'modelid',
-            // 'database-randomid': 'dbid',
-            // 'string-randomid': 'i am a string',
-            // 'number-randomid': 50,
-        },
+        variables: {},
+        dependencies: {},
     };
 
     /**
@@ -152,8 +150,8 @@ export class StateStore {
      * Gets all tokens
      * @returns the tokens
      */
-    get tokens() {
-        return this._store.tokens;
+    get variables() {
+        return this._store.variables;
     }
 
     /**
@@ -196,28 +194,37 @@ export class StateStore {
      * @param type
      * @returns
      */
-    getToken(pointer: string, type: TokenType): Token | unknown {
+    getVariable(pointer: string, type: VariableType): Variable | unknown {
         if (type === 'block') {
             // Get Blocks Data (what we realistically want)
             const block = this.getBlock(pointer);
 
             // TO DO: Genericize this, is it always.value
             return block.data.value as string;
+        } else if (type === 'query') {
+            const query = this.getQuery(pointer);
+
+            // Return query output
+            return query.output;
         } else if (type === 'cell') {
-            //
+            const query = this.getQuery(splitAtPeriod(pointer, 'left'));
+            const cell = query.getCell(splitAtPeriod(pointer, 'right'));
+
+            // Return cells output
+            return cell.output;
+        } else if (
+            type === 'database' ||
+            type === 'model' ||
+            type === 'vector' ||
+            type === 'function' ||
+            type === 'storage'
+        ) {
+            // Finds Dependency from pointer
+            return this._store.dependencies[pointer];
         } else if (type === 'string') {
             //
         } else if (type === 'number') {
             //
-        } else if (type === 'database') {
-            // Finds Dependency from pointer
-            return this._store.dependencies[pointer];
-        } else if (type === 'model') {
-            // Find Dependency from pointer
-            return this._store.dependencies[pointer];
-        } else if (type === 'storage') {
-            // Find Dependency from pointer
-            return this._store.dependencies[pointer];
         }
         return '';
     }
@@ -237,9 +244,6 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.message)),
             JSON.parse(JSON.stringify(action.payload)),
         );
-
-        console.log('tokens', this._store.tokens);
-        console.log('dependencies', this._store.dependencies);
 
         try {
             // apply the action
@@ -274,7 +278,7 @@ export class StateStore {
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
-                this.newQuery(queryId, config);
+                return this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -308,18 +312,22 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.ADD_TOKEN === action.message) {
+            } else if (ActionMessages.ADD_VARIABLE === action.message) {
                 const { alias, to, type } = action.payload;
 
-                this.addToken(alias, to, type);
-            } else if (ActionMessages.RENAME_TOKEN === action.message) {
-                const { to, alias } = action.payload;
-                // TO DO: Does this work
-                this.renameToken(to, alias);
-            } else if (ActionMessages.DELETE_TOKEN === action.message) {
+                this.addVariable(alias, to, type);
+            } else if (ActionMessages.RENAME_VARIABLE === action.message) {
+                const { id, alias } = action.payload;
+
+                this.renameVariable(id, alias);
+            } else if (ActionMessages.EDIT_VARIABLE === action.message) {
+                const { from, to } = action.payload;
+
+                this.editVariable(from, to);
+            } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
-                // TO DO: Does this work
-                this.deleteToken(id);
+
+                this.deleteVariable(id);
             } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
                 const { id, type } = action.payload;
 
@@ -384,8 +392,6 @@ export class StateStore {
             // check if the id is there
             const blockId = path[1];
 
-            debugger;
-
             // get the block
             const block = this._store.blocks[blockId];
             if (block) {
@@ -398,10 +404,10 @@ export class StateStore {
         return expression;
     };
 
-    flattenToken = (expression: string): string => {
+    flattenVar = (expression: string): string => {
         return expression.replace(/{{(.*?)}}/g, (match) => {
             let v;
-            Object.values(this._store.tokens).forEach((token) => {
+            Object.values(this._store.variables).forEach((token) => {
                 // Early return if we find token already
                 if (v) return;
 
@@ -412,7 +418,7 @@ export class StateStore {
                 }
 
                 if (token.alias === copy) {
-                    v = this.getToken(token.to, token.type);
+                    v = this.getVariable(token.to, token.type);
                 }
             });
 
@@ -421,7 +427,7 @@ export class StateStore {
                 return JSON.stringify(v);
             }
 
-            // TODO: Handle old notebooks that don't use tokens
+            // TODO: Handle old notebooks that don't use variables
             v = this.flattenVariable(match);
 
             // convert to a string
@@ -501,8 +507,9 @@ export class StateStore {
                 return acc;
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
-            tokens: toJS(this._store.tokens),
+            variables: toJS(this._store.variables),
             dependencies: toJS(this._store.dependencies),
+            version: this._store.version,
         };
     }
 
@@ -677,10 +684,16 @@ export class StateStore {
             return acc;
         }, {});
 
-        // store the tokens
-        this._store.tokens = state.tokens ? state.tokens : {};
+        // store the variables
+        this._store.variables = state.variables ? state.variables : {};
+
         // store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
+
+        // store the version or the one we currently are on
+        this._store.version = state.version
+            ? state.version
+            : STATE_STORE_CURRENT_VERSION;
     };
 
     /**
@@ -927,7 +940,7 @@ export class StateStore {
     private newQuery = (
         queryId: string,
         config: Omit<QueryStateConfig, 'id'>,
-    ): void => {
+    ): string => {
         this._store.queries[queryId] = new QueryState(
             {
                 ...config,
@@ -935,6 +948,8 @@ export class StateStore {
             },
             this,
         );
+
+        return queryId;
     };
 
     /**
@@ -1118,51 +1133,81 @@ export class StateStore {
         window.dispatchEvent(event);
     };
 
-    // ---------------------------------
-    // REVIEW TOKEN AND DEPENDENCY CODE
-    // ---------------------------------
+    // -----------------------------------
+    // REVIEW VARIABLE AND DEPENDENCY CODE
+    // -----------------------------------
     /**
-     * Adds to tokens that can be referenced
+     * Adds to variable that can be referenced
      * @param alias - referenced as
      * @param to - points to
-     * @param type - type of token
+     * @param type - type of variable
      */
-    private addToken = (alias, to, type) => {
-        // const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+    private addVariable = (alias: string, to: string, type: VariableType) => {
+        let id = `${Math.floor(Math.random() * 10000)}`;
+        let uniq = false;
 
-        // TODO: Get unique ID and verify that it is a unique alias
-        const token: Token = {
+        while (!uniq) {
+            id = `${Math.floor(Math.random() * 10000)}`;
+            if (!this._store.variables[id]) {
+                uniq = true;
+            }
+        }
+
+        const token: Variable = {
             alias,
             to,
             type,
         };
 
-        this._store.tokens[to] = token;
+        this._store.variables[id] = token;
     };
 
     /**
-     * Adds to tokens that can be referenced
+     * Renames variable that can be referenced
      * @param alias - referenced as
      * @param to - points to
      * @param type - type of token
      */
-    private renameToken = (to, alias) => {
-        this._store.tokens[to].alias = alias;
+    private renameVariable = (id: string, alias: string) => {
+        this._store.variables[id].alias = alias;
     };
 
     /**
-     * Deletes token that can be referenced
+     * Replace old variable and remove old dependency
+     * @param from
+     * @param to
+     */
+    private editVariable = (oldVar: VariableWithId, newVar: Variable) => {
+        if (this._store.dependencies[oldVar.to]) {
+            console.log('----------------------------');
+            console.log('remove old engine dependency');
+            console.log('----------------------------');
+            delete this._store.dependencies[oldVar.to];
+        }
+
+        this._store.variables[oldVar.id] = newVar;
+    };
+
+    /**
+     * Deletes variable and corresponding dependency that can be referenced
      * @param id - id to delete
      */
-    private deleteToken = (id) => {
-        // Do i need to go throygh everything and delete token
-        delete this._store.tokens[id];
+    private deleteVariable = (id: string) => {
+        const variable = this._store.variables[id];
+        if (
+            variable.type !== 'block' &&
+            variable.type !== 'query' &&
+            variable.type !== 'cell'
+        ) {
+            delete this._store.dependencies[variable.to];
+        }
+        delete this._store.variables[id];
     };
 
     /**
      * Adds a constant/dependency to use as a token
      * @param value can be an engine id, string, number, date, and etc
-     * @param type - what type of dependency, Model, Database, String, Date, Number
+     * @param type - what type of dependency - Model, Database, String, Date, Number
      * @returns id of newly added dependency for token value
      */
     private addDependency = (value: unknown, type: string) => {

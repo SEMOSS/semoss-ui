@@ -400,7 +400,7 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
-        tokens: {},
+        variables: {},
         dependencies: {},
         queries: {},
         blocks: {

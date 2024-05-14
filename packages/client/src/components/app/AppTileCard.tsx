@@ -296,7 +296,15 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </StyledPublishedByContainer>
             );
         } else {
-            return;
+            //if no app_type is defined default to Code App
+            return (
+                <StyledPublishedByContainer>
+                    <CodeRounded />
+                    <StyledPublishedByLabel variant="body2">
+                        Code App
+                    </StyledPublishedByLabel>
+                </StyledPublishedByContainer>
+            );
         }
     };
 
