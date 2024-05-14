@@ -41,7 +41,6 @@ const StyledAlert = styled(Alert, {
     ...(setBounds && {
         height: theme.spacing(13),
         width: '600px',
-        backgroundColor: 'red',
     }),
 }));
 
