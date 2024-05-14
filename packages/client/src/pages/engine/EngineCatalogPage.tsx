@@ -29,7 +29,7 @@ import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
 import { EngineLandscapeCard } from '@/components/engine';
 import { Page } from '@/components/ui';
-
+import { Help } from '@/components/help';
 import { ENGINE_ROUTES } from './engine.constants';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -1118,6 +1118,7 @@ export const EngineCatalogPage = observer(
                         ) : null}
                     </StyledContent>
                 </StyledContainer>
+                <Help />
             </Page>
         );
     },

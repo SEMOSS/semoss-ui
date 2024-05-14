@@ -45,6 +45,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { CONNECTION_OPTIONS } from './import.constants';
 import { EstablishConnectionPage, ImportConnectionPage } from './';
+import { Help } from '@/components/help';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -804,6 +805,7 @@ export const ImportPage = () => {
                 {/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
                 {steps.length === 3 && <EstablishConnectionPage />}
             </StyledContainer>
+            <Help />
         </Page>
     );
 };

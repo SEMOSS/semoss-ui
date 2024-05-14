@@ -15,6 +15,13 @@ const StyledContainer = styled('div')(({ theme }) => ({
     right: 20,
 }));
 
+const StyledButton = styled(Button)(({ theme }) => ({
+    boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.24)',
+    background: theme.palette.background.paper,
+    borderRadius: '64px',
+    border: '1px solid var(--Secondary-Border, #C4C4C4)',
+}));
+
 const StyledLink = styled('a')(({ theme }) => ({
     textDecoration: 'none',
     color: 'black',
@@ -30,10 +37,9 @@ export const Help = observer((): JSX.Element => {
     const handleHelpClose = () => {
         setAnchorEl(null);
     };
-
     return (
         <StyledContainer>
-            <Button
+            <StyledButton
                 // aria-controls={open ? 'help-menu' : undefined}
                 // aria-haspopup="true"
                 // aria-expanded={open ? 'true' : undefined}
@@ -45,7 +51,7 @@ export const Help = observer((): JSX.Element => {
                 size="small"
             >
                 Help
-            </Button>
+            </StyledButton>
             <Menu
                 // id="help-menu"
                 // aria-labelledby="help-btn"
@@ -53,12 +59,12 @@ export const Help = observer((): JSX.Element => {
                 open={open}
                 onClose={handleHelpClose}
                 anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
+                    vertical: -8,
+                    horizontal: 'right',
                 }}
                 transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
+                    vertical: 'bottom',
+                    horizontal: 'right',
                 }}
             >
                 <MenuItem>

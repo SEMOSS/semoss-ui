@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
+import { Help } from '@/components/help';
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
     marginTop: '-3px',
@@ -338,6 +339,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoRight>
             </StyledInfo>
             {children}
+            <Help />
         </Page>
     );
 };
