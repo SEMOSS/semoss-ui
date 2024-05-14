@@ -83,7 +83,7 @@ export const App = () => {
                         </HashRouter>
                     </LoadingScreen>
                 </Notification>
-                <Help />
+                {/* <Help /> */}
             </ThemeProvider>
         </RootStoreContext.Provider>
     );
