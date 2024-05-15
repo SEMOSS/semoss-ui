@@ -16,7 +16,7 @@ import { Add } from '@mui/icons-material';
 import { observer } from 'mobx-react-lite';
 import { useBlocks, useRootStore, useWorkspace } from '@/hooks';
 import { NewQueryOverlay } from './NewQueryOverlay';
-import { ActionMessages } from '@/stores';
+import { ActionMessages, QueryState } from '@/stores';
 import { ContentCopy, Download, Delete, MoreVert } from '@mui/icons-material';
 
 const StyledSheet = styled('div', {
@@ -55,6 +55,17 @@ const StyledListIcon = styled(List.Icon)(({ theme }) => ({
     minWidth: 'unset',
 }));
 
+interface QueryWithIndex {
+    /**
+     * Query to bind to
+     */
+    q: QueryState;
+    /**
+     * Track what index got removed
+     */
+    index: number;
+}
+
 export const NotebookSheetsMenu = observer((): JSX.Element => {
     const { state, notebook } = useBlocks();
 
@@ -62,6 +73,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
 
+    const [query, setQuery] = useState<QueryWithIndex | null>(null);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
@@ -204,6 +216,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     };
 
     const handleQueryOptionsMenuClose = () => {
+        setQuery(null);
         setAnchorEl(null);
     };
 
@@ -224,102 +237,82 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                         <IconButton
                             size={'small'}
                             onClick={(event: React.MouseEvent<HTMLElement>) => {
+                                setQuery({
+                                    q: q,
+                                    index: i,
+                                });
                                 setAnchorEl(event.currentTarget);
                                 event.stopPropagation();
                             }}
                         >
                             <MoreVert />
                         </IconButton>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={open}
-                            onClose={handleQueryOptionsMenuClose}
-                        >
-                            <List disablePadding dense>
-                                {/* <List.Item disablePadding>
-                            <List.ItemButton
-                                onClick={() => {
-                                    notebook.selectQuery(anchorQuery?.id);
-                                    handleQueryOptionsMenuClose();
-                                }}
-                            >
-                                <StyledListIcon>
-                                    <Edit color="inherit" fontSize="small" />
-                                </StyledListIcon>
-                                <List.ItemText primary="Edit" />
-                            </List.ItemButton>
-                        </List.Item> */}
-                                <List.Item disablePadding>
-                                    <List.ItemButton
-                                        onClick={() => {
-                                            duplicateQuery(q.id);
-                                        }}
-                                    >
-                                        <StyledListIcon>
-                                            <ContentCopy
-                                                color="inherit"
-                                                fontSize="small"
-                                            />
-                                        </StyledListIcon>
-                                        <List.ItemText primary="Duplicate" />
-                                    </List.ItemButton>
-                                </List.Item>
-                                <List.Item disablePadding>
-                                    <List.ItemButton onClick={exportHandler}>
-                                        <StyledListIcon>
-                                            <Download
-                                                color="inherit"
-                                                fontSize="small"
-                                            />
-                                        </StyledListIcon>
-                                        <List.ItemText primary="Export" />
-                                    </List.ItemButton>
-                                </List.Item>
-                                <Divider />
-                                <List.Item disablePadding>
-                                    <List.ItemButton
-                                        onClick={() => {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.DELETE_QUERY,
-                                                payload: {
-                                                    queryId: q.id,
-                                                },
-                                            });
-                                            // if (notebook.queriesList.length) {
-                                            //     const nextQueryIndex =
-                                            //         anchorQuery.index >=
-                                            //         notebook.queriesList.length
-                                            //             ? notebook.queriesList.length -
-                                            //               1
-                                            //             : anchorQuery.index;
-                                            //     notebook.selectQuery(
-                                            //         notebook.queriesList[nextQueryIndex]
-                                            //             .id,
-                                            //     );
-                                            // }
-                                            handleQueryOptionsMenuClose();
-                                        }}
-                                    >
-                                        <StyledListIcon>
-                                            <Delete
-                                                color="error"
-                                                fontSize="small"
-                                            />
-                                        </StyledListIcon>
-                                        <List.ItemText
-                                            primary="Delete"
-                                            primaryTypographyProps={{
-                                                color: 'error',
-                                            }}
-                                        ></List.ItemText>
-                                    </List.ItemButton>
-                                </List.Item>
-                            </List>
-                        </Menu>
                     </StyledSheet>
                 );
             })}
+
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleQueryOptionsMenuClose}
+            >
+                <List disablePadding dense>
+                    <List.Item disablePadding>
+                        <List.ItemButton
+                            onClick={() => {
+                                duplicateQuery(query.q.id);
+                            }}
+                        >
+                            <StyledListIcon>
+                                <ContentCopy color="inherit" fontSize="small" />
+                            </StyledListIcon>
+                            <List.ItemText primary="Duplicate" />
+                        </List.ItemButton>
+                    </List.Item>
+                    <List.Item disablePadding>
+                        <List.ItemButton onClick={exportHandler}>
+                            <StyledListIcon>
+                                <Download color="inherit" fontSize="small" />
+                            </StyledListIcon>
+                            <List.ItemText primary="Export" />
+                        </List.ItemButton>
+                    </List.Item>
+                    <Divider />
+                    <List.Item disablePadding>
+                        <List.ItemButton
+                            onClick={() => {
+                                state.dispatch({
+                                    message: ActionMessages.DELETE_QUERY,
+                                    payload: {
+                                        queryId: query.q.id,
+                                    },
+                                });
+                                if (notebook.queriesList.length) {
+                                    const nextQueryIndex =
+                                        query.index >=
+                                        notebook.queriesList.length
+                                            ? notebook.queriesList.length - 1
+                                            : query.index;
+                                    notebook.selectQuery(
+                                        notebook.queriesList[nextQueryIndex].id,
+                                    );
+                                }
+                                handleQueryOptionsMenuClose();
+                            }}
+                        >
+                            <StyledListIcon>
+                                <Delete color="error" fontSize="small" />
+                            </StyledListIcon>
+                            <List.ItemText
+                                primary="Delete"
+                                primaryTypographyProps={{
+                                    color: 'error',
+                                }}
+                            ></List.ItemText>
+                        </List.ItemButton>
+                    </List.Item>
+                </List>
+            </Menu>
 
             <StyledButtonContainer>
                 <StyledIconButton

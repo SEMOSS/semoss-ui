@@ -964,6 +964,7 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
+        debugger;
         delete this._store.queries[queryId];
     };
 
