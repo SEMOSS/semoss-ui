@@ -33,6 +33,9 @@ import {
     KeyboardArrowDown,
     TableRows,
     Label,
+    JoinLeftRounded,
+    FilterListRounded,
+    ControlPointDuplicateRounded,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -104,6 +107,21 @@ interface AddCellOption {
     }[];
     disabled?: boolean;
 }
+
+type QueryChildElement = {
+    childElementName: string;
+};
+
+type QueryStackElement = {
+    queryType: string; // Data, Join or Filter
+    queryChildren: QueryChildElement[];
+};
+
+type FormValues = {
+    queryStackElements: QueryStackElement[];
+    databaseSelect: string;
+    tableSelect: string;
+};
 
 const Transformations = Array.from(Object.values(TransformationCells)).map(
     (item) => {
@@ -199,10 +217,27 @@ export const NotebookAddCell = observer(
         const { state, notebook } = useBlocks();
 
         const { control, handleSubmit, reset, watch, setValue, getValues } =
-            useForm();
+            useForm<FormValues>({
+                defaultValues: {
+                    queryStackElements: [],
+                    databaseSelect: '',
+                    tableSelect: '',
+                },
+            });
+
         const [userDatabases, setUserDatabases] = useState(null);
+        const [queryElementCounter, setQueryElementCounter] = useState(0);
 
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;');
+
+        const {
+            fields: stackFields,
+            append: appendStack,
+            remove: removeStack,
+        } = useFieldArray({
+            control,
+            name: 'queryStackElements',
+        });
 
         useEffect(() => {
             if (getDatabases.status !== 'SUCCESS') {
@@ -391,57 +426,187 @@ export const NotebookAddCell = observer(
 
                 {/* Import Data Modal */}
                 <Modal open={isDataImportModalOpen} fullWidth>
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <Stack>
-                            <StyledModalTitleWrapper>
-                                <StyledModalTitle variant="h6">
-                                    Import Data
-                                </StyledModalTitle>
+                    <form
+                        onSubmit={handleSubmit(onSubmit)}
+                        style={{ border: '1px solid red', margin: '30px 41px' }}
+                    >
+                        <StyledModalTitleWrapper
+                            sx={{ border: '1px solid blue', padding: '0px' }}
+                        >
+                            <StyledModalTitle
+                                variant="h6"
+                                sx={{ border: '1px solid orange' }}
+                            >
+                                Import Data
+                            </StyledModalTitle>
+                            <Controller
+                                name={'databaseSelect'}
+                                control={control}
+                                render={({ field }) => (
+                                    <Select
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value)
+                                        }
+                                        label={'Select Database...'}
+                                        value={field.value || null}
+                                        size={'small'}
+                                        sx={{
+                                            minWidth: '220px',
+                                        }}
+                                    >
+                                        {userDatabases?.map((ele) => (
+                                            <Menu.Item value={ele.app_name}>
+                                                {ele.app_name}
+                                            </Menu.Item>
+                                        ))}
+                                    </Select>
+                                )}
+                            />
+                        </StyledModalTitleWrapper>
+                        <Modal.Content
+                            sx={{ border: '1px solid green', padding: '0px' }}
+                        >
+                            <Stack spacing={1} direction="column">
+                                <span>Data</span>
                                 <Controller
-                                    name={'Select Database'}
+                                    name={'tableSelect'}
                                     control={control}
                                     render={({ field }) => (
                                         <Select
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value)
-                                            }
-                                            label={'Select Database...'}
-                                            value={field.value || null}
+                                            onChange={(e) => {
+                                                // field.onChange(e.target.value)
+                                                console.log({ e });
+                                            }}
+                                            label={'Select Table...'}
+                                            // value={field.value || null}
                                             size={'small'}
                                             sx={{
                                                 minWidth: '220px',
                                             }}
                                         >
-                                            {userDatabases?.map((ele) => (
-                                                <Menu.Item value={ele.app_name}>
-                                                    {ele.app_name}
-                                                </Menu.Item>
-                                            ))}
+                                            <Menu.Item value={'sample-table-1'}>
+                                                sample table 1
+                                            </Menu.Item>
+                                            <Menu.Item value={'sample-table-2'}>
+                                                sample table 2
+                                            </Menu.Item>
+                                            <Menu.Item value={'sample-table-3'}>
+                                                sample table 3
+                                            </Menu.Item>
+                                            {/* {userDatabases?.map((ele) => (
+                                                    <Menu.Item value={ele.app_name}>
+                                                        {ele.app_name}
+                                                    </Menu.Item>
+                                                ))} */}
                                         </Select>
                                     )}
                                 />
-                            </StyledModalTitleWrapper>
-                            <Modal.Content>{`[modal content]`}</Modal.Content>
-                            <Modal.Actions>
-                                <Button
-                                    type="submit"
-                                    variant="text"
-                                    color="secondary"
-                                    onClick={() =>
-                                        setIsDataImportModalOpen(false)
-                                    }
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    color="primary"
-                                >
-                                    Import
-                                </Button>
-                            </Modal.Actions>
-                        </Stack>
+                            </Stack>
+                            {stackFields.map((stack, stackIndex) => (
+                                <Stack spacing={1} direction="column">
+                                    <span>{stack.queryType}</span>
+                                    <Button
+                                        sx={{
+                                            display: 'inline-block',
+                                            width: '40px',
+                                        }}
+                                        variant="contained"
+                                        color="error"
+                                        size="small"
+                                        onClick={() => {
+                                            // alert(`delete ${stackIndex}`);
+                                            removeStack(stackIndex);
+                                        }}
+                                    >
+                                        delete
+                                    </Button>
+                                </Stack>
+                            ))}
+                        </Modal.Content>
+                        <Modal.Actions
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-start',
+                                border: '1px solid goldenrod',
+                                padding: '0px',
+                            }}
+                        >
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                size="medium"
+                                onClick={() => {
+                                    setQueryElementCounter(
+                                        queryElementCounter + 1,
+                                    );
+                                    appendStack({
+                                        queryType: `Join ${queryElementCounter}`,
+                                        queryChildren: [],
+                                    });
+                                }}
+                                startIcon={<JoinLeftRounded />}
+                            >
+                                Join
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                size="medium"
+                                startIcon={<FilterListRounded />}
+                                onClick={() => {
+                                    setQueryElementCounter(
+                                        queryElementCounter + 1,
+                                    );
+                                    appendStack({
+                                        queryType: `Filter ${queryElementCounter}`,
+                                        queryChildren: [],
+                                    });
+                                }}
+                            >
+                                Add Filter
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                size="medium"
+                                startIcon={<ControlPointDuplicateRounded />}
+                                onClick={() => {
+                                    setQueryElementCounter(
+                                        queryElementCounter + 1,
+                                    );
+                                    appendStack({
+                                        queryType: `Summarization  ${queryElementCounter}`,
+                                        queryChildren: [],
+                                    });
+                                }}
+                            >
+                                Summarize
+                            </Button>
+                        </Modal.Actions>
+                        <Modal.Actions
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                border: '1px solid pink',
+                                padding: '0px',
+                            }}
+                        >
+                            <Button
+                                type="submit"
+                                variant="text"
+                                color="secondary"
+                                onClick={() => setIsDataImportModalOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                            >
+                                Import
+                            </Button>
+                        </Modal.Actions>
                     </form>
                 </Modal>
             </Stack>
