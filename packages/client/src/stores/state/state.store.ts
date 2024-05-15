@@ -424,14 +424,21 @@ export class StateStore {
 
             // Need to wrap in string for the code
             if (v) {
-                return JSON.stringify(v);
+                if (typeof v !== 'string') {
+                    return JSON.stringify(v);
+                } else {
+                    return v;
+                }
             }
 
             // TODO: Handle old notebooks that don't use variables
             v = this.flattenVariable(match);
 
-            // convert to a string
-            return JSON.stringify(v);
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
+            } else {
+                return v;
+            }
         });
     };
 
