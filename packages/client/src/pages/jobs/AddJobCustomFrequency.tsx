@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Stack, TextField } from '@semoss/ui';
-import { JobBuilder } from './AddJobModal';
+import { JobBuilder } from './job.types';
 
-export const AddJobCustomFrequency = (props: { builder: JobBuilder }) => {
-    const { builder } = props;
+export const AddJobCustomFrequency = (props: {
+    builder: JobBuilder;
+    setBuilderField: (field: string, value: string | string[]) => void;
+}) => {
+    const { builder, setBuilderField } = props;
 
     const [cronMinute, setCronMinute] = useState<string>('0');
     const [cronHour, setCronHour] = useState<string>('12');
@@ -32,7 +35,13 @@ export const AddJobCustomFrequency = (props: { builder: JobBuilder }) => {
         if (!Number.isNaN(cronValues[4]) || cronValues[4] == '*') {
             setCronDayOfWeek(cronValues[4]);
         }
-    }, [builder.cronExpression]);
+    }, []);
+    useEffect(() => {
+        setBuilderField(
+            'cronExpression',
+            `${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek}`,
+        );
+    }, [cronMinute, cronHour, cronDayOfMonth, cronMonth, cronDayOfWeek]);
 
     return (
         <Stack direction="row" spacing={1} width="100%">

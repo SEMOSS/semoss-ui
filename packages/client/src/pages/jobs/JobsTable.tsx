@@ -16,7 +16,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
-import { Job } from './jobs.types';
+import { Job } from './job.types';
 import { runPixel } from '@/api';
 
 const StyledDataGrid = styled(DataGrid)(() => ({

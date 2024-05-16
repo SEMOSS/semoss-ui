@@ -1,18 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Stack, TextField } from '@semoss/ui';
-import { JobBuilder } from './AddJobModal';
 import { Autocomplete } from '@mui/material';
 import { DaysOfWeek, FrequencyOptions, Months } from './job.constants';
-import { DayOfWeek, Frequencies, Month } from './jobs.types';
+import { DayOfWeek, Frequencies, JobBuilder, Month } from './job.types';
 
-export const AddJobStandardFrequency = (props: { builder: JobBuilder }) => {
-    const { builder } = props;
+export const AddJobStandardFrequency = (props: {
+    builder: JobBuilder;
+    setBuilderField: (field: string, value: string | string[]) => void;
+}) => {
+    const { builder, setBuilderField } = props;
 
     const [frequency, setFrequency] = useState<Frequencies>('Daily');
     const [time, setTime] = useState<string>('12:00');
-    const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>('Sunday');
+    const [dayOfWeek, setDayOfWeek] = useState<{
+        day: DayOfWeek;
+        value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    }>(DaysOfWeek[0]);
     const [dayOfMonth, setDayOfMonth] = useState<number>(1);
-    const [month, setMonth] = useState<Month>('January');
+    const [month, setMonth] = useState<{
+        month: Month;
+        value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+        days: 28 | 29 | 30 | 31;
+    }>(Months[0]);
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
@@ -45,7 +54,7 @@ export const AddJobStandardFrequency = (props: { builder: JobBuilder }) => {
                 (record) => record.value == dayOfWeekValue,
             );
             if (dayOfWeekRecord) {
-                setDayOfWeek(dayOfWeekRecord.day);
+                setDayOfWeek(dayOfWeekRecord);
             }
         } else if (cronValues[3] == '*' && cronValues[4] == '*') {
             setFrequency('Monthly');
@@ -64,15 +73,49 @@ export const AddJobStandardFrequency = (props: { builder: JobBuilder }) => {
                 (record) => record.value == monthValue,
             );
             if (monthRecord) {
-                setMonth(monthRecord.month);
+                setMonth(monthRecord);
             }
         }
-    }, [builder.cronExpression]);
+    }, []);
+    useEffect(() => {
+        const [hour, minute] = time ? time.split(':') : [0, 0];
+        switch (frequency) {
+            case 'Daily':
+                setBuilderField(
+                    'cronExpression',
+                    `${minute == '00' ? '0' : minute} ${hour} * * *`,
+                );
+                break;
+            case 'Weekly':
+                setBuilderField(
+                    'cronExpression',
+                    `${minute == '00' ? '0' : minute} ${hour} * * ${
+                        dayOfWeek.value
+                    }`,
+                );
+                break;
+            case 'Monthly':
+                setBuilderField(
+                    'cronExpression',
+                    `${
+                        minute == '00' ? '0' : minute
+                    } ${hour} ${dayOfMonth} * *`,
+                );
+                break;
+            case 'Yearly':
+                setBuilderField(
+                    'cronExpression',
+                    `${minute == '00' ? '0' : minute} ${hour} ${dayOfMonth} ${
+                        month.value
+                    } *`,
+                );
+                break;
+        }
+    }, [time, dayOfWeek.value, dayOfMonth, month.value]);
 
     const daysInMonth: number | null = useMemo(() => {
-        const monthRecord = Months.find((record) => record.month == month);
-        if (monthRecord) {
-            return monthRecord.days;
+        if (month) {
+            return month.days;
         } else {
             return 31;
         }
@@ -93,12 +136,16 @@ export const AddJobStandardFrequency = (props: { builder: JobBuilder }) => {
             {frequency == 'Weekly' ? (
                 <Autocomplete
                     size="small"
-                    options={DaysOfWeek.map((record) => record.day)}
+                    options={DaysOfWeek}
                     value={dayOfWeek}
                     renderInput={(params) => {
                         return <TextField {...params} label="Day of Week" />;
                     }}
                     fullWidth
+                    isOptionEqualToValue={(option, value) =>
+                        option.value == value.value
+                    }
+                    getOptionLabel={(option) => option.day}
                     onChange={(_, value) => setDayOfWeek(value)}
                 />
             ) : (
@@ -107,12 +154,16 @@ export const AddJobStandardFrequency = (props: { builder: JobBuilder }) => {
             {frequency == 'Yearly' ? (
                 <Autocomplete
                     size="small"
-                    options={Months.map((record) => record.month)}
+                    options={Months}
                     value={month}
                     renderInput={(params) => {
                         return <TextField {...params} label="Month" />;
                     }}
                     fullWidth
+                    isOptionEqualToValue={(option, value) =>
+                        option.value == value.value
+                    }
+                    getOptionLabel={(option) => option.month}
                     onChange={(_, value) => setMonth(value)}
                 />
             ) : (

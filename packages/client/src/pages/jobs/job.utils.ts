@@ -1,4 +1,4 @@
-import { JobUIState } from './jobs.types';
+import { JobUIState } from './job.types';
 
 export function convertTimeToFrequencyString(job: JobUIState) {
     if (!job?.customCron) {

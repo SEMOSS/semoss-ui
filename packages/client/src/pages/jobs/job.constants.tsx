@@ -1,4 +1,4 @@
-import { DayOfWeek, Frequencies, Month } from './jobs.types';
+import { DayOfWeek, Frequencies, Month } from './job.types';
 
 export const timezones = [
     'Acre Time',
@@ -223,7 +223,7 @@ export const DaysOfWeek: Array<{
 export const Months: Array<{
     month: Month;
     value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
-    days: 28 | 30 | 31;
+    days: 28 | 29 | 30 | 31;
 }> = [
     {
         month: 'January',

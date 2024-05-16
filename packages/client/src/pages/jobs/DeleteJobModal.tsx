@@ -1,5 +1,5 @@
 import { Button, Modal, Typography } from '@semoss/ui';
-import { Job } from './jobs.types';
+import { Job } from './job.types';
 
 export const DeleteJobModal = (props: {
     job: Job;

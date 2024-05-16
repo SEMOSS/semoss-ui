@@ -13,7 +13,7 @@ import { useRootStore } from '@/hooks';
 import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
-import { HistoryJob, Job, JobUIState, PixelReturnJob } from './jobs.types';
+import { HistoryJob, Job, JobUIState, PixelReturnJob } from './job.types';
 import {
     convertDeltaToRuntimeString,
     convertTimeToFrequencyString,

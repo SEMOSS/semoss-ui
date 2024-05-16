@@ -1,6 +1,7 @@
 import { Close } from '@mui/icons-material';
-import { Autocomplete } from '@mui/material';
+import { Autocomplete, createFilterOptions } from '@mui/material';
 import {
+    Button,
     IconButton,
     Modal,
     Stack,
@@ -8,18 +9,11 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@semoss/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { timezones } from './job.constants';
 import { AddJobStandardFrequency } from './AddJobStandardFrequency';
 import { AddJobCustomFrequency } from './AddJobCustomFrequency';
-
-export interface JobBuilder {
-    name: string;
-    pixel: string;
-    tags: string;
-    cronExpression: string;
-    cronTz: string;
-}
+import { JobBuilder } from './job.types';
 
 export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
     const { isOpen, close } = props;
@@ -27,16 +21,21 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
     const [frequencyType, setFrequencyType] = useState<'custom' | 'standard'>(
         'standard',
     );
-    const [builder, setBuilder] = useState({
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [builder, setBuilder] = useState<JobBuilder>({
         name: '',
         pixel: '',
-        tags: '',
-        cronExpression: '0 12 12 9 0',
+        tags: [],
+        cronExpression: '0 12 * * *',
         cronTz: 'Eastern Standard Time',
     });
-    const setBuilderField = (field: string, value: string) => {
-        setBuilder((previousBuilder) => ({ ...previousBuilder, field: value }));
+    const setBuilderField = (field: string, value: string | string[]) => {
+        setBuilder((previousBuilder) => ({
+            ...previousBuilder,
+            [field]: value,
+        }));
     };
+    const filter = createFilterOptions<string>();
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
@@ -68,11 +67,71 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
             setFrequencyType('standard');
             return;
         } else {
-            console.log('setting custom for time');
             setFrequencyType('custom');
             return;
         }
     }, []);
+    const isCronExpressionValid: boolean = useMemo(() => {
+        const cronValues = builder.cronExpression.split(' ');
+        if (cronValues.length < 5) {
+            // make sure it's valid cron syntax
+            return false;
+        }
+        if (
+            cronValues[0] !== '*' &&
+            !(
+                !Number.isNaN(cronValues[0]) &&
+                parseInt(cronValues[0]) <= 59 &&
+                parseInt(cronValues[0]) >= 0
+            )
+        ) {
+            return false;
+        }
+        if (
+            cronValues[1] !== '*' &&
+            !(
+                !Number.isNaN(cronValues[1]) &&
+                parseInt(cronValues[1]) <= 23 &&
+                parseInt(cronValues[1]) >= 0
+            )
+        ) {
+            return false;
+        }
+        if (
+            cronValues[2] !== '*' &&
+            !(
+                !Number.isNaN(cronValues[2]) &&
+                parseInt(cronValues[2]) <= 31 &&
+                parseInt(cronValues[2]) >= 0
+            )
+        ) {
+            return false;
+        }
+        if (
+            cronValues[3] !== '*' &&
+            !(
+                !Number.isNaN(cronValues[3]) &&
+                parseInt(cronValues[3]) <= 12 &&
+                parseInt(cronValues[3]) >= 1
+            )
+        ) {
+            return false;
+        }
+        if (
+            cronValues[4] !== '*' &&
+            !(
+                !Number.isNaN(cronValues[4]) &&
+                parseInt(cronValues[4]) <= 6 &&
+                parseInt(cronValues[4]) >= 0
+            )
+        ) {
+            return false;
+        }
+        return true;
+    }, [builder.cronExpression]);
+    const isBaseFormValid: boolean = useMemo(() => {
+        return !!builder.name && !!builder.pixel && !!builder.cronTz;
+    }, [builder.name, builder.pixel, builder.cronTz]);
 
     return (
         <Modal open={isOpen} maxWidth="md" fullWidth>
@@ -89,7 +148,7 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                 </Stack>
             </Modal.Title>
             <Modal.Content>
-                <Stack spacing={2}>
+                <Stack spacing={2} paddingTop={1}>
                     <TextField
                         label="Name"
                         size="small"
@@ -108,14 +167,35 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                         multiline
                         rows={3}
                     />
-                    <TextField
-                        label="Tags"
+                    <Autocomplete
+                        value={(builder.tags as string[]) ?? []}
+                        fullWidth
+                        multiple
                         size="small"
-                        value={builder.tags}
-                        onChange={(e) =>
-                            setBuilderField('tags', e.target.value)
-                        }
-                        helperText="Comma-separated list of tags"
+                        onChange={(_, newValue) => {
+                            setBuilderField('tags', newValue);
+                        }}
+                        filterOptions={(options, params) => {
+                            const filtered = filter(options, params);
+
+                            const { inputValue } = params;
+                            const isExisting = options.some(
+                                (option) => inputValue === option,
+                            );
+                            if (inputValue !== '' && !isExisting) {
+                                filtered.push(inputValue);
+                            }
+
+                            return filtered;
+                        }}
+                        options={[]}
+                        renderOption={(props, option) => (
+                            <li {...props}>{option}</li>
+                        )}
+                        freeSolo
+                        renderInput={(params) => (
+                            <TextField {...params} label="Tags" />
+                        )}
                     />
                     <ToggleButtonGroup value={frequencyType} size="small">
                         <ToggleButton
@@ -147,12 +227,41 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                         )}
                     />
                     {frequencyType === 'standard' ? (
-                        <AddJobStandardFrequency builder={builder} />
+                        <AddJobStandardFrequency
+                            builder={builder}
+                            setBuilderField={setBuilderField}
+                        />
                     ) : (
-                        <AddJobCustomFrequency builder={builder} />
+                        <AddJobCustomFrequency
+                            builder={builder}
+                            setBuilderField={setBuilderField}
+                        />
                     )}
                 </Stack>
             </Modal.Content>
+            <Modal.Actions>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    paddingX={2}
+                    paddingBottom={2}
+                >
+                    <Button type="button" disabled={isLoading} onClick={close}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant={'contained'}
+                        disabled={
+                            isLoading ||
+                            !isBaseFormValid ||
+                            !isCronExpressionValid
+                        }
+                    >
+                        Create
+                    </Button>
+                </Stack>
+            </Modal.Actions>
         </Modal>
     );
 };
