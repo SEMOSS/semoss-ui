@@ -25,50 +25,50 @@ export const AddJobStandardFrequency = (props: {
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
-        if (cronValues.length < 5) {
+        if (cronValues.length < 6) {
             // make sure it's valid cron syntax
             return;
-        } else if (Number.isNaN(cronValues[0]) || Number.isNaN(cronValues[1])) {
+        } else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
             // make sure there's a valid numbered time
             return;
         }
 
         // set time
         setTime(
-            `${cronValues[1] == '0' ? '00' : cronValues[1]}:${
-                cronValues[0] == '0' ? '00' : cronValues[0]
+            `${cronValues[2] == '0' ? '00' : cronValues[2]}:${
+                cronValues[1] == '0' ? '00' : cronValues[1]
             }`,
         );
 
         // check frequency type
         if (
-            cronValues[2] == '*' &&
             cronValues[3] == '*' &&
-            cronValues[4] == '*'
+            cronValues[4] == '*' &&
+            cronValues[5] == '*'
         ) {
             setFrequency('Daily');
-        } else if (cronValues[2] == '*' && cronValues[3] == '*') {
+        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
             setFrequency('Weekly');
-            const dayOfWeekValue = parseInt(cronValues[4]);
+            const dayOfWeekValue = parseInt(cronValues[5]);
             const dayOfWeekRecord = DaysOfWeek.find(
                 (record) => record.value == dayOfWeekValue,
             );
             if (dayOfWeekRecord) {
                 setDayOfWeek(dayOfWeekRecord);
             }
-        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
+        } else if (cronValues[4] == '*' && cronValues[5] == '*') {
             setFrequency('Monthly');
-            const dayOfMonthValue = parseInt(cronValues[2]);
+            const dayOfMonthValue = parseInt(cronValues[3]);
             if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
                 setDayOfMonth(dayOfMonthValue);
             }
-        } else if (cronValues[4] == '*') {
+        } else if (cronValues[5] == '*') {
             setFrequency('Yearly');
             const dayOfMonthValue = parseInt(cronValues[2]);
             if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
                 setDayOfMonth(dayOfMonthValue);
             }
-            const monthValue = parseInt(cronValues[3]);
+            const monthValue = parseInt(cronValues[4]);
             const monthRecord = Months.find(
                 (record) => record.value == monthValue,
             );
@@ -83,13 +83,13 @@ export const AddJobStandardFrequency = (props: {
             case 'Daily':
                 setBuilderField(
                     'cronExpression',
-                    `${minute == '00' ? '0' : minute} ${hour} * * *`,
+                    `0 ${minute == '00' ? '0' : minute} ${hour} * * *`,
                 );
                 break;
             case 'Weekly':
                 setBuilderField(
                     'cronExpression',
-                    `${minute == '00' ? '0' : minute} ${hour} * * ${
+                    `0 ${minute == '00' ? '0' : minute} ${hour} * * ${
                         dayOfWeek.value
                     }`,
                 );
@@ -97,7 +97,7 @@ export const AddJobStandardFrequency = (props: {
             case 'Monthly':
                 setBuilderField(
                     'cronExpression',
-                    `${
+                    `0 ${
                         minute == '00' ? '0' : minute
                     } ${hour} ${dayOfMonth} * *`,
                 );
@@ -105,7 +105,7 @@ export const AddJobStandardFrequency = (props: {
             case 'Yearly':
                 setBuilderField(
                     'cronExpression',
-                    `${minute == '00' ? '0' : minute} ${hour} ${dayOfMonth} ${
+                    `0 ${minute == '00' ? '0' : minute} ${hour} ${dayOfMonth} ${
                         month.value
                     } *`,
                 );
@@ -122,7 +122,7 @@ export const AddJobStandardFrequency = (props: {
     }, [month]);
 
     return (
-        <Stack spacing={1} width="100%">
+        <Stack spacing={2} width="100%">
             <Autocomplete
                 size="small"
                 options={FrequencyOptions}

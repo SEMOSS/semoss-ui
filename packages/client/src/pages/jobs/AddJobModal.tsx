@@ -14,6 +14,7 @@ import { timezones } from './job.constants';
 import { AddJobStandardFrequency } from './AddJobStandardFrequency';
 import { AddJobCustomFrequency } from './AddJobCustomFrequency';
 import { JobBuilder } from './job.types';
+import { runPixel } from '@/api';
 
 export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
     const { isOpen, close } = props;
@@ -26,7 +27,7 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
         name: '',
         pixel: '',
         tags: [],
-        cronExpression: '0 12 * * *',
+        cronExpression: '0 0 12 * * *',
         cronTz: 'Eastern Standard Time',
     });
     const setBuilderField = (field: string, value: string | string[]) => {
@@ -39,31 +40,30 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
-        if (cronValues.length < 5) {
+        if (cronValues.length < 6) {
             // invalid cron syntax, send to standard builder
             setFrequencyType('standard');
             return;
-        } else if (Number.isNaN(cronValues[0]) || Number.isNaN(cronValues[1])) {
+        } else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
             // non-integer time values, must be custom
             setFrequencyType('custom');
             return;
         }
 
-        // check daily
         if (
-            cronValues[2] == '*' &&
             cronValues[3] == '*' &&
-            cronValues[4] == '*'
+            cronValues[4] == '*' &&
+            cronValues[5] == '*'
         ) {
-            setFrequencyType('standard');
-            return;
-        } else if (cronValues[2] == '*' && cronValues[3] == '*') {
             setFrequencyType('standard');
             return;
         } else if (cronValues[3] == '*' && cronValues[4] == '*') {
             setFrequencyType('standard');
             return;
-        } else if (cronValues[4] == '*') {
+        } else if (cronValues[4] == '*' && cronValues[5] == '*') {
+            setFrequencyType('standard');
+            return;
+        } else if (cronValues[5] == '*') {
             setFrequencyType('standard');
             return;
         } else {
@@ -73,25 +73,15 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
     }, []);
     const isCronExpressionValid: boolean = useMemo(() => {
         const cronValues = builder.cronExpression.split(' ');
-        if (cronValues.length < 5) {
+        if (cronValues.length < 6) {
             // make sure it's valid cron syntax
-            return false;
-        }
-        if (
-            cronValues[0] !== '*' &&
-            !(
-                !Number.isNaN(cronValues[0]) &&
-                parseInt(cronValues[0]) <= 59 &&
-                parseInt(cronValues[0]) >= 0
-            )
-        ) {
             return false;
         }
         if (
             cronValues[1] !== '*' &&
             !(
                 !Number.isNaN(cronValues[1]) &&
-                parseInt(cronValues[1]) <= 23 &&
+                parseInt(cronValues[1]) <= 59 &&
                 parseInt(cronValues[1]) >= 0
             )
         ) {
@@ -101,7 +91,7 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
             cronValues[2] !== '*' &&
             !(
                 !Number.isNaN(cronValues[2]) &&
-                parseInt(cronValues[2]) <= 31 &&
+                parseInt(cronValues[2]) <= 23 &&
                 parseInt(cronValues[2]) >= 0
             )
         ) {
@@ -111,8 +101,8 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
             cronValues[3] !== '*' &&
             !(
                 !Number.isNaN(cronValues[3]) &&
-                parseInt(cronValues[3]) <= 12 &&
-                parseInt(cronValues[3]) >= 1
+                parseInt(cronValues[3]) <= 31 &&
+                parseInt(cronValues[3]) >= 0
             )
         ) {
             return false;
@@ -121,8 +111,18 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
             cronValues[4] !== '*' &&
             !(
                 !Number.isNaN(cronValues[4]) &&
-                parseInt(cronValues[4]) <= 6 &&
-                parseInt(cronValues[4]) >= 0
+                parseInt(cronValues[4]) <= 12 &&
+                parseInt(cronValues[4]) >= 1
+            )
+        ) {
+            return false;
+        }
+        if (
+            cronValues[5] !== '*' &&
+            !(
+                !Number.isNaN(cronValues[5]) &&
+                parseInt(cronValues[5]) <= 6 &&
+                parseInt(cronValues[5]) >= 0
             )
         ) {
             return false;
@@ -133,6 +133,14 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
         return !!builder.name && !!builder.pixel && !!builder.cronTz;
     }, [builder.name, builder.pixel, builder.cronTz]);
 
+    const addJob = async () => {
+        setIsLoading(true);
+        await runPixel(
+            `META|ScheduleJob(jobName="${builder.name}",jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression} ? *",cronTz="${builder.cronTz}",recipe="<encode>${builder.pixel}</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
+        );
+        close();
+        setIsLoading(false);
+    };
     return (
         <Modal open={isOpen} maxWidth="md" fullWidth>
             <Modal.Title>
@@ -257,6 +265,8 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                             !isBaseFormValid ||
                             !isCronExpressionValid
                         }
+                        onClick={addJob}
+                        loading={isLoading}
                     >
                         Create
                     </Button>

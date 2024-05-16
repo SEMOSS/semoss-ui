@@ -13,10 +13,10 @@ import { useRootStore } from '@/hooks';
 import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
-import { HistoryJob, Job, JobUIState, PixelReturnJob } from './job.types';
+import { HistoryJob, Job, PixelReturnJob } from './job.types';
 import {
     convertDeltaToRuntimeString,
-    convertTimeToFrequencyString,
+    getHumanReadableCronExpression,
     convertTimetoDate,
 } from './job.utils';
 import { JobsTable } from './JobsTable';
@@ -66,34 +66,14 @@ export function JobsPage() {
                     const pixelJobs: Record<string, PixelReturnJob> =
                         response.pixelReturn[0].output;
                     const jobs: Job[] = Object.values(pixelJobs).map((job) => {
-                        let jobUIState: JobUIState;
-                        try {
-                            jobUIState = JSON.parse(
-                                job.uiState.replace(/\\"/g, "'"),
-                            );
-                        } catch (e) {
-                            return {
-                                id: job.jobId,
-                                name: job.jobName,
-                                type: 'Custom',
-                                frequencyString: job.cronExpression,
-                                timeZone: job.cronTz,
-                                tags: (job?.jobTags ?? '').split(','),
-                                lastRun: job.PREV_FIRE_TIME,
-                                nextRun: job.NEXT_FIRE_TIME,
-                                ownerId: job.USER_ID,
-                                isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
-                                group: job.jobGroup,
-                            };
-                        }
-
                         return {
                             id: job.jobId,
                             name: job.jobName,
-                            type: jobUIState.jobType,
-                            frequencyString:
-                                convertTimeToFrequencyString(jobUIState),
-                            timeZone: jobUIState.cronTimeZone,
+                            type: 'Custom',
+                            frequencyString: getHumanReadableCronExpression(
+                                job.cronExpression.replaceAll('?', '*'),
+                            ),
+                            timeZone: job.cronTz,
                             tags: (job?.jobTags ?? '').split(','),
                             lastRun: job.PREV_FIRE_TIME,
                             nextRun: job.NEXT_FIRE_TIME,
@@ -137,7 +117,7 @@ export function JobsPage() {
     const pauseJobs = async () => {
         let pixel = ``;
         selectedPausedJobs.forEach((job) => {
-            pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["undefined"]);`;
+            pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
             await runPixel(pixel);

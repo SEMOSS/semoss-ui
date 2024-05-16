@@ -128,7 +128,7 @@ export const JobsTable = (props: {
                         params.value === 'INACTIVE'
                     )
                 ) {
-                    time = dayjs(params.value).format('MM/DD/YYYY HH:MMA');
+                    time = dayjs(params.value).format('MM/DD/YYYY H:MMA');
                 }
                 return <>{time}</>;
             },
@@ -161,7 +161,7 @@ export const JobsTable = (props: {
                             size="medium"
                             onClick={() => {
                                 const job = jobs.find(
-                                    (job) => (job.id = params.value),
+                                    (job) => job.id == params.value,
                                 );
                                 runJob(job);
                             }}
@@ -184,7 +184,7 @@ export const JobsTable = (props: {
                             size="medium"
                             onClick={() => {
                                 const job = jobs.find(
-                                    (job) => (job.id = params.value),
+                                    (job) => job.id == params.value,
                                 );
                                 showDeleteJobModal(job);
                             }}

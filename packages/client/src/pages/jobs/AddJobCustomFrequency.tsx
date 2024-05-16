@@ -16,30 +16,30 @@ export const AddJobCustomFrequency = (props: {
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
-        if (cronValues.length < 5) {
+        if (cronValues.length < 6) {
             // make sure it's valid cron syntax
             return;
         }
-        if (!Number.isNaN(cronValues[0]) || cronValues[0] == '*') {
-            setCronMinute(cronValues[0]);
-        }
         if (!Number.isNaN(cronValues[1]) || cronValues[1] == '*') {
-            setCronHour(cronValues[1]);
+            setCronMinute(cronValues[1]);
         }
         if (!Number.isNaN(cronValues[2]) || cronValues[2] == '*') {
-            setCronDayOfMonth(cronValues[2]);
+            setCronHour(cronValues[2]);
         }
         if (!Number.isNaN(cronValues[3]) || cronValues[3] == '*') {
-            setCronMonth(cronValues[3]);
+            setCronDayOfMonth(cronValues[3]);
         }
         if (!Number.isNaN(cronValues[4]) || cronValues[4] == '*') {
-            setCronDayOfWeek(cronValues[4]);
+            setCronMonth(cronValues[4]);
+        }
+        if (!Number.isNaN(cronValues[5]) || cronValues[5] == '*') {
+            setCronDayOfWeek(cronValues[5]);
         }
     }, []);
     useEffect(() => {
         setBuilderField(
             'cronExpression',
-            `${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek}`,
+            `0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek}`,
         );
     }, [cronMinute, cronHour, cronDayOfMonth, cronMonth, cronDayOfWeek]);
 

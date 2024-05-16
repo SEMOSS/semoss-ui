@@ -1,43 +1,82 @@
-import { JobUIState } from './job.types';
+import { DaysOfWeek, Months } from './job.constants';
 
-export function convertTimeToFrequencyString(job: JobUIState) {
-    if (!job?.customCron) {
-        let freq = job.frequency.computer;
-        let timeStr = job.frequency.human;
+export function getHumanReadableCronExpression(cronExpression: string) {
+    const cronValues = cronExpression.split(' ');
+    if (cronValues.length < 6) {
+        return 'Invalid cron syntax';
+    } else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
+        return cronValues.slice(0, 6).join(' ');
+    }
 
-        if (freq === 2) {
-            // weekly
-            timeStr = timeStr + ' on ' + job.dayOfWeek;
+    try {
+        if (
+            cronValues[3] == '*' &&
+            cronValues[4] == '*' &&
+            cronValues[5] == '*'
+        ) {
+            // daily frequency
+            const displayHour =
+                parseInt(cronValues[2]) === 0
+                    ? 12
+                    : parseInt(cronValues[2]) > 12
+                    ? parseInt(cronValues[2]) - 12
+                    : parseInt(cronValues[2]);
+            const displayMinute = parseInt(cronValues[1]);
+            const amPm = parseInt(cronValues[2]) >= 12 ? 'PM' : 'AM';
+            return `Daily at ${displayHour}:${
+                displayMinute < 10 ? `0${displayMinute}` : displayMinute
+            }${amPm}`;
+        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
+            // weekly frequency
+            const displayHour =
+                parseInt(cronValues[2]) === 0
+                    ? 12
+                    : parseInt(cronValues[2]) > 12
+                    ? parseInt(cronValues[2]) - 12
+                    : parseInt(cronValues[2]);
+            const displayMinute = parseInt(cronValues[1]);
+            const amPm = parseInt(cronValues[2]) >= 12 ? 'PM' : 'AM';
+            const dayOfWeek = DaysOfWeek.find(
+                (value) => value.value == parseInt(cronValues[5]),
+            );
+            return `Every ${dayOfWeek.day} at ${displayHour}:${
+                displayMinute < 10 ? `0${displayMinute}` : displayMinute
+            }${amPm}`;
+        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
+            // monthly frequency
+            const displayHour =
+                parseInt(cronValues[2]) === 0
+                    ? 12
+                    : parseInt(cronValues[2]) > 12
+                    ? parseInt(cronValues[2]) - 12
+                    : parseInt(cronValues[2]);
+            const displayMinute = parseInt(cronValues[1]);
+            const amPm = parseInt(cronValues[2]) >= 12 ? 'PM' : 'AM';
+            return `Every month on day ${cronValues[3]} at ${displayHour}:${
+                displayMinute < 10 ? `0${displayMinute}` : displayMinute
+            }${amPm}`;
+        } else if (cronValues[4] == '*') {
+            const displayHour =
+                parseInt(cronValues[2]) === 0
+                    ? 12
+                    : parseInt(cronValues[2]) > 12
+                    ? parseInt(cronValues[2]) - 12
+                    : parseInt(cronValues[2]);
+            const displayMinute = parseInt(cronValues[1]);
+            const amPm = parseInt(cronValues[2]) >= 12 ? 'PM' : 'AM';
+            const month = Months.find(
+                (value) => value.value == parseInt(cronValues[4]),
+            );
+            return `Yearly on ${month.month} ${
+                cronValues[3]
+            } at ${displayHour}:${
+                displayMinute < 10 ? `0${displayMinute}` : displayMinute
+            }${amPm}`;
+        } else {
+            return cronValues.slice(0, 6).join(' ');
         }
-
-        if (freq === 3) {
-            // monthly
-            timeStr = timeStr + ' on the ' + job.dayOfMonth;
-            const dayOfMonthString = job.dayOfMonth.toString();
-            const monthLastDigit = dayOfMonthString.substring(
-                    dayOfMonthString.length - 1,
-                    dayOfMonthString.length,
-                ),
-                monthFirstDigit = dayOfMonthString.substring(0, 1);
-            if (
-                dayOfMonthString.length > 1 &&
-                (monthFirstDigit === '1' || monthLastDigit === '0')
-            )
-                timeStr += 'th ';
-            else if (monthLastDigit === '1') timeStr += 'st ';
-            else if (monthLastDigit === '2') timeStr += 'nd ';
-            else if (monthLastDigit === '3') timeStr += 'rd ';
-            else timeStr += 'th ';
-        }
-
-        if (freq >= 1) {
-            // daily
-            timeStr = timeStr + ' at ' + job.hour + ':' + job.minute + job.ampm;
-        }
-
-        return timeStr;
-    } else {
-        return 'Custom';
+    } catch (e) {
+        return cronValues.slice(0, 6).join(' ');
     }
 }
 
