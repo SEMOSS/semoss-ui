@@ -3759,7 +3759,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             parameters: {
                                 type: 'pixel',
                                 // Do we want to replace hardcoded LLM to a user default
-                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=[{{question}}]);`,
+                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{question}}"]);`,
                             },
                         },
                     ],
@@ -3949,7 +3949,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `FileRead ( filePath = [{{file}}], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
+                                code: `FileRead ( filePath = ["{{file}}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
                             },
                         },
                         {
@@ -3957,7 +3957,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=[{{block.question.value}}]);`,
+                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{question}}"]);`,
                             },
                         },
                     ],
