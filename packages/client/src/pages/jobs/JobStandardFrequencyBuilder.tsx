@@ -4,7 +4,7 @@ import { Autocomplete } from '@mui/material';
 import { DaysOfWeek, FrequencyOptions, Months } from './job.constants';
 import { DayOfWeek, Frequencies, JobBuilder, Month } from './job.types';
 
-export const AddJobStandardFrequency = (props: {
+export const JobStandardFrequencyBuilder = (props: {
     builder: JobBuilder;
     setBuilderField: (field: string, value: string | string[]) => void;
 }) => {

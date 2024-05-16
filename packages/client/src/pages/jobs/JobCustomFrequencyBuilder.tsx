@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stack, TextField } from '@semoss/ui';
 import { JobBuilder } from './job.types';
 
-export const AddJobCustomFrequency = (props: {
+export const JobCustomFrequencyBuilder = (props: {
     builder: JobBuilder;
     setBuilderField: (field: string, value: string | string[]) => void;
 }) => {

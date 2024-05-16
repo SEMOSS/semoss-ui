@@ -25,7 +25,7 @@ export function getHumanReadableCronExpression(cronExpression: string) {
             const amPm = parseInt(cronValues[2]) >= 12 ? 'PM' : 'AM';
             return `Daily at ${displayHour}:${
                 displayMinute < 10 ? `0${displayMinute}` : displayMinute
-            }${amPm}`;
+            } ${amPm}`;
         } else if (cronValues[3] == '*' && cronValues[4] == '*') {
             // weekly frequency
             const displayHour =
@@ -41,7 +41,7 @@ export function getHumanReadableCronExpression(cronExpression: string) {
             );
             return `Every ${dayOfWeek.day} at ${displayHour}:${
                 displayMinute < 10 ? `0${displayMinute}` : displayMinute
-            }${amPm}`;
+            } ${amPm}`;
         } else if (cronValues[3] == '*' && cronValues[4] == '*') {
             // monthly frequency
             const displayHour =
@@ -54,7 +54,7 @@ export function getHumanReadableCronExpression(cronExpression: string) {
             const amPm = parseInt(cronValues[2]) >= 12 ? 'PM' : 'AM';
             return `Every month on day ${cronValues[3]} at ${displayHour}:${
                 displayMinute < 10 ? `0${displayMinute}` : displayMinute
-            }${amPm}`;
+            } ${amPm}`;
         } else if (cronValues[4] == '*') {
             const displayHour =
                 parseInt(cronValues[2]) === 0
@@ -71,7 +71,7 @@ export function getHumanReadableCronExpression(cronExpression: string) {
                 cronValues[3]
             } at ${displayHour}:${
                 displayMinute < 10 ? `0${displayMinute}` : displayMinute
-            }${amPm}`;
+            } ${amPm}`;
         } else {
             return cronValues.slice(0, 6).join(' ');
         }

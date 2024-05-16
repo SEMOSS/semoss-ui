@@ -16,8 +16,9 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
-import { Job } from './job.types';
+import { Job, JobBuilder } from './job.types';
 import { runPixel } from '@/api';
+import { getHumanReadableCronExpression } from './job.utils';
 
 const StyledDataGrid = styled(DataGrid)(() => ({
     '.MuiDataGrid-overlayWrapper': {
@@ -38,6 +39,7 @@ export const JobsTable = (props: {
     rowSelectionModel: GridRowSelectionModel;
     setRowSelectionModel: (value: GridRowSelectionModel) => void;
     getHistory: () => void;
+    setInitialBuilderState: (builder: JobBuilder) => void;
     showDeleteJobModal: (job: Job) => void;
 }) => {
     const {
@@ -46,6 +48,7 @@ export const JobsTable = (props: {
         rowSelectionModel,
         setRowSelectionModel,
         getHistory,
+        setInitialBuilderState,
         showDeleteJobModal,
     } = props;
     const notification = useNotification();
@@ -83,8 +86,17 @@ export const JobsTable = (props: {
         },
         {
             headerName: 'Frequency',
-            field: 'frequencyString',
+            field: 'cronExpression',
             flex: 1,
+            renderCell: (params) => {
+                return (
+                    <>
+                        {getHumanReadableCronExpression(
+                            params.value.replaceAll('?', '*'),
+                        )}
+                    </>
+                );
+            },
         },
         {
             headerName: 'Time Zone',
@@ -128,7 +140,7 @@ export const JobsTable = (props: {
                         params.value === 'INACTIVE'
                     )
                 ) {
-                    time = dayjs(params.value).format('MM/DD/YYYY H:MMA');
+                    time = dayjs(params.value).format('MM/DD/YYYY h:MM A');
                 }
                 return <>{time}</>;
             },
@@ -175,9 +187,26 @@ export const JobsTable = (props: {
                                 <PlayArrow />
                             )}
                         </IconButton>
-                        {/* <IconButton color="primary" size="medium" disabled>
+                        <IconButton
+                            color="primary"
+                            size="medium"
+                            disabled={runJobLoading}
+                            onClick={() => {
+                                const job = jobs.find(
+                                    (job) => job.id == params.value,
+                                );
+                                setInitialBuilderState({
+                                    id: job.id,
+                                    name: job.name,
+                                    pixel: job.pixel,
+                                    tags: job.tags,
+                                    cronExpression: job.cronExpression,
+                                    cronTz: job.timeZone,
+                                });
+                            }}
+                        >
                             <Edit />
-                        </IconButton> */}
+                        </IconButton>
                         <IconButton
                             disabled={runJobLoading}
                             color="error"

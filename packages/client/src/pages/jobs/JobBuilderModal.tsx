@@ -11,25 +11,32 @@ import {
 } from '@semoss/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { timezones } from './job.constants';
-import { AddJobStandardFrequency } from './AddJobStandardFrequency';
-import { AddJobCustomFrequency } from './AddJobCustomFrequency';
+import { JobStandardFrequencyBuilder } from './JobStandardFrequencyBuilder';
+import { JobCustomFrequencyBuilder } from './JobCustomFrequencyBuilder';
 import { JobBuilder } from './job.types';
 import { runPixel } from '@/api';
 
-export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
-    const { isOpen, close } = props;
+const emptyBuilder: JobBuilder = {
+    id: null,
+    name: '',
+    pixel: '',
+    tags: [],
+    cronExpression: '0 0 12 * * *',
+    cronTz: 'Eastern Standard Time',
+};
+
+export const JobBuilderModal = (props: {
+    isOpen: boolean;
+    close: () => void;
+    initialBuilder?: JobBuilder;
+}) => {
+    const { isOpen, close, initialBuilder } = props;
 
     const [frequencyType, setFrequencyType] = useState<'custom' | 'standard'>(
         'standard',
     );
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [builder, setBuilder] = useState<JobBuilder>({
-        name: '',
-        pixel: '',
-        tags: [],
-        cronExpression: '0 0 12 * * *',
-        cronTz: 'Eastern Standard Time',
-    });
+    const [builder, setBuilder] = useState<JobBuilder>(emptyBuilder);
     const setBuilderField = (field: string, value: string | string[]) => {
         setBuilder((previousBuilder) => ({
             ...previousBuilder,
@@ -37,6 +44,18 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
         }));
     };
     const filter = createFilterOptions<string>();
+
+    const isEditMode = useMemo(() => {
+        return !!builder.id;
+    }, [builder.id]);
+
+    useEffect(() => {
+        if (!!initialBuilder) {
+            setBuilder(initialBuilder);
+        } else {
+            setBuilder(emptyBuilder);
+        }
+    }, [initialBuilder ? initialBuilder.id : null]);
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
@@ -70,7 +89,7 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
             setFrequencyType('custom');
             return;
         }
-    }, []);
+    }, [builder.cronExpression]);
     const isCronExpressionValid: boolean = useMemo(() => {
         const cronValues = builder.cronExpression.split(' ');
         if (cronValues.length < 6) {
@@ -129,18 +148,68 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
         }
         return true;
     }, [builder.cronExpression]);
+
     const isBaseFormValid: boolean = useMemo(() => {
         return !!builder.name && !!builder.pixel && !!builder.cronTz;
     }, [builder.name, builder.pixel, builder.cronTz]);
 
+    const hasChanges: boolean = useMemo(() => {
+        if (builder.id == null) {
+            return true;
+        }
+
+        return (
+            builder.name !== initialBuilder.name ||
+            builder.pixel !== initialBuilder.pixel ||
+            JSON.stringify(builder.tags) !==
+                JSON.stringify(initialBuilder.tags) ||
+            builder.cronTz !== initialBuilder.cronTz ||
+            builder.cronExpression !== initialBuilder.cronExpression
+        );
+    }, [
+        builder.name,
+        builder.pixel,
+        builder.tags,
+        builder.cronTz,
+        builder.cronExpression,
+    ]);
+
     const addJob = async () => {
         setIsLoading(true);
         await runPixel(
-            `META|ScheduleJob(jobName="${builder.name}",jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression} ? *",cronTz="${builder.cronTz}",recipe="<encode>${builder.pixel}</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
+            `META|ScheduleJob(jobName="${builder.name}",${
+                builder.tags.length
+                    ? `jobTags="${JSON.stringify(builder.tags)}",`
+                    : ''
+            }jobGroup=["defaultGroup"],cronExpression="${
+                builder.cronExpression
+            } *",cronTz="${builder.cronTz}",recipe="<encode>${
+                builder.pixel
+            }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
         );
         close();
         setIsLoading(false);
     };
+
+    const updateJob = async () => {
+        setIsLoading(true);
+        await runPixel(
+            `META|EditScheduledJob(jobId="${builder.id}",jobName="${
+                builder.name
+            }",${
+                builder.tags.length
+                    ? `jobTags="${JSON.stringify(builder.tags)}",`
+                    : ''
+            }jobGroup=["defaultGroup"],cronExpression="${
+                builder.cronExpression
+            } *",cronTz="${builder.cronTz}",recipe="<encode>${
+                builder.pixel
+            }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
+        );
+        close();
+        setIsLoading(false);
+    };
+
     return (
         <Modal open={isOpen} maxWidth="md" fullWidth>
             <Modal.Title>
@@ -149,7 +218,7 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                     justifyContent="space-between"
                     alignItems="center"
                 >
-                    <span>Add Job</span>
+                    <span>{isEditMode ? 'Edit' : 'Add'} Job</span>
                     <IconButton aria-label="close" onClick={close}>
                         <Close />
                     </IconButton>
@@ -235,12 +304,12 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                         )}
                     />
                     {frequencyType === 'standard' ? (
-                        <AddJobStandardFrequency
+                        <JobStandardFrequencyBuilder
                             builder={builder}
                             setBuilderField={setBuilderField}
                         />
                     ) : (
-                        <AddJobCustomFrequency
+                        <JobCustomFrequencyBuilder
                             builder={builder}
                             setBuilderField={setBuilderField}
                         />
@@ -263,12 +332,15 @@ export const AddJobModal = (props: { isOpen: boolean; close: () => void }) => {
                         disabled={
                             isLoading ||
                             !isBaseFormValid ||
-                            !isCronExpressionValid
+                            !isCronExpressionValid ||
+                            !hasChanges
                         }
-                        onClick={addJob}
+                        onClick={() => {
+                            isEditMode ? updateJob() : addJob();
+                        }}
                         loading={isLoading}
                     >
-                        Create
+                        {isEditMode ? 'Save' : 'Add'}
                     </Button>
                 </Stack>
             </Modal.Actions>
