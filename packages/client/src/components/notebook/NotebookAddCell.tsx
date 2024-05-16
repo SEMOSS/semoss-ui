@@ -13,7 +13,7 @@ import {
     Select,
 } from '@semoss/ui';
 
-import { useBlocks, usePixel } from '@/hooks';
+import { useBlocks, usePixel, useRootStore } from '@/hooks';
 import {
     ActionMessages,
     CellStateConfig,
@@ -46,6 +46,8 @@ import {
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
+
+import { LoadingScreen } from '@/components/ui';
 
 const StyledModalTitle = styled(Typography)(({ theme }) => ({
     alignContent: 'center',
@@ -209,10 +211,13 @@ export const NotebookAddCell = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const [selectedAddCell, setSelectedAddCell] = useState<string>('');
+
         const [importModalType, setImportModalType] = useState<string>('');
+        const [tableNames, setTableNames] = useState<string[]>([]);
         const [isDataImportModalOpen, setIsDataImportModalOpen] =
             useState<boolean>(false);
         const open = Boolean(anchorEl);
+
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
@@ -229,6 +234,12 @@ export const NotebookAddCell = observer(
         const [queryElementCounter, setQueryElementCounter] = useState(0);
 
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;');
+        const [isDatabaseLoading, setIsDatabaseLoading] =
+            useState<boolean>(false);
+        const [showEditColumns, setShowEditColumns] = useState<boolean>(false);
+        const [showTablePreview, setShowTablePreview] =
+            useState<boolean>(false);
+        const { configStore, monolithStore } = useRootStore();
 
         const {
             fields: stackFields,
@@ -323,6 +334,30 @@ export const NotebookAddCell = observer(
 
         const onSubmit = (submitData) => {
             console.log({ submitData });
+        };
+
+        const retrieveDatabaseTables = async (databaseId) => {
+            setIsDatabaseLoading(true);
+            const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
+
+            monolithStore.runQuery(pixelString).then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const pixelResponse = response.pixelReturn[0].output;
+
+                if (type.indexOf('ERROR') === -1) {
+                    const tableNames = [
+                        ...pixelResponse.reduce((set, ele) => {
+                            set.add(ele[0]);
+                            return set;
+                        }, new Set()),
+                    ];
+                    setTableNames(tableNames);
+                } else {
+                    console.error('Error retrieving database tables');
+                }
+
+                setIsDatabaseLoading(false);
+            });
         };
 
         return (
@@ -426,6 +461,9 @@ export const NotebookAddCell = observer(
 
                 {/* Import Data Modal */}
                 <Modal open={isDataImportModalOpen} fullWidth>
+                    {isDatabaseLoading && (
+                        <LoadingScreen.Trigger description="Retrieving database" />
+                    )}
                     <form
                         onSubmit={handleSubmit(onSubmit)}
                         style={{ border: '1px solid red', margin: '30px 41px' }}
@@ -444,9 +482,12 @@ export const NotebookAddCell = observer(
                                 control={control}
                                 render={({ field }) => (
                                     <Select
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                            field.onChange(e.target.value);
+                                            retrieveDatabaseTables(
+                                                e.target.value,
+                                            );
+                                        }}
                                         label={'Select Database...'}
                                         value={field.value || null}
                                         size={'small'}
@@ -455,7 +496,7 @@ export const NotebookAddCell = observer(
                                         }}
                                     >
                                         {userDatabases?.map((ele) => (
-                                            <Menu.Item value={ele.app_name}>
+                                            <Menu.Item value={ele.database_id}>
                                                 {ele.app_name}
                                             </Menu.Item>
                                         ))}
@@ -466,42 +507,80 @@ export const NotebookAddCell = observer(
                         <Modal.Content
                             sx={{ border: '1px solid green', padding: '0px' }}
                         >
-                            <Stack spacing={1} direction="column">
-                                <span>Data</span>
-                                <Controller
-                                    name={'tableSelect'}
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select
-                                            onChange={(e) => {
-                                                // field.onChange(e.target.value)
-                                                console.log({ e });
-                                            }}
-                                            label={'Select Table...'}
-                                            // value={field.value || null}
-                                            size={'small'}
-                                            sx={{
-                                                minWidth: '220px',
-                                            }}
-                                        >
-                                            <Menu.Item value={'sample-table-1'}>
-                                                sample table 1
-                                            </Menu.Item>
-                                            <Menu.Item value={'sample-table-2'}>
-                                                sample table 2
-                                            </Menu.Item>
-                                            <Menu.Item value={'sample-table-3'}>
-                                                sample table 3
-                                            </Menu.Item>
-                                            {/* {userDatabases?.map((ele) => (
-                                                    <Menu.Item value={ele.app_name}>
-                                                        {ele.app_name}
+                            {!!tableNames.length && (
+                                <Stack
+                                    spacing={1}
+                                    direction="column"
+                                    sx={{
+                                        backgroundColor: '#FAFAFA',
+                                        padding: '16px',
+                                    }}
+                                >
+                                    <Typography variant="h6">Data:</Typography>
+                                    <Controller
+                                        name={'tableSelect'}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                                label={'Select Table...'}
+                                                value={field.value}
+                                                size={'small'}
+                                                color="primary"
+                                                disabled={!tableNames.length}
+                                            >
+                                                {tableNames?.map((ele) => (
+                                                    <Menu.Item value={ele}>
+                                                        {ele}
                                                     </Menu.Item>
-                                                ))} */}
-                                        </Select>
+                                                ))}
+                                            </Select>
+                                        )}
+                                    />
+                                    <Button
+                                        variant="text"
+                                        color="primary"
+                                        size="small"
+                                        onClick={() => {
+                                            setShowEditColumns(
+                                                !showEditColumns,
+                                            );
+                                            setShowTablePreview(false);
+                                        }}
+                                    >
+                                        Edit Columns
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        size="small"
+                                        onClick={() => {
+                                            setShowTablePreview(
+                                                !showTablePreview,
+                                            );
+                                            setShowEditColumns(false);
+                                        }}
+                                    >
+                                        Preview
+                                    </Button>
+
+                                    {showEditColumns && (
+                                        <div>
+                                            <b>Edit Columns</b>
+                                        </div>
                                     )}
-                                />
-                            </Stack>
+
+                                    {showTablePreview && (
+                                        <div>
+                                            <b>Preview</b>
+                                        </div>
+                                    )}
+                                </Stack>
+                            )}
                             {stackFields.map((stack, stackIndex) => (
                                 <Stack spacing={1} direction="column">
                                     <span>{stack.queryType}</span>
@@ -514,7 +593,6 @@ export const NotebookAddCell = observer(
                                         color="error"
                                         size="small"
                                         onClick={() => {
-                                            // alert(`delete ${stackIndex}`);
                                             removeStack(stackIndex);
                                         }}
                                     >
