@@ -1,4 +1,11 @@
-import { BlockJSON, ListenerActions, SerializedState } from './state.types';
+import {
+    BlockJSON,
+    ListenerActions,
+    SerializedState,
+    Variable,
+    VariableType,
+    VariableWithId,
+} from './state.types';
 import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
 
@@ -20,6 +27,11 @@ export enum ActionMessages {
     UPDATE_CELL = 'UPDATE_CELL',
     RUN_CELL = 'RUN_CELL',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
+    ADD_VARIABLE = 'ADD_VARIABLE',
+    RENAME_VARIABLE = 'RENAME_VARIABLE',
+    EDIT_VARIABLE = 'EDIT_VARIABLE',
+    DELETE_VARIABLE = 'DELETE_VARIABLE',
+    ADD_DEPENDENCY = 'ADD_DEPENDENCY',
 }
 
 export type Actions =
@@ -38,7 +50,12 @@ export type Actions =
     | DeleteCellAction
     | UpdateCellAction
     | RunCellAction
-    | DispatchEventAction;
+    | DispatchEventAction
+    | AddVariableAction
+    | RenameVariableAction
+    | EditVariableAction
+    | DeleteVariableAction
+    | AddDependencyAction;
 
 export interface Action {
     message: string;
@@ -202,5 +219,41 @@ export interface DispatchEventAction extends Action {
     payload: {
         name: string;
         detail?: Record<string, unknown>;
+    };
+}
+
+export interface AddDependencyAction extends Action {
+    message: ActionMessages.ADD_DEPENDENCY;
+    payload: {
+        id: string;
+        type: VariableType;
+    };
+}
+
+export interface AddVariableAction extends Action {
+    message: ActionMessages.ADD_VARIABLE;
+    payload: Variable;
+}
+
+export interface EditVariableAction extends Action {
+    message: ActionMessages.EDIT_VARIABLE;
+    payload: {
+        from: VariableWithId;
+        to: Variable;
+    };
+}
+
+export interface RenameVariableAction extends Action {
+    message: ActionMessages.RENAME_VARIABLE;
+    payload: {
+        id: string;
+        alias: string;
+    };
+}
+
+export interface DeleteVariableAction extends Action {
+    message: ActionMessages.DELETE_VARIABLE;
+    payload: {
+        id: string;
     };
 }

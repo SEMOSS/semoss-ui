@@ -8,8 +8,6 @@ import {
     styled,
     IconButton,
     ToggleTabsGroup,
-    ToggleButtonGroup,
-    ToggleButton,
     TextField,
 } from '@semoss/ui';
 
@@ -20,6 +18,7 @@ import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
 import { Search, SearchOff } from '@mui/icons-material';
+import { Help } from '@/components/help';
 
 import { Filterbox } from '@/components/ui';
 import UPDATED_TERMINAL from '@/assets/img/updated_terminal.png';
@@ -51,8 +50,24 @@ const StyledSectionLabel = styled(Typography)(() => ({
     fontWeight: '500',
 }));
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-    marginBottom: theme.spacing(4),
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    border: '1px',
+    minHeight: '42px',
+    color: theme.palette.secondary.light,
+    borderRadius: theme.shape.borderRadius,
+    alignItems: 'center',
+    padding: '0px 3px',
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '38px',
+    padding: '8px 11px',
+    '&.MuiTab-root': {
+        borderRadius: theme.shape.borderRadius,
+    },
+    '&.Mui-selected': {
+        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+    },
 }));
 
 type MODE = 'Mine' | 'Discoverable' | 'System';
@@ -189,7 +204,7 @@ export const HomePage = observer((): JSX.Element => {
      */
     let favoritePixel =
         mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
-    favoritePixel += `(onlyFavorites=[true]);`;
+    favoritePixel += `(filterWord=["${search}"], onlyFavorites=[true]);`;
     const getFavoritedApps = usePixel(favoritePixel);
 
     useEffect(() => {
@@ -218,9 +233,6 @@ export const HomePage = observer((): JSX.Element => {
                     const newFavorites = favoritedApps;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
                         if (newFavorites[i].project_id === app.project_id) {
-                            newFavorites.splice(i, 1);
-                        }
-                        {
                             newFavorites.splice(i, 1);
                         }
                     }
@@ -307,7 +319,32 @@ export const HomePage = observer((): JSX.Element => {
                         alignItems={'center'}
                         justifyContent={'space-between'}
                     >
-                        <StyledToggleButtonGroup value={mode}>
+                        <StyledToggleTabsGroup
+                            value={mode}
+                            onChange={(e: React.SyntheticEvent, val) => {
+                                dispatch({
+                                    type: 'field',
+                                    field: 'databases',
+                                    value: [],
+                                });
+                                setMode(val as MODE);
+                            }}
+                        >
+                            <StyledToggleTabsGroupItem
+                                label="My Apps"
+                                value={'Mine'}
+                            />
+                            <StyledToggleTabsGroupItem
+                                label="Discoverable"
+                                value={'Discoverable'}
+                            />
+                            <StyledToggleTabsGroupItem
+                                label="System Apps"
+                                value={'System'}
+                            />
+                        </StyledToggleTabsGroup>
+
+                        {/* <StyledToggleButtonGroup value={mode}>
                             <ToggleButton
                                 color="secondary"
                                 value="Mine"
@@ -350,7 +387,7 @@ export const HomePage = observer((): JSX.Element => {
                             >
                                 {'System Apps'}
                             </ToggleButton>
-                        </StyledToggleButtonGroup>
+                        </StyledToggleButtonGroup> */}
                         <Stack
                             direction="row"
                             alignItems={'center'}
@@ -385,17 +422,13 @@ export const HomePage = observer((): JSX.Element => {
                         </Stack>
                     </Stack>
 
-                    {'bi'.includes(search.toLowerCase()) &&
-                    'terminal'.includes(search.toLowerCase()) &&
-                    favoritedApps.length > 0 ? (
+                    {mode != 'System' && favoritedApps.length > 0 ? (
                         <StyledSectionLabel variant="subtitle1">
                             Bookmarked
                         </StyledSectionLabel>
                     ) : null}
 
-                    {'bi'.includes(search.toLowerCase()) &&
-                    'terminal'.includes(search.toLowerCase()) &&
-                    favoritedApps.length > 0 ? (
+                    {mode != 'System' && favoritedApps.length > 0 ? (
                         <StyledSection>
                             {favoritedApps.map((app, i) => {
                                 return (
@@ -418,14 +451,11 @@ export const HomePage = observer((): JSX.Element => {
                         </StyledSection>
                     ) : null}
 
-                    {'bi'.includes(search.toLowerCase()) &&
-                        Object.entries(metaFilters).length === 0 &&
-                        'terminal'.includes(search.toLowerCase()) &&
-                        mode == 'System' && (
-                            <StyledSectionLabel variant="subtitle1">
-                                All Apps
-                            </StyledSectionLabel>
-                        )}
+                    {mode == 'System' && (
+                        <StyledSectionLabel variant="subtitle1">
+                            All Apps
+                        </StyledSectionLabel>
+                    )}
 
                     {mode == 'System' && (
                         <StyledSection>
@@ -456,40 +486,52 @@ export const HomePage = observer((): JSX.Element => {
                         </StyledSection>
                     )}
 
-                    {'bi'.includes(search.toLowerCase()) &&
-                    Object.entries(metaFilters).length === 0 &&
-                    'terminal'.includes(search.toLowerCase()) &&
-                    apps.length > 0 ? (
+                    {mode != 'System' && apps.length > 0 ? (
                         <StyledSectionLabel variant="subtitle1">
                             All Apps
                         </StyledSectionLabel>
                     ) : null}
 
-                    {apps.length > 0 ? (
+                    {/* do not show favorited apps in all apps view */}
+                    {mode != 'System' && apps.length > 0 ? (
                         <StyledSection>
-                            {apps.map((app, i) => {
-                                return (
-                                    <AppTileCard
-                                        key={i}
-                                        app={app}
-                                        systemApp={false}
-                                        href={`#/app/${app.project_id}`}
-                                        onAction={() =>
-                                            navigate(`/app/${app.project_id}`)
-                                        }
-                                        appType={app.project_type}
-                                        isFavorite={isFavorited(app.project_id)}
-                                        favorite={() => {
-                                            favoriteApp(app);
-                                        }}
-                                    />
-                                );
-                            })}
+                            {apps
+                                .filter(
+                                    (app) =>
+                                        !favoritedApps.some(
+                                            (filterApp) =>
+                                                filterApp.project_id ===
+                                                app.project_id,
+                                        ),
+                                )
+                                .map((app, i) => {
+                                    return (
+                                        <AppTileCard
+                                            key={i}
+                                            app={app}
+                                            systemApp={false}
+                                            href={`#/app/${app.project_id}`}
+                                            onAction={() =>
+                                                navigate(
+                                                    `/app/${app.project_id}`,
+                                                )
+                                            }
+                                            appType={app.project_type}
+                                            isFavorite={isFavorited(
+                                                app.project_id,
+                                            )}
+                                            favorite={() => {
+                                                favoriteApp(app);
+                                            }}
+                                        />
+                                    );
+                                })}
                         </StyledSection>
                     ) : null}
                 </StyledContentContainer>
             </StyledContainer>
             <WelcomeModal />
+            <Help />
         </Page>
     );
 });

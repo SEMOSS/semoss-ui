@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
+import { Help } from '@/components/help';
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
     marginTop: '-3px',
@@ -257,9 +258,9 @@ export const EngineShell = (props: EngineShellProps) => {
                     </StyledChipContainer>
                 </StyledInfoLeft>
                 <StyledInfoRight>
-                    <StyledDatabaseImage
+                    {/* <StyledDatabaseImage
                         src={`${Env.MODULE}/api/e-${id}/image/download`}
-                    />
+                    /> */}
                     <Stack
                         alignItems={'flex-end'}
                         spacing={1}
@@ -301,13 +302,6 @@ export const EngineShell = (props: EngineShellProps) => {
                                     : 'N/A'}
                             </Typography>
                         </div>
-
-                        {/* <Typography variant={'body2'}>
-                            Published:{' '}
-                            {data.database_date_created
-                                ? data.database_date_created
-                                : 'N/A'}
-                        </Typography> */}
                         <div
                             style={{
                                 width: '100%',
@@ -345,6 +339,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoRight>
             </StyledInfo>
             {children}
+            <Help />
         </Page>
     );
 };

@@ -953,6 +953,634 @@ export class MonolithStore {
     // ----- Users Start -----
 
     // ----- Users End -----
+
+    // ----------------------------------------------------------------------
+    // Teams Start
+    // ----------------------------------------------------------------------
+
+    /**
+     * @name getTeams
+     * @param admin - is admin user
+     */
+    async getTeams(admin: boolean) {
+        let url = `${Env.MODULE}/api/auth/`;
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        url += 'group/getGroups';
+        // get the response
+        const response = await axios.get(url).catch((error) => {
+            throw Error(error);
+        });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get teams');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name addTeam
+     * @param groupId
+     * @param description
+     * @param type
+     * @param isCustomGroup
+     * @returns
+     */
+    async addTeam(
+        groupId: string,
+        description: string,
+        isCustomGroup: boolean,
+        type?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/addGroup';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&description=' + encodeURIComponent(description);
+        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name getTeamUsers
+     * @param groupId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
+     */
+    async getTeamUsers(
+        groupId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getGroupMembers';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+        limit && (params['limit'] = limit);
+        offset && (params['offset'] = offset);
+        searchTerm && (params['searchTerm'] = searchTerm);
+
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get group members');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name getTeamUsersCount
+     * @param groupId
+     */
+    async getTeamUsersCount(groupId: string) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getNumMembersInGroup';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get group member count');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name getNonTeamUsers
+     * @param groupId
+     */
+    async getNonTeamUsers(groupId: string) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getNonGroupMembers';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get non group members');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name addTeamUser
+     * @param groupId
+     * @param type
+     * @param userId
+     * @param admin
+     * @param endDate
+     * @returns
+     */
+    async addTeamUser(
+        groupId: string,
+        type: string,
+        userId: string,
+        admin: boolean,
+        endDate?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/`,
+            postData = '';
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        url += 'group/addGroupMember';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&type=' + encodeURIComponent(type);
+        postData += '&userId=' + encodeURIComponent(userId);
+
+        if (endDate) {
+            postData += '&endDate=' + encodeURIComponent(endDate);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name deleteTeamUser
+     * @param groupId
+     * @param type
+     * @param userId
+     * @returns
+     */
+    async deleteTeamUser(user: {
+        groupid: string;
+        type: string;
+        userid: string;
+    }) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/deleteGroupMember';
+
+        postData += 'groupId=' + encodeURIComponent(user.groupid);
+        postData += '&userId=' + encodeURIComponent(user.userid);
+        postData += '&type=' + encodeURIComponent(user.type);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name addProjectPermission
+     * @param groupId
+     * @param type
+     * @param projectId
+     * @param permission
+     * @param endDate
+     * @returns
+     */
+    async addProject(
+        groupId: string,
+        projectId: string,
+        permission: number,
+        type?: string,
+        endDate?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/addGroupProjectPermission';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&projectId=' + encodeURIComponent(projectId);
+        postData += '&permission=' + encodeURIComponent(permission);
+
+        if (endDate) {
+            postData += '&endDate=' + encodeURIComponent(endDate);
+        }
+
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name editProjectPermission
+     * @param groupId
+     * @param type
+     * @param projectId
+     * @param permission
+     * @param endDate
+     * @returns
+     */
+    async editProjectPermisison(
+        groupId: string,
+        project: {
+            projectid: string;
+            permission: number;
+            project_type?: string;
+            endDate?: string;
+        },
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/editGroupProjectPermission';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&projectId=' + encodeURIComponent(project.projectid);
+        postData += '&permission=' + encodeURIComponent(project.permission);
+
+        if (project.project_type) {
+            postData += '&type=' + encodeURIComponent(project.project_type);
+        }
+        if (project.endDate) {
+            postData += '&endDate=' + encodeURIComponent(project.endDate);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name deleteProjectPermission
+     * @param groupId
+     * @param type
+     * @param projectId
+     * @returns
+     */
+    async deleteProjectPermission(
+        groupId,
+        project: {
+            projectid: string;
+            group_type?: string;
+        },
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/removeGroupProjectPermission';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&projectId=' + encodeURIComponent(project.projectid);
+        if (project.group_type) {
+            postData += '&type=' + encodeURIComponent(project.group_type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name getTeamProjects
+     * @param groupId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
+     */
+    async getTeamProjects(
+        groupId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+        onlyApps: boolean,
+        type?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getProjectsForGroup';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+        limit && (params['limit'] = limit);
+        offset && (params['offset'] = offset);
+        searchTerm && (params['searchTerm'] = searchTerm);
+
+        // searchTerm
+        //     ? (params['searchTerm'] = searchTerm)
+        //     : (params['searchTerm'] = '');
+        onlyApps && (params['onlApps'] = onlyApps);
+        type ? (params['type'] = type) : (params['type'] = null);
+
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get group members');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name getUnassignedTeamProjects
+     * @param groupId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
+     */
+    async getUnassignedTeamProjects(groupId: string) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getAvailableProjectsForGroup';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get group members');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name addEnginePermission
+     * @param groupId
+     * @param type
+     * @param projectId
+     * @param permission
+     * @param endDate
+     * @returns
+     */
+    async addEnginePermission(
+        groupId: string,
+        engineId: string,
+        permission: number,
+        type?: string,
+        endDate?: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/addGroupEnginePermission';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&engineId=' + encodeURIComponent(engineId);
+        postData += '&permission=' + encodeURIComponent(permission);
+
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        if (endDate) {
+            postData += '&endDate=' + encodeURIComponent(endDate);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name editEnginePermission
+     * @param groupId
+     * @param type
+     * @param projectId
+     * @param permission
+     * @param endDate
+     * @returns
+     */
+    async editEnginePermission(
+        groupId: string,
+        engine: {
+            engineid: string;
+            permission: string;
+            type?: string;
+            endDate?: string;
+        },
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/editGroupEnginePermission';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&engineId=' + encodeURIComponent(engine.engineid);
+        postData += '&permission=' + encodeURIComponent(engine.permission);
+
+        if (engine.type) {
+            postData += '&type=' + encodeURIComponent(engine.type);
+        }
+
+        if (engine.endDate) {
+            postData += '&endDate=' + encodeURIComponent(engine.endDate);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name deleteEnginePermission
+     * @param groupId
+     * @param type
+     * @param projectId
+     * @returns
+     */
+    async deleteEnginePermission(
+        groupId: string,
+        engine: {
+            engineid: string;
+            type?: string;
+        },
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/removeGroupEnginePermission';
+
+        postData += 'groupId=' + encodeURIComponent(groupId);
+        postData += '&engineid=' + encodeURIComponent(engine.engineid);
+
+        if (engine.type) {
+            postData += '&type=' + encodeURIComponent(engine.type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name getTeamEngines
+     * @param groupId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
+     */
+    async getTeamEngines(
+        groupId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getEnginesForGroup';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+        limit && (params['limit'] = limit);
+        offset && (params['offset'] = offset);
+        searchTerm && (params['searchTerm'] = searchTerm);
+
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get group members');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name getUnassignedTeamEngines
+     * @param groupId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
+     */
+    async getUnassignedTeamEngines(groupId: string) {
+        let url = `${Env.MODULE}/api/auth/admin/`;
+
+        url += 'group/getAvailableEnginesForGroup';
+
+        const params = {};
+
+        groupId && (params['groupId'] = groupId);
+
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get group members');
+        }
+
+        return response.data;
+    }
+
+    // ---------- Teams End -----------------
+
     // ----- Properties Start -----
 
     /**

@@ -268,8 +268,9 @@ export class CellState<D extends CellDef = CellDef> {
             // convert the cells to the raw pixel
             const raw = this.toPixel();
 
-            // fill the braces {{ }} to create the final pixel
-            const filled = this._state.flattenVariable(raw);
+            // Gets rid of braces and evaluate parameters in query
+            const filled = this._state.flattenVar(raw);
+            // Before: const filled = this._state.flattenVariable(raw);
 
             // clear the previous messages + operation + output
             this._store.messages = [];

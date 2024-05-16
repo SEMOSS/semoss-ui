@@ -42,7 +42,13 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         } else {
             arr = data.options;
         }
-        return arr.map((option) => JSON.stringify(option));
+        return arr.map((option) => {
+            if (typeof option !== 'string') {
+                return JSON.stringify(option);
+            } else {
+                return option;
+            }
+        });
     }, [data.options]);
 
     return (

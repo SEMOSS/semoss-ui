@@ -102,6 +102,8 @@ export const NavigatorLayout = observer(() => {
                         placement="right"
                     >
                         <StyledSidebarItem
+                            data-testid={`${r.name}-icon`}
+                            // id={`${r.name}-icon`}
                             data-tour={`nav-engine-${r.path}`}
                             to={`/engine/${r.path}`}
                             selected={
@@ -121,7 +123,7 @@ export const NavigatorLayout = observer(() => {
                         aria-label={'Navigate to settings'}
                     >
                         <Icon>
-                            <Settings />
+                            <Settings data-testid="Settings-icon" />
                         </Icon>
                     </StyledSidebarItem>
                 </Tooltip>
