@@ -138,11 +138,7 @@ export const EngineQAPage = () => {
 
             setIsAnswered(true);
         } catch (e) {
-            if (e) {
-                setError(e);
-            } else {
-                setError('There is an error, please check pixel calls');
-            }
+            setError('There is an error, please check pixel calls');
         } finally {
             setIsLoading(false);
         }
