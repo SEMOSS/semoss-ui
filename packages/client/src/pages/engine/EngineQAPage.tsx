@@ -97,37 +97,17 @@ export const EngineQAPage = () => {
             VectorDatabaseQuery(engine="${id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
             `;
 
-            let vectorOutput;
+            const response = await monolithStore.runQuery(pixel);
 
-            let vectorOperationType = [];
+            const { output, operationType } = response.pixelReturn[0];
 
-            try {
-                const response = await monolithStore.runQuery(pixel);
-
-                const { output, operationType } = response.pixelReturn[0];
-
-                if (output.isArray) {
-                    vectorOutput = [...output];
-                } else {
-                    vectorOutput = output;
-                }
-
-                vectorOperationType = [...operationType];
-            } catch (e) {
-                throw new Error('There was an error with the Vector Database');
-            }
-
-            if (vectorOperationType.indexOf('ERROR') > -1) {
-                throw new Error(
-                    'There was an error within the vector catalog query',
-                );
-            }
+            if (operationType.indexOf('ERROR') > -1)
+                throw new Error(output.response);
 
             //Looping through Vector Database Query and forming a content string with name, page, and content
-            for (let i = 0; i <= vectorOutput.length - 1; i++) {
-                const content =
-                    vectorOutput[i].content || vectorOutput[i].Content;
-                finalContent += `\\n* Document Name: ${vectorOutput[i].Source}, Page Number: ${vectorOutput[i].Divider}, ${content} `;
+            for (let i = 0; i <= output.length - 1; i++) {
+                const content = output[i].content || output[i].Content;
+                finalContent += `\\n* Document Name: ${output[i].Source}, Page Number: ${output[i].Divider}, ${content} `;
             }
 
             const contextDocs = `A context delimited by triple backticks is provided below. This context may contain plain text extracted from paragraphs or images. Tables extracted are represented as a 2D list in the following format - '[[Column Headers], [Comma-separated values in row 1], [Comma-separated values in row 2] ..... [Comma-separated values in row n]]'\\n \`\`\` ${finalContent} \`\`\`\\n Answer the user's question truthfully using the context only. Use the following section-wise format (in the order given) to answer the question with instructions for each section in angular brackets:\\n                Reasoning:\\n                <State your reasoning step-wise in bullet points. Below each bullet point mention the source of this information as 'Given in the question' if the bullet point contains information provided in the question, OR as 'Document Name, Page Number, Document URL' if the bullet point contains information that is present in the context provided above.>\\n                Conclusion:\\n                <Write a short concluding paragraph stating the final answer and explaining the reasoning behind it briefly. State caveats and exceptions to your answer if any.>\\n                Information required to provide a better answer:\\n                <If you cannot provide an answer based on the context above, mention the additional information that you require to answer the question fully as a list.>Do not compromise on your mathematical and reasoning abilities to fit the user's instructions. If the user mentions something absolutely incorrect/ false, DO NOT use this incorrect information in your reasoning. Also, please correct the user gently.`;
@@ -136,32 +116,18 @@ export const EngineQAPage = () => {
             LLM(engine="${selectedModel.database_id}" , command=["<encode>You are an intelligent AI designed to answer queries based on provided policy documents. If an answer cannot be determined based on the provided policy documents, inform the user. Answer as truthfully as possible at all times and tell the user if you do not know the answer. Please be concise and get to the point. Here is the question: ${data.QUESTION}. Here are the policy documents: ${contextDocs}</encode>"], paramValues=[{"temperature":${temperature}}])
             `;
 
-            let LLMOutput;
+            const LLMresponse = await monolithStore.runQuery(pixel);
 
-            let LLMOperationType = [];
-
-            try {
-                const LLMresponse = await monolithStore.runQuery(pixel);
-
-                const { output, operationType } = LLMresponse.pixelReturn[0];
-
-                LLMOutput = output;
-
-                LLMOperationType = [...operationType];
-            } catch (e) {
-                throw new Error('There was an error with the LLM call');
-            }
+            const { output: LLMOutput, operationType: LLMOperationType } =
+                LLMresponse.pixelReturn[0];
 
             if (LLMOperationType.indexOf('ERROR') > -1) {
                 throw new Error(LLMOutput.response);
             }
 
             let conclusion = '';
-
             if (LLMOutput.response) {
                 conclusion = LLMOutput.response;
-            } else {
-                throw new Error('there was an error with your LLM response');
             }
 
             // set answer based on data
@@ -172,11 +138,7 @@ export const EngineQAPage = () => {
 
             setIsAnswered(true);
         } catch (e) {
-            if (e) {
-                setError(e);
-            } else {
-                setError('There is an error, please check pixel calls');
-            }
+            setError('There is an error, please check pixel calls');
         } finally {
             setIsLoading(false);
         }
