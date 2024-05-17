@@ -178,7 +178,7 @@ export const JobBuilderModal = (props: {
                     : ''
             }jobGroup=["defaultGroup"],cronExpression="${
                 builder.cronExpression
-            }",cronTz="${builder.cronTz}",recipe="<encode>${
+            } *",cronTz="${builder.cronTz}",recipe="<encode>${
                 builder.pixel
             }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
         );
@@ -197,7 +197,7 @@ export const JobBuilderModal = (props: {
                     : ''
             }jobGroup=["defaultGroup"],cronExpression="${
                 builder.cronExpression
-            }",cronTz="${builder.cronTz}",recipe="<encode>${
+            } *",cronTz="${builder.cronTz}",recipe="<encode>${
                 builder.pixel
             }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
         );
