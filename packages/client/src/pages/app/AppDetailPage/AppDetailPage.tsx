@@ -237,36 +237,34 @@ export const AppDetailPage = () => {
             fetchAppInfo(monolithStore, id),
             fetchDependencies(monolithStore, id),
         ]).then((results) =>
-            results.forEach((result, idx) => {
-                if (result.status === 'rejected') {
-                    emitMessage(true, result.reason);
+            results.forEach((res, idx) => {
+                if (res.status === 'rejected') {
+                    emitMessage(true, res.reason);
                 } else {
                     if (idx === 0) {
-                        if (result.value.type === 'error') {
-                            emitMessage(true, result.value.output);
+                        if (res.value.type === 'error') {
+                            emitMessage(true, res.value.output);
                         } else {
-                            setValue('mainUses', result.value.output);
-                            setValue(
-                                'detailsForm.mainUses',
-                                result.value.output,
-                            );
+                            setValue('mainUses', res.value.output);
+                            setValue('detailsForm.mainUses', res.value.output);
                         }
                     } else if (idx === 1) {
-                        if (result.value.type === 'error') {
-                            emitMessage(true, result.value.output);
+                        if (res.value.type === 'error') {
+                            emitMessage(true, res.value.output);
                         } else {
-                            setValue('appInfo', result.value.output);
-                            setValue('tags', result.value.output.tag || []);
+                            setValue('appInfo', res.value.output);
+                            setValue('tags', res.value.output.tag || []);
                             setValue(
                                 'detailsForm.tags',
-                                result.value.output.tag || [],
+                                res.value.output.tag || [],
                             );
                         }
                     } else if (idx === 2) {
-                        if (result.value.type === 'error') {
-                            emitMessage(true, result.value.output);
+                        if (res.value.type === 'error') {
+                            emitMessage(true, res.value.output);
                         } else {
-                            setValue('dependencies', result.value.output);
+                            setValue('dependencies', res.value.output);
+                            setValue('selectedDependencies', res.value.output);
                         }
                     }
                 }
@@ -280,18 +278,6 @@ export const AppDetailPage = () => {
             message,
         });
     };
-
-    async function runSetDependenciesQuery(testSelectedDeps: string[]) {
-        // async function setDependenciesQuery(selectedDependenciesState)
-        const response = await monolithStore.runQuery(
-            `SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
-                testSelectedDeps,
-            )})`,
-            // `SetProjectDependencies(project="${appId}", dependencies=${selectedDependenciesState})`,
-        );
-        // SetProjectDependencies(project=["<project_id>"], dependencies=["<engine_id_1>","<engine_id_2>",...]);
-        // console.log('🚀 ~ setDependenciesQuery ~ response:', response);
-    }
 
     const handleCloseChangeAccessModal = () => {
         setIsChangeAccessModalOpen(false);
@@ -513,7 +499,27 @@ export const AppDetailPage = () => {
                                         </IconButton>
                                     )}
                                 </DependenciesHeadingWrapper>
-                                <DependenciesBody />
+
+                                {dependencies.length > 0 ? (
+                                    <>
+                                        {permission === 'author' && (
+                                            <pre
+                                                style={{
+                                                    background: 'gray',
+                                                    padding: '1rem',
+                                                    textAlign: 'center',
+                                                    width: '100%',
+                                                }}
+                                            >
+                                                (Warning component)
+                                            </pre>
+                                        )}
+                                    </>
+                                ) : (
+                                    <Typography variant="body1">
+                                        No dependencies
+                                    </Typography>
+                                )}
                             </StyledSection>
                         )}
 
@@ -598,8 +604,10 @@ export const AppDetailPage = () => {
             <EditDependenciesModal
                 isOpen={isEditDependenciesModalOpen}
                 onClose={() => setIsEditDependenciesModalOpen(false)}
-                dependencies={dependencies}
-                runSetDependenciesQuery={runSetDependenciesQuery}
+                control={control}
+                getValues={getValues}
+                setValue={setValue}
+                watch={watch}
             />
         </OuterContainer>
     );

@@ -5,10 +5,18 @@ import {
     Select,
     IconButton,
     Button,
+    TextField,
 } from '@semoss/ui';
 import { useState, useEffect } from 'react';
-import { usePixel } from '@/hooks';
+import { usePixel, useRootStore } from '@/hooks';
 import CloseIcon from '@mui/icons-material/Close';
+import {
+    SetProjectDependencies,
+    engine,
+    modelledDependency,
+} from './appDetails.utility';
+import { Control, Controller } from 'react-hook-form';
+import { createFilterOptions, Autocomplete } from '@mui/material';
 
 const EditModalInnerContainer = styled('div')({
     display: 'flex',
@@ -52,53 +60,45 @@ const ModalFooter = styled('div')({
 interface EditDependenciesModalProps {
     isOpen: boolean;
     onClose: () => void;
-    dependencies: any;
-    runSetDependenciesQuery: any;
+    control: Control<any, any>;
+    getValues: any;
+    setValue: any;
+    watch: any;
 }
 
 export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
-    const { isOpen, onClose, dependencies, runSetDependenciesQuery } = props;
-    // TODO: Get dependency image
-    // TODO: Add search bar
-    // TODO: Add save functionality
+    const { isOpen, onClose, control, getValues, setValue, watch } = props;
+    const { monolithStore } = useRootStore();
+    const allDependencies = watch('allDependencies');
+    const selectedDependencies = watch('selectedDependencies');
 
-    // Temporary: I need all Engines
-    const [engines, setEngines] = useState({
-        models: [],
-        databases: [],
-        storages: [],
-    });
-
-    const [dependency, setDependency] = useState(null);
-
-    const getEngines = usePixel<
-        { app_id: string; app_name: string; app_type: string }[]
-    >(`
-        MyEngines();
-    `);
+    const getEngines = usePixel<engine[]>('MyEngines();');
+    const [dependencyIds, setDependencyIds] = useState<string[]>([]);
+    const filter = createFilterOptions<string>();
 
     useEffect(() => {
         if (getEngines.status !== 'SUCCESS') {
             return;
         }
 
-        const cleanedEngines = getEngines.data.map((d) => ({
-            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            app_id: d.app_id,
-            app_type: d.app_type,
+        const modelledDependencies = getEngines.data.map((d) => ({
+            appName: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+            appId: d.app_id,
+            appType: d.app_type,
+            isDiscoverable: d.database_discoverable,
+            isPublic: d.database_global,
         }));
 
-        const newEngines = {
-            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
-            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
-            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
-        };
-
-        setEngines(newEngines);
+        setValue('allDependencies', modelledDependencies);
     }, [getEngines.status, getEngines.data]);
 
-    const saveDependencies = () => {
-        runSetDependenciesQuery([dependency]);
+    const handleUpdateDependencies = () => {
+        const appId = getValues('appId');
+        SetProjectDependencies(monolithStore, appId, selectedDependencies);
+    };
+
+    const handleRemoveDependency = (id: string) => {
+        // TODO
     };
 
     return (
@@ -121,26 +121,48 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                     Linked Dependencies
                 </Typography>
 
-                <pre>search bar</pre>
-
-                <Select
-                    onChange={(e) => {
-                        setDependency(e.target.value);
-                    }}
-                >
-                    {engines.models.map((model, i) => {
+                <Controller
+                    name="selectedDependencies"
+                    control={control}
+                    render={({ field }) => {
                         return (
-                            <Select.Item
-                                key={`select-item--${model}--${i}`}
-                                value={model.app_id}
-                            >
-                                {model.app_id}
-                            </Select.Item>
-                        );
-                    })}
-                </Select>
+                            <Autocomplete
+                                options={allDependencies}
+                                value={field.value}
+                                fullWidth
+                                multiple
+                                onChange={(_, val) => field.onChange(val)}
+                                renderInput={(params) => (
+                                    <TextField {...params} label="Search" />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props}>{option.appName}</li>
+                                )}
+                                getOptionLabel={(option: modelledDependency) =>
+                                    option.appName
+                                }
+                                isOptionEqualToValue={(option, value) => {
+                                    return option.appId === value.appId;
+                                }}
+                                filterOptions={(options, params) => {
+                                    const filtered = filter(options, params);
 
-                {dependencies?.map(
+                                    const { inputValue } = params;
+                                    const isExisting = options.some(
+                                        (option) => inputValue === option.appId,
+                                    );
+                                    if (inputValue !== '' && !isExisting) {
+                                        filtered.push(inputValue);
+                                    }
+
+                                    return filtered;
+                                }}
+                            />
+                        );
+                    }}
+                />
+
+                {/* {dependencies?.map(
                     ({ engine_id, engine_name, engine_type }, idx) => (
                         <ModalDependencyRow
                             key={`dependency-${engine_id}-${idx}`}
@@ -156,18 +178,25 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                                     {engine_type} | Engine ID: {engine_id}
                                 </ModalEngineTypeAndId>
                             </div>
-                            <IconButton onClick={() => null}>
+                            <IconButton
+                                onClick={() =>
+                                    handleRemoveDependency(engine_id)
+                                }
+                            >
                                 <CloseIcon />
                             </IconButton>
                         </ModalDependencyRow>
                     ),
-                )}
+                )} */}
 
                 <ModalFooter>
                     <Button onClick={() => onClose()} variant="text">
                         Cancel
                     </Button>
-                    <Button onClick={saveDependencies} variant="contained">
+                    <Button
+                        onClick={handleUpdateDependencies}
+                        variant="contained"
+                    >
                         Save
                     </Button>
                 </ModalFooter>

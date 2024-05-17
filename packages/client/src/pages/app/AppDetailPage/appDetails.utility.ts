@@ -3,6 +3,45 @@ import { ReactNode } from 'react';
 
 /**
  * -----------------------------------------------------------------------
+ * TYPES -----------------------------------------------------------------
+ * -----------------------------------------------------------------------
+ */
+export interface dependency {
+    app_id: string;
+    app_name: string;
+    app_type: string;
+}
+
+export interface modelledDependency {
+    appId: string;
+    appName: string;
+    appType: string;
+    isDiscoverable: boolean;
+    isPublic: boolean;
+}
+
+export interface engine {
+    app_cost: string;
+    app_favorite: number;
+    app_id: string;
+    app_name: string;
+    app_subtype: string;
+    app_type: string;
+    database_cost: string;
+    database_discoverable: false;
+    database_favorite: number;
+    database_global: false;
+    database_id: string;
+    database_name: string;
+    database_subtype: string;
+    database_type: string;
+    low_database_name: string;
+    permission: number;
+    user_permission: number;
+}
+
+/**
+ * -----------------------------------------------------------------------
  * react-hook-form -----------------------------------------------------------
  * -----------------------------------------------------------------------
  */
@@ -10,7 +49,13 @@ export interface AppDetailsFormTypes {
     appId: string;
     appInfo: any;
     userRole: Role | '';
-    permission: 'author' | 'editor' | 'readOnly' | 'discoverable' | '';
+    permission:
+        | 'creator'
+        | 'author'
+        | 'editor'
+        | 'readOnly'
+        | 'discoverable'
+        | '';
 
     mainUses: string;
     tags: string[];
@@ -20,6 +65,8 @@ export interface AppDetailsFormTypes {
     };
 
     dependencies: any[];
+    allDependencies: engine[];
+    selectedDependencies: any[];
 
     requestedPermission: 'author' | 'editor' | 'readOnly' | '';
     roleChangeComment: string | ReactNode;
@@ -39,6 +86,8 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
     },
 
     dependencies: [],
+    allDependencies: [],
+    selectedDependencies: [],
 
     requestedPermission: '',
     roleChangeComment: '',
@@ -131,6 +180,19 @@ export const updateProjectDetails = async (
         type: type.indexOf('ERROR') === -1 ? 'success' : 'error',
         output,
     };
+};
+
+export const SetProjectDependencies = async (
+    monolithStore: any,
+    appId: string,
+    dependencies: dependency[],
+) => {
+    const res = await monolithStore.runQuery(
+        `SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
+            dependencies,
+        )})`,
+    );
+    console.log('RES', res);
 };
 
 /**
