@@ -50,15 +50,9 @@ export const JobBuilderModal = (props: {
     }, [builder.id]);
 
     useEffect(() => {
-        if (!!initialBuilder) {
-            setBuilder(initialBuilder);
-        } else {
-            setBuilder(emptyBuilder);
-        }
-    }, [initialBuilder ? initialBuilder.id : null]);
-
-    useEffect(() => {
-        const cronValues = builder.cronExpression.split(' ');
+        const builderToSet = !!initialBuilder ? initialBuilder : emptyBuilder;
+        setBuilder(builderToSet);
+        const cronValues = builderToSet.cronExpression.split(' ');
         if (cronValues.length < 6) {
             // invalid cron syntax, send to standard builder
             setFrequencyType('standard');
@@ -89,7 +83,8 @@ export const JobBuilderModal = (props: {
             setFrequencyType('custom');
             return;
         }
-    }, [builder.cronExpression]);
+    }, [initialBuilder ? initialBuilder.id : null]);
+
     const isCronExpressionValid: boolean = useMemo(() => {
         const cronValues = builder.cronExpression.split(' ');
         if (cronValues.length < 6) {
@@ -183,7 +178,7 @@ export const JobBuilderModal = (props: {
                     : ''
             }jobGroup=["defaultGroup"],cronExpression="${
                 builder.cronExpression
-            } *",cronTz="${builder.cronTz}",recipe="<encode>${
+            }",cronTz="${builder.cronTz}",recipe="<encode>${
                 builder.pixel
             }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
         );
@@ -202,7 +197,7 @@ export const JobBuilderModal = (props: {
                     : ''
             }jobGroup=["defaultGroup"],cronExpression="${
                 builder.cronExpression
-            } *",cronTz="${builder.cronTz}",recipe="<encode>${
+            }",cronTz="${builder.cronTz}",recipe="<encode>${
                 builder.pixel
             }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
         );

@@ -64,7 +64,7 @@ export const JobStandardFrequencyBuilder = (props: {
             }
         } else if (cronValues[5] == '*') {
             setFrequency('Yearly');
-            const dayOfMonthValue = parseInt(cronValues[2]);
+            const dayOfMonthValue = parseInt(cronValues[3]);
             if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
                 setDayOfMonth(dayOfMonthValue);
             }

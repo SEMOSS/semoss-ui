@@ -89,6 +89,12 @@ export const JobsTable = (props: {
             field: 'cronExpression',
             flex: 1,
             renderCell: (params) => {
+                console.log(params.value);
+                console.log(
+                    getHumanReadableCronExpression(
+                        params.value.replaceAll('?', '*'),
+                    ),
+                );
                 return (
                     <>
                         {getHumanReadableCronExpression(
