@@ -11,6 +11,7 @@ import {
     Typography,
     Modal,
     Select,
+    Table,
 } from '@semoss/ui';
 
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
@@ -48,6 +49,7 @@ import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
 
 import { LoadingScreen } from '@/components/ui';
+import { useBlocksPixel } from '@/hooks/useBlocksPixel';
 
 const StyledModalTitle = styled(Typography)(({ theme }) => ({
     alignContent: 'center',
@@ -233,6 +235,16 @@ export const NotebookAddCell = observer(
         const [userDatabases, setUserDatabases] = useState(null);
         const [queryElementCounter, setQueryElementCounter] = useState(0);
 
+        const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
+        const [databaseTableRawHeaders, setDatabaseTableRawHeaders] = useState(
+            [],
+        );
+        const [databaseTableRows, setDatabaseTableRows] = useState([]);
+
+        const [selectedDatabaseId, setSelectedDatabaseId] = useState(null);
+        const [selectedTable, setSelectedTable] = useState(null);
+        const [selectedColumnsSet, setSelectedColumnsSet] = useState(new Set());
+
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;');
         const [isDatabaseLoading, setIsDatabaseLoading] =
             useState<boolean>(false);
@@ -249,6 +261,16 @@ export const NotebookAddCell = observer(
             control,
             name: 'queryStackElements',
         });
+
+        useEffect(
+            () => console.log({ selectedColumnsSet }),
+            [selectedColumnsSet],
+        );
+        useEffect(
+            () => console.log({ selectedDatabaseId }),
+            [selectedDatabaseId],
+        );
+        useEffect(() => console.log({ selectedTable }), [selectedTable]);
 
         useEffect(() => {
             if (getDatabases.status !== 'SUCCESS') {
@@ -357,6 +379,96 @@ export const NotebookAddCell = observer(
                 }
 
                 setIsDatabaseLoading(false);
+            });
+        };
+
+        const selectTableHandler = (tableName) => {
+            // get column names from GetDatabaseTableStructure
+            alert('get column names from GetDatabaseTableStructure');
+        };
+
+        const retrieveTableRows = async () => {
+            // setIsDatabaseLoading(true);
+            // "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) | Select ( STATION_SETTINGS__EMAIL , STATION_SETTINGS__ROLE , STATION_SETTINGS__STATION , STATION_SETTINGS__USER , STATION_SETTINGS__VISN ) .as ( [ EMAIL , ROLE , STATION , USER , VISN ] ) | Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME961853__Preview\" ] ) ] ) ;"
+            // "META | Frame ( ) | QueryAll ( ) | Limit ( 20 ) | Collect ( 500 ) ;"
+            // "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) | Select ( STATION_SETTINGS__EMAIL , STATION_SETTINGS__ROLE , STATION_SETTINGS__STATION , STATION_SETTINGS__USER , STATION_SETTINGS__VISN ) .as ( [ EMAIL , ROLE , STATION , USER , VISN ] ) | Distinct ( false ) | QueryRowCount ( ) ;"
+            // `Database( database=["f9b656cc-06e7-4cce-bae8-b5f92075b6da"] )|Select(STATION_SETTINGS__EMAIL, STATION_SETTINGS__ROLE, STATION_SETTINGS__STATION, STATION_SETTINGS__USER, STATION_SETTINGS__VISN).as([EMAIL, ROLE, STATION, USER, VISN])|Distinct(false)|Limit(20) | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["consolidated_settings_FRAME961853__Preview"])]);META|Frame()|QueryAll()|Limit(20)|Collect(500);`
+            // const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
+            // const pixelString = `Database( database=["f9b656cc-06e7-4cce-bae8-b5f92075b6da"] )|Select(STATION_SETTINGS__EMAIL, STATION_SETTINGS__ROLE, STATION_SETTINGS__STATION, STATION_SETTINGS__USER, STATION_SETTINGS__VISN).as([EMAIL, ROLE, STATION, USER, VISN]);`
+            // const pixelString2 = `META|Frame()|QueryAll()|Limit(20)|Collect(500);`
+
+            // const pixelString = ```
+            //     Database(
+            //         database = [
+            //             \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\"
+            //         ]
+            //     ) | Select (
+            //         STATION_SETTINGS__EMAIL,
+            //         STATION_SETTINGS__ROLE,
+            //         STATION_SETTINGS__STATION,
+            //         STATION_SETTINGS__USER,
+            //         STATION_SETTINGS__VISN
+            //     ).as(
+            //         [
+            //             EMAIL,
+            //             ROLE,
+            //             STATION,
+            //             USER,
+            //             VISN
+            //         ]
+            //     ) | Distinct(false) | Limit(20) | Import (
+            //         frame = [
+            //             CreateFrame(
+            //                 frameType = [
+            //                     GRID
+            //                 ],
+            //             override = [
+            //                 true
+            //             ] ).as(
+            //                 [
+            //                     \"consolidated_settings_FRAME961853__Preview\"
+            //                 ]
+            //             )
+            //         ]
+            //     ); META | Frame() | QueryAll() | Limit(20) | Collect(500);
+            // ```
+
+            // const pixelString = `Database(database=[\"${ selectedDatabaseId }\"])|Select(STATION_SETTINGS__EMAIL,STATION_SETTINGS__ROLE,STATION_SETTINGS__STATION,STATION_SETTINGS__USER,STATION_SETTINGS__VISN).as([EMAIL,ROLE,STATION,USER,VISN])|Distinct(false)|Limit(20)|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(20) | Collect(500);`
+            const pixelString = `Database(database=[\"f9b656cc-06e7-4cce-bae8-b5f92075b6da\"])|Select(STATION_SETTINGS__EMAIL,STATION_SETTINGS__ROLE,STATION_SETTINGS__STATION,STATION_SETTINGS__USER,STATION_SETTINGS__VISN).as([EMAIL,ROLE,STATION,USER,VISN])|Distinct(false)|Limit(20)|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(20) | Collect(500);`;
+
+            await monolithStore.runQuery(pixelString).then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const pixelResponse1 = response;
+                const tableHeadersData =
+                    response.pixelReturn[1].output.data.headers;
+                const tableRawHeadersData =
+                    response.pixelReturn[1].output.data.rawHeaders;
+                const tableRowsData =
+                    response.pixelReturn[1].output.data.values;
+
+                console.log({
+                    tableHeadersData,
+                    tableRawHeadersData,
+                    tableRowsData,
+                });
+
+                setDatabaseTableHeaders(tableHeadersData);
+                setDatabaseTableRawHeaders(tableRawHeadersData);
+                setDatabaseTableRows(tableRowsData);
+
+                // if (type.indexOf('ERROR') === -1) {
+                //     const tableNames = [
+                //         ...pixelResponse.reduce((set, ele) => {
+                //             set.add(ele[0]);
+                //             return set;
+                //         }, new Set()),
+                //     ];
+                //     setTableNames(tableNames);
+                // } else {
+                //     console.error('Error retrieving database tables');
+                // }
+
+                // setIsDatabaseLoading(false);
             });
         };
 
@@ -484,6 +596,9 @@ export const NotebookAddCell = observer(
                                     <Select
                                         onChange={(e) => {
                                             field.onChange(e.target.value);
+                                            setSelectedDatabaseId(
+                                                e.target.value,
+                                            );
                                             retrieveDatabaseTables(
                                                 e.target.value,
                                             );
@@ -497,6 +612,7 @@ export const NotebookAddCell = observer(
                                     >
                                         {userDatabases?.map((ele) => (
                                             <Menu.Item value={ele.database_id}>
+                                                {/* <Menu.Item value={ele.app_id}> */}
                                                 {ele.app_name}
                                             </Menu.Item>
                                         ))}
@@ -524,6 +640,9 @@ export const NotebookAddCell = observer(
                                             <Select
                                                 onChange={(e) => {
                                                     field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                    selectTableHandler(
                                                         e.target.value,
                                                     );
                                                 }}
@@ -575,9 +694,63 @@ export const NotebookAddCell = observer(
                                     )}
 
                                     {showTablePreview && (
-                                        <div>
-                                            <b>Preview</b>
-                                        </div>
+                                        <Table.Container>
+                                            <Table stickyHeader>
+                                                <Table.Head>
+                                                    <Table.Row>
+                                                        {/* {getData.status === 'SUCCESS' && */}
+                                                        {true &&
+                                                            databaseTableHeaders.map(
+                                                                (h, hIdx) => (
+                                                                    <Table.Cell
+                                                                        key={
+                                                                            hIdx
+                                                                        }
+                                                                    >
+                                                                        {h}
+                                                                    </Table.Cell>
+                                                                ),
+                                                            )}
+                                                    </Table.Row>
+                                                </Table.Head>
+                                                <Table.Body>
+                                                    {/* {isLoading && (
+                                                    <StyledLoadingTableCell>
+                                                        <LinearProgress variant="indeterminate" />
+                                                    </StyledLoadingTableCell>
+                                                )} */}
+                                                    {/* {isError && (
+                                                    <Table.Cell>
+                                                        There was an issue generating a preview.
+                                                    </Table.Cell>
+                                                )} */}
+                                                    {/* {getData.status === 'SUCCESS' && */}
+                                                    {true &&
+                                                        databaseTableRows.map(
+                                                            (r, rIdx) => (
+                                                                <Table.Row
+                                                                    key={rIdx}
+                                                                >
+                                                                    {r.map(
+                                                                        (
+                                                                            v,
+                                                                            vIdx,
+                                                                        ) => (
+                                                                            <Table.Cell
+                                                                                key={`${rIdx}-${vIdx}`}
+                                                                            >
+                                                                                {
+                                                                                    v
+                                                                                }
+                                                                            </Table.Cell>
+                                                                        ),
+                                                                    )}
+                                                                </Table.Row>
+                                                            ),
+                                                        )}
+                                                </Table.Body>
+                                            </Table>
+                                        </Table.Container>
                                     )}
                                 </Stack>
                             )}
@@ -670,7 +843,18 @@ export const NotebookAddCell = observer(
                             }}
                         >
                             <Button
-                                type="submit"
+                                variant="contained"
+                                color="error"
+                                onClick={() => {
+                                    retrieveTableRows();
+                                    alert(
+                                        'Retrieving sample columns and row values from sample database id from hard-coded pixel',
+                                    );
+                                }}
+                            >
+                                Test
+                            </Button>
+                            <Button
                                 variant="text"
                                 color="secondary"
                                 onClick={() => setIsDataImportModalOpen(false)}
