@@ -12,6 +12,7 @@ import {
     Modal,
     Select,
     Table,
+    Checkbox,
 } from '@semoss/ui';
 
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
@@ -37,6 +38,7 @@ import {
     JoinLeftRounded,
     FilterListRounded,
     ControlPointDuplicateRounded,
+    CheckBox,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -215,7 +217,6 @@ export const NotebookAddCell = observer(
         const [selectedAddCell, setSelectedAddCell] = useState<string>('');
 
         const [importModalType, setImportModalType] = useState<string>('');
-        const [tableNames, setTableNames] = useState<string[]>([]);
         const [isDataImportModalOpen, setIsDataImportModalOpen] =
             useState<boolean>(false);
         const open = Boolean(anchorEl);
@@ -239,7 +240,10 @@ export const NotebookAddCell = observer(
         const [databaseTableRawHeaders, setDatabaseTableRawHeaders] = useState(
             [],
         );
+        const [tableNames, setTableNames] = useState<string[]>([]);
         const [databaseTableRows, setDatabaseTableRows] = useState([]);
+
+        const [tableColumnsObject, setTableColumnsObject] = useState({});
 
         const [selectedDatabaseId, setSelectedDatabaseId] = useState(null);
         const [selectedTable, setSelectedTable] = useState(null);
@@ -262,21 +266,28 @@ export const NotebookAddCell = observer(
             name: 'queryStackElements',
         });
 
-        useEffect(
-            () => console.log({ selectedColumnsSet }),
-            [selectedColumnsSet],
-        );
-        useEffect(
-            () => console.log({ selectedDatabaseId }),
-            [selectedDatabaseId],
-        );
-        useEffect(() => console.log({ selectedTable }), [selectedTable]);
+        // useEffect(
+        //     () => console.log({ selectedColumnsSet }),
+        //     [selectedColumnsSet],
+        // );
+        // useEffect(
+        //     () => console.log({ selectedDatabaseId }),
+        //     [selectedDatabaseId],
+        // );
+        // useEffect(() => console.log({ selectedTable }), [selectedTable]);
 
         useEffect(() => {
             if (getDatabases.status !== 'SUCCESS') {
                 return;
             }
             setUserDatabases(getDatabases.data);
+
+            // // add all table names to new array and set in state
+            // console.log({ userDatabases: getDatabases });
+            // setDatabaseTableNames([]);
+
+            // // add all table columns to arrays as values set at table names keys
+            // setTableColumnsObject({});
         }, [getDatabases.status, getDatabases.data]);
 
         // const cellTypeOptions = computed(() => {
@@ -373,6 +384,34 @@ export const NotebookAddCell = observer(
                             return set;
                         }, new Set()),
                     ];
+
+                    const newTableColumnsObject = pixelResponse.reduce(
+                        (acc, ele) => {
+                            const tableName = ele[0];
+                            const columnName = ele[1];
+                            const columnType = ele[2];
+                            // other info seems to not be needed, unsure what flag is representing or if repeat names are aliases etc
+                            const columnBoolean = ele[3];
+                            const columnName2 = ele[4];
+                            const tableName2 = ele[4];
+
+                            if (!acc[tableName]) acc[tableName] = [];
+                            acc[tableName].push({
+                                tableName,
+                                columnName,
+                                columnType,
+                                columnBoolean,
+                                columnName2,
+                                tableName2,
+                                userAlias: columnName, // user editable in Edit Columns
+                                showInPreview: true, // user editable in Edit Columns
+                            });
+
+                            return acc;
+                        },
+                    );
+
+                    setTableColumnsObject(newTableColumnsObject);
                     setTableNames(tableNames);
                 } else {
                     console.error('Error retrieving database tables');
@@ -384,57 +423,34 @@ export const NotebookAddCell = observer(
 
         const selectTableHandler = (tableName) => {
             // get column names from GetDatabaseTableStructure
-            alert('get column names from GetDatabaseTableStructure');
+            // alert('get column names from GetDatabaseTableStructure');
+            setSelectedTable(tableName);
+            retrieveTableRows(tableName);
         };
 
-        const retrieveTableRows = async () => {
-            // setIsDatabaseLoading(true);
-            // "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) | Select ( STATION_SETTINGS__EMAIL , STATION_SETTINGS__ROLE , STATION_SETTINGS__STATION , STATION_SETTINGS__USER , STATION_SETTINGS__VISN ) .as ( [ EMAIL , ROLE , STATION , USER , VISN ] ) | Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME961853__Preview\" ] ) ] ) ;"
-            // "META | Frame ( ) | QueryAll ( ) | Limit ( 20 ) | Collect ( 500 ) ;"
-            // "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) | Select ( STATION_SETTINGS__EMAIL , STATION_SETTINGS__ROLE , STATION_SETTINGS__STATION , STATION_SETTINGS__USER , STATION_SETTINGS__VISN ) .as ( [ EMAIL , ROLE , STATION , USER , VISN ] ) | Distinct ( false ) | QueryRowCount ( ) ;"
-            // `Database( database=["f9b656cc-06e7-4cce-bae8-b5f92075b6da"] )|Select(STATION_SETTINGS__EMAIL, STATION_SETTINGS__ROLE, STATION_SETTINGS__STATION, STATION_SETTINGS__USER, STATION_SETTINGS__VISN).as([EMAIL, ROLE, STATION, USER, VISN])|Distinct(false)|Limit(20) | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["consolidated_settings_FRAME961853__Preview"])]);META|Frame()|QueryAll()|Limit(20)|Collect(500);`
-            // const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
-            // const pixelString = `Database( database=["f9b656cc-06e7-4cce-bae8-b5f92075b6da"] )|Select(STATION_SETTINGS__EMAIL, STATION_SETTINGS__ROLE, STATION_SETTINGS__STATION, STATION_SETTINGS__USER, STATION_SETTINGS__VISN).as([EMAIL, ROLE, STATION, USER, VISN]);`
-            // const pixelString2 = `META|Frame()|QueryAll()|Limit(20)|Collect(500);`
+        const retrieveTableRows = async (tableName) => {
+            setIsDatabaseLoading(true);
 
-            // const pixelString = ```
-            //     Database(
-            //         database = [
-            //             \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\"
-            //         ]
-            //     ) | Select (
-            //         STATION_SETTINGS__EMAIL,
-            //         STATION_SETTINGS__ROLE,
-            //         STATION_SETTINGS__STATION,
-            //         STATION_SETTINGS__USER,
-            //         STATION_SETTINGS__VISN
-            //     ).as(
-            //         [
-            //             EMAIL,
-            //             ROLE,
-            //             STATION,
-            //             USER,
-            //             VISN
-            //         ]
-            //     ) | Distinct(false) | Limit(20) | Import (
-            //         frame = [
-            //             CreateFrame(
-            //                 frameType = [
-            //                     GRID
-            //                 ],
-            //             override = [
-            //                 true
-            //             ] ).as(
-            //                 [
-            //                     \"consolidated_settings_FRAME961853__Preview\"
-            //                 ]
-            //             )
-            //         ]
-            //     ); META | Frame() | QueryAll() | Limit(20) | Collect(500);
-            // ```
+            // create / format a select array for pixel with table and column names desired
+            // create / format a column alias array for pixel - can just be col names for now but will be user editable
+            // create a limit variable, can be static at 20 for now
 
-            // const pixelString = `Database(database=[\"${ selectedDatabaseId }\"])|Select(STATION_SETTINGS__EMAIL,STATION_SETTINGS__ROLE,STATION_SETTINGS__STATION,STATION_SETTINGS__USER,STATION_SETTINGS__VISN).as([EMAIL,ROLE,STATION,USER,VISN])|Distinct(false)|Limit(20)|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(20) | Collect(500);`
-            const pixelString = `Database(database=[\"f9b656cc-06e7-4cce-bae8-b5f92075b6da\"])|Select(STATION_SETTINGS__EMAIL,STATION_SETTINGS__ROLE,STATION_SETTINGS__STATION,STATION_SETTINGS__USER,STATION_SETTINGS__VISN).as([EMAIL,ROLE,STATION,USER,VISN])|Distinct(false)|Limit(20)|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(20) | Collect(500);`;
+            const selectStringArray = tableColumnsObject[tableName].map(
+                (ele) => `${ele.tableName}__${ele.columnName}`,
+            );
+
+            const selectString = selectStringArray.join(', ');
+
+            const aliasString = tableColumnsObject[tableName]
+                .map(
+                    (ele) =>
+                        `${ele.columnName}`, // may need to switch to ele.columnName2 but they seem to be identical
+                )
+                .join(', ');
+
+            const limit = 20; // may want this to be a changeable useState variable
+
+            const pixelString = `Database(database=[\"${selectedDatabaseId}\"])|Select(${selectString}).as([${aliasString}])|Distinct(false)|Limit(${limit})|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(${limit}) | Collect(500);`;
 
             await monolithStore.runQuery(pixelString).then((response) => {
                 const type = response.pixelReturn[0].operationType;
@@ -468,7 +484,7 @@ export const NotebookAddCell = observer(
                 //     console.error('Error retrieving database tables');
                 // }
 
-                // setIsDatabaseLoading(false);
+                setIsDatabaseLoading(false);
             });
         };
 
@@ -478,7 +494,6 @@ export const NotebookAddCell = observer(
                 <StyledBorderDiv>
                     {Object.entries(AddCellOptions).map((add, i) => {
                         const value = add[1];
-                        console.log({ i, add });
                         return (
                             <StyledButton
                                 key={i}
@@ -688,9 +703,108 @@ export const NotebookAddCell = observer(
                                     </Button>
 
                                     {showEditColumns && (
-                                        <div>
-                                            <b>Edit Columns</b>
-                                        </div>
+                                        <>
+                                            <Typography variant="h6">
+                                                Edit Columns
+                                            </Typography>
+                                            <ul>
+                                                {databaseTableHeaders.map(
+                                                    (columnName, columnIdx) => {
+                                                        console.log({
+                                                            selectedTable,
+                                                        });
+                                                        console.log({
+                                                            columnName,
+                                                        });
+                                                        console.log({
+                                                            tableColumnsObject,
+                                                        });
+                                                        return (
+                                                            <li>
+                                                                {/* <input type='checkbox' checked/>
+                                                            <input type="text" value={columnName}></input> */}
+                                                                <Checkbox
+                                                                    label=""
+                                                                    checked={
+                                                                        tableColumnsObject[
+                                                                            selectedTable
+                                                                        ][
+                                                                            columnIdx
+                                                                        ]
+                                                                            ?.showInPreview
+                                                                    }
+                                                                    // checked
+                                                                    onChange={(
+                                                                        value,
+                                                                    ) => {
+                                                                        console.log(
+                                                                            {
+                                                                                checkbox:
+                                                                                    value,
+                                                                            },
+                                                                        );
+                                                                        const tableColumnsObjectDup =
+                                                                            {
+                                                                                ...tableColumnsObject,
+                                                                            };
+                                                                        tableColumnsObjectDup[
+                                                                            selectedTable
+                                                                        ][
+                                                                            columnIdx
+                                                                        ].showInPreview =
+                                                                            !tableColumnsObjectDup[
+                                                                                selectedTable
+                                                                            ][
+                                                                                columnIdx
+                                                                            ]
+                                                                                .showInPreview;
+                                                                        setTableColumnsObject(
+                                                                            tableColumnsObjectDup,
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    value={
+                                                                        tableColumnsObject[
+                                                                            selectedTable
+                                                                        ][
+                                                                            columnIdx
+                                                                        ]
+                                                                            ?.userAlias
+                                                                    }
+                                                                    onChange={(
+                                                                        value,
+                                                                    ) => {
+                                                                        console.log(
+                                                                            {
+                                                                                textbox:
+                                                                                    value,
+                                                                            },
+                                                                        );
+                                                                        const tableColumnsObjectDup =
+                                                                            {
+                                                                                ...tableColumnsObject,
+                                                                            };
+                                                                        tableColumnsObjectDup[
+                                                                            selectedTable
+                                                                        ][
+                                                                            columnIdx
+                                                                        ].userAlias =
+                                                                            value;
+                                                                        setTableColumnsObject(
+                                                                            tableColumnsObjectDup,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {/* {tableColumnsObject[columnName].userAlias} */}
+                                                                </input>
+                                                            </li>
+                                                        );
+                                                    },
+                                                )}
+                                            </ul>
+                                        </>
                                     )}
 
                                     {showTablePreview && (
@@ -698,56 +812,38 @@ export const NotebookAddCell = observer(
                                             <Table stickyHeader>
                                                 <Table.Head>
                                                     <Table.Row>
-                                                        {/* {getData.status === 'SUCCESS' && */}
-                                                        {true &&
-                                                            databaseTableHeaders.map(
-                                                                (h, hIdx) => (
-                                                                    <Table.Cell
-                                                                        key={
-                                                                            hIdx
-                                                                        }
-                                                                    >
-                                                                        {h}
-                                                                    </Table.Cell>
-                                                                ),
-                                                            )}
+                                                        {databaseTableHeaders.map(
+                                                            (h, hIdx) => (
+                                                                <Table.Cell
+                                                                    key={hIdx}
+                                                                >
+                                                                    {h}
+                                                                </Table.Cell>
+                                                            ),
+                                                        )}
                                                     </Table.Row>
                                                 </Table.Head>
                                                 <Table.Body>
-                                                    {/* {isLoading && (
-                                                    <StyledLoadingTableCell>
-                                                        <LinearProgress variant="indeterminate" />
-                                                    </StyledLoadingTableCell>
-                                                )} */}
-                                                    {/* {isError && (
-                                                    <Table.Cell>
-                                                        There was an issue generating a preview.
-                                                    </Table.Cell>
-                                                )} */}
-                                                    {/* {getData.status === 'SUCCESS' && */}
-                                                    {true &&
-                                                        databaseTableRows.map(
-                                                            (r, rIdx) => (
-                                                                <Table.Row
-                                                                    key={rIdx}
-                                                                >
-                                                                    {r.map(
-                                                                        (
-                                                                            v,
-                                                                            vIdx,
-                                                                        ) => (
-                                                                            <Table.Cell
-                                                                                key={`${rIdx}-${vIdx}`}
-                                                                            >
-                                                                                {
-                                                                                    v
-                                                                                }
-                                                                            </Table.Cell>
-                                                                        ),
-                                                                    )}
-                                                                </Table.Row>
-                                                            ),
-                                                        )}
+                                                    {databaseTableRows.map(
+                                                        (r, rIdx) => (
+                                                            <Table.Row
+                                                                key={rIdx}
+                                                            >
+                                                                {r.map(
+                                                                    (
+                                                                        v,
+                                                                        vIdx,
+                                                                    ) => (
+                                                                        <Table.Cell
+                                                                            key={`${rIdx}-${vIdx}`}
+                                                                        >
+                                                                            {v}
+                                                                        </Table.Cell>
+                                                                    ),
+                                                                )}
+                                                            </Table.Row>
+                                                        ),
+                                                    )}
                                                 </Table.Body>
                                             </Table>
                                         </Table.Container>
