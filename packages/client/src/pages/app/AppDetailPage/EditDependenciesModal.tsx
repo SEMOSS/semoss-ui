@@ -6,6 +6,7 @@ import {
     TextField,
     Stack,
     Button,
+    useNotification,
 } from '@semoss/ui';
 import { useEffect } from 'react';
 import { usePixel, useRootStore } from '@/hooks';
@@ -13,10 +14,11 @@ import { Env } from '@/env';
 import {
     SetProjectDependencies,
     engine,
-    modelledDependency,
+    dependency,
+    modelDependencies,
 } from './appDetails.utility';
 import { Control, Controller } from 'react-hook-form';
-import { createFilterOptions, Autocomplete } from '@mui/material';
+import { Autocomplete } from '@mui/material';
 import { Close } from '@mui/icons-material';
 
 const EditModalInnerContainer = styled('div')({
@@ -73,7 +75,7 @@ const ModalFooter = styled('div')({
 
 interface EditDependenciesModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose: (refresh: boolean) => void;
     control: Control<any, any>;
     getValues: any;
     setValue: any;
@@ -83,36 +85,47 @@ interface EditDependenciesModalProps {
 export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
     const { isOpen, onClose, control, getValues, setValue, watch } = props;
     const { monolithStore } = useRootStore();
-    const appId = watch('appId');
+    const notification = useNotification();
     const allDeps = watch('allDependencies');
     const selectedDeps = watch('selectedDependencies');
 
     const getEngines = usePixel<engine[]>('MyEngines();');
-    const filter = createFilterOptions<string>();
 
     useEffect(() => {
         if (getEngines.status !== 'SUCCESS') {
             return;
         }
 
-        const modelledDependencies = getEngines.data.map((d) => ({
-            name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            id: d.app_id,
-            type: d.app_type,
-            isDiscoverable: d.database_discoverable,
-            isPublic: d.database_global,
-        }));
+        const dependencies = modelDependencies(getEngines.data);
 
-        setValue('allDependencies', modelledDependencies);
+        setValue('allDependencies', dependencies);
     }, [getEngines.status, getEngines.data]);
 
-    const handleUpdateDependencies = () => {
+    const handleUpdateDependencies = async () => {
         const appId = getValues('appId');
-        SetProjectDependencies(monolithStore, appId, selectedDeps);
+        const res = await SetProjectDependencies(
+            monolithStore,
+            appId,
+            selectedDeps,
+        );
+
+        if (res.type === 'success') {
+            notification.add({
+                color: 'success',
+                message: 'Successfully updated dependencies',
+            });
+            onClose(true);
+        } else {
+            notification.add({
+                color: 'error',
+                message: res.output,
+            });
+        }
     };
 
     const handleRemoveDependency = (id: string) => {
-        // TODO
+        const newDependencies = selectedDeps.filter((dep) => dep.app_id !== id);
+        setValue('selectedDependencies', newDependencies);
     };
 
     return (
@@ -122,7 +135,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                     <ModalHeading variant="h2">
                         Add and Edit Dependencies
                     </ModalHeading>
-                    <IconButton onClick={() => onClose()}>
+                    <IconButton onClick={() => onClose(false)}>
                         <Close />
                     </IconButton>
                 </ModalHeaderWrapper>
@@ -146,13 +159,13 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                                     <TextField {...params} label="Search" />
                                 )}
                                 renderOption={(props, option) => (
-                                    <li {...props}>{option.name}</li>
+                                    <li {...props}>{option.app_name}</li>
                                 )}
-                                getOptionLabel={(option: modelledDependency) =>
-                                    option.name
+                                getOptionLabel={(option: dependency) =>
+                                    option.app_name
                                 }
                                 isOptionEqualToValue={(option, value) => {
-                                    return option.id === value.id;
+                                    return option.id === value.appId;
                                 }}
                             />
                         );
@@ -160,35 +173,37 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                 />
 
                 <ul>
-                    {selectedDeps.map(
-                        (dep: modelledDependency, idx: number) => {
-                            return (
-                                <StyledDependencyListItem
-                                    key={`${dep.id}-${idx}`}
+                    {selectedDeps.map((dep: dependency, idx: number) => {
+                        return (
+                            <StyledDependencyListItem
+                                key={`${dep.app_id}-${idx}`}
+                            >
+                                <StyledCardImage
+                                    src={`${Env.MODULE}/api/e-${dep.app_id}/image/download`}
+                                    sx={{ height: '134px' }}
+                                />
+                                <div>
+                                    <Typography variant="h6">
+                                        {dep.app_name}
+                                    </Typography>
+                                    <Stack direction="row">
+                                        {`${dep.app_type} | Engine ID: ${dep.app_id}`}
+                                    </Stack>
+                                </div>
+                                <IconButton
+                                    onClick={() =>
+                                        handleRemoveDependency(dep.app_id)
+                                    }
                                 >
-                                    <StyledCardImage
-                                        src={`${Env.MODULE}/api/e-${dep.id}/image/download`}
-                                        sx={{ height: '134px' }}
-                                    />
-                                    <div>
-                                        <Typography variant="h6">
-                                            {dep.name}
-                                        </Typography>
-                                        <Stack direction="row">
-                                            {`${dep.type} | Engine ID: ${appId}`}
-                                        </Stack>
-                                    </div>
-                                    <IconButton>
-                                        <Close />
-                                    </IconButton>
-                                </StyledDependencyListItem>
-                            );
-                        },
-                    )}
+                                    <Close />
+                                </IconButton>
+                            </StyledDependencyListItem>
+                        );
+                    })}
                 </ul>
 
                 <ModalFooter>
-                    <Button onClick={() => onClose()} variant="text">
+                    <Button onClick={() => onClose(false)} variant="text">
                         Cancel
                     </Button>
                     <Button

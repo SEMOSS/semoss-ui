@@ -30,6 +30,7 @@ import {
     AppDetailsFormTypes,
     AppDetailsFormValues,
     engine,
+    modelDependencies,
 } from './appDetails.utility';
 import { ChangeAccessModal } from './ChangeAccessModal';
 import { EditDetailsModal } from './EditDetailsModal';
@@ -264,7 +265,10 @@ export const AppDetailPage = () => {
                             emitMessage(true, res.value.output);
                         } else {
                             setValue('dependencies', res.value.output);
-                            setValue('selectedDependencies', res.value.output);
+                            const modelled = modelDependencies(
+                                res.value.output,
+                            );
+                            setValue('selectedDependencies', modelled);
                         }
                     }
                 }
@@ -291,6 +295,29 @@ export const AppDetailPage = () => {
             });
         }
         setIsEditDetailsModalOpen(false);
+    };
+
+    const handleCloseDependenciesModal = async (refreshData: boolean) => {
+        const currDependencies = modelDependencies(getValues('dependencies'));
+
+        if (refreshData) {
+            const appId = getValues('appId');
+            const res = await fetchDependencies(monolithStore, appId);
+            if (res.type === 'success') {
+                setValue('dependencies', res.output);
+                const modelled = modelDependencies(res.output);
+                setValue('selectedDependencies', modelled);
+            } else {
+                setValue('selectedDependencies', currDependencies);
+                notification.add({
+                    color: 'error',
+                    message: res.output,
+                });
+            }
+        } else {
+            setValue('selectedDependencies', currDependencies);
+        }
+        setIsEditDependenciesModalOpen(false);
     };
 
     return (
@@ -437,27 +464,27 @@ export const AppDetailPage = () => {
                                     )}
                                 </DependenciesHeadingWrapper>
 
-                                <DependenciesTable>
-                                    <DependencyRow>
-                                        <Typography
-                                            variant="body2"
-                                            fontWeight="bold"
-                                            sx={{ width: '50%' }}
-                                        >
-                                            Dependency
-                                        </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            fontWeight="bold"
-                                            sx={{ width: '50%' }}
-                                        >
-                                            Current level of access
-                                        </Typography>
-                                    </DependencyRow>
-                                </DependenciesTable>
-
                                 {dependencies.length > 0 ? (
                                     <div>
+                                        <DependenciesTable>
+                                            <DependencyRow>
+                                                <Typography
+                                                    variant="body2"
+                                                    fontWeight="bold"
+                                                    sx={{ width: '50%' }}
+                                                >
+                                                    Dependency
+                                                </Typography>
+                                                <Typography
+                                                    variant="body2"
+                                                    fontWeight="bold"
+                                                    sx={{ width: '50%' }}
+                                                >
+                                                    Current level of access
+                                                </Typography>
+                                            </DependencyRow>
+                                        </DependenciesTable>
+
                                         {dependencies?.map((dep: engine) => (
                                             <DependencyRow
                                                 key={`name-${dep.app_name}--id-${dep.app_id}`}
@@ -569,7 +596,7 @@ export const AppDetailPage = () => {
 
             <EditDependenciesModal
                 isOpen={isEditDependenciesModalOpen}
-                onClose={() => setIsEditDependenciesModalOpen(false)}
+                onClose={handleCloseDependenciesModal}
                 control={control}
                 getValues={getValues}
                 setValue={setValue}

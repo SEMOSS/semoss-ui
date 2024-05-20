@@ -12,14 +12,6 @@ export interface dependency {
     app_type: string;
 }
 
-export interface modelledDependency {
-    id: string;
-    name: string;
-    type: string;
-    isDiscoverable: boolean;
-    isPublic: boolean;
-}
-
 export interface engine {
     app_cost: string;
     app_favorite: number;
@@ -65,8 +57,8 @@ export interface AppDetailsFormTypes {
     };
 
     dependencies: engine[];
-    allDependencies: engine[];
-    selectedDependencies: engine[];
+    allDependencies: dependency[];
+    selectedDependencies: dependency[];
 
     requestedPermission: 'author' | 'editor' | 'readOnly' | '';
     roleChangeComment: string | ReactNode;
@@ -193,6 +185,14 @@ export const SetProjectDependencies = async (
         )})`,
     );
     console.log('RES', res);
+
+    const type = res.pixelReturn[0].operationType;
+    const output = res.pixelReturn[0].output;
+
+    return {
+        type: type.indexOf('ERROR') === -1 ? 'success' : 'error',
+        output,
+    };
 };
 
 /**
@@ -215,4 +215,13 @@ export const determineUserPermission = (role: Role): AppPermission => {
     }
 
     return permission;
+};
+
+export const modelDependencies = (dependencies: engine[]) => {
+    const modelled = dependencies.map((d) => ({
+        app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+        app_id: d.app_id,
+        app_type: d.app_type,
+    }));
+    return modelled;
 };
