@@ -22,7 +22,6 @@ import {
 } from '@semoss/ui';
 import { ShareOverlay } from '@/components/workspace';
 import { MembersTable, SettingsTiles } from '@/components/settings';
-// import { AppSettings } from '@/components/app/AppSettings';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
@@ -30,6 +29,7 @@ import { formatPermission } from '@/utils';
 import {
     AppDetailsFormTypes,
     AppDetailsFormValues,
+    engine,
 } from './appDetails.utility';
 import { ChangeAccessModal } from './ChangeAccessModal';
 import { EditDetailsModal } from './EditDetailsModal';
@@ -293,69 +293,6 @@ export const AppDetailPage = () => {
         setIsEditDetailsModalOpen(false);
     };
 
-    function DependenciesBody(): JSX.Element {
-        if (dependencies?.length > 0) {
-            return (
-                <>
-                    {permission === 'author' ? null : (
-                        <pre
-                            style={{
-                                background: 'gray',
-                                padding: '1rem',
-                                textAlign: 'center',
-                                width: '100%',
-                            }}
-                        >
-                            (Warning component)
-                        </pre>
-                    )}
-                    <DependenciesTable>
-                        <DependencyRow>
-                            <Typography
-                                variant="body2"
-                                fontWeight="bold"
-                                sx={{ width: '50%' }}
-                            >
-                                Dependency
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                fontWeight="bold"
-                                sx={{ width: '50%' }}
-                            >
-                                Current level of access
-                            </Typography>
-                        </DependencyRow>
-                        {dependencies?.map(
-                            ({ engine_id, engine_name, engine_type }) => (
-                                <DependencyRow
-                                    key={`name-${engine_name}--id-${engine_id}`}
-                                >
-                                    <Link
-                                        href={`./#/engine/${engine_type}/${engine_id}`}
-                                        sx={{ width: '50%' }}
-                                    >
-                                        <Typography variant="body2">
-                                            {engine_name}
-                                        </Typography>
-                                    </Link>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ width: '50%' }}
-                                    >
-                                        {formatPermission(userRole)}
-                                    </Typography>
-                                </DependencyRow>
-                            ),
-                        )}
-                    </DependenciesTable>
-                </>
-            );
-        } else {
-            return <Typography variant="body1">No dependencies</Typography>;
-        }
-    }
-
     return (
         <OuterContainer>
             <InnerContainer>
@@ -500,21 +437,50 @@ export const AppDetailPage = () => {
                                     )}
                                 </DependenciesHeadingWrapper>
 
+                                <DependenciesTable>
+                                    <DependencyRow>
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight="bold"
+                                            sx={{ width: '50%' }}
+                                        >
+                                            Dependency
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight="bold"
+                                            sx={{ width: '50%' }}
+                                        >
+                                            Current level of access
+                                        </Typography>
+                                    </DependencyRow>
+                                </DependenciesTable>
+
                                 {dependencies.length > 0 ? (
-                                    <>
-                                        {permission === 'author' && (
-                                            <pre
-                                                style={{
-                                                    background: 'gray',
-                                                    padding: '1rem',
-                                                    textAlign: 'center',
-                                                    width: '100%',
-                                                }}
+                                    <div>
+                                        {dependencies?.map((dep: engine) => (
+                                            <DependencyRow
+                                                key={`name-${dep.app_name}--id-${dep.app_id}`}
                                             >
-                                                (Warning component)
-                                            </pre>
-                                        )}
-                                    </>
+                                                <Link
+                                                    href={`./#/engine/${dep.app_type}/${dep.app_id}`}
+                                                    sx={{ width: '50%' }}
+                                                >
+                                                    <Typography variant="body2">
+                                                        {dep.app_name}
+                                                    </Typography>
+                                                </Link>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ width: '50%' }}
+                                                >
+                                                    {formatPermission(
+                                                        dep.user_permission,
+                                                    )}
+                                                </Typography>
+                                            </DependencyRow>
+                                        ))}
+                                    </div>
                                 ) : (
                                     <Typography variant="body1">
                                         No dependencies

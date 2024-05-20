@@ -2,14 +2,14 @@ import {
     styled,
     Typography,
     Modal,
-    Select,
     IconButton,
-    Button,
     TextField,
+    Stack,
+    Button,
 } from '@semoss/ui';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { usePixel, useRootStore } from '@/hooks';
-import CloseIcon from '@mui/icons-material/Close';
+import { Env } from '@/env';
 import {
     SetProjectDependencies,
     engine,
@@ -17,6 +17,7 @@ import {
 } from './appDetails.utility';
 import { Control, Controller } from 'react-hook-form';
 import { createFilterOptions, Autocomplete } from '@mui/material';
+import { Close } from '@mui/icons-material';
 
 const EditModalInnerContainer = styled('div')({
     display: 'flex',
@@ -36,19 +37,32 @@ const ModalHeading = styled(Typography)({
     fontWeight: 500,
 });
 
-const ModalDependencyRow = styled('div')({
-    alignItems: 'center',
+const StyledModalSubHeading = styled(Typography)(({ theme }) => ({
+    fontSize: '14px',
+    paddingBottom: theme.spacing(1),
+    fontWeight: 'medium',
+}));
+
+const StyledDependencyListItem = styled('li')(({ theme }) => ({
+    border: '1px solid red',
+    margin: `${theme.spacing(1)} 0`,
+    padding: `0 ${theme.spacing(2)}`,
+    gap: theme.spacing(2),
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr auto',
+}));
+
+const StyledCardImage = styled('img')({
     display: 'flex',
-    justifyContent: 'space-between',
-    margin: '0.5rem 0',
-});
+    height: '134px',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
 
-const ModalEngineName = styled(Typography)({
-    marginBottom: '0.5rem',
-});
-
-const ModalEngineTypeAndId = styled(Typography)({
-    fontSize: 12,
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    width: '100%',
 });
 
 const ModalFooter = styled('div')({
@@ -69,11 +83,11 @@ interface EditDependenciesModalProps {
 export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
     const { isOpen, onClose, control, getValues, setValue, watch } = props;
     const { monolithStore } = useRootStore();
-    const allDependencies = watch('allDependencies');
-    const selectedDependencies = watch('selectedDependencies');
+    const appId = watch('appId');
+    const allDeps = watch('allDependencies');
+    const selectedDeps = watch('selectedDependencies');
 
     const getEngines = usePixel<engine[]>('MyEngines();');
-    const [dependencyIds, setDependencyIds] = useState<string[]>([]);
     const filter = createFilterOptions<string>();
 
     useEffect(() => {
@@ -82,9 +96,9 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
         }
 
         const modelledDependencies = getEngines.data.map((d) => ({
-            appName: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            appId: d.app_id,
-            appType: d.app_type,
+            name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+            id: d.app_id,
+            type: d.app_type,
             isDiscoverable: d.database_discoverable,
             isPublic: d.database_global,
         }));
@@ -94,7 +108,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 
     const handleUpdateDependencies = () => {
         const appId = getValues('appId');
-        SetProjectDependencies(monolithStore, appId, selectedDependencies);
+        SetProjectDependencies(monolithStore, appId, selectedDeps);
     };
 
     const handleRemoveDependency = (id: string) => {
@@ -109,17 +123,13 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                         Add and Edit Dependencies
                     </ModalHeading>
                     <IconButton onClick={() => onClose()}>
-                        <CloseIcon />
+                        <Close />
                     </IconButton>
                 </ModalHeaderWrapper>
 
-                <Typography
-                    variant="h3"
-                    fontWeight="medium"
-                    sx={{ fontSize: '14px' }}
-                >
+                <StyledModalSubHeading variant="h3">
                     Linked Dependencies
-                </Typography>
+                </StyledModalSubHeading>
 
                 <Controller
                     name="selectedDependencies"
@@ -127,7 +137,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                     render={({ field }) => {
                         return (
                             <Autocomplete
-                                options={allDependencies}
+                                options={allDeps}
                                 value={field.value}
                                 fullWidth
                                 multiple
@@ -136,58 +146,46 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                                     <TextField {...params} label="Search" />
                                 )}
                                 renderOption={(props, option) => (
-                                    <li {...props}>{option.appName}</li>
+                                    <li {...props}>{option.name}</li>
                                 )}
                                 getOptionLabel={(option: modelledDependency) =>
-                                    option.appName
+                                    option.name
                                 }
                                 isOptionEqualToValue={(option, value) => {
-                                    return option.appId === value.appId;
-                                }}
-                                filterOptions={(options, params) => {
-                                    const filtered = filter(options, params);
-
-                                    const { inputValue } = params;
-                                    const isExisting = options.some(
-                                        (option) => inputValue === option.appId,
-                                    );
-                                    if (inputValue !== '' && !isExisting) {
-                                        filtered.push(inputValue);
-                                    }
-
-                                    return filtered;
+                                    return option.id === value.id;
                                 }}
                             />
                         );
                     }}
                 />
 
-                {/* {dependencies?.map(
-                    ({ engine_id, engine_name, engine_type }, idx) => (
-                        <ModalDependencyRow
-                            key={`dependency-${engine_id}-${idx}`}
-                        >
-                            <div>
-                                <ModalEngineName
-                                    variant="body1"
-                                    fontWeight="medium"
+                <ul>
+                    {selectedDeps.map(
+                        (dep: modelledDependency, idx: number) => {
+                            return (
+                                <StyledDependencyListItem
+                                    key={`${dep.id}-${idx}`}
                                 >
-                                    {engine_name}
-                                </ModalEngineName>
-                                <ModalEngineTypeAndId variant="body2">
-                                    {engine_type} | Engine ID: {engine_id}
-                                </ModalEngineTypeAndId>
-                            </div>
-                            <IconButton
-                                onClick={() =>
-                                    handleRemoveDependency(engine_id)
-                                }
-                            >
-                                <CloseIcon />
-                            </IconButton>
-                        </ModalDependencyRow>
-                    ),
-                )} */}
+                                    <StyledCardImage
+                                        src={`${Env.MODULE}/api/e-${dep.id}/image/download`}
+                                        sx={{ height: '134px' }}
+                                    />
+                                    <div>
+                                        <Typography variant="h6">
+                                            {dep.name}
+                                        </Typography>
+                                        <Stack direction="row">
+                                            {`${dep.type} | Engine ID: ${appId}`}
+                                        </Stack>
+                                    </div>
+                                    <IconButton>
+                                        <Close />
+                                    </IconButton>
+                                </StyledDependencyListItem>
+                            );
+                        },
+                    )}
+                </ul>
 
                 <ModalFooter>
                     <Button onClick={() => onClose()} variant="text">

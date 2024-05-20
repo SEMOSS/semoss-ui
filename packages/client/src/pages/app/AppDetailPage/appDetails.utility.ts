@@ -13,9 +13,9 @@ export interface dependency {
 }
 
 export interface modelledDependency {
-    appId: string;
-    appName: string;
-    appType: string;
+    id: string;
+    name: string;
+    type: string;
     isDiscoverable: boolean;
     isPublic: boolean;
 }
@@ -37,7 +37,7 @@ export interface engine {
     database_type: string;
     low_database_name: string;
     permission: number;
-    user_permission: number;
+    user_permission: Role;
 }
 
 /**
@@ -64,9 +64,9 @@ export interface AppDetailsFormTypes {
         tags: string[];
     };
 
-    dependencies: any[];
+    dependencies: engine[];
     allDependencies: engine[];
-    selectedDependencies: any[];
+    selectedDependencies: engine[];
 
     requestedPermission: 'author' | 'editor' | 'readOnly' | '';
     roleChangeComment: string | ReactNode;
