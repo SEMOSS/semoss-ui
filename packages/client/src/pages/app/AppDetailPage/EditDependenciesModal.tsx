@@ -42,35 +42,30 @@ const ModalHeading = styled(Typography)({
 const StyledModalSubHeading = styled(Typography)(({ theme }) => ({
     fontSize: '14px',
     paddingBottom: theme.spacing(1),
-    fontWeight: 'medium',
+    fontWeight: 500,
 }));
 
 const StyledDependencyListItem = styled('li')(({ theme }) => ({
-    border: '1px solid red',
     margin: `${theme.spacing(1)} 0`,
     padding: `0 ${theme.spacing(2)}`,
     gap: theme.spacing(2),
     display: 'grid',
     gridTemplateColumns: 'auto 1fr auto',
+    alignItems: 'center',
 }));
 
 const StyledCardImage = styled('img')({
     display: 'flex',
-    height: '134px',
-    alignItems: 'flex-start',
-    gap: '10px',
-    alignSelf: 'stretch',
+    width: '50px',
+    height: '50px',
+    borderRadius: '8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
 
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
-    width: '100%',
-});
-
-const ModalFooter = styled('div')({
-    display: 'flex',
-    gap: '0.5rem',
-    marginLeft: 'auto',
 });
 
 interface EditDependenciesModalProps {
@@ -165,44 +160,41 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                                     option.app_name
                                 }
                                 isOptionEqualToValue={(option, value) => {
-                                    return option.id === value.appId;
+                                    return option.app_id === value.appId;
                                 }}
                             />
                         );
                     }}
                 />
 
-                <ul>
-                    {selectedDeps.map((dep: dependency, idx: number) => {
-                        return (
-                            <StyledDependencyListItem
-                                key={`${dep.app_id}-${idx}`}
-                            >
-                                <StyledCardImage
-                                    src={`${Env.MODULE}/api/e-${dep.app_id}/image/download`}
-                                    sx={{ height: '134px' }}
-                                />
-                                <div>
-                                    <Typography variant="h6">
-                                        {dep.app_name}
-                                    </Typography>
-                                    <Stack direction="row">
+                {selectedDeps.map((dep: dependency, idx: number) => {
+                    return (
+                        <StyledDependencyListItem key={`${dep.app_id}-${idx}`}>
+                            <StyledCardImage
+                                src={`${Env.MODULE}/api/e-${dep.app_id}/image/download`}
+                            />
+                            <div>
+                                <Typography variant="h6">
+                                    {dep.app_name}
+                                </Typography>
+                                <Stack direction="row">
+                                    <Typography variant="body2">
                                         {`${dep.app_type} | Engine ID: ${dep.app_id}`}
-                                    </Stack>
-                                </div>
-                                <IconButton
-                                    onClick={() =>
-                                        handleRemoveDependency(dep.app_id)
-                                    }
-                                >
-                                    <Close />
-                                </IconButton>
-                            </StyledDependencyListItem>
-                        );
-                    })}
-                </ul>
+                                    </Typography>
+                                </Stack>
+                            </div>
+                            <IconButton
+                                onClick={() =>
+                                    handleRemoveDependency(dep.app_id)
+                                }
+                            >
+                                <Close />
+                            </IconButton>
+                        </StyledDependencyListItem>
+                    );
+                })}
 
-                <ModalFooter>
+                <Modal.Actions>
                     <Button onClick={() => onClose(false)} variant="text">
                         Cancel
                     </Button>
@@ -212,7 +204,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                     >
                         Save
                     </Button>
-                </ModalFooter>
+                </Modal.Actions>
             </EditModalInnerContainer>
         </Modal>
     );
