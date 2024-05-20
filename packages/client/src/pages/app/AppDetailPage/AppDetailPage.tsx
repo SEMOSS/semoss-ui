@@ -29,7 +29,6 @@ import { formatPermission } from '@/utils';
 import {
     AppDetailsFormTypes,
     AppDetailsFormValues,
-    engine,
     modelDependencies,
 } from './appDetails.utility';
 import { ChangeAccessModal } from './ChangeAccessModal';
@@ -41,6 +40,7 @@ import {
     fetchDependencies,
     determineUserPermission,
 } from './appDetails.utility';
+import DependencyTable from './DependencyTable';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -158,11 +158,6 @@ const DependenciesTable = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
-});
-
-const DependencyRow = styled('div')({
-    display: 'flex',
-    width: '100%',
 });
 
 export const AppDetailPage = () => {
@@ -465,49 +460,10 @@ export const AppDetailPage = () => {
                                 </DependenciesHeadingWrapper>
 
                                 {dependencies.length > 0 ? (
-                                    <div>
-                                        <DependenciesTable>
-                                            <DependencyRow>
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight="bold"
-                                                    sx={{ width: '50%' }}
-                                                >
-                                                    Dependency
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight="bold"
-                                                    sx={{ width: '50%' }}
-                                                >
-                                                    Current level of access
-                                                </Typography>
-                                            </DependencyRow>
-                                        </DependenciesTable>
-
-                                        {dependencies?.map((dep: engine) => (
-                                            <DependencyRow
-                                                key={`name-${dep.app_name}--id-${dep.app_id}`}
-                                            >
-                                                <Link
-                                                    href={`./#/engine/${dep.app_type}/${dep.app_id}`}
-                                                    sx={{ width: '50%' }}
-                                                >
-                                                    <Typography variant="body2">
-                                                        {dep.app_name}
-                                                    </Typography>
-                                                </Link>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{ width: '50%' }}
-                                                >
-                                                    {formatPermission(
-                                                        dep.user_permission,
-                                                    )}
-                                                </Typography>
-                                            </DependencyRow>
-                                        ))}
-                                    </div>
+                                    <DependencyTable
+                                        dependencies={dependencies}
+                                        permission={permission}
+                                    />
                                 ) : (
                                     <Typography variant="body1">
                                         No dependencies
