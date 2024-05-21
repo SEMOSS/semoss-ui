@@ -15,6 +15,7 @@ import {
     Tooltip,
     Paper,
     IconButton,
+    Chip,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -33,13 +34,27 @@ const StyledHeader = styled('div')(({ theme }) => ({
 }));
 
 const StyledAdminHeader = styled('div')(({ theme }) => ({
-    height: '24px',
     display: 'flex',
-    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
 }));
 
 const StyledId = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
+}));
+
+const StyledChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'adminMode',
+})<{ adminMode: boolean }>(({ theme, adminMode }) => ({
+    backgroundColor: `${
+        adminMode ? 'rgba(46, 125, 50, .15)' : theme.palette.success
+    }`,
+    '&&:hover': {
+        backgroundColor: `${
+            adminMode ? 'rgba(46, 125, 50, .25)' : theme.palette.grey[300]
+        }`,
+    },
 }));
 
 const IdContainer = styled('span')(({ theme }) => ({
@@ -47,8 +62,7 @@ const IdContainer = styled('span')(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const StyledAdminContainer = styled(Paper)(({ theme }) => ({
-    position: 'absolute',
+const StyledAdminContainer = styled('div')(({ theme }) => ({
     top: theme.spacing(1),
     right: theme.spacing(1),
     zIndex: 1,
@@ -105,7 +119,7 @@ export const SettingsLayout = observer(() => {
             <Page
                 header={
                     <Stack>
-                        {matchedRoute.path ? (
+                        {matchedRoute.path && (
                             <StyledHeader>
                                 <Breadcrumbs separator="/">
                                     <StyledLink to={'.'}>Settings</StyledLink>
@@ -114,7 +128,7 @@ export const SettingsLayout = observer(() => {
                                             <StyledLink
                                                 to={link.replace('<id>', id)}
                                                 key={i + link}
-                                                state={...state}
+                                                state={{ ...state }}
                                             >
                                                 {link.includes('<id>')
                                                     ? id
@@ -123,66 +137,39 @@ export const SettingsLayout = observer(() => {
                                         );
                                     })}
                                 </Breadcrumbs>
-                                {configStore.store.user.admin ? (
-                                    <StyledAdminContainer>
-                                        <Tooltip
-                                            title={
-                                                !adminMode
-                                                    ? 'Enable Admin Mode'
-                                                    : 'Disable Admin Mode'
-                                            }
-                                        >
-                                            <div>
-                                                <ToggleButton
-                                                    size="small"
-                                                    color={'primary'}
-                                                    value={'adminMode'}
-                                                    selected={adminMode}
-                                                    onClick={() =>
-                                                        setAdminMode(!adminMode)
-                                                    }
-                                                >
-                                                    <AdminPanelSettingsOutlined />
-                                                </ToggleButton>
-                                            </div>
-                                        </Tooltip>
-                                    </StyledAdminContainer>
-                                ) : null}
                             </StyledHeader>
-                        ) : configStore.store.user.admin ? (
+                        )}
+                        <StyledAdminContainer>
                             <StyledAdminHeader>
-                                <StyledAdminContainer>
-                                    <Tooltip
-                                        title={
-                                            !adminMode
-                                                ? 'Enable Admin Mode'
-                                                : 'Disable Admin Mode'
-                                        }
-                                    >
-                                        <div>
-                                            <ToggleButton
-                                                size="small"
-                                                color={'primary'}
-                                                value={'adminMode'}
-                                                selected={adminMode}
-                                                onClick={() =>
-                                                    setAdminMode(!adminMode)
+                                <Typography variant="h4">
+                                    {matchedRoute.history.length < 2
+                                        ? matchedRoute.title
+                                        : state
+                                        ? state.name
+                                        : matchedRoute.title}
+                                </Typography>
+                                {configStore.store.user.admin && (
+                                    <StyledChip
+                                        adminMode={adminMode}
+                                        size="medium"
+                                        clickable
+                                        icon={
+                                            <AdminPanelSettingsOutlined
+                                                color={
+                                                    adminMode
+                                                        ? 'success'
+                                                        : 'disabled'
                                                 }
-                                            >
-                                                <AdminPanelSettingsOutlined />
-                                            </ToggleButton>
-                                        </div>
-                                    </Tooltip>
-                                </StyledAdminContainer>
+                                            />
+                                        }
+                                        label={
+                                            adminMode ? 'Admin On' : 'Admin Off'
+                                        }
+                                        onClick={() => setAdminMode(!adminMode)}
+                                    />
+                                )}
                             </StyledAdminHeader>
-                        ) : null}
-                        <Typography variant="h4">
-                            {matchedRoute.history.length < 2
-                                ? matchedRoute.title
-                                : state
-                                ? state.name
-                                : matchedRoute.title}
-                        </Typography>
+                        </StyledAdminContainer>
                         {id ? (
                             <IdContainer>
                                 <StyledId variant={'subtitle2'}>{id}</StyledId>
