@@ -13,6 +13,7 @@ import {
     Select,
     Table,
     Checkbox,
+    TextField,
 } from '@semoss/ui';
 
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
@@ -44,14 +45,16 @@ import {
     DefaultCellDefinitions,
     DefaultCells,
     TransformationCells,
-    // ImportDataCells, // need options for Import Data dropdown options
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
 
 import { LoadingScreen } from '@/components/ui';
-import { useBlocksPixel } from '@/hooks/useBlocksPixel';
+
+const StyledImportDataForm = styled('form')(({ theme }) => ({
+    margin: '30px 41px',
+}));
 
 const StyledModalTitle = styled(Typography)(({ theme }) => ({
     alignContent: 'center',
@@ -103,6 +106,14 @@ const StyledBorderDiv = styled('div')(({ theme }) => ({
     borderRadius: '8px',
 }));
 
+interface Column {
+    id: string;
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
 interface AddCellOption {
     display: string;
     icon: React.ReactNode;
@@ -127,6 +138,7 @@ type FormValues = {
     queryStackElements: QueryStackElement[];
     databaseSelect: string;
     tableSelect: string;
+    columns: Column[];
 };
 
 const Transformations = Array.from(Object.values(TransformationCells)).map(
@@ -148,15 +160,6 @@ const DataImportDropdownOptions = [
         defaultCellType: null,
     },
 ];
-
-// const DataImportDropdownOptions = Array.from(Object.values(TransformationCells)).map(
-//     (item) => {
-//         return {
-//             display: `Test ${item.name}`,
-//             defaultCellType: item.widget,
-//         };
-//     },
-// );
 
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
@@ -247,7 +250,7 @@ export const NotebookAddCell = observer(
 
         const [selectedDatabaseId, setSelectedDatabaseId] = useState(null);
         const [selectedTable, setSelectedTable] = useState(null);
-        const [selectedColumnsSet, setSelectedColumnsSet] = useState(new Set());
+        const [hiddenColumnIdsSet, setHiddenColumnIdsSet] = useState(new Set());
 
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;');
         const [isDatabaseLoading, setIsDatabaseLoading] =
@@ -266,28 +269,30 @@ export const NotebookAddCell = observer(
             name: 'queryStackElements',
         });
 
-        // useEffect(
-        //     () => console.log({ selectedColumnsSet }),
-        //     [selectedColumnsSet],
-        // );
-        // useEffect(
-        //     () => console.log({ selectedDatabaseId }),
-        //     [selectedDatabaseId],
-        // );
-        // useEffect(() => console.log({ selectedTable }), [selectedTable]);
+        const { fields, append, remove } = useFieldArray({
+            control,
+            name: 'columns',
+        });
+
+        useEffect(() => {
+            remove();
+            tableColumnsObject[selectedTable]?.forEach((tableObject, idx) => {
+                console.log({ tableObject });
+                append({
+                    id: idx,
+                    tableName: tableObject.tableName,
+                    columnName: tableObject.columnName,
+                    userAlias: tableObject.columnName,
+                    checked: true,
+                });
+            });
+        }, [selectedTable]);
 
         useEffect(() => {
             if (getDatabases.status !== 'SUCCESS') {
                 return;
             }
             setUserDatabases(getDatabases.data);
-
-            // // add all table names to new array and set in state
-            // console.log({ userDatabases: getDatabases });
-            // setDatabaseTableNames([]);
-
-            // // add all table columns to arrays as values set at table names keys
-            // setTableColumnsObject({});
         }, [getDatabases.status, getDatabases.data]);
 
         // const cellTypeOptions = computed(() => {
@@ -365,7 +370,7 @@ export const NotebookAddCell = observer(
             }
         };
 
-        const onSubmit = (submitData) => {
+        const onImportDataSubmit = (submitData) => {
             console.log({ submitData });
         };
 
@@ -386,7 +391,7 @@ export const NotebookAddCell = observer(
                     ];
 
                     const newTableColumnsObject = pixelResponse.reduce(
-                        (acc, ele) => {
+                        (acc, ele, idx) => {
                             const tableName = ele[0];
                             const columnName = ele[1];
                             const columnType = ele[2];
@@ -404,11 +409,12 @@ export const NotebookAddCell = observer(
                                 columnName2,
                                 tableName2,
                                 userAlias: columnName, // user editable in Edit Columns
-                                showInPreview: true, // user editable in Edit Columns
+                                checked: true,
                             });
 
                             return acc;
                         },
+                        {},
                     );
 
                     setTableColumnsObject(newTableColumnsObject);
@@ -443,8 +449,7 @@ export const NotebookAddCell = observer(
 
             const aliasString = tableColumnsObject[tableName]
                 .map(
-                    (ele) =>
-                        `${ele.columnName}`, // may need to switch to ele.columnName2 but they seem to be identical
+                    (ele) => `${ele.columnName}`, // may need to switch to ele.columnName2 but they seem to be identical
                 )
                 .join(', ');
 
@@ -454,7 +459,6 @@ export const NotebookAddCell = observer(
 
             await monolithStore.runQuery(pixelString).then((response) => {
                 const type = response.pixelReturn[0].operationType;
-                const pixelResponse1 = response;
                 const tableHeadersData =
                     response.pixelReturn[1].output.data.headers;
                 const tableRawHeadersData =
@@ -472,17 +476,9 @@ export const NotebookAddCell = observer(
                 setDatabaseTableRawHeaders(tableRawHeadersData);
                 setDatabaseTableRows(tableRowsData);
 
-                // if (type.indexOf('ERROR') === -1) {
-                //     const tableNames = [
-                //         ...pixelResponse.reduce((set, ele) => {
-                //             set.add(ele[0]);
-                //             return set;
-                //         }, new Set()),
-                //     ];
-                //     setTableNames(tableNames);
-                // } else {
-                //     console.error('Error retrieving database tables');
-                // }
+                if (type.indexOf('ERROR') != -1) {
+                    console.error('Error retrieving database tables');
+                }
 
                 setIsDatabaseLoading(false);
             });
@@ -591,17 +587,11 @@ export const NotebookAddCell = observer(
                     {isDatabaseLoading && (
                         <LoadingScreen.Trigger description="Retrieving database" />
                     )}
-                    <form
-                        onSubmit={handleSubmit(onSubmit)}
-                        style={{ border: '1px solid red', margin: '30px 41px' }}
+                    <StyledImportDataForm
+                        onSubmit={handleSubmit(onImportDataSubmit)}
                     >
-                        <StyledModalTitleWrapper
-                            sx={{ border: '1px solid blue', padding: '0px' }}
-                        >
-                            <StyledModalTitle
-                                variant="h6"
-                                sx={{ border: '1px solid orange' }}
-                            >
+                        <StyledModalTitleWrapper>
+                            <StyledModalTitle variant="h6">
                                 Import Data
                             </StyledModalTitle>
                             <Controller
@@ -617,6 +607,10 @@ export const NotebookAddCell = observer(
                                             retrieveDatabaseTables(
                                                 e.target.value,
                                             );
+                                            setShowEditColumns(false);
+                                            setShowTablePreview(false);
+                                            setSelectedTable(null);
+                                            setHiddenColumnIdsSet(new Set());
                                         }}
                                         label={'Select Database...'}
                                         value={field.value || null}
@@ -627,7 +621,6 @@ export const NotebookAddCell = observer(
                                     >
                                         {userDatabases?.map((ele) => (
                                             <Menu.Item value={ele.database_id}>
-                                                {/* <Menu.Item value={ele.app_id}> */}
                                                 {ele.app_name}
                                             </Menu.Item>
                                         ))}
@@ -635,9 +628,7 @@ export const NotebookAddCell = observer(
                                 )}
                             />
                         </StyledModalTitleWrapper>
-                        <Modal.Content
-                            sx={{ border: '1px solid green', padding: '0px' }}
-                        >
+                        <Modal.Content>
                             {!!tableNames.length && (
                                 <Stack
                                     spacing={1}
@@ -659,6 +650,9 @@ export const NotebookAddCell = observer(
                                                     );
                                                     selectTableHandler(
                                                         e.target.value,
+                                                    );
+                                                    setHiddenColumnIdsSet(
+                                                        new Set(),
                                                     );
                                                 }}
                                                 label={'Select Table...'}
@@ -707,103 +701,82 @@ export const NotebookAddCell = observer(
                                             <Typography variant="h6">
                                                 Edit Columns
                                             </Typography>
-                                            <ul>
-                                                {databaseTableHeaders.map(
-                                                    (columnName, columnIdx) => {
-                                                        console.log({
-                                                            selectedTable,
-                                                        });
-                                                        console.log({
-                                                            columnName,
-                                                        });
-                                                        console.log({
-                                                            tableColumnsObject,
-                                                        });
-                                                        return (
-                                                            <li>
-                                                                {/* <input type='checkbox' checked/>
-                                                            <input type="text" value={columnName}></input> */}
-                                                                <Checkbox
-                                                                    label=""
-                                                                    checked={
-                                                                        tableColumnsObject[
-                                                                            selectedTable
-                                                                        ][
-                                                                            columnIdx
-                                                                        ]
-                                                                            ?.showInPreview
+                                            {fields?.map((field, index) => (
+                                                <div key={field.id}>
+                                                    <Controller
+                                                        name={`columns.${index}.checked`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Checkbox
+                                                                checked={
+                                                                    field.value
+                                                                }
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        e,
+                                                                    );
+                                                                    const hiddenColumnIdsSetDup =
+                                                                        new Set(
+                                                                            [
+                                                                                ...hiddenColumnIdsSet,
+                                                                            ],
+                                                                        );
+                                                                    if (
+                                                                        field.value ==
+                                                                        true
+                                                                    ) {
+                                                                        hiddenColumnIdsSetDup.add(
+                                                                            index,
+                                                                        );
+                                                                    } else {
+                                                                        hiddenColumnIdsSetDup.delete(
+                                                                            index,
+                                                                        );
                                                                     }
-                                                                    // checked
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) => {
-                                                                        console.log(
-                                                                            {
-                                                                                checkbox:
-                                                                                    value,
-                                                                            },
-                                                                        );
-                                                                        const tableColumnsObjectDup =
-                                                                            {
-                                                                                ...tableColumnsObject,
-                                                                            };
-                                                                        tableColumnsObjectDup[
-                                                                            selectedTable
-                                                                        ][
-                                                                            columnIdx
-                                                                        ].showInPreview =
-                                                                            !tableColumnsObjectDup[
-                                                                                selectedTable
-                                                                            ][
-                                                                                columnIdx
-                                                                            ]
-                                                                                .showInPreview;
-                                                                        setTableColumnsObject(
-                                                                            tableColumnsObjectDup,
-                                                                        );
-                                                                    }}
-                                                                />
-                                                                <input
-                                                                    type="text"
-                                                                    value={
-                                                                        tableColumnsObject[
-                                                                            selectedTable
-                                                                        ][
-                                                                            columnIdx
-                                                                        ]
-                                                                            ?.userAlias
-                                                                    }
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) => {
-                                                                        console.log(
-                                                                            {
-                                                                                textbox:
-                                                                                    value,
-                                                                            },
-                                                                        );
-                                                                        const tableColumnsObjectDup =
-                                                                            {
-                                                                                ...tableColumnsObject,
-                                                                            };
-                                                                        tableColumnsObjectDup[
-                                                                            selectedTable
-                                                                        ][
-                                                                            columnIdx
-                                                                        ].userAlias =
-                                                                            value;
-                                                                        setTableColumnsObject(
-                                                                            tableColumnsObjectDup,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    {/* {tableColumnsObject[columnName].userAlias} */}
-                                                                </input>
-                                                            </li>
-                                                        );
-                                                    },
-                                                )}
-                                            </ul>
+                                                                    setHiddenColumnIdsSet(
+                                                                        hiddenColumnIdsSetDup,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                    <Controller
+                                                        name={`columns.${index}.userAlias`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <TextField
+                                                                type="text"
+                                                                variant="outlined"
+                                                                size="small"
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    );
+                                                                    const newTableHeaders =
+                                                                        [
+                                                                            ...databaseTableHeaders,
+                                                                        ];
+                                                                    newTableHeaders[
+                                                                        index
+                                                                    ] =
+                                                                        e.target.value;
+                                                                    setDatabaseTableHeaders(
+                                                                        newTableHeaders,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                </div>
+                                            ))}
                                         </>
                                     )}
 
@@ -812,15 +785,21 @@ export const NotebookAddCell = observer(
                                             <Table stickyHeader>
                                                 <Table.Head>
                                                     <Table.Row>
-                                                        {databaseTableHeaders.map(
-                                                            (h, hIdx) => (
+                                                        {databaseTableHeaders
+                                                            .filter(
+                                                                (v, colIdx) => {
+                                                                    return !hiddenColumnIdsSet.has(
+                                                                        colIdx,
+                                                                    );
+                                                                },
+                                                            )
+                                                            .map((h, hIdx) => (
                                                                 <Table.Cell
                                                                     key={hIdx}
                                                                 >
                                                                     {h}
                                                                 </Table.Cell>
-                                                            ),
-                                                        )}
+                                                            ))}
                                                     </Table.Row>
                                                 </Table.Head>
                                                 <Table.Body>
@@ -829,18 +808,31 @@ export const NotebookAddCell = observer(
                                                             <Table.Row
                                                                 key={rIdx}
                                                             >
-                                                                {r.map(
-                                                                    (
-                                                                        v,
-                                                                        vIdx,
-                                                                    ) => (
-                                                                        <Table.Cell
-                                                                            key={`${rIdx}-${vIdx}`}
-                                                                        >
-                                                                            {v}
-                                                                        </Table.Cell>
-                                                                    ),
-                                                                )}
+                                                                {r
+                                                                    .filter(
+                                                                        (
+                                                                            v,
+                                                                            colIdx,
+                                                                        ) => {
+                                                                            return !hiddenColumnIdsSet.has(
+                                                                                colIdx,
+                                                                            );
+                                                                        },
+                                                                    )
+                                                                    .map(
+                                                                        (
+                                                                            v,
+                                                                            vIdx,
+                                                                        ) => (
+                                                                            <Table.Cell
+                                                                                key={`${rIdx}-${vIdx}`}
+                                                                            >
+                                                                                {
+                                                                                    v
+                                                                                }
+                                                                            </Table.Cell>
+                                                                        ),
+                                                                    )}
                                                             </Table.Row>
                                                         ),
                                                     )}
@@ -874,7 +866,7 @@ export const NotebookAddCell = observer(
                             sx={{
                                 display: 'flex',
                                 justifyContent: 'flex-start',
-                                border: '1px solid goldenrod',
+                                // border: '1px solid goldenrod',
                                 padding: '0px',
                             }}
                         >
@@ -934,22 +926,10 @@ export const NotebookAddCell = observer(
                             sx={{
                                 display: 'flex',
                                 justifyContent: 'flex-end',
-                                border: '1px solid pink',
+                                // border: '1px solid pink',
                                 padding: '0px',
                             }}
                         >
-                            <Button
-                                variant="contained"
-                                color="error"
-                                onClick={() => {
-                                    retrieveTableRows();
-                                    alert(
-                                        'Retrieving sample columns and row values from sample database id from hard-coded pixel',
-                                    );
-                                }}
-                            >
-                                Test
-                            </Button>
                             <Button
                                 variant="text"
                                 color="secondary"
@@ -965,7 +945,7 @@ export const NotebookAddCell = observer(
                                 Import
                             </Button>
                         </Modal.Actions>
-                    </form>
+                    </StyledImportDataForm>
                 </Modal>
             </Stack>
         );
