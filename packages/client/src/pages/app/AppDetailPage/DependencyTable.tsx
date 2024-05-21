@@ -1,10 +1,10 @@
 import { Table, Typography, Link, Chip, Stack } from '@semoss/ui';
 import { tableCellClasses } from '@mui/material';
-import { engine } from './appDetails.utility';
+import { modelledDependency } from './appDetails.utility';
 import { formatPermission } from '@/utils';
 
 interface PropsDependencyTable {
-    dependencies: engine[];
+    dependencies: modelledDependency[];
     permission: string;
 }
 
@@ -40,29 +40,27 @@ const DependencyTable = (props: PropsDependencyTable) => {
                 </Table.Row>
             </Table.Head>
 
-            {dependencies.map((dep: engine) => (
-                <Table.Row key={`name-${dep.app_name}--id-${dep.app_id}`}>
+            {dependencies.map((dep: modelledDependency) => (
+                <Table.Row key={`name-${dep.name}--id-${dep.id}`}>
                     <Table.Cell>
-                        <Link href={`./#/engine/${dep.app_type}/${dep.app_id}`}>
-                            <Typography variant="body2">
-                                {dep.app_name}
-                            </Typography>
+                        <Link href={`./#/engine/${dep.type}/${dep.id}`}>
+                            <Typography variant="body2">{dep.id}</Typography>
                         </Link>
                     </Table.Cell>
                     <Table.Cell>
                         <Typography variant="body2">
-                            {formatPermission(dep.user_permission)}
+                            {formatPermission(dep.userPermission)}
                         </Typography>
                     </Table.Cell>
                     {permission === 'author' && (
                         <Table.Cell>
                             <Stack direction="row" spacing={1}>
-                                {dep.database_discoverable ? (
+                                {dep.isDiscoverable ? (
                                     <Chip label="Discoverable" />
                                 ) : (
                                     <Chip label="Non-Discoverable" />
                                 )}
-                                {dep.database_global ? (
+                                {dep.isPublic ? (
                                     <Chip label="Public" />
                                 ) : (
                                     <Chip label="Non-Public" />

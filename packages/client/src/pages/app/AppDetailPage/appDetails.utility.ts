@@ -6,10 +6,23 @@ import { ReactNode } from 'react';
  * TYPES -----------------------------------------------------------------
  * -----------------------------------------------------------------------
  */
-export interface dependency {
-    app_id: string;
-    app_name: string;
-    app_type: string;
+
+export interface appDependency {
+    engine_discoverable: boolean;
+    engine_global: boolean;
+    engine_id: string;
+    engine_name: string;
+    engine_subtype: string;
+    engine_type: string;
+}
+
+export interface modelledDependency {
+    name: string;
+    id: string;
+    type: string;
+    userPermission: Role | '';
+    isPublic: boolean;
+    isDiscoverable: boolean;
 }
 
 export interface engine {
@@ -56,9 +69,9 @@ export interface AppDetailsFormTypes {
         tags: string[];
     };
 
-    dependencies: engine[];
-    allDependencies: dependency[];
-    selectedDependencies: dependency[];
+    dependencies: modelledDependency[];
+    allDependencies: modelledDependency[];
+    selectedDependencies: modelledDependency[];
 
     requestedPermission: 'author' | 'editor' | 'readOnly' | '';
     roleChangeComment: string | ReactNode;
@@ -177,14 +190,13 @@ export const updateProjectDetails = async (
 export const SetProjectDependencies = async (
     monolithStore: any,
     appId: string,
-    dependencies: dependency[],
+    dependencies: string[],
 ) => {
     const res = await monolithStore.runQuery(
         `SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
             dependencies,
         )})`,
     );
-    console.log('RES', res);
 
     const type = res.pixelReturn[0].operationType;
     const output = res.pixelReturn[0].output;
@@ -215,13 +227,4 @@ export const determineUserPermission = (role: Role): AppPermission => {
     }
 
     return permission;
-};
-
-export const modelDependencies = (dependencies: engine[]) => {
-    const modelled = dependencies.map((d) => ({
-        app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-        app_id: d.app_id,
-        app_type: d.app_type,
-    }));
-    return modelled;
 };

@@ -29,7 +29,8 @@ import { formatPermission } from '@/utils';
 import {
     AppDetailsFormTypes,
     AppDetailsFormValues,
-    modelDependencies,
+    appDependency,
+    modelledDependency,
 } from './appDetails.utility';
 import { ChangeAccessModal } from './ChangeAccessModal';
 import { EditDetailsModal } from './EditDetailsModal';
@@ -154,12 +155,6 @@ const StyledMenuItem = styled(MenuItem)({
     padding: '0.75rem',
 });
 
-const DependenciesTable = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
-});
-
 export const AppDetailPage = () => {
     const { control, setValue, getValues, watch } =
         useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
@@ -259,16 +254,29 @@ export const AppDetailPage = () => {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
-                            setValue('dependencies', res.value.output);
                             const modelled = modelDependencies(
                                 res.value.output,
                             );
+                            setValue('dependencies', modelled);
                             setValue('selectedDependencies', modelled);
                         }
                     }
                 }
             }),
         );
+    };
+
+    const modelDependencies = (
+        dependencies: appDependency[],
+    ): modelledDependency[] => {
+        return dependencies.map((dep: appDependency) => ({
+            name: dep.engine_name ? dep.engine_name.replace(/_/g, ' ') : '',
+            id: dep.engine_id,
+            type: dep.engine_type,
+            userPermission: '', // TODO: no value currently available in the payload
+            isPublic: !!dep.engine_global,
+            isDiscoverable: !!dep.engine_discoverable,
+        }));
     };
 
     const emitMessage = (isError: boolean, message: string) => {
@@ -293,7 +301,7 @@ export const AppDetailPage = () => {
     };
 
     const handleCloseDependenciesModal = async (refreshData: boolean) => {
-        const currDependencies = modelDependencies(getValues('dependencies'));
+        const currDependencies = getValues('dependencies');
 
         if (refreshData) {
             const appId = getValues('appId');

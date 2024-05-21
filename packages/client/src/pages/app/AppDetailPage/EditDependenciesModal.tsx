@@ -14,8 +14,7 @@ import { Env } from '@/env';
 import {
     SetProjectDependencies,
     engine,
-    dependency,
-    modelDependencies,
+    modelledDependency,
 } from './appDetails.utility';
 import { Control, Controller } from 'react-hook-form';
 import { Autocomplete } from '@mui/material';
@@ -96,12 +95,26 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
         setValue('allDependencies', dependencies);
     }, [getEngines.status, getEngines.data]);
 
+    const modelDependencies = (
+        dependencies: engine[],
+    ): modelledDependency[] => {
+        const modelled = dependencies.map((d) => ({
+            name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+            id: d.app_id,
+            type: d.app_type,
+            userPermission: d.user_permission,
+            isPublic: !!d.database_global,
+            isDiscoverable: !!d.database_discoverable,
+        }));
+        return modelled;
+    };
+
     const handleUpdateDependencies = async () => {
         const appId = getValues('appId');
         const res = await SetProjectDependencies(
             monolithStore,
             appId,
-            selectedDeps,
+            selectedDeps.map((dep: modelledDependency) => dep.id),
         );
 
         if (res.type === 'success') {
@@ -119,7 +132,9 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
     };
 
     const handleRemoveDependency = (id: string) => {
-        const newDependencies = selectedDeps.filter((dep) => dep.app_id !== id);
+        const newDependencies = selectedDeps.filter(
+            (dep: modelledDependency) => dep.id !== id,
+        );
         setValue('selectedDependencies', newDependencies);
     };
 
@@ -154,39 +169,35 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                                     <TextField {...params} label="Search" />
                                 )}
                                 renderOption={(props, option) => (
-                                    <li {...props}>{option.app_name}</li>
+                                    <li {...props}>{option.name}</li>
                                 )}
-                                getOptionLabel={(option: dependency) =>
-                                    option.app_name
+                                getOptionLabel={(option: modelledDependency) =>
+                                    option.name
                                 }
                                 isOptionEqualToValue={(option, value) => {
-                                    return option.app_id === value.appId;
+                                    return option.id === value.id;
                                 }}
                             />
                         );
                     }}
                 />
 
-                {selectedDeps.map((dep: dependency, idx: number) => {
+                {selectedDeps.map((dep: modelledDependency, idx: number) => {
                     return (
-                        <StyledDependencyListItem key={`${dep.app_id}-${idx}`}>
+                        <StyledDependencyListItem key={`${dep.id}-${idx}`}>
                             <StyledCardImage
-                                src={`${Env.MODULE}/api/e-${dep.app_id}/image/download`}
+                                src={`${Env.MODULE}/api/e-${dep.id}/image/download`}
                             />
                             <div>
-                                <Typography variant="h6">
-                                    {dep.app_name}
-                                </Typography>
+                                <Typography variant="h6">{dep.name}</Typography>
                                 <Stack direction="row">
                                     <Typography variant="body2">
-                                        {`${dep.app_type} | Engine ID: ${dep.app_id}`}
+                                        {`${dep.type} | Engine ID: ${dep.id}`}
                                     </Typography>
                                 </Stack>
                             </div>
                             <IconButton
-                                onClick={() =>
-                                    handleRemoveDependency(dep.app_id)
-                                }
+                                onClick={() => handleRemoveDependency(dep.id)}
                             >
                                 <Close />
                             </IconButton>
