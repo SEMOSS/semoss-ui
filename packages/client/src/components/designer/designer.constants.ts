@@ -12,6 +12,7 @@ import BLOCK_H4 from '@/assets/img/BLOCK_H4.png';
 import BLOCK_H5 from '@/assets/img/BLOCK_H5.png';
 import BLOCK_H6 from '@/assets/img/BLOCK_H6.png';
 import BLOCK_P from '@/assets/img/BLOCK_P.png';
+import LOG from '@/assets/img/LOG.png';
 import BLOCK_P_ITALICS from '@/assets/img/BLOCK_P_ITALICS.png';
 import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
 import BLOCK_IFRAME from '@/assets/img/BLOCK_IFRAME.png';
@@ -48,6 +49,7 @@ export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
     section:
         | 'Element'
+        | 'Query'
         | 'Input'
         | 'Layout'
         | 'Progress'
@@ -267,6 +269,20 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                 },
                 src: '',
                 title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_TEXT,
+        image: LOG,
+        name: 'Logs',
+        json: {
+            widget: 'logs',
+            data: {
+                style: {},
+                queryId: '',
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
