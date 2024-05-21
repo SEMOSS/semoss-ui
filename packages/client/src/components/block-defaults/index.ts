@@ -2,6 +2,7 @@ import { Registry } from '@/stores';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
+import { config as LogsBlockConfig, LogsBlockDef } from './logs-block';
 import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
@@ -59,6 +60,7 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | ProgressBlockDef
     | QueryBlockDef
+    | LogsBlockDef
     | SelectBlockDef
     | TableBlockDef
     | TextBlockDef
@@ -81,6 +83,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PageBlockConfig.widget]: PageBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
+    [LogsBlockConfig.widget]: LogsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
@@ -106,6 +109,8 @@ export {
     MarkdownBlockConfig,
     HTMLBlockConfig,
     PageBlockConfig,
+    QueryBlockConfig,
+    LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,

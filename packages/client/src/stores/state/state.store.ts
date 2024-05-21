@@ -76,7 +76,7 @@ export class StateStore {
         blocks: {},
         cellRegistry: {},
         variables: {},
-        dependencies: {},
+        dependencies: {}, // Maher said change to constants
     };
 
     /**
@@ -424,14 +424,21 @@ export class StateStore {
 
             // Need to wrap in string for the code
             if (v) {
-                return JSON.stringify(v);
+                if (typeof v !== 'string') {
+                    return JSON.stringify(v);
+                } else {
+                    return v;
+                }
             }
 
             // TODO: Handle old notebooks that don't use variables
             v = this.flattenVariable(match);
 
-            // convert to a string
-            return JSON.stringify(v);
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
+            } else {
+                return v;
+            }
         });
     };
 
@@ -957,6 +964,7 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
+        debugger;
         delete this._store.queries[queryId];
     };
 
@@ -1143,11 +1151,11 @@ export class StateStore {
      * @param type - type of variable
      */
     private addVariable = (alias: string, to: string, type: VariableType) => {
-        let id = `${Math.floor(Math.random() * 10000)}`;
+        let id = `variable--${Math.floor(Math.random() * 10000)}`;
         let uniq = false;
 
         while (!uniq) {
-            id = `${Math.floor(Math.random() * 10000)}`;
+            id = `variable--${Math.floor(Math.random() * 10000)}`;
             if (!this._store.variables[id]) {
                 uniq = true;
             }

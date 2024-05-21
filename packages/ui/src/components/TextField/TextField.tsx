@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
     TextField as MuiTextField,
     TextFieldProps as MuiTextFieldProps,
@@ -11,5 +12,14 @@ export type TextFieldProps = MuiTextFieldProps & {
 
 export const TextField = (props: TextFieldProps) => {
     const { sx } = props;
-    return <MuiTextField sx={sx} {...props} />;
+    const [componentId, setComponentId] = useState(props.id);
+
+    useEffect(() => {
+        if (!componentId) {
+            // gets rid of suggestions
+            setComponentId(`generated-id-${Date.now()}`);
+        }
+    }, [componentId]);
+
+    return <MuiTextField id={componentId} sx={sx} {...props} />;
 };

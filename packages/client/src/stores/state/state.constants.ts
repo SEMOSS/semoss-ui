@@ -3741,7 +3741,13 @@ export const DEFAULT_TEMPLATE: Template[] = [
         lastUpdatedDate: new Date().toISOString(),
         tags: ['LLM'],
         state: {
-            variables: {},
+            variables: {
+                '1000': {
+                    alias: 'question',
+                    to: 'question',
+                    type: 'block',
+                },
+            },
             dependencies: {},
             queries: {
                 ['ask-llm']: {
@@ -3753,7 +3759,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             parameters: {
                                 type: 'pixel',
                                 // Do we want to replace hardcoded LLM to a user default
-                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
+                                code: `LLM(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{question}}"]);`,
                             },
                         },
                     ],
@@ -3922,7 +3928,18 @@ export const DEFAULT_TEMPLATE: Template[] = [
         tags: ['NLP', 'SQL', 'LLM'],
         state: {
             dependencies: {},
-            variables: {},
+            variables: {
+                '1000': {
+                    alias: 'file',
+                    to: 'file',
+                    type: 'block',
+                },
+                '1001': {
+                    alias: 'question',
+                    to: 'question',
+                    type: 'block',
+                },
+            },
             queries: {
                 ['ask-model']: {
                     id: 'ask-model',
@@ -3932,7 +3949,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `FileRead ( filePath = [ "{{block.file.value}}" ], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
+                                code: `FileRead ( filePath = ["{{file}}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
                             },
                         },
                         {
@@ -3940,8 +3957,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                // Do we want to replace hardcoded LLM to a user default
-                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{block.question.value}}"]);`,
+                                code: `NLPQuery2(engine=["17753d59-4536-4415-a6ac-f673b1a90a87"], command=["{{question}}"]);`,
                             },
                         },
                     ],

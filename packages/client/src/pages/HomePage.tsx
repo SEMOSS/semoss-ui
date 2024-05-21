@@ -18,6 +18,7 @@ import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
 import { Search, SearchOff } from '@mui/icons-material';
+import { Help } from '@/components/help';
 
 import { Filterbox } from '@/components/ui';
 import UPDATED_TERMINAL from '@/assets/img/updated_terminal.png';
@@ -188,6 +189,11 @@ export const HomePage = observer((): JSX.Element => {
 
     useEffect(() => {
         if (getApps.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'apps',
+                value: [],
+            });
             return;
         }
 
@@ -208,6 +214,11 @@ export const HomePage = observer((): JSX.Element => {
 
     useEffect(() => {
         if (getFavoritedApps.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'favoritedApps',
+                value: [],
+            });
             return;
         }
 
@@ -530,6 +541,7 @@ export const HomePage = observer((): JSX.Element => {
                 </StyledContentContainer>
             </StyledContainer>
             <WelcomeModal />
+            <Help />
         </Page>
     );
 });

@@ -198,8 +198,8 @@ export const BlocksWorkspaceActions = observer(() => {
     };
 
     return (
-        <Stack direction="row" spacing={1.25} alignItems={'center'}>
-            <IconButton
+        <Stack direction="row" spacing={1} alignItems={'center'}>
+            {/* <IconButton
                 color="default"
                 size="small"
                 title="Preview App"
@@ -208,8 +208,21 @@ export const BlocksWorkspaceActions = observer(() => {
                 }}
             >
                 <PlayCircleRounded />
-            </IconButton>
-            <IconButton
+                Preview
+            </IconButton> */}
+            <Button
+                variant="text"
+                startIcon={<PlayCircleRounded />}
+                title="Preview App"
+                color="inherit"
+                onClick={() => {
+                    previewApp();
+                }}
+            >
+                Preview
+            </Button>
+
+            {/* <IconButton
                 color="default"
                 size="small"
                 title="Download App"
@@ -218,8 +231,20 @@ export const BlocksWorkspaceActions = observer(() => {
                 }}
             >
                 <GetAppRounded />
-            </IconButton>
-            <StyledShareButton
+                Download
+            </IconButton> */}
+            <Button
+                variant="text"
+                startIcon={<GetAppRounded />}
+                title="Download App"
+                color="inherit"
+                onClick={() => {
+                    exportApp();
+                }}
+            >
+                Download
+            </Button>
+            {/* <StyledShareButton
                 size={'small'}
                 color={'secondary'}
                 variant={'outlined'}
@@ -230,18 +255,51 @@ export const BlocksWorkspaceActions = observer(() => {
                 }}
             >
                 <StyledShareButtonText>Share</StyledShareButtonText>
-            </StyledShareButton>
-            <StyledSaveButtonGroup variant={'contained'} color={'primary'}>
+            </StyledShareButton> */}
+            <Button
+                size="small"
+                variant="text"
+                startIcon={<StyledShareIcon />}
+                title="Share App"
+                color="inherit"
+                onClick={() => {
+                    shareApp();
+                }}
+            >
+                Share
+            </Button>
+            {/* <StyledSaveButtonGroup variant={'contained'} color={'primary'}>
                 <ButtonGroup.Item
                     title={'Save App'}
                     size={'small'}
                     onClick={() => {
                         saveApp();
                     }}
+                    color={'primary'}
                 >
                     Save
                 </ButtonGroup.Item>
-            </StyledSaveButtonGroup>
+            </StyledSaveButtonGroup> */}
+            {/* <StyledSaveButton  
+                title={'Save App'} 
+                variant={'contained'} 
+                color={'primary'}
+                onClick={() => {
+                    saveApp();
+                }}>
+                <StyledShareButtonText>Save</StyledShareButtonText>
+            </StyledSaveButton> */}
+            <Button
+                variant="contained"
+                size="small"
+                color="primary"
+                title="Save App"
+                onClick={() => {
+                    saveApp();
+                }}
+            >
+                Save
+            </Button>
         </Stack>
     );
 });

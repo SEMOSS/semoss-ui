@@ -29,7 +29,7 @@ import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
 import { EngineLandscapeCard } from '@/components/engine';
 import { Page } from '@/components/ui';
-
+import { Help } from '@/components/help';
 import { ENGINE_ROUTES } from './engine.constants';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -681,6 +681,17 @@ export const EngineCatalogPage = observer(
                                 </Button>
                             </Stack>
                         </Stack>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                            spacing={4}
+                            sx={{ paddingTop: '10px' }}
+                        >
+                            <Typography variant={'subtitle1'}>
+                                {route ? route.description : ''}
+                            </Typography>
+                        </Stack>
                     </Stack>
                 }
             >
@@ -1118,6 +1129,7 @@ export const EngineCatalogPage = observer(
                         ) : null}
                     </StyledContent>
                 </StyledContainer>
+                <Help />
             </Page>
         );
     },
