@@ -623,6 +623,8 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
         ref.current.scrollIntoView({ behavior: 'smooth' });
     };
 
+    const canEdit = permission !== 'discoverable' && permission !== 'readOnly';
+
     return (
         <StyledSidebar>
             <SidebarMenuItem
@@ -653,7 +655,7 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
                     App Access
                 </SidebarMenuItem>
             )}
-            {permission !== 'discoverable' && (
+            {canEdit && (
                 <SidebarMenuItem
                     onClick={() => scrollIntoView(memberAccessRef)}
                     value={null}
@@ -661,7 +663,7 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
                     Member Access
                 </SidebarMenuItem>
             )}
-            {permission === 'discoverable' && (
+            {!canEdit && (
                 <SidebarMenuItem
                     onClick={() => scrollIntoView(similarAppsRef)}
                     value={null}
