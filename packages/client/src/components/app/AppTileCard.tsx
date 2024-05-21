@@ -314,6 +314,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     const image = findAppImage(appType);
     const appDetails = findAppDetails(appType);
+
     return (
         <StyledTileCard disabled={!href}>
             {!systemApp && (
@@ -470,15 +471,19 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
-                {/* {
-                    app?.user_permission && app.user_permission <= 2 ?
-                    (
+                {app?.user_permission && app.user_permission <= 2 && (
+                    <Link
+                        href={`${href}/detail`}
+                        rel="noopener noreferrer"
+                        color="inherit"
+                        underline="none"
+                        target="_blank"
+                    >
                         <Menu.Item value="copy" onClick={() => {}}>
                             Edit App Details
                         </Menu.Item>
-                    ) :
-                    <></>
-                } */}
+                    </Link>
+                )}
             </Menu>
         </StyledTileCard>
     );
