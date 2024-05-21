@@ -19,9 +19,14 @@ import {
     useNotification,
     Chip,
     Modal,
+    Stack,
 } from '@semoss/ui';
 import { ShareOverlay } from '@/components/workspace';
-import { MembersTable, SettingsTiles } from '@/components/settings';
+import {
+    MembersTable,
+    PendingMembersTable,
+    SettingsTiles,
+} from '@/components/settings';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
@@ -503,26 +508,34 @@ export const AppDetailPage = () => {
                             </StyledSection>
                         )}
 
-                        {permission !== 'discoverable' && (
-                            <StyledSection ref={memberAccessRef}>
-                                <SectionHeading variant="h2">
-                                    Member Access
-                                </SectionHeading>
-                                <SettingsContext.Provider
-                                    value={{
-                                        adminMode: false,
-                                    }}
-                                >
-                                    <MembersTable
-                                        id={appId}
-                                        mode="app"
-                                        name="app"
-                                    />
-                                </SettingsContext.Provider>
-                            </StyledSection>
-                        )}
+                        {permission !== 'discoverable' &&
+                            permission !== 'readOnly' && (
+                                <StyledSection ref={memberAccessRef}>
+                                    <SectionHeading variant="h2">
+                                        Member Access
+                                    </SectionHeading>
+                                    <SettingsContext.Provider
+                                        value={{
+                                            adminMode: false,
+                                        }}
+                                    >
+                                        <Stack direction="column" spacing={2}>
+                                            <PendingMembersTable
+                                                mode="app"
+                                                id={appId}
+                                            />
+                                            <MembersTable
+                                                id={appId}
+                                                mode="app"
+                                                name="app"
+                                            />
+                                        </Stack>
+                                    </SettingsContext.Provider>
+                                </StyledSection>
+                            )}
 
-                        {permission === 'discoverable' && (
+                        {(permission === 'discoverable' ||
+                            permission === 'readOnly') && (
                             <StyledSection ref={similarAppsRef}>
                                 <SectionHeading variant="h2">
                                     Similar Apps
