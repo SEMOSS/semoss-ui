@@ -34,6 +34,7 @@ const StyledMenu = styled('div')(({ theme }) => ({
     width: '100%',
     paddingTop: theme.spacing(1),
     backgroundColor: theme.palette.background.paper,
+    overflowY: 'scroll',
 }));
 
 const StyledMenuTitle = styled(Typography)(() => ({
