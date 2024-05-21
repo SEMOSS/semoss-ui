@@ -307,8 +307,8 @@ export const AppDetailPage = () => {
             const appId = getValues('appId');
             const res = await fetchDependencies(monolithStore, appId);
             if (res.type === 'success') {
-                setValue('dependencies', res.output);
                 const modelled = modelDependencies(res.output);
+                setValue('dependencies', modelled);
                 setValue('selectedDependencies', modelled);
             } else {
                 setValue('selectedDependencies', currDependencies);

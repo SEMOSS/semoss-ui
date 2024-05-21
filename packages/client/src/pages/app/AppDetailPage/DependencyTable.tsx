@@ -44,7 +44,7 @@ const DependencyTable = (props: PropsDependencyTable) => {
                 <Table.Row key={`name-${dep.name}--id-${dep.id}`}>
                     <Table.Cell>
                         <Link href={`./#/engine/${dep.type}/${dep.id}`}>
-                            <Typography variant="body2">{dep.id}</Typography>
+                            <Typography variant="body2">{dep.name}</Typography>
                         </Link>
                     </Table.Cell>
                     <Table.Cell>
