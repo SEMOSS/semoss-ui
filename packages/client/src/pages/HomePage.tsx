@@ -189,6 +189,11 @@ export const HomePage = observer((): JSX.Element => {
 
     useEffect(() => {
         if (getApps.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'apps',
+                value: [],
+            });
             return;
         }
 
@@ -209,6 +214,11 @@ export const HomePage = observer((): JSX.Element => {
 
     useEffect(() => {
         if (getFavoritedApps.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'favoritedApps',
+                value: [],
+            });
             return;
         }
 
