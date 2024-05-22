@@ -244,7 +244,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
+                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -405,7 +405,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
+                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -543,52 +543,12 @@ export const CONNECTION_OPTIONS = {
                             rules: { required: true },
                         },
                         {
-                            fieldName: 'CHAT_TYPE',
-                            label: 'Chat Type',
-                            defaultValue: 'chat-completion',
-                            options: {
-                                component: 'select',
-                                options: [
-                                    {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
-                                    },
-                                    {
-                                        display: 'completion',
-                                        value: 'completion',
-                                    },
-                                ],
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
                                 "from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
                             options: {
                                 component: 'text-field',
-                            },
-                            disabled: false,
-                            rules: { required: true },
-                        },
-                        {
-                            fieldName: 'KEEP_CONVERSATION_HISTORY',
-                            label: 'Keep Conversation History',
-                            defaultValue: 'false',
-                            options: {
-                                component: 'select',
-                                options: [
-                                    {
-                                        display: 'true',
-                                        value: 'true',
-                                    },
-                                    {
-                                        display: 'false',
-                                        value: 'false',
-                                    },
-                                ],
                             },
                             disabled: false,
                             rules: { required: true },
@@ -892,7 +852,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key='${OPEN_AI_KEY}', endpoint='${ENDPOINT}', model_name='${MODEL}')",
+                                "import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
