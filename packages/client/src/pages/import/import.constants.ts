@@ -243,25 +243,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
-                            updateValueFieldsToWatch: [
-                                'VAR_NAME',
-                                'MODEL_TYPE',
-                                'OPEN_AI_KEY',
-                                'CHAT_TYPE',
-                            ],
-                            updateCallback: ({
-                                VAR_NAME,
-                                MODEL_TYPE,
-                                OPEN_AI_KEY,
-                                CHAT_TYPE,
-                            }) => `
-                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
-                                model_name='${MODEL_TYPE}', 
-                                chat_type = '${CHAT_TYPE}', 
-                                api_key="${OPEN_AI_KEY}",
-                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
-                                template_name='mixtral.default.nocontext')`,
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -421,7 +404,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -581,7 +565,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -906,7 +891,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key='${OPEN_AI_KEY}', endpoint='${ENDPOINT}', model_name='${MODEL}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1236,7 +1222,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1389,7 +1376,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1542,7 +1530,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
                             options: {
                                 component: 'text-field',
                             },
