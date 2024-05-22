@@ -1655,61 +1655,14 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
-                            updateValueFieldsToWatch: [
-                                'VAR_NAME',
-                                'MODEL_TYPE',
-                                'OPEN_AI_KEY',
-                                'CHAT_TYPE',
-                            ],
-                            updateCallback: ({
-                                VAR_NAME,
-                                MODEL_TYPE,
-                                OPEN_AI_KEY,
-                                CHAT_TYPE,
-                            }) => `
-                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
-                                model_name='${MODEL_TYPE}', 
-                                chat_type = '${CHAT_TYPE}', 
-                                api_key="${OPEN_AI_KEY}",
-                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
-                                template_name='mixtral.default.nocontext')`,
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
                             options: {
                                 component: 'text-field',
                             },
                             disabled: false,
                             rules: { required: true },
                         },
-                        // {
-                        //     fieldName: 'ENGINE',
-                        //     label: 'Engine',
-                        //     defaultValue: '',
-                        //     options: {
-                        //         component: 'text-field',
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
-                        // {
-                        //     fieldName: 'ENGINE_ALIAS',
-                        //     label: 'Engine Alias',
-                        //     defaultValue: '',
-                        //     options: {
-                        //         component: 'text-field',
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
-                        // {
-                        //     fieldName: 'ENGINE_TYPE',
-                        //     label: 'Engine Type',
-                        //     defaultValue: '',
-                        //     options: {
-                        //         component: 'text-field',
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
                         {
                             fieldName: 'KEEP_CONVERSATION_HISTORY',
                             label: 'Keep Conversation History',
@@ -1865,61 +1818,14 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
-                            updateValueFieldsToWatch: [
-                                'VAR_NAME',
-                                'MODEL_TYPE',
-                                'OPEN_AI_KEY',
-                                'CHAT_TYPE',
-                            ],
-                            updateCallback: ({
-                                VAR_NAME,
-                                MODEL_TYPE,
-                                OPEN_AI_KEY,
-                                CHAT_TYPE,
-                            }) => `
-                                import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', 
-                                model_name='${MODEL_TYPE}', 
-                                chat_type = '${CHAT_TYPE}', 
-                                api_key="${OPEN_AI_KEY}",
-                                template={ "mixtral.default.nocontext":"[INST] $question [/INST]"}, 
-                                template_name='mixtral.default.nocontext')`,
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
                             options: {
                                 component: 'text-field',
                             },
                             disabled: false,
                             rules: { required: true },
                         },
-                        // {
-                        //     fieldName: 'ENGINE',
-                        //     label: 'Engine',
-                        //     defaultValue: '',
-                        //     options: {
-                        //         component: 'text-field',
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
-                        // {
-                        //     fieldName: 'ENGINE_ALIAS',
-                        //     label: 'Engine Alias',
-                        //     defaultValue: '',
-                        //     options: {
-                        //         component: 'text-field',
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
-                        // {
-                        //     fieldName: 'ENGINE_TYPE',
-                        //     label: 'Engine Type',
-                        //     defaultValue: '',
-                        //     options: {
-                        //         component: 'text-field',
-                        //     },
-                        //     disabled: false,
-                        //     rules: { required: true },
-                        // },
                         {
                             fieldName: 'KEEP_CONVERSATION_HISTORY',
                             label: 'Keep Conversation History',
