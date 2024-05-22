@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import {
@@ -47,6 +47,7 @@ import {
     TransformationCells,
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
+import { DataImportCellConfig } from '../cell-defaults/data-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
 
@@ -252,7 +253,11 @@ export const NotebookAddCell = observer(
         const [selectedTable, setSelectedTable] = useState(null);
         const [hiddenColumnIdsSet, setHiddenColumnIdsSet] = useState(new Set());
 
-        const getDatabases = usePixel('META | GetDatabaseList ( ) ;');
+        const [importDataSQLString, setImportDataSQLString] =
+            useState<string>('');
+        const importDataSQLStringRef = useRef<string>('');
+
+        const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
         const [isDatabaseLoading, setIsDatabaseLoading] =
             useState<boolean>(false);
         const [showEditColumns, setShowEditColumns] = useState<boolean>(false);
@@ -295,6 +300,11 @@ export const NotebookAddCell = observer(
             setUserDatabases(getDatabases.data);
         }, [getDatabases.status, getDatabases.data]);
 
+        const loadDatabaseStructure = () => {
+            // set loading to true
+            // fetch database structure
+        };
+
         // const cellTypeOptions = computed(() => {
         //     const options = { ...AddCellOptions };
         //     // transformation cell types can only be added if there exists a query-import cell before it
@@ -331,6 +341,15 @@ export const NotebookAddCell = observer(
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
                 };
+
+                if (widget === DataImportCellConfig.widget) {
+                    config.parameters = {
+                        ...DefaultCells[widget].parameters,
+                        frameVariableName: `FRAME_${newCellId}`,
+                        databaseId: selectedDatabaseId,
+                        selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
+                    };
+                }
 
                 if (widget === QueryImportCellConfig.widget) {
                     config.parameters = {
@@ -370,8 +389,32 @@ export const NotebookAddCell = observer(
             }
         };
 
+        const constructSQLString = ({ submitData }) => {
+            console.log({ submitData });
+            let newSQLString = 'SELECT ';
+
+            newSQLString += submitData.columns
+                .filter((ele) => ele.checked)
+                .map((colObj) => {
+                    if (colObj.columnName === colObj.userAlias) {
+                        return colObj.columnName;
+                    } else {
+                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+                    }
+                })
+                .join(', ');
+
+            newSQLString += ` FROM ${submitData.tableSelect}`;
+            newSQLString += ';';
+
+            importDataSQLStringRef.current = newSQLString;
+        };
+
         const onImportDataSubmit = (submitData) => {
             console.log({ submitData });
+            constructSQLString({ submitData });
+            appendCell('data-import');
+            setIsDataImportModalOpen(false);
         };
 
         const retrieveDatabaseTables = async (databaseId) => {
@@ -428,25 +471,17 @@ export const NotebookAddCell = observer(
         };
 
         const selectTableHandler = (tableName) => {
-            // get column names from GetDatabaseTableStructure
-            // alert('get column names from GetDatabaseTableStructure');
             setSelectedTable(tableName);
             retrieveTableRows(tableName);
         };
 
         const retrieveTableRows = async (tableName) => {
             setIsDatabaseLoading(true);
-
-            // create / format a select array for pixel with table and column names desired
-            // create / format a column alias array for pixel - can just be col names for now but will be user editable
-            // create a limit variable, can be static at 20 for now
-
             const selectStringArray = tableColumnsObject[tableName].map(
                 (ele) => `${ele.tableName}__${ele.columnName}`,
             );
 
             const selectString = selectStringArray.join(', ');
-
             const aliasString = tableColumnsObject[tableName]
                 .map(
                     (ele) => `${ele.columnName}`, // may need to switch to ele.columnName2 but they seem to be identical
@@ -454,7 +489,6 @@ export const NotebookAddCell = observer(
                 .join(', ');
 
             const limit = 20; // may want this to be a changeable useState variable
-
             const pixelString = `Database(database=[\"${selectedDatabaseId}\"])|Select(${selectString}).as([${aliasString}])|Distinct(false)|Limit(${limit})|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(${limit}) | Collect(500);`;
 
             await monolithStore.runQuery(pixelString).then((response) => {
@@ -561,6 +595,7 @@ export const NotebookAddCell = observer(
                                             value={display}
                                             disabled={display == 'From CSV'} // temporary
                                             onClick={() => {
+                                                loadDatabaseStructure();
                                                 setIsDataImportModalOpen(true);
                                                 if (
                                                     display ==
