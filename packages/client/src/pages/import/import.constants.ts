@@ -1913,7 +1913,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -2070,7 +2070,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -2227,7 +2227,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -2384,7 +2384,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -2541,7 +2541,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -2698,7 +2698,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -2855,7 +2855,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3008,11 +3008,11 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: 'lmsys/vicuna-7b-v1.5',
+                        defaultValue: 'meta-llama/Llama-2-7b',
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3165,11 +3165,11 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: 'Llama2 13B',
+                        defaultValue: 'meta-llama/Llama-2-13b',
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3322,11 +3322,11 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: 'Llama2 70B',
+                        defaultValue: 'meta-llama/Llama-2-70b',
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3483,7 +3483,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3646,7 +3646,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3803,7 +3803,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -3960,7 +3960,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -4117,7 +4117,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -4274,7 +4274,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
