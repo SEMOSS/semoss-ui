@@ -89,7 +89,7 @@ export const AddBlocksMenu = observer((props: AddBlocksMenuProps) => {
         const s = search.toLowerCase();
 
         return items.filter((block) => {
-            return block.name.replaceAll('-', ' ').includes(s);
+            return block.name.toLowerCase().replaceAll('-', ' ').includes(s);
         });
     }, [sortedItems, search]);
 
