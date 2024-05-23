@@ -309,6 +309,8 @@ export const TeamsSettingsPage = () => {
                                           id={team.id}
                                           type={team.type}
                                           description={team.description}
+                                          dispatch={dispatch}
+                                          databases={databases}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id
