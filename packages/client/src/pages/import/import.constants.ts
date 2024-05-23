@@ -1892,7 +1892,949 @@ export const CONNECTION_OPTIONS = {
         },
         'Locally Hosted': [
             {
-                name: 'Wizard 13B',
+                name: 'Bert',
+                disable: false,
+                icon: BERT,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Bert',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'Dolly',
+                disable: false,
+                icon: DOLLY,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Dolly',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'Eleuther GPTJ',
+                disable: false,
+                icon: ELEUTHER,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Eleuther GPTJ',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'Falcon',
+                disable: false,
+                icon: FALCON,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Falcon',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'Flan T5 Large',
+                disable: false,
+                icon: FLAN,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Flan T5 Large',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'Flan T5 XXL',
+                disable: false,
+                icon: FLAN,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Flan T5 XXL',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'Guanaco',
                 disable: false,
                 icon: BRAIN,
                 fields: [
@@ -1909,7 +2851,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: 'Wizard 13B',
+                        defaultValue: 'Guanaco',
                         options: {
                             component: 'text-field',
                         },
@@ -2520,9 +3462,9 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'Falcon',
+                name: 'Mosaic ML',
                 disable: false,
-                icon: FALCON,
+                icon: MOSAIC,
                 fields: [
                     {
                         fieldName: 'NAME',
@@ -2537,7 +3479,170 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: 'Falcon',
+                        defaultValue: 'Mosaic ML',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Text Generation',
+                                    value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHAT_TYPE',
+                        label: 'Chat Type',
+                        defaultValue: 'chat-completion',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'chat-completion',
+                                    value: 'chat-completion',
+                                },
+                                {
+                                    display: 'completion',
+                                    value: 'completion',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_CONVERSATION_HISTORY',
+                        label: 'Keep Conversation History',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        rules: { required: false },
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                    },
+                ],
+            },
+            {
+                name: 'NeMo',
+                disable: true,
+                icon: NEMO,
+                fields: [],
+            },
+            {
+                name: 'Replit code model – 3b',
+                disable: false,
+                icon: REPLIT,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'Replit code model – 3b',
                         options: {
                             component: 'text-field',
                         },
@@ -2834,163 +3939,6 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'Guanaco',
-                disable: false,
-                icon: BRAIN,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Guanaco',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
                 name: 'Vicuna',
                 disable: false,
                 icon: VICUNA,
@@ -3148,9 +4096,9 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'Mosaic ML',
+                name: 'Wizard 13B',
                 disable: false,
-                icon: MOSAIC,
+                icon: BRAIN,
                 fields: [
                     {
                         fieldName: 'NAME',
@@ -3165,949 +4113,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: 'Mosaic ML',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
-                name: 'Dolly',
-                disable: false,
-                icon: DOLLY,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Dolly',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
-                name: 'Replit code model – 3b',
-                disable: false,
-                icon: REPLIT,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Replit code model – 3b',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
-                name: 'Flan T5 Large',
-                disable: false,
-                icon: FLAN,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Flan T5 Large',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
-                name: 'Flan T5 XXL',
-                disable: false,
-                icon: FLAN,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Flan T5 XXL',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
-                name: 'Bert',
-                disable: false,
-                icon: BERT,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Bert',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL_TYPE',
-                        label: 'Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Text Generation',
-                                    value: 'TEXT_GENERATION',
-                                },
-                                {
-                                    display: 'vLLM (Fast Chat)',
-                                    value: 'FAST_CHAT',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VAR_NAME',
-                        label: 'Variable Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CHAT_TYPE',
-                        label: 'Chat Type',
-                        defaultValue: 'chat-completion',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'chat-completion',
-                                    value: 'chat-completion',
-                                },
-                                {
-                                    display: 'completion',
-                                    value: 'completion',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'INIT_MODEL_ENGINE',
-                        label: 'Init Script',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_CONVERSATION_HISTORY',
-                        label: 'Keep Conversation History',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'KEEP_INPUT_OUTPUT',
-                        label: 'Record Questions and Responses',
-                        defaultValue: 'false',
-                        options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'true',
-                                    value: 'true',
-                                },
-                                {
-                                    display: 'false',
-                                    value: 'false',
-                                },
-                            ],
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MAX_TOKENS',
-                        label: 'Max Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                    {
-                        fieldName: 'MAX_INPUT_TOKENS',
-                        label: 'Max Input Tokens',
-                        rules: { required: false },
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                    },
-                ],
-            },
-            {
-                name: 'Eleuther GPTJ',
-                disable: false,
-                icon: ELEUTHER,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Eleuther GPTJ',
+                        defaultValue: 'Wizard 13B',
                         options: {
                             component: 'text-field',
                         },
@@ -4403,14 +4409,14 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
+        ],
+        Embedded: [
             {
                 name: 'NeMo',
                 disable: true,
                 icon: NEMO,
                 fields: [],
             },
-        ],
-        Embedded: [
             {
                 name: 'Orca',
                 disable: false,
@@ -4870,12 +4876,6 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
-            {
-                name: 'NeMo',
-                disable: true,
-                icon: NEMO,
-                fields: [],
-            },
         ],
         'File Uploads': [
             {
@@ -5158,6 +5158,24 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'PGVector',
+                disable: true,
+                icon: POSTGRES,
+                fields: [],
+            },
+            {
+                name: 'Pinecone',
+                disable: true,
+                icon: PINECONE,
+                fields: [],
+            },
+            {
+                name: 'Open Search',
+                disable: true,
+                icon: OPEN_SEARCH,
+                fields: [],
+            },
+            {
                 name: 'Weaviate',
                 disable: false,
                 icon: WEVIATE,
@@ -5326,18 +5344,6 @@ export const CONNECTION_OPTIONS = {
                         rules: {},
                     },
                 ],
-            },
-            {
-                name: 'Pinecone',
-                disable: true,
-                icon: PINECONE,
-                fields: [],
-            },
-            {
-                name: 'pgvector',
-                disable: true,
-                icon: POSTGRES,
-                fields: [],
             },
         ],
         'File Uploads': [
