@@ -14,6 +14,7 @@ import {
     Table,
     Checkbox,
     TextField,
+    Grid,
 } from '@semoss/ui';
 
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
@@ -65,6 +66,16 @@ const StyledModalTitle = styled(Typography)(({ theme }) => ({
 const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
+    border: '1px solid blue',
+    padding: '0px',
+}));
+
+const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
+    display: 'flex',
+    alignContent: 'center',
+    border: '1px solid blue',
+    padding: '0px',
+    justifyContent: 'space-between',
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -253,8 +264,6 @@ export const NotebookAddCell = observer(
         const [selectedTable, setSelectedTable] = useState(null);
         const [hiddenColumnIdsSet, setHiddenColumnIdsSet] = useState(new Set());
 
-        const [importDataSQLString, setImportDataSQLString] =
-            useState<string>('');
         const importDataSQLStringRef = useRef<string>('');
 
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
@@ -488,7 +497,7 @@ export const NotebookAddCell = observer(
                 )
                 .join(', ');
 
-            const limit = 20; // may want this to be a changeable useState variable
+            const limit = 10; // may want this to be a changeable useState variable
             const pixelString = `Database(database=[\"${selectedDatabaseId}\"])|Select(${selectString}).as([${aliasString}])|Distinct(false)|Limit(${limit})|Import(frame=[CreateFrame(frameType=[GRID],override=[true]).as([\"consolidated_settings_FRAME961853__Preview\"])]); META | Frame() | QueryAll() | Limit(${limit}) | Collect(500);`;
 
             await monolithStore.runQuery(pixelString).then((response) => {
@@ -617,8 +626,458 @@ export const NotebookAddCell = observer(
                     )}
                 </StyledMenu>
 
+                {/* New Import Data Modal */}
+                <Modal
+                    open={isDataImportModalOpen}
+                    sx={{ border: '3px solid red' }}
+                    maxWidth="lg"
+                >
+                    <Modal.Content
+                        sx={{ border: '3px solid goldenrod', width: '70rem' }}
+                    >
+                        <form
+                            onSubmit={handleSubmit(onImportDataSubmit)}
+                            style={{ border: '1px solid green' }}
+                        >
+                            <StyledModalTitleWrapper>
+                                <StyledModalTitle variant="h6">
+                                    Import Data
+                                </StyledModalTitle>
+                                <Controller
+                                    name={'databaseSelect'}
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value);
+                                                setSelectedDatabaseId(
+                                                    e.target.value,
+                                                );
+                                                retrieveDatabaseTables(
+                                                    e.target.value,
+                                                );
+                                                setShowEditColumns(false);
+                                                setShowTablePreview(false);
+                                                setSelectedTable(null);
+                                                setHiddenColumnIdsSet(
+                                                    new Set(),
+                                                );
+                                            }}
+                                            label={'Select Database...'}
+                                            value={field.value || null}
+                                            size={'small'}
+                                            sx={{
+                                                minWidth: '220px',
+                                            }}
+                                        >
+                                            {userDatabases?.map((ele) => (
+                                                <Menu.Item
+                                                    value={ele.database_id}
+                                                >
+                                                    {ele.app_name}
+                                                </Menu.Item>
+                                            ))}
+                                        </Select>
+                                    )}
+                                />
+                            </StyledModalTitleWrapper>
+                            {!!tableNames.length && (
+                                <Stack
+                                    spacing={1}
+                                    direction="column"
+                                    sx={{
+                                        backgroundColor: '#FAFAFA',
+                                        padding: '16px 16px 24px 16px',
+                                    }}
+                                >
+                                    <StyledModalTitleWrapper2>
+                                        <div
+                                            style={{
+                                                border: '1px solid green',
+                                                display: 'flex',
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    border: '1px solid green',
+                                                    marginRight: '15px',
+                                                }}
+                                                variant="h6"
+                                            >
+                                                Data
+                                            </Typography>
+                                            <Controller
+                                                name={'tableSelect'}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Select
+                                                        onChange={(e) => {
+                                                            field.onChange(
+                                                                e.target.value,
+                                                            );
+                                                            selectTableHandler(
+                                                                e.target.value,
+                                                            );
+                                                            setHiddenColumnIdsSet(
+                                                                new Set(),
+                                                            );
+                                                        }}
+                                                        label={
+                                                            'Select Table...'
+                                                        }
+                                                        value={field.value}
+                                                        size={'small'}
+                                                        color="primary"
+                                                        disabled={
+                                                            !tableNames.length
+                                                        }
+                                                        variant="outlined"
+                                                        sx={{
+                                                            minWidth: '150px',
+                                                            // backgroundColor: '#E2F2FF',
+                                                            // border: '0px',
+                                                            // outline: '0px',
+                                                        }}
+                                                    >
+                                                        {tableNames?.map(
+                                                            (ele) => (
+                                                                <Menu.Item
+                                                                    value={ele}
+                                                                >
+                                                                    {ele}
+                                                                </Menu.Item>
+                                                            ),
+                                                        )}
+                                                    </Select>
+                                                )}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Button
+                                                variant="text"
+                                                color="primary"
+                                                size="medium"
+                                                sx={{
+                                                    marginRight: '15px',
+                                                    border: '1px solid red',
+                                                }}
+                                                onClick={() => {
+                                                    setShowEditColumns(
+                                                        !showEditColumns,
+                                                    );
+                                                    setShowTablePreview(false);
+                                                }}
+                                            >
+                                                Edit Columns
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                color="primary"
+                                                size="medium"
+                                                onClick={() => {
+                                                    setShowTablePreview(
+                                                        !showTablePreview,
+                                                    );
+                                                    setShowEditColumns(false);
+                                                }}
+                                            >
+                                                Preview
+                                            </Button>
+                                        </div>
+                                    </StyledModalTitleWrapper2>
+
+                                    {showEditColumns && (
+                                        <>
+                                            <Typography variant="h6">
+                                                Edit Columns
+                                            </Typography>
+                                            {fields?.map((field, index) => (
+                                                <div key={field.id}>
+                                                    <Controller
+                                                        name={`columns.${index}.checked`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Checkbox
+                                                                checked={
+                                                                    field.value
+                                                                }
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        e,
+                                                                    );
+                                                                    const hiddenColumnIdsSetDup =
+                                                                        new Set(
+                                                                            [
+                                                                                ...hiddenColumnIdsSet,
+                                                                            ],
+                                                                        );
+                                                                    if (
+                                                                        field.value ==
+                                                                        true
+                                                                    ) {
+                                                                        hiddenColumnIdsSetDup.add(
+                                                                            index,
+                                                                        );
+                                                                    } else {
+                                                                        hiddenColumnIdsSetDup.delete(
+                                                                            index,
+                                                                        );
+                                                                    }
+                                                                    setHiddenColumnIdsSet(
+                                                                        hiddenColumnIdsSetDup,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                    <Controller
+                                                        name={`columns.${index}.userAlias`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <TextField
+                                                                type="text"
+                                                                variant="outlined"
+                                                                size="small"
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    );
+                                                                    const newTableHeaders =
+                                                                        [
+                                                                            ...databaseTableHeaders,
+                                                                        ];
+                                                                    newTableHeaders[
+                                                                        index
+                                                                    ] =
+                                                                        e.target.value;
+                                                                    setDatabaseTableHeaders(
+                                                                        newTableHeaders,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {showTablePreview && (
+                                        <Table.Container
+                                            sx={{
+                                                backgroundColor: '#fff',
+                                                marginBottom: '20px',
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                sx={{
+                                                    marginTop: '15px',
+                                                    marginBottom: '25px',
+                                                }}
+                                            >
+                                                Preview
+                                            </Typography>
+                                            <Table stickyHeader size={'small'}>
+                                                {/* <Table.Head>
+                                                    <Table.Row>
+                                                        {databaseTableHeaders
+                                                            .filter(
+                                                                (v, colIdx) => {
+                                                                    return !hiddenColumnIdsSet.has(
+                                                                        colIdx,
+                                                                    );
+                                                                },
+                                                            )
+                                                            .map((h, hIdx) => (
+                                                                <Table.Cell key={hIdx}>
+                                                                    {h}
+                                                                </Table.Cell>
+                                                            ))}
+                                                    </Table.Row>
+                                                </Table.Head> */}
+                                                <Table.Body>
+                                                    <Table.Row>
+                                                        {databaseTableHeaders
+                                                            .filter(
+                                                                (v, colIdx) => {
+                                                                    return !hiddenColumnIdsSet.has(
+                                                                        colIdx,
+                                                                    );
+                                                                },
+                                                            )
+                                                            .map((h, hIdx) => (
+                                                                <Table.Cell
+                                                                    key={hIdx}
+                                                                >
+                                                                    <strong>
+                                                                        {h}
+                                                                    </strong>
+                                                                </Table.Cell>
+                                                            ))}
+                                                    </Table.Row>
+                                                    {databaseTableRows.map(
+                                                        (r, rIdx) => (
+                                                            <Table.Row
+                                                                key={rIdx}
+                                                            >
+                                                                {r
+                                                                    .filter(
+                                                                        (
+                                                                            v,
+                                                                            colIdx,
+                                                                        ) => {
+                                                                            return !hiddenColumnIdsSet.has(
+                                                                                colIdx,
+                                                                            );
+                                                                        },
+                                                                    )
+                                                                    .map(
+                                                                        (
+                                                                            v,
+                                                                            vIdx,
+                                                                        ) => (
+                                                                            <Table.Cell
+                                                                                key={`${rIdx}-${vIdx}`}
+                                                                            >
+                                                                                {
+                                                                                    v
+                                                                                }
+                                                                            </Table.Cell>
+                                                                        ),
+                                                                    )}
+                                                            </Table.Row>
+                                                        ),
+                                                    )}
+                                                </Table.Body>
+                                            </Table>
+                                        </Table.Container>
+                                    )}
+                                </Stack>
+                            )}
+
+                            {/* stack for user-added joins filters and summaries */}
+                            {stackFields.map((stack, stackIndex) => (
+                                <Stack spacing={1} direction="column">
+                                    <span>{stack.queryType}</span>
+                                    <Button
+                                        sx={{
+                                            display: 'inline-block',
+                                            width: '40px',
+                                        }}
+                                        variant="contained"
+                                        color="error"
+                                        size="small"
+                                        onClick={() => {
+                                            removeStack(stackIndex);
+                                        }}
+                                    >
+                                        delete
+                                    </Button>
+                                </Stack>
+                            ))}
+
+                            <Modal.Actions
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-start',
+                                    // border: '1px solid goldenrod',
+                                    padding: '0px',
+                                    marginTop: '10px',
+                                }}
+                            >
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="medium"
+                                    onClick={() => {
+                                        setQueryElementCounter(
+                                            queryElementCounter + 1,
+                                        );
+                                        appendStack({
+                                            queryType: `Join ${queryElementCounter}`,
+                                            queryChildren: [],
+                                        });
+                                    }}
+                                    startIcon={<JoinLeftRounded />}
+                                >
+                                    Join
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="medium"
+                                    startIcon={<FilterListRounded />}
+                                    onClick={() => {
+                                        setQueryElementCounter(
+                                            queryElementCounter + 1,
+                                        );
+                                        appendStack({
+                                            queryType: `Filter ${queryElementCounter}`,
+                                            queryChildren: [],
+                                        });
+                                    }}
+                                >
+                                    Add Filter
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="medium"
+                                    startIcon={<ControlPointDuplicateRounded />}
+                                    onClick={() => {
+                                        setQueryElementCounter(
+                                            queryElementCounter + 1,
+                                        );
+                                        appendStack({
+                                            queryType: `Summarization  ${queryElementCounter}`,
+                                            queryChildren: [],
+                                        });
+                                    }}
+                                >
+                                    Summarize
+                                </Button>
+                            </Modal.Actions>
+                            <Modal.Actions
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    // border: '1px solid pink',
+                                    padding: '0px',
+                                }}
+                            >
+                                <Button
+                                    variant="text"
+                                    color="secondary"
+                                    onClick={() =>
+                                        setIsDataImportModalOpen(false)
+                                    }
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                >
+                                    Import
+                                </Button>
+                            </Modal.Actions>
+                        </form>
+                    </Modal.Content>
+                </Modal>
+
                 {/* Import Data Modal */}
-                <Modal open={isDataImportModalOpen} fullWidth>
+                {/* <Modal open={isDataImportModalOpen} fullWidth> */}
+                <Modal open={false} fullWidth>
                     {isDatabaseLoading && (
                         <LoadingScreen.Trigger description="Retrieving database" />
                     )}
@@ -976,6 +1435,7 @@ export const NotebookAddCell = observer(
                                 type="submit"
                                 variant="contained"
                                 color="primary"
+                                disabled
                             >
                                 Import
                             </Button>

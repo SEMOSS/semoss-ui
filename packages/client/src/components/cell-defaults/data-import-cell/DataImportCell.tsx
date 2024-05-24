@@ -10,6 +10,7 @@ import {
     TextField,
     Stack,
     InputAdornment,
+    Typography,
 } from '@semoss/ui';
 
 import {
@@ -268,11 +269,16 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 direction="row"
                                 justifyContent={'space-between'}
                             >
+                                {/* <Typography variant="body1">
+                                    {cfgLibraryDatabases.display[cell.parameters.databaseId]}
+                                </Typography> */}
                                 <StyledSelect
                                     size={'small'}
                                     variant="standard"
-                                    disabled={cell.isLoading}
-                                    title={'Select Database'}
+                                    // disabled={cell.isLoading}
+                                    disabled={true}
+                                    // title={'Select Database'}
+                                    title={'Database Not Editable'}
                                     value={cell.parameters.databaseId}
                                     SelectProps={{
                                         IconComponent: KeyboardArrowDown,
@@ -334,7 +340,8 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             language="sql" /** TODO: language support? can we tell this from the database type? */
                             options={{
                                 scrollbar: { alwaysConsumeMouseWheel: false },
-                                readOnly: false,
+                                // readOnly: false,
+                                readOnly: true,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
                                 scrollBeyondLastLine: false,
