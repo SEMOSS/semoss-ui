@@ -396,7 +396,7 @@ export const AppDetailPage = () => {
                         <TitleSection>
                             <TitleSectionImg
                                 src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-                                alt="App Image"
+                                alt="App Image."
                             />
                             <TitleSectionBodyWrapper>
                                 <SectionHeading variant="h1">
