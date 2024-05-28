@@ -37,7 +37,7 @@ export const APP_IMAGES = {
         BLOCKS_APP_5,
     ],
     CODE: [UPDATED_CODE, CODE_APP_2, CODE_APP_3, CODE_APP_4, CODE_APP_5],
-    INSIGHT: [
+    INSIGHTS: [
         UPDATED_INSIGHT,
         INSIGHT_APP_2,
         INSIGHT_APP_3,

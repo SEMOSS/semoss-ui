@@ -262,7 +262,13 @@ export const AppTileCard = (props: AppTileCardProps) => {
         if (appType == 'BI' || appType == 'TERMINAL' || appType == '') {
             randomInt = 0;
         }
+
         const image = APP_IMAGES[appType];
+
+        if (!image) {
+            return APP_IMAGES['INSIGHTS'][0];
+        }
+
         return image[randomInt];
     };
 
@@ -290,7 +296,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledPublishedByLabel>
                 </StyledPublishedByContainer>
             );
-        } else if (appType == 'INSIGHT') {
+        } else if (appType == 'INSIGHTS') {
             return (
                 <StyledPublishedByContainer>
                     <BarChartRounded />
