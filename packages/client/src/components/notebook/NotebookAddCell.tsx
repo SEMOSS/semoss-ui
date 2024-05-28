@@ -66,14 +66,13 @@ const StyledModalTitle = styled(Typography)(({ theme }) => ({
 const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
-    border: '1px solid blue',
     padding: '0px',
+    marginBottom: '15px',
 }));
 
 const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
-    border: '1px solid blue',
     padding: '0px',
     justifyContent: 'space-between',
 }));
@@ -226,6 +225,12 @@ const AddCellOptions: Record<string, AddCellOption> = {
     },
 };
 
+const IMPORT_MODAL_WIDTHS = {
+    small: '500px',
+    medium: '750px',
+    large: '1000px',
+};
+
 export const NotebookAddCell = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -263,6 +268,8 @@ export const NotebookAddCell = observer(
         const [selectedDatabaseId, setSelectedDatabaseId] = useState(null);
         const [selectedTable, setSelectedTable] = useState(null);
         const [hiddenColumnIdsSet, setHiddenColumnIdsSet] = useState(new Set());
+        const [importModalPixelWidth, setImportModalPixelWidth] =
+            useState<string>(IMPORT_MODAL_WIDTHS.small);
 
         const importDataSQLStringRef = useRef<string>('');
 
@@ -424,6 +431,21 @@ export const NotebookAddCell = observer(
             constructSQLString({ submitData });
             appendCell('data-import');
             setIsDataImportModalOpen(false);
+            closeImportModalHandler();
+        };
+
+        const closeImportModalHandler = () => {
+            setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.small);
+            setHiddenColumnIdsSet(new Set());
+            setIsDataImportModalOpen(false);
+            setDatabaseTableHeaders([]);
+            setSelectedDatabaseId(null);
+            setShowTablePreview(false);
+            setTableColumnsObject({});
+            setDatabaseTableRows([]);
+            setSelectedTable(null);
+            setTableNames([]);
+            reset();
         };
 
         const retrieveDatabaseTables = async (databaseId) => {
@@ -605,6 +627,9 @@ export const NotebookAddCell = observer(
                                             disabled={display == 'From CSV'} // temporary
                                             onClick={() => {
                                                 loadDatabaseStructure();
+                                                setImportModalPixelWidth(
+                                                    IMPORT_MODAL_WIDTHS.small,
+                                                );
                                                 setIsDataImportModalOpen(true);
                                                 if (
                                                     display ==
@@ -627,18 +652,9 @@ export const NotebookAddCell = observer(
                 </StyledMenu>
 
                 {/* New Import Data Modal */}
-                <Modal
-                    open={isDataImportModalOpen}
-                    sx={{ border: '3px solid red' }}
-                    maxWidth="lg"
-                >
-                    <Modal.Content
-                        sx={{ border: '3px solid goldenrod', width: '70rem' }}
-                    >
-                        <form
-                            onSubmit={handleSubmit(onImportDataSubmit)}
-                            style={{ border: '1px solid green' }}
-                        >
+                <Modal open={isDataImportModalOpen} maxWidth="lg">
+                    <Modal.Content sx={{ width: importModalPixelWidth }}>
+                        <form onSubmit={handleSubmit(onImportDataSubmit)}>
                             <StyledModalTitleWrapper>
                                 <StyledModalTitle variant="h6">
                                     Import Data
@@ -661,6 +677,9 @@ export const NotebookAddCell = observer(
                                                 setSelectedTable(null);
                                                 setHiddenColumnIdsSet(
                                                     new Set(),
+                                                );
+                                                setImportModalPixelWidth(
+                                                    IMPORT_MODAL_WIDTHS.medium,
                                                 );
                                             }}
                                             label={'Select Database...'}
@@ -693,14 +712,14 @@ export const NotebookAddCell = observer(
                                     <StyledModalTitleWrapper2>
                                         <div
                                             style={{
-                                                border: '1px solid green',
                                                 display: 'flex',
+                                                alignItems: 'center',
                                             }}
                                         >
                                             <Typography
                                                 sx={{
-                                                    border: '1px solid green',
                                                     marginRight: '15px',
+                                                    marginBottom: '-1.5px',
                                                 }}
                                                 variant="h6"
                                             >
@@ -721,6 +740,12 @@ export const NotebookAddCell = observer(
                                                             setHiddenColumnIdsSet(
                                                                 new Set(),
                                                             );
+                                                            setShowTablePreview(
+                                                                true,
+                                                            );
+                                                            setImportModalPixelWidth(
+                                                                IMPORT_MODAL_WIDTHS.large,
+                                                            );
                                                         }}
                                                         label={
                                                             'Select Table...'
@@ -734,9 +759,6 @@ export const NotebookAddCell = observer(
                                                         variant="outlined"
                                                         sx={{
                                                             minWidth: '150px',
-                                                            // backgroundColor: '#E2F2FF',
-                                                            // border: '0px',
-                                                            // outline: '0px',
                                                         }}
                                                     >
                                                         {tableNames?.map(
@@ -759,7 +781,6 @@ export const NotebookAddCell = observer(
                                                 size="medium"
                                                 sx={{
                                                     marginRight: '15px',
-                                                    border: '1px solid red',
                                                 }}
                                                 onClick={() => {
                                                     setShowEditColumns(
@@ -787,8 +808,21 @@ export const NotebookAddCell = observer(
                                     </StyledModalTitleWrapper2>
 
                                     {showEditColumns && (
-                                        <>
-                                            <Typography variant="h6">
+                                        <Table.Container
+                                            sx={{
+                                                backgroundColor: '#fff',
+                                                marginBottom: '20px',
+                                                padding: '0px 20px 25px',
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                sx={{
+                                                    marginTop: '15px',
+                                                    marginLeft: '7.5px',
+                                                    marginBottom: '20px',
+                                                }}
+                                            >
                                                 Edit Columns
                                             </Typography>
                                             {fields?.map((field, index) => (
@@ -867,7 +901,7 @@ export const NotebookAddCell = observer(
                                                     />
                                                 </div>
                                             ))}
-                                        </>
+                                        </Table.Container>
                                     )}
 
                                     {showTablePreview && (
@@ -881,7 +915,8 @@ export const NotebookAddCell = observer(
                                                 variant="h6"
                                                 sx={{
                                                     marginTop: '15px',
-                                                    marginBottom: '25px',
+                                                    marginLeft: '15px',
+                                                    marginBottom: '20px',
                                                 }}
                                             >
                                                 Preview
@@ -989,15 +1024,16 @@ export const NotebookAddCell = observer(
                                 sx={{
                                     display: 'flex',
                                     justifyContent: 'flex-start',
-                                    // border: '1px solid goldenrod',
                                     padding: '0px',
-                                    marginTop: '10px',
+                                    marginTop: '15px',
+                                    marginBottom: '15px',
                                 }}
                             >
                                 <Button
                                     variant="outlined"
                                     color="primary"
                                     size="medium"
+                                    disabled
                                     onClick={() => {
                                         setQueryElementCounter(
                                             queryElementCounter + 1,
@@ -1015,6 +1051,7 @@ export const NotebookAddCell = observer(
                                     variant="outlined"
                                     color="primary"
                                     size="medium"
+                                    disabled
                                     startIcon={<FilterListRounded />}
                                     onClick={() => {
                                         setQueryElementCounter(
@@ -1032,6 +1069,7 @@ export const NotebookAddCell = observer(
                                     variant="outlined"
                                     color="primary"
                                     size="medium"
+                                    disabled
                                     startIcon={<ControlPointDuplicateRounded />}
                                     onClick={() => {
                                         setQueryElementCounter(
@@ -1050,16 +1088,20 @@ export const NotebookAddCell = observer(
                                 sx={{
                                     display: 'flex',
                                     justifyContent: 'flex-end',
-                                    // border: '1px solid pink',
                                     padding: '0px',
                                 }}
                             >
                                 <Button
                                     variant="text"
                                     color="secondary"
-                                    onClick={() =>
-                                        setIsDataImportModalOpen(false)
-                                    }
+                                    onClick={() => {
+                                        closeImportModalHandler();
+                                        // setIsDataImportModalOpen(false)
+                                        // setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.small);
+                                        // setShowTablePreview(false);
+                                        // setTableNames([]);
+                                        // reset();
+                                    }}
                                 >
                                     Cancel
                                 </Button>
@@ -1360,22 +1402,23 @@ export const NotebookAddCell = observer(
                             sx={{
                                 display: 'flex',
                                 justifyContent: 'flex-start',
-                                // border: '1px solid goldenrod',
                                 padding: '0px',
                             }}
                         >
                             <Button
                                 variant="outlined"
-                                color="primary"
+                                // color="primary"
+                                color="info"
                                 size="medium"
+                                disabled
                                 onClick={() => {
-                                    setQueryElementCounter(
-                                        queryElementCounter + 1,
-                                    );
-                                    appendStack({
-                                        queryType: `Join ${queryElementCounter}`,
-                                        queryChildren: [],
-                                    });
+                                    // setQueryElementCounter(
+                                    //     queryElementCounter + 1,
+                                    // );
+                                    // appendStack({
+                                    //     queryType: `Join ${queryElementCounter}`,
+                                    //     queryChildren: [],
+                                    // });
                                 }}
                                 startIcon={<JoinLeftRounded />}
                             >
@@ -1420,7 +1463,6 @@ export const NotebookAddCell = observer(
                             sx={{
                                 display: 'flex',
                                 justifyContent: 'flex-end',
-                                // border: '1px solid pink',
                                 padding: '0px',
                             }}
                         >
