@@ -1,29 +1,17 @@
 import { useEffect, useState, useReducer } from 'react';
-import { observer } from 'mobx-react-lite';
 import {
     Avatar,
     Collapse,
     List,
-    Stack,
     Typography,
     Search,
-    Button,
-    Grid,
     styled,
     Divider,
 } from '@semoss/ui';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import { formatName, toTitleCase } from '@/utility';
-
-const StyledContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(3),
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-}));
+import { removeUnderscores, toTitleCase } from '@/utility';
 
 const StyledFilter = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -37,13 +25,6 @@ const StyledFilter = styled('div')(({ theme }) => ({
 const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
     borderRadius: theme.shape.borderRadius,
-    gap: theme.spacing(2),
-}));
-
-const StyledChipList = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    marginLeft: theme.spacing(2),
     gap: theme.spacing(2),
 }));
 
@@ -179,7 +160,7 @@ export const Filterbox = (props: FilterboxProps) => {
         metaKeys.length > 0
             ? type === 'APP'
                 ? `GetProjectMetaValues(metaKeys=${JSON.stringify(metaKeys)}) ;`
-                : `GetEngineMetaValues( engineTypes=[${type}]} metaKeys = ${JSON.stringify(
+                : `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
                       metaKeys,
                   )} ) ;`
             : '',
@@ -333,7 +314,9 @@ export const Filterbox = (props: FilterboxProps) => {
                                         primary={
                                             <Typography variant={'h6'}>
                                                 {toTitleCase(
-                                                    formatName(entries[0]),
+                                                    removeUnderscores(
+                                                        entries[0],
+                                                    ),
                                                 )}
                                             </Typography>
                                         }

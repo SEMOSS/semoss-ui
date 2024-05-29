@@ -50,9 +50,9 @@ export const toTitleCase = (str) => {
 
 /**
  * @desc splits word on _ and Uppercases first word
- * "this-is-a-string" --> "This is a string"
+ * "this_is_a_string" --> "This is a string"
  */
-export const formatName = (str: string) => {
+export const removeUnderscores = (str: string) => {
     let i;
     const frags = str.split('_');
     for (i = 0; i < frags.length; i++) {

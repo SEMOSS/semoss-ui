@@ -163,7 +163,8 @@ export const HomePage = observer((): JSX.Element => {
                 k.display_options === 'single-select' ||
                 k.display_options === 'multi-select' ||
                 k.display_options === 'single-typeahead' ||
-                k.display_options === 'multi-typeahead'
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'select-box'
             );
         },
     );
