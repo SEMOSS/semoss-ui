@@ -31,9 +31,12 @@ interface ConfigStoreInterface {
                 | 'single-select'
                 | 'multi-select'
                 | 'single-typeahead'
-                | 'multi-typeahead';
+                | 'multi-typeahead'
+                | 'select-box';
             display_order: number;
             metakey: string;
+            single_multi: string;
+            display_values?: string;
         }[];
         projectMetaKeys: {
             display_options:
@@ -45,9 +48,12 @@ interface ConfigStoreInterface {
                 | 'single-select'
                 | 'multi-select'
                 | 'single-typeahead'
-                | 'multi-typeahead';
+                | 'multi-typeahead'
+                | 'select-box';
             display_order: number;
             metakey: string;
+            single_multi: string;
+            display_values?: string;
         }[];
         providers: string[];
         loginsAllowed: string[];
