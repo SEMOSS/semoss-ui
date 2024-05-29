@@ -1,3 +1,5 @@
+import { Role } from '@/types';
+
 /**
  * @desc splits a string at the period
  * Used in the UI Builder and notebook
@@ -59,4 +61,25 @@ export const removeUnderscores = (str: string) => {
         frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
     }
     return frags.join(' ');
+};
+
+export const formatPermission = (permission: Role | ''): string => {
+    const errorString = 'No permission found';
+
+    if (!permission) {
+        return errorString;
+    }
+
+    switch (permission) {
+        case 'OWNER':
+            return 'Author';
+        case 'EDIT' || 'EDITOR':
+            return 'Editor';
+        case 'READ_ONLY' || 'VIEWER':
+            return 'Read-Only';
+        case 'DISCOVERABLE':
+            return 'Discoverable';
+        default:
+            return errorString;
+    }
 };

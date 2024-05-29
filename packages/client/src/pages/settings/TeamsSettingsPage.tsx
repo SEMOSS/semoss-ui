@@ -19,7 +19,7 @@ import {
     Select,
 } from '@semoss/ui';
 
-import { formatName } from '@/utils';
+import { removeUnderscores } from '@/utility';
 
 import { Controller, useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';

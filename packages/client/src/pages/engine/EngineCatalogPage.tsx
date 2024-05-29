@@ -381,6 +381,7 @@ export const EngineCatalogPage = observer(
             });
             setCanCollect(true);
             setOffset(0);
+            setMetaFilters({});
         }, [route.type]);
 
         /**
@@ -618,7 +619,8 @@ export const EngineCatalogPage = observer(
                                 </StyledSectionLabel>
                             )}
 
-                        {favoritedDbs.length ? (
+                        {favoritedDbs.length &&
+                        Object.entries(metaFilters).length === 0 ? (
                             <Grid container spacing={3}>
                                 {favoritedDbs.map((db) => {
                                     return (
