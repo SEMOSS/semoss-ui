@@ -209,7 +209,12 @@ export const HomePage = observer((): JSX.Element => {
      */
     let favoritePixel =
         mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
-    favoritePixel += `(filterWord=["${search}"], onlyFavorites=[true]);`;
+    favoritePixel += `(metaKeys = ${JSON.stringify([
+        ...metaKeys,
+        'description',
+    ])}, metaFilters=[${JSON.stringify(
+        metaFilters,
+    )}], filterWord=["${search}"], onlyFavorites=[true]);`;
     const getFavoritedApps = usePixel(favoritePixel);
 
     useEffect(() => {
