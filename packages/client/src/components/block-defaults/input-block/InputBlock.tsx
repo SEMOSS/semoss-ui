@@ -2,6 +2,7 @@ import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
+import { useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
 
@@ -28,7 +29,15 @@ export interface InputBlockDef extends BlockDef<'input'> {
 }
 
 export const InputBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<InputBlockDef>(id);
+    const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
+
+    useDebounce(
+        () => {
+            listeners.onChange();
+        },
+        [listeners, data.value],
+        500,
+    );
 
     return (
         <StyledTextField
@@ -48,7 +57,6 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
             type={data.type}
             onChange={(e) => {
                 const value = e.target.value;
-
                 // update the value
                 setData('value', value);
             }}

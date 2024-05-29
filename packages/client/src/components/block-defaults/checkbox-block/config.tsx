@@ -4,7 +4,7 @@ import {
     SelectInputSettings,
 } from '@/components/block-settings';
 import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
-
+import { buildListener } from '../block-defaults.shared';
 import { CheckboxBlockDef, CheckboxBlock } from './CheckboxBlock';
 import { CheckBox } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
@@ -39,6 +39,10 @@ export const config: BlockConfig<CheckboxBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: 'on Change',
+            children: [...buildListener('onChange')],
         },
     ],
     styleMenu: [],

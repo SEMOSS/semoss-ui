@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 
-import { useBlock } from '@/hooks';
+import { useBlock, useDebounce } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 import { styled, ToggleButtonGroup, ToggleButton } from '@mui/material';
@@ -24,7 +24,16 @@ export interface ToggleButtonBlockDef extends BlockDef<'toggle-button'> {
 }
 
 export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<ToggleButtonBlockDef>(id);
+    const { attrs, data, setData, listeners } =
+        useBlock<ToggleButtonBlockDef>(id);
+
+    useDebounce(
+        () => {
+            listeners.onChange();
+        },
+        [listeners, data.value],
+        500,
+    );
 
     return (
         <StyledContainer {...attrs}>

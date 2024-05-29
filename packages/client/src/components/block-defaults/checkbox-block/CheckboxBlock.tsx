@@ -3,7 +3,7 @@ import React from 'react';
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock } from '@/hooks';
+import { useBlock, useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { Checkbox, FormControlLabel, styled } from '@mui/material';
 
@@ -30,7 +30,15 @@ const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
 }));
 
 export const CheckboxBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<CheckboxBlockDef>(id);
+    const { attrs, data, setData, listeners } = useBlock<CheckboxBlockDef>(id);
+
+    useDebounce(
+        () => {
+            listeners.onChange();
+        },
+        [listeners, data.value],
+        500,
+    );
 
     return (
         <StyledContainer {...attrs}>
