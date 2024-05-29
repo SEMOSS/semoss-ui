@@ -10,7 +10,7 @@ import {
 import { useRootStore } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
 import CloseIcon from '@mui/icons-material/Close';
-import { updateProjectDetails } from './appDetails.utility';
+import { updateProjectDetails } from './app-details.utility';
 import { createFilterOptions, Autocomplete } from '@mui/material';
 
 const ModalHeaderWrapper = styled('div')({

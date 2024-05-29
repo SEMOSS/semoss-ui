@@ -1,6 +1,6 @@
 import { Table, Typography, Link, Chip, Stack } from '@semoss/ui';
 import { tableCellClasses } from '@mui/material';
-import { modelledDependency } from './appDetails.utility';
+import { modelledDependency } from './app-details.utility';
 import { formatPermission } from '@/utils';
 
 interface PropsDependencyTable {
@@ -8,7 +8,7 @@ interface PropsDependencyTable {
     permission: string;
 }
 
-const DependencyTable = (props: PropsDependencyTable) => {
+export const DependencyTable = (props: PropsDependencyTable) => {
     const { dependencies, permission } = props;
     return (
         <Table
@@ -73,5 +73,3 @@ const DependencyTable = (props: PropsDependencyTable) => {
         </Table>
     );
 };
-
-export default DependencyTable;
