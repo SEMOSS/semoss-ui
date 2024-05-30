@@ -15,7 +15,7 @@ import {
     SetProjectDependencies,
     engine,
     modelledDependency,
-} from './appDetails.utility';
+} from './app-details.utility';
 import { Control, Controller } from 'react-hook-form';
 import { Autocomplete } from '@mui/material';
 import { Close } from '@mui/icons-material';
