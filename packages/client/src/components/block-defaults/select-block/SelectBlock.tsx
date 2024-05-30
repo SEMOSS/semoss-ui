@@ -1,7 +1,7 @@
 import { useMemo, CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock } from '@/hooks';
+import { useBlock, useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
 import { Autocomplete, LinearProgress, TextField } from '@mui/material';
@@ -26,7 +26,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
  * But using an autocomplete because it offers better UX when there are many options
  */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
+    const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
 
     const stringifiedOptions: string[] = useMemo(() => {
         let arr = [];
@@ -50,6 +50,14 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             }
         });
     }, [data.options]);
+
+    useDebounce(
+        () => {
+            listeners.onChange();
+        },
+        [listeners, data.value],
+        200,
+    );
 
     return (
         <Autocomplete
