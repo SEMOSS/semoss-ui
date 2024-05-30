@@ -12,6 +12,7 @@ import BLOCK_H4 from '@/assets/img/BLOCK_H4.png';
 import BLOCK_H5 from '@/assets/img/BLOCK_H5.png';
 import BLOCK_H6 from '@/assets/img/BLOCK_H6.png';
 import BLOCK_P from '@/assets/img/BLOCK_P.png';
+import BLOCK_MERMAID from '@/assets/img/BLOCK_MERMAID.png';
 import LOG from '@/assets/img/LOG.png';
 import BLOCK_P_ITALICS from '@/assets/img/BLOCK_P_ITALICS.png';
 import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
@@ -547,7 +548,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: SECTION_MERMAID,
-        image: BLOCK_P_ITALICS, // TODO
+        image: BLOCK_MERMAID,
         name: 'Mermaid',
         json: {
             widget: 'mermaid',

@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 export interface MermaidBlockDef extends BlockDef<'mermaid'> {
     widget: 'mermaid';
     data: {
-        string: string;
+        text: string;
     };
     slots: never;
 }
