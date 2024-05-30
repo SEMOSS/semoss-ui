@@ -38,6 +38,7 @@ const SECTION_INPUT = 'Input';
 const SECTION_LAYOUT = 'Layout';
 const SECTION_PROGRESS = 'Progress';
 const SECTION_TEXT = 'Text';
+const SECTION_MERMAID = 'Mermaid';
 const SECTION_AREA_CHART = 'Area Chart';
 const SECTION_BAR_CHART = 'Bar Chart';
 const SECTION_GENERAL_VISUALIZATION = 'General';
@@ -54,6 +55,7 @@ export interface AddBlocksMenuItem {
         | 'Layout'
         | 'Progress'
         | 'Text'
+        | 'Mermaid'
         | 'Area Chart'
         | 'Bar Chart'
         | 'General'
@@ -537,6 +539,25 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                     fontStyle: 'italic',
                 },
                 text: 'Hello world',
+                variant: 'p',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_P_ITALICS, // TODO
+        name: 'Mermaid',
+        json: {
+            widget: 'mermaid',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Query',
                 variant: 'p',
             },
             listeners: {},
