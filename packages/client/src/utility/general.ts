@@ -1,4 +1,6 @@
 import { Role } from '@/types';
+import { ENGINE_IMAGES } from '@/pages/import';
+import BRAIN from '@/assets/img/BRAIN.png';
 
 /**
  * @desc splits a string at the period
@@ -40,7 +42,7 @@ export const capitalizeFirstLetter = (str) => {
     return str.replace(/\w{1}/, (match) => match.toUpperCase());
 };
 
-/**
+/*
  * @desc capitalizes every word that is spaced
  * "hello world" --> "Hello World"
  */
@@ -82,4 +84,20 @@ export const formatPermission = (permission: Role | ''): string => {
         default:
             return errorString;
     }
+};
+
+/**
+ * @name getEngineImage
+ * @params appType & appSubType
+ * @returns image link for associated engine
+ */
+export const getEngineImage = (appType: string, appSubType: string) => {
+    const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
+
+    if (!obj) {
+        console.warn('No image found:', appType, appSubType);
+        return BRAIN;
+    }
+
+    return obj.icon;
 };
