@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
-import { Tooltip, styled, List, Stack, Typography } from '@semoss/ui';
+import { Collapse, Tooltip, styled, List, Stack, Typography } from '@semoss/ui';
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 import { ModelTraining, SupervisorAccount } from '@mui/icons-material';
 import { SettingsView } from './SettingsView';
@@ -10,7 +10,10 @@ import {
     HistoryRounded,
     TuneRounded,
 } from '@mui/icons-material';
-import { LlmConfigureView } from './LlmConfigureView';
+import { LlmConfigureView } from '../llm-compare/LlmConfigureView';
+import { BlocksRenderer } from '@/components/blocks-workspace';
+import { useBlocks } from '@/hooks';
+import { ABTesting, LLMCompareWrapper } from '../llm-compare';
 
 const StyledSettings = styled('div')(() => ({
     display: 'flex',
@@ -63,6 +66,7 @@ const StyledListItem = styled(List.Item)<{ selected?: boolean }>(
 );
 
 export const Settings = observer(() => {
+    const { state } = useBlocks();
     const [view, setView] = useState<'access' | 'testing' | ''>('access');
     const [subView, setSubView] = useState<
         'configure' | 'testing' | 'analyze' | 'history' | ''
@@ -78,7 +82,7 @@ export const Settings = observer(() => {
     };
 
     const updateSubView = (v: typeof subView) => {
-        if (!v || v === view) {
+        if (!v || v === subView) {
             setSubView('');
             return;
         }
@@ -101,7 +105,7 @@ export const Settings = observer(() => {
                 <SidebarItem
                     selected={view === 'testing'}
                     onClick={() => updateView('testing')}
-                    disabled={true}
+                    disabled={false}
                 >
                     <Tooltip title="Testing" placement="right">
                         <ModelTraining color="inherit" />
@@ -140,7 +144,7 @@ export const Settings = observer(() => {
                                 </List.Icon>
                                 <List.ItemText>A/B Testing</List.ItemText>
                             </StyledListItem>
-                            <StyledListItem
+                            {/* <StyledListItem
                                 alignItems="flex-start"
                                 selected={subView === 'analyze'}
                                 onClick={() => updateSubView('analyze')}
@@ -159,7 +163,7 @@ export const Settings = observer(() => {
                                     <HistoryRounded color="inherit" />
                                 </List.Icon>
                                 <List.ItemText>History</List.ItemText>
-                            </StyledListItem>
+                            </StyledListItem> */}
                         </List>
                     </StyledMenu>
                 </StyledLeftPanel>
@@ -167,9 +171,13 @@ export const Settings = observer(() => {
 
             <StyledRightPanel>
                 {view === 'access' && <SettingsView />}
-
-                {view === 'testing' && subView === 'configure' && (
-                    <LlmConfigureView />
+                {view === 'testing' && (
+                    <LLMCompareWrapper>
+                        <Stack direction="column" sx={{ height: '100%' }}>
+                            {subView === 'configure' && <LlmConfigureView />}
+                            {subView === 'testing' && <ABTesting />}
+                        </Stack>
+                    </LLMCompareWrapper>
                 )}
             </StyledRightPanel>
         </StyledSettings>
