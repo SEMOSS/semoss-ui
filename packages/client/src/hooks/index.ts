@@ -11,6 +11,7 @@ import { usePixel } from './usePixel';
 import { useDesigner } from './useDesigner';
 import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
+import { useDebounce } from './useDebounce';
 
 export {
     useAPI,
@@ -26,4 +27,5 @@ export {
     useDesigner,
     useStepper,
     useWorkspace,
+    useDebounce,
 };
