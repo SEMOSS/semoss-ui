@@ -15,6 +15,7 @@ import {
     Checkbox,
     TextField,
     Grid,
+    IconButton,
 } from '@semoss/ui';
 
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
@@ -41,6 +42,7 @@ import {
     FilterListRounded,
     ControlPointDuplicateRounded,
     CheckBox,
+    IndeterminateCheckBox,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -121,6 +123,7 @@ interface Column {
     id: string;
     tableName: string;
     columnName: string;
+    columnType: string;
     userAlias: string;
     checked: boolean;
 }
@@ -231,6 +234,14 @@ const IMPORT_MODAL_WIDTHS = {
     large: '1000px',
 };
 
+const SQL_COLUMN_TYPES = [
+    'DATE',
+    'NUMBER',
+    'STRING',
+    'TIMESTAMP',
+    // there may be more to add need a definitive list
+];
+
 export const NotebookAddCell = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -279,6 +290,7 @@ export const NotebookAddCell = observer(
         const [showEditColumns, setShowEditColumns] = useState<boolean>(false);
         const [showTablePreview, setShowTablePreview] =
             useState<boolean>(false);
+        const [checkAllColumns, setCheckAllColumns] = useState<boolean>(true);
         const { configStore, monolithStore } = useRootStore();
 
         const {
@@ -308,6 +320,7 @@ export const NotebookAddCell = observer(
                     tableName: tableObject.tableName,
                     columnName: tableObject.columnName,
                     userAlias: tableObject.columnName,
+                    columnType: tableObject.columnType,
                     checked: true,
                 });
             });
@@ -686,7 +699,7 @@ export const NotebookAddCell = observer(
                                                     IMPORT_MODAL_WIDTHS.medium,
                                                 );
                                             }}
-                                            label={'Select Database...'}
+                                            label={'Select Database'}
                                             value={field.value || null}
                                             size={'small'}
                                             sx={{
@@ -744,9 +757,14 @@ export const NotebookAddCell = observer(
                                                             setHiddenColumnIdsSet(
                                                                 new Set(),
                                                             );
-                                                            setShowTablePreview(
-                                                                true,
-                                                            );
+                                                            if (
+                                                                !showTablePreview &&
+                                                                !showEditColumns
+                                                            ) {
+                                                                setShowTablePreview(
+                                                                    true,
+                                                                );
+                                                            }
                                                             setImportModalPixelWidth(
                                                                 IMPORT_MODAL_WIDTHS.large,
                                                             );
@@ -820,152 +838,376 @@ export const NotebookAddCell = observer(
                                             }}
                                         >
                                             <Typography
-                                                variant="body1"
+                                                variant="h6"
                                                 sx={{
                                                     marginTop: '15px',
-                                                    marginLeft: '7.5px',
+                                                    marginLeft: '15px',
                                                     marginBottom: '20px',
                                                 }}
                                             >
                                                 Edit Columns
                                             </Typography>
 
-                                            <Table size="small">
+                                            <Table stickyHeader size={'small'}>
                                                 {/* table header with uncontrolled checkbox for all */}
-                                                <Table.Head>
+                                                <Table.Body>
                                                     <Table.Row>
-                                                        <Table.Cell
-                                                            size="small"
-                                                            sx={{
-                                                                width: '100px',
-                                                                border: '1px solid green',
-                                                            }}
-                                                        >
-                                                            {/* check / uncheck all columns */}
-                                                            <Checkbox />
-                                                        </Table.Cell>
-                                                        <Table.Cell
-                                                            size="small"
-                                                            sx={{
-                                                                border: '1px solid green',
-                                                            }}
-                                                        >
-                                                            {/* <Typography variant='body2'> */}
-                                                            Fields
-                                                            {/* </Typography> */}
-                                                        </Table.Cell>
-                                                        <Table.Cell
-                                                            size="small"
-                                                            sx={{
-                                                                border: '1px solid green',
-                                                            }}
-                                                        >
-                                                            {/* <Typography variant='body2'> */}
-                                                            Alias
-                                                            {/* </Typography> */}
-                                                        </Table.Cell>
-                                                        <Table.Cell
-                                                            size="small"
-                                                            sx={{
-                                                                border: '1px solid green',
-                                                            }}
-                                                        >
-                                                            {/* <Typography variant='body2'> */}
-                                                            Field Type
-                                                            {/* </Typography> */}
-                                                        </Table.Cell>
-                                                    </Table.Row>
-                                                </Table.Head>
-
-                                                {/* show checkboxes and text fields for all columns */}
-                                                {editableColumnFields?.map(
-                                                    (field, index) => (
-                                                        <div key={field.id}>
-                                                            <Controller
-                                                                name={`columns.${index}.checked`}
-                                                                control={
-                                                                    control
-                                                                }
-                                                                render={({
-                                                                    field,
-                                                                }) => (
-                                                                    <Checkbox
-                                                                        checked={
-                                                                            field.value
-                                                                        }
-                                                                        onChange={(
-                                                                            e,
-                                                                        ) => {
-                                                                            field.onChange(
-                                                                                e,
-                                                                            );
-                                                                            const hiddenColumnIdsSetDup =
-                                                                                new Set(
-                                                                                    [
-                                                                                        ...hiddenColumnIdsSet,
-                                                                                    ],
+                                                        <Table.Cell>
+                                                            <IconButton
+                                                                onClick={() => {
+                                                                    setCheckAllColumns(
+                                                                        !checkAllColumns,
+                                                                    );
+                                                                    const hiddenColumnIdsSetDup =
+                                                                        new Set();
+                                                                    if (
+                                                                        checkAllColumns ==
+                                                                        false
+                                                                    ) {
+                                                                        editableColumnFields.forEach(
+                                                                            (
+                                                                                field,
+                                                                                index,
+                                                                            ) => {
+                                                                                // not working need to use setValue
+                                                                                field.checked =
+                                                                                    true;
+                                                                                console.log(
+                                                                                    {
+                                                                                        index,
+                                                                                        field,
+                                                                                    },
                                                                                 );
-                                                                            if (
-                                                                                field.value ==
-                                                                                true
-                                                                            ) {
                                                                                 hiddenColumnIdsSetDup.add(
                                                                                     index,
                                                                                 );
-                                                                            } else {
+                                                                            },
+                                                                        );
+                                                                    } else {
+                                                                        editableColumnFields.forEach(
+                                                                            (
+                                                                                field,
+                                                                                index,
+                                                                            ) => {
+                                                                                // not working need to use setValue
+                                                                                field.checked =
+                                                                                    false;
+                                                                                console.log(
+                                                                                    {
+                                                                                        index,
+                                                                                        field,
+                                                                                    },
+                                                                                );
                                                                                 hiddenColumnIdsSetDup.delete(
                                                                                     index,
                                                                                 );
-                                                                            }
-                                                                            setHiddenColumnIdsSet(
-                                                                                hiddenColumnIdsSetDup,
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                )}
-                                                            />
-                                                            <Controller
-                                                                name={`columns.${index}.userAlias`}
-                                                                control={
-                                                                    control
+                                                                            },
+                                                                        );
+                                                                    }
+                                                                    setHiddenColumnIdsSet(
+                                                                        hiddenColumnIdsSetDup,
+                                                                    );
+                                                                }}
+                                                                color={
+                                                                    checkAllColumns
+                                                                        ? 'primary'
+                                                                        : 'secondary'
                                                                 }
-                                                                render={({
-                                                                    field,
-                                                                }) => (
-                                                                    <TextField
-                                                                        type="text"
-                                                                        variant="outlined"
-                                                                        size="small"
-                                                                        value={
-                                                                            field.value
+                                                                sx={{
+                                                                    marginLeft:
+                                                                        '-10px',
+                                                                }}
+                                                            >
+                                                                <IndeterminateCheckBox />
+                                                            </IconButton>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <Typography
+                                                                variant="body1"
+                                                                sx={{
+                                                                    fontWeight:
+                                                                        'bold',
+                                                                }}
+                                                            >
+                                                                Fields
+                                                            </Typography>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <Typography
+                                                                variant="body1"
+                                                                sx={{
+                                                                    fontWeight:
+                                                                        'bold',
+                                                                }}
+                                                            >
+                                                                Alias
+                                                            </Typography>
+                                                        </Table.Cell>
+                                                        <Table.Cell>
+                                                            <Typography
+                                                                variant="body1"
+                                                                sx={{
+                                                                    fontWeight:
+                                                                        'bold',
+                                                                }}
+                                                            >
+                                                                Field Type
+                                                            </Typography>
+                                                        </Table.Cell>
+                                                    </Table.Row>
+
+                                                    {/* show checkboxes and text fields for all columns */}
+                                                    {editableColumnFields?.map(
+                                                        (field, index) => (
+                                                            <Table.Row
+                                                                key={field.id}
+                                                            >
+                                                                <Table.Cell>
+                                                                    <Controller
+                                                                        name={`columns.${index}.checked`}
+                                                                        control={
+                                                                            control
                                                                         }
-                                                                        onChange={(
-                                                                            e,
-                                                                        ) => {
-                                                                            field.onChange(
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                            );
-                                                                            const newTableHeaders =
-                                                                                [
-                                                                                    ...databaseTableHeaders,
-                                                                                ];
-                                                                            newTableHeaders[
-                                                                                index
-                                                                            ] =
-                                                                                e.target.value;
-                                                                            setDatabaseTableHeaders(
-                                                                                newTableHeaders,
-                                                                            );
-                                                                        }}
+                                                                        render={({
+                                                                            field,
+                                                                        }) => (
+                                                                            <Checkbox
+                                                                                checked={
+                                                                                    field.value
+                                                                                }
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) => {
+                                                                                    field.onChange(
+                                                                                        e,
+                                                                                    );
+                                                                                    const hiddenColumnIdsSetDup =
+                                                                                        new Set(
+                                                                                            [
+                                                                                                ...hiddenColumnIdsSet,
+                                                                                            ],
+                                                                                        );
+                                                                                    if (
+                                                                                        field.value ==
+                                                                                        true
+                                                                                    ) {
+                                                                                        hiddenColumnIdsSetDup.add(
+                                                                                            index,
+                                                                                        );
+                                                                                    } else {
+                                                                                        hiddenColumnIdsSetDup.delete(
+                                                                                            index,
+                                                                                        );
+                                                                                    }
+
+                                                                                    console.log(
+                                                                                        {
+                                                                                            hiddenColumnIdsSetDup,
+                                                                                            editableColumnFields,
+                                                                                        },
+                                                                                    );
+
+                                                                                    if (
+                                                                                        hiddenColumnIdsSetDup.size ==
+                                                                                        0
+                                                                                    ) {
+                                                                                        setCheckAllColumns(
+                                                                                            true,
+                                                                                        );
+                                                                                    } else {
+                                                                                        setCheckAllColumns(
+                                                                                            false,
+                                                                                        );
+                                                                                    }
+
+                                                                                    setHiddenColumnIdsSet(
+                                                                                        hiddenColumnIdsSetDup,
+                                                                                    );
+                                                                                }}
+                                                                            />
+                                                                        )}
                                                                     />
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    ),
-                                                )}
+                                                                </Table.Cell>
+                                                                <Table.Cell>
+                                                                    {
+                                                                        field.columnName
+                                                                    }
+                                                                    {field.columnName ==
+                                                                        'ID' && (
+                                                                        <div
+                                                                            style={{
+                                                                                backgroundColor:
+                                                                                    '#F1E9FB',
+                                                                                padding:
+                                                                                    '3px, 4px, 3px, 4px',
+                                                                                width: '37px',
+                                                                                height: '24px',
+                                                                                borderRadius:
+                                                                                    '3px',
+                                                                                display:
+                                                                                    'inline-block',
+                                                                                marginLeft:
+                                                                                    '7px',
+                                                                                paddingTop:
+                                                                                    '3px',
+                                                                                textAlign:
+                                                                                    'center',
+                                                                            }}
+                                                                        >
+                                                                            PK
+                                                                        </div>
+                                                                    )}
+                                                                    {field.columnName.includes(
+                                                                        '_ID',
+                                                                    ) && (
+                                                                        <div
+                                                                            style={{
+                                                                                backgroundColor:
+                                                                                    '#EBEBEB', //Secondary/Selected
+                                                                                padding:
+                                                                                    '3px, 4px, 3px, 4px',
+                                                                                width: '37px',
+                                                                                height: '24px',
+                                                                                borderRadius:
+                                                                                    '3px',
+                                                                                display:
+                                                                                    'inline-block',
+                                                                                marginLeft:
+                                                                                    '7px',
+                                                                                paddingTop:
+                                                                                    '3px',
+                                                                                textAlign:
+                                                                                    'center',
+                                                                            }}
+                                                                        >
+                                                                            FK
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Cell>
+                                                                <Table.Cell>
+                                                                    <Controller
+                                                                        name={`columns.${index}.userAlias`}
+                                                                        control={
+                                                                            control
+                                                                        }
+                                                                        render={({
+                                                                            field,
+                                                                        }) => (
+                                                                            <TextField
+                                                                                type="text"
+                                                                                variant="outlined"
+                                                                                size="small"
+                                                                                value={
+                                                                                    field.value
+                                                                                }
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) => {
+                                                                                    field.onChange(
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                    );
+                                                                                    const newTableHeaders =
+                                                                                        [
+                                                                                            ...databaseTableHeaders,
+                                                                                        ];
+                                                                                    newTableHeaders[
+                                                                                        index
+                                                                                    ] =
+                                                                                        e.target.value;
+                                                                                    setDatabaseTableHeaders(
+                                                                                        newTableHeaders,
+                                                                                    );
+                                                                                }}
+                                                                            />
+                                                                        )}
+                                                                    />
+                                                                </Table.Cell>
+                                                                <Table.Cell>
+                                                                    <Controller
+                                                                        name={`columns.${index}.columnType`}
+                                                                        control={
+                                                                            control
+                                                                        }
+                                                                        render={({
+                                                                            field,
+                                                                        }) => (
+                                                                            <Select
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) => {
+                                                                                    field.onChange(
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                    );
+                                                                                    // unclear what desired effect is
+                                                                                }}
+                                                                                value={
+                                                                                    field.value ||
+                                                                                    null
+                                                                                }
+                                                                                size={
+                                                                                    'small'
+                                                                                }
+                                                                                sx={{
+                                                                                    minWidth:
+                                                                                        '220px',
+                                                                                }}
+                                                                            >
+                                                                                {SQL_COLUMN_TYPES.map(
+                                                                                    (
+                                                                                        ele,
+                                                                                    ) => (
+                                                                                        <Menu.Item
+                                                                                            value={
+                                                                                                ele
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                ele
+                                                                                            }
+                                                                                        </Menu.Item>
+                                                                                    ),
+                                                                                )}
+                                                                            </Select>
+                                                                        )}
+                                                                    />
+                                                                </Table.Cell>
+                                                            </Table.Row>
+                                                        ),
+                                                    )}
+                                                </Table.Body>
                                             </Table>
+                                            <Modal.Actions
+                                                sx={{
+                                                    display: 'flex',
+                                                    justifyContent: 'flex-end',
+                                                    // padding: '0px',
+                                                }}
+                                            >
+                                                <Button
+                                                    variant="text"
+                                                    color="secondary"
+                                                    size="small"
+                                                    onClick={() => {
+                                                        // closeImportModalHandler();
+                                                        setShowEditColumns(
+                                                            false,
+                                                        );
+                                                    }}
+                                                >
+                                                    Close
+                                                </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size="small"
+                                                >
+                                                    Save
+                                                </Button>
+                                            </Modal.Actions>
                                         </Table.Container>
                                     )}
 
@@ -987,23 +1229,6 @@ export const NotebookAddCell = observer(
                                                 Preview
                                             </Typography>
                                             <Table stickyHeader size={'small'}>
-                                                {/* <Table.Head>
-                                                    <Table.Row>
-                                                        {databaseTableHeaders
-                                                            .filter(
-                                                                (v, colIdx) => {
-                                                                    return !hiddenColumnIdsSet.has(
-                                                                        colIdx,
-                                                                    );
-                                                                },
-                                                            )
-                                                            .map((h, hIdx) => (
-                                                                <Table.Cell key={hIdx}>
-                                                                    {h}
-                                                                </Table.Cell>
-                                                            ))}
-                                                    </Table.Row>
-                                                </Table.Head> */}
                                                 <Table.Body>
                                                     <Table.Row>
                                                         {databaseTableHeaders
@@ -1161,11 +1386,6 @@ export const NotebookAddCell = observer(
                                     color="secondary"
                                     onClick={() => {
                                         closeImportModalHandler();
-                                        // setIsDataImportModalOpen(false)
-                                        // setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.small);
-                                        // setShowTablePreview(false);
-                                        // setTableNames([]);
-                                        // reset();
                                     }}
                                 >
                                     Cancel
