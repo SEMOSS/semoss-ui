@@ -72,7 +72,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             listeners.onChange();
         },
         [listeners, data.value],
-        500,
+        200,
     );
 
     return (

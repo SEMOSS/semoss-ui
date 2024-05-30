@@ -37,7 +37,7 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
             listeners.onChange();
         },
         [listeners, data.value],
-        500,
+        200,
     );
 
     return (
