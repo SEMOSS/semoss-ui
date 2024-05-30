@@ -3,7 +3,7 @@ import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
 import { observer } from 'mobx-react-lite';
 import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
 import { Code, KeyboardArrowDown } from '@mui/icons-material';
-import { CellDef } from '@/stores';
+import { CellDef, Variable } from '@/stores';
 import { runPixel } from '@/api';
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks, useLLM } from '@/hooks';
@@ -81,6 +81,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
+    
+    //console.log(state.blocks);
+    console.log(state.variables);
+
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
     const [LLMLoading, setLLMLoading] = useState(false);
@@ -306,6 +310,31 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
             const suggestions = [];
+            console.log('gen', state.variables);
+            suggestions.push({ 
+                label: {
+                    label: `this is a label`,
+                    //description: JSON.stringify(state.getVariable(variable.to, variable.type))
+                    description: 'some text'
+                },
+                kind: monaco.languages.CompletionItemKind.Variable,
+                documentation: `Returns the value of x`,
+                insertText: `{{variable.alias}}`,
+                range: range,
+             });
+            Object.values(state.variables).forEach((variable: Variable) => {
+                suggestions.push({ 
+                    label: {
+                        label: `${variable.alias}`,
+                        //description: JSON.stringify(state.getVariable(variable.to, variable.type))
+                        description: 'some text'
+                    },
+                    kind: monaco.languages.CompletionItemKind.Variable,
+                    documentation: `Returns the value of ${variable.alias}`,
+                    insertText: `{{${variable.alias}}}`,
+                    range: range,
+                 });
+            });
             Object.values(state.blocks).forEach((block: Block) => {
                 // only input block types will have values
                 const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
@@ -328,36 +357,36 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             });
             notebook.queriesList.forEach((query: QueryState) => {
                 // don't push the query that the cell belongs to
-                if (query.id !== cell.query.id) {
-                    // push all exposed values
-                    Object.keys(query._exposed).forEach(
-                        (exposedParameter: string) => {
-                            suggestions.push({
-                                label: {
-                                    label: `{{query.${query.id}.${exposedParameter}}}`,
-                                    description: query._exposed[
-                                        exposedParameter
-                                    ]
-                                        ? JSON.stringify(
-                                              query._exposed[exposedParameter],
-                                          )
-                                        : '',
-                                },
-                                kind: monaco.languages.CompletionItemKind
-                                    .Variable,
-                                documentation: exposedQueryParameterDescription(
-                                    exposedParameter,
-                                    query.id,
-                                ),
-                                insertText: `{{query.${query.id}.${exposedParameter}}}`,
-                                range: range,
-                                detail: query.id,
-                            });
-                        },
-                    );
-                }
+                // if (query.id !== cell.query.id) {
+                //     // push all exposed values
+                //     Object.keys(query._exposed).forEach(
+                //         (exposedParameter: string) => {
+                //             suggestions.push({
+                //                 label: {
+                //                     label: `{{query.${query.id}.${exposedParameter}}}`,
+                //                     description: query._exposed[
+                //                         exposedParameter
+                //                     ]
+                //                         ? JSON.stringify(
+                //                               query._exposed[exposedParameter],
+                //                           )
+                //                         : '',
+                //                 },
+                //                 kind: monaco.languages.CompletionItemKind
+                //                     .Variable,
+                //                 documentation: exposedQueryParameterDescription(
+                //                     exposedParameter,
+                //                     query.id,
+                //                 ),
+                //                 insertText: `{{query.${query.id}.${exposedParameter}}}`,
+                //                 range: range,
+                //                 detail: query.id,
+                //             });
+                //         },
+                //     );
+                // }
             });
-
+            debugger;
             return suggestions;
         };
 
