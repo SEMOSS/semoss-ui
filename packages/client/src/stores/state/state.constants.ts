@@ -19,13 +19,13 @@ export const VARIABLE_TYPES = [
     'block',
     'cell',
     'query',
-    'string',
-    'number',
     'database',
     'model',
     'vector',
     'storage',
     'function',
+    // 'string',
+    // 'number',
 ];
 
 export const ACTIONS_DISPLAY = {

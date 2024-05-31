@@ -311,10 +311,13 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 suggestions.push({
                     label: {
                         label: `{{${variable.alias}}}`,
-                        description: variable.type,
+                        description: `${state.getVariable(
+                            variable.to,
+                            variable.type,
+                        )}`,
                     },
                     kind: monaco.languages.CompletionItemKind.Variable,
-                    documentation: `Returns the value of ${variable.alias}`,
+                    documentation: `This returns the value of ${variable.alias}, which is a ${variable.type}.  Feel free to change reference value in the variables panel on the left.`,
                     insertText: `{{${variable.alias}}}`,
                     range: range,
                 });
