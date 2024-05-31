@@ -81,9 +81,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
-    
-    //console.log(state.blocks);
-    console.log(state.variables);
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
@@ -310,83 +307,18 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
             const suggestions = [];
-            console.log('gen', state.variables);
-            suggestions.push({ 
-                label: {
-                    label: `this is a label`,
-                    //description: JSON.stringify(state.getVariable(variable.to, variable.type))
-                    description: 'some text'
-                },
-                kind: monaco.languages.CompletionItemKind.Variable,
-                documentation: `Returns the value of x`,
-                insertText: `{{variable.alias}}`,
-                range: range,
-             });
             Object.values(state.variables).forEach((variable: Variable) => {
-                suggestions.push({ 
+                suggestions.push({
                     label: {
-                        label: `${variable.alias}`,
-                        //description: JSON.stringify(state.getVariable(variable.to, variable.type))
-                        description: 'some text'
+                        label: `{{${variable.alias}}}`,
+                        description: variable.type,
                     },
                     kind: monaco.languages.CompletionItemKind.Variable,
                     documentation: `Returns the value of ${variable.alias}`,
                     insertText: `{{${variable.alias}}}`,
                     range: range,
-                 });
+                });
             });
-            Object.values(state.blocks).forEach((block: Block) => {
-                // only input block types will have values
-                const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
-                    (block) => DefaultBlocks[block].type === BLOCK_TYPE_INPUT,
-                );
-                if (inputBlockWidgets.includes(block.widget)) {
-                    suggestions.push({
-                        label: {
-                            label: `{{block.${block.id}.value}}`,
-                            description: block.data?.value
-                                ? JSON.stringify(block.data?.value)
-                                : '',
-                        },
-                        kind: monaco.languages.CompletionItemKind.Variable,
-                        documentation: `Returns the value of block ${block.id}`,
-                        insertText: `{{block.${block.id}.value}}`,
-                        range: range,
-                    });
-                }
-            });
-            notebook.queriesList.forEach((query: QueryState) => {
-                // don't push the query that the cell belongs to
-                // if (query.id !== cell.query.id) {
-                //     // push all exposed values
-                //     Object.keys(query._exposed).forEach(
-                //         (exposedParameter: string) => {
-                //             suggestions.push({
-                //                 label: {
-                //                     label: `{{query.${query.id}.${exposedParameter}}}`,
-                //                     description: query._exposed[
-                //                         exposedParameter
-                //                     ]
-                //                         ? JSON.stringify(
-                //                               query._exposed[exposedParameter],
-                //                           )
-                //                         : '',
-                //                 },
-                //                 kind: monaco.languages.CompletionItemKind
-                //                     .Variable,
-                //                 documentation: exposedQueryParameterDescription(
-                //                     exposedParameter,
-                //                     query.id,
-                //                 ),
-                //                 insertText: `{{query.${query.id}.${exposedParameter}}}`,
-                //                 range: range,
-                //                 detail: query.id,
-                //             });
-                //         },
-                //     );
-                // }
-            });
-            debugger;
             return suggestions;
         };
 
