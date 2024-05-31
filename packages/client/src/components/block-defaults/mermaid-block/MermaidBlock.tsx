@@ -13,7 +13,7 @@ export interface MermaidBlockDef extends BlockDef<'mermaid'> {
 }
 
 export const MermaidBlock: BlockComponent = observer(({ id }) => {
-    const { data } = useBlock<MermaidBlockDef>(id);
+    const { data, attrs } = useBlock<MermaidBlockDef>(id);
 
     useEffect(() => {
         document.getElementById(id)?.removeAttribute('data-processed');
@@ -21,7 +21,7 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
     }, [id]);
 
     return (
-        <pre className="mermaid" id={id}>
+        <pre className="mermaid" id={id} {...attrs}>
             {data.text}
         </pre>
     );
