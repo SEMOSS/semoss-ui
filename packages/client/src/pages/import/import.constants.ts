@@ -155,7 +155,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -320,7 +320,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -481,7 +481,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -602,7 +602,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -764,7 +764,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -930,7 +930,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -1105,7 +1105,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -1259,7 +1259,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -1413,7 +1413,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -1569,7 +1569,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -1732,7 +1732,7 @@ export const CONNECTION_OPTIONS = {
                     fields: [
                         {
                             fieldName: 'NAME',
-                            label: 'Name',
+                            label: 'Catalog Name',
                             defaultValue: '',
                             options: {
                                 component: 'text-field',
@@ -1898,7 +1898,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2055,7 +2055,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2212,7 +2212,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2369,7 +2369,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2526,7 +2526,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2683,7 +2683,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2840,7 +2840,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2997,7 +2997,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -3154,7 +3154,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -3311,7 +3311,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -3468,7 +3468,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -3631,7 +3631,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -3788,7 +3788,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -3945,7 +3945,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4102,7 +4102,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4259,7 +4259,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4424,7 +4424,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4577,7 +4577,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4730,7 +4730,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4916,7 +4916,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -4956,15 +4956,11 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'CONTENT_TYPE',
-                        label: 'POST Message Body',
-                        defaultValue: '',
+                        label: 'POST Message Body Type',
+                        defaultValue: 'json',
                         options: {
                             component: 'select',
                             options: [
-                                {
-                                    display: '',
-                                    value: '',
-                                },
                                 {
                                     display: 'json',
                                     value: 'json',
@@ -4974,6 +4970,36 @@ export const CONNECTION_OPTIONS = {
                                     value: 'x-www-form-urlencoded',
                                 },
                             ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'HEADERS',
+                        label: 'Http Headers',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'FUNCTION_PARAMETERS',
+                        label: 'Function Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: true },
@@ -4991,26 +5017,6 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_DESCRIPTION',
                         label: 'Function Description (metadata)',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'parameters',
-                        label: 'Function Parameters',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'requiredParameters',
-                        label: 'Function Required Parameters',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5050,7 +5056,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5182,7 +5188,7 @@ export const CONNECTION_OPTIONS = {
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5448,7 +5454,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5621,7 +5627,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5795,7 +5801,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5933,7 +5939,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6107,7 +6113,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6291,7 +6297,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6485,7 +6491,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6583,7 +6589,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6757,7 +6763,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6932,7 +6938,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7050,7 +7056,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7225,7 +7231,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7400,7 +7406,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7574,7 +7580,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7748,7 +7754,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -7921,7 +7927,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8039,7 +8045,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8213,7 +8219,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8387,7 +8393,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8571,7 +8577,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8755,7 +8761,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -8929,7 +8935,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -9143,7 +9149,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -9348,7 +9354,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -9533,7 +9539,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -9697,7 +9703,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -9861,7 +9867,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10035,7 +10041,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Database Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10222,7 +10228,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10279,7 +10285,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10346,7 +10352,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10413,7 +10419,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10480,7 +10486,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10543,7 +10549,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10610,7 +10616,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10677,7 +10683,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -10754,7 +10760,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'NAME',
-                        label: 'Name',
+                        label: 'Catalog Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',

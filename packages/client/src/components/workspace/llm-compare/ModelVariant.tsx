@@ -4,14 +4,16 @@ import { TypeVariant, TypeLlmConfig } from '../workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { AddModelCard } from './AddModelCard';
+import { useLLMComparison } from '@/hooks';
+import { LLMSwapCard } from './LLMSwapCard';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingTop: theme.spacing(3),
 }));
 
 const StyledVariantBox = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{ selected?: boolean }>(({ theme, selected }) => ({
+    shouldForwardProp: (prop) => prop !== 'isDefault',
+})<{ isDefault?: boolean }>(({ theme, isDefault }) => ({
     backgroundColor: theme.palette.background.default,
     borderRadius: theme.spacing(1.5),
     padding: theme.spacing(2),
@@ -20,7 +22,7 @@ const StyledVariantBox = styled('div', {
     alignItems: 'center',
     gap: theme.spacing(2),
 
-    ...(selected && {
+    ...(isDefault && {
         boxShadow: '0px 5px 8px 0px #00000014',
     }),
 }));
@@ -39,46 +41,50 @@ const StyledActionBar = styled(Collapse)(({ theme }) => ({
 }));
 
 interface ModelVariantProps {
-    isSelected: boolean;
-    variant: TypeVariant;
-    index: number;
-    click: (number) => void;
+    // isSelected: boolean;
+    // variant?: TypeVariant;
+    index?: number;
+    click?: (number) => void;
+
+    /** is a part of the default variant used in app */
+    isDefault?: boolean;
+
+    /** variant info, the models associated to variant */
+    models: TypeLlmConfig[];
 }
 
 export const ModelVariant = (props: ModelVariantProps) => {
-    const { variant, isSelected, index, click } = props;
+    const { index, models, isDefault } = props;
     const [hovered, setHovered] = useState(false);
-
-    const handleAddVariant = (idx: number) => {
-        // TODO
-    };
-
-    const handleDuplicateVariant = (idx: number) => {
-        // TODO
-    };
-
-    const handleDeleteVariant = (idx: number) => {
-        // TODO
-    };
+    const { defaultVariant, addNewVariant, deleteVariant } = useLLMComparison();
 
     return (
-        <div onClick={() => click(index)}>
+        <Stack direction="column" gap={1}>
             <Typography variant="body1" fontWeight="medium">
-                {index === 0 ? `Default (${variant.name})` : variant.name}
+                {index === -1 ? 'Default Variant' : `Variant ${index + 1}`}
             </Typography>
-            <StyledVariantBox selected={isSelected}>
-                {variant.models.map((model: TypeLlmConfig, mIdx: number) => {
-                    return (
-                        <LlmCard
-                            key={`${variant.name}-${model.name}-${mIdx}`}
-                            llm={model}
-                            isSelected={isSelected}
-                        />
-                    );
+            <StyledVariantBox isDefault={isDefault}>
+                {models.map((model: TypeLlmConfig, mIdx: number) => {
+                    if (!model) {
+                        return (
+                            <LLMSwapCard
+                                key={`llm-card--variant-${index}--model-${mIdx}`}
+                                variantIndex={index}
+                                modelIndex={mIdx}
+                            />
+                        );
+                    } else {
+                        return (
+                            <LlmCard
+                                key={`llm-card--variant-${index}--model-${mIdx}`}
+                                llm={model}
+                                variantIndex={index}
+                                modelIndex={mIdx}
+                                isDefault={isDefault}
+                            />
+                        );
+                    }
                 })}
-                {variant.models.length < 3 && <AddModelCard />}
-                {variant.models.length < 2 && <AddModelCard />}
-                {variant.models.length < 1 && <AddModelCard />}
             </StyledVariantBox>
 
             <StyledRow
@@ -87,12 +93,16 @@ export const ModelVariant = (props: ModelVariantProps) => {
                 onFocus={() => setHovered(true)}
                 onBlur={() => setHovered(false)}
             >
-                <StyledActionBar in={isSelected || hovered}>
+                <StyledActionBar in={isDefault || hovered}>
                     <StyledStack direction="row" gap={2}>
                         <Button
                             variant="text"
                             color="secondary"
-                            onClick={() => handleAddVariant(index)}
+                            onClick={() => {
+                                const variantListWithPlaceholder: null[] =
+                                    new Array(defaultVariant.length).fill(null);
+                                addNewVariant(variantListWithPlaceholder);
+                            }}
                             startIcon={<Add />}
                         >
                             Add Variant
@@ -100,16 +110,16 @@ export const ModelVariant = (props: ModelVariantProps) => {
                         <Button
                             variant="text"
                             color="secondary"
-                            onClick={() => handleDuplicateVariant(index)}
+                            onClick={() => addNewVariant(index)}
                             startIcon={<ContentCopy />}
                         >
                             Duplicate
                         </Button>
-                        {index !== 0 && (
+                        {index !== -1 && (
                             <Button
                                 variant="text"
                                 color="secondary"
-                                onClick={() => handleDeleteVariant(index)}
+                                onClick={() => deleteVariant(index)}
                                 startIcon={<DeleteOutline />}
                             >
                                 Delete
@@ -118,6 +128,6 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     </StyledStack>
                 </StyledActionBar>
             </StyledRow>
-        </div>
+        </Stack>
     );
 };

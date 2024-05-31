@@ -8,6 +8,7 @@ import {
 import { UploadBlockDef, UploadBlock } from './UploadBlock';
 import { Upload } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import { buildListener } from '../block-defaults.shared';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 import { UploadSettings } from '@/components/block-settings/shared/UploadSettings';
 export const DefaultStyles: CSSProperties = {
@@ -68,6 +69,10 @@ export const config: BlockConfig<UploadBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: 'on Change',
+            children: [...buildListener('onChange')],
         },
     ],
     styleMenu: [],
