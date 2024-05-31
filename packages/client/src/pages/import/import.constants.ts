@@ -4956,7 +4956,7 @@ export const CONNECTION_OPTIONS = {
                     },
                     {
                         fieldName: 'CONTENT_TYPE',
-                        label: 'POST Message Body',
+                        label: 'POST Message Body Type',
                         defaultValue: 'json',
                         options: {
                             component: 'select',
@@ -4985,7 +4985,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                     {
-                        fieldName: 'parameters',
+                        fieldName: 'FUNCTION_PARAMETERS',
                         label: 'Function Parameters',
                         defaultValue: '',
                         options: {
@@ -4995,7 +4995,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'requiredParameters',
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
                         defaultValue: '',
                         options: {
