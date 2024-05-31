@@ -15,12 +15,10 @@ import {
     CustomShapeOptions,
     Menu,
     MenuProps,
-    Tooltip,
 } from '@semoss/ui';
 import {
     ContentCopy,
     Delete,
-    DeleteOutlined,
     PlayCircle,
     CheckCircle,
     Error,
@@ -37,7 +35,7 @@ import { useBlocks } from '@/hooks';
 import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
-import { Fade } from '@mui/material';
+import { copyTextToClipboard } from '@/utility';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -447,22 +445,6 @@ export const NotebookCell = observer(
             }
         };
 
-        const copyCellIDHandler = () => {
-            try {
-                navigator.clipboard.writeText(cell.id);
-
-                notification.add({
-                    color: 'success',
-                    message: 'Succesfully copied to clipboard',
-                });
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
-            }
-        };
-
         const generateWithAIHandler = () => {
             console.log('generateWithAIHandler');
         };
@@ -591,7 +573,10 @@ export const NotebookCell = observer(
                                     onClick={(e) => {
                                         // stop propogation to card parent so newly created cell will be selected
                                         e.stopPropagation();
-                                        copyCellIDHandler();
+                                        copyTextToClipboard(
+                                            `{{query.${cell.query.id}.cell.${cell.id}.output}}`,
+                                            notification,
+                                        );
                                     }}
                                 >
                                     <StyledButtonLabel>

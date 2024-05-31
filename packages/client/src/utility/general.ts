@@ -101,3 +101,22 @@ export const getEngineImage = (appType: string, appSubType: string) => {
 
     return obj.icon;
 };
+
+/**
+ * @desc Copies string to clipboard
+ */
+export const copyTextToClipboard = (text: string, notificationService) => {
+    try {
+        navigator.clipboard.writeText(text);
+
+        notificationService.add({
+            color: 'success',
+            message: 'Succesfully copied to clipboard',
+        });
+    } catch (e) {
+        notificationService.add({
+            color: 'error',
+            message: e.message,
+        });
+    }
+};
