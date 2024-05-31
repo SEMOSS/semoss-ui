@@ -11,6 +11,7 @@ import { usePixel } from './usePixel';
 import { useDesigner } from './useDesigner';
 import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
+import { useLLMComparison } from './useLLMCompare';
 import { useDebounce } from './useDebounce';
 
 export {
@@ -27,5 +28,6 @@ export {
     useDesigner,
     useStepper,
     useWorkspace,
+    useLLMComparison,
     useDebounce,
 };

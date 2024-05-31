@@ -7,6 +7,10 @@ import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
 import { StepperContext, StepperContextType } from './StepperContext';
 import { WorkspaceContextProps, WorkspaceContext } from './WorkspaceContext';
+import {
+    LLMComparisonContextType,
+    LLMComparisonContext,
+} from './LLMComparisonContext';
 
 export type {
     DesignerContextType,
@@ -17,6 +21,7 @@ export type {
     SettingsContextType,
     StepperContextType,
     WorkspaceContextProps,
+    LLMComparisonContextType,
 };
 
 export {
@@ -29,4 +34,5 @@ export {
     SettingsContext,
     StepperContext,
     WorkspaceContext,
+    LLMComparisonContext,
 };
