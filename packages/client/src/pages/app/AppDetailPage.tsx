@@ -38,7 +38,7 @@ import { ShareOverlay } from '@/components/workspace';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
-import { formatPermission } from '@/utils';
+import { formatPermission } from '@/utility';
 
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import EditIcon from '@mui/icons-material/Edit';

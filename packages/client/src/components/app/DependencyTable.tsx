@@ -1,7 +1,7 @@
 import { Table, Typography, Link, Chip, Stack } from '@semoss/ui';
 import { tableCellClasses } from '@mui/material';
 import { modelledDependency } from './app-details.utility';
-import { formatPermission } from '@/utils';
+import { formatPermission } from '@/utility';
 
 interface PropsDependencyTable {
     dependencies: modelledDependency[];

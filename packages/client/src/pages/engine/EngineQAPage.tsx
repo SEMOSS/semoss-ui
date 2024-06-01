@@ -138,7 +138,7 @@ export const EngineQAPage = () => {
 
             setIsAnswered(true);
         } catch (e) {
-            setError('There is an error, please check pixel calls');
+            setError('There is an error, please contact administrator');
         } finally {
             setIsLoading(false);
         }
@@ -191,7 +191,11 @@ export const EngineQAPage = () => {
                                 process maps, data from case databases as
                                 inputs, and uses LLM models to provide answers.
                             </Typography>
-                            {error && <Alert color="error">{error}</Alert>}
+                            {error && (
+                                <Alert severity="error" color="error">
+                                    {error}
+                                </Alert>
+                            )}
                             <Controller
                                 name={'QUESTION'}
                                 control={control}

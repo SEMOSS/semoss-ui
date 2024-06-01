@@ -77,7 +77,6 @@ export const EngineLayout = (props: EngineLayoutProps) => {
     const metaKeys = [
         'markdown',
         'description',
-        // 'tags',  // Comes in as 'tag' either a string or string[]
         ...engineMetaKeys.map((k) => k.metakey),
     ];
 
@@ -102,19 +101,26 @@ export const EngineLayout = (props: EngineLayoutProps) => {
         }
 
         // Storage and Model currently not sending back Tag or Tags
-
         return metaKeys.reduce((prev, curr) => {
-            // tag and domain either come in as a string or a string[]
-            // format these as string[] for autocomplete if comes in as string
-            if (curr === 'domain' || curr === 'tag') {
-                if (typeof engineMetaData[curr] === 'string') {
-                    prev[curr] = [engineMetaData[curr]];
-                } else {
-                    prev[curr] = engineMetaData[curr];
+            // tag, domain, and etc either come in as a string or a string[], format it to correct type
+            const found = engineMetaKeys.find((obj) => obj.metakey === curr);
+
+            if (found) {
+                if (
+                    found.display_options === 'single-typeahead' ||
+                    found.display_options === 'select-box' ||
+                    found.display_options === 'multi-typeahead'
+                ) {
+                    if (typeof engineMetaData[curr] === 'string') {
+                        prev[curr] = [engineMetaData[curr]];
+                    } else {
+                        prev[curr] = engineMetaData[curr];
+                    }
                 }
             } else {
                 prev[curr] = engineMetaData[curr];
             }
+
             return prev;
         }, {});
     }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
