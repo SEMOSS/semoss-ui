@@ -71,10 +71,10 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                     <Modal.Content>
                         <Stack direction={'column'} gap={1}>
                             <Stack direction={'column'} gap={1}>
-                                <Typography variant={'caption'}>
+                                <Typography variant={'body1'}>
                                     Variable name
                                 </Typography>
-                                <Typography variant={'caption'}>
+                                <Typography variant={'body2'}>
                                     {variable?.alias}
                                 </Typography>
                             </Stack>
@@ -85,7 +85,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                                 render={({ field }) => {
                                     return (
                                         <Stack>
-                                            <Typography variant={'caption'}>
+                                            <Typography variant={'body1'}>
                                                 Model
                                             </Typography>
                                             <Select
@@ -148,7 +148,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                                 render={({ field }) => {
                                     return (
                                         <Stack>
-                                            <Typography variant={'caption'}>
+                                            <Typography variant={'body1'}>
                                                 Top P
                                             </Typography>
                                             <Slider
@@ -169,7 +169,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                                 render={({ field }) => {
                                     return (
                                         <Stack>
-                                            <Typography variant={'caption'}>
+                                            <Typography variant={'body1'}>
                                                 Temperature
                                             </Typography>
                                             <Slider
@@ -190,7 +190,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                                 render={({ field }) => {
                                     return (
                                         <Stack>
-                                            <Typography variant={'caption'}>
+                                            <Typography variant={'body1'}>
                                                 Length
                                             </Typography>
                                             <Slider
