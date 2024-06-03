@@ -18,7 +18,7 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
     useEffect(() => {
         document.getElementById(id)?.removeAttribute('data-processed');
         mermaid.contentLoaded();
-    }, [id]);
+    }, [id, data.text]);
 
     return (
         <pre className="mermaid" id={id} {...attrs}>
