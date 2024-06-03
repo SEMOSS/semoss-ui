@@ -193,9 +193,9 @@ export const ABTesting = () => {
 
     return (
         <Stack sx={{ height: '100%' }}>
-            <Stack pt={3} pl={3}>
+            {/* <Stack pt={3} pl={3}>
                 <Typography variant="body2">Back to Configure</Typography>
-            </Stack>
+            </Stack> */}
 
             <div style={{ height: '100%', overflowY: 'scroll' }}>
                 {appState ? <BlocksRenderer state={appState} /> : 'Loading'}

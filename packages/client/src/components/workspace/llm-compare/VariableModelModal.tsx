@@ -141,7 +141,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                                     );
                                 }}
                             />
-                            <Controller
+                            {/* <Controller
                                 name={'topP'}
                                 control={control}
                                 rules={{ required: true }}
@@ -202,7 +202,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
                                         </Stack>
                                     );
                                 }}
-                            />
+                            /> */}
                         </Stack>
                     </Modal.Content>
                     <Modal.Actions>
