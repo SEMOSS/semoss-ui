@@ -290,6 +290,9 @@ export const JobBuilderModal = (props: {
                             setBuilderField('cronTz', value)
                         }
                         size="small"
+                        getOptionLabel={(option: string) =>
+                            option.replaceAll('_', ' ')
+                        }
                         renderInput={(params) => (
                             <TextField
                                 {...params}
