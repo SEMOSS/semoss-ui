@@ -102,9 +102,26 @@ export const SelectInputValueSettings = observer(
         };
 
         const stringifiedOptions: string[] = useMemo(() => {
-            return (
-                !Array.isArray(parsedData?.options) ? [] : parsedData.options
-            ).map((option) => JSON.stringify(option));
+            let arr = [];
+            if (!parsedData.options) {
+                // NOOP
+            } else if (!Array.isArray(parsedData?.options)) {
+                if (typeof parsedData.options === 'string') {
+                    const opts: string = parsedData.options;
+                    if (opts.startsWith('[') && opts.endsWith(']')) {
+                        arr = JSON.parse(parsedData.options);
+                    }
+                }
+            } else {
+                arr = parsedData.options;
+            }
+            return arr.map((option) => {
+                if (typeof option !== 'string') {
+                    return JSON.stringify(option);
+                } else {
+                    return option;
+                }
+            });
         }, [parsedData.options]);
 
         return (

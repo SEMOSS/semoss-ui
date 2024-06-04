@@ -94,7 +94,7 @@ export const EngineQAPage = () => {
         }
         try {
             let pixel = `
-            VectorDatabaseQuery(engine="${id}" , command="${data.QUESTION}", limit=${limit})
+            VectorDatabaseQuery(engine="${id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
             `;
 
             const response = await monolithStore.runQuery(pixel);
@@ -138,11 +138,7 @@ export const EngineQAPage = () => {
 
             setIsAnswered(true);
         } catch (e) {
-            if (e) {
-                setError(e);
-            } else {
-                setError('There is an error, please check pixel calls');
-            }
+            setError('There is an error, please contact administrator');
         } finally {
             setIsLoading(false);
         }
@@ -151,7 +147,7 @@ export const EngineQAPage = () => {
     useEffect(() => {
         setIsLoading(true);
         //Grabbing all the Models that are in CfG
-        const pixel = `MyEngines ( engineTypes=["MODEL"]);`;
+        const pixel = `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes=["MODEL"]);`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const { output, operationType } = response.pixelReturn[0];
@@ -195,7 +191,11 @@ export const EngineQAPage = () => {
                                 process maps, data from case databases as
                                 inputs, and uses LLM models to provide answers.
                             </Typography>
-                            {error && <Alert color="error">{error}</Alert>}
+                            {error && (
+                                <Alert severity="error" color="error">
+                                    {error}
+                                </Alert>
+                            )}
                             <Controller
                                 name={'QUESTION'}
                                 control={control}

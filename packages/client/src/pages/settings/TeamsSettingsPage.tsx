@@ -19,7 +19,7 @@ import {
     Select,
 } from '@semoss/ui';
 
-import { formatName } from '@/utils';
+import { removeUnderscores } from '@/utility';
 
 import { Controller, useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';
@@ -309,6 +309,8 @@ export const TeamsSettingsPage = () => {
                                           id={team.id}
                                           type={team.type}
                                           description={team.description}
+                                          dispatch={dispatch}
+                                          databases={databases}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id

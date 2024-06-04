@@ -6,7 +6,7 @@ import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore } from '@/stores';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const StyledMain = styled('div')(() => ({
     display: 'flex',
@@ -72,7 +72,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
         children,
     } = props;
 
+    const { pathname } = useLocation();
     const navigate = useNavigate();
+    console.log('Workspace', workspace);
 
     return (
         <WorkspaceContext.Provider
@@ -113,7 +115,13 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         title="Go back"
                         size="small"
                         color="default"
-                        onClick={() => navigate(-1)}
+                        onClick={() => {
+                            if (pathname.includes('edit')) {
+                                navigate(`/app/${workspace.appId}`);
+                            } else {
+                                navigate('/');
+                            }
+                        }}
                     >
                         <ArrowBack fontSize="medium" />
                     </IconButton>

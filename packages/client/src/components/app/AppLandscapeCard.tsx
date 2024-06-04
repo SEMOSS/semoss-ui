@@ -19,6 +19,7 @@ import { Env } from '@/env';
 import { useNavigate } from 'react-router-dom';
 import React from 'react';
 import { useRootStore } from '@/hooks';
+import { removeUnderscores } from '@/utility';
 
 const StyledCard = styled(Card)({
     display: 'flex',
@@ -168,20 +169,6 @@ interface AppTileCardProps {
     href: string;
 }
 
-/**
- * @name formatName
- * @param str
- * @returns format string
- */
-const formatName = (str: string) => {
-    let i;
-    const frags = str.split('_');
-    for (i = 0; i < frags.length; i++) {
-        frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-    }
-    return frags.join(' ');
-};
-
 export const AppLandscapeCard = (props: AppTileCardProps) => {
     const { app, image, onAction = () => null, href } = props;
     const navigate = useNavigate();
@@ -262,7 +249,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
                         />
                     )}
                     <StyledProjectName variant="body1">
-                        {formatName(app.project_name)}
+                        {removeUnderscores(app.project_name)}
                     </StyledProjectName>
                 </StyledImageContainer>
                 <StyledChipDiv>

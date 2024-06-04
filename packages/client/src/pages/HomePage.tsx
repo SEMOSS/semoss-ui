@@ -18,6 +18,7 @@ import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
 import { Search, SearchOff } from '@mui/icons-material';
+import { Help } from '@/components/help';
 
 import { Filterbox } from '@/components/ui';
 import UPDATED_TERMINAL from '@/assets/img/updated_terminal.png';
@@ -162,7 +163,8 @@ export const HomePage = observer((): JSX.Element => {
                 k.display_options === 'single-select' ||
                 k.display_options === 'multi-select' ||
                 k.display_options === 'single-typeahead' ||
-                k.display_options === 'multi-typeahead'
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'select-box'
             );
         },
     );
@@ -188,6 +190,11 @@ export const HomePage = observer((): JSX.Element => {
 
     useEffect(() => {
         if (getApps.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'apps',
+                value: [],
+            });
             return;
         }
 
@@ -203,11 +210,21 @@ export const HomePage = observer((): JSX.Element => {
      */
     let favoritePixel =
         mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
-    favoritePixel += `(filterWord=["${search}"], onlyFavorites=[true]);`;
+    favoritePixel += `(metaKeys = ${JSON.stringify([
+        ...metaKeys,
+        'description',
+    ])}, metaFilters=[${JSON.stringify(
+        metaFilters,
+    )}], filterWord=["${search}"], onlyFavorites=[true]);`;
     const getFavoritedApps = usePixel(favoritePixel);
 
     useEffect(() => {
         if (getFavoritedApps.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'favoritedApps',
+                value: [],
+            });
             return;
         }
 
@@ -530,6 +547,7 @@ export const HomePage = observer((): JSX.Element => {
                 </StyledContentContainer>
             </StyledContainer>
             <WelcomeModal />
+            <Help />
         </Page>
     );
 });

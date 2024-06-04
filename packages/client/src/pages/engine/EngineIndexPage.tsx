@@ -1,14 +1,10 @@
 import { Chip, Stack, styled, Typography } from '@semoss/ui';
-
-import { formatName } from '@/utils';
-
 import { observer } from 'mobx-react-lite';
-
 import { Section } from '@/components/ui';
 import { Markdown } from '@/components/common';
 import { useEngine, useRootStore } from '@/hooks';
-import { SimilarDatabases } from '@/components/database/SimilarDatabases';
 import { DatabaseStatistics } from '@/components/database/DatabaseStatistics';
+import { removeUnderscores } from '@/utility';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -30,6 +26,7 @@ export const EngineIndexPage = observer(() => {
         },
     );
 
+    console.log('engine meta keys', engineMetaKeys);
     return (
         <StyledPage>
             <Section>
@@ -54,12 +51,13 @@ export const EngineIndexPage = observer(() => {
                     <Section key={k.metakey}>
                         <Section.Header>
                             <Typography variant={'h6'}>
-                                {formatName(k.metakey)}
+                                {removeUnderscores(k.metakey)}
                             </Typography>
                         </Section.Header>
                         {k.display_options === 'multi-checklist' ||
                         k.display_options === 'multi-select' ||
-                        k.display_options === 'multi-typeahead' ? (
+                        k.display_options === 'multi-typeahead' ||
+                        k.display_options === 'select-box' ? (
                             <Stack
                                 direction={'row'}
                                 spacing={1}
@@ -72,7 +70,6 @@ export const EngineIndexPage = observer(() => {
                                                 key={tag}
                                                 label={tag}
                                                 color={'primary'}
-                                                // size={'small'}
                                             ></Chip>
                                         );
                                     },
@@ -92,14 +89,6 @@ export const EngineIndexPage = observer(() => {
                     <DatabaseStatistics id={id} />
                 </Section>
             )}
-            {/* {type === 'database' && (
-                <Section>
-                    <Section.Header>
-                        <Typography variant={'h6'}>Similar</Typography>
-                    </Section.Header>
-                    <SimilarDatabases id={id} />
-                </Section>
-            )} */}
         </StyledPage>
     );
 });

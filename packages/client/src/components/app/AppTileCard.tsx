@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { AppMetadata } from './app.types';
 import { APP_IMAGES } from './app.images';
+import { removeUnderscores } from '@/utility';
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -195,20 +196,6 @@ interface AppTileCardProps {
     systemApp?: boolean;
 }
 
-/**
- * @name formatName
- * @param str
- * @returns format string
- */
-const formatName = (str: string) => {
-    let i;
-    const frags = str.split('_');
-    for (i = 0; i < frags.length; i++) {
-        frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-    }
-    return frags.join(' ');
-};
-
 export const AppTileCard = (props: AppTileCardProps) => {
     const {
         app,
@@ -258,8 +245,18 @@ export const AppTileCard = (props: AppTileCardProps) => {
      * @returns image
      */
     const findAppImage = (appType: string) => {
+        let randomInt = Math.floor(Math.random() * 5);
+        if (appType == 'BI' || appType == 'TERMINAL' || appType == '') {
+            randomInt = 0;
+        }
+
         const image = APP_IMAGES[appType];
-        return image?.image;
+
+        if (!image) {
+            return APP_IMAGES['INSIGHTS'][0];
+        }
+
+        return image[randomInt];
     };
 
     /**
@@ -286,7 +283,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </StyledPublishedByLabel>
                 </StyledPublishedByContainer>
             );
-        } else if (appType == 'INSIGHT') {
+        } else if (appType == 'INSIGHTS') {
             return (
                 <StyledPublishedByContainer>
                     <BarChartRounded />
@@ -310,6 +307,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     const image = findAppImage(appType);
     const appDetails = findAppDetails(appType);
+
     return (
         <StyledTileCard disabled={!href}>
             {!systemApp && (
@@ -355,7 +353,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 <StyledCardHeader
                     title={
                         <StyledName variant={'body1'}>
-                            {formatName(app.project_name)}
+                            {removeUnderscores(app.project_name)}
                         </StyledName>
                     }
                     subheader={appDetails && appDetails}
@@ -466,15 +464,19 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
-                {/* {
-                    app?.user_permission && app.user_permission <= 2 ?
-                    (
+                {app?.user_permission && app.user_permission <= 2 && (
+                    <Link
+                        href={`${href}/detail`}
+                        rel="noopener noreferrer"
+                        color="inherit"
+                        underline="none"
+                        target="_blank"
+                    >
                         <Menu.Item value="copy" onClick={() => {}}>
                             Edit App Details
                         </Menu.Item>
-                    ) :
-                    <></>
-                } */}
+                    </Link>
+                )}
             </Menu>
         </StyledTileCard>
     );

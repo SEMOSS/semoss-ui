@@ -2,6 +2,7 @@ import { Registry } from '@/stores';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
+import { config as LogsBlockConfig, LogsBlockDef } from './logs-block';
 import {
     config as CheckboxBlockConfig,
     CheckboxBlockDef,
@@ -41,6 +42,7 @@ import {
     config as ToggleButtonBlockConfig,
     ToggleButtonBlockDef,
 } from './toggle-button-block';
+import { config as MermaidBlockConfig, MermaidBlockDef } from './mermaid-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -59,6 +61,7 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | ProgressBlockDef
     | QueryBlockDef
+    | LogsBlockDef
     | SelectBlockDef
     | TableBlockDef
     | TextBlockDef
@@ -66,7 +69,8 @@ export type DefaultBlockDefinitions =
     | InputBlockDef
     | SectionBlockDef
     | UploadBlockDef
-    | VegaVisualizationBlockDef;
+    | VegaVisualizationBlockDef
+    | MermaidBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -81,11 +85,13 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PageBlockConfig.widget]: PageBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
+    [LogsBlockConfig.widget]: LogsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [MermaidBlockConfig.widget]: MermaidBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -106,9 +112,12 @@ export {
     MarkdownBlockConfig,
     HTMLBlockConfig,
     PageBlockConfig,
+    QueryBlockConfig,
+    LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
+    MermaidBlockConfig,
 };

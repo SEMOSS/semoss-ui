@@ -24,7 +24,7 @@ import {
 
 import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 
-import { formatName } from '@/utils';
+import { removeUnderscores } from '@/utility';
 
 export interface DBMember {
     ID: string;
@@ -462,7 +462,7 @@ export const DatabaseSettingsPage = () => {
                                                       `${db.database_id}`,
                                                       {
                                                           state: {
-                                                              name: formatName(
+                                                              name: removeUnderscores(
                                                                   db.database_name,
                                                               ),
                                                               global: db.database_global,
@@ -502,7 +502,7 @@ export const DatabaseSettingsPage = () => {
                                                       `${db.database_id}`,
                                                       {
                                                           state: {
-                                                              name: formatName(
+                                                              name: removeUnderscores(
                                                                   db.database_name,
                                                               ),
                                                               global: db.database_global,

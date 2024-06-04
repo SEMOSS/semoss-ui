@@ -1,28 +1,17 @@
 import { useEffect, useState, useReducer } from 'react';
-import { observer } from 'mobx-react-lite';
 import {
     Avatar,
     Collapse,
     List,
-    Stack,
     Typography,
     Search,
-    Button,
-    Grid,
     styled,
     Divider,
 } from '@semoss/ui';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
-
-const StyledContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(3),
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-}));
+import { removeUnderscores, toTitleCase } from '@/utility';
 
 const StyledFilter = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -36,13 +25,6 @@ const StyledFilter = styled('div')(({ theme }) => ({
 const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
     borderRadius: theme.shape.borderRadius,
-    gap: theme.spacing(2),
-}));
-
-const StyledChipList = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    marginLeft: theme.spacing(2),
     gap: theme.spacing(2),
 }));
 
@@ -134,14 +116,18 @@ export const Filterbox = (props: FilterboxProps) => {
             k.display_options === 'single-select' ||
             k.display_options === 'multi-select' ||
             k.display_options === 'single-typeahead' ||
-            k.display_options === 'multi-typeahead'
+            k.display_options === 'multi-typeahead' ||
+            k.display_options === 'select-box'
         );
     });
 
     // get metakeys to the ones we want
     const metaKeys = metaKeyList.map((k) => {
-        return k.metakey;
+        if (!k.display_values) return k.metakey;
     });
+
+    // Filter out nulls
+    metaKeys.filter((v) => v);
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
@@ -174,7 +160,7 @@ export const Filterbox = (props: FilterboxProps) => {
         metaKeys.length > 0
             ? type === 'APP'
                 ? `GetProjectMetaValues(metaKeys=${JSON.stringify(metaKeys)}) ;`
-                : `GetEngineMetaValues( engineTypes=[${type}]} metaKeys = ${JSON.stringify(
+                : `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
                       metaKeys,
                   )} ) ;`
             : '',
@@ -201,6 +187,25 @@ export const Filterbox = (props: FilterboxProps) => {
             });
             return prev;
         }, {});
+
+        // add metakeys that don't get options from projects/engines but stored in config call
+        const metaKeysWithOpts = list.filter((k) => {
+            return k.display_options === 'select-box';
+        });
+
+        metaKeysWithOpts.forEach((filter) => {
+            if (filter.display_values) {
+                const split = filter.display_values.split(',');
+                const formatted = [];
+                split.forEach((val) => {
+                    formatted.push({
+                        value: val,
+                    });
+                });
+
+                updated[filter.metakey] = formatted;
+            }
+        });
 
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
@@ -249,20 +254,6 @@ export const Filterbox = (props: FilterboxProps) => {
         });
         // Pass filters to parent
         onChange(constructedFilters);
-    };
-
-    /**
-     * @name formatName
-     * @param str
-     * @returns format string
-     */
-    const formatName = (str: string) => {
-        let i;
-        const frags = str.split('_');
-        for (i = 0; i < frags.length; i++) {
-            frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-        }
-        return frags.join(' ');
     };
 
     return (
@@ -314,7 +305,7 @@ export const Filterbox = (props: FilterboxProps) => {
                         const totalFilters =
                             Object.entries(filterOptions).length;
                         const list = entries[1];
-                        let shownListItems = 0; // for show more functionality
+                        let shownListItems = 0; // for show more
                         return (
                             <div key={i}>
                                 <List.Item>
@@ -322,7 +313,11 @@ export const Filterbox = (props: FilterboxProps) => {
                                         disableTypography
                                         primary={
                                             <Typography variant={'h6'}>
-                                                {formatName(entries[0])}
+                                                {toTitleCase(
+                                                    removeUnderscores(
+                                                        entries[0],
+                                                    ),
+                                                )}
                                             </Typography>
                                         }
                                     />
@@ -369,9 +364,6 @@ export const Filterbox = (props: FilterboxProps) => {
                                                                 field: 'databases',
                                                                 value: [],
                                                             });
-                                                            // setOffset(
-                                                            //     0,
-                                                            // );
 
                                                             setSelectedFilters(
                                                                 entries[0],
@@ -406,15 +398,17 @@ export const Filterbox = (props: FilterboxProps) => {
                                                                     </Typography>
                                                                 }
                                                             />
-                                                            <StyledAvatarCount
-                                                                variant={
-                                                                    'rounded'
-                                                                }
-                                                            >
-                                                                {
-                                                                    filterOption.count
-                                                                }
-                                                            </StyledAvatarCount>
+                                                            {filterOption.count && (
+                                                                <StyledAvatarCount
+                                                                    variant={
+                                                                        'rounded'
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        filterOption.count
+                                                                    }
+                                                                </StyledAvatarCount>
+                                                            )}
                                                         </div>
                                                     </List.ItemButton>
                                                 </List.Item>
