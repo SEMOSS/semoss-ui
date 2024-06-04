@@ -12,6 +12,7 @@ import BLOCK_H4 from '@/assets/img/BLOCK_H4.png';
 import BLOCK_H5 from '@/assets/img/BLOCK_H5.png';
 import BLOCK_H6 from '@/assets/img/BLOCK_H6.png';
 import BLOCK_P from '@/assets/img/BLOCK_P.png';
+import BLOCK_MERMAID from '@/assets/img/BLOCK_MERMAID.png';
 import LOG from '@/assets/img/LOG.png';
 import BLOCK_P_ITALICS from '@/assets/img/BLOCK_P_ITALICS.png';
 import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
@@ -38,6 +39,7 @@ const SECTION_INPUT = 'Input';
 const SECTION_LAYOUT = 'Layout';
 const SECTION_PROGRESS = 'Progress';
 const SECTION_TEXT = 'Text';
+const SECTION_MERMAID = 'Mermaid';
 const SECTION_AREA_CHART = 'Area Chart';
 const SECTION_BAR_CHART = 'Bar Chart';
 const SECTION_GENERAL_VISUALIZATION = 'General';
@@ -54,6 +56,7 @@ export interface AddBlocksMenuItem {
         | 'Layout'
         | 'Progress'
         | 'Text'
+        | 'Mermaid'
         | 'Area Chart'
         | 'Bar Chart'
         | 'General'
@@ -537,6 +540,25 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                     fontStyle: 'italic',
                 },
                 text: 'Hello world',
+                variant: 'p',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID,
+        name: 'Mermaid',
+        json: {
+            widget: 'mermaid',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Query',
                 variant: 'p',
             },
             listeners: {},

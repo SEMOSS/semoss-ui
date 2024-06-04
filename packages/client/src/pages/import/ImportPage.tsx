@@ -217,6 +217,12 @@ export const ImportPage = () => {
             case '':
                 break;
             case '?type=database':
+                paramedStep.title = 'Connect to Database';
+                paramedStep.description =
+                    "In today's data-driven world, the ability to effortlessly establish connections with various database types is pivotal for unlocking the full potential of your applications and analytical processes. Whether you're a developer, data analyst, or business professional, this page serves as your gateway to understanding the array of database options at your disposal.";
+                paramedStep.data = 'DATABASE';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
                 break;
             case '?type=model':
                 paramedStep.title = 'Connect to Model';
@@ -321,7 +327,6 @@ export const ImportPage = () => {
                 <Box sx={{ width: '100%' }}>
                     {Object.entries(connectionOptions[steps[0].data]).map(
                         (kv: [string, any[]], i) => {
-                            // TODO FIX ANY TYPE
                             return (
                                 <Box key={i}>
                                     <StyledCategoryTitle>

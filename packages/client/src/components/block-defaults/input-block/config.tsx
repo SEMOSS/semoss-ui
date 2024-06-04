@@ -6,6 +6,7 @@ import {
 } from '@/components/block-settings';
 
 import { InputBlockDef, InputBlock } from './InputBlock';
+import { buildListener } from '../block-defaults.shared';
 import { FormatShapes } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
@@ -115,6 +116,10 @@ export const config: BlockConfig<InputBlockDef> = {
                     ),
                 },
             ],
+        },
+        {
+            name: 'on Change',
+            children: [...buildListener('onChange')],
         },
     ],
     styleMenu: [],

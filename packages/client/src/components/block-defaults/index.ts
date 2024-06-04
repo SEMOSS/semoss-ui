@@ -42,6 +42,7 @@ import {
     config as ToggleButtonBlockConfig,
     ToggleButtonBlockDef,
 } from './toggle-button-block';
+import { config as MermaidBlockConfig, MermaidBlockDef } from './mermaid-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -68,7 +69,8 @@ export type DefaultBlockDefinitions =
     | InputBlockDef
     | SectionBlockDef
     | UploadBlockDef
-    | VegaVisualizationBlockDef;
+    | VegaVisualizationBlockDef
+    | MermaidBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -89,6 +91,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [MermaidBlockConfig.widget]: MermaidBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -116,4 +119,5 @@ export {
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
+    MermaidBlockConfig,
 };

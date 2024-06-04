@@ -12,20 +12,17 @@ import {
     CircularProgress,
 } from '@semoss/ui';
 
-import { Env } from '@/env';
 import { useRootStore, useEngine, usePixel } from '@/hooks';
-
-import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
-import { EngineAccessButton } from './';
+import { EngineAccessButton, EditEngineDetails } from './';
+import { removeUnderscores } from '@/utility';
+import { Link } from 'react-router-dom';
+import { Help } from '@/components/help';
 import {
     EditRounded,
     SimCardDownload,
     ContentCopyOutlined,
 } from '@mui/icons-material';
-import { formatName } from '@/utils';
-import { Link } from 'react-router-dom';
-import { Help } from '@/components/help';
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
     marginTop: '-3px',
@@ -143,6 +140,8 @@ export const EngineShell = (props: EngineShellProps) => {
         return <LoadingScreen.Trigger description="Opening Engine" />;
     }
 
+    console.log('metavals', metaVals);
+
     return (
         <Page
             header={
@@ -150,12 +149,12 @@ export const EngineShell = (props: EngineShellProps) => {
                     <Breadcrumbs>
                         <StyledLink to={`..`}>{name} Catalog</StyledLink>
                         <StyledLink to={`.`}>
-                            {formatName(data.database_name)}
+                            {removeUnderscores(data.database_name)}
                         </StyledLink>
                     </Breadcrumbs>
                     <Stack direction="row" alignItems={'center'} width={'100%'}>
                         <Typography variant="h4">
-                            {formatName(data.database_name)}
+                            {removeUnderscores(data.database_name)}
                         </Typography>
                         <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
@@ -179,7 +178,8 @@ export const EngineShell = (props: EngineShellProps) => {
                             {canEdit && (
                                 <>
                                     {edit && (
-                                        <EditDatabaseDetails
+                                        <EditEngineDetails
+                                            type={type}
                                             values={metaVals}
                                             open={edit}
                                             onClose={(success) => {
@@ -190,7 +190,7 @@ export const EngineShell = (props: EngineShellProps) => {
 
                                                 setEdit(false);
                                             }}
-                                        ></EditDatabaseDetails>
+                                        />
                                     )}
                                     <Button
                                         onClick={() => setEdit(!edit)}
@@ -258,9 +258,6 @@ export const EngineShell = (props: EngineShellProps) => {
                     </StyledChipContainer>
                 </StyledInfoLeft>
                 <StyledInfoRight>
-                    {/* <StyledDatabaseImage
-                        src={`${Env.MODULE}/api/e-${id}/image/download`}
-                    /> */}
                     <Stack
                         alignItems={'flex-end'}
                         spacing={1}

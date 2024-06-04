@@ -19,13 +19,13 @@ export const VARIABLE_TYPES = [
     'block',
     'cell',
     'query',
-    'string',
-    'number',
     'database',
     'model',
     'vector',
     'storage',
     'function',
+    // 'string',
+    // 'number',
 ];
 
 export const ACTIONS_DISPLAY = {
@@ -1855,8 +1855,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         style: {
                             padding: '4px',
                         },
-                        markdown:
-                            '#### This is a markdown example\n\n- Bulleted lists are easy\n- Just use a hyphen',
+                        markdown: `#### This is a markdown example`,
                     },
                     listeners: {},
                     slots: {},
@@ -2095,7 +2094,14 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         value: false,
                     },
                     listeners: {
-                        onChange: [],
+                        onChange: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'Checkbox',
+                                },
+                            },
+                        ],
                     },
                     slots: {},
                 },
@@ -2197,7 +2203,14 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         required: false,
                     },
                     listeners: {
-                        onChange: [],
+                        onChange: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'FavoriteAnimal',
+                                },
+                            },
+                        ],
                     },
                     slots: {
                         content: {
@@ -2266,7 +2279,14 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         required: false,
                     },
                     listeners: {
-                        onChange: [],
+                        onChange: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'LuckyNumber',
+                                },
+                            },
+                        ],
                     },
                     slots: {
                         content: {
@@ -2316,7 +2336,14 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         required: false,
                     },
                     listeners: {
-                        onChange: [],
+                        onChange: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'Birthday',
+                                },
+                            },
+                        ],
                     },
                     slots: {
                         content: {
@@ -2469,7 +2496,14 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         required: false,
                     },
                     listeners: {
-                        onChange: [],
+                        onChange: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'UploadFile',
+                                },
+                            },
+                        ],
                     },
                     slots: {
                         content: {
@@ -2559,7 +2593,16 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         mandatory: true,
                         multiple: false,
                     },
-                    listeners: {},
+                    listeners: {
+                        onChange: [
+                            {
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: 'ToggleButton',
+                                },
+                            },
+                        ],
+                    },
                     slots: {},
                 },
                 'text--6014': {
@@ -3662,7 +3705,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         variation: 'radial-plot',
                         specJson:
-                            '{\n  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",\n  "title": "Radial Plot",\n  "width": 300,\n  "height": 300,\n  "description": "A simple radial chart with embedded data.",\n  "data": {\n    "values": [\n      12,\n      23,\n      47,\n      6,\n      52,\n      19\n    ]\n  },\n  "layer": [\n    {\n      "mark": {\n        "type": "arc",\n        "innerRadius": 20,\n        "stroke": "#fff"\n      }\n    },\n    {\n      "mark": {\n        "type": "text",\n        "radiusOffset": 10\n      },\n      "encoding": {\n        "text": {\n          "field": "data",\n          "type": "quantitative"\n        }\n      }\n    }\n  ],\n  "encoding": {\n    "theta": {\n      "field": "data",\n      "type": "quantitative",\n      "stack": true\n    },\n    "radius": {\n      "field": "data",\n      "scale": {\n        "type": "sqrt",\n        "zero": true,\n        "rangeMin": 20\n      }\n    },\n    "color": {\n      "field": "data",\n      "type": "nominal",\n      "legend": null\n    }\n  }\n}',
+                            '{"$schema": "https://vega.github.io/schema/vega-lite/v5.json","title": "Radial Plot","width": 300,"height": 300,"description": "A simple radial chart with embedded data.","data": {"values": [12,23,47,6,52,19]},"layer": [{"mark": {"type": "arc","innerRadius": 20,"stroke": "#fff"}},{"mark": {"type": "text","radiusOffset": 10},"encoding": {"text": {"field": "data","type": "quantitative"}}}],"encoding": {"theta": {"field": "data","type": "quantitative","stack": true},"radius": {"field": "data","scale": {"type": "sqrt","zero": true,"rangeMin": 20}},"color": {"field": "data","type": "nominal","legend": null}}}',
                     },
                     listeners: {},
                     slots: {},

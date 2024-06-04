@@ -1,8 +1,19 @@
-import { Card, Chip, Stack, Typography, styled } from '@semoss/ui';
+import React from 'react';
+import {
+    Card,
+    Chip,
+    Stack,
+    Typography,
+    styled,
+    IconButton,
+    Modal,
+    useNotification,
+    Button,
+} from '@semoss/ui';
 
-import { MoreVert } from '@mui/icons-material';
+import { MoreVert, DeleteRounded } from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
 
-import { Env } from '@/env';
 import { useMemo } from 'react';
 
 const colors = [
@@ -78,20 +89,6 @@ const StyledChipContainer = styled('div')({
     paddingTop: '8px',
 });
 
-/**
- * @name formatDBName
- * @param str
- * @returns formatted db name
- */
-const formatDBName = (str: string) => {
-    let i;
-    const frags = str.split('_');
-    for (i = 0; i < frags.length; i++) {
-        frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-    }
-    return frags.join(' ');
-};
-
 interface TeamCardProps {
     /** ID of team */
     id: string;
@@ -105,81 +102,147 @@ interface TeamCardProps {
     /** Tag of the team */
     tag?: string[] | string;
 
+    /** dispatch function */
+    dispatch: (val: { type: string; field: string; value: unknown[] }) => void;
+
+    /** databases to update */
+    databases;
+
     onClick?: (value: string) => void;
 }
 
 export const TeamTileCard = (props: TeamCardProps) => {
-    const { id, description, tag, onClick } = props;
+    const { id, description, tag, dispatch, databases, onClick } = props;
+    const [hover, setHover] = React.useState(false);
+    const [deleteModal, setDeleteModal] = React.useState(false);
+    const { monolithStore } = useRootStore();
 
     const randomColor = useMemo(() => {
         return colors[Math.floor(Math.random() * colors.length)];
     }, []);
 
+    const notification = useNotification();
+
+    const deleteGroup = () => {
+        try {
+            monolithStore.deleteTeam(id, description);
+            dispatch({
+                type: 'field',
+                field: 'databases',
+                value: [...databases.filter((val) => val.id !== id)],
+            });
+            notification.add({
+                color: 'success',
+                message: 'Successfully deleted group',
+            });
+        } catch (e) {
+            console.error(e);
+            notification.add({
+                color: 'error',
+                message: e,
+            });
+        } finally {
+            setDeleteModal(false);
+        }
+    };
+
     return (
-        <StyledTileCard onClick={() => onClick(id)} bordercolor={randomColor}>
-            {/* Use Card.Media instead, uses img tag */}
-            <Card.Header
-                title={
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            gap: '8px',
+        <React.Fragment>
+            <StyledTileCard
+                onClick={() => onClick(id)}
+                bordercolor={randomColor}
+            >
+                {/* Use Card.Media instead, uses img tag */}
+                <Card.Header
+                    title={
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <StyledTitle variant={'body1'}>{id}</StyledTitle>
+                        </div>
+                    }
+                    action={''}
+                />
+                <Card.Content>
+                    <StyledCardDescription variant={'body2'}>
+                        {description
+                            ? description.replace(/['"]+/g, '')
+                            : 'No description available'}
+                    </StyledCardDescription>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        minHeight="32px"
+                    >
+                        <StyledChipContainer>
+                            {tag !== undefined &&
+                                (Array.isArray(tag) ? (
+                                    <>
+                                        {tag.map((t, i) => {
+                                            if (i <= 3) {
+                                                return (
+                                                    <StyledTagChip
+                                                        maxWidth={
+                                                            tag.length === 2
+                                                                ? '100px'
+                                                                : tag.length ===
+                                                                  1
+                                                                ? '200px'
+                                                                : '75px'
+                                                        }
+                                                        key={`${id}${i}`}
+                                                        label={t}
+                                                        variant="filled"
+                                                    />
+                                                );
+                                            }
+                                        })}
+                                    </>
+                                ) : (
+                                    <StyledTagChip
+                                        key={`${id}0`}
+                                        label={tag}
+                                        variant="filled"
+                                    />
+                                ))}
+                        </StyledChipContainer>
+                    </Stack>
+                </Card.Content>
+                <StyledActionContainer>
+                    <IconButton
+                        onMouseOver={() => {
+                            setHover(true);
+                        }}
+                        onMouseLeave={() => {
+                            setHover(false);
+                        }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteModal(true);
                         }}
                     >
-                        <StyledTitle variant={'body1'}>{id}</StyledTitle>
-                    </div>
-                }
-                action={''}
-            />
-            <Card.Content>
-                <StyledCardDescription variant={'body2'}>
-                    {description
-                        ? description.replace(/['"]+/g, '')
-                        : 'No description available'}
-                </StyledCardDescription>
-                <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={0.5}
-                    minHeight="32px"
-                >
-                    <StyledChipContainer>
-                        {tag !== undefined &&
-                            (Array.isArray(tag) ? (
-                                <>
-                                    {tag.map((t, i) => {
-                                        if (i <= 3) {
-                                            return (
-                                                <StyledTagChip
-                                                    maxWidth={
-                                                        tag.length === 2
-                                                            ? '100px'
-                                                            : tag.length === 1
-                                                            ? '200px'
-                                                            : '75px'
-                                                    }
-                                                    key={`${id}${i}`}
-                                                    label={t}
-                                                    variant="filled"
-                                                />
-                                            );
-                                        }
-                                    })}
-                                </>
-                            ) : (
-                                <StyledTagChip
-                                    key={`${id}0`}
-                                    label={tag}
-                                    variant="filled"
-                                />
-                            ))}
-                    </StyledChipContainer>
-                </Stack>
-            </Card.Content>
-            <StyledActionContainer>
-                <MoreVert />
-            </StyledActionContainer>
-        </StyledTileCard>
+                        <DeleteRounded
+                            sx={{ color: hover ? 'red' : 'black' }}
+                        />
+                    </IconButton>
+                </StyledActionContainer>
+            </StyledTileCard>
+            <Modal open={deleteModal}>
+                <Modal.Content>
+                    Are you sure you want to delete group {id}
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button onClick={() => setDeleteModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button onClick={() => deleteGroup()}>Confirm</Button>
+                </Modal.Actions>
+            </Modal>
+        </React.Fragment>
     );
 };

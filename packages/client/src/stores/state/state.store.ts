@@ -155,6 +155,14 @@ export class StateStore {
     }
 
     /**
+     * Gets all tokens
+     * @returns the tokens
+     */
+    get dependencies() {
+        return this._store.dependencies;
+    }
+
+    /**
      * Get the cell type registry
      * @returns the cell type registry
      */

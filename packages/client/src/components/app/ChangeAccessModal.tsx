@@ -9,7 +9,7 @@ import {
 } from '@semoss/ui';
 import { Control, Controller } from 'react-hook-form';
 import { HdrAuto, Edit, Visibility } from '@mui/icons-material';
-import { AppDetailsFormTypes } from './appDetails.utility';
+import { AppDetailsFormTypes } from './app-details.utility';
 
 const ContentBox = styled(Stack)(({ theme }) => ({
     backgroundColor: theme.palette.background.default,

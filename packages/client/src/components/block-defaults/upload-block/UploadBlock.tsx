@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock } from '@/hooks';
+import { useBlock, useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
 const StyledTextField = styled(TextField)({
@@ -24,7 +24,8 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
 }
 
 export const UploadBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData, uploadFile } = useBlock<UploadBlockDef>(id);
+    const { attrs, data, setData, uploadFile, listeners } =
+        useBlock<UploadBlockDef>(id);
 
     /**
      * Upload a file to the server
@@ -65,6 +66,14 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             setData('loading', false);
         }
     };
+
+    useDebounce(
+        () => {
+            listeners.onChange();
+        },
+        [listeners, data.value],
+        200,
+    );
 
     return (
         <StyledTextField

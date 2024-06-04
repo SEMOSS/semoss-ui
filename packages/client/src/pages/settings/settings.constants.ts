@@ -99,23 +99,6 @@ export const SETTINGS_ROUTES: {
         history: ['database', 'database/<id>'],
     },
     {
-        title: 'Team Permissions',
-        path: 'team-permissions',
-        description: 'View and edit permissions for teams',
-        icon: mdiDatabase,
-        history: ['team-permissions'],
-        admin: true,
-    },
-    {
-        title: 'Team Permissions',
-        path: 'team-permissions/:id',
-        description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the team',
-        icon: mdiDatabase,
-        history: ['team-permissions', 'team-permissions/<id>'],
-        admin: true,
-    },
-    {
         title: 'Vector Settings',
         path: 'vector',
         description: 'View and edit settings for vector databases',
@@ -161,6 +144,14 @@ export const SETTINGS_ROUTES: {
     //     history: ['insight', 'insight/<id>/<appId>'],
     // },
     {
+        title: 'My Profile',
+        path: 'my-profile',
+        description: 'Update settings related to your profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
+    },
+    {
         title: 'Member Settings',
         path: 'members',
         description:
@@ -169,7 +160,23 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: true,
     },
-
+    {
+        title: 'Team Permissions',
+        path: 'team-permissions',
+        description: 'View and edit permissions for teams',
+        icon: mdiDatabase,
+        history: ['team-permissions'],
+        admin: true,
+    },
+    {
+        title: 'Team Permissions',
+        path: 'team-permissions/:id',
+        description:
+            'View member permissions, pending requests, and all other viewable settings pertaining to the team',
+        icon: mdiDatabase,
+        history: ['team-permissions', 'team-permissions/<id>'],
+        admin: true,
+    },
     {
         title: 'Configuration',
         path: 'social-properties',
@@ -192,13 +199,5 @@ export const SETTINGS_ROUTES: {
         icon: mdiDatabaseSearch,
         history: ['settings/'],
         admin: true,
-    },
-    {
-        title: 'My Profile',
-        path: 'my-profile',
-        description: 'Update settings related to your profile.',
-        icon: mdiDatabase,
-        history: ['settings/'],
-        admin: false,
     },
 ];

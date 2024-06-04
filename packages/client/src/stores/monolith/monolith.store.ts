@@ -1019,6 +1019,35 @@ export class MonolithStore {
     }
 
     /**
+     * @name deleteTeam
+     * @param groupId
+     * @param description
+     * @param type
+     * @returns
+     */
+    async deleteTeam(groupid: string, description: string, type?: string) {
+        let url = `${Env.MODULE}/api/auth/admin/`,
+            postData = '';
+
+        url += 'group/deleteGroup';
+
+        postData += 'groupId=' + encodeURIComponent(groupid);
+        postData += '&description=' + encodeURIComponent(description);
+
+        if (type) {
+            postData += '&type=' + encodeURIComponent(type);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
      * @name getTeamUsers
      * @param groupId
      * @param limit

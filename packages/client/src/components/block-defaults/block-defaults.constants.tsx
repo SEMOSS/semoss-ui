@@ -4,6 +4,7 @@ export const BLOCK_TYPE_DISPLAY = 'display';
 export const BLOCK_TYPE_INPUT = 'input';
 export const BLOCK_TYPE_LAYOUT = 'layout';
 export const BLOCK_TYPE_DATA = 'data';
+export const BLOCK_TYPE_MERMAID = 'mermaid';
 
 export const BLOCK_TYPES = [
     BLOCK_TYPE_LAYOUT,
@@ -11,4 +12,5 @@ export const BLOCK_TYPES = [
     BLOCK_TYPE_INPUT,
     BLOCK_TYPE_ACTION,
     BLOCK_TYPE_CHART,
+    BLOCK_TYPE_MERMAID,
 ];
