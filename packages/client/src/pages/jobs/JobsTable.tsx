@@ -59,7 +59,7 @@ export const JobsTable = (props: {
         setRunJobLoading(true);
         try {
             await runPixel(
-                `META | ExecuteScheduledJob ( jobId = [ \"${job.id}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
+                `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
             );
         } catch (e) {
             notification.add({
@@ -165,6 +165,7 @@ export const JobsTable = (props: {
             sortable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
+                const job = jobs.find((job) => job.id == params.value);
                 return (
                     <>
                         <IconButton
@@ -172,9 +173,6 @@ export const JobsTable = (props: {
                             color="primary"
                             size="medium"
                             onClick={() => {
-                                const job = jobs.find(
-                                    (job) => job.id == params.value,
-                                );
                                 runJob(job);
                             }}
                         >
@@ -192,9 +190,6 @@ export const JobsTable = (props: {
                             size="medium"
                             disabled={runJobLoading}
                             onClick={() => {
-                                const job = jobs.find(
-                                    (job) => job.id == params.value,
-                                );
                                 setInitialBuilderState({
                                     id: job.id,
                                     name: job.name,
@@ -213,9 +208,6 @@ export const JobsTable = (props: {
                             color="error"
                             size="medium"
                             onClick={() => {
-                                const job = jobs.find(
-                                    (job) => job.id == params.value,
-                                );
                                 showDeleteJobModal(job);
                             }}
                         >

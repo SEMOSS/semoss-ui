@@ -42,7 +42,7 @@ export function getHumanReadableCronExpression(cronExpression: string) {
             return `Every ${dayOfWeek.day} at ${displayHour}:${
                 displayMinute < 10 ? `0${displayMinute}` : displayMinute
             } ${amPm}`;
-        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
+        } else if (cronValues[4] == '*' && cronValues[5] == '*') {
             // monthly frequency
             const displayHour =
                 parseInt(cronValues[2]) === 0
@@ -55,7 +55,7 @@ export function getHumanReadableCronExpression(cronExpression: string) {
             return `Every month on day ${cronValues[3]} at ${displayHour}:${
                 displayMinute < 10 ? `0${displayMinute}` : displayMinute
             } ${amPm}`;
-        } else if (cronValues[4] == '*') {
+        } else if (cronValues[5] == '*') {
             const displayHour =
                 parseInt(cronValues[2]) === 0
                     ? 12
@@ -81,16 +81,17 @@ export function getHumanReadableCronExpression(cronExpression: string) {
 }
 
 export function convertTimetoDate(time) {
-    let today = new Date(),
+    const today = new Date(),
         dd = String(today.getDate()).padStart(2, '0'),
         mm = String(today.getMonth() + 1).padStart(2, '0'),
         yyyy = today.getFullYear(),
         currentDate = yyyy + '-' + mm + '-' + dd,
-        runDateString = '',
         jobDate = time.split(' ')[0],
         jobTime = time.split(' ')[1].split(':'),
         jobHour = Number(jobTime[0]),
         jobMin = jobTime[1];
+
+    let runDateString = '';
 
     if (jobDate === currentDate) {
         runDateString += 'Today at ';

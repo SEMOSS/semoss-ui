@@ -14,11 +14,7 @@ import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
 import { HistoryJob, Job, JobBuilder, PixelReturnJob } from './job.types';
-import {
-    convertDeltaToRuntimeString,
-    getHumanReadableCronExpression,
-    convertTimetoDate,
-} from './job.utils';
+import { convertDeltaToRuntimeString, convertTimetoDate } from './job.utils';
 import { JobsTable } from './JobsTable';
 import { runPixel } from '@/api';
 import { JobBuilderModal } from './JobBuilderModal';
@@ -51,7 +47,7 @@ export function JobsPage() {
 
     const getJobs = () => {
         setJobsLoading(true);
-        let pixel = 'META|ListAllJobs()';
+        const pixel = 'META|ListAllJobs()';
         monolithStore
             .runQuery<[Record<string, PixelReturnJob>]>(pixel)
             .then((response) => {
@@ -135,7 +131,7 @@ export function JobsPage() {
 
     const getHistory = () => {
         setHistoryLoading(true);
-        let pixel = 'META|SchedulerHistory()';
+        const pixel = 'META|SchedulerHistory()';
         monolithStore
             .runQuery<
                 [
@@ -243,12 +239,11 @@ export function JobsPage() {
                                     headers,
                                     'SUCCESS',
                                 )
-                                    ? output['data'].values[valueIdx][
-                                          headers['SUCCESS']
-                                      ] == 'true' ||
-                                      output['data'].values[valueIdx][
-                                          headers['SUCCESS']
-                                      ] == 'True'
+                                    ? JSON.stringify(
+                                          output['data'].values[valueIdx][
+                                              headers['SUCCESS']
+                                          ],
+                                      ) == 'true'
                                     : false,
                                 // appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
                                 jobTags: Object.prototype.hasOwnProperty.call(
@@ -264,12 +259,11 @@ export function JobsPage() {
                                     headers,
                                     'IS_LATEST',
                                 )
-                                    ? output['data'].values[valueIdx][
-                                          headers['IS_LATEST']
-                                      ] == 'true' ||
-                                      output['data'].values[valueIdx][
-                                          headers['IS_LATEST']
-                                      ] == 'True'
+                                    ? JSON.stringify(
+                                          output['data'].values[valueIdx][
+                                              headers['IS_LATEST']
+                                          ],
+                                      ) == 'true'
                                     : false,
                                 //capture scheduler output
                                 schedulerOutput:

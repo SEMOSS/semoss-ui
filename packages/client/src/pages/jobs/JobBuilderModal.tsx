@@ -8,6 +8,7 @@ import {
     TextField,
     ToggleButton,
     ToggleButtonGroup,
+    useNotification,
 } from '@semoss/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { timezones } from './job.constants';
@@ -32,6 +33,7 @@ export const JobBuilderModal = (props: {
     initialBuilder?: JobBuilder;
 }) => {
     const { isOpen, close, getJobs, initialBuilder } = props;
+    const notification = useNotification();
 
     const [frequencyType, setFrequencyType] = useState<'custom' | 'standard'>(
         'standard',
@@ -51,7 +53,7 @@ export const JobBuilderModal = (props: {
     }, [builder.id]);
 
     useEffect(() => {
-        const builderToSet = !!initialBuilder ? initialBuilder : emptyBuilder;
+        const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
         setBuilder(builderToSet);
         const cronValues = builderToSet.cronExpression.split(' ');
         if (cronValues.length < 6) {
@@ -100,7 +102,6 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[1]) >= 0
             )
         ) {
-            console.log('cron expression min invalid');
             return false;
         }
         if (
@@ -111,7 +112,6 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[2]) >= 0
             )
         ) {
-            console.log('cron expression hour invalid');
             return false;
         }
         if (
@@ -122,7 +122,6 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[3]) >= 0
             )
         ) {
-            console.log('cron expression 3 invalid');
             return false;
         }
         if (
@@ -133,7 +132,6 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[4]) >= 1
             )
         ) {
-            console.log('cron expression 4 invalid');
             return false;
         }
         if (
@@ -144,7 +142,6 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[5]) >= 0
             )
         ) {
-            console.log('cron expression 5 invalid');
             return false;
         }
         return true;
@@ -177,17 +174,30 @@ export const JobBuilderModal = (props: {
 
     const addJob = async () => {
         setIsLoading(true);
-        await runPixel(
-            `META|ScheduleJob(jobName="${builder.name}",${
-                builder.tags.length
-                    ? `jobTags=${JSON.stringify(builder.tags)},`
-                    : ''
-            }jobGroup=["defaultGroup"],cronExpression="${
-                builder.cronExpression
-            } *",cronTz="${builder.cronTz}",recipe="<encode>${
-                builder.pixel
-            }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
-        );
+        try {
+            const response = await runPixel(
+                `META|ScheduleJob(jobName="${builder.name}",${
+                    builder.tags.length
+                        ? `jobTags=${JSON.stringify(builder.tags)},`
+                        : ''
+                }jobGroup=["defaultGroup"],cronExpression="${
+                    builder.cronExpression
+                } *",cronTz="${builder.cronTz}",recipe="<encode>${
+                    builder.pixel
+                }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
+            );
+            if (response.errors.length) {
+                notification.add({
+                    color: 'error',
+                    message: response.errors.length[0],
+                });
+            }
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to add job',
+            });
+        }
         getJobs();
         close();
         setIsLoading(false);
