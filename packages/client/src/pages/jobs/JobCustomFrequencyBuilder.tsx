@@ -12,7 +12,7 @@ export const JobCustomFrequencyBuilder = (props: {
     const [cronHour, setCronHour] = useState<string>('12');
     const [cronDayOfMonth, setCronDayOfMonth] = useState<string>('*');
     const [cronMonth, setCronMonth] = useState<string>('*');
-    const [cronDayOfWeek, setCronDayOfWeek] = useState<string>('*');
+    const [cronDayOfWeek, setCronDayOfWeek] = useState<string>('?');
 
     useEffect(() => {
         const cronValues = builder.cronExpression.split(' ');
@@ -32,14 +32,14 @@ export const JobCustomFrequencyBuilder = (props: {
         if (!Number.isNaN(cronValues[4]) || cronValues[4] == '*') {
             setCronMonth(cronValues[4]);
         }
-        if (!Number.isNaN(cronValues[5]) || cronValues[5] == '*') {
+        if (!Number.isNaN(cronValues[5]) || cronValues[5] == '?') {
             setCronDayOfWeek(cronValues[5]);
         }
     }, []);
     useEffect(() => {
         setBuilderField(
             'cronExpression',
-            `0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek}`,
+            `0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek} *`,
         );
     }, [cronMinute, cronHour, cronDayOfMonth, cronMonth, cronDayOfWeek]);
 
@@ -101,7 +101,7 @@ export const JobCustomFrequencyBuilder = (props: {
                 label="Day of Week"
                 value={cronDayOfWeek}
                 error={
-                    cronDayOfWeek !== '*' &&
+                    cronDayOfWeek !== '?' &&
                     !(
                         !Number.isNaN(cronDayOfWeek) &&
                         parseInt(cronDayOfWeek) <= 6 &&

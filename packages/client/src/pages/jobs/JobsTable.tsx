@@ -89,12 +89,6 @@ export const JobsTable = (props: {
             field: 'cronExpression',
             flex: 1,
             renderCell: (params) => {
-                console.log(params.value);
-                console.log(
-                    getHumanReadableCronExpression(
-                        params.value.replaceAll('?', '*'),
-                    ),
-                );
                 return (
                     <>
                         {getHumanReadableCronExpression(
@@ -206,7 +200,8 @@ export const JobsTable = (props: {
                                     name: job.name,
                                     pixel: job.pixel,
                                     tags: job.tags,
-                                    cronExpression: job.cronExpression,
+                                    cronExpression:
+                                        job.cronExpression.replaceAll('?', '*'),
                                     cronTz: job.timeZone,
                                 });
                             }}

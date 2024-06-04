@@ -21,16 +21,17 @@ const emptyBuilder: JobBuilder = {
     name: '',
     pixel: '',
     tags: [],
-    cronExpression: '0 0 12 * * *',
-    cronTz: 'Eastern Standard Time',
+    cronExpression: '0 0 12 * * ?',
+    cronTz: 'US/Eastern',
 };
 
 export const JobBuilderModal = (props: {
     isOpen: boolean;
     close: () => void;
+    getJobs: () => void;
     initialBuilder?: JobBuilder;
 }) => {
-    const { isOpen, close, initialBuilder } = props;
+    const { isOpen, close, getJobs, initialBuilder } = props;
 
     const [frequencyType, setFrequencyType] = useState<'custom' | 'standard'>(
         'standard',
@@ -99,6 +100,7 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[1]) >= 0
             )
         ) {
+            console.log('cron expression min invalid');
             return false;
         }
         if (
@@ -109,6 +111,7 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[2]) >= 0
             )
         ) {
+            console.log('cron expression hour invalid');
             return false;
         }
         if (
@@ -119,6 +122,7 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[3]) >= 0
             )
         ) {
+            console.log('cron expression 3 invalid');
             return false;
         }
         if (
@@ -129,16 +133,18 @@ export const JobBuilderModal = (props: {
                 parseInt(cronValues[4]) >= 1
             )
         ) {
+            console.log('cron expression 4 invalid');
             return false;
         }
         if (
-            cronValues[5] !== '*' &&
+            cronValues[5] !== '?' &&
             !(
                 !Number.isNaN(cronValues[5]) &&
                 parseInt(cronValues[5]) <= 6 &&
                 parseInt(cronValues[5]) >= 0
             )
         ) {
+            console.log('cron expression 5 invalid');
             return false;
         }
         return true;
@@ -174,7 +180,7 @@ export const JobBuilderModal = (props: {
         await runPixel(
             `META|ScheduleJob(jobName="${builder.name}",${
                 builder.tags.length
-                    ? `jobTags="${JSON.stringify(builder.tags)}",`
+                    ? `jobTags=${JSON.stringify(builder.tags)},`
                     : ''
             }jobGroup=["defaultGroup"],cronExpression="${
                 builder.cronExpression
@@ -182,6 +188,7 @@ export const JobBuilderModal = (props: {
                 builder.pixel
             }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
         );
+        getJobs();
         close();
         setIsLoading(false);
     };

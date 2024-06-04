@@ -44,7 +44,7 @@ export const JobStandardFrequencyBuilder = (props: {
         if (
             cronValues[3] == '*' &&
             cronValues[4] == '*' &&
-            cronValues[5] == '*'
+            (cronValues[5] == '*' || cronValues[5] == '?')
         ) {
             setFrequency('Daily');
         } else if (cronValues[3] == '*' && cronValues[4] == '*') {
@@ -56,13 +56,16 @@ export const JobStandardFrequencyBuilder = (props: {
             if (dayOfWeekRecord) {
                 setDayOfWeek(dayOfWeekRecord);
             }
-        } else if (cronValues[4] == '*' && cronValues[5] == '*') {
+        } else if (
+            cronValues[4] == '*' &&
+            (cronValues[5] == '*' || cronValues[5] == '?')
+        ) {
             setFrequency('Monthly');
             const dayOfMonthValue = parseInt(cronValues[3]);
             if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
                 setDayOfMonth(dayOfMonthValue);
             }
-        } else if (cronValues[5] == '*') {
+        } else if (cronValues[5] == '*' || cronValues[5] == '?') {
             setFrequency('Yearly');
             const dayOfMonthValue = parseInt(cronValues[3]);
             if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
@@ -83,7 +86,7 @@ export const JobStandardFrequencyBuilder = (props: {
             case 'Daily':
                 setBuilderField(
                     'cronExpression',
-                    `0 ${minute == '00' ? '0' : minute} ${hour} * * *`,
+                    `0 ${minute == '00' ? '0' : minute} ${hour} * * ? *`,
                 );
                 break;
             case 'Weekly':
@@ -99,7 +102,7 @@ export const JobStandardFrequencyBuilder = (props: {
                     'cronExpression',
                     `0 ${
                         minute == '00' ? '0' : minute
-                    } ${hour} ${dayOfMonth} * *`,
+                    } ${hour} ${dayOfMonth} * ? *`,
                 );
                 break;
             case 'Yearly':
@@ -107,7 +110,7 @@ export const JobStandardFrequencyBuilder = (props: {
                     'cronExpression',
                     `0 ${minute == '00' ? '0' : minute} ${hour} ${dayOfMonth} ${
                         month.value
-                    } *`,
+                    } ? *`,
                 );
                 break;
         }
