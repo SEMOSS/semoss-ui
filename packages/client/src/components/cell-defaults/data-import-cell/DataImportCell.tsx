@@ -340,8 +340,8 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             language="sql" /** TODO: language support? can we tell this from the database type? */
                             options={{
                                 scrollbar: { alwaysConsumeMouseWheel: false },
-                                // readOnly: false,
-                                readOnly: true,
+                                readOnly: false,
+                                // readOnly: true,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
                                 scrollBeyondLastLine: false,

@@ -16,6 +16,7 @@ import {
     TextField,
     Grid,
     IconButton,
+    Tooltip,
 } from '@semoss/ui';
 
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
@@ -44,6 +45,7 @@ import {
     CheckBox,
     IndeterminateCheckBox,
     Close,
+    JoinInner,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -294,6 +296,14 @@ export const NotebookAddCell = observer(
         const [checkAllColumns, setCheckAllColumns] = useState<boolean>(true);
         const { configStore, monolithStore } = useRootStore();
 
+        // temp state vars move to useForm asap if possible
+        const [selectedLeftTable, setSelectedLeftTable] =
+            useState<string>(null);
+        const [selectedRightTable, setSelectedRightTable] =
+            useState<string>(null);
+        const [selectedLeftKey, setSelectedLeftKey] = useState<string>(null);
+        const [selectedRightKey, setSelectedRightKey] = useState<string>(null);
+
         const {
             fields: stackFields,
             append: appendStack,
@@ -441,11 +451,87 @@ export const NotebookAddCell = observer(
             newSQLString += ` FROM ${submitData.tableSelect}`;
             newSQLString += ';';
 
+            if (
+                selectedLeftTable &&
+                selectedRightTable &&
+                selectedLeftKey &&
+                selectedRightKey
+            ) {
+                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+            }
+
+            importDataSQLStringRef.current = newSQLString;
+        };
+
+        const constructDataBasePixel = ({ submitData }) => {
+            // mimic this pixel structure instead of constructing raw SQL ?
+            // or have join autoselect keys and add columns to edit
+            // that makes sense with new pixel structure
+            // show all tables and selectable rows in edit columns view
+            // find way of showing alerts for un joinable columns
+            // add form structure to json state (?)
+            // make basic non SQL view for notebook cell
+            // make edit window
+
+            // "pixelExpression": "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) |
+
+            // Select (
+            //     STATION_SETTINGS__ROLE ,
+            //     USER_SETTINGS__DATE_CREATED ,
+            //     VISN_SETTINGS__EMAIL ,
+            //     VISN_SETTINGS__USER ,
+            //     VISN_SETTINGS__VISN )
+            // .as ( [
+            //     ROLE ,
+            //     DATE_CREATED ,
+            //     EMAIL ,
+            //     USER ,
+            //     VISN
+            // ] ) |
+
+            // Join ( (
+            //     USER_SETTINGS ,
+            //     inner.join ,
+            //     STATION_SETTINGS
+            // ) , (
+            //     USER_SETTINGS ,
+            //     inner.join ,
+            //     VISN_SETTINGS
+            // ) ) |
+
+            // Distinct ( false ) |
+
+            // QueryRowCount ( ) ;",
+            console.log({ submitData });
+            let newSQLString = 'SELECT ';
+
+            newSQLString += submitData.columns
+                .filter((ele) => ele.checked)
+                .map((colObj) => {
+                    if (colObj.columnName === colObj.userAlias) {
+                        return colObj.columnName;
+                    } else {
+                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+                    }
+                })
+                .join(', ');
+
+            newSQLString += ` FROM ${submitData.tableSelect}`;
+            newSQLString += ';';
+
+            if (
+                selectedLeftTable &&
+                selectedRightTable &&
+                selectedLeftKey &&
+                selectedRightKey
+            ) {
+                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+            }
+
             importDataSQLStringRef.current = newSQLString;
         };
 
         const onImportDataSubmit = (submitData) => {
-            console.log({ submitData });
             constructSQLString({ submitData });
             appendCell('data-import');
             setIsDataImportModalOpen(false);
@@ -1317,6 +1403,10 @@ export const NotebookAddCell = observer(
                                                 {stack.queryType}
                                             </Typography>
                                             {/* <Controller
+
+                                            // ADD TO USEFORM CONTROL ASAP
+                                            // DELETE STATE VARS
+
                                             name={'tableSelect'}
                                             control={control}
                                             render={({ field }) => ( */}
@@ -1342,12 +1432,19 @@ export const NotebookAddCell = observer(
                                                     // setImportModalPixelWidth(
                                                     //     IMPORT_MODAL_WIDTHS.large,
                                                     // );
+                                                    console.log({
+                                                        selectedTable,
+                                                    });
+                                                    setSelectedLeftTable(
+                                                        e.target.value,
+                                                    );
                                                 }}
-                                                label={'Table 1'}
-                                                // value={field.value}
+                                                label={'Left Table'}
+                                                value={selectedLeftTable}
                                                 size={'small'}
                                                 color="primary"
-                                                disabled={!tableNames.length}
+                                                // disabled={!tableNames.length}
+                                                // disabled={true}
                                                 variant="outlined"
                                                 sx={{
                                                     width: '125px',
@@ -1361,17 +1458,23 @@ export const NotebookAddCell = observer(
                                             </Select>
                                             {/* )}
                                         /> */}
-                                            <IconButton
-                                                size="small"
-                                                color="secondary"
-                                                sx={{
-                                                    marginLeft: '7.5px',
-                                                    marginRight: '7.5px',
-                                                }}
-                                            >
-                                                <JoinLeftRounded />
-                                            </IconButton>
+                                            <Tooltip title={`${'Inner Join'}`}>
+                                                <IconButton
+                                                    size="small"
+                                                    color="secondary"
+                                                    sx={{
+                                                        marginLeft: '7.5px',
+                                                        marginRight: '7.5px',
+                                                    }}
+                                                >
+                                                    <JoinInner />
+                                                </IconButton>
+                                            </Tooltip>
                                             {/* <Controller
+
+                                            // ADD TO USEFORM CONTROL ASAP
+                                            // DELETE STATE VARS
+
                                             name={'tableSelect'}
                                             control={control}
                                             render={({ field }) => ( */}
@@ -1397,12 +1500,19 @@ export const NotebookAddCell = observer(
                                                     // setImportModalPixelWidth(
                                                     //     IMPORT_MODAL_WIDTHS.large,
                                                     // );
+                                                    console.log({
+                                                        selectedTable,
+                                                    });
+                                                    setSelectedRightTable(
+                                                        e.target.value,
+                                                    );
                                                 }}
-                                                label={'Select Table 2'}
-                                                // value={field.value}
+                                                label={'Right Table'}
+                                                value={selectedRightTable}
                                                 size={'small'}
                                                 color="primary"
-                                                disabled={!tableNames.length}
+                                                // disabled={!tableNames.length}
+                                                // disabled={true}
                                                 variant="outlined"
                                                 sx={{
                                                     width: '125px',
@@ -1421,6 +1531,7 @@ export const NotebookAddCell = observer(
                                                 sx={{
                                                     marginLeft: '7.5px',
                                                     marginRight: '7.5px',
+                                                    color: 'gray', // temp color
                                                 }}
                                             >
                                                 where
@@ -1451,22 +1562,31 @@ export const NotebookAddCell = observer(
                                                     // setImportModalPixelWidth(
                                                     //     IMPORT_MODAL_WIDTHS.large,
                                                     // );
+                                                    setSelectedLeftKey(
+                                                        e.target.value,
+                                                    );
                                                 }}
-                                                label={'Key 1'}
+                                                label={'Left Key'}
                                                 // value={field.value}
+                                                value={selectedLeftKey}
                                                 size={'small'}
                                                 color="primary"
-                                                disabled={!tableNames.length}
+                                                disabled={!selectedLeftTable}
                                                 variant="outlined"
                                                 sx={{
-                                                    // minWidth: '100px',
-                                                    // maxWidth: '100px',
-                                                    width: '100px',
+                                                    width: '120px',
                                                 }}
                                             >
-                                                {tableNames?.map((ele) => (
-                                                    <Menu.Item value={ele}>
-                                                        {ele}
+                                                {tableColumnsObject[
+                                                    selectedLeftTable
+                                                ]?.map((colObj, idx) => (
+                                                    <Menu.Item
+                                                        value={
+                                                            colObj.columnName
+                                                        }
+                                                        key={idx}
+                                                    >
+                                                        {colObj.columnName}
                                                     </Menu.Item>
                                                 ))}
                                             </Select>
@@ -1477,6 +1597,7 @@ export const NotebookAddCell = observer(
                                                 sx={{
                                                     marginLeft: '7.5px',
                                                     marginRight: '7.5px',
+                                                    color: 'gray', // temp color
                                                 }}
                                             >
                                                 =
@@ -1507,22 +1628,31 @@ export const NotebookAddCell = observer(
                                                     // setImportModalPixelWidth(
                                                     //     IMPORT_MODAL_WIDTHS.large,
                                                     // );
+                                                    setSelectedRightKey(
+                                                        e.target.value,
+                                                    );
                                                 }}
-                                                label={'Key 2'}
+                                                label={'Right Key'}
                                                 // value={field.value}
+                                                value={selectedRightKey}
                                                 size={'small'}
                                                 color="primary"
-                                                disabled={!tableNames.length}
+                                                disabled={!selectedRightTable}
                                                 variant="outlined"
                                                 sx={{
-                                                    // minWidth: '100px',
-                                                    // maxWidth: '100px',
-                                                    width: '100px',
+                                                    width: '120px',
                                                 }}
                                             >
-                                                {tableNames?.map((ele) => (
-                                                    <Menu.Item value={ele}>
-                                                        {ele}
+                                                {tableColumnsObject[
+                                                    selectedRightTable
+                                                ]?.map((colObj, idx) => (
+                                                    <Menu.Item
+                                                        value={
+                                                            colObj.columnName
+                                                        }
+                                                        key={idx}
+                                                    >
+                                                        {colObj.columnName}
                                                     </Menu.Item>
                                                 ))}
                                             </Select>
@@ -2067,15 +2197,35 @@ export const NotebookAddCell = observer(
                                     variant="outlined"
                                     color="primary"
                                     size="medium"
-                                    // disabled
+                                    disabled={
+                                        !selectedDatabaseId || !selectedTable
+                                    }
                                     onClick={() => {
                                         setQueryElementCounter(
                                             queryElementCounter + 1,
                                         );
+                                        console.log({
+                                            selectedDatabaseId,
+                                            selectedTable,
+                                        });
+                                        // set the modal width to large
+                                        setImportModalPixelWidth(
+                                            IMPORT_MODAL_WIDTHS.large,
+                                        );
                                         appendStack({
                                             // queryType: `Join ${queryElementCounter}`,
                                             queryType: `Join`,
-                                            queryChildren: [],
+                                            queryChildren: [
+                                                // this should probably be a dict
+                                                // it can be mostly empty for this appendStack
+                                                // columns will need to be added after table2 is selected
+                                                // the dict will need...
+                                                // table1 = table selected in Data
+                                                // table2
+                                                // joinType
+                                                // key1
+                                                // key2
+                                            ],
                                         });
                                     }}
                                     startIcon={<JoinLeftRounded />}
