@@ -1,10 +1,9 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Collapse,
     Stack,
     Typography,
-    Button,
     styled,
     IconButton,
     ToggleTabsGroup,
@@ -17,8 +16,23 @@ import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
-import { Search, SearchOff } from '@mui/icons-material';
+import {
+    Search,
+    SearchOff,
+    ArrowDropDown,
+    AddRounded,
+} from '@mui/icons-material';
 import { Help } from '@/components/help';
+import {
+    Popper,
+    ClickAwayListener,
+    Grow,
+    Paper,
+    MenuItem,
+    MenuList,
+    Button,
+    ButtonGroup,
+} from '@mui/material';
 
 import { Filterbox } from '@/components/ui';
 import UPDATED_TERMINAL from '@/assets/img/updated_terminal.png';
@@ -154,6 +168,10 @@ export const HomePage = observer((): JSX.Element => {
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
 
+    const [open, setOpen] = useState(false);
+    const anchorRef = useRef<HTMLDivElement>(null);
+    const [selectedIndex, setSelectedIndex] = useState(1);
+
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {
@@ -284,6 +302,21 @@ export const HomePage = observer((): JSX.Element => {
         return favorites.some((el) => el.project_id === id);
     };
 
+    const handleToggle = () => {
+        setOpen((prevOpen) => !prevOpen);
+    };
+
+    const handleClose = (event: Event) => {
+        if (
+            anchorRef.current &&
+            anchorRef.current.contains(event.target as HTMLElement)
+        ) {
+            return;
+        }
+
+        setOpen(false);
+    };
+
     return (
         <Page
             header={
@@ -306,7 +339,7 @@ export const HomePage = observer((): JSX.Element => {
                                 Apps
                             </Typography>
                         </Stack>
-                        <Button
+                        {/* <Button
                             size={'large'}
                             variant={'contained'}
                             onClick={() => {
@@ -315,7 +348,89 @@ export const HomePage = observer((): JSX.Element => {
                             aria-label={`Open the App Model`}
                         >
                             Create New App
-                        </Button>
+                        </Button> */}
+                        <ButtonGroup variant="contained" ref={anchorRef}>
+                            <Button
+                                onClick={() => {
+                                    navigate('/app/new');
+                                }}
+                                startIcon={<AddRounded />}
+                                sx={{
+                                    textTransform: 'none',
+                                }}
+                            >
+                                Create New App
+                            </Button>
+                            <Button
+                                size="small"
+                                aria-controls={
+                                    open ? 'split-button-menu' : undefined
+                                }
+                                aria-expanded={open ? 'true' : undefined}
+                                aria-haspopup="menu"
+                                onClick={handleToggle}
+                            >
+                                <ArrowDropDown />
+                            </Button>
+                        </ButtonGroup>
+                        <Popper
+                            sx={{
+                                zIndex: 1,
+                            }}
+                            open={open}
+                            anchorEl={anchorRef.current}
+                            role={undefined}
+                            transition
+                            disablePortal
+                        >
+                            {({ TransitionProps, placement }) => (
+                                <Grow
+                                    {...TransitionProps}
+                                    style={{
+                                        transformOrigin:
+                                            placement === 'bottom'
+                                                ? 'right top'
+                                                : 'right bottom',
+                                    }}
+                                >
+                                    <Paper>
+                                        <ClickAwayListener
+                                            onClickAway={handleClose}
+                                        >
+                                            <MenuList
+                                                id="split-button-menu"
+                                                autoFocusItem
+                                            >
+                                                <MenuItem
+                                                    disabled={true}
+                                                    onClick={() => {}}
+                                                >
+                                                    Upload New App
+                                                </MenuItem>
+                                                <MenuItem
+                                                    disabled={true}
+                                                    onClick={() => {}}
+                                                >
+                                                    Code Editor
+                                                </MenuItem>
+                                                <MenuItem
+                                                    disabled={true}
+                                                    onClick={() => {}}
+                                                >
+                                                    UI Builder
+                                                </MenuItem>
+                                                <MenuItem
+                                                    disabled={true}
+                                                    onClick={() => {}}
+                                                >
+                                                    Prompt Builder
+                                                </MenuItem>
+                                            </MenuList>
+                                        </ClickAwayListener>
+                                    </Paper>
+                                </Grow>
+                            )}
+                        </Popper>
                     </Stack>
                 </Stack>
             }
