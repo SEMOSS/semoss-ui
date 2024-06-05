@@ -43,6 +43,12 @@ const StyledPopover = styled(Popover)(({ theme }) => ({
     marginLeft: theme.spacing(2),
 }));
 
+const QueryPreviewContainer = styled(Stack)(({ theme }) => ({
+    maxHeight: '275px',
+    width: '100%',
+    overflow: 'auto',
+}));
+
 interface AddVariableModalProps {
     /**
      * modal open
@@ -312,16 +318,18 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
                 if (query.output) {
                     return (
-                        <Typography variant={'body2'}>
-                            {query.output}
-                        </Typography>
+                        <QueryPreviewContainer>
+                            <Typography variant={'body2'}>
+                                {JSON.stringify(query.output)}
+                            </Typography>
+                        </QueryPreviewContainer>
                     );
                 } else {
                     return (
                         <Alert severity="warning" icon={<WarningRounded />}>
                             <Alert.Title>
                                 Sheet {variablePointer} has not been executed.
-                                Would you like to execute?
+                                Click 'Run All' in order to preview output.
                             </Alert.Title>
                         </Alert>
                     );
@@ -336,26 +344,25 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 );
 
                 if (cell.output) {
+                    const rawOutput = state
+                        .getQuery(splitAtPeriod(variablePointer, 'left'))
+                        .getCell(
+                            splitAtPeriod(variablePointer, 'right'),
+                        ).output;
                     return (
-                        <Typography variant={'body2'}>
-                            {
-                                state
-                                    .getQuery(
-                                        splitAtPeriod(variablePointer, 'left'),
-                                    )
-                                    .getCell(
-                                        splitAtPeriod(variablePointer, 'right'),
-                                    ).output
-                            }
-                        </Typography>
+                        <QueryPreviewContainer>
+                            <Typography variant={'body2'}>
+                                {JSON.stringify(rawOutput)}
+                            </Typography>
+                        </QueryPreviewContainer>
                     );
                 } else {
                     return (
                         <Alert severity="warning" icon={<WarningRounded />}>
                             <Alert.Title>
                                 Cell {splitAtPeriod(variablePointer, 'right')}{' '}
-                                has not been executed. Would you like to
-                                execute?
+                                has not been executed. Click 'Run All' in order
+                                to preview output.
                             </Alert.Title>
                         </Alert>
                     );
