@@ -266,6 +266,8 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     </Select.Item>
                 );
             });
+        } else {
+            return <></>;
         }
     }, [variableType]);
 
