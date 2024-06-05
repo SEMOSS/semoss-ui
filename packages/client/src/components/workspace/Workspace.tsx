@@ -74,7 +74,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     const { pathname } = useLocation();
     const navigate = useNavigate();
-    console.log('Workspace', workspace);
 
     return (
         <WorkspaceContext.Provider
