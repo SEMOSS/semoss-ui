@@ -267,7 +267,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 );
             });
         } else {
-            return <></>;
+            return <Select.Item value="" />;
         }
     }, [variableType]);
 
