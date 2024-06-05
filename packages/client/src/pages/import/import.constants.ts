@@ -4949,8 +4949,16 @@ export const CONNECTION_OPTIONS = {
                                     value: 'GET',
                                 },
                                 {
+                                    display: 'HEAD',
+                                    value: 'HEAD',
+                                },
+                                {
                                     display: 'POST',
                                     value: 'POST',
+                                },
+                                {
+                                    display: 'PUT',
+                                    value: 'PUT',
                                 },
                             ],
                         },
