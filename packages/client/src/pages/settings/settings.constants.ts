@@ -185,13 +185,13 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: true,
     },
-    // {
-    //     title: 'Jobs',
-    //     path: 'jobs',
-    //     description: 'Search by job name or filter using job tags',
-    //     icon: mdiTabletCellphone,
-    //     history: ['settings/'],
-    // },
+    {
+        title: 'Jobs',
+        path: 'jobs',
+        description: 'Search by job name or filter using job tags',
+        icon: mdiTabletCellphone,
+        history: ['settings/'],
+    },
     {
         title: 'Admin Query',
         path: 'admin-query',
