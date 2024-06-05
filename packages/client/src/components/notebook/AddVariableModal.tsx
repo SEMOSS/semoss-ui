@@ -267,7 +267,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 );
             });
         } else {
-            return <Select.Item value="" />;
+            return <Select.Item value="">No options</Select.Item>;
         }
     }, [variableType]);
 
@@ -452,7 +452,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     </Select>
                     <Typography variant={'body1'}>Value</Typography>
                     <Select
-                        disabled={!variableType || !values.length}
+                        disabled={!variableType}
                         value={
                             (variableType === 'cell' ||
                             variableType === 'query' ||
