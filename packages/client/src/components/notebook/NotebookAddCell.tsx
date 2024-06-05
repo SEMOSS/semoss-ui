@@ -59,6 +59,8 @@ import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
 
 import { LoadingScreen } from '@/components/ui';
 
+import { runPixel } from '@/api';
+
 const StyledImportDataForm = styled('form')(({ theme }) => ({
     margin: '30px 41px',
 }));
@@ -304,6 +306,9 @@ export const NotebookAddCell = observer(
         const [selectedLeftKey, setSelectedLeftKey] = useState<string>(null);
         const [selectedRightKey, setSelectedRightKey] = useState<string>(null);
 
+        const [tableEdgesObject, setTableEdgesObject] = useState(null);
+        const [columnDataTypesDict, setColumnDataTypesDict] = useState(null);
+
         const {
             fields: stackFields,
             append: appendStack,
@@ -344,10 +349,10 @@ export const NotebookAddCell = observer(
             setUserDatabases(getDatabases.data);
         }, [getDatabases.status, getDatabases.data]);
 
-        const loadDatabaseStructure = () => {
-            // set loading to true
-            // fetch database structure
-        };
+        // const loadDatabaseStructure = () => {
+        //     // set loading to true
+        //     // fetch database structure
+        // };
 
         // const cellTypeOptions = computed(() => {
         //     const options = { ...AddCellOptions };
@@ -552,23 +557,37 @@ export const NotebookAddCell = observer(
             reset();
         };
 
-        const retrieveDatabaseTables = async (databaseId) => {
+        const retrieveDatabaseTablesAndEdges = async (databaseId) => {
             setIsDatabaseLoading(true);
-            const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
+            const pixelString = `META|GetDatabaseTableStructure(database=[ \"${databaseId}\" ]);META|GetDatabaseMetamodel( database=[ \"${databaseId}\" ], options=["dataTypes","positions"]);`;
 
-            monolithStore.runQuery(pixelString).then((response) => {
-                const type = response.pixelReturn[0].operationType;
-                const pixelResponse = response.pixelReturn[0].output;
+            // const pixelResponse = await runPixel(pixelString);
+            monolithStore.runQuery(pixelString).then((pixelResponse) => {
+                const responseTableStructure =
+                    pixelResponse.pixelReturn[0].output;
+                const isResponseTableStructureGood =
+                    pixelResponse.pixelReturn[0].operationType.indexOf(
+                        'ERROR',
+                    ) === -1;
 
-                if (type.indexOf('ERROR') === -1) {
+                const responseTableEdgesStructure =
+                    pixelResponse.pixelReturn[1].output;
+                const isResponseTableEdgesStructureGood =
+                    pixelResponse.pixelReturn[1].operationType.indexOf(
+                        'ERROR',
+                    ) === -1;
+
+                // populate database structure as before
+                if (isResponseTableStructureGood) {
+                    console.log({ responseTableStructure });
                     const tableNames = [
-                        ...pixelResponse.reduce((set, ele) => {
+                        ...responseTableStructure.reduce((set, ele) => {
                             set.add(ele[0]);
                             return set;
                         }, new Set()),
                     ];
 
-                    const newTableColumnsObject = pixelResponse.reduce(
+                    const newTableColumnsObject = responseTableStructure.reduce(
                         (acc, ele, idx) => {
                             const tableName = ele[0];
                             const columnName = ele[1];
@@ -594,16 +613,105 @@ export const NotebookAddCell = observer(
                         },
                         {},
                     );
-
                     setTableColumnsObject(newTableColumnsObject);
                     setTableNames(tableNames);
                 } else {
                     console.error('Error retrieving database tables');
                 }
 
+                // make and populate new edges dict
+                // ### NEED TO...
+                // store columns used for join
+                // these will get displayed in the Key1 and Key2
+
+                if (isResponseTableEdgesStructureGood) {
+                    console.log({ responseTableEdgesStructure });
+                    const newEdgesDict =
+                        responseTableEdgesStructure.edges.reduce((acc, ele) => {
+                            const source = ele.source;
+                            const target = ele.target;
+
+                            if (!acc[source]) {
+                                const newEdgesSet = new Set();
+                                newEdgesSet.add(target);
+                                acc[source] = newEdgesSet;
+                            } else {
+                                acc[source].add(target);
+                            }
+
+                            if (!acc[target]) {
+                                const newEdgesSet = new Set();
+                                newEdgesSet.add(source);
+                                acc[target] = newEdgesSet;
+                            } else {
+                                acc[target].add(source);
+                            }
+
+                            return acc;
+                        }, {});
+
+                    console.log({ newEdgesDict });
+                    setTableEdgesObject(newEdgesDict);
+                } else {
+                    console.error('Error retrieving database edges');
+                }
+
                 setIsDatabaseLoading(false);
             });
         };
+
+        // const retrieveDatabaseTables = async (databaseId) => {
+        //     setIsDatabaseLoading(true);
+        //     const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
+
+        //     monolithStore.runQuery(pixelString).then((response) => {
+        //         const type = response.pixelReturn[0].operationType;
+        //         const pixelResponse = response.pixelReturn[0].output;
+
+        //         if (type.indexOf('ERROR') === -1) {
+        //             const tableNames = [
+        //                 ...pixelResponse.reduce((set, ele) => {
+        //                     set.add(ele[0]);
+        //                     return set;
+        //                 }, new Set()),
+        //             ];
+
+        //             const newTableColumnsObject = pixelResponse.reduce(
+        //                 (acc, ele, idx) => {
+        //                     const tableName = ele[0];
+        //                     const columnName = ele[1];
+        //                     const columnType = ele[2];
+        //                     // other info seems to not be needed, unsure what flag is representing or if repeat names are aliases etc
+        //                     const columnBoolean = ele[3];
+        //                     const columnName2 = ele[4];
+        //                     const tableName2 = ele[4];
+
+        //                     if (!acc[tableName]) acc[tableName] = [];
+        //                     acc[tableName].push({
+        //                         tableName,
+        //                         columnName,
+        //                         columnType,
+        //                         columnBoolean,
+        //                         columnName2,
+        //                         tableName2,
+        //                         userAlias: columnName, // user editable in Edit Columns
+        //                         checked: true,
+        //                     });
+
+        //                     return acc;
+        //                 },
+        //                 {},
+        //             );
+
+        //             setTableColumnsObject(newTableColumnsObject);
+        //             setTableNames(tableNames);
+        //         } else {
+        //             console.error('Error retrieving database tables');
+        //         }
+
+        //         setIsDatabaseLoading(false);
+        //     });
+        // };
 
         const selectTableHandler = (tableName) => {
             setSelectedTable(tableName);
@@ -730,7 +838,7 @@ export const NotebookAddCell = observer(
                                             value={display}
                                             disabled={display == 'From CSV'} // temporary
                                             onClick={() => {
-                                                loadDatabaseStructure();
+                                                // loadDatabaseStructure();
                                                 setImportModalPixelWidth(
                                                     IMPORT_MODAL_WIDTHS.small,
                                                 );
@@ -773,7 +881,12 @@ export const NotebookAddCell = observer(
                                                 setSelectedDatabaseId(
                                                     e.target.value,
                                                 );
-                                                retrieveDatabaseTables(
+                                                // old load delete later
+                                                // retrieveDatabaseTables(
+                                                //     e.target.value,
+                                                // );
+                                                // new load covers old one with edges added
+                                                retrieveDatabaseTablesAndEdges(
                                                     e.target.value,
                                                 );
                                                 setShowEditColumns(false);
@@ -1439,12 +1552,13 @@ export const NotebookAddCell = observer(
                                                         e.target.value,
                                                     );
                                                 }}
-                                                label={'Left Table'}
-                                                value={selectedLeftTable}
+                                                // label={'Left Table'}
+                                                // value={selectedLeftTable}
+                                                value={selectedTable}
                                                 size={'small'}
                                                 color="primary"
                                                 // disabled={!tableNames.length}
-                                                // disabled={true}
+                                                disabled={true}
                                                 variant="outlined"
                                                 sx={{
                                                     width: '125px',
@@ -1507,7 +1621,8 @@ export const NotebookAddCell = observer(
                                                         e.target.value,
                                                     );
                                                 }}
-                                                label={'Right Table'}
+                                                // label={'Right Table'}
+                                                label={'Join Table'}
                                                 value={selectedRightTable}
                                                 size={'small'}
                                                 color="primary"
@@ -1518,11 +1633,19 @@ export const NotebookAddCell = observer(
                                                     width: '125px',
                                                 }}
                                             >
-                                                {tableNames?.map((ele) => (
-                                                    <Menu.Item value={ele}>
-                                                        {ele}
-                                                    </Menu.Item>
-                                                ))}
+                                                {tableNames
+                                                    ?.filter((ele) =>
+                                                        // ### NEED TO...
+                                                        // key into this differently, they wont be sets
+                                                        tableEdgesObject[
+                                                            selectedTable
+                                                        ]?.has(ele),
+                                                    )
+                                                    .map((ele) => (
+                                                        <Menu.Item value={ele}>
+                                                            {ele}
+                                                        </Menu.Item>
+                                                    ))}
                                             </Select>
                                             {/* )}
                                         /> */}
@@ -1571,7 +1694,8 @@ export const NotebookAddCell = observer(
                                                 value={selectedLeftKey}
                                                 size={'small'}
                                                 color="primary"
-                                                disabled={!selectedLeftTable}
+                                                // disabled={!selectedLeftTable}
+                                                disabled={true}
                                                 variant="outlined"
                                                 sx={{
                                                     width: '120px',
@@ -1637,7 +1761,8 @@ export const NotebookAddCell = observer(
                                                 value={selectedRightKey}
                                                 size={'small'}
                                                 color="primary"
-                                                disabled={!selectedRightTable}
+                                                // disabled={!selectedRightTable}
+                                                disabled={true}
                                                 variant="outlined"
                                                 sx={{
                                                     width: '120px',
