@@ -176,8 +176,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 const eng = newEngines[`${variable.type}s`].find(
                     (e) => e.app_id === val,
                 );
-                // console.log('Set Engine Preview', val);
-                // console.log(eng);
                 setEngine(eng);
             }
             setVariableType(variable.type);
@@ -452,13 +450,13 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     </Select>
                     <Typography variant={'body1'}>Value</Typography>
                     <Select
-                        disabled={!variableType}
+                        disabled={!variableType || !values.length}
                         value={
-                            variableType === 'cell' ||
+                            (variableType === 'cell' ||
                             variableType === 'query' ||
                             variableType === 'block'
                                 ? variablePointer
-                                : engine
+                                : engine) ?? ''
                         }
                         onChange={(e) => {
                             const val = e.target.value as unknown;
@@ -541,7 +539,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                                 },
                                             },
                                         });
-                                        console.log('add engine');
                                     }
 
                                     notification.add({
