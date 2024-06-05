@@ -10839,7 +10839,7 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'MINIO',
+                name: 'MinIO',
                 disable: false,
                 icon: MINIO,
                 fields: [
