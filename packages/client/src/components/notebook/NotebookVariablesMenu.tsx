@@ -77,7 +77,6 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
     const isPopoverOpen = Boolean(popoverAnchorEle);
 
     const variables = useMemo(() => {
-        console.log(selectedFilter);
         return Object.entries(state.variables).filter((kv) => {
             const val = kv[1];
 
