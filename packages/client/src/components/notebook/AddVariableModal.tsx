@@ -272,120 +272,128 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     }, [variableType]);
 
     const preview = useMemo(() => {
-        if (variableType && (variablePointer || engine)) {
-            if (variableType === 'block') {
-                const block = state.getBlock(variablePointer);
-                const s: SerializedState = {
-                    dependencies: {},
-                    variables: {},
-                    queries: {},
-                    blocks: {
-                        'page-1': {
-                            id: 'page-1',
-                            widget: 'page',
-                            parent: null,
-                            data: {
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
+        try {
+            if (variableType && (variablePointer || engine)) {
+                if (variableType === 'block') {
+                    const block = state.getBlock(variablePointer);
+                    const s: SerializedState = {
+                        dependencies: {},
+                        variables: {},
+                        queries: {},
+                        blocks: {
+                            'page-1': {
+                                id: 'page-1',
+                                widget: 'page',
+                                parent: null,
+                                data: {
+                                    style: {
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    },
+                                },
+                                listeners: {
+                                    onPageLoad: [],
+                                },
+                                slots: {
+                                    content: {
+                                        name: 'content',
+                                        children: [variablePointer],
+                                    },
                                 },
                             },
-                            listeners: {
-                                onPageLoad: [],
-                            },
-                            slots: {
-                                content: {
-                                    name: 'content',
-                                    children: [variablePointer],
-                                },
+                            [variablePointer]: {
+                                id: block.id,
+                                widget: block.widget,
+                                data: block.data,
+                                parent: null,
+                                listeners: block.listeners,
+                                slots: block.slots,
                             },
                         },
-                        [variablePointer]: {
-                            id: block.id,
-                            widget: block.widget,
-                            data: block.data,
-                            parent: null,
-                            listeners: block.listeners,
-                            slots: block.slots,
-                        },
-                    },
-                };
+                    };
 
-                return <BlocksRenderer state={s} />;
-            } else if (variableType === 'query') {
-                const query = state.getQuery(variablePointer);
+                    return <BlocksRenderer state={s} />;
+                } else if (variableType === 'query') {
+                    const query = state.getQuery(variablePointer);
 
-                if (query.output) {
-                    return (
-                        <QueryPreviewContainer>
-                            <Typography variant={'body2'}>
-                                {JSON.stringify(query.output)}
-                            </Typography>
-                        </QueryPreviewContainer>
+                    if (query.output) {
+                        return (
+                            <QueryPreviewContainer>
+                                <Typography variant={'body2'}>
+                                    {JSON.stringify(query.output)}
+                                </Typography>
+                            </QueryPreviewContainer>
+                        );
+                    } else {
+                        return (
+                            <Alert severity="warning" icon={<WarningRounded />}>
+                                <Alert.Title>
+                                    Sheet {variablePointer} has not been
+                                    executed. Click 'Run All' in order to
+                                    preview output.
+                                </Alert.Title>
+                            </Alert>
+                        );
+                    }
+                } else if (variableType === 'cell') {
+                    const query = state.getQuery(
+                        splitAtPeriod(variablePointer, 'left'),
                     );
+
+                    const cell = query.getCell(
+                        splitAtPeriod(variablePointer, 'right'),
+                    );
+
+                    if (cell.output) {
+                        const rawOutput = state
+                            .getQuery(splitAtPeriod(variablePointer, 'left'))
+                            .getCell(
+                                splitAtPeriod(variablePointer, 'right'),
+                            ).output;
+                        return (
+                            <QueryPreviewContainer>
+                                <Typography variant={'body2'}>
+                                    {JSON.stringify(rawOutput)}
+                                </Typography>
+                            </QueryPreviewContainer>
+                        );
+                    } else {
+                        return (
+                            <Alert severity="warning" icon={<WarningRounded />}>
+                                <Alert.Title>
+                                    Cell{' '}
+                                    {splitAtPeriod(variablePointer, 'right')}{' '}
+                                    has not been executed. Click 'Run All' in
+                                    order to preview output.
+                                </Alert.Title>
+                            </Alert>
+                        );
+                    }
                 } else {
                     return (
-                        <Alert severity="warning" icon={<WarningRounded />}>
-                            <Alert.Title>
-                                Sheet {variablePointer} has not been executed.
-                                Click 'Run All' in order to preview output.
-                            </Alert.Title>
-                        </Alert>
-                    );
-                }
-            } else if (variableType === 'cell') {
-                const query = state.getQuery(
-                    splitAtPeriod(variablePointer, 'left'),
-                );
-
-                const cell = query.getCell(
-                    splitAtPeriod(variablePointer, 'right'),
-                );
-
-                if (cell.output) {
-                    const rawOutput = state
-                        .getQuery(splitAtPeriod(variablePointer, 'left'))
-                        .getCell(
-                            splitAtPeriod(variablePointer, 'right'),
-                        ).output;
-                    return (
-                        <QueryPreviewContainer>
-                            <Typography variant={'body2'}>
-                                {JSON.stringify(rawOutput)}
-                            </Typography>
-                        </QueryPreviewContainer>
-                    );
-                } else {
-                    return (
-                        <Alert severity="warning" icon={<WarningRounded />}>
-                            <Alert.Title>
-                                Cell {splitAtPeriod(variablePointer, 'right')}{' '}
-                                has not been executed. Click 'Run All' in order
-                                to preview output.
-                            </Alert.Title>
-                        </Alert>
-                    );
-                }
-            } else {
-                return (
-                    <Stack direction="row" alignItems="center">
-                        <Icon>
-                            <MoreSharp />
-                        </Icon>
-                        <Stack direction="column">
-                            <Typography variant="body2">
-                                {engine.app_name}
-                            </Typography>
-                            <Typography variant="caption">
-                                {engine.app_id}
-                            </Typography>
+                        <Stack direction="row" alignItems="center">
+                            <Icon>
+                                <MoreSharp />
+                            </Icon>
+                            <Stack direction="column">
+                                <Typography variant="body2">
+                                    {engine.app_name}
+                                </Typography>
+                                <Typography variant="caption">
+                                    {engine.app_id}
+                                </Typography>
+                            </Stack>
                         </Stack>
-                    </Stack>
-                );
+                    );
+                }
+            } else if (variableType && (!engine || variablePointer)) {
+                return <StyledPlaceholder />;
             }
-        } else if (variableType && (!engine || variablePointer)) {
-            return <StyledPlaceholder />;
+        } catch (e) {
+            return (
+                <Typography variant={'body2'}>Value is undefined</Typography>
+            );
         }
     }, [variableType, variablePointer, engine]);
 

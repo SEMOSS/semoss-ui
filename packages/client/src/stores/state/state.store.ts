@@ -203,38 +203,42 @@ export class StateStore {
      * @returns
      */
     getVariable(pointer: string, type: VariableType): Variable | unknown {
-        if (type === 'block') {
-            // Get Blocks Data (what we realistically want)
-            const block = this.getBlock(pointer);
+        try {
+            if (type === 'block') {
+                // Get Blocks Data (what we realistically want)
+                const block = this.getBlock(pointer);
 
-            // TO DO: Genericize this, is it always.value
-            return block.data.value as string;
-        } else if (type === 'query') {
-            const query = this.getQuery(pointer);
+                // TO DO: Genericize this, is it always.value
+                return block.data.value as string;
+            } else if (type === 'query') {
+                const query = this.getQuery(pointer);
 
-            // Return query output
-            return query.output;
-        } else if (type === 'cell') {
-            const query = this.getQuery(splitAtPeriod(pointer, 'left'));
-            const cell = query.getCell(splitAtPeriod(pointer, 'right'));
+                // Return query output
+                return query.output;
+            } else if (type === 'cell') {
+                const query = this.getQuery(splitAtPeriod(pointer, 'left'));
+                const cell = query.getCell(splitAtPeriod(pointer, 'right'));
 
-            // Return cells output
-            return cell.output;
-        } else if (
-            type === 'database' ||
-            type === 'model' ||
-            type === 'vector' ||
-            type === 'function' ||
-            type === 'storage'
-        ) {
-            // Finds Dependency from pointer
-            return this._store.dependencies[pointer];
-        } else if (type === 'string') {
-            //
-        } else if (type === 'number') {
-            //
+                // Return cells output
+                return cell.output;
+            } else if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'vector' ||
+                type === 'function' ||
+                type === 'storage'
+            ) {
+                // Finds Dependency from pointer
+                return this._store.dependencies[pointer];
+            } else if (type === 'string') {
+                //
+            } else if (type === 'number') {
+                //
+            }
+            return '';
+        } catch (e) {
+            return 'undefined';
         }
-        return '';
     }
 
     /**
