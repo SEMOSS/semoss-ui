@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Table, Accordion, Search, styled, LinearProgress } from '@semoss/ui';
 import { ChevronRight } from '@mui/icons-material';
 import { HistoryRow } from './HistoryRow';
-import { HistoryJob } from './jobs.types';
+import { HistoryJob } from './job.types';
 
 const StyledAccordion = styled(Accordion)(() => ({
     '&:before': {

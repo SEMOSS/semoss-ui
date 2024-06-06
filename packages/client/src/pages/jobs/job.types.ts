@@ -1,3 +1,12 @@
+export interface JobBuilder {
+    id: string | null;
+    name: string;
+    pixel: string;
+    tags: string[];
+    cronExpression: string;
+    cronTz: string;
+}
+
 export interface PixelReturnJob {
     jobName: string;
     cronExpression: string;
@@ -65,7 +74,7 @@ export interface Job {
     id: string;
     name: string;
     type: string;
-    frequencyString: string;
+    cronExpression: string;
     timeZone: string;
     tags: string[];
     lastRun: string;
@@ -73,6 +82,7 @@ export interface Job {
     ownerId: string;
     isActive: boolean;
     group: string;
+    pixel: string;
 }
 
 export interface HistoryJob {
@@ -87,3 +97,28 @@ export interface HistoryJob {
     isLatest: boolean;
     schedulerOutput: string;
 }
+
+export type Frequencies = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
+
+export type DayOfWeek =
+    | 'Sunday'
+    | 'Monday'
+    | 'Tuesday'
+    | 'Wednesday'
+    | 'Thursday'
+    | 'Friday'
+    | 'Saturday';
+
+export type Month =
+    | 'January'
+    | 'February'
+    | 'March'
+    | 'April'
+    | 'May'
+    | 'June'
+    | 'July'
+    | 'August'
+    | 'September'
+    | 'October'
+    | 'November'
+    | 'December';
