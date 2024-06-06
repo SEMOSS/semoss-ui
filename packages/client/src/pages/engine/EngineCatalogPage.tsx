@@ -12,7 +12,7 @@ import {
     Grid,
     List,
     TextField,
-    IconButton,
+    InputAdornment,
 } from '@semoss/ui';
 import { SearchOff, Search as SearchIcon } from '@mui/icons-material';
 
@@ -149,7 +149,6 @@ export const EngineCatalogPage = observer(
 
         // save the search string
         const [search, setSearch] = useState<string>('');
-        const [showSearch, setShowSearch] = useState<boolean>(true);
 
         // which view we are on
         const [mode, setMode] = useState<MODE>('Mine');
@@ -471,6 +470,34 @@ export const EngineCatalogPage = observer(
                                 <Typography variant={'h4'}>
                                     {route ? route.name : ''} Catalog
                                 </Typography>
+
+                                <TextField
+                                    size="small"
+                                    sx={{
+                                        width: '200px',
+                                    }}
+                                    value={search}
+                                    variant="outlined"
+                                    onChange={(e) => {
+                                        // Reset databases and reset offset
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'databases',
+                                            value: [],
+                                        });
+                                        setOffset(0);
+
+                                        setSearch(e.target.value);
+                                    }}
+                                    placeholder={'Search'}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon fontSize="medium" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
                             </Stack>
                             <Stack
                                 direction="row"
@@ -555,59 +582,6 @@ export const EngineCatalogPage = observer(
                                     }`}
                                 />
                             </StyledToggleTabsGroup>
-                            <Stack
-                                direction="row"
-                                alignItems={'center'}
-                                justifyContent={'flex-end'}
-                            >
-                                <Collapse
-                                    orientation="horizontal"
-                                    in={showSearch}
-                                >
-                                    <TextField
-                                        size="small"
-                                        sx={{
-                                            width: '200px',
-                                        }}
-                                        value={search}
-                                        variant="outlined"
-                                        onChange={(e) => {
-                                            // Reset databases and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-
-                                            setSearch(e.target.value);
-                                        }}
-                                        placeholder={`Search ${
-                                            route
-                                                ? `${route.name}${
-                                                      route.name === 'Storage'
-                                                          ? ''
-                                                          : 's'
-                                                  }`
-                                                : ''
-                                        }`}
-                                    />
-                                </Collapse>
-                                <IconButton
-                                    color="default"
-                                    size="small"
-                                    onClick={() => {
-                                        setShowSearch(!showSearch);
-                                        setSearch('');
-                                    }}
-                                >
-                                    {showSearch ? (
-                                        <SearchOff fontSize="medium" />
-                                    ) : (
-                                        <SearchIcon fontSize="medium" />
-                                    )}
-                                </IconButton>
-                            </Stack>
                         </Stack>
 
                         {'bi'.includes(search.toLowerCase()) &&
