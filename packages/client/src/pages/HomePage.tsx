@@ -280,6 +280,15 @@ export const HomePage = observer((): JSX.Element => {
         return favorites.some((el) => el.project_id === id);
     };
 
+    const removeApp = (app) => {
+        const updatedApps = apps;
+        for (let i = updatedApps.length - 1; i >= 0; i--) {
+            if (updatedApps[i].project_id === app.project_id) {
+                updatedApps.splice(i, 1);
+            }
+        }
+    };
+
     return (
         <Page
             header={
@@ -520,6 +529,9 @@ export const HomePage = observer((): JSX.Element => {
                                             )}
                                             favorite={() => {
                                                 favoriteApp(app);
+                                            }}
+                                            onDelete={() => {
+                                                removeApp(app);
                                             }}
                                         />
                                     );
