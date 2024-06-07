@@ -1,9 +1,8 @@
 import { styled, Typography, Button, Stack, Collapse } from '@semoss/ui';
 import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
-import { TypeVariant, TypeLlmConfig } from '../workspace.types';
+import { TypeLlmConfig } from '../workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
-import { AddModelCard } from './AddModelCard';
 import { useLLMComparison } from '@/hooks';
 import { LLMSwapCard } from './LLMSwapCard';
 
@@ -38,11 +37,10 @@ const StyledActionBar = styled(Collapse)(({ theme }) => ({
     top: theme.spacing(-2),
     width: '100%',
     zIndex: 1,
+    border: '1px solid red',
 }));
 
 interface ModelVariantProps {
-    // isSelected: boolean;
-    // variant?: TypeVariant;
     index?: number;
     click?: (number) => void;
 

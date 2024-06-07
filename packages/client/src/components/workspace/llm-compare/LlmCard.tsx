@@ -1,23 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     styled,
-    Button,
     Card,
     Stack,
     Typography,
-    Icon,
     IconButton,
     Tooltip,
-    Modal,
-    TextField,
-    Select,
-    Slider,
 } from '@semoss/ui';
 import { TypeLlmConfig } from '../workspace.types';
-import { AddRounded, Delete, Edit } from '@mui/icons-material';
+import { Delete, Edit } from '@mui/icons-material';
 import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';
-import { Controller, useForm } from 'react-hook-form';
 import { VariantModelModal } from './VariantModelModal';
 
 const StyledCard = styled(Card, {
