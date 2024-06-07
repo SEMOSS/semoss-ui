@@ -14,6 +14,7 @@ import { LlmConfigureView } from '../llm-compare/LlmConfigureView';
 import { BlocksRenderer } from '@/components/blocks-workspace';
 import { useBlocks } from '@/hooks';
 import { ABTesting, LLMCompareWrapper } from '../llm-compare';
+import { ABTestingPanel } from '../llm-compare/ABTestingPanel';
 
 const StyledSettings = styled('div')(() => ({
     display: 'flex',
@@ -32,11 +33,20 @@ const StyledLeftPanel = styled('div')(({ theme }) => ({
     borderRight: `1px solid ${theme.palette.divider}`,
 }));
 
-const StyledRightPanel = styled('div')(({ theme }) => ({
+const StyledCenterPanel = styled('div')(({ theme }) => ({
     height: '100%',
+    width: '100%',
     flex: 1,
     overflow: 'hidden',
     backgroundColor: theme.palette.background.paper,
+}));
+
+const StyledRightPanel = styled('div')(({ theme }) => ({
+    height: '100%',
+    width: theme.spacing(45),
+    overflow: 'hidden',
+    backgroundColor: theme.palette.background.paper,
+    borderLeft: `1px solid ${theme.palette.divider}`,
 }));
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -114,7 +124,7 @@ export const Settings = observer(() => {
                 </SidebarItem>
             </Sidebar>
 
-            {view === 'testing' && (
+            {view === 'testing' && subView !== 'testing' && (
                 <StyledLeftPanel>
                     <StyledMenu>
                         <Stack spacing={2} padding={2}>
@@ -136,7 +146,6 @@ export const Settings = observer(() => {
                             </StyledListItem>
                             <StyledListItem
                                 alignItems="flex-start"
-                                selected={subView === 'testing'}
                                 onClick={() => updateSubView('testing')}
                             >
                                 <List.Icon>
@@ -169,7 +178,7 @@ export const Settings = observer(() => {
                 </StyledLeftPanel>
             )}
 
-            <StyledRightPanel>
+            <StyledCenterPanel>
                 {view === 'access' && <SettingsView />}
                 {view === 'testing' && (
                     <LLMCompareWrapper>
@@ -179,7 +188,13 @@ export const Settings = observer(() => {
                         </Stack>
                     </LLMCompareWrapper>
                 )}
-            </StyledRightPanel>
+            </StyledCenterPanel>
+
+            {view === 'testing' && subView === 'testing' && (
+                <StyledRightPanel>
+                    <ABTestingPanel />
+                </StyledRightPanel>
+            )}
         </StyledSettings>
     );
 });
