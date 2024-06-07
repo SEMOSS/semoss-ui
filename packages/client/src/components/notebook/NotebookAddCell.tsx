@@ -46,6 +46,7 @@ import {
     IndeterminateCheckBox,
     Close,
     JoinInner,
+    ArrowDownwardRounded,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -75,6 +76,7 @@ const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
     alignContent: 'center',
     padding: '0px',
     marginBottom: '15px',
+    justifyContent: 'space-between',
 }));
 
 const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
@@ -234,8 +236,10 @@ const AddCellOptions: Record<string, AddCellOption> = {
 };
 
 const IMPORT_MODAL_WIDTHS = {
-    small: '500px',
-    medium: '750px',
+    // small: '500px',
+    // medium: '750px',
+    small: '1150px',
+    medium: '1150px',
     large: '1150px',
 };
 
@@ -326,6 +330,18 @@ export const NotebookAddCell = observer(
             control,
             name: 'columns',
         });
+
+        useEffect(() => {
+            setSelectedLeftKey(null);
+            setSelectedRightKey(null);
+            removeEditableColumns();
+            removeStack();
+        }, [selectedDatabaseId, selectedTable]);
+
+        useEffect(() => {
+            removeEditableColumns();
+            removeStack();
+        }, [selectedDatabaseId]);
 
         useEffect(() => {
             removeEditableColumns();
@@ -625,32 +641,43 @@ export const NotebookAddCell = observer(
                 // these will get displayed in the Key1 and Key2
 
                 if (isResponseTableEdgesStructureGood) {
-                    console.log({ responseTableEdgesStructure });
                     const newEdgesDict =
                         responseTableEdgesStructure.edges.reduce((acc, ele) => {
                             const source = ele.source;
                             const target = ele.target;
+                            const sourceColumn = ele.sourceColumn;
+                            const targetColumn = ele.targetColumn;
 
                             if (!acc[source]) {
-                                const newEdgesSet = new Set();
-                                newEdgesSet.add(target);
-                                acc[source] = newEdgesSet;
+                                acc[source] = {
+                                    [target]: {
+                                        sourceColumn,
+                                        targetColumn,
+                                    },
+                                };
                             } else {
-                                acc[source].add(target);
+                                acc[source][target] = {
+                                    sourceColumn,
+                                    targetColumn,
+                                };
                             }
 
                             if (!acc[target]) {
-                                const newEdgesSet = new Set();
-                                newEdgesSet.add(source);
-                                acc[target] = newEdgesSet;
+                                acc[target] = {
+                                    [source]: {
+                                        sourceColumn: targetColumn,
+                                        targetColumn: sourceColumn,
+                                    },
+                                };
                             } else {
-                                acc[target].add(source);
+                                acc[target][source] = {
+                                    sourceColumn: targetColumn,
+                                    targetColumn: sourceColumn,
+                                };
                             }
-
                             return acc;
                         }, {});
 
-                    console.log({ newEdgesDict });
                     setTableEdgesObject(newEdgesDict);
                 } else {
                     console.error('Error retrieving database edges');
@@ -868,55 +895,133 @@ export const NotebookAddCell = observer(
                     <Modal.Content sx={{ width: importModalPixelWidth }}>
                         <form onSubmit={handleSubmit(onImportDataSubmit)}>
                             <StyledModalTitleWrapper>
-                                <StyledModalTitle variant="h6">
-                                    Import Data
-                                </StyledModalTitle>
-                                <Controller
-                                    name={'databaseSelect'}
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select
-                                            onChange={(e) => {
-                                                field.onChange(e.target.value);
-                                                setSelectedDatabaseId(
-                                                    e.target.value,
-                                                );
-                                                // old load delete later
-                                                // retrieveDatabaseTables(
-                                                //     e.target.value,
-                                                // );
-                                                // new load covers old one with edges added
-                                                retrieveDatabaseTablesAndEdges(
-                                                    e.target.value,
-                                                );
-                                                setShowEditColumns(false);
-                                                setShowTablePreview(false);
-                                                setSelectedTable(null);
-                                                setHiddenColumnIdsSet(
-                                                    new Set(),
-                                                );
-                                                setImportModalPixelWidth(
-                                                    IMPORT_MODAL_WIDTHS.medium,
-                                                );
-                                            }}
-                                            label={'Select Database'}
-                                            value={field.value || null}
-                                            size={'small'}
-                                            sx={{
-                                                minWidth: '220px',
-                                            }}
-                                        >
-                                            {userDatabases?.map((ele) => (
-                                                <Menu.Item
-                                                    value={ele.database_id}
-                                                >
-                                                    {ele.app_name}
-                                                </Menu.Item>
-                                            ))}
-                                        </Select>
-                                    )}
-                                />
+                                <div
+                                    style={{
+                                        width: 'fit-content',
+                                        blockSize: 'fit-content',
+                                        display: 'flex',
+                                    }}
+                                >
+                                    <StyledModalTitle variant="h6">
+                                        Import Data from
+                                    </StyledModalTitle>
+                                    <Controller
+                                        name={'databaseSelect'}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                    setSelectedDatabaseId(
+                                                        e.target.value,
+                                                    );
+                                                    // old load delete later
+                                                    // retrieveDatabaseTables(
+                                                    //     e.target.value,
+                                                    // );
+                                                    // new load covers old one with edges added
+                                                    retrieveDatabaseTablesAndEdges(
+                                                        e.target.value,
+                                                    );
+                                                    setShowEditColumns(false);
+                                                    setShowTablePreview(false);
+                                                    setSelectedTable(null);
+                                                    setHiddenColumnIdsSet(
+                                                        new Set(),
+                                                    );
+                                                    setImportModalPixelWidth(
+                                                        IMPORT_MODAL_WIDTHS.medium,
+                                                    );
+                                                }}
+                                                label={'Select Database'}
+                                                value={field.value || null}
+                                                size={'small'}
+                                                sx={{
+                                                    minWidth: '220px',
+                                                }}
+                                            >
+                                                {userDatabases?.map((ele) => (
+                                                    <Menu.Item
+                                                        value={ele.database_id}
+                                                    >
+                                                        {ele.app_name}
+                                                    </Menu.Item>
+                                                ))}
+                                            </Select>
+                                        )}
+                                    />
+                                </div>
+                                <IconButton disabled={true}>
+                                    <KeyboardArrowDown />
+                                </IconButton>
                             </StyledModalTitleWrapper>
+                            <div style={{ width: '100%', display: 'flex' }}>
+                                <div
+                                    style={{
+                                        width: '50%',
+                                        height: '250px',
+                                        border: '1px solid lightgray',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'left',
+                                        padding: '0px 24px',
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body1"
+                                        color="secondary"
+                                        sx={{ fontStyle: 'italic' }}
+                                    >
+                                        First, select a datasource
+                                    </Typography>
+                                    <IconButton
+                                        sx={{ barder: '1px solid #666' }}
+                                        color="secondary"
+                                    >
+                                        {/* <AccountTree/> */}
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="18"
+                                            height="18"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                        >
+                                            <g clipPath="url(#clip0_2378_103062)">
+                                                <path
+                                                    fillRule="evenodd"
+                                                    clipRule="evenodd"
+                                                    d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
+                                                    fill="#666666"
+                                                ></path>
+                                            </g>
+                                            <defs>
+                                                <clipPath id="clip0_2378_103062">
+                                                    <rect
+                                                        width="24"
+                                                        height="24"
+                                                        fill="#666666"
+                                                    ></rect>
+                                                </clipPath>
+                                            </defs>
+                                        </svg>
+                                    </IconButton>
+                                </div>
+                                <div
+                                    style={{
+                                        width: '50%',
+                                        height: '250px',
+                                        border: '1px solid lightgray',
+                                        borderLeft: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'left',
+                                    }}
+                                >
+                                    test
+                                </div>
+                            </div>
                             {!!tableNames.length && (
                                 <Stack
                                     spacing={1}
@@ -1620,6 +1725,18 @@ export const NotebookAddCell = observer(
                                                     setSelectedRightTable(
                                                         e.target.value,
                                                     );
+                                                    setSelectedLeftKey(
+                                                        tableEdgesObject[
+                                                            selectedTable
+                                                        ][e.target.value]
+                                                            .sourceColumn,
+                                                    );
+                                                    setSelectedRightKey(
+                                                        tableEdgesObject[
+                                                            selectedTable
+                                                        ][e.target.value]
+                                                            .targetColumn,
+                                                    );
                                                 }}
                                                 // label={'Right Table'}
                                                 label={'Join Table'}
@@ -1627,19 +1744,34 @@ export const NotebookAddCell = observer(
                                                 size={'small'}
                                                 color="primary"
                                                 // disabled={!tableNames.length}
-                                                // disabled={true}
+                                                disabled={
+                                                    !(
+                                                        tableEdgesObject[
+                                                            selectedTable
+                                                        ] &&
+                                                        Object.values(
+                                                            tableEdgesObject[
+                                                                selectedTable
+                                                            ],
+                                                        ).length
+                                                    )
+                                                }
                                                 variant="outlined"
                                                 sx={{
                                                     width: '125px',
                                                 }}
                                             >
                                                 {tableNames
-                                                    ?.filter((ele) =>
-                                                        // ### NEED TO...
-                                                        // key into this differently, they wont be sets
-                                                        tableEdgesObject[
-                                                            selectedTable
-                                                        ]?.has(ele),
+                                                    ?.filter(
+                                                        (ele) =>
+                                                            // ### NEED TO...
+                                                            // key into this differently, they wont be sets
+                                                            tableEdgesObject[
+                                                                selectedTable
+                                                            ] &&
+                                                            tableEdgesObject[
+                                                                selectedTable
+                                                            ][ele],
                                                     )
                                                     .map((ele) => (
                                                         <Menu.Item value={ele}>
@@ -1689,7 +1821,7 @@ export const NotebookAddCell = observer(
                                                         e.target.value,
                                                     );
                                                 }}
-                                                label={'Left Key'}
+                                                // label={'Left Key'}
                                                 // value={field.value}
                                                 value={selectedLeftKey}
                                                 size={'small'}
@@ -1701,7 +1833,13 @@ export const NotebookAddCell = observer(
                                                     width: '120px',
                                                 }}
                                             >
-                                                {tableColumnsObject[
+                                                <Menu.Item
+                                                    value={selectedLeftKey}
+                                                >
+                                                    {selectedLeftKey}
+                                                </Menu.Item>
+
+                                                {/* {tableColumnsObject[
                                                     selectedLeftTable
                                                 ]?.map((colObj, idx) => (
                                                     <Menu.Item
@@ -1712,7 +1850,7 @@ export const NotebookAddCell = observer(
                                                     >
                                                         {colObj.columnName}
                                                     </Menu.Item>
-                                                ))}
+                                                ))} */}
                                             </Select>
                                             {/* )}
                                         /> */}
@@ -1756,7 +1894,7 @@ export const NotebookAddCell = observer(
                                                         e.target.value,
                                                     );
                                                 }}
-                                                label={'Right Key'}
+                                                // label={'Right Key'}
                                                 // value={field.value}
                                                 value={selectedRightKey}
                                                 size={'small'}
@@ -1768,7 +1906,12 @@ export const NotebookAddCell = observer(
                                                     width: '120px',
                                                 }}
                                             >
-                                                {tableColumnsObject[
+                                                <Menu.Item
+                                                    value={selectedRightKey}
+                                                >
+                                                    {selectedRightKey}
+                                                </Menu.Item>
+                                                {/* {tableColumnsObject[
                                                     selectedRightTable
                                                 ]?.map((colObj, idx) => (
                                                     <Menu.Item
@@ -1779,7 +1922,7 @@ export const NotebookAddCell = observer(
                                                     >
                                                         {colObj.columnName}
                                                     </Menu.Item>
-                                                ))}
+                                                ))} */}
                                             </Select>
                                             {/* )}
                                         /> */}
@@ -2323,8 +2466,17 @@ export const NotebookAddCell = observer(
                                     color="primary"
                                     size="medium"
                                     disabled={
-                                        !selectedDatabaseId || !selectedTable
+                                        !selectedDatabaseId ||
+                                        !selectedTable ||
+                                        !(
+                                            tableEdgesObject[selectedTable] &&
+                                            Object.values(
+                                                tableEdgesObject[selectedTable],
+                                            ).length
+                                        )
                                     }
+                                    // disabled={!(tableEdgesObject[selectedTable] && Object.values(tableEdgesObject[selectedTable]).length)}
+
                                     onClick={() => {
                                         setQueryElementCounter(
                                             queryElementCounter + 1,
