@@ -165,6 +165,14 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
+    const setSelectedVariants = (vars: ModelVariant[][]) => {
+        dispatch({
+            type: 'field',
+            field: 'selectedVariants',
+            value: vars,
+        });
+    };
+
     const swapVariantModel = (
         variantIndex: number,
         modelIndex: number,
@@ -186,8 +194,10 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
             value={{
                 variants: llmVariants,
                 defaultVariant: defaultLLMVariant,
+                selectedVariants: llmVariants,
                 addNewVariant: addNewVariant,
                 deleteVariant: deleteVariant,
+                setSelectedVariants: setSelectedVariants,
                 swapVariantModel: swapVariantModel,
             }}
         >

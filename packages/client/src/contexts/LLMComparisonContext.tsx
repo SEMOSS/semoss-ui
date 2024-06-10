@@ -23,6 +23,9 @@ export type LLMComparisonContextType = {
     /** the variants we want to test on this app */
     variants: (ModelVariant | null)[][];
 
+    /** selected variants for comparison */
+    selectedVariants: (ModelVariant | null)[][];
+
     /** default variant in app */
     defaultVariant: DefaultModelVariant[];
 
@@ -31,6 +34,9 @@ export type LLMComparisonContextType = {
 
     /** Delete Variant set in context */
     deleteVariant: (index: number) => void;
+
+    /** Sets the selected variants */
+    setSelectedVariants: (variants: ModelVariant[][]) => void;
 
     /** Swap function of variant model */
     swapVariantModel: (
