@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect } from 'react';
+import { CSSProperties, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -22,11 +22,21 @@ export interface PageBlockDef extends BlockDef<'page'> {
 
 export const PageBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, listeners } = useBlock<PageBlockDef>(id);
+    const [loading, setLoading] = useState(data.loading);
 
     // when the page is mounted, trigger the onPageLoad event
     useEffect(() => {
         if (listeners.onPageLoad) {
             listeners.onPageLoad();
+        }
+    }, []);
+
+    useEffect(() => {
+        if (loading) {
+            setTimeout(() => {
+                console.log('PageBlock ' + data.loading);
+                setLoading(false);
+            }, 2000);
         }
     }, []);
 
@@ -44,7 +54,7 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         >
             {/* TODO: Make Loading Screen relative to the Page */}
             <LoadingScreen>
-                {data.loading ? <LoadingScreen.Trigger /> : null}
+                {loading ? <LoadingScreen.Trigger /> : null}
                 <Slot slot={slots.content}></Slot>
             </LoadingScreen>
         </div>
