@@ -1,30 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import {
-    styled,
-    Button,
-    Card,
-    Stack,
-    Typography,
-    Icon,
-    IconButton,
-    Tooltip,
-    Modal,
-    TextField,
-    Select,
-    Slider,
-} from '@semoss/ui';
+import { useEffect, useState } from 'react';
+import { Button, Stack, Typography, Modal, Select, Slider } from '@semoss/ui';
 import { TypeLlmConfig } from '../workspace.types';
 import { Controller, useForm } from 'react-hook-form';
 import { usePixel } from '@/hooks';
-import { ModelVariant } from '@/contexts/LLMComparisonContext';
 
 interface VariantModelModalProps {
     /** Open Modal */
     open: boolean;
     /** Callback on modal close */
-    onClose: (model?: ModelVariant) => void;
+    onClose: (model?: TypeLlmConfig) => void;
     /** Variable to map to */
-    variable: ModelVariant;
+    variable: TypeLlmConfig;
 }
 
 export const VariantModelModal = (props: VariantModelModalProps) => {
