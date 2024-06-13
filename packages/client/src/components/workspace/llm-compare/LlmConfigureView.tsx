@@ -1,6 +1,6 @@
-import { useMemo, useEffect } from 'react';
-import { styled, Container, Grid, Card, Stack } from '@semoss/ui';
-import { useLLMComparison, useRootStore } from '@/hooks';
+import { useMemo } from 'react';
+import { styled, Grid } from '@semoss/ui';
+import { useLLMComparison } from '@/hooks';
 import { LLMConfigureHeader, ModelVariant } from './';
 
 const StyledContainer = styled('section')(({ theme }) => ({
@@ -19,7 +19,6 @@ const StyledContainer = styled('section')(({ theme }) => ({
 
 export const LlmConfigureView = () => {
     const { variants, defaultVariant } = useLLMComparison();
-    const { monolithStore } = useRootStore();
 
     const variantList = useMemo(() => {
         return variants.map((variant, j) => {
@@ -27,7 +26,7 @@ export const LlmConfigureView = () => {
                 <ModelVariant
                     key={j}
                     index={j}
-                    models={variant}
+                    variant={variant}
                     isDefault={false}
                 />
             );
@@ -40,7 +39,7 @@ export const LlmConfigureView = () => {
             <Grid container spacing={1}>
                 <ModelVariant
                     index={-1}
-                    models={defaultVariant}
+                    variant={defaultVariant}
                     isDefault={true}
                 />
             </Grid>

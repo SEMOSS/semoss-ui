@@ -1,16 +1,38 @@
-import React, { useEffect, useMemo, useState, useReducer } from 'react';
-import {
-    LLMComparisonContext,
-    ModelVariant,
-} from '@/contexts/LLMComparisonContext';
+import React, { useEffect, useReducer } from 'react';
+import { LLMComparisonContext } from '@/contexts/LLMComparisonContext';
 import { useNotification } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { useBlocks } from '@/hooks';
 import { useRootStore } from '@/hooks';
-import { TypeLlmConfig } from '../workspace.types';
+import { TypeLlmConfig, TypeVariant } from '../workspace.types';
 
 const initialState = {
-    defaultLLMVariant: [],
+    defaultLLMVariant: {
+        selected: true,
+        models: [
+            {
+                alias: 'llm1',
+                value: '001510f8-b86e-492e-a7f0-41299775e7d9',
+                database_name: 'AIC',
+                database_subtype: 'OPEN_AI',
+                database_type: 'MODEL',
+            },
+            {
+                alias: 'llm2',
+                value: '001510f8-b86e-492e-a7f0-41299775e7d8',
+                database_name: 'AIC',
+                database_subtype: 'OPEN_AI',
+                database_type: 'MODEL',
+            },
+            {
+                alias: 'llm3',
+                value: '001510f8-b86e-492e-a7f0-41299775e7d7',
+                database_name: 'AIC',
+                database_subtype: 'OPEN_AI',
+                database_type: 'MODEL',
+            },
+        ],
+    },
     llmVariants: [
         // [
         // {
@@ -165,22 +187,14 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
-    const setSelectedVariants = (vars: ModelVariant[][]) => {
-        dispatch({
-            type: 'field',
-            field: 'selectedVariants',
-            value: vars,
-        });
-    };
-
     const swapVariantModel = (
         variantIndex: number,
         modelIndex: number,
-        model: ModelVariant,
+        model: TypeLlmConfig,
     ) => {
         const variantsCopy = llmVariants;
 
-        variantsCopy[variantIndex][modelIndex] = model;
+        variantsCopy[variantIndex].models[modelIndex] = model;
 
         dispatch({
             type: 'field',
@@ -194,10 +208,8 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
             value={{
                 variants: llmVariants,
                 defaultVariant: defaultLLMVariant,
-                selectedVariants: llmVariants,
                 addNewVariant: addNewVariant,
                 deleteVariant: deleteVariant,
-                setSelectedVariants: setSelectedVariants,
                 swapVariantModel: swapVariantModel,
             }}
         >
