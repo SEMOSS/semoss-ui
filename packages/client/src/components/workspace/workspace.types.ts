@@ -1,4 +1,6 @@
 export interface TypeVariant {
+    name?: string;
+    selected: boolean;
     models: TypeLlmConfig[];
 }
 
@@ -14,4 +16,9 @@ export interface TypeLlmConfig {
     topP?: number;
     temperature?: number;
     length?: number;
+}
+
+export interface DefaultModelVariant extends TypeLlmConfig {
+    to: string;
+    type: string;
 }
