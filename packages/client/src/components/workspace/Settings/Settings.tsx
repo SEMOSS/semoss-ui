@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
-import { Collapse, Tooltip, styled, List, Stack, Typography } from '@semoss/ui';
+import { Tooltip, styled, List, Stack, Typography } from '@semoss/ui';
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 import { ModelTraining, SupervisorAccount } from '@mui/icons-material';
 import { SettingsView } from './SettingsView';
@@ -11,8 +11,6 @@ import {
     TuneRounded,
 } from '@mui/icons-material';
 import { LlmConfigureView } from '../llm-compare/LlmConfigureView';
-import { BlocksRenderer } from '@/components/blocks-workspace';
-import { useBlocks } from '@/hooks';
 import { ABTesting, LLMCompareWrapper } from '../llm-compare';
 import { ABTestingPanel } from '../llm-compare/ABTestingPanel';
 
@@ -43,10 +41,11 @@ const StyledCenterPanel = styled('div')(({ theme }) => ({
 
 const StyledRightPanel = styled('div')(({ theme }) => ({
     height: '100%',
-    width: theme.spacing(45),
+    width: '400px',
     overflow: 'hidden',
     backgroundColor: theme.palette.background.paper,
     borderLeft: `1px solid ${theme.palette.divider}`,
+    padding: `${theme.spacing(2)} ${theme.spacing(5)}`,
 }));
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -76,7 +75,6 @@ const StyledListItem = styled(List.Item)<{ selected?: boolean }>(
 );
 
 export const Settings = observer(() => {
-    const { state } = useBlocks();
     const [view, setView] = useState<'access' | 'testing' | ''>('access');
     const [subView, setSubView] = useState<
         'configure' | 'testing' | 'analyze' | 'history' | ''
@@ -92,7 +90,7 @@ export const Settings = observer(() => {
     };
 
     const updateSubView = (v: typeof subView) => {
-        if (!v || v === subView) {
+        if (!v) {
             setSubView('');
             return;
         }
@@ -192,7 +190,9 @@ export const Settings = observer(() => {
 
             {view === 'testing' && subView === 'testing' && (
                 <StyledRightPanel>
-                    <ABTestingPanel />
+                    <LLMCompareWrapper>
+                        <ABTestingPanel />
+                    </LLMCompareWrapper>
                 </StyledRightPanel>
             )}
         </StyledSettings>
