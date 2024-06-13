@@ -1,61 +1,28 @@
-import { useEffect, useState } from 'react';
-import {
-    styled,
-    Button,
-    Card,
-    Stack,
-    Typography,
-    Icon,
-    IconButton,
-    Tooltip,
-    Modal,
-    TextField,
-    Select,
-    Slider,
-} from '@semoss/ui';
-import { TypeLlmConfig } from '../workspace.types';
-import { AddRounded, Delete, Edit } from '@mui/icons-material';
-import { getEngineImage } from '@/utility';
+import { useState } from 'react';
+import { styled, Card, Stack, Typography, Icon } from '@semoss/ui';
+import { AddRounded } from '@mui/icons-material';
 import { useLLMComparison } from '@/hooks';
-import { Controller, useForm } from 'react-hook-form';
 import { VariantModelModal } from './';
 
 const StyledCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'disableHover',
-})<{ disableHover?: boolean }>(({ theme, disableHover }) => ({
-    width: '362px',
-    padding: theme.spacing(2),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '16px',
-}));
+    shouldForwardProp: (prop) => prop !== 'disableHover' && prop !== 'size',
+})<{ disableHover?: boolean; size: string }>(
+    ({ theme, disableHover, size }) => ({
+        padding: theme.spacing(2),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '16px',
 
-const StyledCardHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: theme.spacing(2),
-    alignSelf: 'stretch',
-}));
+        ...(size === 'small' && {
+            width: '288px',
+        }),
 
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-
-    ':last-child': {
-        paddingBottom: 0,
-    },
-}));
-
-const StyledCardImg = styled(Card.Media)(({ theme }) => ({
-    width: '36px',
-    height: '36px',
-    borderRadius: theme.shape.borderRadius,
-    justifyContent: 'center',
-    alignItems: 'center',
-}));
+        ...(size === 'medium' && {
+            width: '362px',
+        }),
+    }),
+);
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     overflow: 'hidden',
@@ -100,9 +67,14 @@ interface LLMSwapCardProps {
      * This is the index of the model within its own variant
      */
     modelIndex: number;
+
+    /**
+     * Sets the width of the Card
+     */
+    size?: 'small' | 'medium';
 }
 export const LLMSwapCard = (props: LLMSwapCardProps) => {
-    const { variantIndex, modelIndex } = props;
+    const { variantIndex, modelIndex, size = 'medium' } = props;
     const { defaultVariant, swapVariantModel } = useLLMComparison();
     const [modelModal, setModelModal] = useState(false);
     const variableToMapTo = defaultVariant[modelIndex];
@@ -110,6 +82,7 @@ export const LLMSwapCard = (props: LLMSwapCardProps) => {
     return (
         <>
             <StyledCard
+                size={size}
                 onClick={() => {
                     setModelModal(true);
                 }}

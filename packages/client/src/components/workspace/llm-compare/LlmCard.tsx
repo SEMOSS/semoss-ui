@@ -14,15 +14,24 @@ import { useLLMComparison } from '@/hooks';
 import { VariantModelModal } from './VariantModelModal';
 
 const StyledCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'disableHover',
-})<{ disableHover?: boolean }>(({ theme, disableHover }) => ({
-    width: '362px',
-    padding: theme.spacing(2),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '16px',
-}));
+    shouldForwardProp: (prop) => prop !== 'disableHover' && prop !== 'size',
+})<{ disableHover?: boolean; size: string }>(
+    ({ theme, disableHover, size }) => ({
+        padding: theme.spacing(2),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '16px',
+
+        ...(size === 'small' && {
+            width: '288px',
+        }),
+
+        ...(size === 'medium' && {
+            width: '362px',
+        }),
+    }),
+);
 
 const StyledCardHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -61,7 +70,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     letterSpacing: '0.15px',
 }));
 
-interface LlmCardProps {
+export interface LlmCardProps {
     /**
      * Either specified already or not specified yet - llm that is mapped to variable
      */
@@ -78,10 +87,15 @@ interface LlmCardProps {
      * Is this a default llm in our app, if so don't allow edit for now
      */
     isDefault: boolean;
+
+    /**
+     * Sets the width of the Card
+     */
+    size?: 'small' | 'medium';
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const { llm, variantIndex, modelIndex, isDefault } = props;
+    const { llm, variantIndex, modelIndex, isDefault, size = 'medium' } = props;
     const { swapVariantModel } = useLLMComparison();
     const [modelModal, setModelModal] = useState(false);
 
@@ -98,7 +112,7 @@ export const LlmCard = (props: LlmCardProps) => {
 
     return (
         <>
-            <StyledCard>
+            <StyledCard size={size}>
                 <StyledCardHeader>
                     <Stack direction={'row'} gap={2}>
                         <StyledCardImg
