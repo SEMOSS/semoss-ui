@@ -1,6 +1,6 @@
 import { styled, Typography, Button, Stack, Collapse } from '@semoss/ui';
 import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
-import { TypeLlmConfig } from '../workspace.types';
+import { TypeLlmConfig, TypeVariant } from '../workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useLLMComparison } from '@/hooks';
@@ -11,20 +11,26 @@ const StyledStack = styled(Stack)(({ theme }) => ({
 }));
 
 const StyledVariantBox = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'isDefault',
-})<{ isDefault?: boolean }>(({ theme, isDefault }) => ({
-    backgroundColor: theme.palette.background.default,
-    borderRadius: theme.spacing(1.5),
-    padding: theme.spacing(2),
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(2),
+    shouldForwardProp: (prop) => prop !== 'isDefault' && prop !== 'isVertical',
+})<{ isDefault?: boolean; isVertical: boolean }>(
+    ({ theme, isDefault, isVertical }) => ({
+        backgroundColor: theme.palette.background.default,
+        borderRadius: theme.spacing(1.5),
+        padding: theme.spacing(2),
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: theme.spacing(2),
 
-    ...(isDefault && {
-        boxShadow: '0px 5px 8px 0px #00000014',
+        ...(isDefault && {
+            boxShadow: '0px 5px 8px 0px #00000014',
+        }),
+
+        ...(isVertical && {
+            flexDirection: 'column',
+        }),
     }),
-}));
+);
 
 const StyledRow = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -37,7 +43,6 @@ const StyledActionBar = styled(Collapse)(({ theme }) => ({
     top: theme.spacing(-2),
     width: '100%',
     zIndex: 1,
-    border: '1px solid red',
 }));
 
 interface ModelVariantProps {
@@ -48,27 +53,70 @@ interface ModelVariantProps {
     isDefault?: boolean;
 
     /** variant info, the models associated to variant */
-    models: TypeLlmConfig[];
+    variant: TypeVariant;
+
+    /** sets the orientation for how the variants are displayed */
+    orientation?: 'column' | 'row';
+
+    /** Disables/hides the variant specific actions (LLM actions are still available) */
+    hideVariantActions?: boolean;
+
+    /** Disables/hides the ability for users to pin/select a variant */
+    hidePins: boolean;
+
+    /** Props passed to each Llm Card */
+    cardProps?: {
+        size: 'small' | 'medium';
+    };
 }
 
 export const ModelVariant = (props: ModelVariantProps) => {
-    const { index, models, isDefault } = props;
+    const {
+        index,
+        variant,
+        isDefault = false,
+        orientation = 'row',
+        hideVariantActions = false,
+        cardProps,
+    } = props;
     const [hovered, setHovered] = useState(false);
-    const { defaultVariant, addNewVariant, deleteVariant } = useLLMComparison();
+    const { addNewVariant, deleteVariant } = useLLMComparison();
+
+    // TODO: Delete when BE is functional and no longer needed
+    const buildFakeModelForTest = (num: number) => {
+        return {
+            blah: 'blah',
+            blah2: 'blah',
+            alias: 'alias',
+            value: 'value',
+            database_name: 'database name',
+            database_subtype: 'DB subType',
+            database_type: 'DB type',
+            name: 'database name',
+            icon: 'icon',
+            topP: num,
+            temperature: 96.7,
+            length: num,
+        };
+    };
 
     return (
         <Stack direction="column" gap={1}>
             <Typography variant="body1" fontWeight="medium">
-                {index === -1 ? 'Default Variant' : `Variant ${index + 1}`}
+                {isDefault ? 'Default Variant' : `Variant ${variant.name}`}
             </Typography>
-            <StyledVariantBox isDefault={isDefault}>
-                {models.map((model: TypeLlmConfig, mIdx: number) => {
+            <StyledVariantBox
+                isVertical={orientation === 'column'}
+                isDefault={isDefault}
+            >
+                {variant?.models.map((model: TypeLlmConfig, mIdx: number) => {
                     if (!model) {
                         return (
                             <LLMSwapCard
                                 key={`llm-card--variant-${index}--model-${mIdx}`}
                                 variantIndex={index}
                                 modelIndex={mIdx}
+                                size={cardProps ? cardProps.size : 'medium'}
                             />
                         );
                     } else {
@@ -79,53 +127,62 @@ export const ModelVariant = (props: ModelVariantProps) => {
                                 variantIndex={index}
                                 modelIndex={mIdx}
                                 isDefault={isDefault}
+                                size={cardProps ? cardProps.size : 'medium'}
                             />
                         );
                     }
                 })}
             </StyledVariantBox>
 
-            <StyledRow
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                onFocus={() => setHovered(true)}
-                onBlur={() => setHovered(false)}
-            >
-                <StyledActionBar in={isDefault || hovered}>
-                    <StyledStack direction="row" gap={2}>
-                        <Button
-                            variant="text"
-                            color="secondary"
-                            onClick={() => {
-                                const variantListWithPlaceholder: null[] =
-                                    new Array(defaultVariant.length).fill(null);
-                                addNewVariant(variantListWithPlaceholder);
-                            }}
-                            startIcon={<Add />}
-                        >
-                            Add Variant
-                        </Button>
-                        <Button
-                            variant="text"
-                            color="secondary"
-                            onClick={() => addNewVariant(index)}
-                            startIcon={<ContentCopy />}
-                        >
-                            Duplicate
-                        </Button>
-                        {index !== -1 && (
+            {!hideVariantActions && (
+                <StyledRow
+                    onMouseEnter={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                    onFocus={() => setHovered(true)}
+                    onBlur={() => setHovered(false)}
+                >
+                    <StyledActionBar in={isDefault || hovered}>
+                        <StyledStack direction="row" gap={2}>
                             <Button
                                 variant="text"
                                 color="secondary"
-                                onClick={() => deleteVariant(index)}
-                                startIcon={<DeleteOutline />}
+                                onClick={() => {
+                                    addNewVariant({
+                                        name: 'New Variant',
+                                        selected: false,
+                                        models: [
+                                            buildFakeModelForTest(1),
+                                            buildFakeModelForTest(2),
+                                            buildFakeModelForTest(3),
+                                        ],
+                                    });
+                                }}
+                                startIcon={<Add />}
                             >
-                                Delete
+                                Add Variant
                             </Button>
-                        )}
-                    </StyledStack>
-                </StyledActionBar>
-            </StyledRow>
+                            <Button
+                                variant="text"
+                                color="secondary"
+                                onClick={() => addNewVariant(index)}
+                                startIcon={<ContentCopy />}
+                            >
+                                Duplicate
+                            </Button>
+                            {index !== -1 && (
+                                <Button
+                                    variant="text"
+                                    color="secondary"
+                                    onClick={() => deleteVariant(index)}
+                                    startIcon={<DeleteOutline />}
+                                >
+                                    Delete
+                                </Button>
+                            )}
+                        </StyledStack>
+                    </StyledActionBar>
+                </StyledRow>
+            )}
         </Stack>
     );
 };
