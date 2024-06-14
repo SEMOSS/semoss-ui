@@ -6,6 +6,7 @@ import { useBlocks } from '@/hooks';
 import { useRootStore } from '@/hooks';
 import { TypeLlmConfig, TypeVariant } from '../workspace.types';
 
+// TODO: clean out fake data when BE is operational
 const initialState = {
     defaultLLMVariant: {
         selected: true,
@@ -34,40 +35,60 @@ const initialState = {
         ],
     },
     llmVariants: [
-        // [
-        // {
-        //     alias: 'llm',
-        //     value: '001510f8-b86e-492e-a7f0-41299775e7d9',
-        //     database_name: 'AIC',
-        //     database_subtype: 'OPEN_AI',
-        //     database_type: 'MODEL',
-        // },
-        // null,
-        // {
-        //     alias: 'llm-2',
-        //     value: 'dbf6d2d7-dfba-4400-a214-6ac403350b04',
-        //     database_name: 'hhaha',
-        //     database_subtype: 'OPEN_AI',
-        //     database_type: 'MODEL',
-        // },
-        // ],
-        // [
-        // {
-        //     alias: 'llm',
-        //     value: 'dbf6d2d7-dfba-4400-a214-6ac403350b04',
-        //     database_name: 'hhaha',
-        //     database_subtype: 'OPEN_AI',
-        //     database_type: 'MODEL',
-        // },
-        // null,
-        // {
-        //     alias: 'llm-2',
-        //     value: '17753d59-4536-4415-a6ac-f673b1a90a87',
-        //     database_name: 'hhaha',
-        //     database_subtype: 'OPEN_AI',
-        //     database_type: 'MODEL',
-        // },
-        // ],
+        {
+            name: 'A',
+            selected: false,
+            models: [
+                {
+                    alias: 'llm Z',
+                    value: '123',
+                    database_name: 'AIC',
+                    database_subtype: 'OPEN_AI',
+                    database_type: 'MODEL',
+                },
+                {
+                    alias: 'llm Y',
+                    value: '456',
+                    database_name: 'hhaha',
+                    database_subtype: 'OPEN_AI',
+                    database_type: 'MODEL',
+                },
+                {
+                    alias: 'llm X',
+                    value: '789',
+                    database_name: 'hhaha',
+                    database_subtype: 'OPEN_AI',
+                    database_type: 'MODEL',
+                },
+            ],
+        },
+        {
+            name: 'B',
+            selected: false,
+            models: [
+                {
+                    alias: 'llm W',
+                    value: '321',
+                    database_name: 'AIC',
+                    database_subtype: 'OPEN_AI',
+                    database_type: 'MODEL',
+                },
+                {
+                    alias: 'llm V',
+                    value: '654',
+                    database_name: 'hhaha',
+                    database_subtype: 'OPEN_AI',
+                    database_type: 'MODEL',
+                },
+                {
+                    alias: 'llm U',
+                    value: '987',
+                    database_name: 'hhaha',
+                    database_subtype: 'OPEN_AI',
+                    database_type: 'MODEL',
+                },
+            ],
+        },
     ],
 };
 
