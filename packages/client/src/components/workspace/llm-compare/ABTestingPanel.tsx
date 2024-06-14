@@ -9,6 +9,8 @@ const StyledABTestingPanel = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
+    height: '100%',
+    overflowY: 'auto',
 }));
 
 type Mode = 'variants' | 'abTesting';
