@@ -1,9 +1,15 @@
 import { useLLMComparison } from '@/hooks';
-import { Fragment } from 'react';
-import { PlayArrow } from '@mui/icons-material';
-import { styled, ToggleTabsGroup, Typography, Button } from '@semoss/ui';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+import { Check, PlayArrow } from '@mui/icons-material';
+import {
+    styled,
+    ToggleTabsGroup,
+    Typography,
+    Button,
+    Checkbox,
+} from '@semoss/ui';
 import { ModelVariant } from './ModelVariant';
+import { TypeVariant } from '../workspace.types';
 
 const StyledABTestingPanel = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -17,10 +23,26 @@ type Mode = 'variants' | 'abTesting';
 
 export const ABTestingPanel = () => {
     const [mode, setMode] = useState<Mode>('variants');
-    const { defaultVariant, variants } = useLLMComparison();
+    const { defaultVariant, variants, editVariant } = useLLMComparison();
 
     const handleRerunVariants = () => {
         // TODO: reruns and saves the selected variants/edits to generated the report
+    };
+
+    const handleToggleSelected = (idx: number) => {
+        if (idx === -1) {
+            const newDefault = {
+                ...defaultVariant,
+                selected: !defaultVariant.selected,
+            };
+            editVariant(idx, newDefault);
+        } else {
+            const newVariant = {
+                ...variants[idx],
+                selected: !variants[idx].selected,
+            };
+            editVariant(idx, newVariant);
+        }
     };
 
     return (
@@ -71,9 +93,28 @@ export const ABTestingPanel = () => {
             )}
 
             {mode === 'abTesting' && (
-                <div>
-                    <Typography variant="body1">Select Variants</Typography>
-                </div>
+                <Fragment>
+                    <Typography variant="body1" fontWeight="bold">
+                        Select Variants
+                    </Typography>
+
+                    <Checkbox
+                        label="Defaul Variant"
+                        checked={defaultVariant.selected}
+                        onChange={() => handleToggleSelected(-1)}
+                    />
+
+                    {variants.map((value: TypeVariant, idx: number) => {
+                        return (
+                            <Checkbox
+                                key={`${value.name}-${idx}`}
+                                label={value.name}
+                                checked={value.selected}
+                                onChange={() => handleToggleSelected(idx)}
+                            />
+                        );
+                    })}
+                </Fragment>
             )}
         </StyledABTestingPanel>
     );
