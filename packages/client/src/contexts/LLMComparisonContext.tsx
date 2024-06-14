@@ -14,6 +14,9 @@ export type LLMComparisonContextType = {
     /** Delete Variant set in context */
     deleteVariant: (index: number) => void;
 
+    /** Edits the provided variant's details */
+    editVariant: (index: number, newVariant: TypeVariant) => void;
+
     /** Swap function of variant model */
     swapVariantModel: (
         variantIndex: number,

@@ -113,10 +113,6 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         setDefaultModels();
     }, [variables.length]);
 
-    useEffect(() => {
-        console.log('variants length changed');
-    }, [llmVariants.length]);
-
     /**
      * @desc get default models used in app and details behind them
      */
@@ -187,6 +183,25 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
+    const editVariant = (index: number, variant: TypeVariant) => {
+        if (index === -1) {
+            dispatch({
+                type: 'field',
+                field: 'defaultLLMVariant',
+                value: variant,
+            });
+        } else {
+            const variantsCopy = llmVariants;
+            variantsCopy[index] = variant;
+
+            dispatch({
+                type: 'field',
+                field: 'llmVariants',
+                value: variantsCopy,
+            });
+        }
+    };
+
     const swapVariantModel = (
         variantIndex: number,
         modelIndex: number,
@@ -210,6 +225,7 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
                 defaultVariant: defaultLLMVariant,
                 addNewVariant: addNewVariant,
                 deleteVariant: deleteVariant,
+                editVariant,
                 swapVariantModel: swapVariantModel,
             }}
         >

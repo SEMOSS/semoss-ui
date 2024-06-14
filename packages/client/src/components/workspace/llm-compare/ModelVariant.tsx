@@ -1,5 +1,18 @@
-import { styled, Typography, Button, Stack, Collapse } from '@semoss/ui';
-import { Add, ContentCopy, DeleteOutline } from '@mui/icons-material';
+import {
+    styled,
+    Typography,
+    Button,
+    Stack,
+    Collapse,
+    IconButton,
+} from '@semoss/ui';
+import {
+    Add,
+    ContentCopy,
+    DeleteOutline,
+    PushPinOutlined,
+    PushPinRounded,
+} from '@mui/icons-material';
 import { TypeLlmConfig, TypeVariant } from '../workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
@@ -8,6 +21,12 @@ import { LLMSwapCard } from './LLMSwapCard';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingTop: theme.spacing(3),
+}));
+
+const StyledVariantHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
 }));
 
 const StyledVariantBox = styled('div', {
@@ -62,7 +81,7 @@ interface ModelVariantProps {
     hideVariantActions?: boolean;
 
     /** Disables/hides the ability for users to pin/select a variant */
-    hidePins: boolean;
+    hidePins?: boolean;
 
     /** Props passed to each Llm Card */
     cardProps?: {
@@ -77,22 +96,20 @@ export const ModelVariant = (props: ModelVariantProps) => {
         isDefault = false,
         orientation = 'row',
         hideVariantActions = false,
+        hidePins = false,
         cardProps,
     } = props;
     const [hovered, setHovered] = useState(false);
-    const { addNewVariant, deleteVariant } = useLLMComparison();
+    const { addNewVariant, deleteVariant, editVariant } = useLLMComparison();
 
     // TODO: Delete when BE is functional and no longer needed
     const buildFakeModelForTest = (num: number) => {
         return {
-            blah: 'blah',
-            blah2: 'blah',
             alias: 'alias',
-            value: 'value',
+            value: `value-${num}`,
             database_name: 'database name',
             database_subtype: 'DB subType',
             database_type: 'DB type',
-            name: 'database name',
             icon: 'icon',
             topP: num,
             temperature: 96.7,
@@ -100,11 +117,29 @@ export const ModelVariant = (props: ModelVariantProps) => {
         };
     };
 
+    const handleToggleSelected = () => {
+        const updatedVariant = { ...variant };
+        updatedVariant.selected = !variant.selected;
+        editVariant(index, updatedVariant);
+    };
+
     return (
         <Stack direction="column" gap={1}>
-            <Typography variant="body1" fontWeight="medium">
-                {isDefault ? 'Default Variant' : `Variant ${variant.name}`}
-            </Typography>
+            <StyledVariantHeader>
+                <Typography variant="body1" fontWeight="medium">
+                    {isDefault ? 'Default Variant' : `Variant ${variant.name}`}
+                </Typography>
+                {!hidePins && (
+                    <IconButton onClick={handleToggleSelected}>
+                        {variant.selected ? (
+                            <PushPinRounded />
+                        ) : (
+                            <PushPinOutlined />
+                        )}
+                    </IconButton>
+                )}
+            </StyledVariantHeader>
+
             <StyledVariantBox
                 isVertical={orientation === 'column'}
                 isDefault={isDefault}

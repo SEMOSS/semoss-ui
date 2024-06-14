@@ -28,6 +28,7 @@ export const LlmConfigureView = () => {
                     index={j}
                     variant={variant}
                     isDefault={false}
+                    hidePins={true}
                 />
             );
         });
@@ -41,6 +42,7 @@ export const LlmConfigureView = () => {
                     index={-1}
                     variant={defaultVariant}
                     isDefault={true}
+                    hidePins={true}
                 />
             </Grid>
             {variantList}
