@@ -43,6 +43,10 @@ import {
     ToggleButtonBlockDef,
 } from './toggle-button-block';
 import { config as MermaidBlockConfig, MermaidBlockDef } from './mermaid-block';
+import {
+    config as CompareLLMBlockConfig,
+    LLMComparisonBlockDef,
+} from './llm-comparison-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -70,7 +74,8 @@ export type DefaultBlockDefinitions =
     | SectionBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
-    | MermaidBlockDef;
+    | MermaidBlockDef
+    | LLMComparisonBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -92,6 +97,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -120,4 +126,5 @@ export {
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
     MermaidBlockConfig,
+    CompareLLMBlockConfig,
 };
