@@ -89,12 +89,6 @@ export const stepsOne = [
         disabled: true,
         data: 'COPY_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
     },
-    // {
-    //     name: 'Upload Database',
-    //     description: '',
-    //     disabled: true,
-    //     data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
-    // },
     {
         name: 'Build Database',
         description: '',
@@ -5530,9 +5524,22 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'CSV',
-                disable: true,
+                disable: false,
                 icon: CSV,
-                fields: [],
+                fields: [
+                    // baseUpload
+                    // PredictDataTypes
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
             },
             {
                 name: 'Excel',
