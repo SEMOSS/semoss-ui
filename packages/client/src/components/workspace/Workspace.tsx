@@ -95,14 +95,23 @@ export const Workspace = observer((props: WorkspaceProps) => {
         if (validateDependencies.status !== 'SUCCESS') {
             return;
         } else if (validateDependencies.data !== null) {
-            //setAlertOpen(true);
-            //Object.keys(validateDependencies.data)
-            notification.add({
-                color: 'warning',
-                message:
-                    Object.keys(validateDependencies.data) +
-                    '- are dependencies you do not have access to',
+            const needsAccess = [];
+            Object.entries(validateDependencies.data).forEach((kv) => {
+                debugger;
+                const hasAccess = kv[1];
+
+                if (!hasAccess) {
+                    needsAccess.push(kv[0]);
+                }
             });
+            if (needsAccess.length) {
+                notification.add({
+                    color: 'warning',
+                    message:
+                        needsAccess.join(', ') +
+                        '- are dependencies you do not have access to',
+                });
+            }
         }
     }, [validateDependencies.status, validateDependencies.data]);
 
