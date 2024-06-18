@@ -25,27 +25,25 @@ const LoadingTableCell = styled(Table.Cell)(() => ({
 export const JobHistory = (props: {
     history: HistoryJob[];
     historyLoading: boolean;
+    historyCount: number;
+    historyPage: number;
+    historyRowsPerPage: number;
+    onPageChange?: (page: number) => void;
+    onRowsPerPageChange?: (rowsPerPage: number) => void;
+    onSearchChange?: (search: string) => void;
 }) => {
-    const { history, historyLoading } = props;
-    const [historySearchValue, setHistorySearchValue] = useState('');
+    const {
+        history,
+        historyLoading,
+        historyCount,
+        historyPage,
+        historyRowsPerPage,
+        onPageChange,
+        onRowsPerPageChange,
+        onSearchChange,
+    } = props;
 
     const [historyExpanded, setHistoryExpanded] = useState(false);
-
-    // pagination for history table
-    const [historyPage, setHistoryPage] = useState<number>(0);
-    const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
-    const historyStartIndex = historyPage * historyRowsPerPage;
-    const historyEndIndex = historyStartIndex + historyRowsPerPage;
-
-    const filterHistory = (historyJobs: HistoryJob[]) => {
-        return historyJobs.filter((job) => {
-            return historySearchValue.length > 0
-                ? job.jobName
-                      .toLowerCase()
-                      .includes(historySearchValue.toLowerCase())
-                : true;
-        });
-    };
 
     return (
         <StyledAccordion
@@ -61,7 +59,7 @@ export const JobHistory = (props: {
                 <Search
                     fullWidth
                     size="small"
-                    onChange={(e) => setHistorySearchValue(e.target.value)}
+                    onChange={(e) => onSearchChange(e.target.value)}
                 />
                 <Table.Container>
                     <Table>
@@ -82,21 +80,16 @@ export const JobHistory = (props: {
                                     </LoadingTableCell>
                                 </Table.Row>
                             )}
-                            {filterHistory(history).length === 0 &&
-                            !historyLoading ? (
+                            {history.length === 0 && !historyLoading ? (
                                 <Table.Row>
                                     <Table.Cell colSpan={5}>
                                         No job history, please try again.
                                     </Table.Cell>
                                 </Table.Row>
                             ) : (
-                                filterHistory(history)
-                                    .slice(historyStartIndex, historyEndIndex)
-                                    .map((history, i) => {
-                                        return (
-                                            <HistoryRow key={i} row={history} />
-                                        );
-                                    })
+                                history.map((history, i) => {
+                                    return <HistoryRow key={i} row={history} />;
+                                })
                             )}
                         </Table.Body>
                         <Table.Footer>
@@ -104,16 +97,16 @@ export const JobHistory = (props: {
                                 <Table.Pagination
                                     rowsPerPageOptions={[5, 10, 25]}
                                     onPageChange={(e, v) => {
-                                        setHistoryPage(v);
+                                        onPageChange(v);
                                     }}
                                     page={historyPage}
                                     rowsPerPage={historyRowsPerPage}
                                     onRowsPerPageChange={(e) => {
-                                        setHistoryRowsPerPage(
+                                        onRowsPerPageChange(
                                             Number(e.target.value),
                                         );
                                     }}
-                                    count={filterHistory(history).length}
+                                    count={historyCount}
                                 />
                             </Table.Row>
                         </Table.Footer>
