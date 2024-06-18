@@ -6,6 +6,7 @@ import { observer } from 'mobx-react-lite';
 import { StarBorder } from '@mui/icons-material';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
+    margin: `${theme.spacing(1)} 0`,
     borderRadius: '12px',
     backgroundColor: theme.palette.background.default,
     padding: theme.spacing(2),
