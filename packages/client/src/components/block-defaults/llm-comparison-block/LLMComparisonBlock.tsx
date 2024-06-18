@@ -131,7 +131,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                             }}
                         >
                             <StyledStarButton
-                                color="secondary"
                                 onClick={() => handleRateResponse(1)}
                                 onMouseEnter={() => setHighlightedRating(1)}
                                 onFocus={() => setHighlightedRating(1)}
@@ -143,7 +142,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 )}
                             </StyledStarButton>
                             <StyledStarButton
-                                color="secondary"
                                 onClick={() => handleRateResponse(2)}
                                 onMouseEnter={() => setHighlightedRating(2)}
                                 onFocus={() => setHighlightedRating(2)}
@@ -155,7 +153,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 )}
                             </StyledStarButton>
                             <StyledStarButton
-                                color="secondary"
                                 onClick={() => handleRateResponse(3)}
                                 onMouseEnter={() => setHighlightedRating(3)}
                                 onFocus={() => setHighlightedRating(3)}
@@ -167,7 +164,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 )}
                             </StyledStarButton>
                             <StyledStarButton
-                                color="secondary"
                                 onClick={() => handleRateResponse(4)}
                                 onMouseEnter={() => setHighlightedRating(4)}
                                 onFocus={() => setHighlightedRating(4)}
@@ -179,7 +175,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 )}
                             </StyledStarButton>
                             <StyledStarButton
-                                color="secondary"
                                 onClick={() => handleRateResponse(5)}
                                 onMouseEnter={() => setHighlightedRating(5)}
                                 onFocus={() => setHighlightedRating(5)}
