@@ -28,9 +28,11 @@ import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
 import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import Editor, { OnMount } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
-    height: '10vh',
+    height: '100vh',
     width: '100%',
 }));
 
@@ -98,12 +100,19 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         app_type: string;
     } | null>(null);
 
+    const [variableInputValue, setVariableInputValue] = useState(null);
+
     /** To disable add button */
     const tN = Boolean(variableType.length > 0 && variableName.length > 0);
-    const eP = Boolean(engine || variablePointer.length > 0);
+    const eP = Boolean(
+        engine || variablePointer.length > 0 || variableInputValue,
+    );
     const isTypeAlias = tN;
     const isPointer = eP;
-
+    const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
+    const inputVariableTypes = Boolean(
+        inputVariableTypeList.includes(variableType),
+    );
     // get the input type blocks as an array
     const inputBlocks = computed(() => {
         return Object.values(state.blocks)
@@ -167,13 +176,18 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 variable.type !== 'block'
             ) {
                 const val = state.getVariable(variable.to, variable.type);
-                const eng = newEngines[`${variable.type}s`].find(
-                    (e) => e.app_id === val,
-                );
                 // console.log('Set Engine Preview', val);
                 // console.log(eng);
-                setEngine(eng);
+                if (inputVariableTypeList.includes(variable.type)) {
+                    setVariableInputValue(val);
+                } else {
+                    const eng = newEngines[`${variable.type}s`].find(
+                        (e) => e.app_id === val,
+                    );
+                    setEngine(eng);
+                }
             }
+
             setVariableType(variable.type);
             setVariableName(variable.alias);
             setVariablePointer(variable.to);
@@ -262,6 +276,55 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     </Select.Item>
                 );
             });
+        }
+    }, [variableType]);
+
+    const input = useMemo(() => {
+        if (variableType === 'string') {
+            return (
+                <TextField
+                    variant="outlined"
+                    onChange={(e) =>
+                        setVariableInputValue(e.target.value.toString())
+                    }
+                    value={variableInputValue}
+                />
+            );
+        } else if (variableType === 'number') {
+            console.log(variableInputValue);
+            return (
+                <TextField
+                    variant="outlined"
+                    type="number"
+                    onChange={(e) => {
+                        setVariableInputValue(parseInt(e.target.value));
+                    }}
+                    value={variableInputValue}
+                />
+            );
+        } else if (variableType === 'JSON' || variableType === 'array') {
+            return (
+                <Editor
+                    width={'100%'}
+                    height={'10vh'}
+                    language={'plaintext'}
+                    onChange={(newValue, e) => {
+                        setVariableInputValue(newValue);
+                    }}
+                    value={variableInputValue}
+                ></Editor>
+            );
+        } else if (variableType === 'date') {
+            return (
+                <TextField
+                    type="date"
+                    variant="outlined"
+                    onChange={(e) =>
+                        setVariableInputValue(e.target.value.toString())
+                    }
+                    value={variableInputValue}
+                />
+            );
         }
     }, [variableType]);
 
@@ -360,6 +423,8 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         </Alert>
                     );
                 }
+            } else if (inputVariableTypeList.includes(variableType)) {
+                return <></>;
             } else {
                 return (
                     <Stack direction="row" alignItems="center">
@@ -444,38 +509,44 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         })}
                     </Select>
                     <Typography variant={'body1'}>Value</Typography>
-                    <Select
-                        disabled={!variableType}
-                        value={
-                            variableType === 'cell' ||
-                            variableType === 'query' ||
-                            variableType === 'block'
-                                ? variablePointer
-                                : engine
-                        }
-                        onChange={(e) => {
-                            const val = e.target.value as unknown;
-                            if (
-                                variableType === 'cell' ||
-                                variableType === 'query' ||
-                                variableType === 'block'
-                            ) {
-                                const p = val as string;
-                                setVariablePointer(p);
-                            } else {
-                                const p = val as {
-                                    app_id: string;
-                                    app_name: string;
-                                    app_type: string;
-                                };
-                                setEngine(p);
-                            }
-                        }}
-                    >
-                        {values}
-                    </Select>
-                    <Typography variant={'h6'}>Preview</Typography>
-                    {preview}
+                    {!inputVariableTypes && (
+                        <>
+                            <Select
+                                disabled={!variableType}
+                                value={
+                                    variableType === 'cell' ||
+                                    variableType === 'query' ||
+                                    variableType === 'block'
+                                        ? variablePointer
+                                        : engine
+                                }
+                                onChange={(e) => {
+                                    const val = e.target.value as unknown;
+                                    if (
+                                        variableType === 'cell' ||
+                                        variableType === 'query' ||
+                                        variableType === 'block'
+                                    ) {
+                                        const p = val as string;
+                                        setVariablePointer(p);
+                                    } else {
+                                        const p = val as {
+                                            app_id: string;
+                                            app_name: string;
+                                            app_type: string;
+                                        };
+                                        setEngine(p);
+                                    }
+                                }}
+                            >
+                                {values}
+                            </Select>
+                            <Typography variant={'h6'}>Preview</Typography>
+                            {preview}
+                        </>
+                    )}
+
+                    {inputVariableTypes && input}
                 </Stack>
                 <Stack direction={'row'} justifyContent={'flex-end'}>
                     <Button
@@ -498,7 +569,8 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell'
+                                        variableType === 'cell' ||
+                                        variableType === 'string'
                                     ) {
                                         state.dispatch({
                                             message:
@@ -513,14 +585,26 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             },
                                         });
                                     } else {
-                                        const id = await state.dispatch({
-                                            message:
-                                                ActionMessages.ADD_DEPENDENCY,
-                                            payload: {
-                                                id: engine.app_id,
-                                                type: variableType,
-                                            },
-                                        });
+                                        let id;
+                                        if (engine) {
+                                            id = await state.dispatch({
+                                                message:
+                                                    ActionMessages.ADD_DEPENDENCY,
+                                                payload: {
+                                                    id: engine.app_id,
+                                                    type: variableType,
+                                                },
+                                            });
+                                        } else {
+                                            id = await state.dispatch({
+                                                message:
+                                                    ActionMessages.ADD_DEPENDENCY,
+                                                payload: {
+                                                    id: variableInputValue,
+                                                    type: variableType,
+                                                },
+                                            });
+                                        }
 
                                         state.dispatch({
                                             message:
@@ -566,7 +650,9 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.ADD_DEPENDENCY,
                                             payload: {
-                                                id: engine.app_id,
+                                                id: engine
+                                                    ? engine.app_id
+                                                    : variableInputValue,
                                                 type: variableType,
                                             },
                                         });

@@ -225,14 +225,16 @@ export class StateStore {
             type === 'model' ||
             type === 'vector' ||
             type === 'function' ||
-            type === 'storage'
+            type === 'storage' ||
+            type === 'string' ||
+            type === 'number' ||
+            type === 'date' ||
+            type === 'array' ||
+            type === 'JSON'
         ) {
+            console.log(this._store.dependencies[pointer]);
             // Finds Dependency from pointer
             return this._store.dependencies[pointer];
-        } else if (type === 'string') {
-            //
-        } else if (type === 'number') {
-            //
         }
         return '';
     }
@@ -329,6 +331,7 @@ export class StateStore {
 
                 this.renameVariable(id, alias);
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
+                console.log(action.payload);
                 const { from, to } = action.payload;
 
                 this.editVariable(from, to);
@@ -1230,7 +1233,6 @@ export class StateStore {
         const id = `${type}--${Math.floor(Math.random() * 10000)}`;
 
         this._store.dependencies[id] = value;
-
         return id;
     };
 }
