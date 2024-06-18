@@ -28,9 +28,11 @@ import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
 import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import Editor, { OnMount } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
-    height: '10vh',
+    height: '100vh',
     width: '100%',
 }));
 
@@ -103,6 +105,17 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     const eP = Boolean(engine || variablePointer.length > 0);
     const isTypeAlias = tN;
     const isPointer = eP;
+    const inputVariableTypeList = [
+        'string',
+        'number',
+        'JSON',
+        'boolean',
+        'date',
+        'array',
+    ];
+    const inputVariableTypes = Boolean(
+        inputVariableTypeList.includes(variableType),
+    );
 
     // get the input type blocks as an array
     const inputBlocks = computed(() => {
@@ -265,6 +278,55 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         }
     }, [variableType]);
 
+    const input = useMemo(() => {
+        if (variableType === 'string' || variableType === 'number') {
+            return (
+                <TextField
+                    variant="outlined"
+                    onChange={(e) =>
+                        setVariablePointer(e.target.value.toString())
+                    }
+                />
+            );
+        } else if (variableType === 'JSON' || variableType === 'array') {
+            return (
+                <Editor
+                    width={'100%'}
+                    height={'10vh'}
+                    language={'plaintext'}
+                    onChange={(newValue, e) => {
+                        setVariablePointer(newValue);
+                    }}
+                ></Editor>
+            );
+        } else if (variableType === 'boolean') {
+            return (
+                <Select
+                    onChange={(e) => {
+                        setVariablePointer(e.target.value);
+                    }}
+                >
+                    <Select.Item value={'true'}>
+                        <Typography variant="caption">True</Typography>
+                    </Select.Item>
+                    <Select.Item value={'false'}>
+                        <Typography variant="caption">False</Typography>
+                    </Select.Item>
+                </Select>
+            );
+        } else if (variableType === 'date') {
+            return (
+                <TextField
+                    type="date"
+                    variant="outlined"
+                    onChange={(e) =>
+                        setVariablePointer(e.target.value.toString())
+                    }
+                />
+            );
+        }
+    }, [variableType]);
+
     const preview = useMemo(() => {
         if (variableType && (variablePointer || engine)) {
             if (variableType === 'block') {
@@ -360,6 +422,8 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         </Alert>
                     );
                 }
+            } else if (inputVariableTypeList.includes(variableType)) {
+                return <></>;
             } else {
                 return (
                     <Stack direction="row" alignItems="center">
@@ -444,38 +508,44 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         })}
                     </Select>
                     <Typography variant={'body1'}>Value</Typography>
-                    <Select
-                        disabled={!variableType}
-                        value={
-                            variableType === 'cell' ||
-                            variableType === 'query' ||
-                            variableType === 'block'
-                                ? variablePointer
-                                : engine
-                        }
-                        onChange={(e) => {
-                            const val = e.target.value as unknown;
-                            if (
-                                variableType === 'cell' ||
-                                variableType === 'query' ||
-                                variableType === 'block'
-                            ) {
-                                const p = val as string;
-                                setVariablePointer(p);
-                            } else {
-                                const p = val as {
-                                    app_id: string;
-                                    app_name: string;
-                                    app_type: string;
-                                };
-                                setEngine(p);
-                            }
-                        }}
-                    >
-                        {values}
-                    </Select>
-                    <Typography variant={'h6'}>Preview</Typography>
-                    {preview}
+                    {!inputVariableTypes && (
+                        <>
+                            <Select
+                                disabled={!variableType}
+                                value={
+                                    variableType === 'cell' ||
+                                    variableType === 'query' ||
+                                    variableType === 'block'
+                                        ? variablePointer
+                                        : engine
+                                }
+                                onChange={(e) => {
+                                    const val = e.target.value as unknown;
+                                    if (
+                                        variableType === 'cell' ||
+                                        variableType === 'query' ||
+                                        variableType === 'block'
+                                    ) {
+                                        const p = val as string;
+                                        setVariablePointer(p);
+                                    } else {
+                                        const p = val as {
+                                            app_id: string;
+                                            app_name: string;
+                                            app_type: string;
+                                        };
+                                        setEngine(p);
+                                    }
+                                }}
+                            >
+                                {values}
+                            </Select>
+                            <Typography variant={'h6'}>Preview</Typography>
+                            {preview}
+                        </>
+                    )}
+
+                    {inputVariableTypes && input}
                 </Stack>
                 <Stack direction={'row'} justifyContent={'flex-end'}>
                     <Button
@@ -498,7 +568,11 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell'
+                                        variableType === 'cell' ||
+                                        variableType === 'string' ||
+                                        inputVariableTypeList.includes(
+                                            variableType,
+                                        )
                                     ) {
                                         state.dispatch({
                                             message:
@@ -549,7 +623,10 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell'
+                                        variableType === 'cell' ||
+                                        inputVariableTypeList.includes(
+                                            variableType,
+                                        )
                                     ) {
                                         state.dispatch({
                                             message:
