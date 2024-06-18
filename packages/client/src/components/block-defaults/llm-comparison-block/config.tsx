@@ -5,6 +5,7 @@ import {
 } from './LLMComparisonBlock';
 import { BLOCK_TYPE_COMPARE } from '../block-defaults.constants';
 import { SmartButton } from '@mui/icons-material';
+import { LLMComparisonMenu } from './LLMComparisonMenu';
 
 export const config: BlockConfig<LLMComparisonBlockDef> = {
     widget: 'llmComparison',
@@ -14,4 +15,5 @@ export const config: BlockConfig<LLMComparisonBlockDef> = {
     slots: {},
     render: LLMComparisonBlock,
     icon: SmartButton,
+    menu: LLMComparisonMenu,
 };
