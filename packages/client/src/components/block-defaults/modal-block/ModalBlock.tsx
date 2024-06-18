@@ -19,7 +19,8 @@ export const ModalBlock = ({ id }) => {
 
     return (
         <Dialog
-            open={data.open}
+            // open={data.open}
+            open={false}
             container={() => document.getElementById('page-1')}
             sx={{ position: 'absolute' }}
             BackdropProps={{ style: { position: 'absolute' } }}
