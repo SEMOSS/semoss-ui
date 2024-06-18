@@ -55,6 +55,10 @@ const StyledListIcon = styled(List.Icon)(({ theme }) => ({
     minWidth: 'unset',
 }));
 
+const StyledStack = styled(Stack)(({ theme }) => ({
+    overflowX: 'scroll',
+}));
+
 interface QueryWithIndex {
     /**
      * Query to bind to
@@ -221,7 +225,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     };
 
     return (
-        <Stack direction="row" spacing={0}>
+        <StyledStack direction="row" spacing={0}>
             {notebook.queriesList.map((q, i) => {
                 return (
                     <StyledSheet
@@ -326,6 +330,6 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                     </Icon>
                 </StyledIconButton>
             </StyledButtonContainer>
-        </Stack>
+        </StyledStack>
     );
 });
