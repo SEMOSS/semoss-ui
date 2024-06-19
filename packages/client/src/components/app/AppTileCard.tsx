@@ -484,8 +484,10 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         underline="none"
                         target="_blank"
                     >
-                        <Menu.Item value="copy" onClick={() => {}}>
-                            Edit App Details
+                        <Menu.Item value="copy">
+                            {app.user_permission === 2
+                                ? 'View App Details'
+                                : 'Edit App Details'}
                         </Menu.Item>
                     </Link>
                 )}
