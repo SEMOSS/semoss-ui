@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Stack,
     IconButton,
+    CircularProgress,
     Icon,
     Menu,
     List,
@@ -17,7 +18,15 @@ import { observer } from 'mobx-react-lite';
 import { useBlocks, useRootStore, useWorkspace } from '@/hooks';
 import { NewQueryOverlay } from './NewQueryOverlay';
 import { ActionMessages, QueryState } from '@/stores';
-import { ContentCopy, Download, Delete, MoreVert } from '@mui/icons-material';
+import {
+    ContentCopy,
+    CheckCircle,
+    Error,
+    Pending,
+    Download,
+    Delete,
+    MoreVert,
+} from '@mui/icons-material';
 
 const StyledSheet = styled('div', {
     shouldForwardProp: (prop) => prop !== 'selected',
@@ -50,6 +59,11 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
     },
 }));
 
+const StyledIcon = styled(Icon)(({ theme }) => ({
+    width: '.75em',
+    height: '.75em',
+}));
+
 const StyledListIcon = styled(List.Icon)(({ theme }) => ({
     width: theme.spacing(4),
     minWidth: 'unset',
@@ -57,6 +71,20 @@ const StyledListIcon = styled(List.Icon)(({ theme }) => ({
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     overflowX: 'scroll',
+}));
+
+const StyledRedDot = styled('div')(({ theme }) => ({
+    width: '.50em',
+    height: '.50em',
+    backgroundColor: theme.palette.error.main,
+    borderRadius: '50%',
+}));
+
+const StyledGreenDot = styled('div')(({ theme }) => ({
+    width: '.50em',
+    height: '.50em',
+    backgroundColor: theme.palette.success.main,
+    borderRadius: '50%',
 }));
 
 interface QueryWithIndex {
@@ -150,11 +178,16 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
             // throw an error if there is no key
             // throw an error if index / size return as 0 indicating app is new and has not yet been saved
             if (!key) {
-                throw new Error('Error downloading app notebook');
+                notification.add({
+                    color: 'error',
+                    message: 'Error downloading app notebook',
+                });
             } else if (key == 'Index: 0, Size: 0') {
-                throw new Error(
-                    'Error downloading app notebook. Save new apps before downloading.',
-                );
+                notification.add({
+                    color: 'error',
+                    message:
+                        'Error downloading app notebook. Save new apps before downloading.',
+                });
             } else {
                 // if no issues are indicated in the return download the app
                 await monolithStore.download(configStore.store.insightID, key);
@@ -184,7 +217,10 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
             // get the query
             const query = state.getQuery(id);
             if (!query) {
-                throw new Error(`Cannot find query ${id}`);
+                notification.add({
+                    color: 'error',
+                    message: `Cannot find query ${id}`,
+                });
             }
 
             // get the json
@@ -224,6 +260,16 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
         setAnchorEl(null);
     };
 
+    const getSheetStatusIcon = (query) => {
+        if (query.isSuccessful) {
+            return <StyledGreenDot />;
+        } else if (query.isError) {
+            return <StyledRedDot />;
+        } else {
+            return;
+        }
+    };
+
     return (
         <StyledStack direction="row" spacing={0}>
             {notebook.queriesList.map((q, i) => {
@@ -235,6 +281,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                             notebook.selectQuery(q.id);
                         }}
                     >
+                        {getSheetStatusIcon(q)}
                         <Typography variant={'body2'} fontWeight="bold">
                             {q.id}
                         </Typography>

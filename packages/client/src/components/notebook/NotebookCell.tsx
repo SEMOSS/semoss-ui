@@ -477,36 +477,6 @@ export const NotebookCell = observer(
 
                     <StyledCellActions in={showCellActions}>
                         <Stack gap={1} direction={'row'} alignItems={'center'}>
-                            {/* <StyledIdChip
-                                label={
-                                    <Stack
-                                        direction="row"
-                                        spacing={0.5}
-                                        alignItems="center"
-                                    >
-                                        <span>{`${cell.id}`}</span>
-                                        <ContentCopy fontSize="inherit" />
-                                    </Stack>
-                                }
-                                title="Copy cell id"
-                                onClick={() => {
-                                    try {
-                                        navigator.clipboard.writeText(cell.id);
-
-                                        notification.add({
-                                            color: 'success',
-                                            message:
-                                                'Succesfully copied to clipboard',
-                                        });
-                                    } catch (e) {
-                                        notification.add({
-                                            color: 'error',
-                                            message: e.message,
-                                        });
-                                    }
-                                }}
-                            /> */}
-                            {/* <ButtonGroup variant="outlined"> */}
                             <StyledButtonGroup variant="outlined">
                                 <StyledButtonGroupButton
                                     title="Run this cell and below"
