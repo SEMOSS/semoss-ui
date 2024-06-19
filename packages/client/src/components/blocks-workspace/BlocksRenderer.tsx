@@ -50,7 +50,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
         // load the app
         runPixel<[SerializedState]>(pixel, 'new')
-            .then(({ pixelReturn, errors, insightId }) => {
+            .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
                     throw new Error(errors.join(''));
                 }
@@ -80,6 +80,20 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
                 // set it
                 setStateStore(store);
+
+                if (appId) {
+                    const { errors: errs } = await runPixel(
+                        `SetContext("${appId}");`,
+                        insightId,
+                    );
+
+                    if (errs.length) {
+                        notification.add({
+                            color: 'error',
+                            message: errs.join(''),
+                        });
+                    }
+                }
             })
             .catch((e) => {
                 notification.add({

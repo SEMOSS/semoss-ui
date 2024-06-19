@@ -97,7 +97,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
         } else if (validateDependencies.data !== null) {
             const needsAccess = [];
             Object.entries(validateDependencies.data).forEach((kv) => {
-                debugger;
                 const hasAccess = kv[1];
 
                 if (!hasAccess) {

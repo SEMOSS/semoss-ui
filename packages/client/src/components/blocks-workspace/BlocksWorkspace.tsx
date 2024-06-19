@@ -65,7 +65,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
             'new',
         )
-            .then(({ pixelReturn, errors, insightId }) => {
+            .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
                     throw new Error(errors.join(''));
                 }
@@ -83,6 +83,18 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 
                 // set it
                 setState(s);
+
+                const { errors: errs } = await runPixel(
+                    `SetContext("${workspace.appId}");`,
+                    insightId,
+                );
+
+                if (errs.length) {
+                    notification.add({
+                        color: 'error',
+                        message: errs.join(''),
+                    });
+                }
             })
             .catch((e) => {
                 notification.add({
