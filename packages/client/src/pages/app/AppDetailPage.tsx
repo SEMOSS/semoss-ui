@@ -250,12 +250,17 @@ export const AppDetailPage = () => {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
+                            const tagRes = res.value.output.tag;
+                            let modelledTags: string[] = [];
+                            if (typeof tagRes === 'string') {
+                                modelledTags.push(tagRes);
+                            } else if (Array.isArray(tagRes)) {
+                                modelledTags = tagRes;
+                            }
+
                             setValue('appInfo', res.value.output);
-                            setValue('tags', res.value.output.tag || []);
-                            setValue(
-                                'detailsForm.tags',
-                                res.value.output.tag || [],
-                            );
+                            setValue('tags', modelledTags);
+                            setValue('detailsForm.tags', modelledTags);
                         }
                     } else if (idx === 2) {
                         if (res.value.type === 'error') {
@@ -401,9 +406,9 @@ export const AppDetailPage = () => {
                                 alt="App Image"
                             />
                             <TitleSectionBodyWrapper>
-                                <SectionHeading variant="h1">
+                                <Typography variant="h6">
                                     {appInfo?.project_name}
-                                </SectionHeading>
+                                </Typography>
                                 <TitleSectionBody variant="body1">
                                     {() => {
                                         if (permission === 'author') {
