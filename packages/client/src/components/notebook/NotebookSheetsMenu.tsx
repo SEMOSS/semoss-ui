@@ -59,11 +59,6 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
     },
 }));
 
-const StyledIcon = styled(Icon)(({ theme }) => ({
-    width: '.75em',
-    height: '.75em',
-}));
-
 const StyledListIcon = styled(List.Icon)(({ theme }) => ({
     width: theme.spacing(4),
     minWidth: 'unset',

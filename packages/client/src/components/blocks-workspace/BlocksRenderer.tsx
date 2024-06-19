@@ -8,6 +8,7 @@ import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
+import { Typography } from '@semoss/ui';
 
 const ACTIVE = 'page-1';
 
@@ -17,13 +18,16 @@ interface BlocksRendererProps {
 
     /** State to render */
     state?: SerializedState;
+
+    /** Do we want to see load screen. Ex: preview on tooltip */
+    preview?: boolean;
 }
 
 /**
  * Render a block app
  */
 export const BlocksRenderer = observer((props: BlocksRendererProps) => {
-    const { appId, state } = props;
+    const { appId, state, preview } = props;
     const notification = useNotification();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -109,8 +113,12 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
             });
     }, [state, appId]);
 
-    if (!stateStore || isLoading) {
-        return <LoadingScreen.Trigger />;
+    if (!stateStore || (isLoading && !preview)) {
+        if (!preview) {
+            return <LoadingScreen.Trigger />;
+        } else {
+            return <Typography variant="h6">Fetching Preview...</Typography>;
+        }
     }
 
     return (

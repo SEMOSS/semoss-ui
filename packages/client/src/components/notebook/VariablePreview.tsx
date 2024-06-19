@@ -90,7 +90,10 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
         if (variable.type === 'block') {
             return (
                 <StyledBlocksBox>
-                    <BlocksRenderer state={getStateWithBlock(variable.to)} />
+                    <BlocksRenderer
+                        state={getStateWithBlock(variable.to)}
+                        preview={true}
+                    />
                 </StyledBlocksBox>
             );
         } else {
