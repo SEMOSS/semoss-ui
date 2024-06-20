@@ -73,8 +73,12 @@ const StyledIcon = styled(Icon)(({ theme }) => ({
     color: 'rgb(0,0,0)',
 }));
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
+const StyledErrorTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.error.main,
+}));
+
+const StyledCapitalizedTypography = styled(Typography)(() => ({
+    textTransform: 'capitalize',
 }));
 
 const StyledAnchorSpan = styled('span')(({ theme }) => ({
@@ -251,9 +255,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                             >
                                 <Stack direction="row" alignItems="center">
                                     <Delete color="error" />
-                                    <StyledTypography variant="body2">
+                                    <StyledErrorTypography variant="body2">
                                         Delete
-                                    </StyledTypography>
+                                    </StyledErrorTypography>
                                 </Stack>
                             </Menu.Item>
                         </Menu>
@@ -299,9 +303,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         >
                                             {variable.alias}
                                         </Typography>
-                                        <Typography variant="body2">
+                                        <StyledCapitalizedTypography variant="body2">
                                             {getVariableTypeDisplay}
-                                        </Typography>
+                                        </StyledCapitalizedTypography>
                                     </StyledPointerStack>
                                 ) : (
                                     <StyledStack spacing={1} direction="column">
