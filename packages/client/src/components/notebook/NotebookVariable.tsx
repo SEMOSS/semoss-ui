@@ -91,10 +91,18 @@ interface NotebookTokenProps {
     id: string;
     /** Variable Value */
     variable: Variable;
+    /** Engines loaded in root variable menu */
+    engines: {
+        models: { app_id: string; app_name: string; app_type: string }[];
+        databases: { app_id: string; app_name: string; app_type: string }[];
+        storages: { app_id: string; app_name: string; app_type: string }[];
+        functions: { app_id: string; app_name: string; app_type: string }[];
+        vectors: { app_id: string; app_name: string; app_type: string }[];
+    };
 }
 
 export const NotebookVariable = observer((props: NotebookTokenProps) => {
-    const { id, variable } = props;
+    const { id, variable, engines } = props;
     const { state } = useBlocks();
     const notification = useNotification();
 
@@ -326,6 +334,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             onClose={() => {
                                                 setPopoverAnchorEl(null);
                                             }}
+                                            engines={engines}
                                         />
                                     </div>
                                 )}

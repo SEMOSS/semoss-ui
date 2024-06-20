@@ -69,6 +69,17 @@ interface AddVariableModalProps {
      * Do we want edit variable
      */
     variable?: VariableWithId;
+
+    /**
+     * Engines
+     */
+    engines: {
+        models: { app_id: string; app_name: string; app_type: string }[];
+        databases: { app_id: string; app_name: string; app_type: string }[];
+        storages: { app_id: string; app_name: string; app_type: string }[];
+        functions: { app_id: string; app_name: string; app_type: string }[];
+        vectors: { app_id: string; app_name: string; app_type: string }[];
+    };
 }
 export const AddVariableModal = observer((props: AddVariableModalProps) => {
     const {
@@ -77,23 +88,10 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         anchorEl,
         onClose,
         variable,
+        engines,
     } = props;
     const { state } = useBlocks();
     const notification = useNotification();
-
-    const getEngines = usePixel<
-        { app_id: string; app_name: string; app_type: string }[]
-    >(`
-    MyEngines();
-    `);
-
-    const [engines, setEngines] = useState({
-        models: [],
-        databases: [],
-        storages: [],
-        functions: [],
-        vectors: [],
-    });
 
     const [variableName, setVariableName] = useState('');
     const [variableType, setVariableType] = useState<VariableType | ''>('');
@@ -146,45 +144,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
         return cells;
     }, [state.queries]);
-
-    useEffect(() => {
-        if (getEngines.status !== 'SUCCESS') {
-            return;
-        }
-        const cleanedEngines = getEngines.data.map((d) => ({
-            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            app_id: d.app_id,
-            app_type: d.app_type,
-        }));
-
-        const newEngines = {
-            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
-            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
-            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
-            functions: cleanedEngines.filter((e) => e.app_type === 'FUNCTION'),
-            vectors: cleanedEngines.filter((e) => e.app_type === 'VECTOR'),
-        };
-
-        if (variable) {
-            // debugger;
-            if (
-                variable.type !== 'cell' &&
-                variable.type !== 'query' &&
-                variable.type !== 'block'
-            ) {
-                const val = state.getVariable(variable.to, variable.type);
-                const eng = newEngines[`${variable.type}s`].find(
-                    (e) => e.app_id === val,
-                );
-                setEngine(eng);
-            }
-            setVariableType(variable.type);
-            setVariableName(variable.alias);
-            setVariablePointer(variable.to);
-        }
-
-        setEngines(newEngines);
-    }, [getEngines.status, getEngines.data]);
 
     const values = useMemo(() => {
         if (variableType === 'block') {
