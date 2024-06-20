@@ -61,6 +61,7 @@ export const SettingsView = () => {
                             mode={'app'}
                             name={'app'}
                             id={workspace.appId}
+                            direction="row"
                             onDelete={() => {
                                 navigate('/settings/app');
                             }}

@@ -159,9 +159,11 @@ export const Filterbox = (props: FilterboxProps) => {
     >(
         metaKeys.length > 0
             ? type === 'APP'
-                ? `GetProjectMetaValues(metaKeys=${JSON.stringify(metaKeys)}) ;`
+                ? `GetProjectMetaValues(metaKeys=${JSON.stringify(
+                      metaKeys.filter((mk) => mk),
+                  )}) ;`
                 : `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
-                      metaKeys,
+                      metaKeys.filter((mk) => mk),
                   )} ) ;`
             : '',
     );
