@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -93,11 +93,36 @@ interface NotebookTokenProps {
     variable: Variable;
     /** Engines loaded in root variable menu */
     engines: {
-        models: { app_id: string; app_name: string; app_type: string }[];
-        databases: { app_id: string; app_name: string; app_type: string }[];
-        storages: { app_id: string; app_name: string; app_type: string }[];
-        functions: { app_id: string; app_name: string; app_type: string }[];
-        vectors: { app_id: string; app_name: string; app_type: string }[];
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
     };
 }
 
@@ -134,6 +159,31 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
             });
         }
     };
+
+    /**
+     * Effects/Memos
+     */
+    const getVariableTypeDisplay: string = useMemo(() => {
+        if (
+            variable.type !== 'query' &&
+            variable.type !== 'block' &&
+            variable.type !== 'cell'
+        ) {
+            const engineId = state.getVariable(variable.to, variable.type);
+            const engine = engines[`${variable.type}s`]
+                ? engines[`${variable.type}s`].find(
+                      (engineValue) => engineValue.app_id === engineId,
+                  )
+                : null;
+            if (engine) {
+                return engine.app_name;
+            } else {
+                return variable.type;
+            }
+        } else {
+            return variable.type;
+        }
+    }, [variable.type, engines]);
 
     return (
         <StyledListItem
@@ -250,7 +300,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             {variable.alias}
                                         </Typography>
                                         <Typography variant="body2">
-                                            {variable.type}
+                                            {getVariableTypeDisplay}
                                         </Typography>
                                     </StyledPointerStack>
                                 ) : (

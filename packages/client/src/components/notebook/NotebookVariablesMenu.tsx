@@ -74,11 +74,36 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
         null,
     );
     const [engines, setEngines] = useState<{
-        models: { app_id: string; app_name: string; app_type: string }[];
-        databases: { app_id: string; app_name: string; app_type: string }[];
-        storages: { app_id: string; app_name: string; app_type: string }[];
-        functions: { app_id: string; app_name: string; app_type: string }[];
-        vectors: { app_id: string; app_name: string; app_type: string }[];
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
     }>({
         models: [],
         databases: [],
@@ -93,9 +118,14 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
      * API
      */
     const getEngines =
-        usePixel<{ app_id: string; app_name: string; app_type: string }[]>(
-            `MyEngines();`,
-        );
+        usePixel<
+            {
+                app_id: string;
+                app_name: string;
+                app_type: string;
+                app_subtype: string;
+            }[]
+        >(`MyEngines();`);
 
     /**
      * Computed
@@ -114,6 +144,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
             app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
             app_id: d.app_id,
             app_type: d.app_type,
+            app_subtype: d.app_subtype,
         }));
 
         const newEngines = {

@@ -26,8 +26,13 @@ import { DefaultBlocks, getIconForBlock } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
-import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
+import {
+    capitalizeFirstLetter,
+    getEngineImage,
+    splitAtPeriod,
+} from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import { ENGINE_ROUTES } from '@/pages/engine';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
     height: '10vh',
@@ -47,6 +52,10 @@ const QueryPreviewContainer = styled(Stack)(({ theme }) => ({
     maxHeight: '275px',
     width: '100%',
     overflow: 'auto',
+}));
+
+const StyledImg = styled('img')(({ theme }) => ({
+    maxWidth: theme.spacing(5),
 }));
 
 interface AddVariableModalProps {
@@ -74,11 +83,36 @@ interface AddVariableModalProps {
      * Engines
      */
     engines: {
-        models: { app_id: string; app_name: string; app_type: string }[];
-        databases: { app_id: string; app_name: string; app_type: string }[];
-        storages: { app_id: string; app_name: string; app_type: string }[];
-        functions: { app_id: string; app_name: string; app_type: string }[];
-        vectors: { app_id: string; app_name: string; app_type: string }[];
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
     };
 }
 export const AddVariableModal = observer((props: AddVariableModalProps) => {
@@ -100,6 +134,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         app_id: string;
         app_name: string;
         app_type: string;
+        app_subtype;
     } | null>(null);
 
     /** To disable add button */
@@ -330,11 +365,27 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         );
                     }
                 } else {
+                    const image = getEngineImage(
+                        engine.app_type,
+                        engine.app_subtype,
+                        true,
+                    );
+                    const engineDisplay = ENGINE_ROUTES.find(
+                        (engineValue) => engineValue.type === engine.app_type,
+                    );
                     return (
                         <Stack direction="row" alignItems="center">
-                            <Icon>
-                                <MoreSharp />
-                            </Icon>
+                            {image ? (
+                                <StyledImg src={image} />
+                            ) : (
+                                <Icon>
+                                    {engineDisplay ? (
+                                        createElement(engineDisplay.icon)
+                                    ) : (
+                                        <MoreSharp />
+                                    )}
+                                </Icon>
+                            )}
                             <Stack direction="column">
                                 <Typography variant="body2">
                                     {engine.app_name}
@@ -441,6 +492,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     app_id: string;
                                     app_name: string;
                                     app_type: string;
+                                    app_subtype: string;
                                 };
                                 setEngine(p);
                             }
