@@ -82,33 +82,24 @@ const StyledCrumb = styled(Typography, {
     }),
 }));
 
-const TopButtonsContainer = styled('div')({
+const ActionBar = styled('div')(({ theme }) => ({
     display: 'flex',
-    gap: '0.6rem',
+    gap: theme.spacing(1),
     marginLeft: 'auto',
-});
+}));
 
-const ChangeAccessButton = styled(Button)({
-    fontWeight: 'bold',
-});
-
-const SidebarAndSectionsContainer = styled('div')({
-    display: 'flex',
-});
-
-const Sections = styled('div')({
+const PageBody = styled('div')(({ theme }) => ({
+    marginLeft: '177px',
     display: 'flex',
     flexDirection: 'column',
-    width: '100%',
-    gap: '1rem',
-    marginLeft: '12.4rem',
-});
+    gap: theme.spacing(3),
+}));
 
-const SectionHeading = styled(Typography)({
+const SectionHeading = styled(Typography)(({ theme }) => ({
     fontSize: 20,
-    fontWeight: '550',
-    marginBottom: '0.75rem',
-});
+    fontWeight: '500',
+    marginBottom: theme.spacing(1),
+}));
 
 const TitleSection = styled('section')({
     display: 'flex',
@@ -347,59 +338,65 @@ export const AppDetailPage = () => {
                     </StyledCrumb>
                 </Breadcrumbs>
 
-                <TopButtonsContainer>
-                    {permission !== 'author' && (
-                        <ChangeAccessButton
-                            variant="text"
-                            onClick={() => setIsChangeAccessModalOpen(true)}
-                        >
-                            Change Access
-                        </ChangeAccessButton>
-                    )}
-
-                    <Button variant="contained" onClick={() => navigate('../')}>
-                        Open
-                    </Button>
-
-                    <IconButton
-                        onClick={(event) =>
-                            setMoreVertAnchorEl(event.currentTarget)
-                        }
-                    >
-                        <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                        anchorEl={moreVertAnchorEl}
-                        open={Boolean(moreVertAnchorEl)}
-                        onClose={() => setMoreVertAnchorEl(null)}
-                    >
-                        {(permission === 'author' ||
-                            permission === 'editor') && (
-                            <StyledMenuItem
-                                onClick={() => {
-                                    setIsEditDetailsModalOpen(true);
-                                    setMoreVertAnchorEl(null);
-                                }}
-                                value={null}
-                            >
-                                <EditIcon fontSize="small" />
-                                Edit App Details
-                            </StyledMenuItem>
-                        )}
-                        <StyledMenuItem
-                            value={null}
-                            onClick={() => setIsShareOverlayOpen(true)}
-                        >
-                            <ShareIcon fontSize="small" />
-                            Share
-                        </StyledMenuItem>
-                    </Menu>
-                </TopButtonsContainer>
-
-                <SidebarAndSectionsContainer>
+                <div>
                     <Sidebar permission={permission} refs={refs} />
 
-                    <Sections>
+                    <PageBody>
+                        <ActionBar>
+                            {permission !== 'author' && (
+                                <Button
+                                    variant="text"
+                                    onClick={() =>
+                                        setIsChangeAccessModalOpen(true)
+                                    }
+                                    sx={{ fontWeight: 'bold' }}
+                                >
+                                    Change Access
+                                </Button>
+                            )}
+
+                            <Button
+                                variant="contained"
+                                onClick={() => navigate('../')}
+                            >
+                                Open
+                            </Button>
+
+                            <IconButton
+                                onClick={(event) =>
+                                    setMoreVertAnchorEl(event.currentTarget)
+                                }
+                            >
+                                <MoreVertIcon />
+                            </IconButton>
+                            <Menu
+                                anchorEl={moreVertAnchorEl}
+                                open={Boolean(moreVertAnchorEl)}
+                                onClose={() => setMoreVertAnchorEl(null)}
+                            >
+                                {(permission === 'author' ||
+                                    permission === 'editor') && (
+                                    <StyledMenuItem
+                                        onClick={() => {
+                                            setIsEditDetailsModalOpen(true);
+                                            setMoreVertAnchorEl(null);
+                                        }}
+                                        value={null}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                        Edit App Details
+                                    </StyledMenuItem>
+                                )}
+                                <StyledMenuItem
+                                    value={null}
+                                    onClick={() => setIsShareOverlayOpen(true)}
+                                >
+                                    <ShareIcon fontSize="small" />
+                                    Share
+                                </StyledMenuItem>
+                            </Menu>
+                        </ActionBar>
+
                         <TitleSection>
                             <TitleSectionImg
                                 src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
@@ -549,8 +546,8 @@ export const AppDetailPage = () => {
                                 </SectionHeading>
                             </StyledSection>
                         )}
-                    </Sections>
-                </SidebarAndSectionsContainer>
+                    </PageBody>
+                </div>
             </InnerContainer>
 
             <Modal
@@ -591,25 +588,13 @@ export const AppDetailPage = () => {
 };
 
 const StyledSidebar = styled('div')(({ theme }) => ({
+    width: '132px',
     borderRight: `2px solid ${theme.palette.secondary.main}`,
     display: 'flex',
     flexDirection: 'column',
-    fontWeight: 'bold',
-    gap: '1rem',
-    paddingRight: '0.7rem',
+    gap: theme.spacing(0.5),
     position: 'fixed',
 }));
-
-const SidebarMenuItem = styled(MenuItem)({
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: 'inherit',
-    textDecoration: 'none',
-    '&:visited': {
-        color: 'inherit',
-    },
-    whiteSpace: 'nowrap',
-});
 
 interface SidebarProps {
     permission: string;
@@ -634,49 +619,61 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
 
     return (
         <StyledSidebar>
-            <SidebarMenuItem
+            <Button
+                variant="text"
+                color="secondary"
                 onClick={() => scrollIntoView(mainUsesRef)}
                 value={null}
             >
                 Main Uses
-            </SidebarMenuItem>
-            <SidebarMenuItem
+            </Button>
+            <Button
+                variant="text"
+                color="secondary"
                 onClick={() => scrollIntoView(tagsRef)}
                 value={null}
             >
                 Tags
-            </SidebarMenuItem>
+            </Button>
             {permission !== 'discoverable' && (
-                <SidebarMenuItem
+                <Button
+                    variant="text"
+                    color="secondary"
                     onClick={() => scrollIntoView(dependenciesRef)}
                     value={null}
                 >
                     Dependencies
-                </SidebarMenuItem>
+                </Button>
             )}
             {permission === 'author' && (
-                <SidebarMenuItem
+                <Button
+                    variant="text"
+                    color="secondary"
                     onClick={() => scrollIntoView(appAccessRef)}
                     value={null}
                 >
                     App Access
-                </SidebarMenuItem>
+                </Button>
             )}
             {canEdit && (
-                <SidebarMenuItem
+                <Button
+                    variant="text"
+                    color="secondary"
                     onClick={() => scrollIntoView(memberAccessRef)}
                     value={null}
                 >
                     Member Access
-                </SidebarMenuItem>
+                </Button>
             )}
             {!canEdit && (
-                <SidebarMenuItem
+                <Button
+                    variant="text"
+                    color="secondary"
                     onClick={() => scrollIntoView(similarAppsRef)}
                     value={null}
                 >
                     Similar Apps
-                </SidebarMenuItem>
+                </Button>
             )}
         </StyledSidebar>
     );
