@@ -194,11 +194,20 @@ export const AppDetailPage = () => {
     const { appId } = useParams();
 
     useEffect(() => {
-        getPermission();
         setValue('appId', appId);
-
-        fetchAllData(appId);
+        fetchUserSpecificData();
+        fetchAppData(appId);
     }, []);
+
+    const fetchUserSpecificData = async () => {
+        const currPermission = getValues('permission');
+        await getPermission();
+        const newPermission = getValues('permission');
+
+        if (newPermission !== currPermission && newPermission === 'readOnly') {
+            fetchSimilarApps();
+        }
+    };
 
     async function getPermission() {
         const { permission: role } =
@@ -220,7 +229,7 @@ export const AppDetailPage = () => {
         }
     }
 
-    const fetchAllData = async (id: string) => {
+    const fetchAppData = async (id: string) => {
         Promise.allSettled([
             fetchMainUses(monolithStore, id),
             fetchAppInfo(monolithStore, id),
@@ -267,6 +276,10 @@ export const AppDetailPage = () => {
                 }
             }),
         );
+    };
+
+    const fetchSimilarApps = () => {
+        // TODO
     };
 
     const modelDependencies = (
@@ -532,6 +545,9 @@ export const AppDetailPage = () => {
                                                 id={appId}
                                                 mode="app"
                                                 name="app"
+                                                refreshPermission={() => {
+                                                    fetchUserSpecificData();
+                                                }}
                                             />
                                         </Stack>
                                     </SettingsContext.Provider>
