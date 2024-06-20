@@ -91,6 +91,7 @@ export const Filterbox = (props: FilterboxProps) => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { filterSearch } = state;
+    const [showCollapsible, setShowCollapsible] = useState({});
 
     const tagColors = [
         'blue',
@@ -203,6 +204,12 @@ export const Filterbox = (props: FilterboxProps) => {
                     });
                 });
 
+                //Initialize filter metakey collapsibles to be open
+                setShowCollapsible((set) => ({
+                    ...set,
+                    [filter.metakey]: true,
+                }));
+
                 updated[filter.metakey] = formatted;
             }
         });
@@ -308,7 +315,25 @@ export const Filterbox = (props: FilterboxProps) => {
                         let shownListItems = 0; // for show more
                         return (
                             <div key={i}>
-                                <List.Item>
+                                <List.Item
+                                    secondaryAction={
+                                        <List.ItemButton
+                                            onClick={() => {
+                                                setShowCollapsible((set) => ({
+                                                    ...set,
+                                                    [entries[0]]:
+                                                        !set[entries[0]],
+                                                }));
+                                            }}
+                                        >
+                                            {showCollapsible[entries[0]] ? (
+                                                <ExpandLess />
+                                            ) : (
+                                                <ExpandMore />
+                                            )}
+                                        </List.ItemButton>
+                                    }
+                                >
                                     <List.ItemText
                                         disableTypography
                                         primary={
@@ -339,79 +364,89 @@ export const Filterbox = (props: FilterboxProps) => {
                                         ) {
                                             shownListItems += 1;
                                             return (
-                                                <List.Item
-                                                    disableGutters
-                                                    key={i}
+                                                <Collapse
+                                                    in={
+                                                        showCollapsible[
+                                                            entries[0]
+                                                        ]
+                                                    }
                                                 >
-                                                    <List.ItemButton
+                                                    <List.Item
                                                         disableGutters
-                                                        sx={{
-                                                            paddingLeft: '16px',
-                                                            paddingRight:
-                                                                '16px',
-                                                        }}
-                                                        selected={
-                                                            filterVisibility[
-                                                                entries[0]
-                                                            ].value.indexOf(
-                                                                filterOption.value,
-                                                            ) > -1
-                                                        }
-                                                        onClick={() => {
-                                                            // Reset databases and reset offset
-                                                            dispatch({
-                                                                type: 'field',
-                                                                field: 'databases',
-                                                                value: [],
-                                                            });
-
-                                                            setSelectedFilters(
-                                                                entries[0],
-                                                                filterOption,
-                                                            );
-                                                        }}
-                                                        aria-label={
-                                                            filterVisibility[
-                                                                entries[0]
-                                                            ].value.indexOf(
-                                                                filterOption.value,
-                                                            ) > -1
-                                                                ? `Unfilter ${filterOption.value}`
-                                                                : `Filter ${filterOption.value}`
-                                                        }
+                                                        key={i}
                                                     >
-                                                        <div
-                                                            style={{
-                                                                width: '100%',
-                                                                display: 'flex',
-                                                                justifyContent:
-                                                                    'space-between',
+                                                        <List.ItemButton
+                                                            disableGutters
+                                                            sx={{
+                                                                paddingLeft:
+                                                                    '16px',
+                                                                paddingRight:
+                                                                    '16px',
                                                             }}
+                                                            selected={
+                                                                filterVisibility[
+                                                                    entries[0]
+                                                                ].value.indexOf(
+                                                                    filterOption.value,
+                                                                ) > -1
+                                                            }
+                                                            onClick={() => {
+                                                                // Reset databases and reset offset
+                                                                dispatch({
+                                                                    type: 'field',
+                                                                    field: 'databases',
+                                                                    value: [],
+                                                                });
+
+                                                                setSelectedFilters(
+                                                                    entries[0],
+                                                                    filterOption,
+                                                                );
+                                                            }}
+                                                            aria-label={
+                                                                filterVisibility[
+                                                                    entries[0]
+                                                                ].value.indexOf(
+                                                                    filterOption.value,
+                                                                ) > -1
+                                                                    ? `Unfilter ${filterOption.value}`
+                                                                    : `Filter ${filterOption.value}`
+                                                            }
                                                         >
-                                                            <List.ItemText
-                                                                disableTypography
-                                                                primary={
-                                                                    <Typography variant="body1">
-                                                                        {
-                                                                            filterOption.value
+                                                            <div
+                                                                style={{
+                                                                    width: '100%',
+                                                                    display:
+                                                                        'flex',
+                                                                    justifyContent:
+                                                                        'space-between',
+                                                                }}
+                                                            >
+                                                                <List.ItemText
+                                                                    disableTypography
+                                                                    primary={
+                                                                        <Typography variant="body1">
+                                                                            {
+                                                                                filterOption.value
+                                                                            }
+                                                                        </Typography>
+                                                                    }
+                                                                />
+                                                                {filterOption.count && (
+                                                                    <StyledAvatarCount
+                                                                        variant={
+                                                                            'rounded'
                                                                         }
-                                                                    </Typography>
-                                                                }
-                                                            />
-                                                            {filterOption.count && (
-                                                                <StyledAvatarCount
-                                                                    variant={
-                                                                        'rounded'
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        filterOption.count
-                                                                    }
-                                                                </StyledAvatarCount>
-                                                            )}
-                                                        </div>
-                                                    </List.ItemButton>
-                                                </List.Item>
+                                                                    >
+                                                                        {
+                                                                            filterOption.count
+                                                                        }
+                                                                    </StyledAvatarCount>
+                                                                )}
+                                                            </div>
+                                                        </List.ItemButton>
+                                                    </List.Item>
+                                                </Collapse>
                                             );
                                         }
                                     }
