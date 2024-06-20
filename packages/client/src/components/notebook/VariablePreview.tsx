@@ -99,7 +99,12 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
         } else {
             return (
                 <Typography variant="body2" fontWeight="bold">
-                    {state.getVariable(variable.to, variable.type)}{' '}
+                    {typeof state.getVariable(variable.to, variable.type) !==
+                    'string'
+                        ? JSON.stringify(
+                              state.getVariable(variable.to, variable.type),
+                          )
+                        : state.getVariable(variable.to, variable.type)}{' '}
                 </Typography>
             );
         }
@@ -121,6 +126,13 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                     <Typography variant="body2">
                         {variable.type === 'block'
                             ? state.getBlock(variable.to).data?.value
+                            : typeof state.getVariable(
+                                  variable.to,
+                                  variable.type,
+                              ) !== 'string'
+                            ? JSON.stringify(
+                                  state.getVariable(variable.to, variable.type),
+                              )
                             : state.getVariable(variable.to, variable.type)}
                     </Typography>
                 </Stack>
