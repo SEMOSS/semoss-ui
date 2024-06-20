@@ -12,8 +12,6 @@ export const config: BlockConfig<HTMLBlockDef> = {
     type: BLOCK_TYPE_DISPLAY,
     data: {
         html: '',
-        defaultVariant: [],
-        selectedVariant: [],
     },
     listeners: {},
     slots: {},
