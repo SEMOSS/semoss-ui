@@ -848,7 +848,7 @@ function editDatabaseDirective(
             );
 
             scope.editDatabase.fields.forEach(function (item) {
-                const field = `editDatabase.db.${item}`;
+                const field = `editDatabase.db["${item}"]`;
                 scope.$watch(field, function (newValue, oldValue) {
                     if (newValue && !angular.equals(newValue, oldValue)) {
                         const newVal = newValue
