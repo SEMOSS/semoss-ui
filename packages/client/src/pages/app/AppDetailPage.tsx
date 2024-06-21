@@ -7,7 +7,6 @@ import {
     Link,
     IconButton,
     Menu,
-    MenuItem,
     styled,
     Typography,
     useNotification,
@@ -39,13 +38,14 @@ import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
 import { formatPermission } from '@/utility';
-
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import EditIcon from '@mui/icons-material/Edit';
-import HdrAutoIcon from '@mui/icons-material/HdrAuto';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import NoteAltIcon from '@mui/icons-material/NoteAlt';
-import ShareIcon from '@mui/icons-material/Share';
+import {
+    Edit,
+    HdrAuto,
+    MoreVert,
+    Share,
+    EditLocation,
+    RemoveRedEyeRounded,
+} from '@mui/icons-material';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -121,12 +121,12 @@ const TitleSectionBodyWrapper = styled('div')({
     justifyContent: 'center',
 });
 
-const TitleSectionBody = styled(Typography)({
+const TitleSectionBody = styled(Typography)(({ theme }) => ({
     alignItems: 'center',
-    color: 'rgb(0, 0, 0, 0.6)',
+    color: theme.palette.secondary.dark,
     display: 'flex',
     gap: '0.25rem',
-});
+}));
 
 const TagsBodyWrapper = styled('div')({
     display: 'flex',
@@ -145,13 +145,13 @@ const DependenciesHeadingWrapper = styled('div')({
     position: 'relative',
 });
 
-const StyledMenuItem = styled(MenuItem)({
-    color: 'rgb(0, 0, 0, 0.7)',
+const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
     display: 'flex',
-    fontSize: 12,
-    gap: '0.75rem',
-    padding: '0.75rem',
-});
+    gap: theme.spacing(0.5),
+    alignItems: 'center',
+    height: '48px',
+}));
 
 export const AppDetailPage = () => {
     const { control, setValue, getValues, watch } =
@@ -380,12 +380,22 @@ export const AppDetailPage = () => {
                                     setMoreVertAnchorEl(event.currentTarget)
                                 }
                             >
-                                <MoreVertIcon />
+                                <MoreVert />
                             </IconButton>
+
                             <Menu
                                 anchorEl={moreVertAnchorEl}
                                 open={Boolean(moreVertAnchorEl)}
                                 onClose={() => setMoreVertAnchorEl(null)}
+                                anchorOrigin={{
+                                    vertical: 'bottom',
+                                    horizontal: 'right',
+                                }}
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                sx={{ borderRadius: '4px' }}
                             >
                                 {(permission === 'author' ||
                                     permission === 'editor') && (
@@ -396,16 +406,21 @@ export const AppDetailPage = () => {
                                         }}
                                         value={null}
                                     >
-                                        <EditIcon fontSize="small" />
-                                        Edit App Details
+                                        <Edit fontSize="small" />
+                                        <Typography variant="caption">
+                                            Edit App Details
+                                        </Typography>
                                     </StyledMenuItem>
                                 )}
+
                                 <StyledMenuItem
                                     value={null}
                                     onClick={() => setIsShareOverlayOpen(true)}
                                 >
-                                    <ShareIcon fontSize="small" />
-                                    Share
+                                    <Share fontSize="small" />
+                                    <Typography variant="caption">
+                                        Share
+                                    </Typography>
                                 </StyledMenuItem>
                             </Menu>
                         </ActionBar>
@@ -420,15 +435,13 @@ export const AppDetailPage = () => {
                                     {appInfo?.project_name}
                                 </Typography>
                                 <TitleSectionBody variant="body1">
-                                    {() => {
-                                        if (permission === 'author') {
-                                            return <HdrAutoIcon />;
-                                        } else if (permission === 'editor') {
-                                            return <NoteAltIcon />;
-                                        } else {
-                                            return <AssignmentIcon />;
-                                        }
-                                    }}
+                                    {permission === 'author' ? (
+                                        <HdrAuto />
+                                    ) : permission === 'editor' ? (
+                                        <EditLocation />
+                                    ) : permission === 'discoverable' ? (
+                                        <RemoveRedEyeRounded />
+                                    ) : null}
                                     {`${formatPermission(userRole)} Access`}
                                 </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
@@ -484,7 +497,7 @@ export const AppDetailPage = () => {
                                                 top: '-0.4rem',
                                             }}
                                         >
-                                            <EditIcon />
+                                            <Edit />
                                         </IconButton>
                                     )}
                                 </DependenciesHeadingWrapper>
