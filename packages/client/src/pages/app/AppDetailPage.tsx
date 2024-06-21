@@ -604,12 +604,17 @@ export const AppDetailPage = () => {
 };
 
 const StyledSidebar = styled('div')(({ theme }) => ({
-    width: '132px',
+    width: '145px',
     borderRight: `2px solid ${theme.palette.secondary.main}`,
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(0.5),
     position: 'fixed',
+    paddingRight: theme.spacing(1),
+}));
+
+const StyledSidebarItem = styled(Button)(({ theme }) => ({
+    justifyContent: 'flex-start',
 }));
 
 interface SidebarProps {
@@ -635,61 +640,61 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
 
     return (
         <StyledSidebar>
-            <Button
+            <StyledSidebarItem
                 variant="text"
                 color="secondary"
                 onClick={() => scrollIntoView(mainUsesRef)}
                 value={null}
             >
                 Main Uses
-            </Button>
-            <Button
+            </StyledSidebarItem>
+            <StyledSidebarItem
                 variant="text"
                 color="secondary"
                 onClick={() => scrollIntoView(tagsRef)}
                 value={null}
             >
                 Tags
-            </Button>
+            </StyledSidebarItem>
             {permission !== 'discoverable' && (
-                <Button
+                <StyledSidebarItem
                     variant="text"
                     color="secondary"
                     onClick={() => scrollIntoView(dependenciesRef)}
                     value={null}
                 >
                     Dependencies
-                </Button>
+                </StyledSidebarItem>
             )}
             {permission === 'author' && (
-                <Button
+                <StyledSidebarItem
                     variant="text"
                     color="secondary"
                     onClick={() => scrollIntoView(appAccessRef)}
                     value={null}
                 >
                     App Access
-                </Button>
+                </StyledSidebarItem>
             )}
             {canEdit && (
-                <Button
+                <StyledSidebarItem
                     variant="text"
                     color="secondary"
                     onClick={() => scrollIntoView(memberAccessRef)}
                     value={null}
                 >
                     Member Access
-                </Button>
+                </StyledSidebarItem>
             )}
             {!canEdit && (
-                <Button
+                <StyledSidebarItem
                     variant="text"
                     color="secondary"
                     onClick={() => scrollIntoView(similarAppsRef)}
                     value={null}
                 >
                     Similar Apps
-                </Button>
+                </StyledSidebarItem>
             )}
         </StyledSidebar>
     );
