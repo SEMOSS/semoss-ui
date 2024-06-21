@@ -618,7 +618,7 @@ export const AppDetailPage = () => {
 
 const StyledSidebar = styled('div')(({ theme }) => ({
     width: '145px',
-    borderRight: `2px solid ${theme.palette.secondary.main}`,
+    borderRight: `1px solid ${theme.palette.secondary.main}`,
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(0.5),
