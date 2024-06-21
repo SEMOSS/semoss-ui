@@ -13,9 +13,11 @@ export interface SelectBlockDef extends BlockDef<'select'> {
         style: CSSProperties;
         label: string;
         value: string;
-        options: string[];
         required: boolean;
         disabled: boolean;
+        options: string[];
+        optionLabel?: string;
+        optionValue?: string;
         hint?: string;
         loading?: boolean;
     };
@@ -59,6 +61,8 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         200,
     );
 
+    console.log(stringifiedOptions);
+
     return (
         <Autocomplete
             fullWidth
@@ -66,6 +70,20 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             options={stringifiedOptions}
             value={data.value || null}
             disabled={data?.disabled || data?.loading}
+            getOptionLabel={(option: string) => {
+                try {
+                    // More error handling and testing
+                    const isObj = JSON.parse(option)[data.optionLabel];
+
+                    if (isObj) {
+                        return isObj;
+                    }
+
+                    return option;
+                } catch {
+                    return option;
+                }
+            }}
             onChange={(_, value) => {
                 setData('value', value);
             }}
