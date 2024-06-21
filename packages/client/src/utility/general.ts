@@ -91,12 +91,20 @@ export const formatPermission = (permission: Role | ''): string => {
  * @params appType & appSubType
  * @returns image link for associated engine
  */
-export const getEngineImage = (appType: string, appSubType: string) => {
+export const getEngineImage = (
+    appType: string,
+    appSubType: string,
+    ignoreNotFound: boolean = false,
+) => {
     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
     if (!obj) {
-        console.warn('No image found:', appType, appSubType);
-        return BRAIN;
+        if (ignoreNotFound) {
+            return null;
+        } else {
+            console.warn('No image found:', appType, appSubType);
+            return BRAIN;
+        }
     }
 
     return obj.icon;

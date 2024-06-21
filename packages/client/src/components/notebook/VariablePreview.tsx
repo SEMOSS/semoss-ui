@@ -7,7 +7,9 @@ import { BlocksRenderer } from '../blocks-workspace';
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-const StyledStack = styled(Stack)(({ theme }) => ({}));
+const StyledStack = styled(Stack)(({ theme }) => ({
+    border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
+}));
 
 const StyledBox = styled(Box)(({ theme }) => ({
     paddingLeft: theme.spacing(2),
