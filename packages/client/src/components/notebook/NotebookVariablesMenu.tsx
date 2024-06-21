@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Button,
@@ -13,7 +13,7 @@ import {
     Search,
     Popover,
 } from '@semoss/ui';
-import { useBlocks } from '@/hooks';
+import { useBlocks, usePixel } from '@/hooks';
 import { AddVariableModal } from './AddVariableModal';
 import { NotebookVariable } from './NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
@@ -55,6 +55,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
     marginLeft: theme.spacing(2),
     marginTop: theme.spacing(2),
     marginBottom: theme.spacing(2),
+    paddingRight: theme.spacing(2),
 }));
 
 /**
@@ -63,19 +64,99 @@ const StyledBox = styled(Box)(({ theme }) => ({
 export const NotebookVariablesMenu = observer((): JSX.Element => {
     const { state } = useBlocks();
 
+    /**
+     * State
+     */
     const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
         null,
     );
     const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLElement | null>(
         null,
     );
-
+    const [engines, setEngines] = useState<{
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+    }>({
+        models: [],
+        databases: [],
+        storages: [],
+        functions: [],
+        vectors: [],
+    });
     const [filterWord, setFilterWord] = useState('');
     const [selectedFilter, setSelectedFilter] = useState(VARIABLE_TYPES);
 
+    /**
+     * API
+     */
+    const getEngines =
+        usePixel<
+            {
+                app_id: string;
+                app_name: string;
+                app_type: string;
+                app_subtype: string;
+            }[]
+        >(`MyEngines();`);
+
+    /**
+     * Computed
+     */
     const isFilterPopoverOpen = Boolean(filterAnchorEl);
     const isPopoverOpen = Boolean(popoverAnchorEle);
 
+    /**
+     * Effects/Memos
+     */
+    useEffect(() => {
+        if (getEngines.status !== 'SUCCESS') {
+            return;
+        }
+        const cleanedEngines = getEngines.data.map((d) => ({
+            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+            app_id: d.app_id,
+            app_type: d.app_type,
+            app_subtype: d.app_subtype,
+        }));
+
+        const newEngines = {
+            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
+            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
+            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
+            functions: cleanedEngines.filter((e) => e.app_type === 'FUNCTION'),
+            vectors: cleanedEngines.filter((e) => e.app_type === 'VECTOR'),
+        };
+
+        setEngines(newEngines);
+    }, [getEngines.status, getEngines.data]);
     const variables = useMemo(() => {
         return Object.entries(state.variables).filter((kv) => {
             const val = kv[1];
@@ -94,7 +175,11 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
     ]);
 
     return (
-        <StyledStack direction={'column'} spacing={0}>
+        <StyledStack
+            direction={'column'}
+            spacing={0}
+            className="notebook-variables-menu"
+        >
             <StyledMenu>
                 <Stack spacing={2} padding={2}>
                     <Stack direction="row" justifyContent="space-between">
@@ -102,6 +187,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                             Variables
                         </StyledMenuTitle>
                         <IconButton
+                            className="notebook-variable-menu__add-variable-button"
                             onClick={(e) => {
                                 setPopoverAnchorEl(e.currentTarget);
                             }}
@@ -143,6 +229,10 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                         onClose={() => {
                             setFilterAnchorEl(null);
                         }}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'center',
+                        }}
                     >
                         <StyledBox>
                             <Checklist
@@ -165,6 +255,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                                     key={variable.alias}
                                     id={t[0]}
                                     variable={variable}
+                                    engines={engines}
                                 />
                             );
                         })}
@@ -177,6 +268,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                         onClose={() => {
                             setPopoverAnchorEl(null);
                         }}
+                        engines={engines}
                     />
                 )}
             </StyledMenu>

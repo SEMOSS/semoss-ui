@@ -26,8 +26,13 @@ import { DefaultBlocks, getIconForBlock } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
-import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
+import {
+    capitalizeFirstLetter,
+    getEngineImage,
+    splitAtPeriod,
+} from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import { ENGINE_ROUTES } from '@/pages/engine';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
     height: '10vh',
@@ -47,6 +52,10 @@ const QueryPreviewContainer = styled(Stack)(({ theme }) => ({
     maxHeight: '275px',
     width: '100%',
     overflow: 'auto',
+}));
+
+const StyledImg = styled('img')(({ theme }) => ({
+    maxWidth: theme.spacing(5),
 }));
 
 interface AddVariableModalProps {
@@ -69,6 +78,42 @@ interface AddVariableModalProps {
      * Do we want edit variable
      */
     variable?: VariableWithId;
+
+    /**
+     * Engines
+     */
+    engines: {
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+    };
 }
 export const AddVariableModal = observer((props: AddVariableModalProps) => {
     const {
@@ -77,23 +122,10 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         anchorEl,
         onClose,
         variable,
+        engines,
     } = props;
     const { state } = useBlocks();
     const notification = useNotification();
-
-    const getEngines = usePixel<
-        { app_id: string; app_name: string; app_type: string }[]
-    >(`
-    MyEngines();
-    `);
-
-    const [engines, setEngines] = useState({
-        models: [],
-        databases: [],
-        storages: [],
-        functions: [],
-        vectors: [],
-    });
 
     const [variableName, setVariableName] = useState('');
     const [variableType, setVariableType] = useState<VariableType | ''>('');
@@ -102,6 +134,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         app_id: string;
         app_name: string;
         app_type: string;
+        app_subtype;
     } | null>(null);
 
     /** To disable add button */
@@ -146,45 +179,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
         return cells;
     }, [state.queries]);
-
-    useEffect(() => {
-        if (getEngines.status !== 'SUCCESS') {
-            return;
-        }
-        const cleanedEngines = getEngines.data.map((d) => ({
-            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            app_id: d.app_id,
-            app_type: d.app_type,
-        }));
-
-        const newEngines = {
-            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
-            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
-            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
-            functions: cleanedEngines.filter((e) => e.app_type === 'FUNCTION'),
-            vectors: cleanedEngines.filter((e) => e.app_type === 'VECTOR'),
-        };
-
-        if (variable) {
-            // debugger;
-            if (
-                variable.type !== 'cell' &&
-                variable.type !== 'query' &&
-                variable.type !== 'block'
-            ) {
-                const val = state.getVariable(variable.to, variable.type);
-                const eng = newEngines[`${variable.type}s`].find(
-                    (e) => e.app_id === val,
-                );
-                setEngine(eng);
-            }
-            setVariableType(variable.type);
-            setVariableName(variable.alias);
-            setVariablePointer(variable.to);
-        }
-
-        setEngines(newEngines);
-    }, [getEngines.status, getEngines.data]);
 
     const values = useMemo(() => {
         if (variableType === 'block') {
@@ -371,11 +365,27 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         );
                     }
                 } else {
+                    const image = getEngineImage(
+                        engine.app_type,
+                        engine.app_subtype,
+                        true,
+                    );
+                    const engineDisplay = ENGINE_ROUTES.find(
+                        (engineValue) => engineValue.type === engine.app_type,
+                    );
                     return (
                         <Stack direction="row" alignItems="center">
-                            <Icon>
-                                <MoreSharp />
-                            </Icon>
+                            {image ? (
+                                <StyledImg src={image} />
+                            ) : (
+                                <Icon>
+                                    {engineDisplay ? (
+                                        createElement(engineDisplay.icon)
+                                    ) : (
+                                        <MoreSharp />
+                                    )}
+                                </Icon>
+                            )}
                             <Stack direction="column">
                                 <Typography variant="body2">
                                     {engine.app_name}
@@ -482,6 +492,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     app_id: string;
                                     app_name: string;
                                     app_type: string;
+                                    app_subtype: string;
                                 };
                                 setEngine(p);
                             }
