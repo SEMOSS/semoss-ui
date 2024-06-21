@@ -370,7 +370,7 @@ export const AppDetailPage = () => {
 
                             <Button
                                 variant="contained"
-                                onClick={() => navigate('../')}
+                                onClick={() => navigate(`/app/${appId}`)}
                             >
                                 Open
                             </Button>
