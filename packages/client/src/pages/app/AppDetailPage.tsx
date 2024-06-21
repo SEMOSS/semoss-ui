@@ -89,7 +89,7 @@ const ActionBar = styled('div')(({ theme }) => ({
 }));
 
 const PageBody = styled('div')(({ theme }) => ({
-    marginLeft: '177px',
+    marginLeft: '200px',
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(3),
