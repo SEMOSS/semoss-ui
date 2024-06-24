@@ -2,6 +2,8 @@
     "files.exclude": {
         "**/*.rollup.cache": true,
         "**/dist": true,
-        "**/target": true
-    }
+        "**/target": true,
+    },
+    "editor.folding": true,
+    "editor.foldingStrategy": "indentation",
 }
