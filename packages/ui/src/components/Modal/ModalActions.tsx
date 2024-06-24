@@ -1,4 +1,12 @@
-import { DialogActions as MuiModalActions, SxProps } from "@mui/material";
+import {
+    DialogActions as MuiModalActions,
+    SxProps,
+    styled,
+} from "@mui/material";
+
+const StyledModalActions = styled(MuiModalActions)(({ theme }) => ({
+    padding: `0 ${theme.spacing(2)} ${theme.spacing(2)}`,
+}));
 
 export interface ModalActionsProps {
     /**
@@ -21,8 +29,8 @@ export interface ModalActionsProps {
 export const ModalActions = (props: ModalActionsProps) => {
     const { sx, children } = props;
     return (
-        <MuiModalActions sx={sx} {...props}>
+        <StyledModalActions sx={sx} {...props}>
             {children}
-        </MuiModalActions>
+        </StyledModalActions>
     );
 };
