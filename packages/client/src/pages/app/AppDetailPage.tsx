@@ -356,17 +356,13 @@ export const AppDetailPage = () => {
 
                     <PageBody>
                         <ActionBar>
-                            {permission !== 'author' && (
-                                <Button
-                                    variant="text"
-                                    onClick={() =>
-                                        setIsChangeAccessModalOpen(true)
-                                    }
-                                    sx={{ fontWeight: 'bold' }}
-                                >
-                                    Change Access
-                                </Button>
-                            )}
+                            <Button
+                                variant="text"
+                                onClick={() => setIsChangeAccessModalOpen(true)}
+                                sx={{ fontWeight: 'bold' }}
+                            >
+                                Change Access
+                            </Button>
 
                             <Button
                                 variant="contained"
