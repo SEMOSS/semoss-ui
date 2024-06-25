@@ -1,98 +1,95 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - github-actions
-  workflow_dispatch:
+    workflow_dispatch:
 
 env:
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
-  MAVEN_CLI_OPTS: "-s ./settings.xml --batch-mode"
-  FF_USE_FASTZIP: "true"
+    MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
+    MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
+    FF_USE_FASTZIP: 'true'
 
 jobs:
-  pnpm_build_dev:
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[release]')"
-    container:
-      image: node:18.16.1-bullseye
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    pnpm_build_dev:
+        runs-on: ubuntu-latest
+        if: "!contains(github.event.head_commit.message, '[release]')"
+        container:
+            image: node:18.16.1-bullseye
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
 
-      - name: Cache node modules and Maven repository
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            .m2/repository
-            dist
-            index.html
-          key: ${{ github.ref_name }}
+            - name: Cache node modules and Maven repository
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      node_modules
+                      .m2/repository
+                      dist
+                      index.html
+                  key: ${{ github.ref_name }}
 
-      - name: Install dependencies
-        run: |
-          apt-get update
-          apt-get install -y maven
-          npm install -g pnpm@8
-          pnpm install
+            - name: Install dependencies
+              run: |
+                  apt-get update
+                  apt-get install -y maven
+                  npm install -g pnpm@8
+                  pnpm install
 
-      - name: Build
-        run: pnpm run build
+            - name: Build
+              run: pnpm run build
 
-      - name: Maven clean install
-        run: |
-          /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ secrets.VERSION }}-SNAPSHOT
-          rm -rf .m2/repository/org/semoss
+            - name: Maven clean install
+              run: |
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ secrets.VERSION }}-SNAPSHOT
+                  rm -rf .m2/repository/org/semoss
 
-      - name: Save artifacts
-        if: success()
-        uses: actions/upload-artifact@v3
-        with:
-          name: semossweb-artifact
-          path: target/semossweb-${{ secrets.VERSION }}-SNAPSHOT.war
+            - name: Save artifacts
+              if: success()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: semossweb-artifact
+                  path: target/semossweb-${{ secrets.VERSION }}-SNAPSHOT.war
 
-  pnpm_build_deploy:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/dev'
-    container:
-      image: node:18.16.1-bullseye
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    pnpm_build_deploy:
+        runs-on: ubuntu-latest
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/dev'
+        container:
+            image: node:18.16.1-bullseye
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
 
-      - name: Cache node modules and Maven repository
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            .m2/repository
-            dist
-            index.html
-          key: ${{ github.ref_name }}
+            - name: Cache node modules and Maven repository
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      node_modules
+                      .m2/repository
+                      dist
+                      index.html
+                  key: ${{ github.ref_name }}
 
-      - name: Install dependencies
-        run: |
-          apt-get update
-          apt-get install -y maven gnupg2
-          echo "$GPG_PRIVATE_KEY" | gpg2 --batch --import
-          echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
-          gpg2 --refresh-key
-          npm install -g pnpm@8
-          pnpm install
+            - name: Install dependencies
+              run: |
+                  apt-get update
+                  apt-get install -y maven gnupg2
+                  echo "$GPG_PRIVATE_KEY" | gpg2 --batch --import
+                  echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+                  gpg2 --refresh-key
+                  npm install -g pnpm@8
+                  pnpm install
 
-      - name: Build
-        run: pnpm run build
+            - name: Build
+              run: pnpm run build
 
-      - name: Maven deploy
-        run: |
-          /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ secrets.VERSION }}-SNAPSHOT
-          rm -rf .m2/repository/org/semoss
+            - name: Maven deploy
+              run: |
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ secrets.VERSION }}-SNAPSHOT
+                  rm -rf .m2/repository/org/semoss
 
-      - name: Save artifacts
-        if: success()
-        uses: actions/upload-artifact@v3
-        with:
-          name: semossweb-artifact
-          path: target/semossweb-${{ secrets.VERSION }}-SNAPSHOT.war
+            - name: Save artifacts
+              if: success()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: semossweb-artifact
+                  path: target/semossweb-${{ secrets.VERSION }}-SNAPSHOT.war
