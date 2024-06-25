@@ -9,31 +9,30 @@ import {
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
-import CloseIcon from '@mui/icons-material/Close';
 import { updateProjectDetails } from './app-details.utility';
 import { createFilterOptions, Autocomplete } from '@mui/material';
+import { Close } from '@mui/icons-material';
 
-const ModalHeaderWrapper = styled('div')({
-    alignItems: 'center',
+const StyledModalHeading = styled(Modal.Title)({
     display: 'flex',
-    marginBottom: '1rem',
     justifyContent: 'space-between',
+    alignItems: 'center',
 });
 
-const ModalHeading = styled(Typography)({
-    fontSize: 20,
+const StyledTitle = styled(Typography)({
     fontWeight: 500,
 });
 
-const ModalSectionHeading = styled(Typography)({
-    fontSize: 16,
-    fontWeight: 500,
-    margin: '1rem 0 0.75rem 0',
-});
+const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+}));
 
-const StyledModalFooter = styled(Modal.Actions)({
-    padding: '0 20px 20px',
-});
+const StyledSubtitle = styled(Typography)(({ theme }) => ({
+    fontWeight: 500,
+    paddingBottom: theme.spacing(1),
+}));
 
 interface EditDetailsModalProps {
     isOpen: boolean;
@@ -80,79 +79,87 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
     return (
         <Modal open={isOpen} fullWidth>
-            <Modal.Content>
-                <ModalHeaderWrapper>
-                    <ModalHeading variant="h2">Edit App Details</ModalHeading>
-                    <IconButton onClick={() => onClose(true)}>
-                        <CloseIcon />
-                    </IconButton>
-                </ModalHeaderWrapper>
+            <StyledModalHeading>
+                <StyledTitle variant="h6">Edit App Details</StyledTitle>
 
-                <ModalSectionHeading variant="h3">
-                    Main Uses
-                </ModalSectionHeading>
-                <Controller
-                    name="detailsForm.mainUses"
-                    control={control}
-                    render={({ field }) => {
-                        return (
-                            <TextField
-                                value={field.value}
-                                onChange={(val) => field.onChange(val)}
-                                fullWidth
-                                multiline
-                                rows={7}
-                            />
-                        );
-                    }}
-                />
+                <IconButton size="small" onClick={() => onClose(true)}>
+                    <Close />
+                </IconButton>
+            </StyledModalHeading>
 
-                <ModalSectionHeading variant="h3">Tags</ModalSectionHeading>
-                <Controller
-                    name="detailsForm.tags"
-                    control={control}
-                    render={({ field }) => {
-                        return (
-                            <Autocomplete
-                                options={[]}
-                                value={field.value}
-                                fullWidth
-                                multiple
-                                freeSolo
-                                onChange={(_, val) => field.onChange(val)}
-                                renderInput={(params) => (
-                                    <TextField {...params} label="Tags" />
-                                )}
-                                renderOption={(props, option) => (
-                                    <li {...props}>{option}</li>
-                                )}
-                                filterOptions={(options, params) => {
-                                    const filtered = filter(options, params);
+            <StyledModalContent>
+                <div>
+                    <StyledSubtitle variant="subtitle1">
+                        Main Uses
+                    </StyledSubtitle>
+                    <Controller
+                        name="detailsForm.mainUses"
+                        control={control}
+                        render={({ field }) => {
+                            return (
+                                <TextField
+                                    value={field.value}
+                                    onChange={(val) => field.onChange(val)}
+                                    fullWidth
+                                    multiline
+                                    rows={7}
+                                />
+                            );
+                        }}
+                    />
+                </div>
 
-                                    const { inputValue } = params;
-                                    const isExisting = options.some(
-                                        (option) => inputValue === option,
-                                    );
-                                    if (inputValue !== '' && !isExisting) {
-                                        filtered.push(inputValue);
-                                    }
+                <div>
+                    <StyledSubtitle variant="subtitle1">Tags</StyledSubtitle>
+                    <Controller
+                        name="detailsForm.tags"
+                        control={control}
+                        render={({ field }) => {
+                            return (
+                                <Autocomplete
+                                    options={[]}
+                                    value={field.value}
+                                    fullWidth
+                                    multiple
+                                    freeSolo
+                                    onChange={(_, val) => field.onChange(val)}
+                                    renderInput={(params) => (
+                                        <TextField {...params} label="Tags" />
+                                    )}
+                                    renderOption={(props, option) => (
+                                        <li {...props}>{option}</li>
+                                    )}
+                                    filterOptions={(options, params) => {
+                                        const filtered = filter(
+                                            options,
+                                            params,
+                                        );
 
-                                    return filtered;
-                                }}
-                            />
-                        );
-                    }}
-                />
-            </Modal.Content>
+                                        const { inputValue } = params;
+                                        const isExisting = options.some(
+                                            (option) => inputValue === option,
+                                        );
+                                        if (inputValue !== '' && !isExisting) {
+                                            filtered.push(inputValue);
+                                        }
 
-            <StyledModalFooter>
+                                        return filtered;
+                                    }}
+                                />
+                            );
+                        }}
+                    />
+                </div>
+            </StyledModalContent>
+
+            <Modal.Actions>
                 <Button onClick={() => onClose(true)} variant="text">
                     Cancel
                 </Button>
                 <Button onClick={handleEditAppDetails} variant="contained">
                     Save
                 </Button>
-            </StyledModalFooter>
+            </Modal.Actions>
         </Modal>
     );
 };
