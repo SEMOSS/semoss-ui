@@ -29,7 +29,7 @@ Now you are ready to go. You can do things like
 -   Login or Logout
 
 ```js
-const login = (username, password) => {
+const login = async (username, password) => {
     const success = await insight.actions.login({
         type: 'native',
         username: username,
@@ -39,7 +39,7 @@ const login = (username, password) => {
     console.log(success);
 };
 
-const logout = (username, password) => {
+const logout = async (username, password) => {
     const success = await insight.actions.logout();
 
     console.log(success);
@@ -49,12 +49,60 @@ const logout = (username, password) => {
 -   Query a LLM and return a result
 
 ```js
-const ask = (question) => {
+const ask = async (question) => {
     const { output } = await insight.actions.askModel(MODEL_ID, question);
 
     // log the output
     console.log(output);
 };
+
+```
+
+- Stream Response from LLM
+
+```js
+
+
+const askWithStream = async (question) => {
+    let isCollecting = false;
+    const collectMessage = async () => {
+        // only continue if response hasn't come back from runPixel
+        if (!isCollecting) {
+            return;
+        }
+
+        // get the output of partial
+        try {
+            const output = await partial(insight.insightId);
+            // add the martian
+            if (output.message && output.message.total) {
+                setAnswers([output.message.total]);
+            }
+            // get the next partial of response
+            setTimeout(() => collectMessage(), 1000);
+        } catch (e) {
+            // noop
+        }
+    }
+
+    // start collecting
+    isCollecting = true;
+
+    // initial delay that collects partial of response
+    setTimeout(() => collectMessage(), 500);
+
+    // Pass insight.insightId as optional 3rd param
+    const response = await insight.actions.askModel(MODEL_ID, question) 
+
+    // wait for the pixel to run
+    // const { errors, pixelReturn } = await runPixel(
+    //     `LLM(engine=[MODEL_ID], command=["<encode>${question}</encode>"]);`,
+    //     insightId,
+    // );
+
+    isCollecting = false
+}
+
 ```
 
 -   Run a database query

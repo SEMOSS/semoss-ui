@@ -582,6 +582,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
                     // set it
                     id = this._store.options.appId;
+                } else {
+                    id = space;
                 }
 
                 const { errors, pixelReturn } = await runPixel<O>(pixel, id);

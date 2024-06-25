@@ -85,6 +85,68 @@ const ask = (question) => {
 };
 ```
 
+- Stream Response from LLM
+
+```js
+import { useInsight } from '@semoss/sdk-react';
+import { partial, runPixel } from '@semoss/sdk';
+
+export const ChatPage = (props) => {
+
+    const { actions, insightId } = useInsight();
+
+    const askWithStream = async (question) => {
+        let isCollecting = false;
+
+        const collectMessage = async () => {
+            // only continue if response hasn't come back from runPixel
+            if (!isCollecting) {
+                return;
+            }
+    
+            // get the output of partial
+            try {
+                const output = await partial(roomId);
+
+                // add the martian
+                if (output.message && output.message.total) {
+                    setAnswers([output.message.total]);
+                }
+
+                // get the next partial of response
+                setTimeout(() => collectMessage(), 1000);
+            } catch (e) {
+                // noop
+            }
+        }
+
+        // start collecting
+        isCollecting = true;
+
+        // initial delay that collects partial of response
+        setTimeout(() => collectMessage(), 500);
+
+        
+        // initial delay that collects partial of response
+        setTimeout(() => collectMessage(), 500);
+
+        // wait for the pixel to run
+        // const response = await actions.askModel(MODEL_ID, question, insightId)
+        // const response = await  actions.run(
+        //     `LLM(engine=[MODEL_ID], command=["<encode>${question}</encode>"]);`,
+        //     insightId,
+        // )
+        // const { errors, pixelReturn } = await runPixel(
+        //     `LLM(engine=[MODEL_ID], command=["<encode>${question}</encode>"]);`,
+        //     insightId,
+        // );
+
+        isCollecting = false
+    }
+}
+
+```
+
 -   Run a database query
 
 ```js
