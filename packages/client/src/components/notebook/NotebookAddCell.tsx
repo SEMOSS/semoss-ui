@@ -364,8 +364,10 @@ export const NotebookAddCell = observer(
             reset: newReset,
             getValues: _newGetValues,
             setValue: _newSetValue,
-            watch: _newWatch,
+            watch: dataImportwatch,
         } = useForm<NewFormValues>();
+
+        const watchedTables = dataImportwatch('tables');
 
         // region --- useStates / useRefs
 
@@ -393,7 +395,7 @@ export const NotebookAddCell = observer(
         const [checkAllColumns, setCheckAllColumns] = useState<boolean>(true);
         const { configStore, monolithStore } = useRootStore();
 
-        // temp state vars move to useForm asap if possible
+        // State Vars for Old useForm --- all uneeded / deletable
         const [selectedLeftTable, setSelectedLeftTable] =
             useState<string>(null);
         const [selectedRightTable, setSelectedRightTable] =
@@ -402,6 +404,22 @@ export const NotebookAddCell = observer(
         const [columnDataTypesDict, setColumnDataTypesDict] = useState(null);
         const [selectedLeftKey, setSelectedLeftKey] = useState<string>(null);
         const [tableEdgesObject, setTableEdgesObject] = useState(null);
+
+        // State Vars for new useForm Structure
+        // checkedColumnsSet
+        const [checkedColumnsSet, setCheckedColumnsSet] = useState(new Set());
+        const [hiddenTablesSet, setHiddenTablesSet] = useState({});
+        const [aliasesCountObj, setAliasesCountObj] = useState({}); // { emailAlias: 1, phoneAlias: 2 }
+
+        // newCheckHandler must...
+        // must hide any unjoined tables
+        // must check for repeat column names / aliases
+        // add to column aliases set
+
+        // check / uncheck column
+        // check for table edges
+        // hide unjoinable tables
+        // update alias counts
 
         // endregion
 
@@ -491,8 +509,9 @@ export const NotebookAddCell = observer(
 
         // endregion
 
-        // might be deletable
+        // region --- cellTypeOptions unused / remove?
         // const cellTypeOptions = computed(() => {
+        //     alert("test23")
         //     const options = { ...AddCellOptions };
         //     // transformation cell types can only be added if there exists a query-import cell before it
         //     if (!previousCellId) {
@@ -516,6 +535,7 @@ export const NotebookAddCell = observer(
 
         //     return Object.values(options);
         // }).get();
+        // endregion
 
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
@@ -575,104 +595,104 @@ export const NotebookAddCell = observer(
         };
 
         /** Construct a Raw SQL String for Data Import --- remove */
-        // const constructSQLString = ({ submitData }) => {
-        //     console.log({ submitData });
-        //     let newSQLString = 'SELECT ';
+        const constructSQLString = ({ submitData }) => {
+            console.log({ submitData });
+            let newSQLString = 'SELECT ';
 
-        //     newSQLString += submitData.columns
-        //         .filter((ele) => ele.checked)
-        //         .map((colObj) => {
-        //             if (colObj.columnName === colObj.userAlias) {
-        //                 return colObj.columnName;
-        //             } else {
-        //                 return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
-        //             }
-        //         })
-        //         .join(', ');
+            newSQLString += submitData.columns
+                .filter((ele) => ele.checked)
+                .map((colObj) => {
+                    if (colObj.columnName === colObj.userAlias) {
+                        return colObj.columnName;
+                    } else {
+                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+                    }
+                })
+                .join(', ');
 
-        //     newSQLString += ` FROM ${submitData.tableSelect}`;
-        //     newSQLString += ';';
+            newSQLString += ` FROM ${submitData.tableSelect}`;
+            newSQLString += ';';
 
-        //     if (
-        //         selectedLeftTable &&
-        //         selectedRightTable &&
-        //         selectedLeftKey &&
-        //         selectedRightKey
-        //     ) {
-        //         newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
-        //     }
+            if (
+                selectedLeftTable &&
+                selectedRightTable &&
+                selectedLeftKey &&
+                selectedRightKey
+            ) {
+                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+            }
 
-        //     importDataSQLStringRef.current = newSQLString;
-        // };
+            importDataSQLStringRef.current = newSQLString;
+        };
 
         /** Construct Submit Pixel for Data Import --- remove? */
-        // const constructDataBasePixel = ({ submitData }) => {
-        //     // mimic this pixel structure instead of constructing raw SQL ?
-        //     // or have join autoselect keys and add columns to edit
-        //     // that makes sense with new pixel structure
-        //     // show all tables and selectable rows in edit columns view
-        //     // find way of showing alerts for un joinable columns
-        //     // add form structure to json state (?)
-        //     // make basic non SQL view for notebook cell
-        //     // make edit window
+        const constructDataBasePixel = ({ submitData }) => {
+            // mimic this pixel structure instead of constructing raw SQL ?
+            // or have join autoselect keys and add columns to edit
+            // that makes sense with new pixel structure
+            // show all tables and selectable rows in edit columns view
+            // find way of showing alerts for un joinable columns
+            // add form structure to json state (?)
+            // make basic non SQL view for notebook cell
+            // make edit window
 
-        //     // "pixelExpression": "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) |
+            // "pixelExpression": "Database ( database = [ \"f9b656cc-06e7-4cce-bae8-b5f92075b6da\" ] ) |
 
-        //     // Select (
-        //     //     STATION_SETTINGS__ROLE ,
-        //     //     USER_SETTINGS__DATE_CREATED ,
-        //     //     VISN_SETTINGS__EMAIL ,
-        //     //     VISN_SETTINGS__USER ,
-        //     //     VISN_SETTINGS__VISN )
-        //     // .as ( [
-        //     //     ROLE ,
-        //     //     DATE_CREATED ,
-        //     //     EMAIL ,
-        //     //     USER ,
-        //     //     VISN
-        //     // ] ) |
+            // Select (
+            //     STATION_SETTINGS__ROLE ,
+            //     USER_SETTINGS__DATE_CREATED ,
+            //     VISN_SETTINGS__EMAIL ,
+            //     VISN_SETTINGS__USER ,
+            //     VISN_SETTINGS__VISN )
+            // .as ( [
+            //     ROLE ,
+            //     DATE_CREATED ,
+            //     EMAIL ,
+            //     USER ,
+            //     VISN
+            // ] ) |
 
-        //     // Join ( (
-        //     //     USER_SETTINGS ,
-        //     //     inner.join ,
-        //     //     STATION_SETTINGS
-        //     // ) , (
-        //     //     USER_SETTINGS ,
-        //     //     inner.join ,
-        //     //     VISN_SETTINGS
-        //     // ) ) |
+            // Join ( (
+            //     USER_SETTINGS ,
+            //     inner.join ,
+            //     STATION_SETTINGS
+            // ) , (
+            //     USER_SETTINGS ,
+            //     inner.join ,
+            //     VISN_SETTINGS
+            // ) ) |
 
-        //     // Distinct ( false ) |
+            // Distinct ( false ) |
 
-        //     // QueryRowCount ( ) ;",
-        //     console.log({ submitData });
-        //     let newSQLString = 'SELECT ';
+            // QueryRowCount ( ) ;",
+            console.log({ submitData });
+            let newSQLString = 'SELECT ';
 
-        //     newSQLString += submitData.columns
-        //         .filter((ele) => ele.checked)
-        //         .map((colObj) => {
-        //             if (colObj.columnName === colObj.userAlias) {
-        //                 return colObj.columnName;
-        //             } else {
-        //                 return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
-        //             }
-        //         })
-        //         .join(', ');
+            newSQLString += submitData.columns
+                .filter((ele) => ele.checked)
+                .map((colObj) => {
+                    if (colObj.columnName === colObj.userAlias) {
+                        return colObj.columnName;
+                    } else {
+                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+                    }
+                })
+                .join(', ');
 
-        //     newSQLString += ` FROM ${submitData.tableSelect}`;
-        //     newSQLString += ';';
+            newSQLString += ` FROM ${submitData.tableSelect}`;
+            newSQLString += ';';
 
-        //     if (
-        //         selectedLeftTable &&
-        //         selectedRightTable &&
-        //         selectedLeftKey &&
-        //         selectedRightKey
-        //     ) {
-        //         newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
-        //     }
+            if (
+                selectedLeftTable &&
+                selectedRightTable &&
+                selectedLeftKey &&
+                selectedRightKey
+            ) {
+                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+            }
 
-        //     importDataSQLStringRef.current = newSQLString;
-        // };
+            importDataSQLStringRef.current = newSQLString;
+        };
 
         /** Add all the columns from a Table */
         const addAllTableColumnsHandler = (event) => {
@@ -840,58 +860,58 @@ export const NotebookAddCell = observer(
         };
 
         /** Old Get All Database Tables for Import Data --- remove? */
-        // const retrieveDatabaseTables = async (databaseId) => {
-        //     setIsDatabaseLoading(true);
-        //     const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
+        const retrieveDatabaseTables = async (databaseId) => {
+            setIsDatabaseLoading(true);
+            const pixelString = `META | GetDatabaseTableStructure ( database = [ \"${databaseId}\" ] ) ;`;
 
-        //     monolithStore.runQuery(pixelString).then((response) => {
-        //         const type = response.pixelReturn[0].operationType;
-        //         const pixelResponse = response.pixelReturn[0].output;
+            monolithStore.runQuery(pixelString).then((response) => {
+                const type = response.pixelReturn[0].operationType;
+                const pixelResponse = response.pixelReturn[0].output;
 
-        //         if (type.indexOf('ERROR') === -1) {
-        //             const tableNames = [
-        //                 ...pixelResponse.reduce((set, ele) => {
-        //                     set.add(ele[0]);
-        //                     return set;
-        //                 }, new Set()),
-        //             ];
+                if (type.indexOf('ERROR') === -1) {
+                    const tableNames = [
+                        ...pixelResponse.reduce((set, ele) => {
+                            set.add(ele[0]);
+                            return set;
+                        }, new Set()),
+                    ];
 
-        //             const newTableColumnsObject = pixelResponse.reduce(
-        //                 (acc, ele, idx) => {
-        //                     const tableName = ele[0];
-        //                     const columnName = ele[1];
-        //                     const columnType = ele[2];
-        //                     // other info seems to not be needed, unsure what flag is representing or if repeat names are aliases etc
-        //                     const columnBoolean = ele[3];
-        //                     const columnName2 = ele[4];
-        //                     const tableName2 = ele[4];
+                    const newTableColumnsObject = pixelResponse.reduce(
+                        (acc, ele, idx) => {
+                            const tableName = ele[0];
+                            const columnName = ele[1];
+                            const columnType = ele[2];
+                            // other info seems to not be needed, unsure what flag is representing or if repeat names are aliases etc
+                            const columnBoolean = ele[3];
+                            const columnName2 = ele[4];
+                            const tableName2 = ele[4];
 
-        //                     if (!acc[tableName]) acc[tableName] = [];
-        //                     acc[tableName].push({
-        //                         tableName,
-        //                         columnName,
-        //                         columnType,
-        //                         columnBoolean,
-        //                         columnName2,
-        //                         tableName2,
-        //                         userAlias: columnName, // user editable in Edit Columns
-        //                         checked: true,
-        //                     });
+                            if (!acc[tableName]) acc[tableName] = [];
+                            acc[tableName].push({
+                                tableName,
+                                columnName,
+                                columnType,
+                                columnBoolean,
+                                columnName2,
+                                tableName2,
+                                userAlias: columnName, // user editable in Edit Columns
+                                checked: true,
+                            });
 
-        //                     return acc;
-        //                 },
-        //                 {},
-        //             );
+                            return acc;
+                        },
+                        {},
+                    );
 
-        //             setTableColumnsObject(newTableColumnsObject);
-        //             setTableNames(tableNames);
-        //         } else {
-        //             console.error('Error retrieving database tables');
-        //         }
+                    setTableColumnsObject(newTableColumnsObject);
+                    setTableNames(tableNames);
+                } else {
+                    console.error('Error retrieving database tables');
+                }
 
-        //         setIsDatabaseLoading(false);
-        //     });
-        // };
+                setIsDatabaseLoading(false);
+            });
+        };
 
         /** Old Select Tables for Import Data --- remove? */
         const selectTableHandler = (tableName) => {
@@ -941,6 +961,42 @@ export const NotebookAddCell = observer(
 
                 setIsDatabaseLoading(false);
             });
+        };
+
+        /** Helper Function Update Alias Tracker Object*/
+        const updateAliasCountObj = (checked, alias) => {
+            const newAliasesCountObj = { ...aliasesCountObj };
+
+            if (checked) {
+                if (newAliasesCountObj[alias]) {
+                    newAliasesCountObj[alias] = newAliasesCountObj[alias] + 1;
+                } else {
+                    newAliasesCountObj[alias] = 1;
+                }
+            } else {
+                if (newAliasesCountObj[alias]) {
+                    newAliasesCountObj[alias] = newAliasesCountObj[alias] - 1;
+                } else {
+                    newAliasesCountObj[alias] = 0;
+                }
+            }
+
+            console.log({ newAliasesCountObj });
+            setAliasesCountObj(newAliasesCountObj);
+        };
+
+        /** Checkbox Handler */
+        const checkBoxHandler = (tableIndex, columnIndex) => {
+            const columnObject = watchedTables[tableIndex].columns[columnIndex];
+            console.log({ columnObject });
+            updateAliasCountObj(columnObject.checked, columnObject.userAlias);
+
+            // add checked column to set
+            // check for joinable tables
+            // hide all other tables
+
+            // check for repeat aliases in checked columns
+            //
         };
 
         return (
@@ -1059,6 +1115,7 @@ export const NotebookAddCell = observer(
                 <Modal open={isDataImportModalOpen} maxWidth="lg">
                     <Modal.Content sx={{ width: importModalPixelWidth }}>
                         <form onSubmit={newHandleSubmit(onImportDataSubmit)}>
+                            {/* Import Data from Database Selector */}
                             <StyledModalTitleWrapper>
                                 <div
                                     style={{
@@ -1079,7 +1136,15 @@ export const NotebookAddCell = observer(
                                                     field.onChange(
                                                         e.target.value,
                                                     );
-                                                    // setSelectedDatabaseId(
+                                                    // alert(e.target.value)
+                                                    setSelectedDatabaseId(
+                                                        e.target.value,
+                                                    );
+                                                    retrieveDatabaseTablesAndEdges(
+                                                        e.target.value,
+                                                    );
+                                                    setShowEditColumns(true);
+                                                    setShowTablePreview(false);
                                                     setImportModalPixelWidth(
                                                         IMPORT_MODAL_WIDTHS.medium,
                                                     );
@@ -1111,8 +1176,8 @@ export const NotebookAddCell = observer(
                                     <KeyboardArrowDown />
                                 </IconButton>
                             </StyledModalTitleWrapper>
-                            {!!tableNames.length && (
-                                // {true && (
+                            {/* {!!tableNames.length && ( */}
+                            {selectedDatabaseId && (
                                 <Stack
                                     spacing={1}
                                     direction="column"
@@ -1138,61 +1203,6 @@ export const NotebookAddCell = observer(
                                             >
                                                 Data
                                             </Typography>
-
-                                            {/* ### this doesnt need to exist anymore as selectable */}
-                                            {/* ### it will be a mapped set of tables with selected cols */}
-                                            {/* ### rendered as colored bubbles */}
-                                            {/* <Controller
-                                            name={'tableSelect'}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Select
-                                                    onChange={(e) => {
-                                                        field.onChange(
-                                                            e.target.value,
-                                                        );
-                                                        selectTableHandler(
-                                                            e.target.value,
-                                                        );
-                                                        setHiddenColumnIdsSet(
-                                                            new Set(),
-                                                        );
-                                                        if (
-                                                            !showTablePreview &&
-                                                            !showEditColumns
-                                                        ) {
-                                                            setShowTablePreview(
-                                                                true,
-                                                            );
-                                                        }
-                                                        setImportModalPixelWidth(
-                                                            IMPORT_MODAL_WIDTHS.large,
-                                                        );
-                                                    }}
-                                                    label={'Select Table'}
-                                                    value={field.value}
-                                                    size={'small'}
-                                                    color="primary"
-                                                    disabled={
-                                                        !tableNames.length
-                                                    }
-                                                    variant="outlined"
-                                                    sx={{
-                                                        minWidth: '150px',
-                                                    }}
-                                                >
-                                                    {tableNames?.map(
-                                                        (ele) => (
-                                                            <Menu.Item
-                                                                value={ele}
-                                                            >
-                                                                {ele}
-                                                            </Menu.Item>
-                                                        ),
-                                                    )}
-                                                </Select>
-                                            )}
-                                        /> */}
                                         </div>
                                         <div>
                                             <Button
@@ -1304,6 +1314,10 @@ export const NotebookAddCell = observer(
                                                                                                 ) => {
                                                                                                     field.onChange(
                                                                                                         e,
+                                                                                                    );
+                                                                                                    checkBoxHandler(
+                                                                                                        tableIndex,
+                                                                                                        columnIndex,
                                                                                                     );
                                                                                                 }}
                                                                                             />
