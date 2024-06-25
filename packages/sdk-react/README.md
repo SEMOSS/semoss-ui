@@ -106,7 +106,7 @@ export const ChatPage = (props) => {
     
             // get the output of partial
             try {
-                const output = await partial(roomId);
+                const output = await partial(insightId);
 
                 // add the martian
                 if (output.message && output.message.total) {
