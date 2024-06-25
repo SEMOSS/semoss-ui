@@ -92,7 +92,6 @@ const PageBody = styled('div')(({ theme }) => ({
     marginLeft: '200px',
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(3),
 }));
 
 const SectionHeading = styled(Typography)(({ theme }) => ({
@@ -101,18 +100,18 @@ const SectionHeading = styled(Typography)(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
-const TitleSection = styled('section')({
+const TitleSection = styled('section')(({ theme }) => ({
     display: 'flex',
-    gap: '1rem',
-    paddingBottom: '3rem',
-});
+    gap: theme.spacing(2),
+    paddingBottom: theme.spacing(6),
+}));
 
-const TitleSectionImg = styled('img')({
-    borderRadius: '0.75rem',
+const TitleSectionImg = styled('img')(({ theme }) => ({
+    borderRadius: theme.spacing(0.75),
     height: '135px',
     width: '160px',
     overflow: 'hidden',
-});
+}));
 
 const TitleSectionBodyWrapper = styled('div')({
     display: 'flex',
@@ -135,7 +134,7 @@ const TagsBodyWrapper = styled('div')({
 });
 
 const StyledSection = styled('section')(({ theme }) => ({
-    paddingBottom: theme.spacing(1),
+    paddingBottom: theme.spacing(3),
 }));
 
 const DependenciesHeadingWrapper = styled('div')({
