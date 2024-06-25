@@ -76,7 +76,7 @@ export class StateStore {
         blocks: {},
         cellRegistry: {},
         variables: {},
-        dependencies: {}, // Maher said change to constants
+        dependencies: {},
     };
 
     /**

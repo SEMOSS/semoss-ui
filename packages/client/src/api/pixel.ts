@@ -141,57 +141,31 @@ export const pixelConsole = async (jobId: string) => {
 };
 
 /**
- * Poll the console to get messages for a job
+ * Poll the response
  *
- * @param pixel - pixel
- * @param insightId - id of the insight to run
+ * @param roomId - id of the room to stream output
  */
-export const pixelConsole2 = async (jobId: string) => {
-    if (!jobId) {
-        throw Error('No job id provded to get pixel response');
+export const pixelPartial = async (roomId: string) => {
+    if (!roomId) {
+        throw Error('No room id provded to get pixel response');
     }
 
     // build the expression
     let postData = '';
 
-    postData += 'jobId=' + encodeURIComponent(jobId);
+    postData += 'jobId=' + encodeURIComponent(roomId);
 
-    let response;
-    let stillPolling = true;
-    const messages = [];
-    // Set up polling in order to get full stdout
-    while (stillPolling) {
-        try {
-            response = await axios.post<{
-                messages: string[];
-                status: string;
-            }>(`${Env.MODULE}/api/engine/console`, postData, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
-            });
-
-            // Append new messages
-            response.data.message.forEach((mess) => {
-                messages.push(mess);
-            });
-
-            // Currently console does not get pass STREAMING
-            if (response.data.status === 'Complete') {
-                stillPolling = false;
-            } else if (response.data.status === 'Streaming') {
-                stillPolling = false;
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 3000)); // Adjust the delay as needed
-            }
-        } catch (error) {
-            console.error('Error occurred on Pulling:', error.message);
-            stillPolling = false;
-        }
-    }
+    const response = await axios.post<{
+        message: { new: string; total: string };
+        status: string;
+    }>(`${Env.MODULE}/api/engine/partial`, postData, {
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+        },
+    });
 
     return {
-        messages: messages,
+        message: response.data.message,
         status: response.data.status,
     };
 };

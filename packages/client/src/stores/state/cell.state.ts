@@ -5,7 +5,7 @@ import { setValueByPath } from '@/utility';
 import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
-import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
+import { pixelConsole, pixelPartial, pixelResult, runPixelAsync } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -289,12 +289,19 @@ export class CellState<D extends CellDef = CellDef> {
                 try {
                     // get the reponse from the job id
                     const { messages, status } = await pixelConsole(jobId);
+                    const { message, status: partialStatus } =
+                        await pixelPartial(this._state.insightId);
 
                     // add the new messages
                     runInAction(() => {
                         messages.forEach((mess) => {
                             this._store.messages.push(mess);
                         });
+
+                        this._store.operation = ['OPERATION'];
+
+                        // save the last output
+                        this._store.output = JSON.stringify(message);
                     });
 
                     // Currently console does not get pass STREAMING
