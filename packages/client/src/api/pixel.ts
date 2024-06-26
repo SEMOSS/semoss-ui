@@ -73,10 +73,13 @@ export const runPixel = async <O extends unknown[] | []>(
  * @param pixel - pixel
  * @param insightId - id of the insight to run
  */
-export const runPixelAsync = async (pixel: string, insightId?: string) => {
+export const runPixelAsync = async (pixel: string) => {
     if (!pixel) {
         throw Error('No Pixel To Execute');
     }
+
+    // Only do this to get the partial of response
+    const { insightId } = await runPixel('1+1;', 'new');
 
     // build the expression
     let postData = '';
@@ -107,6 +110,7 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
 
     return {
         jobId: response.data.jobId,
+        insightId: insightId,
     };
 };
 
@@ -165,7 +169,7 @@ export const pixelPartial = async (roomId: string) => {
     });
 
     return {
-        message: response.data.message,
+        output: response.data.message.total,
         status: response.data.status,
     };
 };

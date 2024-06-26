@@ -278,10 +278,7 @@ export class CellState<D extends CellDef = CellDef> {
             this._store.output = undefined;
 
             // start polling
-            const { jobId } = await runPixelAsync(
-                filled,
-                this._state.insightId,
-            );
+            const { jobId, insightId } = await runPixelAsync(filled);
 
             // Set up polling in order to get full stdout
             let isPolling = true;
@@ -289,8 +286,9 @@ export class CellState<D extends CellDef = CellDef> {
                 try {
                     // get the reponse from the job id
                     const { messages, status } = await pixelConsole(jobId);
-                    const { message, status: partialStatus } =
-                        await pixelPartial(this._state.insightId);
+
+                    // TODO: Can we get the output in console instead ??
+                    const { output } = await pixelPartial(insightId);
 
                     // add the new messages
                     runInAction(() => {
@@ -298,10 +296,11 @@ export class CellState<D extends CellDef = CellDef> {
                             this._store.messages.push(mess);
                         });
 
+                        // TODO: IDK operation until its complete
                         this._store.operation = ['OPERATION'];
 
                         // save the last output
-                        this._store.output = JSON.stringify(message);
+                        this._store.output = JSON.stringify(output);
                     });
 
                     // Currently console does not get pass STREAMING
