@@ -50,6 +50,11 @@ import {
     AddBox,
     Close,
     JoinInner,
+    Warning,
+    WarningAmber,
+    TableView,
+    TableChart,
+    CalendarViewMonth,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -133,6 +138,13 @@ const FlexWrapper = styled('div')(({ theme }) => ({
     marginTop: '15px',
 }));
 
+const FlexTableCell = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    // padding: '0px',
+    // marginTop: '15px',
+}));
+
 const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
     marginTop: '0px',
     marginLeft: '0px',
@@ -141,6 +153,8 @@ const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
     width: 'fit-content',
     padding: '7.5px 17.5px',
     borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
 }));
 
 const SingleTableWrapper = styled('div')(({ theme }) => ({
@@ -151,6 +165,17 @@ const SingleTableWrapper = styled('div')(({ theme }) => ({
 
 const CheckAllIconButton = styled(IconButton)(({ theme }) => ({
     marginLeft: '-10px',
+}));
+
+const AliasWarningIcon = styled(Tooltip)(({ theme }) => ({
+    color: 'goldenrod',
+    marginLeft: '10px',
+}));
+
+const TableIconButton = styled(Tooltip)(({ theme }) => ({
+    marginLeft: '-3px',
+    marginRight: '7px',
+    color: theme.palette.primary.main,
 }));
 
 const ColumnNameText = styled(Typography)(({ theme }) => ({
@@ -964,23 +989,46 @@ export const NotebookAddCell = observer(
         };
 
         /** Helper Function Update Alias Tracker Object*/
-        const updateAliasCountObj = (checked, alias) => {
+        const updateAliasCountObj = (
+            isBeingAdded,
+            newAlias,
+            oldAlias = null,
+        ) => {
             const newAliasesCountObj = { ...aliasesCountObj };
 
-            if (checked) {
-                if (newAliasesCountObj[alias]) {
-                    newAliasesCountObj[alias] = newAliasesCountObj[alias] + 1;
+            if (isBeingAdded) {
+                if (newAliasesCountObj[newAlias]) {
+                    newAliasesCountObj[newAlias] =
+                        newAliasesCountObj[newAlias] + 1;
                 } else {
-                    newAliasesCountObj[alias] = 1;
+                    newAliasesCountObj[newAlias] = 1;
                 }
             } else {
-                if (newAliasesCountObj[alias]) {
-                    newAliasesCountObj[alias] = newAliasesCountObj[alias] - 1;
+                if (newAliasesCountObj[newAlias]) {
+                    newAliasesCountObj[newAlias] =
+                        newAliasesCountObj[newAlias] - 1;
                 } else {
-                    newAliasesCountObj[alias] = 0;
+                    newAliasesCountObj[newAlias] = 0;
                 }
             }
 
+            if (newAliasesCountObj[newAlias] < 1) {
+                delete newAliasesCountObj[newAlias];
+            }
+
+            if (oldAlias) {
+                if (newAliasesCountObj[oldAlias]) {
+                    newAliasesCountObj[oldAlias] =
+                        newAliasesCountObj[newAlias] - 1;
+                } else {
+                    newAliasesCountObj[oldAlias] = 0;
+                }
+                if (newAliasesCountObj[oldAlias] < 1) {
+                    delete newAliasesCountObj[oldAlias];
+                }
+            }
+
+            console.log({ isBeingAdded });
             console.log({ newAliasesCountObj });
             setAliasesCountObj(newAliasesCountObj);
         };
@@ -996,7 +1044,6 @@ export const NotebookAddCell = observer(
             // hide all other tables
 
             // check for repeat aliases in checked columns
-            //
         };
 
         return (
@@ -1136,7 +1183,6 @@ export const NotebookAddCell = observer(
                                                     field.onChange(
                                                         e.target.value,
                                                     );
-                                                    // alert(e.target.value)
                                                     setSelectedDatabaseId(
                                                         e.target.value,
                                                     );
@@ -1176,7 +1222,6 @@ export const NotebookAddCell = observer(
                                     <KeyboardArrowDown />
                                 </IconButton>
                             </StyledModalTitleWrapper>
-                            {/* {!!tableNames.length && ( */}
                             {selectedDatabaseId && (
                                 <Stack
                                     spacing={1}
@@ -1225,6 +1270,11 @@ export const NotebookAddCell = observer(
                                                 variant="outlined"
                                                 color="primary"
                                                 size="medium"
+                                                disabled={Object.values(
+                                                    aliasesCountObj,
+                                                ).some(
+                                                    (key: number) => key > 1,
+                                                )}
                                                 onClick={() => {
                                                     setShowTablePreview(
                                                         !showTablePreview,
@@ -1243,7 +1293,6 @@ export const NotebookAddCell = observer(
                                                 Available Tables / Columns
                                             </StyledTableTitle>
                                             <ScrollTableSetContainer>
-                                                {/* {tableNames.map((tableName) => ( */}
                                                 {newTableFields.map(
                                                     (table, tableIndex) => (
                                                         <SingleTableWrapper
@@ -1251,6 +1300,14 @@ export const NotebookAddCell = observer(
                                                         >
                                                             <FlexWrapper>
                                                                 <StyledTableTitleBlueBubble variant="body1">
+                                                                    <TableIconButton
+                                                                        title={
+                                                                            'Table'
+                                                                        }
+                                                                        placement="top"
+                                                                    >
+                                                                        <CalendarViewMonth />
+                                                                    </TableIconButton>
                                                                     {table.name}
                                                                 </StyledTableTitleBlueBubble>
                                                             </FlexWrapper>
@@ -1297,7 +1354,6 @@ export const NotebookAddCell = observer(
                                                                             >
                                                                                 <Table.Cell>
                                                                                     <Controller
-                                                                                        // #### start here, need to figure out how to key in correctly
                                                                                         name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
                                                                                         control={
                                                                                             newControl
@@ -1381,49 +1437,77 @@ export const NotebookAddCell = observer(
                                                                                     )}
                                                                                 </Table.Cell>
                                                                                 <Table.Cell>
-                                                                                    <Controller
-                                                                                        // name={`columns.${index}.userAlias`}
-                                                                                        name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
-                                                                                        control={
-                                                                                            newControl
-                                                                                        }
-                                                                                        render={({
-                                                                                            field,
-                                                                                        }) => (
-                                                                                            <TextField
-                                                                                                type="text"
-                                                                                                variant="outlined"
-                                                                                                size="small"
-                                                                                                value={
-                                                                                                    field.value
-                                                                                                }
-                                                                                                onChange={(
-                                                                                                    e,
-                                                                                                ) => {
-                                                                                                    field.onChange(
-                                                                                                        e
-                                                                                                            .target
-                                                                                                            .value,
-                                                                                                    );
-                                                                                                    // const newTableHeaders =
-                                                                                                    //     [
-                                                                                                    //         ...databaseTableHeaders,
-                                                                                                    //     ];
-                                                                                                    // newTableHeaders[
-                                                                                                    //     index
-                                                                                                    // ] =
-                                                                                                    //     e.target.value;
-                                                                                                    // setDatabaseTableHeaders(
-                                                                                                    //     newTableHeaders,
-                                                                                                    // );
-                                                                                                }}
-                                                                                            />
-                                                                                        )}
-                                                                                    />
+                                                                                    <FlexTableCell>
+                                                                                        <Controller
+                                                                                            name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
+                                                                                            control={
+                                                                                                newControl
+                                                                                            }
+                                                                                            render={({
+                                                                                                field,
+                                                                                            }) => (
+                                                                                                <TextField
+                                                                                                    type="text"
+                                                                                                    variant="outlined"
+                                                                                                    size="small"
+                                                                                                    value={
+                                                                                                        field.value
+                                                                                                    }
+                                                                                                    onChange={(
+                                                                                                        e,
+                                                                                                    ) => {
+                                                                                                        if (
+                                                                                                            watchedTables[
+                                                                                                                tableIndex
+                                                                                                            ]
+                                                                                                                .columns[
+                                                                                                                columnIndex
+                                                                                                            ]
+                                                                                                                .checked
+                                                                                                        ) {
+                                                                                                            updateAliasCountObj(
+                                                                                                                true,
+                                                                                                                e
+                                                                                                                    .target
+                                                                                                                    .value,
+                                                                                                                field.value,
+                                                                                                            );
+                                                                                                        }
+                                                                                                        field.onChange(
+                                                                                                            e
+                                                                                                                .target
+                                                                                                                .value,
+                                                                                                        );
+                                                                                                    }}
+                                                                                                />
+                                                                                            )}
+                                                                                        />
+                                                                                        {watchedTables[
+                                                                                            tableIndex
+                                                                                        ]
+                                                                                            .columns[
+                                                                                            columnIndex
+                                                                                        ]
+                                                                                            .checked &&
+                                                                                            aliasesCountObj[
+                                                                                                watchedTables[
+                                                                                                    tableIndex
+                                                                                                ]
+                                                                                                    .columns[
+                                                                                                    columnIndex
+                                                                                                ]
+                                                                                                    .userAlias
+                                                                                            ] >
+                                                                                                1 && (
+                                                                                                <AliasWarningIcon title="Duplicate Alias Name">
+                                                                                                    <Warning />
+                                                                                                </AliasWarningIcon>
+                                                                                            )}
+                                                                                    </FlexTableCell>
                                                                                 </Table.Cell>
+
                                                                                 <Table.Cell>
                                                                                     <Controller
-                                                                                        // name={`columns.${index}.columnType`}
                                                                                         name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
                                                                                         control={
                                                                                             newControl
@@ -2963,6 +3047,9 @@ export const NotebookAddCell = observer(
                                     type="submit"
                                     variant="contained"
                                     color="primary"
+                                    disabled={Object.values(
+                                        aliasesCountObj,
+                                    ).some((key: number) => key > 1)}
                                 >
                                     Import
                                 </Button>
