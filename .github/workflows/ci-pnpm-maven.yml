@@ -2,6 +2,15 @@ name: CI
 
 on:
     workflow_dispatch:
+        inputs:
+            VERSION:
+                description: 'Version to use for the build snapshot'
+                required: true
+                default: '4.3.0'
+            RELEASE:
+                decription:
+                    required: true
+                    deault: 'FALSE'
 
 env:
     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
@@ -11,7 +20,7 @@ env:
 jobs:
     pnpm_build_dev:
         runs-on: ubuntu-latest
-        if: ${{ secrets.RELEASE != 'TRUE'}}
+        if: ${{ github.event.inputs.RELEASE != 'TRUE'}}
         container:
             image: node:18.16.1-bullseye
         steps:
@@ -40,7 +49,7 @@ jobs:
 
             - name: Maven clean install
               run: |
-                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ secrets.VERSION }}-SNAPSHOT
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ github.event.inputs.VERSION }}-SNAPSHOT
                   rm -rf .m2/repository/org/semoss
 
             - name: Save artifacts
@@ -48,11 +57,11 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: semossweb-artifact
-                  path: target/semossweb-${{ secrets.VERSION }}-SNAPSHOT.war
+                  path: target/semossweb-${{ github.event.inputs.VERSION }}-SNAPSHOT.war
 
     pnpm_build_deploy:
         runs-on: ubuntu-latest
-        if: secrets.RELEASE != 'TRUE' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev'
+        if: github.event.inputs.RELEASE != 'TRUE' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev'
         container:
             image: node:18.16.1-bullseye
         steps:
@@ -84,7 +93,7 @@ jobs:
 
             - name: Maven deploy
               run: |
-                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ secrets.VERSION }}-SNAPSHOT
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ github.event.inputs.VERSION }}-SNAPSHOT
                   rm -rf .m2/repository/org/semoss
 
             - name: Save artifacts
@@ -92,4 +101,4 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: semossweb-artifact
-                  path: target/semossweb-${{ secrets.VERSION }}-SNAPSHOT.war
+                  path: target/semossweb-${{ github.event.inputs.VERSION }}-SNAPSHOT.war
