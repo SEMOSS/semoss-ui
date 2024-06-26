@@ -11,7 +11,7 @@ env:
 jobs:
     pnpm_build_dev:
         runs-on: ubuntu-latest
-        if: "!contains(github.event.head_commit.message, '[release]')"
+        if: ${{ secrets.RELEASE != 'TRUE'}}
         container:
             image: node:18.16.1-bullseye
         steps:
@@ -52,7 +52,7 @@ jobs:
 
     pnpm_build_deploy:
         runs-on: ubuntu-latest
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/dev'
+        if: secrets.RELEASE != 'TRUE' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev'
         container:
             image: node:18.16.1-bullseye
         steps:
