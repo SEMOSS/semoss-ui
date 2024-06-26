@@ -37,12 +37,10 @@ const StyledMemberInnerContent = styled('div')({
     alignSelf: 'stretch',
 });
 
-const StyledTableContainer = styled(Table.Container)({
+const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
     borderRadius: '12px',
-    // background: #FFF;
-    /* Devias Drop Shadow */
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-});
+    border: `1px solid ${theme.palette.secondary.border}`,
+}));
 
 const StyledTableRow = styled(Table.Row)({
     backgroundColor: '#FFF',
@@ -50,13 +48,12 @@ const StyledTableRow = styled(Table.Row)({
 
 const StyledMemberTable = styled(Table)({});
 
-const StyledTableTitleContainer = styled('div')({
+const StyledTableTitleContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     alignSelf: 'stretch',
-    boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
     backgroundColor: 'white',
-});
+}));
 
 const StyledTableTitleDiv = styled('div')({
     display: 'flex',

@@ -33,7 +33,7 @@ const StyledAlert = styled(Alert, {
     alignSelf: 'stretch',
     borderRadius: '12px',
     background: theme.palette.background.paper,
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    border: `1px solid ${theme.palette.secondary.border}`,
     '.MuiAlert-action': {
         paddingRight: '8px',
     },
