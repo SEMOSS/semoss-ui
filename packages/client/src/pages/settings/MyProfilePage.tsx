@@ -1,9 +1,10 @@
-// COMMENTS: John (11/3/2023)
-// Please Ensure that all three Sections or Paper have the same padding as spacing
-// In order to get the Style fixes out, I added a quick StyledAccessTokensPaper with custom padding
-// Either way all three Sections should have a pretty similar structure
-
-import { Add, Delete, ContentCopyOutlined } from '@mui/icons-material';
+import {
+    Add,
+    Delete,
+    ContentCopyOutlined,
+    KeyboardArrowDown,
+    KeyboardArrowUp,
+} from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
 import {
@@ -20,12 +21,13 @@ import {
     Modal,
     Grid,
     Alert,
+    Collapse,
 } from '@semoss/ui';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
-
+import { getSDKSnippet } from '@/utility';
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
@@ -35,13 +37,6 @@ const StyledAvatar = styled(Avatar)(({ theme }) => ({
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: '40px 30px 20px 50px',
-}));
-
-const StyledRow = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing(1),
 }));
 
 const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
@@ -113,13 +108,9 @@ const GridItem = styled(Grid)(({ theme }) => ({
     padding: 0,
 }));
 
-const StyledAccessTokensGrid = styled(Grid)(({ theme }) => ({
+const CustomGridItem = styled(GridItem)(({ theme }) => ({
     padding: 0,
-    width: '100%',
-}));
-
-const ProfileImagePlaceholder = styled(Avatar)(({ theme }) => ({
-    fontSize: '50px !important',
+    zIndex: 8,
 }));
 
 const StyledCodeBlock = styled('pre')(({ theme }) => ({
@@ -133,8 +124,30 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     margin: '0px',
 }));
 
-const StyledCodeContent = styled('code')(() => ({
+const StyledCodeContent = styled('code', {
+    shouldForwardProp: (prop) => prop !== 'maxWidth',
+})<{
+    /** Track if the page header is stuck */
+    maxWidth?: string;
+}>(({ theme, maxWidth }) => ({
     flex: 1,
+    maxWidth: maxWidth ? maxWidth : 'auto',
+    overflowY: 'scroll',
+}));
+
+const StyledSDKBlock = styled('pre')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '40px',
+    background: theme.palette.background.paper,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(2),
+    margin: '0px',
+}));
+
+const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
+    background: theme.palette.background.default,
+    padding: theme.spacing(1),
 }));
 
 interface CreateAccessKeyForm {
@@ -199,6 +212,9 @@ export const MyProfilePage = () => {
 
     // track if we can create a key
     const isCreated = ACCESSKEY && SECRETKEY ? true : false;
+
+    const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
+    const [isPySdkOpen, setIsPySdkOpen] = useState(false);
 
     /**
      * Submit edit profile info
@@ -344,9 +360,11 @@ export const MyProfilePage = () => {
     ) {
         return <LoadingScreen.Trigger description="Getting access keys" />;
     }
+    const pySnippet = getSDKSnippet('py', ACCESSKEY, SECRETKEY);
+    const jsSnippet = getSDKSnippet('js', ACCESSKEY, SECRETKEY);
 
     return (
-        <>
+        <Stack gap={3} className="my-profile-page">
             <StyledPaper>
                 <StyledGrid container spacing={3}>
                     <GridItem sm={4}>
@@ -571,22 +589,52 @@ export const MyProfilePage = () => {
 
             <StyledPaper>
                 <MonolithGrid container spacing={3}>
-                    <GridItem sm={4}>
-                        <Typography variant="h6">Monolith Endpoint</Typography>
-                    </GridItem>
-
-                    <GridItem sm={7}>{process.env.MODULE}</GridItem>
-
+                    <CustomGridItem sm={11}>
+                        <Typography variant="h6">Javascript SDK</Typography>
+                    </CustomGridItem>
                     <CopyGridItem sm={1}>
                         <IconButton
                             title="Copy"
                             onClick={() => {
-                                copy(process.env.MODULE);
+                                copy(jsSnippet);
                             }}
                         >
                             <ContentCopyOutlined />
                         </IconButton>
                     </CopyGridItem>
+                </MonolithGrid>
+                <MonolithGrid container spacing={3}>
+                    <GridItem sm={12}>
+                        <StyledSDKBlock>
+                            <StyledCodeContent>{jsSnippet}</StyledCodeContent>
+                        </StyledSDKBlock>
+                    </GridItem>
+                </MonolithGrid>
+            </StyledPaper>
+
+            <StyledPaper>
+                <MonolithGrid container spacing={3}>
+                    <CustomGridItem sm={11}>
+                        <Typography variant="h6">Python SDK</Typography>
+                    </CustomGridItem>
+
+                    <CopyGridItem sm={1}>
+                        <IconButton
+                            title="Copy"
+                            onClick={() => {
+                                copy(pySnippet);
+                            }}
+                        >
+                            <ContentCopyOutlined />
+                        </IconButton>
+                    </CopyGridItem>
+                </MonolithGrid>
+                <MonolithGrid container spacing={3}>
+                    <GridItem sm={12}>
+                        <StyledSDKBlock>
+                            <StyledCodeContent>{pySnippet}</StyledCodeContent>
+                        </StyledSDKBlock>
+                    </GridItem>
                 </MonolithGrid>
             </StyledPaper>
 
@@ -685,119 +733,239 @@ export const MyProfilePage = () => {
                     )}
             </StyledAccessTokensPaper>
 
-            <Modal open={addModal} onClose={() => closeModel()}>
+            <Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
                 <Modal.Title>Generate Key</Modal.Title>
                 <Modal.Content>
-                    <form onSubmit={handleSubmit(createAccessKey)}>
-                        <Stack direction="column" spacing={2}>
-                            <Alert severity="info">
-                                Note: Your private key will only be generated
-                                once
-                            </Alert>
+                    <Stack sx={{ width: '800px' }} spacing={4}>
+                        <form
+                            onSubmit={handleSubmit(createAccessKey)}
+                            className="my-profile-page__generate-key-form"
+                        >
+                            <Stack direction="column" spacing={2}>
+                                <Alert severity="info">
+                                    Note: Your private key will only be
+                                    generated once
+                                </Alert>
 
-                            <Controller
-                                name={'TOKENNAME'}
-                                control={control}
-                                rules={{ required: true }}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            required
-                                            label="Name"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            disabled={isCreated}
-                                            onChange={(value) =>
-                                                field.onChange(value)
-                                            }
-                                            inputProps={{ maxLength: 255 }}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
+                                <Controller
+                                    name={'TOKENNAME'}
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                required
+                                                label="Name"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 255 }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
 
-                            <Controller
-                                name={'TOKENDESCRIPTION'}
-                                control={control}
-                                rules={{ required: false }}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            label="Description"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            disabled={isCreated}
-                                            onChange={(value) =>
-                                                field.onChange(value)
-                                            }
-                                            inputProps={{ maxLength: 500 }}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
+                                <Controller
+                                    name={'TOKENDESCRIPTION'}
+                                    control={control}
+                                    rules={{ required: false }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Description"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
 
-                            <Stack direction="row" justifyContent={'start'}>
-                                <Button
-                                    disabled={isCreated}
-                                    type="submit"
-                                    variant={'outlined'}
-                                    color="primary"
-                                >
-                                    Generate
-                                </Button>
+                                <Stack direction="row" justifyContent={'start'}>
+                                    <Button
+                                        disabled={isCreated}
+                                        type="submit"
+                                        variant={'outlined'}
+                                        color="primary"
+                                    >
+                                        Generate
+                                    </Button>
+                                </Stack>
+                                {isCreated && (
+                                    <StyledCreatedKeyContainer direction="column">
+                                        <Stack direction="column" spacing={1}>
+                                            <Typography variant={'subtitle2'}>
+                                                Access Key
+                                            </Typography>
+                                            <StyledSDKBlock>
+                                                <StyledCodeContent>
+                                                    {ACCESSKEY}
+                                                </StyledCodeContent>
+                                                <Button
+                                                    size={'medium'}
+                                                    variant="outlined"
+                                                    startIcon={
+                                                        <ContentCopyOutlined
+                                                            color={'inherit'}
+                                                        />
+                                                    }
+                                                    onClick={() =>
+                                                        copy(ACCESSKEY)
+                                                    }
+                                                >
+                                                    Copy
+                                                </Button>
+                                            </StyledSDKBlock>
+                                        </Stack>
+                                        <Stack direction="column" spacing={1}>
+                                            <Typography variant={'subtitle2'}>
+                                                Secret Key
+                                            </Typography>
+                                            <StyledSDKBlock>
+                                                <StyledCodeContent>
+                                                    {SECRETKEY}
+                                                </StyledCodeContent>
+                                                <Button
+                                                    size={'medium'}
+                                                    variant="outlined"
+                                                    startIcon={
+                                                        <ContentCopyOutlined
+                                                            color={'inherit'}
+                                                        />
+                                                    }
+                                                    onClick={() =>
+                                                        copy(SECRETKEY)
+                                                    }
+                                                >
+                                                    Copy
+                                                </Button>
+                                            </StyledSDKBlock>
+                                        </Stack>
+                                        <Stack
+                                            direction="column"
+                                            spacing={1}
+                                            className="my-profile-page__js-sdk-access key"
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                justifyContent={'space-between'}
+                                                alignItems={'center'}
+                                            >
+                                                <Typography
+                                                    variant={'subtitle2'}
+                                                >
+                                                    Javascript Example
+                                                </Typography>
+                                                <IconButton
+                                                    onClick={() => {
+                                                        setIsJsSdkOpen(
+                                                            !isJsSdkOpen,
+                                                        );
+                                                    }}
+                                                >
+                                                    {isJsSdkOpen ? (
+                                                        <KeyboardArrowUp />
+                                                    ) : (
+                                                        <KeyboardArrowDown />
+                                                    )}
+                                                </IconButton>
+                                            </Stack>
+
+                                            <Collapse in={isJsSdkOpen}>
+                                                <StyledSDKBlock>
+                                                    <StyledCodeContent maxWidth="600px">
+                                                        {jsSnippet}
+                                                    </StyledCodeContent>
+                                                    <Button
+                                                        size={'medium'}
+                                                        variant="outlined"
+                                                        startIcon={
+                                                            <ContentCopyOutlined
+                                                                color={
+                                                                    'inherit'
+                                                                }
+                                                            />
+                                                        }
+                                                        onClick={() =>
+                                                            copy(jsSnippet)
+                                                        }
+                                                    >
+                                                        Copy
+                                                    </Button>
+                                                </StyledSDKBlock>
+                                            </Collapse>
+                                        </Stack>
+                                        <Stack
+                                            direction="column"
+                                            spacing={1}
+                                            className="my-profile-page__py-sdk-access key"
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                justifyContent={'space-between'}
+                                                alignItems={'center'}
+                                            >
+                                                <Typography
+                                                    variant={'subtitle2'}
+                                                >
+                                                    Python Example
+                                                </Typography>
+                                                <IconButton
+                                                    onClick={() => {
+                                                        setIsPySdkOpen(
+                                                            !isPySdkOpen,
+                                                        );
+                                                    }}
+                                                >
+                                                    {isPySdkOpen ? (
+                                                        <KeyboardArrowUp />
+                                                    ) : (
+                                                        <KeyboardArrowDown />
+                                                    )}
+                                                </IconButton>
+                                            </Stack>
+                                            <Collapse in={isPySdkOpen}>
+                                                <StyledSDKBlock>
+                                                    <StyledCodeContent maxWidth="600px">
+                                                        {pySnippet}
+                                                    </StyledCodeContent>
+                                                    <Button
+                                                        size={'medium'}
+                                                        variant="outlined"
+                                                        startIcon={
+                                                            <ContentCopyOutlined
+                                                                color={
+                                                                    'inherit'
+                                                                }
+                                                            />
+                                                        }
+                                                        onClick={() =>
+                                                            copy(pySnippet)
+                                                        }
+                                                    >
+                                                        Copy
+                                                    </Button>
+                                                </StyledSDKBlock>
+                                            </Collapse>
+                                        </Stack>
+                                    </StyledCreatedKeyContainer>
+                                )}
                             </Stack>
-                            {isCreated && (
-                                <>
-                                    <Stack direction="column" spacing={1}>
-                                        <Typography variant={'subtitle2'}>
-                                            Access Key
-                                        </Typography>
-                                        <StyledCodeBlock>
-                                            <StyledCodeContent>
-                                                {ACCESSKEY}
-                                            </StyledCodeContent>
-                                            <Button
-                                                size={'medium'}
-                                                variant="outlined"
-                                                startIcon={
-                                                    <ContentCopyOutlined
-                                                        color={'inherit'}
-                                                    />
-                                                }
-                                                onClick={() => copy(ACCESSKEY)}
-                                            >
-                                                Copy
-                                            </Button>
-                                        </StyledCodeBlock>
-                                    </Stack>
-                                    <Stack direction="column" spacing={1}>
-                                        <Typography variant={'subtitle2'}>
-                                            Secret Key
-                                        </Typography>
-                                        <StyledCodeBlock>
-                                            <StyledCodeContent>
-                                                {SECRETKEY}
-                                            </StyledCodeContent>
-                                            <Button
-                                                size={'medium'}
-                                                variant="outlined"
-                                                startIcon={
-                                                    <ContentCopyOutlined
-                                                        color={'inherit'}
-                                                    />
-                                                }
-                                                onClick={() => copy(SECRETKEY)}
-                                            >
-                                                Copy
-                                            </Button>
-                                        </StyledCodeBlock>
-                                    </Stack>
-                                </>
-                            )}
-                        </Stack>
-                    </form>
+                        </form>
+                    </Stack>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button variant="text" onClick={() => closeModel()}>
@@ -806,7 +974,11 @@ export const MyProfilePage = () => {
                 </Modal.Actions>
             </Modal>
 
-            <Modal open={profileImgModal} onClose={() => closeModel()}>
+            <Modal
+                open={profileImgModal}
+                onClose={() => closeModel()}
+                maxWidth="md"
+            >
                 <Modal.Title>Upload Profile Picture</Modal.Title>
                 <Modal.Content>
                     <CurrentAvatarStack direction="row" spacing={2}>
@@ -855,6 +1027,6 @@ export const MyProfilePage = () => {
                     </Stack>
                 </Modal.Content>
             </Modal>
-        </>
+        </Stack>
     );
 };

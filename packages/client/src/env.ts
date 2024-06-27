@@ -9,6 +9,11 @@ export class Env {
         MODULE: process.env.MODULE || '',
         ACCESS_KEY: process.env.ACCESS_KEY || '',
         SECRET_KEY: process.env.SECRET_KEY || '',
+        // Added to show on SDK docs
+        ORIGIN: window.location.origin || '',
+        PATH: window.location.pathname.includes('SemossWeb')
+            ? window.location.pathname.split('SemossWeb')[0].replace(/\/$/, '')
+            : '' || '',
     };
 
     /**
@@ -30,6 +35,20 @@ export class Env {
      */
     static get SECRET_KEY() {
         return this._store.SECRET_KEY;
+    }
+
+    /**
+     * Ready only getter
+     */
+    static get ORIGIN() {
+        return this._store.ORIGIN;
+    }
+
+    /**
+     * Ready only getter
+     */
+    static get PATH() {
+        return this._store.PATH;
     }
 
     /**

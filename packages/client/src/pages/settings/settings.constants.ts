@@ -201,3 +201,36 @@ export const SETTINGS_ROUTES: {
         admin: false,
     },
 ];
+
+export const getSDKSnippet = (
+    type: 'py' | 'js',
+    accessKey?: string,
+    secretKey?: string,
+) => {
+    if (type === 'py') {
+        return `
+# import the ai platform package
+import ai_server
+
+# pass in your access and secret keys to authenticate
+server_connection=ai_server.RESTServer(
+    access_key="${
+        accessKey ? accessKey : '<your access key>'
+    }",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
+    secret_key="${
+        secretKey ? secretKey : '<your access key>'
+    }",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
+    base="${Env.ORIGIN}${Env.PATH}${Env.MODULE}/api"
+`;
+    } else {
+        return `
+# .env
+ENDPOINT="${Env.ORIGIN}${Env.PATH}"
+MODULE="${Env.MODULE}"
+
+#.env.local
+ACCESS_KEY="${accessKey ? accessKey : '<your access key>'}"
+SECRET_KEY="${secretKey ? secretKey : '<your secret key>'}"
+`;
+    }
+};
