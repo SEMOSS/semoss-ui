@@ -320,8 +320,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const image = findAppImage(appType);
     const appDetails = findAppDetails(appType);
 
-    console.log('hello app', app.user_permission, app.project_name);
-
     return (
         <StyledTileCard disabled={!href}>
             {!systemApp && (
