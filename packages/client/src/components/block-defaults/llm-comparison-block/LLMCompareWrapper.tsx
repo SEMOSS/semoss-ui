@@ -4,7 +4,7 @@ import { useNotification } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { useBlocks } from '@/hooks';
 import { useRootStore } from '@/hooks';
-import { TypeLlmConfig, TypeVariant } from '../workspace.types';
+import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
 
 // TODO: clean out fake data when BE is operational
 const initialState = {
