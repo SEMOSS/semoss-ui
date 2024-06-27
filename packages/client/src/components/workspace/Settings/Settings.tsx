@@ -2,17 +2,15 @@ import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 import { Tooltip, styled, List, Stack, Typography } from '@semoss/ui';
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
-import { ModelTraining, SupervisorAccount } from '@mui/icons-material';
 import { SettingsView } from './SettingsView';
 import {
-    AutoGraphRounded,
-    CompareArrowsRounded,
-    HistoryRounded,
-    TuneRounded,
+    SupervisorAccount,
+    // ModelTraining,
+    // AutoGraphRounded,
+    // CompareArrowsRounded,
+    // HistoryRounded,
+    // TuneRounded,
 } from '@mui/icons-material';
-import { LlmConfigureView } from '../llm-compare/LlmConfigureView';
-import { ABTesting, LLMCompareWrapper } from '../llm-compare';
-import { ABTestingPanel } from '../llm-compare/ABTestingPanel';
 
 const StyledSettings = styled('div')(() => ({
     display: 'flex',
@@ -23,13 +21,13 @@ const StyledSettings = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-const StyledLeftPanel = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: theme.spacing(45),
-    overflow: 'hidden',
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
-}));
+// const StyledLeftPanel = styled('div')(({ theme }) => ({
+//     height: '100%',
+//     width: theme.spacing(45),
+//     overflow: 'hidden',
+//     backgroundColor: theme.palette.background.paper,
+//     borderRight: `1px solid ${theme.palette.divider}`,
+// }));
 
 const StyledCenterPanel = styled('div')(({ theme }) => ({
     height: '100%',
@@ -39,46 +37,37 @@ const StyledCenterPanel = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
 }));
 
-const StyledRightPanel = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: '400px',
-    overflow: 'hidden',
-    backgroundColor: theme.palette.background.paper,
-    borderLeft: `1px solid ${theme.palette.divider}`,
-    padding: `${theme.spacing(2)} ${theme.spacing(5)}`,
-}));
+// const StyledMenu = styled('div')(({ theme }) => ({
+//     display: 'flex',
+//     flexDirection: 'column',
+//     height: '100%',
+//     width: '100%',
+//     padding: `${theme.spacing(1)} 0`,
+//     backgroundColor: theme.palette.background.paper,
+// }));
 
-const StyledMenu = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    width: '100%',
-    padding: `${theme.spacing(1)} 0`,
-    backgroundColor: theme.palette.background.paper,
-}));
+// const StyledMenuTitle = styled(Typography)(() => ({
+//     fontWeight: 'bold',
+// }));
 
-const StyledMenuTitle = styled(Typography)(() => ({
-    fontWeight: 'bold',
-}));
+// const StyledListItem = styled(List.Item)<{ selected?: boolean }>(
+//     ({ theme, selected }) => ({
+//         padding: theme.spacing(2),
+//         '&:hover': {
+//             backgroundColor: theme.palette.primary.selected,
+//         },
 
-const StyledListItem = styled(List.Item)<{ selected?: boolean }>(
-    ({ theme, selected }) => ({
-        padding: theme.spacing(2),
-        '&:hover': {
-            backgroundColor: theme.palette.primary.selected,
-        },
-
-        ...(selected && {
-            backgroundColor: theme.palette.primary.selected,
-        }),
-    }),
-);
+//         ...(selected && {
+//             backgroundColor: theme.palette.primary.selected,
+//         }),
+//     }),
+// );
 
 export const Settings = observer(() => {
     const [view, setView] = useState<'access' | 'testing' | ''>('access');
-    const [subView, setSubView] = useState<
-        'configure' | 'testing' | 'analyze' | 'history' | ''
-    >('configure');
+    // const [subView, setSubView] = useState<
+    //     'configure' | 'testing' | 'analyze' | 'history' | ''
+    // >('configure');
 
     const updateView = (v: typeof view) => {
         if (!v || v === view) {
@@ -89,14 +78,14 @@ export const Settings = observer(() => {
         setView(v);
     };
 
-    const updateSubView = (v: typeof subView) => {
-        if (!v) {
-            setSubView('');
-            return;
-        }
+    // const updateSubView = (v: typeof subView) => {
+    //     if (!v) {
+    //         setSubView('');
+    //         return;
+    //     }
 
-        setSubView(v);
-    };
+    //     setSubView(v);
+    // };
 
     return (
         <StyledSettings>
@@ -110,19 +99,9 @@ export const Settings = observer(() => {
                     </Tooltip>
                     <SidebarText>Access</SidebarText>
                 </SidebarItem>
-                <SidebarItem
-                    selected={view === 'testing'}
-                    onClick={() => updateView('testing')}
-                    disabled={false}
-                >
-                    <Tooltip title="Testing" placement="right">
-                        <ModelTraining color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Testing</SidebarText>
-                </SidebarItem>
             </Sidebar>
 
-            {view === 'testing' && subView !== 'testing' && (
+            {/* {view === 'testing' && subView !== 'testing' && (
                 <StyledLeftPanel>
                     <StyledMenu>
                         <Stack spacing={2} padding={2}>
@@ -151,7 +130,7 @@ export const Settings = observer(() => {
                                 </List.Icon>
                                 <List.ItemText>A/B Testing</List.ItemText>
                             </StyledListItem>
-                            {/* <StyledListItem
+                            <StyledListItem
                                 alignItems="flex-start"
                                 selected={subView === 'analyze'}
                                 onClick={() => updateSubView('analyze')}
@@ -170,31 +149,15 @@ export const Settings = observer(() => {
                                     <HistoryRounded color="inherit" />
                                 </List.Icon>
                                 <List.ItemText>History</List.ItemText>
-                            </StyledListItem> */}
+                            </StyledListItem>
                         </List>
                     </StyledMenu>
                 </StyledLeftPanel>
-            )}
+            )} */}
 
             <StyledCenterPanel>
                 {view === 'access' && <SettingsView />}
-                {view === 'testing' && (
-                    <LLMCompareWrapper>
-                        <Stack direction="column" sx={{ height: '100%' }}>
-                            {subView === 'configure' && <LlmConfigureView />}
-                            {subView === 'testing' && <ABTesting />}
-                        </Stack>
-                    </LLMCompareWrapper>
-                )}
             </StyledCenterPanel>
-
-            {view === 'testing' && subView === 'testing' && (
-                <StyledRightPanel>
-                    <LLMCompareWrapper>
-                        <ABTestingPanel />
-                    </LLMCompareWrapper>
-                </StyledRightPanel>
-            )}
         </StyledSettings>
     );
 });
