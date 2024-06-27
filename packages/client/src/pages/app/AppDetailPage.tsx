@@ -214,18 +214,12 @@ export const AppDetailPage = () => {
 
         setValue('userRole', role);
         const permission = determineUserPermission(role);
-        if (permission === 'author') {
-            setValue('permission', 'author');
-            setValue('requestedPermission', 'author');
-        } else if (permission === 'editor') {
-            setValue('permission', 'editor');
-            setValue('requestedPermission', 'editor');
-        } else if (permission === 'readOnly') {
-            setValue('permission', 'readOnly');
-            setValue('requestedPermission', 'readOnly');
-        } else if (permission === 'discoverable') {
-            setValue('permission', 'discoverable');
-        }
+        setValue('permission', permission);
+
+        if (permission === 'author') setValue('requestedPermission', 'OWNER');
+        if (permission === 'editor') setValue('requestedPermission', 'EDIT');
+        if (permission === 'readOnly')
+            setValue('requestedPermission', 'READ_ONLY');
     }
 
     const fetchAppData = async (id: string) => {
@@ -301,7 +295,19 @@ export const AppDetailPage = () => {
         });
     };
 
-    const handleCloseChangeAccessModal = () => {
+    const handleCloseChangeAccessModal = (refresh?: boolean) => {
+        if (refresh) {
+            // fetch updated permission.
+            getPermission();
+        } else {
+            // reset permission to original.
+            if (permission === 'author')
+                setValue('requestedPermission', 'OWNER');
+            if (permission === 'editor')
+                setValue('requestedPermission', 'EDIT');
+            if (permission === 'readOnly')
+                setValue('requestedPermission', 'READ_ONLY');
+        }
         setIsChangeAccessModalOpen(false);
     };
 
@@ -589,6 +595,7 @@ export const AppDetailPage = () => {
                 open={isChangeAccessModalOpen}
                 onClose={handleCloseChangeAccessModal}
                 control={control}
+                getValues={getValues}
             />
 
             <EditDetailsModal

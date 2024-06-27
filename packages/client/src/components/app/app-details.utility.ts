@@ -54,13 +54,7 @@ export interface AppDetailsFormTypes {
     appId: string;
     appInfo: any;
     userRole: Role | '';
-    permission:
-        | 'creator'
-        | 'author'
-        | 'editor'
-        | 'readOnly'
-        | 'discoverable'
-        | '';
+    permission: 'author' | 'editor' | 'readOnly' | 'discoverable' | '';
 
     mainUses: string;
     tags: string[];
@@ -73,7 +67,7 @@ export interface AppDetailsFormTypes {
     allDependencies: modelledDependency[];
     selectedDependencies: modelledDependency[];
 
-    requestedPermission: 'author' | 'editor' | 'readOnly' | '';
+    requestedPermission: 'OWNER' | 'EDIT' | 'READ_ONLY' | '';
     roleChangeComment: string | ReactNode;
 }
 
