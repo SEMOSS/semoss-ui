@@ -649,7 +649,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                             }
                         }}
                     >
-                        {variable ? 'Edit' : 'Add'}
+                        {variable ? 'Save' : 'Add'}
                     </Button>
                 </Stack>
             </StyledStack>
