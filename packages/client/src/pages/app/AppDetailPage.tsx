@@ -478,7 +478,7 @@ export const AppDetailPage = () => {
                             )}
                         </StyledSection>
 
-                        {permission !== 'discoverable' && (
+                        {permission && permission !== 'discoverable' && (
                             <StyledSection ref={dependenciesRef}>
                                 <DependenciesHeadingWrapper>
                                     <SectionHeading variant="h2">
@@ -539,7 +539,8 @@ export const AppDetailPage = () => {
                             </StyledSection>
                         )}
 
-                        {permission !== 'discoverable' &&
+                        {permission &&
+                            permission !== 'discoverable' &&
                             permission !== 'readOnly' && (
                                 <StyledSection ref={memberAccessRef}>
                                     <SectionHeading variant="h2">
