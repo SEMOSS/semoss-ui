@@ -469,8 +469,8 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 {variable && (
                     <Alert icon={<WarningRounded />} severity={'warning'}>
                         <Alert.Title>
-                            Editing this variable may result in errors
-                            throughout your sheets.
+                            If this variable is actively being used, editing it
+                            may result in errors throughout your sheets.
                         </Alert.Title>
                     </Alert>
                 )}
