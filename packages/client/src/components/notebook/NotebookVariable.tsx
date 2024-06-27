@@ -90,6 +90,10 @@ const StyledStack = styled(Stack)(({ theme }) => ({
     width: '80%',
 }));
 
+const StyledTextField = styled(TextField)(() => ({
+    padding: '0px',
+}));
+
 interface NotebookTokenProps {
     /** Id of the variable */
     id: string;
@@ -309,7 +313,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                     </StyledPointerStack>
                                 ) : (
                                     <StyledStack spacing={1} direction="column">
-                                        <TextField
+                                        <StyledTextField
+                                            className="notebook-variable__alias-name-text-field"
                                             inputRef={(input) =>
                                                 input && input.focus()
                                             }
@@ -318,6 +323,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             size={'small'}
                                             variant="standard"
                                             value={newTokenAlias}
+                                            helperText={
+                                                <em>
+                                                    Press enter to update
+                                                    variable name
+                                                </em>
+                                            }
                                             onChange={(e) => {
                                                 setNewTokenAlias(
                                                     e.target.value,
@@ -325,8 +336,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
-                                                    console.log('Save alias');
-
                                                     setOpenRenameAlias(false);
                                                     setNewTokenAlias(
                                                         newTokenAlias,
@@ -352,18 +361,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                 setNewTokenAlias(
                                                     variable.alias,
                                                 );
-
-                                                notification.add({
-                                                    color: 'warning',
-                                                    message: `Unsuccesfully renamed variable ${variable.alias}, press enter to save.`,
-                                                });
                                             }}
                                             InputProps={{
                                                 disableUnderline: true,
                                             }}
-                                        />
-                                        <StyledLinearProgress
-                                            color={'warning'}
                                         />
                                     </StyledStack>
                                 )}
