@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
 import { observer } from 'mobx-react-lite';
 import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
@@ -179,6 +179,41 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         });
     };
 
+    /**
+     * Fetch and set list of general reactors
+     */
+    const [generalReactors, setGeneralReactors] = useState([]);
+    const fetchGeneralReactors = async () => {
+        const pixel = `META|help();`;
+
+        try {
+            const res = await runPixel(pixel);
+            const reactorList = [];
+
+            const response: any = res?.pixelReturn[0].output;
+            const array = response.split('General Reactors:').pop().split(' ');
+
+            array.forEach((reactor) => {
+                if (/[a-z]/i.test(reactor)) {
+                    if (reactor.startsWith('\n')) {
+                        reactor.split('\n').pop();
+                    }
+                    reactorList.push(reactor);
+                }
+            });
+
+            console.log('reactor list', reactorList);
+
+            setGeneralReactors(reactorList);
+        } catch {
+            console.error('Failed response from help pixel');
+            return;
+        }
+    };
+    useEffect(() => {
+        fetchGeneralReactors();
+    }, []);
+
     const handleMount = (editor, monaco) => {
         // if diffedit code has been rejected set to old editor content
         if (isLLMRejected) {
@@ -325,6 +360,26 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             return suggestions;
         };
 
+        // add editor reactor suggestions
+        const generateReactorSuggestions = (range) => {
+            const suggestions = [];
+
+            generalReactors.forEach((reactor) => {
+                suggestions.push({
+                    label: {
+                        label: `${reactor}`,
+                        description: 'General Reactor',
+                    },
+                    kind: monaco.languages.CompletionItemKind.Variable,
+                    documentation: `This returns the value of ${reactor}.  Feel free to change reference value in the variables panel on the left.`,
+                    insertText: `${reactor}`,
+                    range: range,
+                });
+            });
+
+            return suggestions;
+        };
+
         monaco.editor.defineTheme('custom-theme', {
             base: 'vs',
             inherit: false,
@@ -414,6 +469,36 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     },
                 ),
             };
+        });
+
+        //add additional completion provider for pixel cells
+        monaco.languages.registerCompletionItemProvider('pixel', {
+            provideCompletionItems: function (model, position) {
+                const line = model.getValueInRange({
+                    startLineNumber: position.lineNumber,
+                    startColumn: 1,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column,
+                });
+                console.log('model, position', line);
+                const match = line.match(/^[A-Z]+$/);
+                console.log('is a match', match);
+                if (!match) {
+                    return { suggestions: [] };
+                }
+                const word = model.getWordUntilPosition(position);
+
+                const range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn,
+                };
+                return {
+                    suggestions: generateReactorSuggestions(range),
+                };
+            },
+            triggerCharacters: ['A'],
         });
 
         const lines = editor.getModel().getLineCount();
