@@ -5,7 +5,7 @@ import { setValueByPath } from '@/utility';
 import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
-import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
+import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -323,11 +323,11 @@ export class CellState<D extends CellDef = CellDef> {
 
             const last = results[results.length - 1];
 
-            runInAction(() => {
-                // set the output per operation
-                let output: unknown;
-                let opType: string[] = last.opType;
+            // set the output per operation
+            let output: unknown;
+            let opType: string[] = last.opType;
 
+            runInAction(() => {
                 if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
                     output = last.value;
                 } else if (last.pixelType === 'FORMATTED_DATA_SET') {
@@ -359,6 +359,10 @@ export class CellState<D extends CellDef = CellDef> {
                 // save the last output
                 this._store.output = output;
             });
+
+            if (opType.includes('FILE_DOWNLOAD')) {
+                await download(this._state.insightId, output as string);
+            }
         } catch (e) {
             runInAction(() => {
                 // store the operation and output
