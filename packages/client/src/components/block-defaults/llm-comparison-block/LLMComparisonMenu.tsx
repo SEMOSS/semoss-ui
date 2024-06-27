@@ -1,7 +1,9 @@
 import { BlockComponent } from '@/stores';
 import { useBlock } from '@/hooks';
-import { styled, ToggleTabsGroup, Stack } from '@semoss/ui';
+import { styled, ToggleTabsGroup } from '@semoss/ui';
 import { useState } from 'react';
+import { SettingsSubMenu } from './SettingsSubMenu';
+import { ConfigureSubMenu } from './ConfigureSubMenu';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     padding: theme.spacing(2),
@@ -26,17 +28,9 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
                 <ToggleTabsGroup.Item label="Settings" value="settings" />
             </ToggleTabsGroup>
 
-            {mode === 'configure' && (
-                <Stack direction="column">
-                    <div>Configure Menu</div>
-                </Stack>
-            )}
+            {mode === 'configure' && <ConfigureSubMenu />}
 
-            {mode === 'settings' && (
-                <Stack direction="column">
-                    <div>Settings Menu</div>
-                </Stack>
-            )}
+            {mode === 'settings' && <SettingsSubMenu />}
         </StyledMenu>
     );
 };
