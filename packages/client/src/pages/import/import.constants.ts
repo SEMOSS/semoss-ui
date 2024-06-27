@@ -1024,7 +1024,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -5316,6 +5317,16 @@ export const CONNECTION_OPTIONS = {
                 disable: false,
                 icon: WEVIATE,
                 fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
                     {
                         fieldName: 'NAME',
                         label: 'Catalog Name',
