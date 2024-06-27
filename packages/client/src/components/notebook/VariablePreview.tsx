@@ -7,7 +7,9 @@ import { BlocksRenderer } from '../blocks-workspace';
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-const StyledStack = styled(Stack)(({ theme }) => ({}));
+const StyledStack = styled(Stack)(({ theme }) => ({
+    border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
+}));
 
 const StyledBox = styled(Box)(({ theme }) => ({
     paddingLeft: theme.spacing(2),
@@ -90,13 +92,21 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
         if (variable.type === 'block') {
             return (
                 <StyledBlocksBox>
-                    <BlocksRenderer state={getStateWithBlock(variable.to)} />
+                    <BlocksRenderer
+                        state={getStateWithBlock(variable.to)}
+                        preview={true}
+                    />
                 </StyledBlocksBox>
             );
         } else {
             return (
                 <Typography variant="body2" fontWeight="bold">
-                    {state.getVariable(variable.to, variable.type)}{' '}
+                    {typeof state.getVariable(variable.to, variable.type) !==
+                    'string'
+                        ? JSON.stringify(
+                              state.getVariable(variable.to, variable.type),
+                          )
+                        : state.getVariable(variable.to, variable.type)}{' '}
                 </Typography>
             );
         }
@@ -118,6 +128,13 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                     <Typography variant="body2">
                         {variable.type === 'block'
                             ? state.getBlock(variable.to).data?.value
+                            : typeof state.getVariable(
+                                  variable.to,
+                                  variable.type,
+                              ) !== 'string'
+                            ? JSON.stringify(
+                                  state.getVariable(variable.to, variable.type),
+                              )
                             : state.getVariable(variable.to, variable.type)}
                     </Typography>
                 </Stack>

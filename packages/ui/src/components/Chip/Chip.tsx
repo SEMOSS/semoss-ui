@@ -17,13 +17,13 @@ const StyledMuiChip = styled(MuiChip, {
             color: "#212121",
             borderColor: "",
             ".MuiSvgIcon-root": {
-                color: theme.palette.text.secondary,
+                color: theme.palette.secondary.dark,
             },
             "& .MuiChip-deleteIcon": {
                 color: theme.palette.text.secondary,
             },
             "&&:hover": {
-                backgroundColor: theme.palette.secondary.main,
+                backgroundColor: theme.palette.secondary.selected,
             },
         }),
         ...(chipColor === "primary" && {

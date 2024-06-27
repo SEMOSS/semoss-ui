@@ -89,12 +89,6 @@ export const stepsOne = [
         disabled: true,
         data: 'COPY_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
     },
-    // {
-    //     name: 'Upload Database',
-    //     description: '',
-    //     disabled: true,
-    //     data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
-    // },
     {
         name: 'Build Database',
         description: '',
@@ -1030,7 +1024,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -5333,6 +5328,16 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'VECTOR_TYPE',
                         label: 'Type',
                         defaultValue: 'WEAVIATE',
@@ -5530,9 +5535,22 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'CSV',
-                disable: true,
+                disable: false,
                 icon: CSV,
-                fields: [],
+                fields: [
+                    // baseUpload
+                    // PredictDataTypes
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
             },
             {
                 name: 'Excel',

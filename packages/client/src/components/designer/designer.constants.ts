@@ -13,7 +13,24 @@ import BLOCK_H5 from '@/assets/img/BLOCK_H5.png';
 import BLOCK_H6 from '@/assets/img/BLOCK_H6.png';
 import BLOCK_P from '@/assets/img/BLOCK_P.png';
 import BLOCK_MERMAID from '@/assets/img/BLOCK_MERMAID.png';
-import LOG from '@/assets/img/LOG.png';
+import BLOCK_MERMAID_CLASS_DIAGRAM from '@/assets/img/BLOCK_MERMAID_CLASS_DIAGRAM.png';
+import BLOCK_MERMAID_C4_DIAGRAM from '@/assets/img/BLOCK_MERMAID_C4_DIAGRAM.png';
+import BLOCK_MERMAID_RELATIONSHIP_ENTITY from '@/assets/img/BLOCK_MERMAID_RELATIONSHIP_ENTITY.png';
+import BLOCK_MERMAID_PIECHART from '@/assets/img/BLOCK_MERMAID_PIECHART.png';
+import BLOCK_MERMAID_DIAGRAM from '@/assets/img/BLOCK_MERMAID_DIAGRAM.png';
+import BLOCK_MERMAID_GANTT from '@/assets/img/BLOCK_MERMAID_GANTT.png';
+import BLOCK_MERMAID_REQUIREMENT_DIAGRAM from '@/assets/img/BLOCK_MERMAID_REQUIREMENT_DIAGRAM.png';
+import BLOCK_MERMAID_GIT_DIAGRAM from '@/assets/img/BLOCK_MERMAID_GIT_DIAGRAM.png';
+import BLOCK_MERMAID_SANKEY from '@/assets/img/BLOCK_MERMAID_SANKEY.png';
+import BLOCK_MERMAID_QUADRANT_CHART from '@/assets/img/BLOCK_MERMAID_QUADRANT_CHART.png';
+import BLOCK_MERMAID_MINDMAP from '@/assets/img/BLOCK_MERMAID_MINDMAP.png';
+import BLOCK_MERMAID_STATE_DIAGRAM from '@/assets/img/BLOCK_MERMAID_STATE_DIAGRAM.png';
+import BLOCK_MERMAID_SEQUENCE_DIAGRAM from '@/assets/img/BLOCK_MERMAID_SEQUENCE_DIAGRAM.png';
+import BLOCK_MERMAID_JOURNEY from '@/assets/img/BLOCK_MERMAID_JOURNEY.png';
+import BLOCK_MERMAID_TIMELINE from '@/assets/img/BLOCK_MERMAID_TIMELINE.png';
+import BLOCK_MERMAID_XY_CHART from '@/assets/img/BLOCK_MERMAID_XY_CHART.png';
+import BLOCK_MODAL from '@/assets/img/BLOCK_MODAL.png';
+import BLOCK_LOG from '@/assets/img/LOG.png';
 import BLOCK_P_ITALICS from '@/assets/img/BLOCK_P_ITALICS.png';
 import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
 import BLOCK_IFRAME from '@/assets/img/BLOCK_IFRAME.png';
@@ -24,15 +41,34 @@ import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_PROGRESS_BAR from '@/assets/img/BLOCK_PROGRESS_BAR.png';
 import BLOCK_SELECT from '@/assets/img/BLOCK_SELECT.png';
 import BLOCK_TOGGLE_BUTTON from '@/assets/img/BLOCK_TOGGLE_BUTTON.png';
-import PIE_CHART from '@/assets/img/PIE_CHART.png';
 import BAR_CHART from '@/assets/img/BAR_CHART.png';
 import GROUP_BAR_CHART from '@/assets/img/GROUP_BAR_CHART.png';
 import GENERAL_CHART from '@/assets/img/GENERAL_CHART.png';
 import LINE_CHART from '@/assets/img/LINE_CHART.png';
 import AREA_CHART from '@/assets/img/AREA_CHART.png';
 import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
+import PIE_CHART_IMAGE from '@/assets/img/PIE_CHART.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
+import {
+    CLASS_DIAGRAM,
+    ENTITY_RELATIONSHIP_DIAGRAM,
+    GANTT,
+    SEQUENCE_DIAGRAM,
+    STATE_DIAGRAM,
+    USER_JOURNEY,
+    PIE_CHART,
+    QUADRANT_CHART,
+    REQUIREMENT_DIAGRAM,
+    GIT_DIAGRAM,
+    C4_DIAGRAM,
+    MINDMAP,
+    TIMELINE,
+    SANKEY,
+    XY_Chart,
+    BLOCK_DIAGRAM,
+    GENERAL_MERMAID,
+} from '../block-defaults/mermaid-block/diagrams.constants';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -121,6 +157,24 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // {
+    //     section: SECTION_INPUT,
+    //     image: BLOCK_MODAL,
+    //     name: 'Modal',
+    //     json: {
+    //         widget: 'modal',
+    //         data: {
+    //             style: {},
+    //             open: true,
+    //         },
+    //         listeners: {
+    //             onChange: [],
+    //         },
+    //         slots: {
+    //             children: [],
+    //         } as BlockJSON['slots'],
+    //     },
+    // },
     {
         section: SECTION_INPUT,
         image: BLOCK_INPUT,
@@ -281,7 +335,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: SECTION_TEXT,
-        image: LOG,
+        image: BLOCK_LOG,
         name: 'Logs',
         json: {
             widget: 'logs',
@@ -681,7 +735,7 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
         section: SECTION_PIE_CHART,
         name: 'Pie Chart',
-        image: PIE_CHART,
+        image: PIE_CHART_IMAGE,
         json: {
             widget: 'vega',
             data: {
@@ -991,6 +1045,227 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                     null,
                     2,
                 ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID,
+        name: 'General Mermaid',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: GENERAL_MERMAID,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_CLASS_DIAGRAM,
+        name: 'Class Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: CLASS_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_SEQUENCE_DIAGRAM,
+        name: 'Sequence Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: SEQUENCE_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_STATE_DIAGRAM,
+        name: 'State Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: STATE_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_RELATIONSHIP_ENTITY,
+        name: 'Entity Relationship Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: ENTITY_RELATIONSHIP_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_JOURNEY,
+        name: 'User Journey',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: USER_JOURNEY,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_GANTT,
+        name: 'Gantt',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: GANTT,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_PIECHART,
+        name: 'Pie Chart',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: PIE_CHART,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_QUADRANT_CHART,
+        name: 'Quadrant Chart',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: QUADRANT_CHART,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_REQUIREMENT_DIAGRAM,
+        name: 'Requirement Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: REQUIREMENT_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_GIT_DIAGRAM,
+        name: 'Git Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: GIT_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_C4_DIAGRAM,
+        name: 'C4 Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: C4_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_MINDMAP,
+        name: 'Mindmap',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: MINDMAP,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_TIMELINE,
+        name: 'Timeline',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: TIMELINE,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_SANKEY,
+        name: 'Sankey',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: SANKEY,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_XY_CHART,
+        name: 'XY Chart',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: XY_Chart,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_MERMAID,
+        image: BLOCK_MERMAID_DIAGRAM,
+        name: 'Block Diagram',
+        json: {
+            widget: 'mermaid',
+            data: {
+                text: BLOCK_DIAGRAM,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

@@ -98,6 +98,13 @@ export interface HistoryJob {
     schedulerOutput: string;
 }
 
+export interface HistoryPaginationProps {
+    page?: number;
+    rowsPerPage?: number;
+    search?: string;
+    reload?: boolean;
+}
+
 export type Frequencies = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
 
 export type DayOfWeek =

@@ -2,6 +2,7 @@ import { BlockConfig } from '@/stores';
 import {
     InputSettings,
     QuerySelectionSettings,
+    SelectOptionLabelSettings,
 } from '@/components/block-settings';
 
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
@@ -26,6 +27,8 @@ export const config: BlockConfig<SelectBlockDef> = {
         required: false,
         disabled: false,
         loading: false,
+        optionLabel: '',
+        optionValue: '',
     },
     listeners: {
         onChange: [],
@@ -70,6 +73,24 @@ export const config: BlockConfig<SelectBlockDef> = {
                         );
                     },
                 },
+                {
+                    description: 'Option Label',
+                    render: ({ id }) => {
+                        return (
+                            <SelectOptionLabelSettings
+                                id={id}
+                                label="Option Label"
+                                path="optionLabel"
+                            />
+                        );
+                    },
+                },
+                // {
+                //     description: 'Option Value',
+                //     render: ({ id }) => {
+                //         return <>opt value</>;
+                //     },
+                // },
                 {
                     description: 'Loading',
                     render: ({ id }) => (

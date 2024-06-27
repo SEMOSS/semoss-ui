@@ -10,7 +10,7 @@ export interface PageBlockDef extends BlockDef<'page'> {
     widget: 'page';
     data: {
         style: CSSProperties;
-        loading: boolean;
+        loading: boolean | string;
     };
     slots: {
         content: true;
@@ -30,9 +30,17 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
+    const isLoading =
+        typeof data.loading === 'string'
+            ? data.loading.toLowerCase() === 'true'
+            : data.loading;
+
     return (
         <div
+            id={id}
             style={{
+                // position Set to relative so we can have a modal to attach to page block
+                position: 'relative',
                 width: '100%',
                 height: '100%',
                 background: '#FFFFFF',
@@ -44,7 +52,7 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         >
             {/* TODO: Make Loading Screen relative to the Page */}
             <LoadingScreen>
-                {data.loading ? <LoadingScreen.Trigger /> : null}
+                {isLoading ? <LoadingScreen.Trigger /> : null}
                 <Slot slot={slots.content}></Slot>
             </LoadingScreen>
         </div>

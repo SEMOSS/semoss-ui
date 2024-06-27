@@ -1,5 +1,52 @@
 import { ReactNode } from "react";
-import { Switch as MuiSwitch, SxProps } from "@mui/material";
+import { Switch as MuiSwitch, SxProps, styled } from "@mui/material";
+
+const StyledSwitch = styled(MuiSwitch)(({ theme }) => ({
+    width: "52px",
+    height: "32px",
+    padding: 0,
+
+    "& .MuiSwitch-switchBase": {
+        padding: 0,
+        margin: "4px",
+        transitionDuration: "300ms",
+
+        "&.Mui-checked": {
+            transform: "translateX(20px)",
+            color: "#fff",
+
+            "& + .MuiSwitch-track": {
+                backgroundColor: theme.palette.primary.main,
+                opacity: 1,
+                border: 0,
+            },
+
+            "&.Mui-disabled + .MuiSwitch-track": {
+                backgroundColor: theme.palette.secondary.main,
+            },
+        },
+
+        "&.Mui-disabled + .MuiSwitch-track": {
+            opacity: theme.palette.secondary.main,
+        },
+    },
+
+    "& .MuiSwitch-thumb": {
+        boxSizing: "border-box",
+        width: "24px",
+        height: "24px",
+        color: theme.palette.background.paper,
+    },
+
+    "& .MuiSwitch-track": {
+        borderRadius: "17px",
+        backgroundColor: theme.palette.secondary.dark,
+        opacity: 1,
+        transition: theme.transitions.create(["background-color"], {
+            duration: 500,
+        }),
+    },
+}));
 
 export interface SwitchProps {
     /**
@@ -31,14 +78,13 @@ export interface SwitchProps {
      * If `true`, the component is disabled.
      */
     disabled?: boolean;
-    // If true, the ripple effect is disabled.
-    disableRipple?: boolean;
 
     /**
      * If `true`, the touch ripple effect is disabled.
      * @default false
      */
     disableTouchRipple?: boolean;
+    disableRipple?: boolean;
 
     // If given, uses a negative margin to counteract the padding on one side
     //  (this is often helpful for aligning the left or right side of the icon with content
@@ -73,5 +119,5 @@ export interface SwitchProps {
 
 export const Switch = (props: SwitchProps) => {
     const { sx } = props;
-    return <MuiSwitch sx={sx} {...props} />;
+    return <StyledSwitch sx={sx} {...props} />;
 };
