@@ -4,6 +4,7 @@ import { styled, ToggleTabsGroup } from '@semoss/ui';
 import { useState } from 'react';
 import { SettingsSubMenu } from './SettingsSubMenu';
 import { ConfigureSubMenu } from './ConfigureSubMenu';
+import { LLMCompareWrapper } from './LLMCompareWrapper';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     padding: theme.spacing(2),
@@ -19,18 +20,20 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     const [mode, setMode] = useState<Mode>('configure');
 
     return (
-        <StyledMenu>
-            <ToggleTabsGroup
-                value={mode}
-                onChange={(e, val) => setMode(val as Mode)}
-            >
-                <ToggleTabsGroup.Item label="Configure" value="configure" />
-                <ToggleTabsGroup.Item label="Settings" value="settings" />
-            </ToggleTabsGroup>
+        <LLMCompareWrapper>
+            <StyledMenu>
+                <ToggleTabsGroup
+                    value={mode}
+                    onChange={(e, val) => setMode(val as Mode)}
+                >
+                    <ToggleTabsGroup.Item label="Configure" value="configure" />
+                    <ToggleTabsGroup.Item label="Settings" value="settings" />
+                </ToggleTabsGroup>
 
-            {mode === 'configure' && <ConfigureSubMenu />}
+                {mode === 'configure' && <ConfigureSubMenu />}
 
-            {mode === 'settings' && <SettingsSubMenu />}
-        </StyledMenu>
+                {mode === 'settings' && <SettingsSubMenu />}
+            </StyledMenu>
+        </LLMCompareWrapper>
     );
 };
