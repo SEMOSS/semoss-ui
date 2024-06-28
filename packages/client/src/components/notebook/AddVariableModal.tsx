@@ -76,7 +76,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     } = props;
     const { state } = useBlocks();
     const notification = useNotification();
-
     const getEngines = usePixel<
         { app_id: string; app_name: string; app_type: string }[]
     >(`
@@ -170,12 +169,10 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
         if (variable) {
             // debugger;
-            console.log(variable);
             if (
                 variable.type !== 'cell' &&
                 variable.type !== 'query' &&
-                variable.type !== 'block' &&
-                !inputVariableTypeList.includes(variable.type)
+                variable.type !== 'block'
             ) {
                 const val = state.getVariable(variable.to, variable.type);
                 // console.log('Set Engine Preview', val);
@@ -623,10 +620,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell' ||
-                                        inputVariableTypeList.includes(
-                                            variableType,
-                                        )
+                                        variableType === 'cell'
                                     ) {
                                         state.dispatch({
                                             message:

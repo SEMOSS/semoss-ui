@@ -232,7 +232,6 @@ export class StateStore {
             type === 'array' ||
             type === 'JSON'
         ) {
-            console.log(this._store.dependencies[pointer]);
             // Finds Dependency from pointer
             return this._store.dependencies[pointer];
         }
@@ -331,7 +330,6 @@ export class StateStore {
 
                 this.renameVariable(id, alias);
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
-                console.log(action.payload);
                 const { from, to } = action.payload;
 
                 this.editVariable(from, to);
