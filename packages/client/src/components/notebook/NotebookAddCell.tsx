@@ -438,6 +438,9 @@ export const NotebookAddCell = observer(
         const [tableEdges, setTableEdges] = useState({}); //
         const [initialTableSelected, setInitialTableSelected] = useState(null);
 
+        const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
+        const [shownTables, setShownTables] = useState(new Set());
+
         // track to manage joinable tables
 
         // endregion
@@ -523,18 +526,17 @@ export const NotebookAddCell = observer(
                 return;
             }
             setUserDatabases(getDatabases.data);
-            console.log({ userDatabases: getDatabases.data });
         }, [getDatabases.status, getDatabases.data]);
 
-        useEffect(() => {
-            if (initialTableSelected == null) {
-                // TODO: unhide all tables
-                alert('unhide all tables');
-            } else {
-                // TODO: hide all unjoinable tables
-                alert('hide all unjoinable tables');
-            }
-        }, [initialTableSelected]);
+        // useEffect(() => {
+        //     if (initialTableSelected == null) {
+        //         // TODO: unhide all tables
+        //         alert('unhide all tables');
+        //     } else {
+        //         // TODO: hide all unjoinable tables
+        //         alert('hide all unjoinable tables');
+        //     }
+        // }, [initialTableSelected]);
 
         // endregion
 
@@ -726,6 +728,7 @@ export const NotebookAddCell = observer(
         /** Add all the columns from a Table */
         const addAllTableColumnsHandler = (event) => {
             alert('add all');
+            // TODO: check all columns from table
         };
 
         /** New Submit for Import Data --- empty */
@@ -774,10 +777,12 @@ export const NotebookAddCell = observer(
                         'ERROR',
                     ) === -1;
 
+                let newTableNames = [];
+
                 // populate database structure
                 if (isResponseTableStructureGood) {
                     console.log({ responseTableStructure });
-                    const tableNames = [
+                    newTableNames = [
                         ...responseTableStructure.reduce((set, ele) => {
                             set.add(ele[0]);
                             return set;
@@ -832,13 +837,13 @@ export const NotebookAddCell = observer(
                         databaseSelect: databaseId,
                         tables: newTableColumnsObject,
                     });
-                    console.log({ newTableColumnsObject });
-
-                    // setTableColumnsObject(tableColumnsObject);
-                    // setTableNames(tableNames);
                 } else {
                     console.error('Error retrieving database tables');
                 }
+
+                // set visible tables set to all tables
+                setTableNames(newTableNames);
+                setShownTables(new Set(newTableNames));
 
                 // make and populate new edges dict
                 if (isResponseTableEdgesStructureGood) {
@@ -891,27 +896,21 @@ export const NotebookAddCell = observer(
                     // add edge from source direction
                     if (newTableEdges[edge.source]) {
                         newTableEdges[edge.source][edge.target] = edge.relation;
-                        // debugger;
                     } else {
                         newTableEdges[edge.source] = {
                             [edge.target]: edge.relation,
                         };
-                        // debugger;
                     }
                     // add edge from target direction
                     if (newTableEdges[edge.target]) {
                         newTableEdges[edge.target][edge.source] = edge.relation;
-                        // debugger;
                     } else {
                         newTableEdges[edge.target] = {
                             [edge.source]: edge.relation,
                         };
-                        // debugger;
                     }
                 });
-                console.log({ newTableEdges });
                 setTableEdges(newTableEdges);
-
                 setIsDatabaseLoading(false);
             });
         };
@@ -1060,34 +1059,46 @@ export const NotebookAddCell = observer(
                 }
             }
 
-            console.log({ isBeingAdded });
-            console.log({ newAliasesCountObj });
             setAliasesCountObj(newAliasesCountObj);
+        };
+
+        /** Find Joinable Tables */
+        const findAllJoinableTables = (rootTableName) => {
+            const joinableTables = tableEdges[rootTableName]
+                ? Object.keys(tableEdges[rootTableName])
+                : [];
+            console.log({
+                rootTableName,
+                tableEdges,
+                joinableTables,
+                'tableEdges[rootTableName]': tableEdges[rootTableName],
+            });
+            const newShownTables = new Set([...joinableTables, rootTableName]);
+            // debugger;
+            setShownTables(newShownTables);
         };
 
         /** Checkbox Handler */
         const checkBoxHandler = (tableIndex, columnIndex) => {
+            // debugger;
             const columnObject = watchedTables[tableIndex].columns[columnIndex];
-            updateAliasCountObj(columnObject.checked, columnObject.userAlias);
-            if (columnObject.checked && initialTableSelected == null) {
-                setInitialTableSelected(watchedTables[tableIndex].name);
-                alert(watchedTables[tableIndex].name);
-                console.log({ tableIndex, watchedTables });
-            } else if (
-                columnObject.checked == false
-                // &&
-                // ### start here
-                // check for checked columns in same table as init column
-                // check for any other checked columns in other tables
-            ) {
-                setInitialTableSelected(null);
+            updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
+            if (columnObject?.checked) {
+                // debugger;
+                if (checkedColumnsCount == 0) {
+                    // debugger;
+                    findAllJoinableTables(watchedTables[tableIndex].name);
+                }
+                setCheckedColumnsCount(checkedColumnsCount + 1);
+            } else if (columnObject?.checked == false) {
+                // debugger;
+                if (checkedColumnsCount == 1) {
+                    // debugger;
+                    setShownTables(new Set(tableNames));
+                }
+                setCheckedColumnsCount(checkedColumnsCount - 1);
             }
-
-            // add checked column to set
-            // check for joinable tables
-            // hide all other tables
-
-            // check for repeat aliases in checked columns
+            // debugger;
         };
 
         return (
@@ -1337,278 +1348,284 @@ export const NotebookAddCell = observer(
                                                 Available Tables / Columns
                                             </StyledTableTitle>
                                             <ScrollTableSetContainer>
-                                                {newTableFields.map(
-                                                    (table, tableIndex) => (
-                                                        <SingleTableWrapper
-                                                            key={table.name}
-                                                        >
-                                                            <FlexWrapper>
-                                                                <StyledTableTitleBlueBubble variant="body1">
-                                                                    <TableIconButton
-                                                                        title={
-                                                                            'Table'
+                                                {newTableFields
+                                                    .filter((t) =>
+                                                        shownTables.has(t.name),
+                                                    )
+                                                    .map(
+                                                        (table, tableIndex) => (
+                                                            <SingleTableWrapper
+                                                                key={table.name}
+                                                            >
+                                                                <FlexWrapper>
+                                                                    <StyledTableTitleBlueBubble variant="body1">
+                                                                        <TableIconButton
+                                                                            title={
+                                                                                'Table'
+                                                                            }
+                                                                            placement="top"
+                                                                        >
+                                                                            <CalendarViewMonth />
+                                                                        </TableIconButton>
+                                                                        {
+                                                                            table.name
                                                                         }
-                                                                        placement="top"
-                                                                    >
-                                                                        <CalendarViewMonth />
-                                                                    </TableIconButton>
-                                                                    {table.name}
-                                                                </StyledTableTitleBlueBubble>
-                                                            </FlexWrapper>
-                                                            <Table size="small">
-                                                                <Table.Body>
-                                                                    <Table.Row>
-                                                                        <Table.Cell>
-                                                                            <CheckAllIconButton
-                                                                                onClick={
-                                                                                    addAllTableColumnsHandler
-                                                                                }
-                                                                                color="primary"
-                                                                            >
-                                                                                <AddBox />
-                                                                            </CheckAllIconButton>
-                                                                        </Table.Cell>
-                                                                        <Table.Cell>
-                                                                            <ColumnNameText variant="body1">
-                                                                                Fields
-                                                                            </ColumnNameText>
-                                                                        </Table.Cell>
-                                                                        <Table.Cell>
-                                                                            <ColumnNameText variant="body1">
-                                                                                Alias
-                                                                            </ColumnNameText>
-                                                                        </Table.Cell>
-                                                                        <Table.Cell>
-                                                                            <ColumnNameText variant="body1">
-                                                                                Field
-                                                                                Type
-                                                                            </ColumnNameText>
-                                                                        </Table.Cell>
-                                                                    </Table.Row>
+                                                                    </StyledTableTitleBlueBubble>
+                                                                </FlexWrapper>
+                                                                <Table size="small">
+                                                                    <Table.Body>
+                                                                        <Table.Row>
+                                                                            <Table.Cell>
+                                                                                <CheckAllIconButton
+                                                                                    onClick={
+                                                                                        addAllTableColumnsHandler
+                                                                                    }
+                                                                                    color="primary"
+                                                                                >
+                                                                                    <AddBox />
+                                                                                </CheckAllIconButton>
+                                                                            </Table.Cell>
+                                                                            <Table.Cell>
+                                                                                <ColumnNameText variant="body1">
+                                                                                    Fields
+                                                                                </ColumnNameText>
+                                                                            </Table.Cell>
+                                                                            <Table.Cell>
+                                                                                <ColumnNameText variant="body1">
+                                                                                    Alias
+                                                                                </ColumnNameText>
+                                                                            </Table.Cell>
+                                                                            <Table.Cell>
+                                                                                <ColumnNameText variant="body1">
+                                                                                    Field
+                                                                                    Type
+                                                                                </ColumnNameText>
+                                                                            </Table.Cell>
+                                                                        </Table.Row>
 
-                                                                    {table.columns.map(
-                                                                        (
-                                                                            column,
-                                                                            columnIndex,
-                                                                        ) => (
-                                                                            <Table.Row
-                                                                                key={
-                                                                                    column.columnName
-                                                                                }
-                                                                            >
-                                                                                <Table.Cell>
-                                                                                    <Controller
-                                                                                        name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
-                                                                                        control={
-                                                                                            newControl
-                                                                                        }
-                                                                                        render={({
-                                                                                            field,
-                                                                                        }) => (
-                                                                                            <Checkbox
-                                                                                                checked={
-                                                                                                    field.value
-                                                                                                }
-                                                                                                onChange={(
-                                                                                                    e,
-                                                                                                ) => {
-                                                                                                    field.onChange(
-                                                                                                        e,
-                                                                                                    );
-                                                                                                    checkBoxHandler(
-                                                                                                        tableIndex,
-                                                                                                        columnIndex,
-                                                                                                    );
-                                                                                                }}
-                                                                                            />
-                                                                                        )}
-                                                                                    />
-                                                                                </Table.Cell>
-                                                                                <Table.Cell>
-                                                                                    {
+                                                                        {table.columns.map(
+                                                                            (
+                                                                                column,
+                                                                                columnIndex,
+                                                                            ) => (
+                                                                                <Table.Row
+                                                                                    key={
                                                                                         column.columnName
                                                                                     }
-                                                                                    {column.columnName ==
-                                                                                        'ID' && (
-                                                                                        <div
-                                                                                            style={{
-                                                                                                backgroundColor:
-                                                                                                    '#F1E9FB',
-                                                                                                padding:
-                                                                                                    '3px, 4px, 3px, 4px',
-                                                                                                width: '37px',
-                                                                                                height: '24px',
-                                                                                                borderRadius:
-                                                                                                    '3px',
-                                                                                                display:
-                                                                                                    'inline-block',
-                                                                                                marginLeft:
-                                                                                                    '7px',
-                                                                                                paddingTop:
-                                                                                                    '3px',
-                                                                                                textAlign:
-                                                                                                    'center',
-                                                                                            }}
-                                                                                        >
-                                                                                            PK
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {column.columnName.includes(
-                                                                                        '_ID',
-                                                                                    ) && (
-                                                                                        <div
-                                                                                            style={{
-                                                                                                backgroundColor:
-                                                                                                    '#EBEBEB', //Secondary/Selected
-                                                                                                padding:
-                                                                                                    '3px, 4px, 3px, 4px',
-                                                                                                width: '37px',
-                                                                                                height: '24px',
-                                                                                                borderRadius:
-                                                                                                    '3px',
-                                                                                                display:
-                                                                                                    'inline-block',
-                                                                                                marginLeft:
-                                                                                                    '7px',
-                                                                                                paddingTop:
-                                                                                                    '3px',
-                                                                                                textAlign:
-                                                                                                    'center',
-                                                                                            }}
-                                                                                        >
-                                                                                            FK
-                                                                                        </div>
-                                                                                    )}
-                                                                                </Table.Cell>
-                                                                                <Table.Cell>
-                                                                                    <FlexTableCell>
+                                                                                >
+                                                                                    <Table.Cell>
                                                                                         <Controller
-                                                                                            name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
+                                                                                            name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
                                                                                             control={
                                                                                                 newControl
                                                                                             }
                                                                                             render={({
                                                                                                 field,
                                                                                             }) => (
-                                                                                                <TextField
-                                                                                                    type="text"
-                                                                                                    variant="outlined"
-                                                                                                    size="small"
-                                                                                                    value={
+                                                                                                <Checkbox
+                                                                                                    checked={
                                                                                                         field.value
                                                                                                     }
                                                                                                     onChange={(
                                                                                                         e,
                                                                                                     ) => {
-                                                                                                        if (
-                                                                                                            watchedTables[
-                                                                                                                tableIndex
-                                                                                                            ]
-                                                                                                                .columns[
-                                                                                                                columnIndex
-                                                                                                            ]
-                                                                                                                .checked
-                                                                                                        ) {
-                                                                                                            updateAliasCountObj(
-                                                                                                                true,
-                                                                                                                e
-                                                                                                                    .target
-                                                                                                                    .value,
-                                                                                                                field.value,
-                                                                                                            );
-                                                                                                        }
                                                                                                         field.onChange(
-                                                                                                            e
-                                                                                                                .target
-                                                                                                                .value,
+                                                                                                            e,
+                                                                                                        );
+                                                                                                        checkBoxHandler(
+                                                                                                            tableIndex,
+                                                                                                            columnIndex,
                                                                                                         );
                                                                                                     }}
                                                                                                 />
                                                                                             )}
                                                                                         />
-                                                                                        {watchedTables[
-                                                                                            tableIndex
-                                                                                        ]
-                                                                                            .columns[
-                                                                                            columnIndex
-                                                                                        ]
-                                                                                            .checked &&
-                                                                                            aliasesCountObj[
-                                                                                                watchedTables[
-                                                                                                    tableIndex
-                                                                                                ]
-                                                                                                    .columns[
-                                                                                                    columnIndex
-                                                                                                ]
-                                                                                                    .userAlias
-                                                                                            ] >
-                                                                                                1 && (
-                                                                                                <AliasWarningIcon title="Duplicate Alias Name">
-                                                                                                    <Warning />
-                                                                                                </AliasWarningIcon>
-                                                                                            )}
-                                                                                    </FlexTableCell>
-                                                                                </Table.Cell>
-
-                                                                                <Table.Cell>
-                                                                                    <Controller
-                                                                                        name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
-                                                                                        control={
-                                                                                            newControl
+                                                                                    </Table.Cell>
+                                                                                    <Table.Cell>
+                                                                                        {
+                                                                                            column.columnName
                                                                                         }
-                                                                                        render={({
-                                                                                            field,
-                                                                                        }) => (
-                                                                                            <Select
-                                                                                                onChange={(
-                                                                                                    e,
-                                                                                                ) => {
-                                                                                                    field.onChange(
-                                                                                                        e
-                                                                                                            .target
-                                                                                                            .value,
-                                                                                                    );
-                                                                                                    // unclear what desired effect is
-                                                                                                }}
-                                                                                                value={
-                                                                                                    field.value ||
-                                                                                                    ''
-                                                                                                }
-                                                                                                size={
-                                                                                                    'small'
-                                                                                                }
-                                                                                                sx={{
-                                                                                                    minWidth:
-                                                                                                        '220px',
+                                                                                        {column.columnName ==
+                                                                                            'ID' && (
+                                                                                            <div
+                                                                                                style={{
+                                                                                                    backgroundColor:
+                                                                                                        '#F1E9FB',
+                                                                                                    padding:
+                                                                                                        '3px, 4px, 3px, 4px',
+                                                                                                    width: '37px',
+                                                                                                    height: '24px',
+                                                                                                    borderRadius:
+                                                                                                        '3px',
+                                                                                                    display:
+                                                                                                        'inline-block',
+                                                                                                    marginLeft:
+                                                                                                        '7px',
+                                                                                                    paddingTop:
+                                                                                                        '3px',
+                                                                                                    textAlign:
+                                                                                                        'center',
                                                                                                 }}
                                                                                             >
-                                                                                                {SQL_COLUMN_TYPES.map(
-                                                                                                    (
-                                                                                                        ele,
-                                                                                                    ) => (
-                                                                                                        <Menu.Item
-                                                                                                            value={
-                                                                                                                ele
-                                                                                                            }
-                                                                                                        >
-                                                                                                            {
-                                                                                                                ele
-                                                                                                            }
-                                                                                                        </Menu.Item>
-                                                                                                    ),
-                                                                                                )}
-                                                                                            </Select>
+                                                                                                PK
+                                                                                            </div>
                                                                                         )}
-                                                                                    />
-                                                                                </Table.Cell>
-                                                                            </Table.Row>
-                                                                        ),
-                                                                    )}
-                                                                </Table.Body>
-                                                            </Table>
-                                                        </SingleTableWrapper>
-                                                    ),
-                                                )}
+                                                                                        {column.columnName.includes(
+                                                                                            '_ID',
+                                                                                        ) && (
+                                                                                            <div
+                                                                                                style={{
+                                                                                                    backgroundColor:
+                                                                                                        '#EBEBEB', //Secondary/Selected
+                                                                                                    padding:
+                                                                                                        '3px, 4px, 3px, 4px',
+                                                                                                    width: '37px',
+                                                                                                    height: '24px',
+                                                                                                    borderRadius:
+                                                                                                        '3px',
+                                                                                                    display:
+                                                                                                        'inline-block',
+                                                                                                    marginLeft:
+                                                                                                        '7px',
+                                                                                                    paddingTop:
+                                                                                                        '3px',
+                                                                                                    textAlign:
+                                                                                                        'center',
+                                                                                                }}
+                                                                                            >
+                                                                                                FK
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </Table.Cell>
+                                                                                    <Table.Cell>
+                                                                                        <FlexTableCell>
+                                                                                            <Controller
+                                                                                                name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
+                                                                                                control={
+                                                                                                    newControl
+                                                                                                }
+                                                                                                render={({
+                                                                                                    field,
+                                                                                                }) => (
+                                                                                                    <TextField
+                                                                                                        type="text"
+                                                                                                        variant="outlined"
+                                                                                                        size="small"
+                                                                                                        value={
+                                                                                                            field.value
+                                                                                                        }
+                                                                                                        onChange={(
+                                                                                                            e,
+                                                                                                        ) => {
+                                                                                                            if (
+                                                                                                                watchedTables[
+                                                                                                                    tableIndex
+                                                                                                                ]
+                                                                                                                    .columns[
+                                                                                                                    columnIndex
+                                                                                                                ]
+                                                                                                                    .checked
+                                                                                                            ) {
+                                                                                                                updateAliasCountObj(
+                                                                                                                    true,
+                                                                                                                    e
+                                                                                                                        .target
+                                                                                                                        .value,
+                                                                                                                    field.value,
+                                                                                                                );
+                                                                                                            }
+                                                                                                            field.onChange(
+                                                                                                                e
+                                                                                                                    .target
+                                                                                                                    .value,
+                                                                                                            );
+                                                                                                        }}
+                                                                                                    />
+                                                                                                )}
+                                                                                            />
+                                                                                            {watchedTables[
+                                                                                                tableIndex
+                                                                                            ]
+                                                                                                .columns[
+                                                                                                columnIndex
+                                                                                            ]
+                                                                                                .checked &&
+                                                                                                aliasesCountObj[
+                                                                                                    watchedTables[
+                                                                                                        tableIndex
+                                                                                                    ]
+                                                                                                        .columns[
+                                                                                                        columnIndex
+                                                                                                    ]
+                                                                                                        .userAlias
+                                                                                                ] >
+                                                                                                    1 && (
+                                                                                                    <AliasWarningIcon title="Duplicate Alias Name">
+                                                                                                        <Warning />
+                                                                                                    </AliasWarningIcon>
+                                                                                                )}
+                                                                                        </FlexTableCell>
+                                                                                    </Table.Cell>
+
+                                                                                    <Table.Cell>
+                                                                                        <Controller
+                                                                                            name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
+                                                                                            control={
+                                                                                                newControl
+                                                                                            }
+                                                                                            render={({
+                                                                                                field,
+                                                                                            }) => (
+                                                                                                <Select
+                                                                                                    onChange={(
+                                                                                                        e,
+                                                                                                    ) => {
+                                                                                                        field.onChange(
+                                                                                                            e
+                                                                                                                .target
+                                                                                                                .value,
+                                                                                                        );
+                                                                                                        // unclear what desired effect is
+                                                                                                    }}
+                                                                                                    value={
+                                                                                                        field.value ||
+                                                                                                        ''
+                                                                                                    }
+                                                                                                    size={
+                                                                                                        'small'
+                                                                                                    }
+                                                                                                    sx={{
+                                                                                                        minWidth:
+                                                                                                            '220px',
+                                                                                                    }}
+                                                                                                >
+                                                                                                    {SQL_COLUMN_TYPES.map(
+                                                                                                        (
+                                                                                                            ele,
+                                                                                                        ) => (
+                                                                                                            <Menu.Item
+                                                                                                                value={
+                                                                                                                    ele
+                                                                                                                }
+                                                                                                            >
+                                                                                                                {
+                                                                                                                    ele
+                                                                                                                }
+                                                                                                            </Menu.Item>
+                                                                                                        ),
+                                                                                                    )}
+                                                                                                </Select>
+                                                                                            )}
+                                                                                        />
+                                                                                    </Table.Cell>
+                                                                                </Table.Row>
+                                                                            ),
+                                                                        )}
+                                                                    </Table.Body>
+                                                                </Table>
+                                                            </SingleTableWrapper>
+                                                        ),
+                                                    )}
 
                                                 {/* <SingleTableWrapper>
                                                 <StyledTableTitleBlueBubble variant='body1'>
