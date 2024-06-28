@@ -32,6 +32,7 @@ const StyledAlert = styled(Alert, {
     flex: '1 0 0',
     alignSelf: 'stretch',
     borderRadius: '12px',
+    color: theme.palette.text.primary,
     background: theme.palette.background.paper,
     border: `1px solid ${theme.palette.secondary.border}`,
     '.MuiAlert-action': {
