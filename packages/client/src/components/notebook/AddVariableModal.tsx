@@ -170,10 +170,12 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
         if (variable) {
             // debugger;
+            console.log(variable);
             if (
                 variable.type !== 'cell' &&
                 variable.type !== 'query' &&
-                variable.type !== 'block'
+                variable.type !== 'block' &&
+                !inputVariableTypeList.includes(variable.type)
             ) {
                 const val = state.getVariable(variable.to, variable.type);
                 // console.log('Set Engine Preview', val);
@@ -291,7 +293,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 />
             );
         } else if (variableType === 'number') {
-            console.log(variableInputValue);
             return (
                 <TextField
                     variant="outlined"
@@ -569,8 +570,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell' ||
-                                        variableType === 'string'
+                                        variableType === 'cell'
                                     ) {
                                         state.dispatch({
                                             message:
@@ -585,26 +585,16 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             },
                                         });
                                     } else {
-                                        let id;
-                                        if (engine) {
-                                            id = await state.dispatch({
-                                                message:
-                                                    ActionMessages.ADD_DEPENDENCY,
-                                                payload: {
-                                                    id: engine.app_id,
-                                                    type: variableType,
-                                                },
-                                            });
-                                        } else {
-                                            id = await state.dispatch({
-                                                message:
-                                                    ActionMessages.ADD_DEPENDENCY,
-                                                payload: {
-                                                    id: variableInputValue,
-                                                    type: variableType,
-                                                },
-                                            });
-                                        }
+                                        const id = await state.dispatch({
+                                            message:
+                                                ActionMessages.ADD_DEPENDENCY,
+                                            payload: {
+                                                id: engine
+                                                    ? engine.app_id
+                                                    : variableInputValue,
+                                                type: variableType,
+                                            },
+                                        });
 
                                         state.dispatch({
                                             message:
@@ -633,7 +623,10 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell'
+                                        variableType === 'cell' ||
+                                        inputVariableTypeList.includes(
+                                            variableType,
+                                        )
                                     ) {
                                         state.dispatch({
                                             message:
