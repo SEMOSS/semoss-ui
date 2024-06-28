@@ -435,16 +435,10 @@ export const NotebookAddCell = observer(
         const [checkedColumnsSet, setCheckedColumnsSet] = useState(new Set());
         const [hiddenTablesSet, setHiddenTablesSet] = useState({});
         const [aliasesCountObj, setAliasesCountObj] = useState({}); // { emailAlias: 1, phoneAlias: 2 }
+        const [tableEdges, setTableEdges] = useState({}); //
+        const [initialTableSelected, setInitialTableSelected] = useState(null);
 
-        // newCheckHandler must...
-        // must hide any unjoined tables
-        // must check for repeat column names / aliases
-        // add to column aliases set
-
-        // check / uncheck column
-        // check for table edges
-        // hide unjoinable tables
-        // update alias counts
+        // track to manage joinable tables
 
         // endregion
 
@@ -531,6 +525,16 @@ export const NotebookAddCell = observer(
             setUserDatabases(getDatabases.data);
             console.log({ userDatabases: getDatabases.data });
         }, [getDatabases.status, getDatabases.data]);
+
+        useEffect(() => {
+            if (initialTableSelected == null) {
+                // TODO: unhide all tables
+                alert('unhide all tables');
+            } else {
+                // TODO: hide all unjoinable tables
+                alert('hide all unjoinable tables');
+            }
+        }, [initialTableSelected]);
 
         // endregion
 
@@ -880,6 +884,34 @@ export const NotebookAddCell = observer(
                     console.error('Error retrieving database edges');
                 }
 
+                // store edges in useState
+                const edges = pixelResponse.pixelReturn[1].output.edges;
+                const newTableEdges = {};
+                edges.forEach((edge) => {
+                    // add edge from source direction
+                    if (newTableEdges[edge.source]) {
+                        newTableEdges[edge.source][edge.target] = edge.relation;
+                        // debugger;
+                    } else {
+                        newTableEdges[edge.source] = {
+                            [edge.target]: edge.relation,
+                        };
+                        // debugger;
+                    }
+                    // add edge from target direction
+                    if (newTableEdges[edge.target]) {
+                        newTableEdges[edge.target][edge.source] = edge.relation;
+                        // debugger;
+                    } else {
+                        newTableEdges[edge.target] = {
+                            [edge.source]: edge.relation,
+                        };
+                        // debugger;
+                    }
+                });
+                console.log({ newTableEdges });
+                setTableEdges(newTableEdges);
+
                 setIsDatabaseLoading(false);
             });
         };
@@ -1036,8 +1068,20 @@ export const NotebookAddCell = observer(
         /** Checkbox Handler */
         const checkBoxHandler = (tableIndex, columnIndex) => {
             const columnObject = watchedTables[tableIndex].columns[columnIndex];
-            console.log({ columnObject });
             updateAliasCountObj(columnObject.checked, columnObject.userAlias);
+            if (columnObject.checked && initialTableSelected == null) {
+                setInitialTableSelected(watchedTables[tableIndex].name);
+                alert(watchedTables[tableIndex].name);
+                console.log({ tableIndex, watchedTables });
+            } else if (
+                columnObject.checked == false
+                // &&
+                // ### start here
+                // check for checked columns in same table as init column
+                // check for any other checked columns in other tables
+            ) {
+                setInitialTableSelected(null);
+            }
 
             // add checked column to set
             // check for joinable tables
