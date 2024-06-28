@@ -72,6 +72,7 @@ export const Help = observer((): JSX.Element => {
                         <StyledLink
                             href="https://workshop.cfg.deloitte.com/docs/"
                             target="_blank"
+                            rel="noopener noreferrer"
                         >
                             Documentation
                         </StyledLink>
@@ -82,6 +83,7 @@ export const Help = observer((): JSX.Element => {
                         <StyledLink
                             href="https://workshop.cfg.deloitte.com/docs/category/app-creation-guides"
                             target="_blank"
+                            rel="noopener noreferrer"
                         >
                             Tutorials
                         </StyledLink>
