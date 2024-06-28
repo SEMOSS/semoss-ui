@@ -5,7 +5,7 @@ import { setValueByPath } from '@/utility';
 import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
-import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
+import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -318,73 +318,73 @@ export class CellState<D extends CellDef = CellDef> {
 
             const { errors, results } = await pixelResult(jobId);
 
-            debugger;
             if (errors.length > 0) {
                 throw new Error(errors.join(''));
             }
 
             const last = results[results.length - 1];
 
+            // set the output per operation
+            let output: unknown;
+            const opType: string[] = last.operationType;
+
+            if (last.operationType.indexOf('CUSTOM_DATA_STRUCTURE') > -1) {
+                output = last.output;
+            } else if (last.operationType.indexOf('FORMATTED_DATA_SET') > -1) {
+                output = last.output[0];
+            } else if (last.operationType.indexOf('CODE_EXECUTION') > -1) {
+                output = last.output[0].output;
+            } else if (last.operationType.indexOf('CODE') > -1) {
+                output = last.output[0].value[0];
+            } else if (last.operationType.indexOf('ERROR') > -1) {
+                output = last.output[0];
+            } else if (last.operationType.indexOf('CONST_STRING') > -1) {
+                output = last.output[0];
+            } else if (last.operationType.indexOf('INVALID_SYNTAX') > -1) {
+                output = last.output[0];
+            } else if (last.operationType.indexOf('VECTOR') > -1) {
+                output = last.output[0];
+            } else {
+                output = last.output;
+            }
+
+            // DEAD CODE, /result comes back totally different than /result2.  Some pixelTypes im unable to even get
+            // let opType: string[] = last.opType;
+
+            // if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
+            //     output = last.value;
+            // } else if (last.pixelType === 'FORMATTED_DATA_SET') {
+            //     output = last.value[0];
+            // } else if (last.pixelType === 'CODE') {
+            //     output = last.value[0].value[0];
+            // } else if (last.pixelType === 'ERROR') {
+            //     output = last.value[0];
+            // } else if (last.pixelType === 'CONST_STRING') {
+            //     output = last.value[0];
+            // } else if (last.pixelType === 'INVALID_SYNTAX') {
+            //     output = last.value[0];
+            // } else if (last.pixelType === 'FRAME') {
+            //     output = last.value[0];
+
+            //     // Currently gives us 2 operations with a single output, do we want operation do determine if we show multiple outputs
+            //     opType = [opType[0]];
+            // } else if (last.pixelType === 'MAP') {
+            //     output = last.value[0];
+            // } else if (last.pixelType === 'VECTOR') {
+            //     output = last.value[0];
+            // }
+
             runInAction(() => {
-                // set the output per operation
-                let output: unknown;
-                const opType: string[] = last.operationType;
-
-                debugger;
-
-                if (last.operationType.indexOf('CUSTOM_DATA_STRUCTURE') > -1) {
-                    output = last.output;
-                } else if (
-                    last.operationType.indexOf('FORMATTED_DATA_SET') > -1
-                ) {
-                    output = last.output[0];
-                } else if (last.operationType.indexOf('CODE_EXECUTION') > -1) {
-                    output = last.output[0].output;
-                } else if (last.operationType.indexOf('CODE') > -1) {
-                    output = last.output[0].value[0];
-                } else if (last.operationType.indexOf('ERROR') > -1) {
-                    output = last.output[0];
-                } else if (last.operationType.indexOf('CONST_STRING') > -1) {
-                    output = last.output[0];
-                } else if (last.operationType.indexOf('INVALID_SYNTAX') > -1) {
-                    output = last.output[0];
-                } else if (last.operationType.indexOf('VECTOR') > -1) {
-                    output = last.output[0];
-                } else {
-                    output = last.output;
-                }
-                // DEAD CODE, /result comes back totally different than /result2.  Some pixelTypes im unable to even get
-                // let opType: string[] = last.opType;
-
-                // if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
-                //     output = last.value;
-                // } else if (last.pixelType === 'FORMATTED_DATA_SET') {
-                //     output = last.value[0];
-                // } else if (last.pixelType === 'CODE') {
-                //     output = last.value[0].value[0];
-                // } else if (last.pixelType === 'ERROR') {
-                //     output = last.value[0];
-                // } else if (last.pixelType === 'CONST_STRING') {
-                //     output = last.value[0];
-                // } else if (last.pixelType === 'INVALID_SYNTAX') {
-                //     output = last.value[0];
-                // } else if (last.pixelType === 'FRAME') {
-                //     output = last.value[0];
-
-                //     // Currently gives us 2 operations with a single output, do we want operation do determine if we show multiple outputs
-                //     opType = [opType[0]];
-                // } else if (last.pixelType === 'MAP') {
-                //     output = last.value[0];
-                // } else if (last.pixelType === 'VECTOR') {
-                //     output = last.value[0];
-                // }
-
                 // store the operation and output
                 this._store.operation = opType;
 
                 // save the last output
                 this._store.output = output;
             });
+
+            if (opType.includes('FILE_DOWNLOAD')) {
+                await download(this._state.insightId, output as string);
+            }
         } catch (e) {
             runInAction(() => {
                 // store the operation and output
@@ -394,12 +394,12 @@ export class CellState<D extends CellDef = CellDef> {
                 this._store.output = e.message;
             });
         } finally {
+            const end = new Date();
+
+            this._store.executionDurationMilliseconds =
+                end.getTime() - start.getTime();
+
             runInAction(() => {
-                const end = new Date();
-
-                this._store.executionDurationMilliseconds =
-                    end.getTime() - start.getTime();
-
                 // stop the loading screen
                 this._store.isLoading = false;
             });
