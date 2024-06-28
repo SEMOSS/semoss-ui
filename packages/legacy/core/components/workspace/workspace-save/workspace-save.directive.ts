@@ -202,7 +202,7 @@ function workspaceSaveDirective(
                             // regex is looking for something between Database (  and the next ,
                             // so basically the first argument to Database
                             const regEx =
-                                /Database\s*\(\s*database\s*=\s*\[\s*\"([a-zA-Z0-9-]+)+\"\s*]\s*\)/g;
+                                /Database\s*\(\s*database\s*=\s*\[\s*"([a-zA-Z0-9-]+)"\s*]\s*\)/g;
                             const match = recipe[i].expression.match(regEx); // regEx.exec(recipe[i].expression);
                             if (match) {
                                 // grab only the id and remove all the rest of the text surrounding it
