@@ -7,10 +7,6 @@ on:
                 description: 'VERSION'
                 required: true
                 default: '4.3.0'
-            RELEASE:
-                decription: 'RELEASE'
-                required: true
-                deault: 'FALSE'
 
 env:
     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
@@ -20,7 +16,7 @@ env:
 jobs:
     pnpm_build_dev:
         runs-on: ubuntu-latest
-        if: ${{ github.event.inputs.RELEASE != 'TRUE'}}
+        if: ${{ env.RELEASE != 'TRUE' }}
         container:
             image: node:18.16.1-bullseye
         steps:
@@ -61,7 +57,8 @@ jobs:
 
     pnpm_build_deploy:
         runs-on: ubuntu-latest
-        if: github.event.inputs.RELEASE != 'TRUE' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev'
+        needs: pnpm_build_dev
+        if: ${{ env.RELEASE != 'TRUE' }} && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev'
         container:
             image: node:18.16.1-bullseye
         steps:
