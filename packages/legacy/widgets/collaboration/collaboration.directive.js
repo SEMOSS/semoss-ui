@@ -261,7 +261,7 @@ function collaborationDirective(ENDPOINT, $timeout, semossCoreService) {
                         // regex is looking for something between Database (  and the next ,
                         // so basically the first argument to Database
                         regEx =
-                            /Database\s*\(\s*database\s*=\s*\[\s*"(?>[a-zA-Z0-9-]+)"\s*]\s*\)/g;
+                            /Database\s*\(\s*database\s*=\s*\[\s*"([a-zA-Z0-9-]+)"\s*]\s*\)/g;
                         match = recipe[i].expression.match(regEx); // regEx.exec(recipe[i].expression);
                         if (match) {
                             getGit(match[0].replace(regEx, '$1'));
