@@ -5,7 +5,7 @@ import {
 } from "@mui/material";
 
 const StyledModalContent = styled(MuiModalContent)(({ theme }) => ({
-    padding: `0 ${theme.spacing(2)} ${theme.spacing(2)}`,
+    padding: `0 ${theme.spacing(3)} ${theme.spacing(3)}`,
 }));
 
 export interface ModalContentProps {

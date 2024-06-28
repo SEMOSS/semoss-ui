@@ -5,7 +5,7 @@ import {
 } from "@mui/material";
 
 const StyledModalActions = styled(MuiModalActions)(({ theme }) => ({
-    padding: `0 ${theme.spacing(2)} ${theme.spacing(2)}`,
+    padding: `0 ${theme.spacing(3)} ${theme.spacing(3)}`,
 }));
 
 export interface ModalActionsProps {
