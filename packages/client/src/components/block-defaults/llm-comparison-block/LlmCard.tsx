@@ -12,6 +12,7 @@ import { Delete, Edit } from '@mui/icons-material';
 import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';
 import { VariantModelModal } from './VariantModelModal';
+import ImageSkeleton from '@/assets/img/ImageSkeleton.png';
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'disableHover' && prop !== 'size',
@@ -95,7 +96,7 @@ export interface LlmCardProps {
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const { llm, variantIndex, modelIndex, isDefault, size = 'medium' } = props;
+    const { llm, variantIndex, modelIndex, isDefault, size = 'small' } = props;
     const { swapVariantModel } = useLLMComparison();
     const [modelModal, setModelModal] = useState(false);
 
@@ -105,9 +106,9 @@ export const LlmCard = (props: LlmCardProps) => {
         database_subtype,
         database_type,
         value,
-        topP = '-',
-        temperature = '-',
-        length = '-',
+        topP,
+        temperature,
+        length,
     } = llm;
 
     return (
@@ -117,15 +118,21 @@ export const LlmCard = (props: LlmCardProps) => {
                     <Stack direction={'row'} gap={2}>
                         <StyledCardImg
                             src="img"
-                            image={getEngineImage(
-                                database_type,
-                                database_subtype,
-                            )}
+                            image={
+                                database_type
+                                    ? getEngineImage(
+                                          database_type,
+                                          database_subtype,
+                                      )
+                                    : ImageSkeleton
+                            }
                         />
                         <Stack direction="column">
-                            <Typography variant={'caption'}>{alias}</Typography>
+                            <Typography variant={'caption'}>
+                                {alias || 'Undefined Variable'}
+                            </Typography>
                             <StyledTypography variant={'body1'}>
-                                {database_name}
+                                {database_name || 'Model'}
                             </StyledTypography>
                         </Stack>
                     </Stack>
@@ -150,19 +157,19 @@ export const LlmCard = (props: LlmCardProps) => {
                     <div>
                         <Typography variant="body1">Top P</Typography>
                         <Typography variant="body1" fontWeight="bold">
-                            {topP}
+                            {topP || '--'}
                         </Typography>
                     </div>
                     <div>
                         <Typography variant="body1">Temperature</Typography>
                         <Typography variant="body1" fontWeight="bold">
-                            {temperature}
+                            {temperature || '--'}
                         </Typography>
                     </div>
                     <div>
                         <Typography variant="body1">Length</Typography>
                         <Typography variant="body1" fontWeight="bold">
-                            {length}
+                            {length || '--'}
                         </Typography>
                     </div>
                 </StyledCardContent>

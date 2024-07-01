@@ -8,8 +8,8 @@ import {
 } from '@semoss/ui';
 import {
     Add,
+    Cancel,
     ContentCopy,
-    DeleteOutline,
     PushPinOutlined,
     PushPinRounded,
 } from '@mui/icons-material';
@@ -65,7 +65,7 @@ const StyledActionBar = styled(Collapse)(({ theme }) => ({
 }));
 
 interface ModelVariantProps {
-    index?: number;
+    index: number;
     click?: (number) => void;
 
     /** is a part of the default variant used in app */
@@ -74,14 +74,8 @@ interface ModelVariantProps {
     /** variant info, the models associated to variant */
     variant: TypeVariant;
 
-    /** sets the orientation for how the variants are displayed */
+    /** sets the orientation for how the models are displayed */
     orientation?: 'column' | 'row';
-
-    /** Disables/hides the variant specific actions (LLM actions are still available) */
-    hideVariantActions?: boolean;
-
-    /** Disables/hides the ability for users to pin/select a variant */
-    hidePins?: boolean;
 
     /** Props passed to each Llm Card */
     cardProps?: {
@@ -94,9 +88,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
         index,
         variant,
         isDefault = false,
-        orientation = 'row',
-        hideVariantActions = false,
-        hidePins = false,
+        orientation = 'column',
         cardProps,
     } = props;
     const [hovered, setHovered] = useState(false);
@@ -126,16 +118,27 @@ export const ModelVariant = (props: ModelVariantProps) => {
     return (
         <Stack direction="column" gap={1}>
             <StyledVariantHeader>
-                <Typography variant="body1" fontWeight="medium">
-                    {isDefault ? 'Default Variant' : `Variant ${variant.name}`}
-                </Typography>
-                {!hidePins && (
+                <Stack direction="row">
                     <IconButton onClick={handleToggleSelected}>
                         {variant.selected ? (
                             <PushPinRounded />
                         ) : (
                             <PushPinOutlined />
                         )}
+                    </IconButton>
+                    <Typography variant="body1" fontWeight="medium">
+                        {isDefault
+                            ? 'Default Variant'
+                            : `Variant ${variant.name}`}
+                    </Typography>
+                </Stack>
+
+                {index !== -1 && (
+                    <IconButton
+                        color="secondary"
+                        onClick={() => deleteVariant(index)}
+                    >
+                        <Cancel />
                     </IconButton>
                 )}
             </StyledVariantHeader>
@@ -169,55 +172,43 @@ export const ModelVariant = (props: ModelVariantProps) => {
                 })}
             </StyledVariantBox>
 
-            {!hideVariantActions && (
-                <StyledRow
-                    onMouseEnter={() => setHovered(true)}
-                    onMouseLeave={() => setHovered(false)}
-                    onFocus={() => setHovered(true)}
-                    onBlur={() => setHovered(false)}
-                >
-                    <StyledActionBar in={isDefault || hovered}>
-                        <StyledStack direction="row" gap={2}>
-                            <Button
-                                variant="text"
-                                color="secondary"
-                                onClick={() => {
-                                    addNewVariant({
-                                        name: 'New Variant',
-                                        selected: false,
-                                        models: [
-                                            buildFakeModelForTest(1),
-                                            buildFakeModelForTest(2),
-                                            buildFakeModelForTest(3),
-                                        ],
-                                    });
-                                }}
-                                startIcon={<Add />}
-                            >
-                                Add Variant
-                            </Button>
-                            <Button
-                                variant="text"
-                                color="secondary"
-                                onClick={() => addNewVariant(index)}
-                                startIcon={<ContentCopy />}
-                            >
-                                Duplicate
-                            </Button>
-                            {index !== -1 && (
-                                <Button
-                                    variant="text"
-                                    color="secondary"
-                                    onClick={() => deleteVariant(index)}
-                                    startIcon={<DeleteOutline />}
-                                >
-                                    Delete
-                                </Button>
-                            )}
-                        </StyledStack>
-                    </StyledActionBar>
-                </StyledRow>
-            )}
+            <StyledRow
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                onFocus={() => setHovered(true)}
+                onBlur={() => setHovered(false)}
+            >
+                <StyledActionBar in={isDefault || hovered}>
+                    <StyledStack direction="row" gap={2}>
+                        <Button
+                            variant="text"
+                            color="secondary"
+                            onClick={() => {
+                                addNewVariant({
+                                    name: 'New Variant',
+                                    selected: false,
+                                    models: [
+                                        buildFakeModelForTest(1),
+                                        buildFakeModelForTest(2),
+                                        buildFakeModelForTest(3),
+                                    ],
+                                });
+                            }}
+                            startIcon={<Add />}
+                        >
+                            Add Variant
+                        </Button>
+                        <Button
+                            variant="text"
+                            color="secondary"
+                            onClick={() => addNewVariant(index)}
+                            startIcon={<ContentCopy />}
+                        >
+                            Duplicate
+                        </Button>
+                    </StyledStack>
+                </StyledActionBar>
+            </StyledRow>
         </Stack>
     );
 };
