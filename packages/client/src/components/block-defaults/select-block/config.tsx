@@ -2,7 +2,7 @@ import { BlockConfig } from '@/stores';
 import {
     InputSettings,
     QuerySelectionSettings,
-    SelectOptionLabelSettings,
+    SelectOptionsSettings,
 } from '@/components/block-settings';
 
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
@@ -28,6 +28,7 @@ export const config: BlockConfig<SelectBlockDef> = {
         disabled: false,
         loading: false,
         optionLabel: '',
+        optionSublabel: '',
         optionValue: '',
     },
     listeners: {
@@ -49,6 +50,28 @@ export const config: BlockConfig<SelectBlockDef> = {
                     ),
                 },
                 {
+                    description: 'Option Settings',
+                    render: ({ id }) => {
+                        return (
+                            <SelectOptionsSettings
+                                id={id}
+                                optionData={[
+                                    {
+                                        label: 'Label',
+                                        path: 'optionLabel',
+                                    },
+                                    {
+                                        label: 'Sublabel',
+                                        path: 'optionSublabel',
+                                    },
+                                ]}
+                                label="Option Label"
+                                path="optionLabel"
+                            />
+                        );
+                    },
+                },
+                {
                     description: 'Label',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Label" path="label" />
@@ -60,37 +83,6 @@ export const config: BlockConfig<SelectBlockDef> = {
                         <InputSettings id={id} label="Hint" path="hint" />
                     ),
                 },
-                {
-                    description: 'Options',
-                    render: ({ id }) => {
-                        return (
-                            <QuerySelectionSettings
-                                id={id}
-                                label="Options"
-                                path="options"
-                                queryPath="output"
-                            />
-                        );
-                    },
-                },
-                {
-                    description: 'Option Label',
-                    render: ({ id }) => {
-                        return (
-                            <SelectOptionLabelSettings
-                                id={id}
-                                label="Option Label"
-                                path="optionLabel"
-                            />
-                        );
-                    },
-                },
-                // {
-                //     description: 'Option Value',
-                //     render: ({ id }) => {
-                //         return <>opt value</>;
-                //     },
-                // },
                 {
                     description: 'Loading',
                     render: ({ id }) => (
