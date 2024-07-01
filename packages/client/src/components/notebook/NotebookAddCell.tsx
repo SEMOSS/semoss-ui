@@ -352,7 +352,7 @@ const AddCellOptions: Record<string, AddCellOption> = {
 };
 
 const IMPORT_MODAL_WIDTHS = {
-    small: '500px',
+    small: '600px',
     medium: '1150px',
     large: '1150px',
 };
@@ -436,7 +436,7 @@ export const NotebookAddCell = observer(
         const [hiddenTablesSet, setHiddenTablesSet] = useState({});
         const [aliasesCountObj, setAliasesCountObj] = useState({}); // { emailAlias: 1, phoneAlias: 2 }
         const [tableEdges, setTableEdges] = useState({}); //
-        const [initialTableSelected, setInitialTableSelected] = useState(null);
+        const [rootTable, setRootTable] = useState(null);
 
         const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
         const [shownTables, setShownTables] = useState(new Set());
@@ -528,15 +528,10 @@ export const NotebookAddCell = observer(
             setUserDatabases(getDatabases.data);
         }, [getDatabases.status, getDatabases.data]);
 
-        // useEffect(() => {
-        //     if (initialTableSelected == null) {
-        //         // TODO: unhide all tables
-        //         alert('unhide all tables');
-        //     } else {
-        //         // TODO: hide all unjoinable tables
-        //         alert('hide all unjoinable tables');
-        //     }
-        // }, [initialTableSelected]);
+        useEffect(() => {
+            // if any change occurs with checkboxes reassess all joins to display
+            setJoinsStackHandler();
+        }, [checkedColumnsCount]);
 
         // endregion
 
@@ -1083,26 +1078,99 @@ export const NotebookAddCell = observer(
 
         /** Checkbox Handler */
         const checkBoxHandler = (tableIndex, columnIndex) => {
-            // debugger;
             const columnObject = watchedTables[tableIndex].columns[columnIndex];
             console.log({ columnObject });
             updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
             if (columnObject?.checked) {
-                // debugger;
                 if (checkedColumnsCount == 0) {
-                    // debugger;
                     findAllJoinableTables(watchedTables[tableIndex].name);
+                    setRootTable(watchedTables[tableIndex].name);
                 }
                 setCheckedColumnsCount(checkedColumnsCount + 1);
             } else if (columnObject?.checked == false) {
-                // debugger;
                 if (checkedColumnsCount == 1) {
-                    // debugger;
                     setShownTables(new Set(tableNames));
+                    setRootTable(null);
                 }
                 setCheckedColumnsCount(checkedColumnsCount - 1);
             }
-            // debugger;
+        };
+
+        const checkTableForSelectedColumns = (tableName) => {
+            for (let i = 0; i < watchedTables.length; i++) {
+                const currTable = watchedTables[i];
+                if (currTable.name == tableName) {
+                    const currTableColumns = currTable.columns;
+                    for (let j = 0; j < currTableColumns.length; j++) {
+                        const currColumn = currTableColumns[j];
+                        if (currColumn.checked == true) return true;
+                    }
+                }
+            }
+            return false;
+        };
+
+        const setJoinsStackHandler = () => {
+            if (checkedColumnsCount < 2) {
+                // do nothing
+            } else {
+                const leftTable = rootTable;
+                const rightTables = Object.entries(tableEdgesObject[rootTable]);
+
+                rightTables.forEach((entry, joinIdx) => {
+                    const rightTable = entry[0];
+                    const leftKey = entry[1]['sourceColumn'];
+                    const rightKey = entry[1]['targetColumn'];
+                    console.log({
+                        joinIdx,
+                        leftTable,
+                        rightTable,
+                        leftKey,
+                        rightKey,
+                    });
+
+                    const leftTableContainsCheckedColumns =
+                        checkTableForSelectedColumns(leftTable);
+                    const rightTableContainsCheckedColumns =
+                        checkTableForSelectedColumns(rightTable);
+
+                    if (
+                        leftTableContainsCheckedColumns &&
+                        rightTableContainsCheckedColumns
+                    ) {
+                        // alert(`${leftTable} :: ${rightTable} || ${leftKey} :: ${rightKey}`);
+                        alert('join being added');
+                        setQueryElementCounter(queryElementCounter + 1);
+                        appendStack({
+                            queryType: `Join`,
+                            queryChildren: [],
+                        });
+                    }
+                    // check leftTable and rightTable for checks
+                });
+
+                console.log({ leftTable, rightTables, tableEdges });
+
+                removeStack();
+                // remove all join stacks?
+                // left table will always be the root table
+                // get right tables from tableEdges
+                // check right tables for checked columns
+                // if 1+ are found add append join stack
+                // if 0 are found remove specific join stack?
+
+                // Array.from(shownTables).forEach((shownTable: string, shownTableIndex, foo) => {
+                //     console.log({ shownTableIndex, shownTable, foo });
+                //     if (shownTableIndex == 0) {
+                //         const leftTable = shownTable;
+                //         const rightTables = Object.entries(tableEdgesObject[leftTable]);
+                //         for (const [rightTable, keysObject] of rightTables) {
+                //             console.log({ leftTable, rightTable, joinColumn: keysObject["sourceColumn"] })
+                //         }
+                //     }
+                // });
+            }
+            console.log({ tableEdges, shownTables, tableEdgesObject });
         };
 
         return (
@@ -2284,7 +2352,6 @@ export const NotebookAddCell = observer(
                                                     );
                                                 }}
                                                 // label={'Right Table'}
-                                                label={'Join Table'}
                                                 value={selectedRightTable}
                                                 size={'small'}
                                                 color="primary"
@@ -2483,7 +2550,7 @@ export const NotebookAddCell = observer(
                                                 <Close />
                                             </IconButton>
 
-                                            <Button
+                                            {/* <Button
                                                 variant="text"
                                                 color="primary"
                                                 size="medium"
@@ -2511,7 +2578,7 @@ export const NotebookAddCell = observer(
                                                 // }}
                                             >
                                                 Preview
-                                            </Button>
+                                            </Button> */}
                                         </div>
                                     </StyledModalTitleWrapper2>
 
@@ -2975,26 +3042,6 @@ export const NotebookAddCell = observer(
                                         </Table.Container>
                                     )}
                                 </Stack>
-                                // <Stack spacing={1} direction="column" sx={{
-                                //     display: 'flex',
-                                //     border: '1px solid red',
-                                // }}>
-                                //     <span>{stack.queryType}</span>
-                                //     <Button
-                                //         sx={{
-                                //             display: 'inline-block',
-                                //             width: '40px',
-                                //         }}
-                                //         variant="contained"
-                                //         color="error"
-                                //         size="small"
-                                //         onClick={() => {
-                                //             removeStack(stackIndex);
-                                //         }}
-                                //     >
-                                //         delete
-                                //     </Button>
-                                // </Stack>
                             ))}
 
                             <Modal.Actions
@@ -3006,41 +3053,42 @@ export const NotebookAddCell = observer(
                                     marginBottom: '15px',
                                 }}
                             >
-                                {/* <Button
-                                variant="outlined"
-                                color="primary"
-                                size="medium"
-                                disabled={
-                                    !selectedDatabaseId ||
-                                    !selectedTable ||
-                                    !(
-                                        tableEdgesObject[selectedTable] &&
-                                        Object.values(
-                                            tableEdgesObject[selectedTable],
-                                        ).length
-                                    )
-                                }
-                                onClick={() => {
-                                    setQueryElementCounter(
-                                        queryElementCounter + 1,
-                                    );
-                                    console.log({
-                                        selectedDatabaseId,
-                                        selectedTable,
-                                    });
-                                    setImportModalPixelWidth(
-                                        IMPORT_MODAL_WIDTHS.large,
-                                    );
-                                    appendStack({
-                                        queryType: `Join`,
-                                        queryChildren: [
-                                        ],
-                                    });
-                                }}
-                                startIcon={<JoinLeftRounded />}
-                            >
-                                Join
-                            </Button> */}
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="medium"
+                                    disabled={
+                                        !selectedDatabaseId
+                                        // !selectedDatabaseId ||
+                                        // !selectedTable ||
+                                        // !(
+                                        //     tableEdgesObject[selectedTable] &&
+                                        //     Object.values(
+                                        //         tableEdgesObject[selectedTable],
+                                        //     ).length
+                                        // )
+                                    }
+                                    onClick={() => {
+                                        alert('join button clicked');
+                                        setQueryElementCounter(
+                                            queryElementCounter + 1,
+                                        );
+                                        console.log({
+                                            selectedDatabaseId,
+                                            selectedTable,
+                                        });
+                                        setImportModalPixelWidth(
+                                            IMPORT_MODAL_WIDTHS.large,
+                                        );
+                                        appendStack({
+                                            queryType: `Join`,
+                                            queryChildren: [],
+                                        });
+                                    }}
+                                    startIcon={<JoinLeftRounded />}
+                                >
+                                    Join
+                                </Button>
                                 <Button
                                     variant="outlined"
                                     color="primary"
