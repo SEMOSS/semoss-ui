@@ -4,7 +4,13 @@ import { observer } from 'mobx-react-lite';
 import { useBlock, useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
-import { Autocomplete, LinearProgress, TextField } from '@mui/material';
+import {
+    Autocomplete,
+    LinearProgress,
+    Stack,
+    TextField,
+    Typography,
+} from '@mui/material';
 import { optimize } from 'webpack';
 
 export interface SelectBlockDef extends BlockDef<'select'> {
@@ -17,6 +23,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
         disabled: boolean;
         options: string[];
         optionLabel?: string;
+        optionSublabel?: string;
         optionValue?: string;
         hint?: string;
         loading?: boolean;
@@ -61,8 +68,6 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         200,
     );
 
-    console.log(stringifiedOptions);
-
     return (
         <Autocomplete
             fullWidth
@@ -70,6 +75,35 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             options={stringifiedOptions}
             value={data.value || null}
             disabled={data?.disabled || data?.loading}
+            renderOption={(props, option: string) => {
+                try {
+                    // Parse the option string into an object
+                    const parsedOption = JSON.parse(option);
+
+                    // Extract optionLabel and optionSublabel from the parsed object
+                    const optionLabel = parsedOption[data?.optionLabel];
+                    const optionSublabel = parsedOption[data?.optionSublabel];
+
+                    if (optionLabel && optionSublabel) {
+                        // Both labels are present, render them in a structured format
+                        return (
+                            <li {...props} style={{ whiteSpace: 'pre-wrap' }}>
+                                <Stack direction={'column'}>
+                                    <>{optionLabel}</>
+                                    <Typography variant="caption">
+                                        {optionSublabel}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        );
+                    } else {
+                        // If one or both labels are missing, fall back to the whole option or a default message
+                        return <li {...props}>{optionLabel || option}</li>;
+                    }
+                } catch (error) {
+                    return <li {...props}>{option}</li>;
+                }
+            }}
             getOptionLabel={(option: string) => {
                 try {
                     // More error handling and testing
@@ -85,6 +119,9 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                 }
             }}
             onChange={(_, value) => {
+                const parsedVal = value;
+
+                debugger;
                 setData('value', value);
             }}
             sx={{
