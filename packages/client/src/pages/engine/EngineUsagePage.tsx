@@ -29,11 +29,11 @@ export const EngineUsagePage = () => {
     const notification = useNotification();
 
     // get the engine info
-    const getEngineUsage = usePixel<{
-        pixel?: string;
-        python?: string;
-        java?: string;
-    }>(`GetEngineUsage(engine=["${id}"]);`);
+    const GetEngineUsage2 = usePixel<{
+        code: string;
+        label: string;
+        type: string;
+    }>(`GetEngineUsage2(engine=["${id}"]);`);
 
     /**
      * Copy text and add it to the clipboard
@@ -56,7 +56,7 @@ export const EngineUsagePage = () => {
     };
 
     // show a loading screen when it is pending
-    if (getEngineUsage.status !== 'SUCCESS') {
+    if (GetEngineUsage2.status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Loading Usage" />;
     }
 
@@ -65,31 +65,25 @@ export const EngineUsagePage = () => {
             <Typography variant={'h6'} fontWeight="regular">
                 Use in Code
             </Typography>
-            {Object.keys(getEngineUsage.data).length === 0 ? (
+            {Object.keys(GetEngineUsage2.data).length === 0 ? (
                 <Stack p={4} alignItems={'center'} justifyContent={'center'}>
                     No Details
                 </Stack>
             ) : (
                 ''
             )}
-            {['pixel', 'python', 'java'].map((p, idx) => {
-                const text = getEngineUsage.data[p];
-                const name = p.replace(/\w\S*/g, function (txt) {
-                    return (
-                        txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
-                    );
-                });
-                if (!text) {
+            {Object.keys(GetEngineUsage2.data).map((key, idx) => {
+                const { code, label } = GetEngineUsage2.data[key];
+
+                if (!code) {
                     return null;
                 }
 
                 return (
                     <Stack key={idx} direction="column" spacing={1}>
-                        <Typography variant={'subtitle1'}>
-                            How to use in {name}
-                        </Typography>
+                        <Typography variant={'subtitle1'}>{label}</Typography>
                         <StyledCodeBlock>
-                            <StyledCodeContent>{text}</StyledCodeContent>
+                            <StyledCodeContent>{code}</StyledCodeContent>
                             <Button
                                 size="medium"
                                 variant="outlined"
@@ -97,7 +91,7 @@ export const EngineUsagePage = () => {
                                 startIcon={
                                     <ContentCopyOutlined color={'inherit'} />
                                 }
-                                onClick={() => copy(text)}
+                                onClick={() => copy(code)}
                             >
                                 Copy
                             </Button>
