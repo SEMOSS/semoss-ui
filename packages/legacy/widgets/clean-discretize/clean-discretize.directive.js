@@ -349,7 +349,7 @@ function cleanDiscretize(semossCoreService) {
                     // now determine if we shoudl update the label value
                     if (
                         scope.descretize.customLabels[i].match(
-                            /(\[|\()(\d+\.*\d*)\s*\-\s*(\d+\.*\d*)+(\]|\))/g
+                            /(\[|\()(\d+(?:\.\d*)?)\s*-\s*(\d+(?:\.\d*)?)(\]|\))/g
                         )
                     ) {
                         // here we need to modify the defualt bin label that was given

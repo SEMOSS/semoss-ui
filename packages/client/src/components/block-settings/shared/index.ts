@@ -12,4 +12,4 @@ export { ConditionalVariationSettings } from './ConditionalVariationSettings';
 export { AIGenerationSettings } from './AIGenerationSettings';
 export { JsonSettings } from './JsonSettings';
 export { CodeEditorSettings } from './CodeEditorSettings';
-export { SelectOptionLabelSettings } from './SelectOptionLabelSettings';
+export { SelectOptionsSettings } from './SelectOptionsSettings';

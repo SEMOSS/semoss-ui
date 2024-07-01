@@ -212,15 +212,13 @@ export const pixelResult = async <O extends unknown[] | []>(jobId: string) => {
 
     const response = await axios
         .post<{
-            insight: Record<string, unknown>;
-            results: {
-                class: string[];
-                opType: string[];
-                pixelType: string;
-                value: O[number];
+            insightID: string;
+            pixelReturn: {
+                operationType: string[];
+                output: unknown;
+                pixelExpression: string;
             }[];
-            returnPixelList: Record<string, unknown>;
-        }>(`${Env.MODULE}/api/engine/result`, postData, {
+        }>(`${Env.MODULE}/api/engine/result2`, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },
@@ -238,18 +236,18 @@ export const pixelResult = async <O extends unknown[] | []>(jobId: string) => {
     const errors: string[] = [];
 
     // collect the errors
-    for (const p of response.data.results) {
-        const { value, opType } = p;
+    for (const p of response.data.pixelReturn) {
+        const { output, operationType } = p;
 
-        if (opType.indexOf('ERROR') > -1) {
-            errors.push(value as string);
+        if (operationType.indexOf('ERROR') > -1) {
+            errors.push(output as string);
         }
     }
 
     return {
         errors: errors,
-        insightId: response.data.insight.insightID,
-        results: response.data.results,
+        insightId: response.data.insightID,
+        results: response.data.pixelReturn,
     };
 };
 
