@@ -35,7 +35,6 @@ export type VariableType =
     | 'storage' // X
     | 'function' // X
     | 'JSON'
-    | 'boolean'
     | 'date'
     | 'array';
 

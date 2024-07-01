@@ -225,14 +225,15 @@ export class StateStore {
             type === 'model' ||
             type === 'vector' ||
             type === 'function' ||
-            type === 'storage'
+            type === 'storage' ||
+            type === 'string' ||
+            type === 'number' ||
+            type === 'date' ||
+            type === 'array' ||
+            type === 'JSON'
         ) {
             // Finds Dependency from pointer
             return this._store.dependencies[pointer];
-        } else if (type === 'string') {
-            //
-        } else if (type === 'number') {
-            //
         }
         return '';
     }
@@ -1230,7 +1231,6 @@ export class StateStore {
         const id = `${type}--${Math.floor(Math.random() * 10000)}`;
 
         this._store.dependencies[id] = value;
-
         return id;
     };
 }

@@ -76,7 +76,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     } = props;
     const { state } = useBlocks();
     const notification = useNotification();
-
     const getEngines = usePixel<
         { app_id: string; app_name: string; app_type: string }[]
     >(`
@@ -100,23 +99,19 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         app_type: string;
     } | null>(null);
 
+    const [variableInputValue, setVariableInputValue] = useState(null);
+
     /** To disable add button */
     const tN = Boolean(variableType.length > 0 && variableName.length > 0);
-    const eP = Boolean(engine || variablePointer.length > 0);
+    const eP = Boolean(
+        engine || variablePointer.length > 0 || variableInputValue,
+    );
     const isTypeAlias = tN;
     const isPointer = eP;
-    const inputVariableTypeList = [
-        'string',
-        'number',
-        'JSON',
-        'boolean',
-        'date',
-        'array',
-    ];
+    const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
     const inputVariableTypes = Boolean(
         inputVariableTypeList.includes(variableType),
     );
-
     // get the input type blocks as an array
     const inputBlocks = computed(() => {
         return Object.values(state.blocks)
@@ -180,13 +175,18 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                 variable.type !== 'block'
             ) {
                 const val = state.getVariable(variable.to, variable.type);
-                const eng = newEngines[`${variable.type}s`].find(
-                    (e) => e.app_id === val,
-                );
                 // console.log('Set Engine Preview', val);
                 // console.log(eng);
-                setEngine(eng);
+                if (inputVariableTypeList.includes(variable.type)) {
+                    setVariableInputValue(val);
+                } else {
+                    const eng = newEngines[`${variable.type}s`].find(
+                        (e) => e.app_id === val,
+                    );
+                    setEngine(eng);
+                }
             }
+
             setVariableType(variable.type);
             setVariableName(variable.alias);
             setVariablePointer(variable.to);
@@ -279,13 +279,25 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
     }, [variableType]);
 
     const input = useMemo(() => {
-        if (variableType === 'string' || variableType === 'number') {
+        if (variableType === 'string') {
             return (
                 <TextField
                     variant="outlined"
                     onChange={(e) =>
-                        setVariablePointer(e.target.value.toString())
+                        setVariableInputValue(e.target.value.toString())
                     }
+                    value={variableInputValue}
+                />
+            );
+        } else if (variableType === 'number') {
+            return (
+                <TextField
+                    variant="outlined"
+                    type="number"
+                    onChange={(e) => {
+                        setVariableInputValue(parseInt(e.target.value));
+                    }}
+                    value={variableInputValue}
                 />
             );
         } else if (variableType === 'JSON' || variableType === 'array') {
@@ -295,24 +307,10 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     height={'10vh'}
                     language={'plaintext'}
                     onChange={(newValue, e) => {
-                        setVariablePointer(newValue);
+                        setVariableInputValue(newValue);
                     }}
+                    value={variableInputValue}
                 ></Editor>
-            );
-        } else if (variableType === 'boolean') {
-            return (
-                <Select
-                    onChange={(e) => {
-                        setVariablePointer(e.target.value);
-                    }}
-                >
-                    <Select.Item value={'true'}>
-                        <Typography variant="caption">True</Typography>
-                    </Select.Item>
-                    <Select.Item value={'false'}>
-                        <Typography variant="caption">False</Typography>
-                    </Select.Item>
-                </Select>
             );
         } else if (variableType === 'date') {
             return (
@@ -320,8 +318,9 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     type="date"
                     variant="outlined"
                     onChange={(e) =>
-                        setVariablePointer(e.target.value.toString())
+                        setVariableInputValue(e.target.value.toString())
                     }
+                    value={variableInputValue}
                 />
             );
         }
@@ -591,7 +590,9 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.ADD_DEPENDENCY,
                                             payload: {
-                                                id: engine.app_id,
+                                                id: engine
+                                                    ? engine.app_id
+                                                    : variableInputValue,
                                                 type: variableType,
                                             },
                                         });
@@ -643,7 +644,9 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.ADD_DEPENDENCY,
                                             payload: {
-                                                id: engine.app_id,
+                                                id: engine
+                                                    ? engine.app_id
+                                                    : variableInputValue,
                                                 type: variableType,
                                             },
                                         });

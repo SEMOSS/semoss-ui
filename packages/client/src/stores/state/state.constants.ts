@@ -26,7 +26,6 @@ export const VARIABLE_TYPES = [
     'function',
     'string',
     'number',
-    'boolean',
     'date',
     'array',
     'JSON',
