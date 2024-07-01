@@ -13,7 +13,7 @@ import {
     PushPinOutlined,
     PushPinRounded,
 } from '@mui/icons-material';
-import { TypeLlmConfig, TypeVariant } from '../workspace.types';
+import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useLLMComparison } from '@/hooks';

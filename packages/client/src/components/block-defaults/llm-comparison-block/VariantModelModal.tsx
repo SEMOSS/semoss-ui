@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Stack, Typography, Modal, Select, Slider } from '@semoss/ui';
-import { TypeLlmConfig } from '../workspace.types';
+import { TypeLlmConfig } from '../../workspace/workspace.types';
 import { Controller, useForm } from 'react-hook-form';
 import { usePixel } from '@/hooks';
 
