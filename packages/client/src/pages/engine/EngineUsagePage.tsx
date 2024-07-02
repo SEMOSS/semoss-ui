@@ -29,11 +29,11 @@ export const EngineUsagePage = () => {
     const notification = useNotification();
 
     // get the engine info
-    const GetEngineUsage2 = usePixel<{
+    const GetEngineUsage = usePixel<{
         code: string;
         label: string;
         type: string;
-    }>(`GetEngineUsage2(engine=["${id}"]);`);
+    }>(`GetEngineUsage(engine=["${id}"]);`);
 
     /**
      * Copy text and add it to the clipboard
@@ -56,7 +56,7 @@ export const EngineUsagePage = () => {
     };
 
     // show a loading screen when it is pending
-    if (GetEngineUsage2.status !== 'SUCCESS') {
+    if (GetEngineUsage.status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Loading Usage" />;
     }
 
@@ -65,15 +65,15 @@ export const EngineUsagePage = () => {
             <Typography variant={'h6'} fontWeight="regular">
                 Use in Code
             </Typography>
-            {Object.keys(GetEngineUsage2.data).length === 0 ? (
+            {Object.keys(GetEngineUsage.data).length === 0 ? (
                 <Stack p={4} alignItems={'center'} justifyContent={'center'}>
                     No Details
                 </Stack>
             ) : (
                 ''
             )}
-            {Object.keys(GetEngineUsage2.data).map((key, idx) => {
-                const { code, label } = GetEngineUsage2.data[key];
+            {Object.keys(GetEngineUsage.data).map((key, idx) => {
+                const { code, label } = GetEngineUsage.data[key];
 
                 if (!code) {
                     return null;
