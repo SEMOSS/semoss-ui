@@ -118,6 +118,9 @@ const TitleSection = styled('section')({
 
 const TitleSectionImg = styled('img')({
     borderRadius: '0.75rem',
+    height: '135px',
+    width: '160px',
+    overflow: 'hidden',
 });
 
 const TitleSectionBodyWrapper = styled('div')({

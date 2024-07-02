@@ -144,14 +144,6 @@ export const SETTINGS_ROUTES: {
     //     history: ['insight', 'insight/<id>/<appId>'],
     // },
     {
-        title: 'My Profile',
-        path: 'my-profile',
-        description: 'Update settings related to your profile.',
-        icon: mdiDatabase,
-        history: ['settings/'],
-        admin: false,
-    },
-    {
         title: 'Member Settings',
         path: 'members',
         description:
@@ -185,13 +177,13 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: true,
     },
-    // {
-    //     title: 'Jobs',
-    //     path: 'jobs',
-    //     description: 'Search by job name or filter using job tags',
-    //     icon: mdiTabletCellphone,
-    //     history: ['settings/'],
-    // },
+    {
+        title: 'Jobs',
+        path: 'jobs',
+        description: 'Search by job name or filter using job tags',
+        icon: mdiTabletCellphone,
+        history: ['settings/'],
+    },
     {
         title: 'Admin Query',
         path: 'admin-query',
@@ -199,5 +191,13 @@ export const SETTINGS_ROUTES: {
         icon: mdiDatabaseSearch,
         history: ['settings/'],
         admin: true,
+    },
+    {
+        title: 'My Profile',
+        path: 'my-profile',
+        description: 'Update settings related to your profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
     },
 ];

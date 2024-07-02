@@ -67,6 +67,8 @@ export const CodeEditorSettings = observer(
                     setLanguage('html');
                 } else if (path == 'specJson') {
                     setLanguage('json');
+                } else if (path == 'text') {
+                    setLanguage('plaintext');
                 }
 
                 if (typeof v === 'undefined') {

@@ -50,7 +50,7 @@ export interface MenuItemProps {
     selected?: boolean;
 
     /** value of item */
-    value: string | number;
+    value: any;
 
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.

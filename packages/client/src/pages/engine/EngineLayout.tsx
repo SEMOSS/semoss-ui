@@ -27,6 +27,13 @@ const StyledDocument = styled('div')(({ theme }) => ({
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(() => ({
     borderRadius: '12px 12px 0px 0px',
+    height: '42px',
+    alignItems: 'center',
+    padding: '0px 3px',
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(() => ({
+    height: '38px',
 }));
 
 const StyledDiv = styled('div')(() => ({
@@ -217,10 +224,10 @@ export const EngineLayout = (props: EngineLayoutProps) => {
                         >
                             {tabs.map((t) => {
                                 return (
-                                    <ToggleTabsGroup.Item
+                                    <StyledToggleTabsGroupItem
                                         key={t.path}
                                         label={t.name}
-                                    ></ToggleTabsGroup.Item>
+                                    ></StyledToggleTabsGroupItem>
                                 );
                             })}
                         </StyledToggleTabsGroup>
