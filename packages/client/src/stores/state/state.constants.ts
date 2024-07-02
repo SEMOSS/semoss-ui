@@ -24,8 +24,11 @@ export const VARIABLE_TYPES = [
     'vector',
     'storage',
     'function',
-    // 'string',
-    // 'number',
+    'string',
+    'number',
+    'date',
+    'array',
+    'JSON',
 ];
 
 export const ACTIONS_DISPLAY = {

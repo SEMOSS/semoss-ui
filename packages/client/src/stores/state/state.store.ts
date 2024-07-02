@@ -204,38 +204,48 @@ export class StateStore {
      */
     getVariable(pointer: string, type: VariableType): Variable | unknown {
         try {
-            if (type === 'block') {
-                // Get Blocks Data (what we realistically want)
-                const block = this.getBlock(pointer);
+            if (pointer) {
+                if (type === 'block') {
+                    const block = this.getBlock(pointer);
 
-                // TO DO: Genericize this, is it always.value
-                return block.data.value as string;
-            } else if (type === 'query') {
-                const query = this.getQuery(pointer);
+                    // TO DO: Genericize this, is it always going to be block.value -- other properties user would like to tie to?
+                    return block.data.value as string;
+                } else if (type === 'query') {
+                    const query = this.getQuery(pointer);
 
-                // Return query output
-                return query.output;
-            } else if (type === 'cell') {
-                const query = this.getQuery(splitAtPeriod(pointer, 'left'));
-                const cell = query.getCell(splitAtPeriod(pointer, 'right'));
+                    return query.output;
+                } else if (type === 'cell') {
+                    const query = this.getQuery(splitAtPeriod(pointer, 'left'));
+                    const cell = query.getCell(splitAtPeriod(pointer, 'right'));
 
-                // Return cells output
-                return cell.output;
-            } else if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'vector' ||
-                type === 'function' ||
-                type === 'storage'
-            ) {
-                // Finds Dependency from pointer
-                return this._store.dependencies[pointer];
-            } else if (type === 'string') {
-                //
-            } else if (type === 'number') {
-                //
+                    return cell.output;
+                } else if (
+                    type === 'database' ||
+                    type === 'model' ||
+                    type === 'vector' ||
+                    type === 'function' ||
+                    type === 'storage' ||
+                    type === 'string' ||
+                    type === 'date' ||
+                    type === 'number'
+                ) {
+                    const value = this._store.dependencies[pointer];
+
+                    return value;
+                } else if (type === 'array' || type === 'JSON') {
+                    let value;
+                    if (typeof this._store.dependencies[pointer] === 'string') {
+                        value = JSON.parse(
+                            this._store.dependencies[pointer] as string,
+                        );
+                    } else value = this._store.dependencies[pointer];
+
+                    return value;
+                }
+                return '';
+            } else {
+                return undefined;
             }
-            return '';
         } catch (e) {
             return 'undefined';
         }
@@ -976,7 +986,6 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
-        debugger;
         delete this._store.queries[queryId];
     };
 
@@ -1234,7 +1243,6 @@ export class StateStore {
         const id = `${type}--${Math.floor(Math.random() * 10000)}`;
 
         this._store.dependencies[id] = value;
-
         return id;
     };
 }
