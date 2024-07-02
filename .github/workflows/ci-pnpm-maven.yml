@@ -17,7 +17,7 @@ env:
 jobs:
     pnpm_build_dev:
         runs-on: ubuntu-latest
-        if: ${{env.RELEASE != 'TRUE'}}
+        if: ${{ env.RELEASE != 'TRUE' }}
         container:
             image: node:18.16.1-bullseye
         steps:
