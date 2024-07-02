@@ -26,11 +26,13 @@
 
 Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
-
 ## Common Errors
  1. `Cannot find module @semoss/ui` - This error indicates that our component library is not fully built out which is a required dependency in SemossUI.  To get around this do these steps rerun steps **4** and **5**.
 
  2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
+
+ ### Must be on a version of Node 18
+1. We use a node version manager to handle swapping between different versions.  https://github.com/coreybutler/nvm-windows, Most members are on version `18.16.0`
 
 # Contributions and Standardized Commits 
 
