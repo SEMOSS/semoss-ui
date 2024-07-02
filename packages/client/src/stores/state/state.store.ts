@@ -252,6 +252,25 @@ export class StateStore {
     }
 
     /**
+     * Gets the variable alias by it's pointer
+     * @param pointer
+     * @param type
+     * @returns
+     */
+    getAlias(pointer: string): string {
+        let alias = '';
+        // Do we need to change how variables are stored to get rid of this iteration
+        Object.entries(this._store.variables).forEach((val) => {
+            const variable = val[1];
+
+            if (variable.to === pointer) {
+                alias = variable.alias;
+            }
+        });
+        return alias;
+    }
+
+    /**
      * Actions
      */
     /**

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Typography, styled } from '@semoss/ui';
+import { Stack, Typography, styled } from '@semoss/ui';
 
 import {
     ActionMessages,
@@ -62,6 +62,9 @@ export const SelectedMask = observer(() => {
 
     // get the block
     const block = state.getBlock(designer.selected);
+    const variable = state.getAlias(designer.selected);
+
+    console.log('variable', variable);
 
     // check if it is draggable
     const isDraggable =
@@ -234,7 +237,17 @@ export const SelectedMask = observer(() => {
             }}
         >
             <StyledTitle onMouseDown={handleMouseDown}>
-                <Typography variant={'body2'}>{designer.selected}</Typography>
+                <Stack direction={'row'}>
+                    {variable && (
+                        <Typography variant={'body2'} fontWeight="bold">
+                            {variable} ---
+                        </Typography>
+                    )}
+
+                    <Typography variant={variable ? 'caption' : 'body2'}>
+                        {designer.selected}
+                    </Typography>
+                </Stack>
                 {isDraggable && (
                     <DragIndicator
                         fontSize="inherit"
