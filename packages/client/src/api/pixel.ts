@@ -218,7 +218,7 @@ export const pixelResult = async <O extends unknown[] | []>(jobId: string) => {
                 output: unknown;
                 pixelExpression: string;
             }[];
-        }>(`${Env.MODULE}/api/engine/result2`, postData, {
+        }>(`${Env.MODULE}/api/engine/result`, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },

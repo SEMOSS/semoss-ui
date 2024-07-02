@@ -117,15 +117,14 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
     /**
      * API
      */
-    const getEngines =
-        usePixel<
-            {
-                app_id: string;
-                app_name: string;
-                app_type: string;
-                app_subtype: string;
-            }[]
-        >(`MyEngines();`);
+    const getEngines = usePixel<
+        {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[]
+    >(`MyEngines();`);
 
     /**
      * Computed
