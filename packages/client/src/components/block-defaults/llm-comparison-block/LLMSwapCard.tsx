@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { styled, Card, Stack, Typography, Icon } from '@semoss/ui';
 import { AddRounded } from '@mui/icons-material';
 import { useLLMComparison } from '@/hooks';
-import { VariantModelModal } from './';
+import { VariantModelModal } from './VariantModelModal';
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'disableHover' && prop !== 'size',

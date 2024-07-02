@@ -11,7 +11,6 @@ import { TypeLlmConfig } from '../../workspace/workspace.types';
 import { Delete, Edit } from '@mui/icons-material';
 import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';
-import { VariantModelModal } from './VariantModelModal';
 import ImageSkeleton from '@/assets/img/ImageSkeleton.png';
 
 const StyledCard = styled(Card, {
@@ -96,7 +95,7 @@ export interface LlmCardProps {
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const { llm, variantIndex, modelIndex, isDefault, size = 'small' } = props;
+    const { llm, variantIndex, modelIndex, isDefault, size = 'medium' } = props;
     const { swapVariantModel } = useLLMComparison();
     const [modelModal, setModelModal] = useState(false);
 
@@ -174,19 +173,6 @@ export const LlmCard = (props: LlmCardProps) => {
                     </div>
                 </StyledCardContent>
             </StyledCard>
-            <VariantModelModal
-                open={modelModal}
-                variable={llm}
-                onClose={(model) => {
-                    if (model) {
-                        swapVariantModel(variantIndex, modelIndex, {
-                            ...model,
-                            alias: llm.alias,
-                        });
-                    }
-                    setModelModal(false);
-                }}
-            />
         </>
     );
 };
