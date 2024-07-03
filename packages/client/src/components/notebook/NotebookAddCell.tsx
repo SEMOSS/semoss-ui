@@ -213,6 +213,22 @@ const StyledBorderDiv = styled('div')(({ theme }) => ({
     borderRadius: '8px',
 }));
 
+const StyledJoinDiv = styled('div')(({ theme }) => ({
+    border: '1px solid #aaa',
+    padding: '4px 12px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    color: '#aaa',
+    cursor: 'default',
+}));
+
+const StyledJoinTypography = styled(Typography)(({ theme }) => ({
+    marginLeft: '7.5px',
+    marginRight: '7.5px',
+    color: 'gray',
+    cursor: 'default',
+}));
+
 // endregion
 
 // region --- Old Data Import useForm Types & Interfaces
@@ -237,8 +253,17 @@ type QueryStackElement = {
     queryChildren: QueryChildElement[];
 };
 
+type JoinElement = {
+    leftTable: string;
+    rightTable: string;
+    joinType: string;
+    leftKey: string;
+    rightKey: string;
+};
+
 type FormValues = {
     queryStackElements: QueryStackElement[];
+    joinElements: JoinElement[];
     databaseSelect: string;
     tableSelect: string;
     columns: Column[];
@@ -273,6 +298,10 @@ interface NewFormData {
 type NewFormValues = {
     databaseSelect: string;
     tables: Table[];
+    joins: JoinElement[];
+    // filters: FilterElement[];
+    // summaries: SummaryElement[];
+    // calculations: CalculationElement[];
 };
 
 // endregion
@@ -440,6 +469,7 @@ export const NotebookAddCell = observer(
 
         const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
         const [shownTables, setShownTables] = useState(new Set());
+        const [joinsSet, setJoinsSet] = useState(new Set()); // Set({ "USERS_TABLE:VISNS_TABLE" })
 
         // track to manage joinable tables
 
@@ -490,6 +520,15 @@ export const NotebookAddCell = observer(
             name: 'tables',
         });
 
+        const {
+            fields: joinElements,
+            append: appendJoinElement,
+            remove: removeJoinElement,
+        } = useFieldArray({
+            control: newControl,
+            name: 'joins',
+        });
+
         // endregion
 
         // region --- useEffects
@@ -532,6 +571,14 @@ export const NotebookAddCell = observer(
             // if any change occurs with checkboxes reassess all joins to display
             setJoinsStackHandler();
         }, [checkedColumnsCount]);
+
+        useEffect(() => {
+            console.log('useEffect', { stackFields });
+        }, [stackFields]);
+
+        useEffect(() => {
+            console.log('useEffect', { joinElements });
+        }, [joinElements]);
 
         // endregion
 
@@ -1113,7 +1160,12 @@ export const NotebookAddCell = observer(
         const setJoinsStackHandler = () => {
             if (checkedColumnsCount < 2) {
                 // do nothing
+                removeJoinElement();
+                setJoinsSet(new Set());
             } else {
+                // removeJoinElement();
+                // setJoinsSet(new Set());
+
                 const leftTable = rootTable;
                 const rightTables = Object.entries(tableEdgesObject[rootTable]);
 
@@ -1121,56 +1173,41 @@ export const NotebookAddCell = observer(
                     const rightTable = entry[0];
                     const leftKey = entry[1]['sourceColumn'];
                     const rightKey = entry[1]['targetColumn'];
-                    console.log({
-                        joinIdx,
-                        leftTable,
-                        rightTable,
-                        leftKey,
-                        rightKey,
-                    });
 
                     const leftTableContainsCheckedColumns =
                         checkTableForSelectedColumns(leftTable);
                     const rightTableContainsCheckedColumns =
                         checkTableForSelectedColumns(rightTable);
 
+                    const joinsSetString = `${leftTable}:${rightTable}`;
+                    console.log({ joinsSetString, joinsSet });
                     if (
                         leftTableContainsCheckedColumns &&
-                        rightTableContainsCheckedColumns
+                        rightTableContainsCheckedColumns &&
+                        joinsSet.has(joinsSetString) == false
                     ) {
-                        // alert(`${leftTable} :: ${rightTable} || ${leftKey} :: ${rightKey}`);
-                        alert('join being added');
-                        setQueryElementCounter(queryElementCounter + 1);
-                        appendStack({
-                            queryType: `Join`,
-                            queryChildren: [],
+                        // setQueryElementCounter(queryElementCounter + 1);
+                        // appendStack({
+                        //     queryType: `Join`,
+                        //     queryChildren: [],
+                        // });
+                        appendJoinElement({
+                            leftTable: leftTable,
+                            rightTable: rightTable,
+                            joinType: 'Inner Join',
+                            leftKey: leftKey,
+                            rightKey: rightKey,
                         });
+                        addToJoinsSetHelper(joinsSetString);
                     }
-                    // check leftTable and rightTable for checks
                 });
-
-                console.log({ leftTable, rightTables, tableEdges });
-
-                removeStack();
-                // remove all join stacks?
-                // left table will always be the root table
-                // get right tables from tableEdges
-                // check right tables for checked columns
-                // if 1+ are found add append join stack
-                // if 0 are found remove specific join stack?
-
-                // Array.from(shownTables).forEach((shownTable: string, shownTableIndex, foo) => {
-                //     console.log({ shownTableIndex, shownTable, foo });
-                //     if (shownTableIndex == 0) {
-                //         const leftTable = shownTable;
-                //         const rightTables = Object.entries(tableEdgesObject[leftTable]);
-                //         for (const [rightTable, keysObject] of rightTables) {
-                //             console.log({ leftTable, rightTable, joinColumn: keysObject["sourceColumn"] })
-                //         }
-                //     }
-                // });
             }
-            console.log({ tableEdges, shownTables, tableEdgesObject });
+        };
+
+        const addToJoinsSetHelper = (newJoinSet) => {
+            const joinsSetCopy = new Set(joinsSet);
+            joinsSetCopy.add(newJoinSet);
+            setJoinsSet(joinsSetCopy);
         };
 
         return (
@@ -2207,7 +2244,8 @@ export const NotebookAddCell = observer(
                             )}
 
                             {/* stack for user-added joins filters and summaries */}
-                            {stackFields.map((stack, stackIndex) => (
+                            {/* {stackFields.map((stack, stackIndex) => ( */}
+                            {joinElements.map((join, stackIndex) => (
                                 <Stack
                                     spacing={1}
                                     direction="column"
@@ -2231,65 +2269,15 @@ export const NotebookAddCell = observer(
                                                 }}
                                                 variant="h6"
                                             >
-                                                {stack.queryType}
+                                                Join
                                             </Typography>
-                                            {/* <Controller
 
-                                        // ADD TO USEFORM CONTROL ASAP
-                                        // DELETE STATE VARS
+                                            <Tooltip title="Left Table">
+                                                <StyledJoinDiv>
+                                                    {join.leftTable}
+                                                </StyledJoinDiv>
+                                            </Tooltip>
 
-                                        name={'tableSelect'}
-                                        control={control}
-                                        render={({ field }) => ( */}
-                                            <Select
-                                                onChange={(e) => {
-                                                    // field.onChange(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // selectTableHandler(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // setHiddenColumnIdsSet(
-                                                    //     new Set(),
-                                                    // );
-                                                    // if (
-                                                    //     !showTablePreview &&
-                                                    //     !showEditColumns
-                                                    // ) {
-                                                    //     setShowTablePreview(
-                                                    //         true,
-                                                    //     );
-                                                    // }
-                                                    // setImportModalPixelWidth(
-                                                    //     IMPORT_MODAL_WIDTHS.large,
-                                                    // );
-                                                    console.log({
-                                                        selectedTable,
-                                                    });
-                                                    setSelectedLeftTable(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                // label={'Left Table'}
-                                                // value={selectedLeftTable}
-                                                value={selectedTable}
-                                                size={'small'}
-                                                color="primary"
-                                                // disabled={!tableNames.length}
-                                                disabled={true}
-                                                variant="outlined"
-                                                sx={{
-                                                    width: '125px',
-                                                }}
-                                            >
-                                                {tableNames?.map((ele) => (
-                                                    <Menu.Item value={ele}>
-                                                        {ele}
-                                                    </Menu.Item>
-                                                ))}
-                                            </Select>
-                                            {/* )}
-                                    /> */}
                                             <Tooltip title={`${'Inner Join'}`}>
                                                 <IconButton
                                                     size="small"
@@ -2302,244 +2290,57 @@ export const NotebookAddCell = observer(
                                                     <JoinInner />
                                                 </IconButton>
                                             </Tooltip>
-                                            {/* <Controller
 
-                                        // ADD TO USEFORM CONTROL ASAP
-                                        // DELETE STATE VARS
+                                            <Tooltip title="Right Table">
+                                                <StyledJoinDiv>
+                                                    {join.rightTable}
+                                                </StyledJoinDiv>
+                                            </Tooltip>
 
-                                        name={'tableSelect'}
-                                        control={control}
-                                        render={({ field }) => ( */}
-                                            <Select
-                                                onChange={(e) => {
-                                                    // field.onChange(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // selectTableHandler(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // setHiddenColumnIdsSet(
-                                                    //     new Set(),
-                                                    // );
-                                                    // if (
-                                                    //     !showTablePreview &&
-                                                    //     !showEditColumns
-                                                    // ) {
-                                                    //     setShowTablePreview(
-                                                    //         true,
-                                                    //     );
-                                                    // }
-                                                    // setImportModalPixelWidth(
-                                                    //     IMPORT_MODAL_WIDTHS.large,
-                                                    // );
-                                                    console.log({
-                                                        selectedTable,
-                                                    });
-                                                    setSelectedRightTable(
-                                                        e.target.value,
-                                                    );
-                                                    setSelectedLeftKey(
-                                                        tableEdgesObject[
-                                                            selectedTable
-                                                        ][e.target.value]
-                                                            .sourceColumn,
-                                                    );
-                                                    setSelectedRightKey(
-                                                        tableEdgesObject[
-                                                            selectedTable
-                                                        ][e.target.value]
-                                                            .targetColumn,
-                                                    );
-                                                }}
-                                                // label={'Right Table'}
-                                                value={selectedRightTable}
+                                            {/* <TextField
+                                                value={join.rightTable}
                                                 size={'small'}
                                                 color="primary"
-                                                // disabled={!tableNames.length}
-                                                disabled={
-                                                    !(
-                                                        tableEdgesObject[
-                                                            selectedTable
-                                                        ] &&
-                                                        Object.values(
-                                                            tableEdgesObject[
-                                                                selectedTable
-                                                            ],
-                                                        ).length
-                                                    )
-                                                }
+                                                disabled={true}
                                                 variant="outlined"
                                                 sx={{
-                                                    width: '125px',
+                                                    width: 'fit-content',
                                                 }}
                                             >
-                                                {tableNames
-                                                    ?.filter(
-                                                        (ele) =>
-                                                            // ### NEED TO...
-                                                            // key into this differently, they wont be sets
-                                                            tableEdgesObject[
-                                                                selectedTable
-                                                            ] &&
-                                                            tableEdgesObject[
-                                                                selectedTable
-                                                            ][ele],
-                                                    )
-                                                    .map((ele) => (
-                                                        <Menu.Item value={ele}>
-                                                            {ele}
-                                                        </Menu.Item>
-                                                    ))}
-                                            </Select>
-                                            {/* )}
-                                    /> */}
-                                            <Typography
+                                            </TextField> */}
+                                            {/* <Typography
                                                 variant="body1"
                                                 sx={{
                                                     marginLeft: '7.5px',
                                                     marginRight: '7.5px',
-                                                    color: 'gray', // temp color
+                                                    color: 'gray',
+                                                    cursor: 'default',
                                                 }}
                                             >
                                                 where
-                                            </Typography>
-                                            {/* <Controller
-                                        name={'tableSelect'}
-                                        control={control}
-                                        render={({ field }) => ( */}
-                                            <Select
-                                                onChange={(e) => {
-                                                    // field.onChange(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // selectTableHandler(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // setHiddenColumnIdsSet(
-                                                    //     new Set(),
-                                                    // );
-                                                    // if (
-                                                    //     !showTablePreview &&
-                                                    //     !showEditColumns
-                                                    // ) {
-                                                    //     setShowTablePreview(
-                                                    //         true,
-                                                    //     );
-                                                    // }
-                                                    // setImportModalPixelWidth(
-                                                    //     IMPORT_MODAL_WIDTHS.large,
-                                                    // );
-                                                    setSelectedLeftKey(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                // label={'Left Key'}
-                                                // value={field.value}
-                                                value={selectedLeftKey}
-                                                size={'small'}
-                                                color="primary"
-                                                // disabled={!selectedLeftTable}
-                                                disabled={true}
-                                                variant="outlined"
-                                                sx={{
-                                                    width: '120px',
-                                                }}
-                                            >
-                                                <Menu.Item
-                                                    value={selectedLeftKey}
-                                                >
-                                                    {selectedLeftKey}
-                                                </Menu.Item>
+                                            </Typography> */}
 
-                                                {/* {tableColumnsObject[
-                                                selectedLeftTable
-                                            ]?.map((colObj, idx) => (
-                                                <Menu.Item
-                                                    value={
-                                                        colObj.columnName
-                                                    }
-                                                    key={idx}
-                                                >
-                                                    {colObj.columnName}
-                                                </Menu.Item>
-                                            ))} */}
-                                            </Select>
-                                            {/* )}
-                                    /> */}
-                                            <Typography
-                                                variant="body1"
-                                                sx={{
-                                                    marginLeft: '7.5px',
-                                                    marginRight: '7.5px',
-                                                    color: 'gray', // temp color
-                                                }}
-                                            >
+                                            <StyledJoinTypography variant="body1">
+                                                where
+                                            </StyledJoinTypography>
+
+                                            <Tooltip title="Left Key">
+                                                <StyledJoinDiv>
+                                                    {join.leftKey}
+                                                </StyledJoinDiv>
+                                            </Tooltip>
+
+                                            <StyledJoinTypography variant="body1">
                                                 =
-                                            </Typography>
-                                            {/* <Controller
-                                        name={'tableSelect'}
-                                        control={control}
-                                        render={({ field }) => ( */}
-                                            <Select
-                                                onChange={(e) => {
-                                                    // field.onChange(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // selectTableHandler(
-                                                    //     e.target.value,
-                                                    // );
-                                                    // setHiddenColumnIdsSet(
-                                                    //     new Set(),
-                                                    // );
-                                                    // if (
-                                                    //     !showTablePreview &&
-                                                    //     !showEditColumns
-                                                    // ) {
-                                                    //     setShowTablePreview(
-                                                    //         true,
-                                                    //     );
-                                                    // }
-                                                    // setImportModalPixelWidth(
-                                                    //     IMPORT_MODAL_WIDTHS.large,
-                                                    // );
-                                                    setSelectedRightKey(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                // label={'Right Key'}
-                                                // value={field.value}
-                                                value={selectedRightKey}
-                                                size={'small'}
-                                                color="primary"
-                                                // disabled={!selectedRightTable}
-                                                disabled={true}
-                                                variant="outlined"
-                                                sx={{
-                                                    width: '120px',
-                                                }}
-                                            >
-                                                <Menu.Item
-                                                    value={selectedRightKey}
-                                                >
-                                                    {selectedRightKey}
-                                                </Menu.Item>
-                                                {/* {tableColumnsObject[
-                                                selectedRightTable
-                                            ]?.map((colObj, idx) => (
-                                                <Menu.Item
-                                                    value={
-                                                        colObj.columnName
-                                                    }
-                                                    key={idx}
-                                                >
-                                                    {colObj.columnName}
-                                                </Menu.Item>
-                                            ))} */}
-                                            </Select>
-                                            {/* )}
-                                    /> */}
+                                            </StyledJoinTypography>
+
+                                            <Tooltip title="Right Key">
+                                                <StyledJoinDiv>
+                                                    {join.rightKey}
+                                                </StyledJoinDiv>
+                                            </Tooltip>
                                         </div>
-                                        <div>
+                                        {/* <div>
                                             <IconButton
                                                 size="small"
                                                 color="secondary"
@@ -2549,37 +2350,7 @@ export const NotebookAddCell = observer(
                                             >
                                                 <Close />
                                             </IconButton>
-
-                                            {/* <Button
-                                                variant="text"
-                                                color="primary"
-                                                size="medium"
-                                                sx={{
-                                                    marginRight: '15px',
-                                                }}
-                                                onClick={() => {
-                                                    // setShowEditColumns(
-                                                    //     !showEditColumns,
-                                                    // );
-                                                    // setShowTablePreview(false);
-                                                }}
-                                            >
-                                                Edit Columns
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                color="primary"
-                                                size="medium"
-                                                // onClick={() => {
-                                                //     setShowTablePreview(
-                                                //         !showTablePreview,
-                                                //     );
-                                                //     setShowEditColumns(false);
-                                                // }}
-                                            >
-                                                Preview
-                                            </Button> */}
-                                        </div>
+                                        </div> */}
                                     </StyledModalTitleWrapper2>
 
                                     {/* {showEditColumns && ( */}
@@ -3084,6 +2855,7 @@ export const NotebookAddCell = observer(
                                             queryType: `Join`,
                                             queryChildren: [],
                                         });
+                                        console.log({ stackFields });
                                     }}
                                     startIcon={<JoinLeftRounded />}
                                 >
