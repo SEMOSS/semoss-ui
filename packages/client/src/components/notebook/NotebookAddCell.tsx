@@ -1179,26 +1179,48 @@ export const NotebookAddCell = observer(
                     const rightTableContainsCheckedColumns =
                         checkTableForSelectedColumns(rightTable);
 
+                    const defaultJoinType = 'Inner Join';
+
                     const joinsSetString = `${leftTable}:${rightTable}`;
-                    console.log({ joinsSetString, joinsSet });
                     if (
                         leftTableContainsCheckedColumns &&
                         rightTableContainsCheckedColumns &&
                         joinsSet.has(joinsSetString) == false
                     ) {
-                        // setQueryElementCounter(queryElementCounter + 1);
-                        // appendStack({
-                        //     queryType: `Join`,
-                        //     queryChildren: [],
-                        // });
                         appendJoinElement({
                             leftTable: leftTable,
                             rightTable: rightTable,
-                            joinType: 'Inner Join',
+                            joinType: defaultJoinType,
                             leftKey: leftKey,
                             rightKey: rightKey,
                         });
                         addToJoinsSetHelper(joinsSetString);
+                    } else if (
+                        leftTableContainsCheckedColumns == false ||
+                        (rightTableContainsCheckedColumns == false &&
+                            joinsSet.has(joinsSetString))
+                    ) {
+                        // one or both tables contains no checked columns
+                        // but the join has been previously added to the join set and stack
+                        // so remove it from both
+
+                        joinsSet.delete(joinsSetString);
+                        // find the index of the target join element to remove
+
+                        joinElements.some((ele, idx) => {
+                            if (
+                                leftTable == ele.leftTable &&
+                                rightTable == ele.rightTable &&
+                                defaultJoinType == ele.joinType &&
+                                leftKey == ele.leftKey &&
+                                rightKey == ele.rightKey
+                            ) {
+                                removeJoinElement(idx);
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        });
                     }
                 });
             }
@@ -2824,7 +2846,7 @@ export const NotebookAddCell = observer(
                                     marginBottom: '15px',
                                 }}
                             >
-                                <Button
+                                {/* <Button
                                     variant="outlined"
                                     color="primary"
                                     size="medium"
@@ -2860,7 +2882,7 @@ export const NotebookAddCell = observer(
                                     startIcon={<JoinLeftRounded />}
                                 >
                                     Join
-                                </Button>
+                                </Button> */}
                                 <Button
                                     variant="outlined"
                                     color="primary"
