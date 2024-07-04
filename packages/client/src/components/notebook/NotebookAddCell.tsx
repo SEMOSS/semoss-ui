@@ -443,8 +443,7 @@ export const NotebookAddCell = observer(
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
         const [isDatabaseLoading, setIsDatabaseLoading] =
             useState<boolean>(false);
-        const [showTablePreview, setShowTablePreview] =
-            useState<boolean>(false);
+        const [showPreview, setShowTablePreview] = useState<boolean>(false);
         const [showEditColumns, setShowEditColumns] = useState<boolean>(true); // ### change back to false
         const [checkAllColumns, setCheckAllColumns] = useState<boolean>(true);
         const { configStore, monolithStore } = useRootStore();
@@ -543,6 +542,8 @@ export const NotebookAddCell = observer(
         useEffect(() => {
             removeEditableColumns();
             removeStack();
+            setShowTablePreview(false);
+            setShowEditColumns(true);
         }, [selectedDatabaseId]);
 
         useEffect(() => {
@@ -579,6 +580,17 @@ export const NotebookAddCell = observer(
         useEffect(() => {
             console.log('useEffect', { joinElements });
         }, [joinElements]);
+
+        useEffect(() => {
+            if (showPreview) {
+                retrievePreviewData();
+            }
+        }, [
+            aliasesCountObj,
+            checkedColumnsCount,
+            showPreview,
+            selectedDatabaseId,
+        ]);
 
         // endregion
 
@@ -1017,6 +1029,77 @@ export const NotebookAddCell = observer(
             retrieveTableRows(tableName);
         };
 
+        const retrievePreviewData = async () => {
+            setIsDatabaseLoading(true);
+
+            // run database rows reactor
+            const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+            const pixelColumnAliases = [];
+            const pixelJoins = [];
+
+            watchedTables.forEach((tableObject) => {
+                const currTableName = tableObject.name;
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            console.log({
+                databaseId,
+                pixelTables,
+                pixelColumnNames,
+                pixelColumnAliases,
+                pixelJoins,
+            });
+
+            // need to add logic for more than one join
+            // currently should work for 0-1 joins
+            const sampleJoinString = `${
+                Array.from(pixelTables)[0]
+            } , inner.join , ${Array.from(pixelTables)[1]}`;
+            const combinedJoinString =
+                pixelJoins.length > 0
+                    ? `| Join ( ( ${sampleJoinString} ) ) `
+                    : '';
+
+            const testReactorPixel =
+                'Database ( database = [ "f9b656cc-06e7-4cce-bae8-b5f92075b6da" ] ) | Select ( STATION_SETTINGS__EMAIL , USER_SETTINGS__PHONE ) .as ( [ EMAIL , PHONE ] ) | Join ( ( USER_SETTINGS , inner.join , STATION_SETTINGS ) ) | Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);';
+            const reactorPixel = `Database ( database = [ \"${databaseId}\" ] ) | Select ( ${pixelColumnNames.join(
+                ' , ',
+            )} ) .as ( [ ${pixelColumnAliases.join(
+                ' , ',
+            )} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+            await monolithStore.runQuery(reactorPixel).then((response) => {
+                const type = response.pixelReturn[0]?.operationType;
+                const tableHeadersData =
+                    response.pixelReturn[1]?.output?.data?.headers;
+                const tableRawHeadersData =
+                    response.pixelReturn[1]?.output?.data?.rawHeaders;
+                const tableRowsData =
+                    response.pixelReturn[1]?.output?.data?.values;
+
+                setDatabaseTableHeaders(tableHeadersData);
+                setDatabaseTableRawHeaders(tableRawHeadersData);
+                setDatabaseTableRows(tableRowsData);
+
+                if (type.indexOf('ERROR') != -1) {
+                    console.error('Error retrieving database tables');
+                }
+
+                setIsDatabaseLoading(false);
+            });
+        };
+
         /** Old Select Tables for Import Data --- unused / remove? */
         const retrieveTableRows = async (tableName) => {
             setIsDatabaseLoading(true);
@@ -1159,13 +1242,9 @@ export const NotebookAddCell = observer(
 
         const setJoinsStackHandler = () => {
             if (checkedColumnsCount < 2) {
-                // do nothing
                 removeJoinElement();
                 setJoinsSet(new Set());
             } else {
-                // removeJoinElement();
-                // setJoinsSet(new Set());
-
                 const leftTable = rootTable;
                 const rightTables = Object.entries(tableEdgesObject[rootTable]);
 
@@ -1200,13 +1279,7 @@ export const NotebookAddCell = observer(
                         (rightTableContainsCheckedColumns == false &&
                             joinsSet.has(joinsSetString))
                     ) {
-                        // one or both tables contains no checked columns
-                        // but the join has been previously added to the join set and stack
-                        // so remove it from both
-
                         joinsSet.delete(joinsSetString);
-                        // find the index of the target join element to remove
-
                         joinElements.some((ele, idx) => {
                             if (
                                 leftTable == ele.leftTable &&
@@ -1463,7 +1536,7 @@ export const NotebookAddCell = observer(
                                                 )}
                                                 onClick={() => {
                                                     setShowTablePreview(
-                                                        !showTablePreview,
+                                                        !showPreview,
                                                     );
                                                     setShowEditColumns(false);
                                                 }}
@@ -2182,7 +2255,7 @@ export const NotebookAddCell = observer(
                                         </StyledTableSetWrapper>
                                     )}
 
-                                    {showTablePreview && (
+                                    {showPreview && (
                                         <StyledTableSetWrapper>
                                             <StyledTableTitle variant="h6">
                                                 Preview
@@ -2758,7 +2831,7 @@ export const NotebookAddCell = observer(
                                         </Table.Container>
                                     )}
 
-                                    {/* {showTablePreview && ( */}
+                                    {/* {showPreview && ( */}
                                     {false && (
                                         <Table.Container
                                             sx={{
