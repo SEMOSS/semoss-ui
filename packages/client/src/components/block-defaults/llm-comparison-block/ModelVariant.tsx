@@ -8,7 +8,7 @@ import {
 } from '@semoss/ui';
 import {
     Add,
-    Cancel,
+    Close,
     ContentCopy,
     PushPinOutlined,
     PushPinRounded,
@@ -129,7 +129,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                         color="secondary"
                         onClick={() => deleteVariant(index)}
                     >
-                        <Cancel />
+                        <Close />
                     </IconButton>
                 )}
             </StyledVariantHeader>

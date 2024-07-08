@@ -84,7 +84,7 @@ export interface LlmCardProps {
      */
     modelIndex: number;
     /**
-     * Is this a default llm in our app, if so don't allow edit for now
+     * Is this LLM a part of the default variant in our app, if so don't allow edit for now
      */
     isDefault: boolean;
 
@@ -96,8 +96,7 @@ export interface LlmCardProps {
 
 export const LlmCard = (props: LlmCardProps) => {
     const { llm, variantIndex, modelIndex, isDefault, size = 'medium' } = props;
-    const { swapVariantModel } = useLLMComparison();
-    const [modelModal, setModelModal] = useState(false);
+    const { setDesignerView } = useLLMComparison();
 
     const {
         alias,
@@ -109,6 +108,10 @@ export const LlmCard = (props: LlmCardProps) => {
         temperature,
         length,
     } = llm;
+
+    const handleOpenLlmEditor = () => {
+        setDesignerView('editModel');
+    };
 
     return (
         <>
@@ -136,20 +139,11 @@ export const LlmCard = (props: LlmCardProps) => {
                         </Stack>
                     </Stack>
                     {!isDefault && (
-                        <Stack direction="row">
-                            <Tooltip title={value}>
-                                <IconButton
-                                    onClick={() => {
-                                        setModelModal(true);
-                                    }}
-                                >
-                                    <Edit />
-                                </IconButton>
-                            </Tooltip>
-                            <IconButton disabled={true}>
-                                <Delete />
+                        <Tooltip title={value}>
+                            <IconButton onClick={handleOpenLlmEditor}>
+                                <Edit />
                             </IconButton>
-                        </Stack>
+                        </Tooltip>
                     )}
                 </StyledCardHeader>
                 <StyledCardContent>

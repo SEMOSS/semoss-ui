@@ -1,5 +1,9 @@
 import { createContext } from 'react';
-import { TypeVariant, TypeLlmConfig } from '@/components/workspace';
+import {
+    TypeVariant,
+    TypeLlmConfig,
+    TypeLlmConfigureView,
+} from '@/components/workspace';
 
 export type LLMComparisonContextType = {
     /** the variants we want to test on this app */
@@ -23,6 +27,20 @@ export type LLMComparisonContextType = {
         modelIndex: number,
         model: TypeLlmConfig,
     ) => void;
+
+    /** view for the LLM Comparison Block's menu in the designer */
+    designerView: TypeLlmConfigureView;
+
+    /** sets the view state for the 'designerView' above */
+    setDesignerView: (view: TypeLlmConfigureView) => void;
+
+    // setConfigureVariant: (variantIndex: number) => void;
+
+    // /** selected variant being edited in the designer */
+    // selectedVariant: { variantIndex: number } & TypeVariant;
+
+    // /** selected model being edited in the designer */
+    // selectedModel: { variantIndex: number; modelIndex: number } & TypeLlmConfig;
 };
 
 /**

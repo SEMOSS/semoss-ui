@@ -4,7 +4,11 @@ import { useNotification } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { useBlocks } from '@/hooks';
 import { useRootStore } from '@/hooks';
-import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
+import {
+    TypeLlmConfig,
+    TypeLlmConfigureView,
+    TypeVariant,
+} from '../../workspace/workspace.types';
 
 // TODO: clean out fake data when BE is operational
 const initialState = {
@@ -239,6 +243,14 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
+    const setDesignerView = (view: TypeLlmConfigureView) => {
+        dispatch({
+            type: 'field',
+            field: 'designerView',
+            value: view,
+        });
+    };
+
     return (
         <LLMComparisonContext.Provider
             value={{
@@ -248,6 +260,8 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
                 deleteVariant: deleteVariant,
                 editVariant,
                 swapVariantModel: swapVariantModel,
+                designerView: 'allVariants',
+                setDesignerView,
             }}
         >
             {children}

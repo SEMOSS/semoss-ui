@@ -22,3 +22,5 @@ export interface DefaultModelVariant extends TypeLlmConfig {
     to: string;
     type: string;
 }
+
+export type TypeLlmConfigureView = 'allVariants' | 'editVariant' | 'editModel';
