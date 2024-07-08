@@ -12,8 +12,8 @@ export type LLMComparisonContextType = {
     /** default variant in app */
     defaultVariant: TypeVariant;
 
-    /** Adds Variant to context */
-    addNewVariant: (index: number | TypeVariant) => void;
+    /** Adds/Duplicates a Variant to context */
+    addVariant: (index: number, variant?: TypeVariant) => void;
 
     /** Delete Variant set in context */
     deleteVariant: (index: number) => void;
@@ -34,13 +34,13 @@ export type LLMComparisonContextType = {
     /** sets the view state for the 'designerView' above */
     setDesignerView: (view: TypeLlmConfigureView) => void;
 
-    // setConfigureVariant: (variantIndex: number) => void;
+    /** selected variant being edited in the designer */
+    editorVariantIndex: number | null;
+    setEditorVariant: (index: number | null) => void;
 
-    // /** selected variant being edited in the designer */
-    // selectedVariant: { variantIndex: number } & TypeVariant;
-
-    // /** selected model being edited in the designer */
-    // selectedModel: { variantIndex: number; modelIndex: number } & TypeLlmConfig;
+    /** selected model being edited in the designer */
+    editorModelIndex: number | null;
+    setEditorModel: (index: number | null) => void;
 };
 
 /**

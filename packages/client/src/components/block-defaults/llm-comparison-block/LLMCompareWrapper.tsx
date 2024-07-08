@@ -96,6 +96,31 @@ const initialState = {
     ],
 };
 
+const emptyVariant: TypeVariant = {
+    name: 'Empty Variant',
+    selected: false,
+    models: [],
+};
+
+const emptyModel: TypeLlmConfig = {
+    alias: null,
+    value: null,
+    database_name: null,
+    database_subtype: null,
+    database_type: null,
+    topP: 0,
+    temperature: 0,
+    length: 0,
+};
+
+const buildEmptyVariant = (modelCount: number): TypeVariant => {
+    const emptyVariantCopy = emptyVariant;
+
+    emptyVariantCopy.models = Array(modelCount).fill(emptyModel);
+
+    return emptyVariant;
+};
+
 const reducer = (state, action) => {
     switch (action.type) {
         case 'field': {
@@ -180,15 +205,17 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
-    const addNewVariant = (val) => {
-        const variantsCopy = llmVariants;
-        if (typeof val === 'object') {
-            variantsCopy.push(val);
-        } else if (val === -1) {
-            variantsCopy.push(defaultLLMVariant);
-        } else {
-            variantsCopy.push(llmVariants[val]);
-        }
+    const addVariant = (index: number, variant?: TypeVariant) => {
+        const newVariant = variant
+            ? variant
+            : buildEmptyVariant(defaultLLMVariant.models.length);
+
+        let variantsCopy = llmVariants;
+        variantsCopy = [
+            ...variantsCopy.slice(0, index),
+            newVariant,
+            ...variantsCopy.slice(index),
+        ];
 
         dispatch({
             type: 'field',
@@ -198,7 +225,7 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
     };
 
     const deleteVariant = (index: number) => {
-        const variantsCopy = llmVariants;
+        const variantsCopy = [...llmVariants];
         variantsCopy.splice(index, 1);
 
         dispatch({
@@ -251,17 +278,37 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
+    const setEditorVariant = (index: number | null) => {
+        dispatch({
+            type: 'field',
+            field: 'editorVariant',
+            value: index,
+        });
+    };
+
+    const setEditorModel = (index: number | null) => {
+        dispatch({
+            type: 'field',
+            field: 'editorModel',
+            value: index,
+        });
+    };
+
     return (
         <LLMComparisonContext.Provider
             value={{
                 variants: llmVariants,
                 defaultVariant: defaultLLMVariant,
-                addNewVariant: addNewVariant,
+                addVariant,
                 deleteVariant: deleteVariant,
                 editVariant,
                 swapVariantModel: swapVariantModel,
                 designerView: 'allVariants',
                 setDesignerView,
+                editorVariantIndex: null,
+                setEditorVariant,
+                editorModelIndex: null,
+                setEditorModel,
             }}
         >
             {children}

@@ -5,13 +5,11 @@ export interface TypeVariant {
 }
 
 export interface TypeLlmConfig {
-    alias: string;
-    value: string;
-    database_name: string;
-    database_subtype: string;
-    database_type: string;
-
-    name?: string;
+    alias: string | null;
+    value: string | null;
+    database_name: string | null;
+    database_subtype: string | null;
+    database_type: string | null;
     icon?: string;
     topP?: number;
     temperature?: number;

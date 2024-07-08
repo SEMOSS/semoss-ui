@@ -76,7 +76,13 @@ export const ModelVariant = (props: ModelVariantProps) => {
         cardProps,
     } = props;
     const [hovered, setHovered] = useState(false);
-    const { addNewVariant, deleteVariant, editVariant } = useLLMComparison();
+    const {
+        addVariant,
+        deleteVariant,
+        editVariant,
+        setDesignerView,
+        setEditorVariant,
+    } = useLLMComparison();
 
     // TODO: Delete when BE is functional and no longer needed
     const buildFakeModelForTest = (num: number) => {
@@ -97,6 +103,12 @@ export const ModelVariant = (props: ModelVariantProps) => {
         const updatedVariant = { ...variant };
         updatedVariant.selected = !variant.selected;
         editVariant(index, updatedVariant);
+    };
+
+    const handleAddNewVariant = () => {
+        addVariant(index);
+        setDesignerView('editVariant');
+        setEditorVariant(index + 1);
     };
 
     return (
@@ -125,10 +137,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                 </Stack>
 
                 {index !== -1 && (
-                    <IconButton
-                        color="secondary"
-                        onClick={() => deleteVariant(index)}
-                    >
+                    <IconButton onClick={() => deleteVariant(index)}>
                         <Close />
                     </IconButton>
                 )}
@@ -169,17 +178,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     <Button
                         variant="text"
                         color="secondary"
-                        onClick={() => {
-                            addNewVariant({
-                                name: 'New Variant',
-                                selected: false,
-                                models: [
-                                    buildFakeModelForTest(1),
-                                    buildFakeModelForTest(2),
-                                    buildFakeModelForTest(3),
-                                ],
-                            });
-                        }}
+                        onClick={() => addVariant(index)}
                         startIcon={<Add />}
                     >
                         Add Variant
@@ -187,7 +186,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     <Button
                         variant="text"
                         color="secondary"
-                        onClick={() => addNewVariant(index)}
+                        onClick={() => addVariant(index, variant)}
                         startIcon={<ContentCopy />}
                     >
                         Duplicate
