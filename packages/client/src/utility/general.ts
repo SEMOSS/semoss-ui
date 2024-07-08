@@ -1,6 +1,7 @@
 import { Role } from '@/types';
 import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
+import { Env } from '@/env';
 
 /**
  * @desc splits a string at the period
@@ -91,12 +92,20 @@ export const formatPermission = (permission: Role | ''): string => {
  * @params appType & appSubType
  * @returns image link for associated engine
  */
-export const getEngineImage = (appType: string, appSubType: string) => {
+export const getEngineImage = (
+    appType: string,
+    appSubType: string,
+    ignoreNotFound: boolean = false,
+) => {
     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
     if (!obj) {
-        console.warn('No image found:', appType, appSubType);
-        return BRAIN;
+        if (ignoreNotFound) {
+            return null;
+        } else {
+            console.warn('No image found:', appType, appSubType);
+            return BRAIN;
+        }
     }
 
     return obj.icon;
@@ -118,5 +127,39 @@ export const copyTextToClipboard = (text: string, notificationService) => {
             color: 'error',
             message: e.message,
         });
+    }
+};
+
+export const getSDKSnippet = (
+    type: 'py' | 'js',
+    accessKey?: string,
+    secretKey?: string,
+) => {
+    if (type === 'py') {
+        return `
+# import the ai platform package
+import ai_server
+
+# pass in your access and secret keys to authenticate
+server_connection=ai_server.RESTServer(
+    access_key="${
+        accessKey ? accessKey : '<your access key>'
+    }",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
+    secret_key="${
+        secretKey ? secretKey : '<your access key>'
+    }",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
+    base="${Env.ORIGIN}${Env.PATH}${Env.MODULE}/api"
+)
+`;
+    } else {
+        return `
+# .env
+ENDPOINT="${Env.ORIGIN}${Env.PATH}"
+MODULE="${Env.MODULE}"
+
+#.env.local
+ACCESS_KEY="${accessKey ? accessKey : '<your access key>'}"
+SECRET_KEY="${secretKey ? secretKey : '<your secret key>'}"
+`;
     }
 };

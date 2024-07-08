@@ -478,6 +478,7 @@ function databaseDirective(
                     }
                 );
 
+            
             // app-defined filter fields
             scope.database.CONFIG.databaseMetaKeys.forEach(function (item) {
                 const metaKey = item.metakey;
@@ -494,7 +495,7 @@ function databaseDirective(
                     item.display_options !== 'input' &&
                     item.display_options !== 'single-typeahead'
                 ) {
-                    const watched = `database.appInfo.${metaKey}`;
+                    const watched = `database.appInfo["${metaKey}"]`;
                     scope.$watch(watched, function (newValue, oldValue) {
                         if (newValue && !angular.equals(newValue, oldValue)) {
                             const newVal = newValue

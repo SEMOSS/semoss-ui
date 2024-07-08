@@ -8,7 +8,6 @@ import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
 import { Router } from '@/pages';
 import { LoadingScreen } from '@/components/ui';
-import { Help } from '@/components/help';
 
 // add interceptors
 axios.interceptors.response.use(
@@ -83,7 +82,6 @@ export const App = () => {
                         </HashRouter>
                     </LoadingScreen>
                 </Notification>
-                {/* <Help /> */}
             </ThemeProvider>
         </RootStoreContext.Provider>
     );

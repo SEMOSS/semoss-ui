@@ -144,14 +144,6 @@ export const SETTINGS_ROUTES: {
     //     history: ['insight', 'insight/<id>/<appId>'],
     // },
     {
-        title: 'My Profile',
-        path: 'my-profile',
-        description: 'Update settings related to your profile.',
-        icon: mdiDatabase,
-        history: ['settings/'],
-        admin: false,
-    },
-    {
         title: 'Member Settings',
         path: 'members',
         description:
@@ -199,5 +191,13 @@ export const SETTINGS_ROUTES: {
         icon: mdiDatabaseSearch,
         history: ['settings/'],
         admin: true,
+    },
+    {
+        title: 'My Profile',
+        path: 'my-profile',
+        description: 'Update settings related to your profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
     },
 ];

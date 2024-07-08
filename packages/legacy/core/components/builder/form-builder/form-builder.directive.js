@@ -2809,7 +2809,7 @@ function formDirective($compile, $timeout, semossCoreService) {
             scope.form.content.items[idx].html = scope.form.content.items[
                 idx
             ].html.replace(
-                /smss-form-model\s*=\s*"\s*[\s\S]*\s*"/,
+                /smss-form-model\s*=\s*"\s*[\s\S]*?"/,
                 'smss-form-model="' + scope.form.content.items[idx].model + '"'
             );
         }
@@ -4008,7 +4008,7 @@ function formDirective($compile, $timeout, semossCoreService) {
                 scope.form.content.items[idx].html = scope.form.content.items[
                     idx
                 ].html.replace(
-                    /ng-model\s*=\s*"\s*[\w.\s]*\s*"/,
+                    /ng-model\s*=\s*"\s*([\w.]+\s*)+"/,
                     'ng-model="form.dataModel.' +
                         scope.form.dataBinding[scope.form.content.selected]
                             .name +

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNotification, styled } from '@semoss/ui';
 
 import { useWorkspace, useRootStore } from '@/hooks';
@@ -11,21 +10,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
     height: '100%',
     // height: 'calc(100% - 42px)',
-}));
-
-const StyledTopLeft = styled('div')(({ theme }) => ({
-    display: 'flex',
-    overflowX: 'hidden',
-    backgroundColor: theme.palette.secondary.light,
-    justifyContent: 'space-between',
-    paddingLeft: theme.spacing(2),
-    paddingTop: theme.spacing(2),
-    paddingBottom: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-
-    // Take in prop that will resize width of left portion
-    height: '100%',
-    width: '100%',
 }));
 
 interface CodeViewPanelProps {

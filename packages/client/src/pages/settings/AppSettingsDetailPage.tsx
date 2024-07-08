@@ -84,6 +84,7 @@ export const AppSettingsDetailPage = () => {
                     mode={'app'}
                     name={'app'}
                     id={id}
+                    direction={'row'}
                     onDelete={() => {
                         navigate('/settings/app');
                     }}
