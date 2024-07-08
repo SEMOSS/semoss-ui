@@ -12,6 +12,10 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         selectQuery: '',
     },
     toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
+        console.log({ databaseId, frameType, frameVariableName, selectQuery });
+        const splitPixelString = selectQuery.split(';');
+        const firstPixel = `${splitPixelString[0]};`;
+        return firstPixel;
         return `Database( database=["${databaseId}"] ) | Query("<encode>${selectQuery}</encode>") | Import(frame=[CreateFrame(frameType=[${frameType}], override=[true]).as(["${frameVariableName}"])]);`;
     },
 };

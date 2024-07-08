@@ -29,6 +29,10 @@ const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
 const FRAME_TYPES = {
+    PIXEL: {
+        display: 'Pixel',
+        value: 'PIXEL',
+    },
     NATIVE: {
         display: 'GRID',
         value: 'NATIVE',
@@ -84,7 +88,7 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
         databaseId: string;
 
         /** Output frame type */
-        frameType: 'NATIVE' | 'PY' | 'R' | 'GRID';
+        frameType: 'NATIVE' | 'PY' | 'R' | 'GRID' | 'PIXEL';
 
         /** Ouput variable name */
         frameVariableName: string;
@@ -403,6 +407,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 ))}
                             </StyledSelect>
                             <StyledTextField
+                                // ## TODO fix variable import pixel syntax, currently including db name for some reason
                                 title="Set Frame Variable Name"
                                 value={cell.parameters.frameVariableName}
                                 disabled={cell.isLoading}

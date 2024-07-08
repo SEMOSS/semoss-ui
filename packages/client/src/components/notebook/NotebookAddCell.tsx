@@ -470,7 +470,8 @@ export const NotebookAddCell = observer(
         const [shownTables, setShownTables] = useState(new Set());
         const [joinsSet, setJoinsSet] = useState(new Set()); // Set({ "USERS_TABLE:VISNS_TABLE" })
 
-        // track to manage joinable tables
+        const [pixelString, setPixelString] = useState('');
+        const pixelStringRef = useRef<string>('');
 
         // endregion
 
@@ -637,7 +638,8 @@ export const NotebookAddCell = observer(
                         ...DefaultCells[widget].parameters,
                         frameVariableName: `FRAME_${newCellId}`,
                         databaseId: selectedDatabaseId,
-                        selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
+                        // selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
+                        selectQuery: pixelStringRef.current, // construct query based on useForm inputs
                     };
                 }
 
@@ -787,11 +789,12 @@ export const NotebookAddCell = observer(
 
         /** New Submit for Import Data --- empty */
         const onImportDataSubmit = (data: NewFormData) => {
-            // constructSQLString({ submitData });
-            // appendCell('data-import');
-            // setIsDataImportModalOpen(false);
-            // closeImportModalHandler();
             console.log({ data });
+            // constructSQLString({ submitData });
+            retrievePreviewData();
+            appendCell('data-import');
+            setIsDataImportModalOpen(false);
+            // closeImportModalHandler();
         };
 
         /** Close and Reset Import Data Form Modal */
@@ -1054,31 +1057,42 @@ export const NotebookAddCell = observer(
                 });
             });
 
+            console.log(joinsSet);
+
+            Array.from(joinsSet).forEach((joinEle: string) => {
+                console.log({ joinEle });
+                const splitJoinsString = joinEle.split(':');
+                pixelJoins.push(
+                    `( ${splitJoinsString[0]} , inner.join , ${splitJoinsString[1]} )`,
+                );
+            });
+
             console.log({
                 databaseId,
                 pixelTables,
                 pixelColumnNames,
                 pixelColumnAliases,
                 pixelJoins,
+                joinsSet,
             });
 
-            // need to add logic for more than one join
-            // currently should work for 0-1 joins
-            const sampleJoinString = `${
-                Array.from(pixelTables)[0]
-            } , inner.join , ${Array.from(pixelTables)[1]}`;
             const combinedJoinString =
                 pixelJoins.length > 0
-                    ? `| Join ( ( ${sampleJoinString} ) ) `
+                    ? `| Join ( ${pixelJoins.join(' , ')} ) `
                     : '';
 
-            const testReactorPixel =
-                'Database ( database = [ "f9b656cc-06e7-4cce-bae8-b5f92075b6da" ] ) | Select ( STATION_SETTINGS__EMAIL , USER_SETTINGS__PHONE ) .as ( [ EMAIL , PHONE ] ) | Join ( ( USER_SETTINGS , inner.join , STATION_SETTINGS ) ) | Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);';
+            // const testReactorPixel =
+            //     'Database ( database = [ "f9b656cc-06e7-4cce-bae8-b5f92075b6da" ] ) | Select ( STATION_SETTINGS__EMAIL , USER_SETTINGS__PHONE ) .as ( [ EMAIL , PHONE ] ) | Join ( ( USER_SETTINGS , inner.join , STATION_SETTINGS ) ) | Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);';
             const reactorPixel = `Database ( database = [ \"${databaseId}\" ] ) | Select ( ${pixelColumnNames.join(
                 ' , ',
             )} ) .as ( [ ${pixelColumnAliases.join(
                 ' , ',
             )} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+            // ## TODO fix variable import pixel syntax, currently including db name for some reason
+
+            setPixelString(reactorPixel);
+            pixelStringRef.current = reactorPixel;
+
             await monolithStore.runQuery(reactorPixel).then((response) => {
                 const type = response.pixelReturn[0]?.operationType;
                 const tableHeadersData =
@@ -1588,6 +1602,9 @@ export const NotebookAddCell = observer(
                                                                                             addAllTableColumnsHandler
                                                                                         }
                                                                                         color="primary"
+                                                                                        disabled={
+                                                                                            true
+                                                                                        }
                                                                                     >
                                                                                         <AddBox />
                                                                                     </CheckAllIconButton>
