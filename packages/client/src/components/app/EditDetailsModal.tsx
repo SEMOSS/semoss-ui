@@ -5,12 +5,10 @@ import {
     IconButton,
     Button,
     TextField,
-    Stack,
     Autocomplete,
 } from '@semoss/ui';
 import { usePixel, useRootStore } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
-import CloseIcon from '@mui/icons-material/Close';
 import { createFilterOptions } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { MarkdownEditor } from '../common';
@@ -31,6 +29,7 @@ const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
+    paddingTop: `${theme.spacing(1)}!important`,
 }));
 
 const StyledSubtitle = styled(Typography)(({ theme }) => ({
@@ -138,66 +137,54 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
             </StyledModalHeading>
 
             <StyledModalContent>
-                <div>
-                    <StyledSubtitle variant="subtitle1">
-                        Main Uses
-                    </StyledSubtitle>
-                    <Controller
-                        name="detailsForm.mainUses"
-                        control={control}
-                        render={({ field }) => {
-                            return (
-                                <TextField
-                                    value={field.value}
-                                    onChange={(val) => field.onChange(val)}
-                                    fullWidth
-                                    multiline
-                                    rows={7}
-                                />
-                            );
-                        }}
-                    />
-                </div>
+                <Controller
+                    name="detailsForm.markdown"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <TextField
+                                value={field.value}
+                                onChange={(val) => field.onChange(val)}
+                                fullWidth
+                                multiline
+                                label="Main Uses"
+                                rows={7}
+                            />
+                        );
+                    }}
+                />
+                <Controller
+                    name="detailsForm.tag"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <Autocomplete
+                                options={[]}
+                                value={field.value}
+                                fullWidth
+                                multiple
+                                freeSolo
+                                onChange={(_, val) => field.onChange(val)}
+                                renderInput={(params) => (
+                                    <TextField {...params} label="Tags" />
+                                )}
+                                filterOptions={(options, params) => {
+                                    const filtered = filter(options, params);
 
-                <div>
-                    <StyledSubtitle variant="subtitle1">Tags</StyledSubtitle>
-                    <Controller
-                        name="detailsForm.tags"
-                        control={control}
-                        render={({ field }) => {
-                            return (
-                                <Autocomplete
-                                    options={[]}
-                                    value={field.value}
-                                    fullWidth
-                                    multiple
-                                    freeSolo
-                                    onChange={(_, val) => field.onChange(val)}
-                                    renderInput={(params) => (
-                                        <TextField {...params} label="Tags" />
-                                    )}
-                                    filterOptions={(options, params) => {
-                                        const filtered = filter(
-                                            options,
-                                            params,
-                                        );
+                                    const { inputValue } = params;
+                                    const isExisting = options.some(
+                                        (option) => inputValue === option,
+                                    );
+                                    if (inputValue !== '' && !isExisting) {
+                                        filtered.push(inputValue);
+                                    }
 
-                                        const { inputValue } = params;
-                                        const isExisting = options.some(
-                                            (option) => inputValue === option,
-                                        );
-                                        if (inputValue !== '' && !isExisting) {
-                                            filtered.push(inputValue);
-                                        }
-
-                                        return filtered;
-                                    }}
-                                />
-                            );
-                        }}
-                    />
-                </div>
-
+                                    return filtered;
+                                }}
+                            />
+                        );
+                    }}
+                />
                 {projectMetaKeys.map((key) => {
                     const { metakey, display_options } = key;
                     const label =

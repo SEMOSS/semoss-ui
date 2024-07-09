@@ -819,6 +819,7 @@ const StyledSidebar = styled('div')(({ theme }) => ({
 
 const StyledSidebarItem = styled(Button)(({ theme }) => ({
     justifyContent: 'flex-start',
+    whiteSpace: 'nowrap',
 }));
 
 interface SidebarProps {
@@ -866,6 +867,8 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
             </StyledSidebarItem>
             {dynamicRefs?.map((ref) => (
                 <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
                     onClick={() => scrollIntoView(ref.ref)}
                     value={null}
                     key={ref.display}
@@ -875,6 +878,8 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
             ))}
             {permission !== 'discoverable' && (
                 <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
                     onClick={() => scrollIntoView(dependenciesRef.ref)}
                     value={null}
                 >
