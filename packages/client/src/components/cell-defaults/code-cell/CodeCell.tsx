@@ -6,7 +6,7 @@ import { Code, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef, Variable } from '@/stores';
 import { runPixel } from '@/api';
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
-import { useBlocks, useLLM } from '@/hooks';
+import { useBlocks, useLLM, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
@@ -81,6 +81,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
+    const { monolithStore } = useRootStore();
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
@@ -182,37 +183,18 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     /**
      * Fetch and set list of general reactors
      */
-    const [generalReactors, setGeneralReactors] = useState([]);
     const fetchGeneralReactors = async () => {
-        const pixel = `META|help();`;
-
         try {
-            const res = await runPixel(pixel);
-            const reactorList = [];
+            const res = await monolithStore.runQuery('META|HelpJson();');
 
-            const response: any = res?.pixelReturn[0].output;
-            const array = response.split('General Reactors:').pop().split(' ');
+            const generalReactorList = res.pixelReturn[0].output['General'];
 
-            array.forEach((reactor) => {
-                if (/[a-z]/i.test(reactor)) {
-                    if (reactor.startsWith('\n')) {
-                        reactor.split('\n').pop();
-                    }
-                    reactorList.push(reactor);
-                }
-            });
-
-            console.log('reactor list', reactorList);
-
-            setGeneralReactors(reactorList);
+            return generalReactorList;
         } catch {
             console.error('Failed response from help pixel');
-            return;
+            return [];
         }
     };
-    useEffect(() => {
-        fetchGeneralReactors();
-    }, []);
 
     const handleMount = (editor, monaco) => {
         // if diffedit code has been rejected set to old editor content
@@ -357,25 +339,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     range: range,
                 });
             });
-            return suggestions;
-        };
-
-        // add editor reactor suggestions
-        const generateReactorSuggestions = (range) => {
-            const suggestions = [];
-
-            generalReactors.forEach((reactor) => {
-                suggestions.push({
-                    label: {
-                        label: `${reactor}`,
-                        description: 'General Reactor',
-                    },
-                    kind: monaco.languages.CompletionItemKind.Variable,
-                    documentation: `This returns the value of ${reactor}.  Feel free to change reference value in the variables panel on the left.`,
-                    insertText: `${reactor}`,
-                    range: range,
-                });
-            });
 
             return suggestions;
         };
@@ -408,97 +371,103 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 [language]: monaco.languages.registerCompletionItemProvider(
                     language,
                     {
-                        provideCompletionItems: (model, position) => {
-                            const word = model.getWordUntilPosition(position);
-                            // getWordUntilPosition doesn't track when words are led by special characters
-                            // we need to chack for wrapping curly brackets manually to know what to replace
+                        provideCompletionItems: async (model, position) => {
+                            if (language == 'pixel') {
+                                const word =
+                                    model.getWordUntilPosition(position);
 
-                            // word is not empty, completion was triggered by a non-special character
-                            if (word.word !== '') {
-                                // return empty suggestions to trigger built in typeahead
+                                const generalReactors =
+                                    await fetchGeneralReactors();
+
+                                const suggestions = generalReactors.map(
+                                    (reactor) => ({
+                                        label: {
+                                            label: reactor,
+                                            description: 'General Reactor',
+                                        },
+                                        kind: monaco.languages
+                                            .CompletionItemKind.Function,
+                                        insertText: reactor,
+                                        range: new monaco.Range(
+                                            position.lineNumber,
+                                            position.column - word.length,
+                                            position.lineNumber,
+                                            position.column,
+                                        ),
+                                    }),
+                                );
+
                                 return {
-                                    suggestions: [],
+                                    suggestions: suggestions,
+                                };
+                            } else {
+                                // getWordUntilPosition doesn't track when words are led by special characters
+                                // we need to chack for wrapping curly brackets manually to know what to replace
+                                const word =
+                                    model.getWordUntilPosition(position);
+
+                                // word is not empty, completion was triggered by a non-special character
+                                if (word.word !== '') {
+                                    // return empty suggestions to trigger built in typeahead
+                                    return {
+                                        suggestions: [],
+                                    };
+                                }
+
+                                // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+                                const specialCharacterStartRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.startColumn - 2,
+                                    endColumn: word.startColumn,
+                                };
+                                const preceedingTwoCharacters =
+                                    model.getValueInRange(
+                                        specialCharacterStartRange,
+                                    );
+                                const replaceRangeStartBuffer =
+                                    preceedingTwoCharacters === '{{' ? 2 : 1;
+                                // python editor will automatically add closed bracket when you type a start one
+                                // need to replace the closed brackets appropriately
+                                const specialCharacterEndRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.endColumn,
+                                    endColumn: word.endColumn + 2,
+                                };
+                                const followingTwoCharacters =
+                                    model.getValueInRange(
+                                        specialCharacterEndRange,
+                                    );
+                                const replaceRangeEndBuffer =
+                                    followingTwoCharacters === '}}'
+                                        ? 2
+                                        : followingTwoCharacters == '} ' ||
+                                          followingTwoCharacters == '}'
+                                        ? 1
+                                        : 0;
+
+                                // compose range that we want to replace with the suggestion
+                                const replaceRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn:
+                                        word.startColumn -
+                                        replaceRangeStartBuffer,
+                                    endColumn:
+                                        word.endColumn + replaceRangeEndBuffer,
+                                };
+
+                                return {
+                                    suggestions:
+                                        generateSuggestions(replaceRange),
                                 };
                             }
-
-                            // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-                            const specialCharacterStartRange = {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn: word.startColumn - 2,
-                                endColumn: word.startColumn,
-                            };
-                            const preceedingTwoCharacters =
-                                model.getValueInRange(
-                                    specialCharacterStartRange,
-                                );
-                            const replaceRangeStartBuffer =
-                                preceedingTwoCharacters === '{{' ? 2 : 1;
-                            // python editor will automatically add closed bracket when you type a start one
-                            // need to replace the closed brackets appropriately
-                            const specialCharacterEndRange = {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn: word.endColumn,
-                                endColumn: word.endColumn + 2,
-                            };
-                            const followingTwoCharacters =
-                                model.getValueInRange(specialCharacterEndRange);
-                            const replaceRangeEndBuffer =
-                                followingTwoCharacters === '}}'
-                                    ? 2
-                                    : followingTwoCharacters == '} ' ||
-                                      followingTwoCharacters == '}'
-                                    ? 1
-                                    : 0;
-
-                            // compose range that we want to replace with the suggestion
-                            const replaceRange = {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn:
-                                    word.startColumn - replaceRangeStartBuffer,
-                                endColumn:
-                                    word.endColumn + replaceRangeEndBuffer,
-                            };
-                            return {
-                                suggestions: generateSuggestions(replaceRange),
-                            };
                         },
                         triggerCharacters: ['{'],
                     },
                 ),
             };
-        });
-
-        //add additional completion provider for pixel cells
-        monaco.languages.registerCompletionItemProvider('pixel', {
-            provideCompletionItems: function (model, position) {
-                const line = model.getValueInRange({
-                    startLineNumber: position.lineNumber,
-                    startColumn: 1,
-                    endLineNumber: position.lineNumber,
-                    endColumn: position.column,
-                });
-                console.log('model, position', line);
-                const match = line.match(/^[A-Z]+$/);
-                console.log('is a match', match);
-                if (!match) {
-                    return { suggestions: [] };
-                }
-                const word = model.getWordUntilPosition(position);
-
-                const range = {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: word.startColumn,
-                    endColumn: word.endColumn,
-                };
-                return {
-                    suggestions: generateReactorSuggestions(range),
-                };
-            },
-            triggerCharacters: ['A'],
         });
 
         const lines = editor.getModel().getLineCount();
