@@ -158,10 +158,11 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
     }, [getEngines.status, getEngines.data]);
     const variables = useMemo(() => {
         return Object.entries(state.variables).filter((kv) => {
+            const id = kv[0];
             const val = kv[1];
 
             if (
-                val.alias.includes(filterWord) &&
+                id.includes(filterWord) &&
                 selectedFilter.indexOf(val.type) > -1
             )
                 return kv;
@@ -247,12 +248,13 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                 </Stack>
                 <StyledMenuScroll>
                     <List disablePadding>
-                        {variables.map((t, index) => {
-                            const variable = t[1];
+                        {variables.map((keyValue, index) => {
+                            const id = keyValue[0];
+                            const variable = keyValue[1];
                             return (
                                 <NotebookVariable
-                                    key={variable.alias}
-                                    id={t[0]}
+                                    key={id}
+                                    id={id}
                                     variable={variable}
                                     engines={engines}
                                 />

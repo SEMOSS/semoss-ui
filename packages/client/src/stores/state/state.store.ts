@@ -258,16 +258,18 @@ export class StateStore {
      * @returns
      */
     getAlias(pointer: string): string {
-        let alias = '';
-        // Do we need to change how variables are stored to get rid of this iteration
-        Object.entries(this._store.variables).forEach((val) => {
-            const variable = val[1];
+        const alias = 'needs to change';
 
-            if (variable.to === pointer) {
-                alias = variable.alias;
-            }
-        });
         return alias;
+        // // Do we need to change how variables are stored to get rid of this iteration
+        // Object.entries(this._store.variables).forEach((val) => {
+        //     const variable = val[1];
+
+        //     if (variable.to === pointer) {
+        //         alias = variable.alias;
+        //     }
+        // });
+        // return alias;
     }
 
     /**
@@ -354,9 +356,9 @@ export class StateStore {
 
                 this.dispatchEvent(name, detail);
             } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { alias, to, type } = action.payload;
+                const { id, to, type } = action.payload;
 
-                this.addVariable(alias, to, type);
+                this.addVariable(id, to, type);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -429,7 +431,7 @@ export class StateStore {
                     return getValueByPath(query._exposed, s);
                 }
             }
-        } else if (path[0] === 'block') {
+        } else if (path[0] === 'block' && path[1]) {
             // check if the id is there
             const blockId = path[1];
 
@@ -440,47 +442,14 @@ export class StateStore {
                 const s = path.slice(2).join('.');
                 return getValueByPath(block.data, s);
             }
+        } else if (this._store.variables[path[0]]) {
+            const variable = this._store.variables[path[0]];
+            const value = this.getVariable(variable.to, variable.type);
+
+            return value;
         }
 
         return expression;
-    };
-
-    flattenVar = (expression: string): string => {
-        return expression.replace(/{{(.*?)}}/g, (match) => {
-            let v;
-            Object.values(this._store.variables).forEach((token) => {
-                // Early return if we find token already
-                if (v) return;
-
-                let copy = match;
-                // remove the brackets
-                if (copy.startsWith('{{') && copy.endsWith('}}')) {
-                    copy = copy.slice(2, -2);
-                }
-
-                if (token.alias === copy) {
-                    v = this.getVariable(token.to, token.type);
-                }
-            });
-
-            // Need to wrap in string for the code
-            if (v) {
-                if (typeof v !== 'string') {
-                    return JSON.stringify(v);
-                } else {
-                    return v;
-                }
-            }
-
-            // TODO: Handle old notebooks that don't use variables
-            v = this.flattenVariable(match);
-
-            if (typeof v !== 'string') {
-                return JSON.stringify(v);
-            } else {
-                return v;
-            }
-        });
     };
 
     /**
@@ -1186,38 +1155,38 @@ export class StateStore {
     // -----------------------------------
     /**
      * Adds to variable that can be referenced
-     * @param alias - referenced as
+     * @param id - referenced as
      * @param to - points to
      * @param type - type of variable
      */
-    private addVariable = (alias: string, to: string, type: VariableType) => {
-        let id = `variable--${Math.floor(Math.random() * 10000)}`;
-        let uniq = false;
-
-        while (!uniq) {
-            id = `variable--${Math.floor(Math.random() * 10000)}`;
-            if (!this._store.variables[id]) {
-                uniq = true;
-            }
+    private addVariable = (id: string, to: string, type: VariableType) => {
+        if (this._store.variables[id]) {
+            return false;
         }
 
         const token: Variable = {
-            alias,
             to,
             type,
         };
 
         this._store.variables[id] = token;
+
+        return token;
     };
 
     /**
      * Renames variable that can be referenced
-     * @param alias - referenced as
-     * @param to - points to
-     * @param type - type of token
+     * @param old - points to old id
+     * @param id - new id for variable
      */
-    private renameVariable = (id: string, alias: string) => {
-        this._store.variables[id].alias = alias;
+    private renameVariable = (old: string, id: string) => {
+        if (this._store.variables[old]) {
+            return false;
+        } else {
+            this._store.variables[id] = this._store.variables[old];
+
+            delete this._store.variables[old];
+        }
     };
 
     /**

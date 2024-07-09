@@ -141,7 +141,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
     const [openRenameAlias, setOpenRenameAlias] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [newTokenAlias, setNewTokenAlias] = useState(variable.alias);
+    const [newTokenAlias, setNewTokenAlias] = useState(id);
     const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
         null,
     );
@@ -195,7 +195,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
     return (
         <StyledListItem
-            key={variable.alias}
+            key={id}
             secondaryAction={
                 <>
                     <Stack
@@ -206,7 +206,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                     >
                         <IconButton
                             onClick={() => {
-                                copyAlias(variable.alias);
+                                copyAlias(id);
                                 setAnchorEl(null);
                             }}
                         >
@@ -305,7 +305,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             variant="body1"
                                             fontWeight="medium"
                                         >
-                                            {variable.alias}
+                                            {id}
                                         </Typography>
                                         <StyledCapitalizedTypography variant="body2">
                                             {getVariableTypeDisplay}
@@ -343,7 +343,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
                                                     notification.add({
                                                         color: 'success',
-                                                        message: `Succesfully renamed variable ${variable.alias} to ${newTokenAlias}, remember to save your app.`,
+                                                        message: `Succesfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`,
                                                     });
 
                                                     state.dispatch({
@@ -358,9 +358,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             }}
                                             onBlur={() => {
                                                 setOpenRenameAlias(false);
-                                                setNewTokenAlias(
-                                                    variable.alias,
-                                                );
+                                                setNewTokenAlias(id);
                                             }}
                                             InputProps={{
                                                 disableUnderline: true,

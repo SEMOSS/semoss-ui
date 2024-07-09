@@ -514,7 +514,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         }
 
         const hasChanges = variable
-            ? variable.alias !== variableName ||
+            ? variable.id !== variableName ||
               variable.to !== variablePointer ||
               variable.type !== variableType ||
               variableInputValue !== v
@@ -531,7 +531,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
     useEffect(() => {
         if (variable?.id) {
-            setVariableName(variable.alias);
+            setVariableName(variable.id);
             setVariableType(variable.type);
             setVariablePointer(variable.to);
 
@@ -650,7 +650,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             payload: {
                                                 from: variable,
                                                 to: {
-                                                    alias: variableName,
                                                     to: variablePointer,
                                                     type: variableType,
                                                 },
@@ -680,7 +679,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             payload: {
                                                 from: variable,
                                                 to: {
-                                                    alias: variableName,
                                                     to: id,
                                                     type: variableType,
                                                 },
@@ -690,7 +688,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
 
                                     notification.add({
                                         color: 'success',
-                                        message: `Succesfully editted ${variable.alias}, remember to save your app.`,
+                                        message: `Succesfully editted ${variable.id}, remember to save your app.`,
                                     });
                                     onClose();
                                 } else {
@@ -706,7 +704,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.ADD_VARIABLE,
                                             payload: {
-                                                alias: variableName,
+                                                id: variableName,
                                                 to: variablePointer,
                                                 type: variableType,
                                             },
@@ -730,11 +728,12 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             },
                                         });
 
+                                        debugger;
                                         state.dispatch({
                                             message:
                                                 ActionMessages.ADD_VARIABLE,
                                             payload: {
-                                                alias: variableName,
+                                                id: variableName,
                                                 to: id,
                                                 type: variableType,
                                             },

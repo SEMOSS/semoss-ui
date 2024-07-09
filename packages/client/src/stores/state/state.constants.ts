@@ -3788,8 +3788,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
         tags: ['LLM'],
         state: {
             variables: {
-                '1000': {
-                    alias: 'question',
+                question: {
                     to: 'question',
                     type: 'block',
                 },
@@ -3975,13 +3974,11 @@ export const DEFAULT_TEMPLATE: Template[] = [
         state: {
             dependencies: {},
             variables: {
-                '1000': {
-                    alias: 'file',
+                file: {
                     to: 'file',
                     type: 'block',
                 },
-                '1001': {
-                    alias: 'question',
+                question: {
                     to: 'question',
                     type: 'block',
                 },

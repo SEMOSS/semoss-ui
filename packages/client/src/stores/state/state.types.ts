@@ -42,12 +42,10 @@ export type VariableType =
  * Variables
  */
 export type Variable = {
-    alias: string;
     to: string;
     type: VariableType;
 };
 
-// John merge with this, dont be lazy..... ^
 export interface VariableWithId extends Variable {
     id: string;
 }

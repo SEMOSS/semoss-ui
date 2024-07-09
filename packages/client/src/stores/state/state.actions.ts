@@ -232,7 +232,11 @@ export interface AddDependencyAction extends Action {
 
 export interface AddVariableAction extends Action {
     message: ActionMessages.ADD_VARIABLE;
-    payload: Variable;
+    payload: {
+        id: string;
+        to: string;
+        type: VariableType;
+    };
 }
 
 export interface EditVariableAction extends Action {
