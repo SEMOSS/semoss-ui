@@ -170,9 +170,6 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
                                     renderInput={(params) => (
                                         <TextField {...params} label="Tags" />
                                     )}
-                                    renderOption={(props, option) => (
-                                        <li {...props}>{option}</li>
-                                    )}
                                     filterOptions={(options, params) => {
                                         const filtered = filter(
                                             options,
