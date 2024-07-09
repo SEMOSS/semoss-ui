@@ -267,7 +267,7 @@ export const TextEditor = (props: TextEditorProps) => {
     /**
      * @name prettifyFile
      * Use custom parsers to format file
-     * TO-DO: Save custom configs?
+     * TODO: Save custom configs?
      */
     const prettifyFile = () => {
         if (process.env.NODE_ENV == 'development') {

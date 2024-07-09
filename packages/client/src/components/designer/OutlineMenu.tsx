@@ -177,7 +177,7 @@ export const OutlineMenu = observer((): JSX.Element => {
 
     /**
      * @returns List of pages
-     * TO-DO: Go from active page from wherever we decide to hold this in state
+     * TODO: Go from active page from wherever we decide to hold this in state
      */
     const pages = useMemo(() => {
         const blocks = Object.entries(state.blocks);
@@ -187,7 +187,7 @@ export const OutlineMenu = observer((): JSX.Element => {
 
     /**
      * @returns Children of the Active Page
-     * TO-DO: Go off of Active_Page in depenedency array
+     * TODO: Go off of Active_Page in depenedency array
      */
     const pageBlocks = useMemo(() => {
         const renderedPage = state.blocks[designer.rendered];
