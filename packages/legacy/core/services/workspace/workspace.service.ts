@@ -7,6 +7,7 @@ export default angular
     .factory('workspaceService', workspaceService);
 
 workspaceService.$inject = [
+    '$sce',
     '$state',
     '$stateParams',
     '$transitions',
@@ -19,6 +20,7 @@ workspaceService.$inject = [
 ];
 
 function workspaceService(
+    $sce,
     $state,
     $stateParams,
     $transitions,
@@ -376,6 +378,14 @@ function workspaceService(
                 }
             },
         };
+    /**
+     * @name validateAndReturn
+     * @desc validate URL
+     * @param payload - {url}
+     */
+    function validateAndReturn(url: string): string {
+        return $sce.trustAsResourceUrl(url);
+    }
 
     /**
      * @name _updateTerminal
@@ -416,9 +426,13 @@ function workspaceService(
                     const url =
                         $location.absUrl().split('#')[0] +
                         `#!/terminal?insightID=${_popup.insightID}`;
+
                     _popup.window =
-                        window.open(url, 'popup', 'height=500px,width=500px') ||
-                        undefined;
+                        window.open(
+                            validateAndReturn(url),
+                            'popup',
+                            'height=500px,width=500px'
+                        ) || undefined;
 
                     // add event
                     if (_popup.window) {

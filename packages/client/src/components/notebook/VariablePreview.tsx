@@ -45,59 +45,68 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
      * @returns Serialized State
      */
     const getStateWithBlock = (to: string) => {
-        const block = state.getBlock(to);
-
-        const s: SerializedState = {
-            dependencies: {},
-            variables: {},
-            queries: {},
-            blocks: {
-                'page-1': {
-                    id: 'page-1',
-                    widget: 'page',
-                    parent: null,
-                    data: {
-                        style: {
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            backgroundColor: '#FAFAFA',
+        try {
+            const block = state.getBlock(to);
+            const s: SerializedState = {
+                dependencies: {},
+                variables: {},
+                queries: {},
+                blocks: {
+                    'page-1': {
+                        id: 'page-1',
+                        widget: 'page',
+                        parent: null,
+                        data: {
+                            style: {
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                backgroundColor: '#FAFAFA',
+                            },
+                        },
+                        listeners: {
+                            onPageLoad: [],
+                        },
+                        slots: {
+                            content: {
+                                name: 'content',
+                                children: [to],
+                            },
                         },
                     },
-                    listeners: {
-                        onPageLoad: [],
-                    },
-                    slots: {
-                        content: {
-                            name: 'content',
-                            children: [to],
-                        },
+                    [to]: {
+                        id: block.id,
+                        widget: block.widget,
+                        data: block.data,
+                        parent: null,
+                        listeners: block.listeners,
+                        slots: block.slots,
                     },
                 },
-                [to]: {
-                    id: block.id,
-                    widget: block.widget,
-                    data: block.data,
-                    parent: null,
-                    listeners: block.listeners,
-                    slots: block.slots,
-                },
-            },
-        };
+            };
 
-        return s;
+            return s;
+        } catch {
+            return null;
+        }
     };
 
     const preview = useMemo(() => {
         if (variable.type === 'block') {
-            return (
-                <StyledBlocksBox>
-                    <BlocksRenderer
-                        state={getStateWithBlock(variable.to)}
-                        preview={true}
-                    />
-                </StyledBlocksBox>
-            );
+            const config = getStateWithBlock(variable.to);
+            if (config) {
+                return (
+                    <StyledBlocksBox>
+                        <BlocksRenderer state={config} preview={true} />
+                    </StyledBlocksBox>
+                );
+            } else {
+                return (
+                    <Typography variant="body2" fontWeight="bold" color="error">
+                        Block is no longer available
+                    </Typography>
+                );
+            }
         } else {
             return (
                 <Typography variant="body2" fontWeight="bold">
@@ -113,6 +122,26 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
     }, [variable]);
 
     const previewValue = useMemo(() => {
+        let val;
+
+        if (variable.type === 'block') {
+            try {
+                val = state.getBlock(variable.to).data?.value;
+            } catch {
+                val = 'undefined';
+            }
+        } else {
+            if (
+                typeof state.getVariable(variable.to, variable.type) !==
+                'string'
+            ) {
+                val = JSON.stringify(
+                    state.getVariable(variable.to, variable.type),
+                );
+            } else {
+                val = state.getVariable(variable.to, variable.type);
+            }
+        }
         return (
             <>
                 <Stack direction="row">
@@ -125,18 +154,7 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                     <Typography variant="body2" fontWeight="bold">
                         Value:{' '}
                     </Typography>
-                    <Typography variant="body2">
-                        {variable.type === 'block'
-                            ? state.getBlock(variable.to).data?.value
-                            : typeof state.getVariable(
-                                  variable.to,
-                                  variable.type,
-                              ) !== 'string'
-                            ? JSON.stringify(
-                                  state.getVariable(variable.to, variable.type),
-                              )
-                            : state.getVariable(variable.to, variable.type)}
-                    </Typography>
+                    <Typography variant="body2">{val}</Typography>
                 </Stack>
             </>
         );

@@ -33,7 +33,10 @@ export type VariableType =
     | 'model' // X
     | 'vector' // X
     | 'storage' // X
-    | 'function'; // X
+    | 'function' // X
+    | 'JSON'
+    | 'date'
+    | 'array';
 
 /**
  * Variables
