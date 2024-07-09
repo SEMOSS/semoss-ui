@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -33,12 +33,14 @@ import {
     fetchMainUses,
     fetchDependencies,
     determineUserPermission,
+    DetailsForm,
+    AppDetailsRef,
 } from '@/components/app';
 import { ShareOverlay } from '@/components/workspace';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
-import { formatPermission } from '@/utility';
+import { formatPermission, toTitleCase } from '@/utility';
 
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import EditIcon from '@mui/icons-material/Edit';
@@ -104,11 +106,11 @@ const Sections = styled('div')({
     marginLeft: '12.4rem',
 });
 
-const SectionHeading = styled(Typography)({
+const SectionHeading = styled(Typography)(({ theme }) => ({
     fontSize: 20,
     fontWeight: '550',
     marginBottom: '0.75rem',
-});
+}));
 
 const TitleSection = styled('section')({
     display: 'flex',
@@ -130,12 +132,12 @@ const TitleSectionBodyWrapper = styled('div')({
     justifyContent: 'center',
 });
 
-const TitleSectionBody = styled(Typography)({
+const TitleSectionBody = styled(Typography)(({ theme }) => ({
     alignItems: 'center',
     color: 'rgb(0, 0, 0, 0.6)',
     display: 'flex',
     gap: '0.25rem',
-});
+}));
 
 const TagsBodyWrapper = styled('div')({
     display: 'flex',
@@ -163,15 +165,16 @@ const StyledMenuItem = styled(MenuItem)({
 });
 
 export const AppDetailPage = () => {
-    const { control, setValue, getValues, watch } =
+    const { control, setValue, getValues, watch, handleSubmit } =
         useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
-    const mainUses = watch('mainUses');
-    const tags = watch('tags');
+    const markdown = watch('markdown');
+    const tags = watch('tag');
     const appInfo = watch('appInfo');
     const userRole = watch('userRole');
     const permission = watch('permission');
     const dependencies = watch('dependencies');
+    const detailsForm = watch('detailsForm');
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
@@ -181,23 +184,31 @@ export const AppDetailPage = () => {
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
 
-    const mainUsesRef = useRef<HTMLElement>(null);
+    const [values, setValues] = useState<DetailsForm>(
+        AppDetailsFormValues.detailsForm,
+    );
+
+    const markdownRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
     const dependenciesRef = useRef<HTMLElement>(null);
     const appAccessRef = useRef<HTMLElement>(null);
     const memberAccessRef = useRef<HTMLElement>(null);
     const similarAppsRef = useRef<HTMLElement>(null);
 
-    const refs = [
-        mainUsesRef,
-        tagsRef,
-        dependenciesRef,
-        appAccessRef,
-        memberAccessRef,
-        similarAppsRef,
-    ];
+    const refs = useMemo<
+        { ref: React.MutableRefObject<HTMLElement>; display: string }[]
+    >(() => {
+        return [
+            { ref: markdownRef, display: 'Main Uses' },
+            { ref: tagsRef, display: 'Tags' },
+            { ref: dependenciesRef, display: 'Dependencies' },
+            { ref: appAccessRef, display: 'App Access' },
+            { ref: memberAccessRef, display: 'Member Access' },
+            { ref: similarAppsRef, display: 'Similar Apps' },
+        ];
+    }, []);
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
     const { appId } = useParams();
@@ -205,9 +216,8 @@ export const AppDetailPage = () => {
     useEffect(() => {
         getPermission();
         setValue('appId', appId);
-
         fetchAllData(appId);
-    }, []);
+    }, [appId]);
 
     async function getPermission() {
         const { permission: role } =
@@ -231,8 +241,12 @@ export const AppDetailPage = () => {
 
     const fetchAllData = async (id: string) => {
         Promise.allSettled([
+            fetchAppInfo(
+                monolithStore,
+                id,
+                configStore.store.config.projectMetaKeys.map((a) => a.metakey),
+            ),
             fetchMainUses(monolithStore, id),
-            fetchAppInfo(monolithStore, id),
             fetchDependencies(monolithStore, id),
         ]).then((results) =>
             results.forEach((res, idx) => {
@@ -243,19 +257,59 @@ export const AppDetailPage = () => {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
-                            setValue('mainUses', res.value.output);
-                            setValue('detailsForm.mainUses', res.value.output);
+                            setValue('appInfo', res.value.output);
+                            const output = res.value.output;
+
+                            const projectMetaKeys =
+                                configStore.store.config.projectMetaKeys;
+                            // Keep only relevant project keys defined for app details
+                            const parsedMeta = projectMetaKeys
+                                .map((k) => k.metakey)
+                                .reduce((prev, curr) => {
+                                    // tag, domain, and etc either come in as a string or a string[], format it to correct type
+                                    const found = projectMetaKeys.find(
+                                        (obj) => obj.metakey === curr,
+                                    );
+
+                                    if (curr === 'tag') {
+                                        if (typeof output[curr] === 'string') {
+                                            prev[curr] = [output[curr]];
+                                        } else {
+                                            prev[curr] = output[curr];
+                                        }
+                                    } else if (
+                                        found.display_options ===
+                                            'single-typeahead' ||
+                                        found.display_options ===
+                                            'select-box' ||
+                                        found.display_options ===
+                                            'multi-typeahead'
+                                    ) {
+                                        if (typeof output[curr] === 'string') {
+                                            prev[curr] = [output[curr]];
+                                        } else {
+                                            prev[curr] = output[curr];
+                                        }
+                                    } else {
+                                        prev[curr] = output[curr];
+                                    }
+
+                                    return prev;
+                                }, {}) as AppDetailsFormTypes['detailsForm'];
+                            setValue('detailsForm', parsedMeta);
+                            setValue('tag', parsedMeta.tag);
+                            setValues((prev) => ({ ...prev, ...parsedMeta }));
                         }
                     } else if (idx === 1) {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
-                            setValue('appInfo', res.value.output);
-                            setValue('tags', res.value.output.tag || []);
-                            setValue(
-                                'detailsForm.tags',
-                                res.value.output.tag || [],
-                            );
+                            setValue('markdown', res.value.output);
+                            setValue('detailsForm.markdown', res.value.output);
+                            setValues((prev) => ({
+                                ...prev,
+                                markdown: res.value.output || '',
+                            }));
                         }
                     } else if (idx === 2) {
                         if (res.value.type === 'error') {
@@ -297,12 +351,9 @@ export const AppDetailPage = () => {
         setIsChangeAccessModalOpen(false);
     };
 
-    const handleCloseEditDetailsModal = (reset?: boolean) => {
-        if (reset) {
-            setValue('detailsForm', {
-                mainUses,
-                tags,
-            });
+    const handleCloseEditDetailsModal = (isReset?: boolean) => {
+        if (isReset) {
+            setValue('detailsForm', values);
         }
         setIsEditDetailsModalOpen(false);
     };
@@ -329,6 +380,100 @@ export const AppDetailPage = () => {
         }
         setIsEditDependenciesModalOpen(false);
     };
+
+    // filter metakeys to the variable ones
+    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
+        (k) => {
+            return (
+                k.metakey !== 'description' &&
+                k.metakey !== 'markdown' &&
+                k.metakey !== 'tag'
+            );
+        },
+    );
+
+    // Create refs for dynamic fields
+    const createRefs = useMemo<AppDetailsRef[]>(() => {
+        const refs = [];
+        projectMetaKeys.forEach((meta) => {
+            if (detailsForm?.[meta.metakey]) {
+                refs.push({
+                    ref: React.createRef<HTMLElement>(),
+                    display: toTitleCase(meta.metakey),
+                    ...meta,
+                });
+            }
+        });
+        return refs as AppDetailsRef[];
+    }, [projectMetaKeys, detailsForm]);
+
+    // Merge default/dynamic refs for side bar navigiation
+    const detailRefs = [
+        ...refs,
+        ...createRefs.map((a) => ({ ref: a.ref, display: a.display })),
+    ];
+
+    /**
+     * @name onSubmit
+     * @desc update app details
+     * @param data - form data
+     */
+    const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
+        // copy over the defined keys
+        const meta = {} as AppDetailsFormTypes['detailsForm'];
+        if (data.detailsForm) {
+            for (const key in data.detailsForm) {
+                if (data.detailsForm[key] !== undefined) {
+                    meta[key] = data.detailsForm[key];
+                }
+            }
+        }
+
+        if (Object.keys(meta).length === 0) {
+            notification.add({
+                color: 'warning',
+                message: 'Nothing to Save',
+            });
+
+            return;
+        }
+
+        monolithStore
+            .runQuery(
+                `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                    meta,
+                )}], jsonCleanup=[true])`,
+            )
+            .then((response) => {
+                const { output, additionalOutput, operationType } =
+                    response.pixelReturn[0];
+
+                // track the errors
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+
+                    return;
+                }
+
+                // close it, refresh and succesfully message
+                notification.add({
+                    color: 'success',
+                    message: additionalOutput[0].output,
+                });
+
+                fetchAllData(appId);
+                handleCloseEditDetailsModal();
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    message: error.message,
+                });
+            });
+    });
 
     return (
         <OuterContainer>
@@ -375,7 +520,7 @@ export const AppDetailPage = () => {
                                     setIsEditDetailsModalOpen(true);
                                     setMoreVertAnchorEl(null);
                                 }}
-                                value={null}
+                                value={''}
                             >
                                 <EditIcon fontSize="small" />
                                 Edit App Details
@@ -392,8 +537,7 @@ export const AppDetailPage = () => {
                 </TopButtonsContainer>
 
                 <SidebarAndSectionsContainer>
-                    <Sidebar permission={permission} refs={refs} />
-
+                    <Sidebar permission={permission} refs={detailRefs} />
                     <Sections>
                         <TitleSection>
                             <TitleSectionImg
@@ -405,15 +549,13 @@ export const AppDetailPage = () => {
                                     {appInfo?.project_name}
                                 </SectionHeading>
                                 <TitleSectionBody variant="body1">
-                                    {() => {
-                                        if (permission === 'author') {
-                                            return <HdrAutoIcon />;
-                                        } else if (permission === 'editor') {
-                                            return <NoteAltIcon />;
-                                        } else {
-                                            return <AssignmentIcon />;
-                                        }
-                                    }}
+                                    {permission === 'author' ? (
+                                        <HdrAutoIcon />
+                                    ) : permission === 'editor' ? (
+                                        <NoteAltIcon />
+                                    ) : (
+                                        <AssignmentIcon />
+                                    )}
                                     {`${formatPermission(userRole)} Access`}
                                 </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
@@ -424,11 +566,11 @@ export const AppDetailPage = () => {
                             </TitleSectionBodyWrapper>
                         </TitleSection>
 
-                        <StyledSection ref={mainUsesRef}>
+                        <StyledSection ref={markdownRef}>
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
-                            <Typography variant="body1">{mainUses}</Typography>
+                            <Typography variant="body1">{markdown}</Typography>
                         </StyledSection>
 
                         <StyledSection ref={tagsRef}>
@@ -448,6 +590,55 @@ export const AppDetailPage = () => {
                                 </Typography>
                             )}
                         </StyledSection>
+                        <>
+                            {createRefs.map((k) => {
+                                if (
+                                    values[k.metakey] === undefined ||
+                                    !Array.isArray(values[k.metakey])
+                                ) {
+                                    return null;
+                                }
+
+                                return (
+                                    <StyledSection key={k.metakey} ref={k.ref}>
+                                        <SectionHeading variant="h2">
+                                            {k.display}
+                                        </SectionHeading>
+                                        <TagsBodyWrapper>
+                                            {k.display_options ===
+                                                'multi-checklist' ||
+                                            k.display_options ===
+                                                'multi-select' ||
+                                            k.display_options ===
+                                                'multi-typeahead' ||
+                                            k.display_options ===
+                                                'select-box' ? (
+                                                <Stack
+                                                    direction={'row'}
+                                                    spacing={1}
+                                                    flexWrap={'wrap'}
+                                                >
+                                                    {(
+                                                        detailsForm[
+                                                            k.metakey
+                                                        ] as string[]
+                                                    ).map((tag) => {
+                                                        return (
+                                                            <Chip
+                                                                key={tag}
+                                                                label={tag}
+                                                            ></Chip>
+                                                        );
+                                                    })}
+                                                </Stack>
+                                            ) : (
+                                                detailsForm[k.metakey]
+                                            )}
+                                        </TagsBodyWrapper>
+                                    </StyledSection>
+                                );
+                            })}
+                        </>
 
                         {permission !== 'discoverable' && (
                             <StyledSection ref={dependenciesRef}>
@@ -510,7 +701,8 @@ export const AppDetailPage = () => {
                             </StyledSection>
                         )}
 
-                        {permission !== 'discoverable' &&
+                        {permission &&
+                            permission !== 'discoverable' &&
                             permission !== 'readOnly' && (
                                 <StyledSection ref={memberAccessRef}>
                                     <SectionHeading variant="h2">
@@ -569,8 +761,7 @@ export const AppDetailPage = () => {
                 isOpen={isEditDetailsModalOpen}
                 onClose={handleCloseEditDetailsModal}
                 control={control}
-                getValues={getValues}
-                setValue={setValue}
+                onSubmit={onSubmit}
             />
 
             <EditDependenciesModal
@@ -608,7 +799,7 @@ const SidebarMenuItem = styled(MenuItem)({
 
 interface SidebarProps {
     permission: string;
-    refs: React.MutableRefObject<HTMLElement>[];
+    refs: { ref: React.MutableRefObject<HTMLElement>; display: string }[];
 }
 
 const Sidebar = ({ permission, refs }: SidebarProps) => {
@@ -619,31 +810,44 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
         appAccessRef,
         memberAccessRef,
         similarAppsRef,
+        ...dynamicRefs
     ] = refs;
 
     const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
         ref.current.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const canEdit = permission !== 'discoverable' && permission !== 'readOnly';
+    const canEdit =
+        permission &&
+        permission !== 'discoverable' &&
+        permission !== 'readOnly';
 
     return (
         <StyledSidebar>
             <SidebarMenuItem
-                onClick={() => scrollIntoView(mainUsesRef)}
+                onClick={() => scrollIntoView(mainUsesRef.ref)}
                 value={null}
             >
                 Main Uses
             </SidebarMenuItem>
             <SidebarMenuItem
-                onClick={() => scrollIntoView(tagsRef)}
+                onClick={() => scrollIntoView(tagsRef.ref)}
                 value={null}
             >
                 Tags
             </SidebarMenuItem>
+            {dynamicRefs?.map((ref) => (
+                <SidebarMenuItem
+                    onClick={() => scrollIntoView(ref.ref)}
+                    value={null}
+                    key={ref.display}
+                >
+                    {ref.display}
+                </SidebarMenuItem>
+            ))}
             {permission !== 'discoverable' && (
                 <SidebarMenuItem
-                    onClick={() => scrollIntoView(dependenciesRef)}
+                    onClick={() => scrollIntoView(dependenciesRef.ref)}
                     value={null}
                 >
                     Dependencies
@@ -651,7 +855,7 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
             )}
             {permission === 'author' && (
                 <SidebarMenuItem
-                    onClick={() => scrollIntoView(appAccessRef)}
+                    onClick={() => scrollIntoView(appAccessRef.ref)}
                     value={null}
                 >
                     App Access
@@ -659,7 +863,7 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
             )}
             {canEdit && (
                 <SidebarMenuItem
-                    onClick={() => scrollIntoView(memberAccessRef)}
+                    onClick={() => scrollIntoView(memberAccessRef.ref)}
                     value={null}
                 >
                     Member Access
@@ -667,7 +871,7 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
             )}
             {!canEdit && (
                 <SidebarMenuItem
-                    onClick={() => scrollIntoView(similarAppsRef)}
+                    onClick={() => scrollIntoView(similarAppsRef.ref)}
                     value={null}
                 >
                     Similar Apps
