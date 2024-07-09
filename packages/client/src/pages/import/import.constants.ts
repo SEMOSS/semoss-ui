@@ -9627,7 +9627,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Password',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'password',
                         },
                         disabled: false,
                         rules: { required: false },
