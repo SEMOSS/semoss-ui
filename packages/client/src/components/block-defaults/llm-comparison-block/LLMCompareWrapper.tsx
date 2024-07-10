@@ -106,8 +106,8 @@ const emptyModel: TypeLlmConfig = {
     alias: null,
     value: null,
     database_name: null,
-    database_subtype: null,
     database_type: null,
+    database_subtype: null,
     topP: 0,
     temperature: 0,
     length: 0,
@@ -119,6 +119,21 @@ const buildEmptyVariant = (modelCount: number): TypeVariant => {
     emptyVariantCopy.models = Array(modelCount).fill(emptyModel);
 
     return emptyVariant;
+};
+
+const modelEngineOutput = (output: any[]): TypeLlmConfig[] => {
+    return output.map((data) => {
+        return {
+            alias: data.app_name,
+            value: data.database_id,
+            database_name: data.database_name,
+            database_type: data.database_type,
+            database_subtype: data.database_subtype,
+            topP: data.TODO_FIND_NAME ? data.TODO_FIND_NAME : null,
+            temperature: data.TODO_FIND_NAME ? data.TODO_FIND_NAME : null,
+            length: data.TODO_FIND_NAME ? data.TODO_FIND_NAME : null,
+        };
+    });
 };
 
 const reducer = (state, action) => {
@@ -134,9 +149,7 @@ const reducer = (state, action) => {
 };
 
 interface LLMCompareWrapperProps {
-    /**
-     * Children els to render
-     */
+    /** Children els to render */
     children: React.ReactNode;
 }
 
@@ -157,15 +170,15 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
             message:
                 'The LLM Comparison tool is currently in beta, please contact the administrator with any issues with this part of the tool',
         });
+
+        fetchAllModels();
     }, []);
 
     useEffect(() => {
         setDefaultModels();
     }, [variables.length]);
 
-    /**
-     * @desc get default models used in app and details behind them
-     */
+    /** Get default models used in app and details behind them */
     const setDefaultModels = async () => {
         const vars = [];
         variables.forEach((v) => {
@@ -205,15 +218,25 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
-    const addVariant = (index: number, variant?: TypeVariant) => {
-        const newVariant = variant
-            ? variant
-            : buildEmptyVariant(defaultLLMVariant.models.length);
+    /** Get all availabe models to configure variants with */
+    const fetchAllModels = async () => {
+        const pixel = `MyEngines(engineTypes=["MODEL"])`;
+        const res = await monolithStore.runQuery(pixel);
 
+        const modelled = modelEngineOutput(res.pixelReturn[0].output);
+
+        dispatch({
+            type: 'field',
+            field: 'allModels',
+            value: modelled,
+        });
+    };
+
+    const addVariant = (index: number, variant: TypeVariant) => {
         let variantsCopy = llmVariants;
         variantsCopy = [
             ...variantsCopy.slice(0, index),
-            newVariant,
+            variant,
             ...variantsCopy.slice(index),
         ];
 
@@ -278,36 +301,74 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
-    const setEditorVariant = (index: number | null) => {
+    const setEditorVariant = (index: number | null, duplicate?: boolean) => {
         dispatch({
             type: 'field',
-            field: 'editorVariant',
+            field: 'editorVariantIndex',
             value: index,
         });
+
+        if (index === null) {
+            dispatch({
+                type: 'field',
+                field: 'editorVariant',
+                value: null,
+            });
+        } else {
+            const variant = duplicate
+                ? llmVariants[index]
+                : buildEmptyVariant(defaultLLMVariant.models.length);
+
+            dispatch({
+                type: 'field',
+                field: 'editorVariant',
+                value: variant,
+            });
+        }
     };
 
-    const setEditorModel = (index: number | null) => {
+    const setEditorModel = (
+        variantIndex: number | null,
+        modelIndex: number | null,
+    ) => {
+        dispatch({
+            type: 'field',
+            field: 'editorVariantIndex',
+            value: variantIndex,
+        });
+        dispatch({
+            type: 'field',
+            field: 'editorModelIndex',
+            value: modelIndex,
+        });
+
         dispatch({
             type: 'field',
             field: 'editorModel',
-            value: index,
+            value:
+                variantIndex === null && modelIndex === null
+                    ? null
+                    : llmVariants[variantIndex]?.models[modelIndex],
         });
     };
 
     return (
         <LLMComparisonContext.Provider
             value={{
+                allModels: [],
                 variants: llmVariants,
                 defaultVariant: defaultLLMVariant,
                 addVariant,
-                deleteVariant: deleteVariant,
+                deleteVariant,
                 editVariant,
-                swapVariantModel: swapVariantModel,
+                swapVariantModel,
                 designerView: 'allVariants',
                 setDesignerView,
                 editorVariantIndex: null,
-                setEditorVariant,
                 editorModelIndex: null,
+                editorVariant: null,
+                editorModel: null,
+                setEditorVariant,
                 setEditorModel,
             }}
         >
