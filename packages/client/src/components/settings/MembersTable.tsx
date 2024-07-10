@@ -79,11 +79,10 @@ const StyledMemberInnerContent = styled('div')({
     alignSelf: 'stretch',
 });
 
-const StyledTableContainer = styled(Table.Container)({
+const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
     borderRadius: '12px',
-    /* Devias Drop Shadow */
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-});
+    border: `1px solid ${theme.palette.secondary.border}`,
+}));
 
 const StyledMemberTable = styled(Table)({ backgroundColor: 'white' });
 
@@ -159,11 +158,11 @@ const StyledAddMemberContainer = styled('div')({
     gap: '10px',
 });
 
-const StyledNoMembersContainer = styled('div')({
+const StyledNoMembersContainer = styled('div')(({ theme }) => ({
     width: '100%',
     borderRadius: '12px',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-});
+    border: `1px solid ${theme.palette.secondary.border}`,
+}));
 
 const StyledNoMembersDiv = styled('div')({
     width: '100%',

@@ -476,7 +476,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
-                {app?.user_permission && app.user_permission <= 2 && (
+                {app?.user_permission && app.user_permission <= 3 && (
                     <Link
                         href={`${href}/detail`}
                         rel="noopener noreferrer"
@@ -484,8 +484,10 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         underline="none"
                         target="_blank"
                     >
-                        <Menu.Item value="copy" onClick={() => {}}>
-                            Edit App Details
+                        <Menu.Item value="copy">
+                            {app.user_permission === 3
+                                ? 'View App Details'
+                                : 'Edit App Details'}
                         </Menu.Item>
                     </Link>
                 )}

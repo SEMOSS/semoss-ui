@@ -24,7 +24,7 @@ const StyledPopoverContent = styled(Popover.Content, {
 export const Moose = (props): JSX.Element => {
     const { options, value, insightID, semossCoreService } = props;
 
-    // TO-DO: Switch to Context Provider
+    // TODO: Switch to Context Provider
     const [messages, setMessages] = useState([]); // Parent needs to hold messages state, for popover close
     const [updated, setUpdated] = useState(0); // Used to see updated accordion state
     const [selectedModel, setSelectedModel] = useState<

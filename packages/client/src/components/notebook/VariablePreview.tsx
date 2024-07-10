@@ -94,7 +94,6 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
     const preview = useMemo(() => {
         if (variable.type === 'block') {
             const config = getStateWithBlock(variable.to);
-            debugger;
             if (config) {
                 return (
                     <StyledBlocksBox>

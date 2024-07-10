@@ -1160,17 +1160,29 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            defaultValue: 'text',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
+                                        display: 'chat',
+                                        value: 'chat',
                                     },
                                     {
-                                        display: 'completion',
-                                        value: 'completion',
+                                        display: 'code',
+                                        value: 'code',
+                                    },
+                                    {
+                                        display: 'codechat',
+                                        value: 'codechat',
+                                    },
+                                    {
+                                        display: 'generative',
+                                        value: 'generative',
+                                    },
+                                    {
+                                        display: 'text',
+                                        value: 'text',
                                     },
                                 ],
                             },
@@ -1181,7 +1193,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1314,17 +1326,29 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            defaultValue: 'text',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
+                                        display: 'chat',
+                                        value: 'chat',
                                     },
                                     {
-                                        display: 'completion',
-                                        value: 'completion',
+                                        display: 'code',
+                                        value: 'code',
+                                    },
+                                    {
+                                        display: 'codechat',
+                                        value: 'codechat',
+                                    },
+                                    {
+                                        display: 'generative',
+                                        value: 'generative',
+                                    },
+                                    {
+                                        display: 'text',
+                                        value: 'text',
                                     },
                                 ],
                             },
@@ -1335,7 +1359,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1468,17 +1492,29 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            defaultValue: 'text',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
+                                        display: 'chat',
+                                        value: 'chat',
                                     },
                                     {
-                                        display: 'completion',
-                                        value: 'completion',
+                                        display: 'code',
+                                        value: 'code',
+                                    },
+                                    {
+                                        display: 'codechat',
+                                        value: 'codechat',
+                                    },
+                                    {
+                                        display: 'generative',
+                                        value: 'generative',
+                                    },
+                                    {
+                                        display: 'text',
+                                        value: 'text',
                                     },
                                 ],
                             },
@@ -1489,7 +1525,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -9591,7 +9627,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Password',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'password',
                         },
                         disabled: false,
                         rules: { required: false },

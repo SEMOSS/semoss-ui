@@ -1,23 +1,36 @@
 name: CI
 
+# on:
+#     workflow_dispatch:
+#         inputs:
+#             VERSION:
+#                 description: 'VERSION'
+#                 required: true
+#                 default: '4.3.0'
 on:
-    workflow_dispatch:
-        inputs:
-            VERSION:
-                description: 'VERSION'
-                required: true
-                default: '4.3.0'
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
 
 env:
     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
     MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
     FF_USE_FASTZIP: 'true'
+    GPG_PASS_PHRASE: ${{ secrets.GPG_PASS_PHRASE }}
     RELEASE: ${{ vars.RELEASE }}
+    MAVEN_REPO_TOKEN: ${{ vars.MAVEN_REPO_TOKEN }}
+    MAVEN_REPO_TOKEN_PASS: ${{ vars.MAVEN_REPO_TOKEN_PASS }}
 
 jobs:
     pnpm_build_dev:
         runs-on: ubuntu-latest
-        if: ${{env.RELEASE != 'TRUE'}}
+        if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
             image: node:18.16.1-bullseye
         steps:
@@ -46,20 +59,31 @@ jobs:
 
             - name: Maven clean install
               run: |
-                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ github.event.inputs.VERSION }}-SNAPSHOT
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
                   rm -rf .m2/repository/org/semoss
 
-            - name: Save artifacts
-              if: success()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: semossweb-artifact
-                  path: target/semossweb-${{ github.event.inputs.VERSION }}-SNAPSHOT.war
+            # - name: Save artifacts
+            #   if: success()
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #       name: semossweb-artifact
+            #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
+                  
+            # - name: Delete old artifacts
+            #   run: |
+            #     echo "Deleting old artifacts..."
+            #     ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #       "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" | jq -r '.artifacts | sort_by(.created_at) | reverse | .[1:] | .[].id')
+            #     for ARTIFACT_ID in $ARTIFACTS; do
+            #       curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #         "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
+            #     done
+            #   env:
+            #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     pnpm_build_deploy:
         runs-on: ubuntu-latest
-        needs: pnpm_build_dev
-        if: ${{ env.RELEASE != 'TRUE' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev' }}
+        if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
         container:
             image: node:18.16.1-bullseye
         steps:
@@ -78,10 +102,13 @@ jobs:
 
             - name: Install dependencies
               run: |
+                  echo "Event Name: ${{ github.event_name }}"
+                  echo "Release: ${{ vars.RELEASE }}"
                   apt-get update
                   apt-get install -y maven gnupg2
-                  echo "$GPG_PRIVATE_KEY" | gpg2 --batch --import
+                  echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg2 --batch --import
                   echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+                  cat ~/.gnupg/gpg.conf
                   gpg2 --refresh-key
                   npm install -g pnpm@8
                   pnpm install
@@ -91,12 +118,24 @@ jobs:
 
             - name: Maven deploy
               run: |
-                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ github.event.inputs.VERSION }}-SNAPSHOT
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}-SNAPSHOT
                   rm -rf .m2/repository/org/semoss
 
-            - name: Save artifacts
-              if: success()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: semossweb-artifact
-                  path: target/semossweb-${{ github.event.inputs.VERSION }}-SNAPSHOT.war
+            # - name: Save artifacts
+            #   if: success()
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #       name: semossweb-artifact
+            #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
+
+            # - name: Delete old artifacts
+            #   run: |
+            #     echo "Deleting old artifacts..."
+            #     ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #       "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" | jq -r '.artifacts | sort_by(.created_at) | reverse | .[1:] | .[].id')
+            #     for ARTIFACT_ID in $ARTIFACTS; do
+            #       curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #         "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
+            #     done
+            #   env:
+            #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

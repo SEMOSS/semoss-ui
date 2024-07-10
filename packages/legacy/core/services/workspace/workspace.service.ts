@@ -378,6 +378,14 @@ function workspaceService(
                 }
             },
         };
+    /**
+     * @name validateAndReturn
+     * @desc validate URL
+     * @param payload - {url}
+     */
+    function validateAndReturn(url: string): string {
+        return $sce.trustAsResourceUrl(url);
+    }
 
     /**
      * @name _updateTerminal
@@ -419,10 +427,9 @@ function workspaceService(
                         $location.absUrl().split('#')[0] +
                         `#!/terminal?insightID=${_popup.insightID}`;
 
-                    const trustedUrl = $sce.trustAsResourceUrl(url);
                     _popup.window =
                         window.open(
-                            trustedUrl,
+                            validateAndReturn(url),
                             'popup',
                             'height=500px,width=500px'
                         ) || undefined;

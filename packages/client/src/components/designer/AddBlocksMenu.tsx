@@ -4,7 +4,6 @@ import { observer } from 'mobx-react-lite';
 import {
     styled,
     Grid,
-    Collapse,
     IconButton,
     Stack,
     TextField,
@@ -20,6 +19,7 @@ const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
+    lineHeight: theme.spacing(5),
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(2),
     paddingBottom: theme.spacing(1.5),
@@ -104,18 +104,21 @@ export const AddBlocksMenu = observer((props: AddBlocksMenuProps) => {
                     alignItems="center"
                     justifyContent="end"
                 >
-                    <Collapse orientation="horizontal" in={showSearch}>
+                    {showSearch ? (
                         <TextField
                             placeholder="Search"
                             size="small"
                             sx={{
-                                width: '200px',
+                                width: '100%',
+                                maxWidth: '200px',
                             }}
                             value={search}
                             variant="outlined"
                             onChange={(e) => setSearch(e.target.value)}
                         />
-                    </Collapse>
+                    ) : (
+                        <>&nbsp;</>
+                    )}
                     <IconButton
                         color="default"
                         size="small"
