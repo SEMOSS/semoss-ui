@@ -72,16 +72,11 @@ angular
     .constant('DEBUG', true)
     .constant('PLAYGROUND', false)
     .constant('RIBBON_MESSAGE', '')
-    // .constant('RIBBON_MESSAGE', 'Please do not upload sensitive data.')
     .constant('LINKS', {
-        MHS_EXECUTIVE_DASHBOARD: {
-            display: 'Executive Dashboard',
-            url: 'https://otm.insights.health.mil/OTMExecutiveView',
-        },
-        MHS_FORMS: {
-            display: 'MHS SEMOSS Forms',
-            url: 'https://otm.insights.health.mil/Surveys/MHS/app/#/login',
-        },
+        // NAME: {
+        //     display: "Display Name",
+        //     url: "URL of Link"
+        // },
     })
     .constant('HIDDEN_WIDGETS', [])
     .constant('WIDGETS_HIDDEN_FOR_NON_ADMIN', [])
