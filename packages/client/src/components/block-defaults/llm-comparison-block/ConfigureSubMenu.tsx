@@ -1,60 +1,124 @@
-import { styled, Stack } from '@semoss/ui';
+import { styled, Stack, Button } from '@semoss/ui';
+import { useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
 import { useLLMComparison } from '@/hooks';
 import { ModelVariant } from './ModelVariant';
-import { TypeLlmConfig } from '@/components/workspace';
+import { TypeLlmComparisonForm, TypeLlmConfig } from '@/components/workspace';
 import { LLMEditor } from './LLMEditor';
+import { ArrowBack } from '@mui/icons-material';
+
+const ComparisonFormDefaulValues = {
+    models: [],
+};
+
+const StyledConfigureSubMenu = styled(Stack)(({ theme }) => ({
+    width: '100%',
+}));
 
 export const ConfigureSubMenu = () => {
+    const viewRef = useRef('allVariants');
     const {
         variants,
         defaultVariant,
         designerView,
-        editorVariantIndex,
-        editorModelIndex,
+        setDesignerView,
+        editorVariant,
+        editorModel,
     } = useLLMComparison();
+    const { handleSubmit, control, setValue } = useForm<TypeLlmComparisonForm>({
+        defaultValues: ComparisonFormDefaulValues,
+    });
 
-    return (
-        <Stack direction="column" gap={2}>
-            {designerView === 'allVariants' && (
-                <>
-                    <ModelVariant
-                        isDefault={true}
-                        variant={defaultVariant}
-                        index={-1}
-                    />
+    useEffect(() => {
+        if (designerView !== viewRef.current) {
+            viewRef.current = designerView;
 
-                    {variants.map((variant, idx: number) => (
-                        <ModelVariant
-                            variant={variant}
-                            index={idx}
-                            key={`variant-${idx}`}
-                        />
-                    ))}
-                </>
-            )}
+            if (designerView === 'allVariants') {
+                setValue('models', []);
+            } else if (designerView === 'variantEdit') {
+                setValue('models', editorVariant.models);
+            } else if (designerView === 'modelEdit') {
+                setValue('models', [editorModel]);
+            }
+        }
+    }, [designerView, editorVariant, editorModel]);
 
-            {designerView === 'editVariant' && (
-                <>
-                    {variants[editorVariantIndex].models.map(
-                        (model: TypeLlmConfig, idx: number) => (
-                            <LLMEditor
-                                key={`${model.alias}-${idx}`}
-                                model={model}
-                                index={idx}
-                            />
-                        ),
-                    )}
-                </>
-            )}
+    const onSubmit = () => {
+        //TODO
+    };
 
-            {designerView === 'editModel' && (
-                <LLMEditor
-                    model={
-                        variants[editorVariantIndex]?.models[editorModelIndex]
-                    }
-                    index={editorModelIndex}
+    const handleResetParams = () => {
+        if (designerView === 'variantEdit') {
+            setValue('models', editorVariant.models);
+        } else if (designerView === 'modelEdit') {
+            setValue('models', [editorModel]);
+        }
+    };
+
+    if (designerView === 'allVariants') {
+        return (
+            <StyledConfigureSubMenu direction="column" gap={2}>
+                <ModelVariant
+                    isDefault={true}
+                    variant={defaultVariant}
+                    index={-1}
                 />
-            )}
-        </Stack>
-    );
+
+                {variants.map((variant, idx: number) => (
+                    <ModelVariant
+                        variant={variant}
+                        index={idx}
+                        key={`variant-${idx}`}
+                    />
+                ))}
+            </StyledConfigureSubMenu>
+        );
+    } else {
+        return (
+            <StyledConfigureSubMenu direction="column" gap={2}>
+                <div>
+                    <Button
+                        variant="text"
+                        color="secondary"
+                        startIcon={<ArrowBack />}
+                        onClick={() => setDesignerView('allVariants')}
+                    >
+                        Configure
+                    </Button>
+
+                    {designerView === 'variantEdit' && (
+                        <>
+                            {editorVariant.models.map(
+                                (model: TypeLlmConfig, idx: number) => (
+                                    <LLMEditor
+                                        key={`${model.alias}-${idx}`}
+                                        control={control}
+                                        index={idx}
+                                        model={model}
+                                    />
+                                ),
+                            )}
+                        </>
+                    )}
+
+                    {designerView === 'modelEdit' && (
+                        <LLMEditor
+                            index={0}
+                            control={control}
+                            model={editorModel}
+                        />
+                    )}
+                </div>
+
+                <Stack gap={2} direction="row">
+                    <Button color="primary" onClick={onSubmit}>
+                        Save
+                    </Button>
+                    <Button variant="text" onClick={handleResetParams}>
+                        Reset Parameters
+                    </Button>
+                </Stack>
+            </StyledConfigureSubMenu>
+        );
+    }
 };
