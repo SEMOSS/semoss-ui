@@ -110,7 +110,7 @@ export const LlmCard = (props: LlmCardProps) => {
     } = llm;
 
     const handleOpenLlmEditor = () => {
-        setDesignerView('editModel');
+        setDesignerView('modelEdit');
     };
 
     return (
