@@ -12,6 +12,7 @@ import {
 
 // TODO: clean out fake data when BE is operational
 const initialState = {
+    allModels: [],
     defaultLLMVariant: {
         selected: true,
         models: [
@@ -94,6 +95,11 @@ const initialState = {
             ],
         },
     ],
+    designerView: 'allVariants',
+    editorVariantIndex: null,
+    editorModelIndex: null,
+    editorVariant: null,
+    editorModel: null,
 };
 
 const emptyVariant: TypeVariant = {
@@ -355,19 +361,19 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
     return (
         <LLMComparisonContext.Provider
             value={{
-                allModels: [],
+                allModels: state.allModels,
                 variants: llmVariants,
                 defaultVariant: defaultLLMVariant,
                 addVariant,
                 deleteVariant,
                 editVariant,
                 swapVariantModel,
-                designerView: 'allVariants',
+                designerView: state.designerView,
                 setDesignerView,
-                editorVariantIndex: null,
-                editorModelIndex: null,
-                editorVariant: null,
-                editorModel: null,
+                editorVariantIndex: state.editorVariantIndex,
+                editorModelIndex: state.editorModelIndex,
+                editorVariant: state.editorVariant,
+                editorModel: state.editorModel,
                 setEditorVariant,
                 setEditorModel,
             }}
