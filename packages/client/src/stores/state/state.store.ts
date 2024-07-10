@@ -197,23 +197,49 @@ export class StateStore {
     }
 
     /**
-     * Gets the token by it's pointer
+     * Gets the variable by it's pointer
      * @param pointer
      * @param type
+     * @param path - {{.isLoading}} {{.data.value}}
      * @returns
      */
-    getVariable(pointer: string, type: VariableType): Variable | unknown {
+    getVariable(
+        pointer: string,
+        type: VariableType,
+        path?: string[],
+    ): Variable | unknown {
         try {
             if (pointer) {
                 if (type === 'block') {
-                    const block = this.getBlock(pointer);
+                    // const block = this.getBlock(pointer);
+                    const block = this._store.blocks[pointer];
 
-                    // TO DO: Genericize this, is it always going to be block.value -- other properties user would like to tie to?
-                    return block.data.value as string;
+                    // Old Version of JSON - notebooks, will be dependent on the .value and may crash
+                    if (path && path.length === 1) {
+                        return block.data.value as string;
+                    } else {
+                        if (block) {
+                            // get the search path
+                            const s = path.slice(1).join('.');
+                            return getValueByPath(block.data, s);
+                        }
+                    }
                 } else if (type === 'query') {
-                    const query = this.getQuery(pointer);
+                    const query = this._store.queries[pointer];
 
                     return query.output;
+                    if (pointer !== path[0]) {
+                    } else {
+                        const key = path[2];
+                        if (query) {
+                            if (key in query._exposed) {
+                                // get the search path
+                                const s = path.slice(2).join('.');
+                                return getValueByPath(query._exposed, s);
+                            }
+                        }
+                    }
+                    // get the attribute key
                 } else if (type === 'cell') {
                     const query = this.getQuery(splitAtPeriod(pointer, 'left'));
                     const cell = query.getCell(splitAtPeriod(pointer, 'right'));
@@ -258,18 +284,16 @@ export class StateStore {
      * @returns
      */
     getAlias(pointer: string): string {
-        const alias = 'needs to change';
+        let alias = '';
+        // Do we need to change how variables are stored to get rid of this iteration
+        Object.entries(this._store.variables).forEach((keyValue) => {
+            const variable = keyValue[1];
 
+            if (variable.to === pointer) {
+                alias = keyValue[0];
+            }
+        });
         return alias;
-        // // Do we need to change how variables are stored to get rid of this iteration
-        // Object.entries(this._store.variables).forEach((val) => {
-        //     const variable = val[1];
-
-        //     if (variable.to === pointer) {
-        //         alias = variable.alias;
-        //     }
-        // });
-        // return alias;
     }
 
     /**
@@ -398,7 +422,11 @@ export class StateStore {
         // get the keys in the path
         const path = cleaned.split('.');
 
-        if (path[0] === 'query' && path[2] === 'cell') {
+        if (
+            path[0] === 'query' &&
+            this._store.queries[path[1]] && // checks for variables that are named "query"
+            path[2] === 'cell'
+        ) {
             // check if the id is there
             const queryId = path[1];
             const cellId = path[3];
@@ -415,7 +443,11 @@ export class StateStore {
                     return getValueByPath(cell._exposed, s);
                 }
             }
-        } else if (path[0] === 'query' && path[2] !== 'cell') {
+        } else if (
+            path[0] === 'query' &&
+            this._store.queries[path[1]] && // checks for variables that are named "query"
+            path[2] !== 'cell'
+        ) {
             // check if the id is there
             const queryId = path[1];
 
@@ -431,7 +463,8 @@ export class StateStore {
                     return getValueByPath(query._exposed, s);
                 }
             }
-        } else if (path[0] === 'block' && path[1]) {
+        } else if (path[0] === 'block' && this._store.blocks[path[1]]) {
+            // checks for variables that are named block
             // check if the id is there
             const blockId = path[1];
 
@@ -444,7 +477,16 @@ export class StateStore {
             }
         } else if (this._store.variables[path[0]]) {
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(variable.to, variable.type);
+
+            if (
+                variable.type === 'query' &&
+                path.length > 1 &&
+                variable.to !== path[1]
+            ) {
+                return expression;
+            }
+
+            const value = this.getVariable(variable.to, variable.type, path);
 
             return value;
         }
@@ -1180,7 +1222,7 @@ export class StateStore {
      * @param id - new id for variable
      */
     private renameVariable = (old: string, id: string) => {
-        if (this._store.variables[old]) {
+        if (this._store.variables[id]) {
             return false;
         } else {
             this._store.variables[id] = this._store.variables[old];
