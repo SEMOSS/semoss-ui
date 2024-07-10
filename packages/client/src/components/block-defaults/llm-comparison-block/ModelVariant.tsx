@@ -17,7 +17,6 @@ import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useLLMComparison } from '@/hooks';
-import { LLMSwapCard } from './LLMSwapCard';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -76,28 +75,8 @@ export const ModelVariant = (props: ModelVariantProps) => {
         cardProps,
     } = props;
     const [hovered, setHovered] = useState(false);
-    const {
-        addVariant,
-        deleteVariant,
-        editVariant,
-        setDesignerView,
-        setEditorVariant,
-    } = useLLMComparison();
-
-    // TODO: Delete when BE is functional and no longer needed
-    const buildFakeModelForTest = (num: number) => {
-        return {
-            alias: 'alias',
-            value: `value-${num}`,
-            database_name: 'database name',
-            database_subtype: 'DB subType',
-            database_type: 'DB type',
-            icon: 'icon',
-            topP: num,
-            temperature: 96.7,
-            length: num,
-        };
-    };
+    const { deleteVariant, editVariant, setDesignerView, setEditorVariant } =
+        useLLMComparison();
 
     const handleToggleSelected = () => {
         const updatedVariant = { ...variant };
@@ -105,10 +84,9 @@ export const ModelVariant = (props: ModelVariantProps) => {
         editVariant(index, updatedVariant);
     };
 
-    const handleAddNewVariant = () => {
-        addVariant(index);
+    const handleOpenVariantEditor = (duplicate: boolean) => {
+        setEditorVariant(index, duplicate);
         setDesignerView('editVariant');
-        setEditorVariant(index + 1);
     };
 
     return (
@@ -121,7 +99,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
             onBlur={() => setHovered(false)}
         >
             <StyledVariantHeader>
-                <Stack direction="row">
+                <Stack direction="row" alignContent="center">
                     <IconButton onClick={handleToggleSelected}>
                         {variant.selected ? (
                             <PushPinRounded />
@@ -144,33 +122,16 @@ export const ModelVariant = (props: ModelVariantProps) => {
             </StyledVariantHeader>
 
             <StyledVariantBox isVertical={orientation === 'column'}>
-                {variant?.models.map((model: TypeLlmConfig, mIdx: number) => {
-                    if (!model) {
-                        return (
-                            <LLMSwapCard
-                                key={`llm-card--variant-${index}--model-${mIdx}`}
-                                variantIndex={index}
-                                modelIndex={mIdx}
-                                size={
-                                    cardProps?.size ? cardProps.size : 'medium'
-                                }
-                            />
-                        );
-                    } else {
-                        return (
-                            <LlmCard
-                                key={`llm-card--variant-${index}--model-${mIdx}`}
-                                llm={model}
-                                variantIndex={index}
-                                modelIndex={mIdx}
-                                isDefault={isDefault}
-                                size={
-                                    cardProps?.size ? cardProps.size : 'medium'
-                                }
-                            />
-                        );
-                    }
-                })}
+                {variant?.models.map((model: TypeLlmConfig, mIdx: number) => (
+                    <LlmCard
+                        key={`llm-card--variant-${index}--model-${mIdx}`}
+                        llm={model}
+                        variantIndex={index}
+                        modelIndex={mIdx}
+                        isDefault={isDefault}
+                        size={cardProps?.size ? cardProps.size : 'medium'}
+                    />
+                ))}
             </StyledVariantBox>
 
             <Collapse in={hovered}>
@@ -178,7 +139,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     <Button
                         variant="text"
                         color="secondary"
-                        onClick={() => addVariant(index)}
+                        onClick={() => handleOpenVariantEditor(false)}
                         startIcon={<Add />}
                     >
                         Add Variant
@@ -186,7 +147,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     <Button
                         variant="text"
                         color="secondary"
-                        onClick={() => addVariant(index, variant)}
+                        onClick={() => handleOpenVariantEditor(true)}
                         startIcon={<ContentCopy />}
                     >
                         Duplicate
