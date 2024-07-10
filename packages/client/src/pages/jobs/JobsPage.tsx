@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GridRowSelectionModel } from '@mui/x-data-grid';
 import {
+    Add,
     Bedtime,
     ErrorRounded,
     NotStartedOutlined,
@@ -16,18 +17,23 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { useRootStore } from '@/hooks';
+import { useDebounce, useRootStore } from '@/hooks';
 import { AvTimer } from '@mui/icons-material';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
-import { HistoryJob, Job, JobUIState, PixelReturnJob } from './jobs.types';
 import {
-    convertDeltaToRuntimeString,
-    convertTimeToFrequencyString,
-    convertTimetoDate,
-} from './job.utils';
+    HistoryJob,
+    HistoryPaginationProps,
+    Job,
+    JobBuilder,
+    JobUIState,
+    PixelReturnJob,
+} from './job.types';
+import { convertDeltaToRuntimeString, convertTimetoDate } from './job.utils';
 import { JobsTable } from './JobsTable';
 import { runPixel } from '@/api';
+import { JobBuilderModal } from './JobBuilderModal';
+import { DeleteJobModal } from './DeleteJobModal';
 
 export function JobsPage() {
     const { monolithStore } = useRootStore();
@@ -40,6 +46,9 @@ export function JobsPage() {
 
     const [failedJobCount, setFailedJobCount] = useState<number>(0);
 
+    const [initalBuilderState, setInitialBuilderState] =
+        useState<JobBuilder>(null);
+
     const [jobs, setJobs] = useState<Job[]>([]);
     const [jobsLoading, setJobsLoading] = useState<boolean>(false);
 
@@ -50,10 +59,15 @@ export function JobsPage() {
 
     const [history, setHistory] = useState<HistoryJob[]>([]);
     const [historyLoading, setHistoryLoading] = useState<boolean>(false);
+    const [historySearch, setHistorySearch] = useState('');
+    const [historySearchBuffer, setHistorySearchBuffer] = useState('');
+    const [historyPage, setHistoryPage] = useState<number>(0);
+    const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
+    const [historyCount, setHistoryCount] = useState<number>(-1);
 
     const getJobs = () => {
         setJobsLoading(true);
-        let pixel = 'META|ListAllJobs()';
+        const pixel = 'META|ListAllJobs()';
         monolithStore
             .runQuery<[Record<string, PixelReturnJob>]>(pixel)
             .then((response) => {
@@ -69,40 +83,21 @@ export function JobsPage() {
                     const pixelJobs: Record<string, PixelReturnJob> =
                         response.pixelReturn[0].output;
                     const jobs: Job[] = Object.values(pixelJobs).map((job) => {
-                        let jobUIState: JobUIState;
-                        try {
-                            jobUIState = JSON.parse(
-                                job.uiState.replace(/\\"/g, "'"),
-                            );
-                        } catch (e) {
-                            return {
-                                id: job.jobId,
-                                name: job.jobName,
-                                type: 'Custom',
-                                frequencyString: job.cronExpression,
-                                timeZone: job.cronTz,
-                                tags: job.jobTags.split(','),
-                                lastRun: job.PREV_FIRE_TIME,
-                                nextRun: job.NEXT_FIRE_TIME,
-                                ownerId: job.USER_ID,
-                                isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
-                                group: job.jobGroup,
-                            };
-                        }
-
                         return {
                             id: job.jobId,
                             name: job.jobName,
-                            type: jobUIState.jobType,
-                            frequencyString:
-                                convertTimeToFrequencyString(jobUIState),
-                            timeZone: jobUIState.cronTimeZone,
-                            tags: job.jobTags.split(','),
+                            type: 'Custom',
+                            cronExpression: job.cronExpression,
+                            timeZone: job.cronTz,
+                            tags: (job?.jobTags ?? '')
+                                .split(',')
+                                .filter((tag) => !!tag),
                             lastRun: job.PREV_FIRE_TIME,
                             nextRun: job.NEXT_FIRE_TIME,
                             ownerId: job.USER_ID,
                             isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
                             group: job.jobGroup,
+                            pixel: job.recipe,
                         };
                     });
 
@@ -140,7 +135,7 @@ export function JobsPage() {
     const pauseJobs = async () => {
         let pixel = ``;
         selectedPausedJobs.forEach((job) => {
-            pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["undefined"]);`;
+            pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
             await runPixel(pixel);
@@ -154,10 +149,23 @@ export function JobsPage() {
         }
     };
 
-    const getHistory = () => {
+    const loadHistory = async (
+        page: number,
+        rowsPerPage: number,
+        search: string,
+    ) => {
         setHistoryLoading(true);
-        let pixel = 'META|SchedulerHistory()';
-        monolithStore
+        let pixel = 'META|SchedulerHistory(';
+        if (search) {
+            pixel += 'filters=[Filter(SMSS_JOB_RECIPES__JOB_NAME ?like "';
+            pixel += search;
+            pixel += '")],';
+        }
+        pixel += 'limit=' + rowsPerPage + ',';
+        pixel += 'offset=' + page * rowsPerPage + ' ';
+        pixel += ')';
+
+        return monolithStore
             .runQuery<
                 [
                     {
@@ -264,12 +272,11 @@ export function JobsPage() {
                                     headers,
                                     'SUCCESS',
                                 )
-                                    ? output['data'].values[valueIdx][
-                                          headers['SUCCESS']
-                                      ] == 'true' ||
-                                      output['data'].values[valueIdx][
-                                          headers['SUCCESS']
-                                      ] == 'True'
+                                    ? JSON.stringify(
+                                          output['data'].values[valueIdx][
+                                              headers['SUCCESS']
+                                          ],
+                                      ) == 'true'
                                     : false,
                                 // appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
                                 jobTags: Object.prototype.hasOwnProperty.call(
@@ -285,12 +292,11 @@ export function JobsPage() {
                                     headers,
                                     'IS_LATEST',
                                 )
-                                    ? output['data'].values[valueIdx][
-                                          headers['IS_LATEST']
-                                      ] == 'true' ||
-                                      output['data'].values[valueIdx][
-                                          headers['IS_LATEST']
-                                      ] == 'True'
+                                    ? JSON.stringify(
+                                          output['data'].values[valueIdx][
+                                              headers['IS_LATEST']
+                                          ],
+                                      ) == 'true'
                                     : false,
                                 //capture scheduler output
                                 schedulerOutput:
@@ -307,13 +313,96 @@ export function JobsPage() {
                             historyData.push(job);
                         }
                     }
-                    setFailedJobCount(
-                        historyData.filter((job) => !job.success).length,
+                    return historyData;
+                }
+            })
+            .finally(() => {
+                setHistoryLoading(false);
+            });
+    };
+
+    const getHistory = async (paginationProps: HistoryPaginationProps = {}) => {
+        const { page, rowsPerPage, search, reload } = paginationProps;
+        const oldSearch = historySearch;
+        const oldNumOfRows = historyRowsPerPage;
+        const oldPage = historyPage;
+        const oldHistoryData = history;
+
+        const newSearch = search ?? oldSearch;
+        const newNumOfRows = rowsPerPage ?? oldNumOfRows;
+        const newPage =
+            newSearch !== oldSearch
+                ? 0
+                : Math.floor(((page ?? oldPage) * oldNumOfRows) / newNumOfRows);
+
+        if (
+            newPage !== oldPage ||
+            newNumOfRows !== oldNumOfRows ||
+            newSearch !== oldSearch ||
+            reload
+        ) {
+            setHistorySearch(newSearch);
+
+            const newHistoryData = await loadHistory(
+                newPage,
+                newNumOfRows,
+                newSearch,
+            );
+
+            if (newHistoryData && newHistoryData.length) {
+                if (newHistoryData.length < newNumOfRows) {
+                    setHistoryCount(
+                        newPage * newNumOfRows + newHistoryData.length,
                     );
-                    setHistory(historyData);
+                } else {
+                    setHistoryCount(-1);
+                }
+                setHistoryPage(newPage);
+                setHistoryRowsPerPage(newNumOfRows);
+                setHistory(newHistoryData);
+            } else if (newPage > oldPage && newNumOfRows === oldNumOfRows) {
+                setHistoryCount(oldPage * oldNumOfRows + oldHistoryData.length);
+            } else if (newPage !== 0) {
+                setHistoryCount(-1);
+                getHistory({
+                    page: 0,
+                    rowsPerPage: newNumOfRows,
+                    search: newSearch,
+                });
+            } else {
+                setHistoryCount(0);
+                setHistory([]);
+            }
+        }
+    };
+
+    const getFailedJobCount = () => {
+        let pixel =
+            'META|SchedulerHistory(filters=[Filter(SMSS_AUDIT_TRAIL__SUCCESS == "false")])';
+        monolithStore
+            .runQuery<
+                [
+                    {
+                        data: {
+                            values: string[][];
+                            headers: string[];
+                        };
+                    },
+                ]
+            >(pixel)
+            .then((response) => {
+                const type = response.pixelReturn[0].operationType[0];
+                if (type.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message:
+                            'Something went wrong. Failed job history could not be retrieved.',
+                    });
+                } else {
+                    const output = response.pixelReturn[0].output;
+                    setFailedJobCount(output['data'].values.length);
                 }
             });
-        setHistoryLoading(false);
     };
 
     const filteredJobs = useMemo(() => {
@@ -339,10 +428,19 @@ export function JobsPage() {
     }, [rowSelectionModel]);
 
     useEffect(() => {
-        // initial render to get all jobs/history
+        // initial render
         getJobs();
-        getHistory();
+        getHistory({ reload: true });
+        getFailedJobCount();
     }, []);
+
+    useDebounce(
+        () => {
+            getHistory({ search: historySearchBuffer });
+        },
+        [historySearchBuffer],
+        400,
+    );
 
     return (
         <Stack spacing={2}>
@@ -416,15 +514,25 @@ export function JobsPage() {
                             Resume
                         </Button>
                     </span>
-                    {/* <span>
+                    <span>
                         <Button
                             size="medium"
                             variant="contained"
                             startIcon={<Add />}
+                            onClick={() =>
+                                setInitialBuilderState({
+                                    id: null,
+                                    name: '',
+                                    pixel: '',
+                                    tags: [],
+                                    cronExpression: '0 0 12 * * *',
+                                    cronTz: 'Eastern Standard Time',
+                                })
+                            }
                         >
                             Add
                         </Button>
-                    </span> */}
+                    </span>
                 </Stack>
             </Stack>
             <JobsTable
@@ -432,46 +540,34 @@ export function JobsPage() {
                 jobsLoading={jobsLoading}
                 rowSelectionModel={rowSelectionModel}
                 setRowSelectionModel={setRowSelectionModel}
-                getHistory={getHistory}
+                getHistory={() => getHistory({ reload: true })}
+                setInitialBuilderState={setInitialBuilderState}
                 showDeleteJobModal={(job: Job) => setJobToDelete(job)}
             />
-            <JobHistory history={history} historyLoading={historyLoading} />
-            <Modal
-                onClose={() => {
-                    setJobToDelete(null);
-                }}
-                open={jobToDelete !== null}
-            >
-                <Modal.Content>
-                    <Modal.Title>Delete Job</Modal.Title>
-                    <Modal.Content>
-                        {JSON.stringify(jobToDelete)}
-                        <Typography variant="body1">
-                            Are you sure you want to delete {jobToDelete?.name}?
-                            This action is permanent.
-                        </Typography>
-                    </Modal.Content>
-                    <Modal.Actions>
-                        <Button
-                            variant="text"
-                            onClick={() => {
-                                setJobToDelete(null);
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="error"
-                            onClick={() => {
-                                deleteJob(jobToDelete.id, jobToDelete.group);
-                            }}
-                        >
-                            Delete
-                        </Button>
-                    </Modal.Actions>
-                </Modal.Content>
-            </Modal>
+            <JobHistory
+                history={history}
+                historyLoading={historyLoading}
+                historyCount={historyCount}
+                historyPage={historyPage}
+                historyRowsPerPage={historyRowsPerPage}
+                onPageChange={(page) => getHistory({ page })}
+                onRowsPerPageChange={(rowsPerPage) =>
+                    getHistory({ rowsPerPage })
+                }
+                onSearchChange={setHistorySearchBuffer}
+            />
+            <DeleteJobModal
+                job={jobToDelete}
+                isOpen={jobToDelete !== null}
+                close={() => setJobToDelete(null)}
+                deleteJob={deleteJob}
+            />
+            <JobBuilderModal
+                isOpen={initalBuilderState !== null}
+                initialBuilder={initalBuilderState}
+                close={() => setInitialBuilderState(null)}
+                getJobs={getJobs}
+            />
         </Stack>
     );
 }

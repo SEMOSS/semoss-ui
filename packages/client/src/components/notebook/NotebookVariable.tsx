@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -73,8 +73,12 @@ const StyledIcon = styled(Icon)(({ theme }) => ({
     color: 'rgb(0,0,0)',
 }));
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
+const StyledErrorTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.error.main,
+}));
+
+const StyledCapitalizedTypography = styled(Typography)(() => ({
+    textTransform: 'capitalize',
 }));
 
 const StyledAnchorSpan = styled('span')(({ theme }) => ({
@@ -86,15 +90,52 @@ const StyledStack = styled(Stack)(({ theme }) => ({
     width: '80%',
 }));
 
+const StyledTextField = styled(TextField)(() => ({
+    padding: '0px',
+}));
+
 interface NotebookTokenProps {
     /** Id of the variable */
     id: string;
     /** Variable Value */
     variable: Variable;
+    /** Engines loaded in root variable menu */
+    engines: {
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+    };
 }
 
 export const NotebookVariable = observer((props: NotebookTokenProps) => {
-    const { id, variable } = props;
+    const { id, variable, engines } = props;
     const { state } = useBlocks();
     const notification = useNotification();
 
@@ -126,6 +167,31 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
             });
         }
     };
+
+    /**
+     * Effects/Memos
+     */
+    const getVariableTypeDisplay: string = useMemo(() => {
+        if (
+            variable.type !== 'query' &&
+            variable.type !== 'block' &&
+            variable.type !== 'cell'
+        ) {
+            const engineId = state.getVariable(variable.to, variable.type);
+            const engine = engines[`${variable.type}s`]
+                ? engines[`${variable.type}s`].find(
+                      (engineValue) => engineValue.app_id === engineId,
+                  )
+                : null;
+            if (engine) {
+                return engine.app_name;
+            } else {
+                return variable.type;
+            }
+        } else {
+            return variable.type;
+        }
+    }, [variable.type, engines]);
 
     return (
         <StyledListItem
@@ -193,9 +259,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                             >
                                 <Stack direction="row" alignItems="center">
                                     <Delete color="error" />
-                                    <StyledTypography variant="body2">
+                                    <StyledErrorTypography variant="body2">
                                         Delete
-                                    </StyledTypography>
+                                    </StyledErrorTypography>
                                 </Stack>
                             </Menu.Item>
                         </Menu>
@@ -241,13 +307,14 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                         >
                                             {variable.alias}
                                         </Typography>
-                                        <Typography variant="body2">
-                                            {variable.type}
-                                        </Typography>
+                                        <StyledCapitalizedTypography variant="body2">
+                                            {getVariableTypeDisplay}
+                                        </StyledCapitalizedTypography>
                                     </StyledPointerStack>
                                 ) : (
                                     <StyledStack spacing={1} direction="column">
-                                        <TextField
+                                        <StyledTextField
+                                            className="notebook-variable__alias-name-text-field"
                                             inputRef={(input) =>
                                                 input && input.focus()
                                             }
@@ -256,6 +323,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             size={'small'}
                                             variant="standard"
                                             value={newTokenAlias}
+                                            helperText={
+                                                <em>
+                                                    Press enter to update
+                                                    variable name
+                                                </em>
+                                            }
                                             onChange={(e) => {
                                                 setNewTokenAlias(
                                                     e.target.value,
@@ -263,8 +336,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
-                                                    console.log('Save alias');
-
                                                     setOpenRenameAlias(false);
                                                     setNewTokenAlias(
                                                         newTokenAlias,
@@ -290,18 +361,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                 setNewTokenAlias(
                                                     variable.alias,
                                                 );
-
-                                                notification.add({
-                                                    color: 'warning',
-                                                    message: `Unsuccesfully renamed variable ${variable.alias}, press enter to save.`,
-                                                });
                                             }}
                                             InputProps={{
                                                 disableUnderline: true,
                                             }}
-                                        />
-                                        <StyledLinearProgress
-                                            color={'warning'}
                                         />
                                     </StyledStack>
                                 )}
@@ -326,6 +389,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             onClose={() => {
                                                 setPopoverAnchorEl(null);
                                             }}
+                                            engines={engines}
                                         />
                                     </div>
                                 )}

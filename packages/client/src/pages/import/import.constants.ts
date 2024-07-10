@@ -36,14 +36,16 @@ import TIBCO from '@/assets/img/TIBCO.png';
 import TRINO from '@/assets/img/TRINO.jpg';
 //Add Storage
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
+import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
+import CEPH from '@/assets/img/CEPH.png';
 import DREAMHOST from '@/assets/img/DREAMHOST.png';
 import DROPBOX from '@/assets/img/dropbox.png';
 import GOOGLE_CLOUD from '@/assets/img/GOOGLE_CLOUD_STORAGE.png';
 import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
-import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
-import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
+import LOCAL_FILE_SYSTEM from '@/assets/img/LOCAL_FILE_SYSTEM.png';
 import MINIO from '@/assets/img/MINIO.png';
-import CEPH from '@/assets/img/CEPH.png';
+import NETWORK_FILE_SYSTEM from '@/assets/img/NETWORK_FILE_SYSTEM.png';
+import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import SFTP from '@/assets/img/SFTP.png';
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
@@ -67,9 +69,10 @@ import ORCA from '@/assets/img/ORCA.png';
 import STABILITY_AI from '@/assets/img/STABILITY_AI.png';
 import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
+import RESTAPI from '@/assets/img/rest-api.svg';
+//Vector
 import WEVIATE from '@/assets/img/WEVIATE.png';
 import PINECONE from '@/assets/img/PINECONE.png';
-import RESTAPI from '@/assets/img/rest-api.svg';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -86,12 +89,6 @@ export const stepsOne = [
         disabled: true,
         data: 'COPY_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
     },
-    // {
-    //     name: 'Upload Database',
-    //     description: '',
-    //     disabled: true,
-    //     data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
-    // },
     {
         name: 'Build Database',
         description: '',
@@ -1027,7 +1024,8 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
-                            defaultValue: '',
+                            defaultValue:
+                                "import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1162,17 +1160,29 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            defaultValue: 'text',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
+                                        display: 'chat',
+                                        value: 'chat',
                                     },
                                     {
-                                        display: 'completion',
-                                        value: 'completion',
+                                        display: 'code',
+                                        value: 'code',
+                                    },
+                                    {
+                                        display: 'codechat',
+                                        value: 'codechat',
+                                    },
+                                    {
+                                        display: 'generative',
+                                        value: 'generative',
+                                    },
+                                    {
+                                        display: 'text',
+                                        value: 'text',
                                     },
                                 ],
                             },
@@ -1183,7 +1193,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1316,17 +1326,29 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            defaultValue: 'text',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
+                                        display: 'chat',
+                                        value: 'chat',
                                     },
                                     {
-                                        display: 'completion',
-                                        value: 'completion',
+                                        display: 'code',
+                                        value: 'code',
+                                    },
+                                    {
+                                        display: 'codechat',
+                                        value: 'codechat',
+                                    },
+                                    {
+                                        display: 'generative',
+                                        value: 'generative',
+                                    },
+                                    {
+                                        display: 'text',
+                                        value: 'text',
                                     },
                                 ],
                             },
@@ -1337,7 +1359,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -1470,17 +1492,29 @@ export const CONNECTION_OPTIONS = {
                         {
                             fieldName: 'CHAT_TYPE',
                             label: 'Chat Type',
-                            defaultValue: 'chat-completion',
+                            defaultValue: 'text',
                             options: {
                                 component: 'select',
                                 options: [
                                     {
-                                        display: 'chat-completion',
-                                        value: 'chat-completion',
+                                        display: 'chat',
+                                        value: 'chat',
                                     },
                                     {
-                                        display: 'completion',
-                                        value: 'completion',
+                                        display: 'code',
+                                        value: 'code',
+                                    },
+                                    {
+                                        display: 'codechat',
+                                        value: 'codechat',
+                                    },
+                                    {
+                                        display: 'generative',
+                                        value: 'generative',
+                                    },
+                                    {
+                                        display: 'text',
+                                        value: 'text',
                                     },
                                 ],
                             },
@@ -1491,7 +1525,7 @@ export const CONNECTION_OPTIONS = {
                             fieldName: 'INIT_MODEL_ENGINE',
                             label: 'Init Script',
                             defaultValue:
-                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(modelId = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}')",
+                                "import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
                             options: {
                                 component: 'text-field',
                             },
@@ -4946,8 +4980,16 @@ export const CONNECTION_OPTIONS = {
                                     value: 'GET',
                                 },
                                 {
+                                    display: 'HEAD',
+                                    value: 'HEAD',
+                                },
+                                {
                                     display: 'POST',
                                     value: 'POST',
+                                },
+                                {
+                                    display: 'PUT',
+                                    value: 'PUT',
                                 },
                             ],
                         },
@@ -5049,6 +5091,131 @@ export const CONNECTION_OPTIONS = {
     },
     VECTOR: {
         Connections: [
+            // {
+            //     name: 'Azure AI Search',
+            //     disable: false,
+            //     icon: META,
+            //     fields: [
+            //         {
+            //             fieldName: 'NAME',
+            //             label: 'Catalog Name',
+            //             defaultValue: '',
+            //             options: {
+            //                 component: 'text-field',
+            //             },
+            //             disabled: false,
+            //             rules: { required: true },
+            //         },
+            //         {
+            //             fieldName: 'VECTOR_TYPE',
+            //             label: 'Type',
+            //             defaultValue: 'AZURE_AI_SEARCH',
+            //             options: {
+            //                 component: 'text-field',
+            //             },
+            //             hidden: true,
+            //             disabled: true,
+            //             rules: { required: true },
+            //         },
+            //         {
+            //             fieldName: 'URL',
+            //             label: 'URL',
+            //             hidden: false,
+            //             defaultValue: '',
+            //             options: {
+            //                 component: 'text-field',
+            //             },
+            //             disabled: false,
+            //             rules: { required: true },
+            //         },
+            //         {
+            //             fieldName: 'ACCESS_KEY',
+            //             label: 'Access Key',
+            //             hidden: false,
+            //             defaultValue: '',
+            //             options: {
+            //                 component: 'password',
+            //             },
+            //             disabled: false,
+            //             rules: { required: true },
+            //         },
+            //         {
+            //             fieldName: 'EMBEDDER_ENGINE_ID',
+            //             label: 'Embedder',
+            //             defaultValue: '',
+            //             options: {
+            //                 component: 'select',
+            //                 options: [],
+            //                 pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+            //                 optionDisplay: 'database_name',
+            //                 optionValue: 'database_id',
+            //             },
+            //             disabled: false,
+            //             rules: { required: true },
+            //             helperText:
+            //                 'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+            //         },
+            //         {
+            //             fieldName: 'CONTENT_LENGTH',
+            //             label: 'Content Length',
+            //             defaultValue: '',
+            //             options: {
+            //                 component: 'text-field',
+            //             },
+            //             disabled: false,
+            //             rules: { required: true },
+            //             helperText:
+            //                 "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+            //             pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
+            //         },
+            //         {
+            //             fieldName: 'CONTENT_OVERLAP',
+            //             label: 'Content Overlap',
+            //             defaultValue: '0',
+            //             options: {
+            //                 component: 'text-field',
+            //                 options: [],
+            //             },
+            //             disabled: false,
+            //             rules: { required: true },
+            //             helperText:
+            //                 'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+            //         },
+            //         {
+            //             fieldName: 'DISTANCE_METHOD',
+            //             label: 'Distance Method',
+            //             defaultValue: 'Squared Euclidean (L2) distance',
+            //             options: {
+            //                 component: 'select',
+            //                 options: [
+            //                     {
+            //                         display: 'Squared Euclidean (L2) distance',
+            //                         value: 'Squared Euclidean (L2) distance',
+            //                     },
+            //                     {
+            //                         display: 'cosine similarity',
+            //                         value: 'cosine similarity',
+            //                     },
+            //                 ],
+            //             },
+            //             disabled: false,
+            //             rules: { required: false },
+            //             advanced: true,
+            //             helperText: '',
+            //         },
+            //         {
+            //             fieldName: 'EMBEDDINGS',
+            //             label: 'Embeddings',
+            //             defaultValue: null,
+            //             options: {
+            //                 component: 'file-upload',
+            //             },
+            //             disabled: true,
+            //             secondary: true,
+            //             rules: {},
+            //         },
+            //     ],
+            // },
             {
                 name: 'FAISS',
                 disable: false,
@@ -5186,6 +5353,16 @@ export const CONNECTION_OPTIONS = {
                 disable: false,
                 icon: WEVIATE,
                 fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
                     {
                         fieldName: 'NAME',
                         label: 'Catalog Name',
@@ -5394,9 +5571,22 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'CSV',
-                disable: true,
+                disable: false,
                 icon: CSV,
-                fields: [],
+                fields: [
+                    // baseUpload
+                    // PredictDataTypes
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
             },
             {
                 name: 'Excel',
@@ -9437,7 +9627,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Password',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'password',
                         },
                         disabled: false,
                         rules: { required: false },
@@ -10220,6 +10410,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'AMAZON_S3',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10277,6 +10468,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'CEPH',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10344,6 +10536,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: '',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10411,6 +10604,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'DROPBOX',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10478,6 +10672,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'GOOGLE_CLOUD_STORAGE',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10533,6 +10728,44 @@ export const CONNECTION_OPTIONS = {
                 fields: [],
             },
             {
+                name: 'Local File System',
+                disable: false,
+                icon: LOCAL_FILE_SYSTEM,
+                fields: [
+                    {
+                        fieldName: 'STORAGE_TYPE',
+                        label: 'Storage Type',
+                        defaultValue: 'LOCAL_FILE_SYSTEM',
+                        hidden: true,
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PATH_PREFIX',
+                        label: 'Local Path Prefix',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
                 name: 'Microsoft Azure Blob Storage',
                 disable: false,
                 icon: AZURE_BLOB,
@@ -10541,6 +10774,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'MICROSOFT_AZURE_BLOB_STORAGE',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10667,7 +10901,7 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'MINIO',
+                name: 'MinIO',
                 disable: false,
                 icon: MINIO,
                 fields: [
@@ -10675,6 +10909,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'MINIO',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -10744,6 +10979,75 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'Network File System',
+                disable: false,
+                icon: NETWORK_FILE_SYSTEM,
+                fields: [
+                    {
+                        fieldName: 'STORAGE_TYPE',
+                        label: 'Storage Type',
+                        defaultValue: 'SMB_CIFS',
+                        hidden: true,
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NETWORK_DOMAIN',
+                        label: 'Network Domain',
+                        defaultValue: 'US',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PATH_PREFIX',
+                        label: 'Network Path Prefix',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                ],
+            },
+
+            {
                 name: 'SFTP',
                 disable: false,
                 icon: SFTP,
@@ -10752,6 +11056,7 @@ export const CONNECTION_OPTIONS = {
                         fieldName: 'STORAGE_TYPE',
                         label: 'Storage Type',
                         defaultValue: 'SFTP',
+                        hidden: true,
                         options: {
                             component: 'text-field',
                         },
@@ -11174,12 +11479,20 @@ export const ENGINE_IMAGES = {
             icon: GOOGLE_DRIVE,
         },
         {
+            name: 'LOCAL_FILE_SYSTEM',
+            icon: LOCAL_FILE_SYSTEM,
+        },
+        {
             name: 'MICROSOFT_AZURE_BLOB_STORAGE',
             icon: AZURE_BLOB,
         },
         {
             name: 'MICROSOFT_ONEDRIVE',
             icon: ONEDRIVE,
+        },
+        {
+            name: 'NETWORK_FILE_SYSTEM',
+            icon: NETWORK_FILE_SYSTEM,
         },
         {
             name: 'MINIO',

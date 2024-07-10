@@ -67,6 +67,15 @@ const login = (username, password) => {
     console.log(success);
 };
 
+const loginWithOauth = (provider: 'ms' ) => {
+    const resp = await insight.actions.login({
+        type: 'oauth',
+        provider: provider
+    })
+
+    console.log(resp)
+}
+
 const logout = (username, password) => {
     const success = await actions.logout();
 
@@ -83,6 +92,61 @@ const ask = (question) => {
     // log the output
     console.log(output);
 };
+```
+
+- Ask LLM with stream
+
+```js
+import { partial, runPixel } from '@semoss/sdk';
+
+const { actions, insightId } = useInsight()
+
+const askWithStream = async () => {
+        let isCollecting = false;
+
+        const collectMessage = async () => {
+            // only continue if response hasn't come back from runPixel
+            if (!isCollecting) {
+                return;
+            }
+    
+            // get the output of partial
+            try {
+                const output = await partial(insightId);
+
+                // add the partial
+                if (output.message && output.message.total) {
+                    setAnswer(output.message.total);
+                }
+
+                // get the next partial of response
+                setTimeout(() => collectMessage(), 1000);
+            } catch (e) {
+                // noop
+            }
+        }
+
+        // start collecting
+        isCollecting = true;
+
+        // initial delay that collects partial of response
+        setTimeout(() => collectMessage(), 500);
+
+        const { errors, pixelReturn } = await runPixel(
+            `LLM(engine=["001510f8-b86e-492e-a7f0-41299775e7d9"], command=["<encode>${question}</encode>"]);`,
+            insightId,
+        );
+
+        // OR
+
+        // const response = await  actions.run(
+        //     `LLM(engine=[MODEL_ID], command=["<encode>${question}</encode>"]);`,
+        //     insightId,
+        // )
+
+        isCollecting = false
+    }
+
 ```
 
 -   Run a database query

@@ -11,7 +11,7 @@ import { Renderer } from '@/components/blocks';
 
 import { AddBlocksMenu } from './AddBlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
-import { OutlineMenu } from './OutlineMenu';
+import { LayersMenu } from './LayersMenu';
 import { Screen } from './Screen';
 import { DEFAULT_MENU, VISUALIZATION_MENU } from './designer.constants';
 
@@ -31,6 +31,7 @@ const StyledSidebarContent = styled(Paper)(({ theme }) => ({
     width: '100%',
     height: '100%',
     borderRadius: '0',
+    overflow: 'hidden',
 }));
 
 const StyledSidebarContentInner = styled('div')(({ theme }) => ({
@@ -88,7 +89,7 @@ export const Designer = observer((): JSX.Element => {
 
     // view
     const [view, setView] = useState<
-        'outline' | 'blocks' | 'visualization' | ''
+        'layers' | 'blocks' | 'visualization' | ''
     >('');
 
     // menu resize
@@ -191,13 +192,13 @@ export const Designer = observer((): JSX.Element => {
                 >
                     <Sidebar>
                         <SidebarItem
-                            selected={view === 'outline'}
-                            onClick={() => updateView('outline')}
+                            selected={view === 'layers'}
+                            onClick={() => updateView('layers')}
                         >
-                            <Tooltip title={'View Outline'} placement="right">
+                            <Tooltip title={'View Layers'} placement="right">
                                 <Layers color="inherit" />
                             </Tooltip>
-                            <SidebarText>Outline</SidebarText>
+                            <SidebarText>Layers</SidebarText>
                         </SidebarItem>
                         <SidebarItem
                             selected={view === 'blocks'}
@@ -224,7 +225,7 @@ export const Designer = observer((): JSX.Element => {
                     {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
-                                {view === 'outline' ? <OutlineMenu /> : null}
+                                {view === 'layers' ? <LayersMenu /> : null}
                                 {view === 'blocks' ? (
                                     <AddBlocksMenu
                                         title={'Add Blocks'}

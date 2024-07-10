@@ -13,6 +13,7 @@ import { observer } from 'mobx-react-lite';
 
 import { usePixel, useRootStore, useEngine } from '@/hooks';
 import { MarkdownEditor } from '@/components/common';
+import { toTitleCase } from '@/utility';
 
 const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
@@ -184,7 +185,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                 onClose(false);
             }}
         >
-            <Modal.Title>Edit {type} Details</Modal.Title>
+            <Modal.Title>Edit {toTitleCase(type)} Details</Modal.Title>
             <Modal.Content>
                 <Stack spacing={4}>
                     {engineMetaKeys.map((key) => {

@@ -6,4 +6,4 @@ export * from './LLMConfigureHeader';
 export * from './LLMSwapCard';
 export * from './LlmConfigureView';
 export * from './ModelVariant';
-export * from './VariableModelModal';
+export * from './VariantModelModal';

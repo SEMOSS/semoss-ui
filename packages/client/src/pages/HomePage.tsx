@@ -1,14 +1,13 @@
 import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    Collapse,
     Stack,
     Typography,
     Button,
     styled,
-    IconButton,
     ToggleTabsGroup,
     TextField,
+    InputAdornment,
 } from '@semoss/ui';
 
 import { useNavigate } from 'react-router-dom';
@@ -17,12 +16,12 @@ import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { WelcomeModal } from '@/components/welcome';
-import { Search, SearchOff } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { Help } from '@/components/help';
 
 import { Filterbox } from '@/components/ui';
-import UPDATED_TERMINAL from '@/assets/img/updated_terminal.png';
-import UPDATED_BUSINESS_INTELLIGENCE from '@/assets/img/updated_business_intelligence.png';
+
+// Test Comment
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -150,7 +149,6 @@ export const HomePage = observer((): JSX.Element => {
     const { favoritedApps, apps } = state;
 
     const [search, setSearch] = useState<string>('');
-    const [showSearch, setShowSearch] = useState<boolean>(true);
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
 
@@ -284,6 +282,15 @@ export const HomePage = observer((): JSX.Element => {
         return favorites.some((el) => el.project_id === id);
     };
 
+    const removeApp = (app) => {
+        const updatedApps = apps;
+        for (let i = updatedApps.length - 1; i >= 0; i--) {
+            if (updatedApps[i].project_id === app.project_id) {
+                updatedApps.splice(i, 1);
+            }
+        }
+    };
+
     return (
         <Page
             header={
@@ -305,6 +312,24 @@ export const HomePage = observer((): JSX.Element => {
                             >
                                 Apps
                             </Typography>
+
+                            <TextField
+                                placeholder="Search"
+                                size="small"
+                                sx={{
+                                    width: '200px',
+                                }}
+                                value={search}
+                                variant="outlined"
+                                onChange={(e) => setSearch(e.target.value)}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search fontSize="medium" />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
                         </Stack>
                         <Button
                             size={'large'}
@@ -404,38 +429,6 @@ export const HomePage = observer((): JSX.Element => {
                                 {'System Apps'}
                             </ToggleButton>
                         </StyledToggleButtonGroup> */}
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            justifyContent={'flex-end'}
-                        >
-                            <Collapse orientation="horizontal" in={showSearch}>
-                                <TextField
-                                    placeholder="Search"
-                                    size="small"
-                                    sx={{
-                                        width: '200px',
-                                    }}
-                                    value={search}
-                                    variant="outlined"
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </Collapse>
-                            <IconButton
-                                color="default"
-                                size="small"
-                                onClick={() => {
-                                    setShowSearch(!showSearch);
-                                    setSearch('');
-                                }}
-                            >
-                                {showSearch ? (
-                                    <SearchOff fontSize="medium" />
-                                ) : (
-                                    <Search fontSize="medium" />
-                                )}
-                            </IconButton>
-                        </Stack>
                     </Stack>
 
                     {mode != 'System' && favoritedApps.length > 0 ? (
@@ -538,6 +531,9 @@ export const HomePage = observer((): JSX.Element => {
                                             )}
                                             favorite={() => {
                                                 favoriteApp(app);
+                                            }}
+                                            onDelete={() => {
+                                                removeApp(app);
                                             }}
                                         />
                                     );

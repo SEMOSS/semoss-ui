@@ -15,3 +15,4 @@ export * from './EditDetailsModal';
 export * from './NewAppStep';
 export * from './NewAppModal';
 export * from './AppTemplates';
+export * from './AppDeleteModal';

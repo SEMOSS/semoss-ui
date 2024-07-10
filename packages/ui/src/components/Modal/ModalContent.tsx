@@ -1,4 +1,12 @@
-import { DialogContent as MuiModalContent, SxProps } from "@mui/material";
+import {
+    DialogContent as MuiModalContent,
+    SxProps,
+    styled,
+} from "@mui/material";
+
+const StyledModalContent = styled(MuiModalContent)(({ theme }) => ({
+    padding: `0 ${theme.spacing(3)} ${theme.spacing(3)}`,
+}));
 
 export interface ModalContentProps {
     /**
@@ -21,8 +29,8 @@ export interface ModalContentProps {
 export const ModalContent = (props: ModalContentProps) => {
     const { children, sx } = props;
     return (
-        <MuiModalContent sx={sx} {...props}>
+        <StyledModalContent sx={sx} {...props}>
             {children}
-        </MuiModalContent>
+        </StyledModalContent>
     );
 };

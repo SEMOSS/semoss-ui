@@ -745,7 +745,7 @@ function dashboardAssistantModalDirective(
                 }
             }
 
-            // TO-DO: Do we want this to filter frame automatically
+            // TODO: Do we want this to filter frame automatically
         }
 
         function queryHasEdits(): boolean {
@@ -827,7 +827,7 @@ function dashboardAssistantModalDirective(
          * @param event
          */
         function filterAndPreview(event) {
-            // TO-DO prevent multiple enter keydowns in a row
+            // TODO prevent multiple enter keydowns in a row
             if (event.keyCode === 13) {
                 executeNLPQuery('preview');
             }

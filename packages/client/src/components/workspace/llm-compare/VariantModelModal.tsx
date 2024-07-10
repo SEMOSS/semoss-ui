@@ -33,6 +33,7 @@ export const VariantModelModal = (props: VariantModelModalProps) => {
 
     const { handleSubmit, control, setValue } = useForm({
         defaultValues: {
+            alias: variable.alias ? variable.alias : '',
             value: variable.value ? variable.value : '',
             database_name: variable.database_name ? variable.database_name : '',
             database_subtype: variable.database_subtype

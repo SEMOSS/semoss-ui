@@ -45,35 +45,49 @@ export interface engine {
     user_permission: Role;
 }
 
+export interface AppDetailsRef {
+    metakey: string;
+    single_multi: string;
+    display_values?: string;
+    display: string;
+    display_options:
+        | 'input'
+        | 'textarea'
+        | 'markdown'
+        | 'single-checklist'
+        | 'multi-checklist'
+        | 'single-select'
+        | 'multi-select'
+        | 'single-typeahead'
+        | 'multi-typeahead'
+        | 'select-box';
+    ref: React.MutableRefObject<HTMLElement>;
+}
+
 /**
  * -----------------------------------------------------------------------
  * react-hook-form -----------------------------------------------------------
  * -----------------------------------------------------------------------
  */
+export interface DetailsForm extends Record<string, unknown> {
+    markdown: string;
+    tag: string[];
+}
+
 export interface AppDetailsFormTypes {
     appId: string;
     appInfo: any;
     userRole: Role | '';
-    permission:
-        | 'creator'
-        | 'author'
-        | 'editor'
-        | 'readOnly'
-        | 'discoverable'
-        | '';
+    permission: 'author' | 'editor' | 'readOnly' | 'discoverable' | '';
 
-    mainUses: string;
-    tags: string[];
-    detailsForm: {
-        mainUses: string;
-        tags: string[];
-    };
-
+    markdown: string;
+    tag: string[];
+    detailsForm: DetailsForm;
     dependencies: modelledDependency[];
     allDependencies: modelledDependency[];
     selectedDependencies: modelledDependency[];
 
-    requestedPermission: 'author' | 'editor' | 'readOnly' | '';
+    requestedPermission: 'OWNER' | 'EDIT' | 'READ_ONLY' | '';
     roleChangeComment: string | ReactNode;
 }
 
@@ -82,12 +96,11 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
     appInfo: null,
     userRole: '',
     permission: '',
-
-    mainUses: '',
-    tags: [],
+    markdown: '',
+    tag: [],
     detailsForm: {
-        mainUses: '',
-        tags: [],
+        markdown: '',
+        tag: [],
     },
 
     dependencies: [],
@@ -103,8 +116,16 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
  * PIXEL CALLS -----------------------------------------------------------
  * -----------------------------------------------------------------------
  */
-export const fetchAppInfo = async (monolithStore: any, appId: string) => {
-    const res = await monolithStore.runQuery(`ProjectInfo(project="${appId}")`);
+export const fetchAppInfo = async (
+    monolithStore: any,
+    appId: string,
+    metaKeys: string[],
+) => {
+    const res = await monolithStore.runQuery(
+        `GetProjectMetadata(project="${appId}", metaKeys=${JSON.stringify([
+            metaKeys,
+        ])})`,
+    );
 
     const type = res.pixelReturn[0].operationType;
     const output = res.pixelReturn[0].output;
@@ -167,15 +188,21 @@ export const fetchDependencies = async (monolithStore: any, appId: string) => {
 export const updateProjectDetails = async (
     monolithStore: any,
     appId: string,
-    markdown: string,
-    tags: string[],
+    data: object,
 ) => {
+    // copy over the defined keys
+    const meta = {};
+    if (data) {
+        for (const key in data) {
+            if (data[key] !== undefined) {
+                meta[key] = data[key];
+            }
+        }
+    }
     const res = await monolithStore.runQuery(
-        `SetProjectMetadata(project="${appId}", meta=[{"markdown": "${markdown}", "tag": [${tags.map(
-            (tag) => {
-                return `"${tag}"`;
-            },
-        )}]}])`,
+        `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+            meta,
+        )}], jsonCleanup=[true])`,
     );
 
     const type = res.pixelReturn[0].operationType;

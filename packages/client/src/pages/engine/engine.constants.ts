@@ -18,6 +18,7 @@ import { EngineQAPage } from './EngineQAPage';
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
+import { EngineSmssPage } from './EngineSmssPage';
 
 export const ENGINE_ROUTES: {
     /** Name of the route */
@@ -79,6 +80,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
+            {
+                name: 'SMSS',
+                path: 'smss',
+                component: EngineSmssPage,
+                restrict: ['OWNER'],
+            },
         ],
     },
     {
@@ -106,6 +113,12 @@ export const ENGINE_ROUTES: {
                 path: 'settings',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
+            },
+            {
+                name: 'SMSS',
+                path: 'smss',
+                component: EngineSmssPage,
+                restrict: ['OWNER'],
             },
         ],
     },
@@ -153,6 +166,12 @@ export const ENGINE_ROUTES: {
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
+            {
+                name: 'SMSS',
+                path: 'smss',
+                component: EngineSmssPage,
+                restrict: ['OWNER'],
+            },
         ],
     },
     {
@@ -180,6 +199,12 @@ export const ENGINE_ROUTES: {
                 path: 'settings',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
+            },
+            {
+                name: 'SMSS',
+                path: 'smss',
+                component: EngineSmssPage,
+                restrict: ['OWNER'],
             },
             {
                 name: 'Files',
@@ -220,6 +245,12 @@ export const ENGINE_ROUTES: {
                 path: 'settings',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
+            },
+            {
+                name: 'SMSS',
+                path: 'smss',
+                component: EngineSmssPage,
+                restrict: ['OWNER'],
             },
         ],
     },

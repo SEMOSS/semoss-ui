@@ -28,6 +28,11 @@ interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
      * Query path to bind to
      */
     queryPath: 'isLoading' | 'output';
+
+    /**
+     * Callback
+     */
+    __onChange?: () => void;
 }
 
 /**
@@ -39,6 +44,7 @@ export const QuerySelectionSettings = observer(
         path,
         label,
         queryPath,
+        __onChange,
     }: QuerySelectionSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
@@ -98,6 +104,7 @@ export const QuerySelectionSettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     setData(path, value as PathValue<D['data'], typeof path>);
+                    __onChange();
                 } catch (e) {
                     console.log(e);
                 }

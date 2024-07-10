@@ -18,7 +18,7 @@ import { AddRounded, Delete, Edit } from '@mui/icons-material';
 import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';
 import { Controller, useForm } from 'react-hook-form';
-import { VariantModelModal } from './VariableModelModal';
+import { VariantModelModal } from './VariantModelModal';
 
 const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'disableHover',

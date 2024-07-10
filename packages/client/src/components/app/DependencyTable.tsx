@@ -55,15 +55,15 @@ export const DependencyTable = (props: PropsDependencyTable) => {
                     {permission === 'author' && (
                         <Table.Cell>
                             <Stack direction="row" spacing={1}>
-                                {dep.isDiscoverable ? (
-                                    <Chip label="Discoverable" />
-                                ) : (
-                                    <Chip label="Non-Discoverable" />
-                                )}
                                 {dep.isPublic ? (
                                     <Chip label="Public" />
+                                ) : dep.isDiscoverable ? (
+                                    <Chip label="Discoverable" />
                                 ) : (
-                                    <Chip label="Non-Public" />
+                                    <>
+                                        <Chip label="Non-Discoverable" />
+                                        <Chip label="Non-Public" />
+                                    </>
                                 )}
                             </Stack>
                         </Table.Cell>

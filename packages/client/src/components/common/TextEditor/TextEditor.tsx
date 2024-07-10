@@ -262,18 +262,16 @@ export const TextEditor = (props: TextEditorProps) => {
     // Effect to re-initialize 'id' ref change
     useEffect(() => {
         modelIdRef.current = modelId;
-        console.log({ modelId });
     }, [modelId]);
 
     /**
      * @name prettifyFile
      * Use custom parsers to format file
-     * TO-DO: Save custom configs?
+     * TODO: Save custom configs?
      */
     const prettifyFile = () => {
         if (process.env.NODE_ENV == 'development') {
             let formatted = activeFile.content;
-            console.log(activeFile);
 
             if (activeFile.type === 'py') {
                 (async () => {

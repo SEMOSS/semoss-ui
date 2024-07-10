@@ -6,7 +6,6 @@ import {
     MembersTable,
     PendingMembersTable,
     SettingsTiles,
-    UpdateSMSS,
 } from '@/components/settings';
 import { useEngine } from '@/hooks';
 
@@ -34,13 +33,13 @@ export const EngineSettingsPage = () => {
                     mode="engine"
                     name={name}
                     id={id}
+                    direction="row"
                     onDelete={() => {
                         navigate(`/engine/${type.toLowerCase()}`);
                     }}
                 />
                 <PendingMembersTable mode={'engine'} id={id} />
                 <MembersTable mode={'engine'} id={id} name={name} />
-                <UpdateSMSS mode={'engine'} id={id} />
             </StyledContainer>
         </SettingsContext.Provider>
     );

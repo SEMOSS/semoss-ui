@@ -814,6 +814,9 @@ export const AppSettings = (props: AppSettingsProps) => {
                     </StyledCardContainer>
                 ) : null}
                 <StyledCardContainer>
+                    {isLoading && (
+                        <LoadingScreen.Trigger description="Updating Project" />
+                    )}
                     <StyledCardDiv>
                         <StyledCardLeft>
                             <StyledListItemHeader>

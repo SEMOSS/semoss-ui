@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -7,7 +7,6 @@ import {
     Link,
     IconButton,
     Menu,
-    MenuItem,
     styled,
     Typography,
     useNotification,
@@ -33,19 +32,22 @@ import {
     fetchMainUses,
     fetchDependencies,
     determineUserPermission,
+    DetailsForm,
+    AppDetailsRef,
 } from '@/components/app';
 import { ShareOverlay } from '@/components/workspace';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
-import { formatPermission } from '@/utility';
-
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import EditIcon from '@mui/icons-material/Edit';
-import HdrAutoIcon from '@mui/icons-material/HdrAuto';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import NoteAltIcon from '@mui/icons-material/NoteAlt';
-import ShareIcon from '@mui/icons-material/Share';
+import { formatPermission, toTitleCase } from '@/utility';
+import {
+    Edit,
+    HdrAuto,
+    MoreVert,
+    Share,
+    EditLocation,
+    RemoveRedEyeRounded,
+} from '@mui/icons-material';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -82,43 +84,36 @@ const StyledCrumb = styled(Typography, {
     }),
 }));
 
-const TopButtonsContainer = styled('div')({
+const ActionBar = styled('div')(({ theme }) => ({
     display: 'flex',
-    gap: '0.6rem',
+    gap: theme.spacing(1),
     marginLeft: 'auto',
-});
+}));
 
-const ChangeAccessButton = styled(Button)({
-    fontWeight: 'bold',
-});
-
-const SidebarAndSectionsContainer = styled('div')({
-    display: 'flex',
-});
-
-const Sections = styled('div')({
+const PageBody = styled('div')(({ theme }) => ({
+    marginLeft: '200px',
     display: 'flex',
     flexDirection: 'column',
-    width: '100%',
-    gap: '1rem',
-    marginLeft: '12.4rem',
-});
+}));
 
-const SectionHeading = styled(Typography)({
+const SectionHeading = styled(Typography)(({ theme }) => ({
     fontSize: 20,
-    fontWeight: '550',
-    marginBottom: '0.75rem',
-});
+    fontWeight: '500',
+    marginBottom: theme.spacing(1),
+}));
 
-const TitleSection = styled('section')({
+const TitleSection = styled('section')(({ theme }) => ({
     display: 'flex',
-    gap: '1rem',
-    paddingBottom: '3rem',
-});
+    gap: theme.spacing(2),
+    paddingBottom: theme.spacing(6),
+}));
 
-const TitleSectionImg = styled('img')({
-    borderRadius: '0.75rem',
-});
+const TitleSectionImg = styled('img')(({ theme }) => ({
+    borderRadius: theme.spacing(0.75),
+    height: '135px',
+    width: '160px',
+    overflow: 'hidden',
+}));
 
 const TitleSectionBodyWrapper = styled('div')({
     display: 'flex',
@@ -127,12 +122,12 @@ const TitleSectionBodyWrapper = styled('div')({
     justifyContent: 'center',
 });
 
-const TitleSectionBody = styled(Typography)({
+const TitleSectionBody = styled(Typography)(({ theme }) => ({
     alignItems: 'center',
-    color: 'rgb(0, 0, 0, 0.6)',
+    color: theme.palette.secondary.dark,
     display: 'flex',
     gap: '0.25rem',
-});
+}));
 
 const TagsBodyWrapper = styled('div')({
     display: 'flex',
@@ -141,7 +136,7 @@ const TagsBodyWrapper = styled('div')({
 });
 
 const StyledSection = styled('section')(({ theme }) => ({
-    paddingBottom: theme.spacing(1),
+    paddingBottom: theme.spacing(3),
 }));
 
 const DependenciesHeadingWrapper = styled('div')({
@@ -151,24 +146,25 @@ const DependenciesHeadingWrapper = styled('div')({
     position: 'relative',
 });
 
-const StyledMenuItem = styled(MenuItem)({
-    color: 'rgb(0, 0, 0, 0.7)',
+const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
     display: 'flex',
-    fontSize: 12,
-    gap: '0.75rem',
-    padding: '0.75rem',
-});
+    gap: theme.spacing(0.5),
+    alignItems: 'center',
+    height: '48px',
+}));
 
 export const AppDetailPage = () => {
-    const { control, setValue, getValues, watch } =
+    const { control, setValue, getValues, watch, handleSubmit } =
         useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
-    const mainUses = watch('mainUses');
-    const tags = watch('tags');
+    const markdown = watch('markdown');
+    const tags = watch('tag');
     const appInfo = watch('appInfo');
     const userRole = watch('userRole');
     const permission = watch('permission');
     const dependencies = watch('dependencies');
+    const detailsForm = watch('detailsForm');
 
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
@@ -178,33 +174,50 @@ export const AppDetailPage = () => {
     const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
         useState(false);
 
-    const mainUsesRef = useRef<HTMLElement>(null);
+    const [values, setValues] = useState<DetailsForm>(
+        AppDetailsFormValues.detailsForm,
+    );
+
+    const markdownRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
     const dependenciesRef = useRef<HTMLElement>(null);
     const appAccessRef = useRef<HTMLElement>(null);
     const memberAccessRef = useRef<HTMLElement>(null);
     const similarAppsRef = useRef<HTMLElement>(null);
 
-    const refs = [
-        mainUsesRef,
-        tagsRef,
-        dependenciesRef,
-        appAccessRef,
-        memberAccessRef,
-        similarAppsRef,
-    ];
+    const refs = useMemo<
+        { ref: React.MutableRefObject<HTMLElement>; display: string }[]
+    >(() => {
+        return [
+            { ref: markdownRef, display: 'Main Uses' },
+            { ref: tagsRef, display: 'Tags' },
+            { ref: dependenciesRef, display: 'Dependencies' },
+            { ref: appAccessRef, display: 'App Access' },
+            { ref: memberAccessRef, display: 'Member Access' },
+            { ref: similarAppsRef, display: 'Similar Apps' },
+        ];
+    }, []);
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
     const { appId } = useParams();
 
     useEffect(() => {
-        getPermission();
         setValue('appId', appId);
+        fetchUserSpecificData();
+        fetchAppData(appId);
+    }, [appId]);
 
-        fetchAllData(appId);
-    }, []);
+    const fetchUserSpecificData = async () => {
+        const currPermission = getValues('permission');
+        await getPermission();
+        const newPermission = getValues('permission');
+
+        if (newPermission !== currPermission && newPermission === 'readOnly') {
+            fetchSimilarApps();
+        }
+    };
 
     async function getPermission() {
         const { permission: role } =
@@ -212,24 +225,22 @@ export const AppDetailPage = () => {
 
         setValue('userRole', role);
         const permission = determineUserPermission(role);
-        if (permission === 'author') {
-            setValue('permission', 'author');
-            setValue('requestedPermission', 'author');
-        } else if (permission === 'editor') {
-            setValue('permission', 'editor');
-            setValue('requestedPermission', 'editor');
-        } else if (permission === 'readOnly') {
-            setValue('permission', 'readOnly');
-            setValue('requestedPermission', 'readOnly');
-        } else if (permission === 'discoverable') {
-            setValue('permission', 'discoverable');
-        }
+        setValue('permission', permission);
+
+        if (permission === 'author') setValue('requestedPermission', 'OWNER');
+        if (permission === 'editor') setValue('requestedPermission', 'EDIT');
+        if (permission === 'readOnly')
+            setValue('requestedPermission', 'READ_ONLY');
     }
 
-    const fetchAllData = async (id: string) => {
+    const fetchAppData = async (id: string) => {
         Promise.allSettled([
+            fetchAppInfo(
+                monolithStore,
+                id,
+                configStore.store.config.projectMetaKeys.map((a) => a.metakey),
+            ),
             fetchMainUses(monolithStore, id),
-            fetchAppInfo(monolithStore, id),
             fetchDependencies(monolithStore, id),
         ]).then((results) =>
             results.forEach((res, idx) => {
@@ -240,19 +251,59 @@ export const AppDetailPage = () => {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
-                            setValue('mainUses', res.value.output);
-                            setValue('detailsForm.mainUses', res.value.output);
+                            setValue('appInfo', res.value.output);
+                            const output = res.value.output;
+
+                            const projectMetaKeys =
+                                configStore.store.config.projectMetaKeys;
+                            // Keep only relevant project keys defined for app details
+                            const parsedMeta = projectMetaKeys
+                                .map((k) => k.metakey)
+                                .reduce((prev, curr) => {
+                                    // tag, domain, and etc either come in as a string or a string[], format it to correct type
+                                    const found = projectMetaKeys.find(
+                                        (obj) => obj.metakey === curr,
+                                    );
+
+                                    if (curr === 'tag') {
+                                        if (typeof output[curr] === 'string') {
+                                            prev[curr] = [output[curr]];
+                                        } else {
+                                            prev[curr] = output[curr];
+                                        }
+                                    } else if (
+                                        found.display_options ===
+                                            'single-typeahead' ||
+                                        found.display_options ===
+                                            'select-box' ||
+                                        found.display_options ===
+                                            'multi-typeahead'
+                                    ) {
+                                        if (typeof output[curr] === 'string') {
+                                            prev[curr] = [output[curr]];
+                                        } else {
+                                            prev[curr] = output[curr];
+                                        }
+                                    } else {
+                                        prev[curr] = output[curr];
+                                    }
+
+                                    return prev;
+                                }, {}) as AppDetailsFormTypes['detailsForm'];
+                            setValue('detailsForm', parsedMeta);
+                            setValue('tag', parsedMeta.tag);
+                            setValues((prev) => ({ ...prev, ...parsedMeta }));
                         }
                     } else if (idx === 1) {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
-                            setValue('appInfo', res.value.output);
-                            setValue('tags', res.value.output.tag || []);
-                            setValue(
-                                'detailsForm.tags',
-                                res.value.output.tag || [],
-                            );
+                            setValue('markdown', res.value.output);
+                            setValue('detailsForm.markdown', res.value.output);
+                            setValues((prev) => ({
+                                ...prev,
+                                markdown: res.value.output || '',
+                            }));
                         }
                     } else if (idx === 2) {
                         if (res.value.type === 'error') {
@@ -268,6 +319,10 @@ export const AppDetailPage = () => {
                 }
             }),
         );
+    };
+
+    const fetchSimilarApps = () => {
+        // TODO
     };
 
     const modelDependencies = (
@@ -290,16 +345,25 @@ export const AppDetailPage = () => {
         });
     };
 
-    const handleCloseChangeAccessModal = () => {
+    const handleCloseChangeAccessModal = (refresh?: boolean) => {
+        if (refresh) {
+            // fetch updated permission.
+            getPermission();
+        } else {
+            // reset permission to original.
+            if (permission === 'author')
+                setValue('requestedPermission', 'OWNER');
+            if (permission === 'editor')
+                setValue('requestedPermission', 'EDIT');
+            if (permission === 'readOnly')
+                setValue('requestedPermission', 'READ_ONLY');
+        }
         setIsChangeAccessModalOpen(false);
     };
 
-    const handleCloseEditDetailsModal = (reset?: boolean) => {
-        if (reset) {
-            setValue('detailsForm', {
-                mainUses,
-                tags,
-            });
+    const handleCloseEditDetailsModal = (isReset?: boolean) => {
+        if (isReset) {
+            setValue('detailsForm', values);
         }
         setIsEditDetailsModalOpen(false);
     };
@@ -327,6 +391,100 @@ export const AppDetailPage = () => {
         setIsEditDependenciesModalOpen(false);
     };
 
+    // filter metakeys to the variable ones
+    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
+        (k) => {
+            return (
+                k.metakey !== 'description' &&
+                k.metakey !== 'markdown' &&
+                k.metakey !== 'tag'
+            );
+        },
+    );
+
+    // Create refs for dynamic fields
+    const createRefs = useMemo<AppDetailsRef[]>(() => {
+        const refs = [];
+        projectMetaKeys.forEach((meta) => {
+            if (detailsForm?.[meta.metakey]) {
+                refs.push({
+                    ref: React.createRef<HTMLElement>(),
+                    display: toTitleCase(meta.metakey),
+                    ...meta,
+                });
+            }
+        });
+        return refs as AppDetailsRef[];
+    }, [projectMetaKeys, detailsForm]);
+
+    // Merge default/dynamic refs for side bar navigiation
+    const detailRefs = [
+        ...refs,
+        ...createRefs.map((a) => ({ ref: a.ref, display: a.display })),
+    ];
+
+    /**
+     * @name onSubmit
+     * @desc update app details
+     * @param data - form data
+     */
+    const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
+        // copy over the defined keys
+        const meta = {} as AppDetailsFormTypes['detailsForm'];
+        if (data.detailsForm) {
+            for (const key in data.detailsForm) {
+                if (data.detailsForm[key] !== undefined) {
+                    meta[key] = data.detailsForm[key];
+                }
+            }
+        }
+
+        if (Object.keys(meta).length === 0) {
+            notification.add({
+                color: 'warning',
+                message: 'Nothing to Save',
+            });
+
+            return;
+        }
+
+        monolithStore
+            .runQuery(
+                `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+                    meta,
+                )}], jsonCleanup=[true])`,
+            )
+            .then((response) => {
+                const { output, additionalOutput, operationType } =
+                    response.pixelReturn[0];
+
+                // track the errors
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+
+                    return;
+                }
+
+                // close it, refresh and succesfully message
+                notification.add({
+                    color: 'success',
+                    message: additionalOutput[0].output,
+                });
+
+                fetchAppData(appId);
+                handleCloseEditDetailsModal();
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    message: error.message,
+                });
+            });
+    });
+
     return (
         <OuterContainer>
             <InnerContainer>
@@ -339,78 +497,92 @@ export const AppDetailPage = () => {
                     </StyledCrumb>
                 </Breadcrumbs>
 
-                <TopButtonsContainer>
-                    {permission !== 'author' && (
-                        <ChangeAccessButton
-                            variant="text"
-                            onClick={() => setIsChangeAccessModalOpen(true)}
-                        >
-                            Change Access
-                        </ChangeAccessButton>
-                    )}
-
-                    <Button variant="contained" onClick={() => navigate('../')}>
-                        Open
-                    </Button>
-
-                    <IconButton
-                        onClick={(event) =>
-                            setMoreVertAnchorEl(event.currentTarget)
-                        }
-                    >
-                        <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                        anchorEl={moreVertAnchorEl}
-                        open={Boolean(moreVertAnchorEl)}
-                        onClose={() => setMoreVertAnchorEl(null)}
-                    >
-                        {(permission === 'author' ||
-                            permission === 'editor') && (
-                            <StyledMenuItem
-                                onClick={() => {
-                                    setIsEditDetailsModalOpen(true);
-                                    setMoreVertAnchorEl(null);
-                                }}
-                                value={null}
+                <div>
+                    <Sidebar permission={permission} refs={detailRefs} />
+                    <PageBody>
+                        <ActionBar>
+                            <Button
+                                variant="text"
+                                onClick={() => setIsChangeAccessModalOpen(true)}
+                                sx={{ fontWeight: 'bold' }}
                             >
-                                <EditIcon fontSize="small" />
-                                Edit App Details
-                            </StyledMenuItem>
-                        )}
-                        <StyledMenuItem
-                            value={null}
-                            onClick={() => setIsShareOverlayOpen(true)}
-                        >
-                            <ShareIcon fontSize="small" />
-                            Share
-                        </StyledMenuItem>
-                    </Menu>
-                </TopButtonsContainer>
+                                Change Access
+                            </Button>
 
-                <SidebarAndSectionsContainer>
-                    <Sidebar permission={permission} refs={refs} />
+                            <Button
+                                variant="contained"
+                                onClick={() => navigate(`/app/${appId}`)}
+                            >
+                                Open
+                            </Button>
 
-                    <Sections>
+                            <IconButton
+                                onClick={(event) =>
+                                    setMoreVertAnchorEl(event.currentTarget)
+                                }
+                            >
+                                <MoreVert />
+                            </IconButton>
+
+                            <Menu
+                                anchorEl={moreVertAnchorEl}
+                                open={Boolean(moreVertAnchorEl)}
+                                onClose={() => setMoreVertAnchorEl(null)}
+                                anchorOrigin={{
+                                    vertical: 'bottom',
+                                    horizontal: 'right',
+                                }}
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                sx={{ borderRadius: '4px' }}
+                            >
+                                {(permission === 'author' ||
+                                    permission === 'editor') && (
+                                    <StyledMenuItem
+                                        onClick={() => {
+                                            setIsEditDetailsModalOpen(true);
+                                            setMoreVertAnchorEl(null);
+                                        }}
+                                        value={null}
+                                    >
+                                        <Edit fontSize="small" />
+                                        <Typography variant="caption">
+                                            Edit App Details
+                                        </Typography>
+                                    </StyledMenuItem>
+                                )}
+
+                                <StyledMenuItem
+                                    value={null}
+                                    onClick={() => setIsShareOverlayOpen(true)}
+                                >
+                                    <Share fontSize="small" />
+                                    <Typography variant="caption">
+                                        Share
+                                    </Typography>
+                                </StyledMenuItem>
+                            </Menu>
+                        </ActionBar>
+
                         <TitleSection>
                             <TitleSectionImg
                                 src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
                                 alt="App Image"
                             />
                             <TitleSectionBodyWrapper>
-                                <SectionHeading variant="h1">
+                                <Typography variant="h6">
                                     {appInfo?.project_name}
-                                </SectionHeading>
+                                </Typography>
                                 <TitleSectionBody variant="body1">
-                                    {() => {
-                                        if (permission === 'author') {
-                                            return <HdrAutoIcon />;
-                                        } else if (permission === 'editor') {
-                                            return <NoteAltIcon />;
-                                        } else {
-                                            return <AssignmentIcon />;
-                                        }
-                                    }}
+                                    {permission === 'author' ? (
+                                        <HdrAuto />
+                                    ) : permission === 'editor' ? (
+                                        <EditLocation />
+                                    ) : permission === 'discoverable' ? (
+                                        <RemoveRedEyeRounded />
+                                    ) : null}
                                     {`${formatPermission(userRole)} Access`}
                                 </TitleSectionBody>
                                 <TitleSectionBody variant="body1">
@@ -421,11 +593,11 @@ export const AppDetailPage = () => {
                             </TitleSectionBodyWrapper>
                         </TitleSection>
 
-                        <StyledSection ref={mainUsesRef}>
+                        <StyledSection ref={markdownRef}>
                             <SectionHeading variant="h2">
                                 Main uses
                             </SectionHeading>
-                            <Typography variant="body1">{mainUses}</Typography>
+                            <Typography variant="body1">{markdown}</Typography>
                         </StyledSection>
 
                         <StyledSection ref={tagsRef}>
@@ -445,8 +617,57 @@ export const AppDetailPage = () => {
                                 </Typography>
                             )}
                         </StyledSection>
+                        <>
+                            {createRefs.map((k) => {
+                                if (
+                                    values[k.metakey] === undefined ||
+                                    !Array.isArray(values[k.metakey])
+                                ) {
+                                    return null;
+                                }
 
-                        {permission !== 'discoverable' && (
+                                return (
+                                    <StyledSection key={k.metakey} ref={k.ref}>
+                                        <SectionHeading variant="h2">
+                                            {k.display}
+                                        </SectionHeading>
+                                        <TagsBodyWrapper>
+                                            {k.display_options ===
+                                                'multi-checklist' ||
+                                            k.display_options ===
+                                                'multi-select' ||
+                                            k.display_options ===
+                                                'multi-typeahead' ||
+                                            k.display_options ===
+                                                'select-box' ? (
+                                                <Stack
+                                                    direction={'row'}
+                                                    spacing={1}
+                                                    flexWrap={'wrap'}
+                                                >
+                                                    {(
+                                                        detailsForm[
+                                                            k.metakey
+                                                        ] as string[]
+                                                    ).map((tag) => {
+                                                        return (
+                                                            <Chip
+                                                                key={tag}
+                                                                label={tag}
+                                                            ></Chip>
+                                                        );
+                                                    })}
+                                                </Stack>
+                                            ) : (
+                                                detailsForm[k.metakey]
+                                            )}
+                                        </TagsBodyWrapper>
+                                    </StyledSection>
+                                );
+                            })}
+                        </>
+
+                        {permission && permission !== 'discoverable' && (
                             <StyledSection ref={dependenciesRef}>
                                 <DependenciesHeadingWrapper>
                                     <SectionHeading variant="h2">
@@ -466,7 +687,7 @@ export const AppDetailPage = () => {
                                                 top: '-0.4rem',
                                             }}
                                         >
-                                            <EditIcon />
+                                            <Edit />
                                         </IconButton>
                                     )}
                                 </DependenciesHeadingWrapper>
@@ -507,7 +728,8 @@ export const AppDetailPage = () => {
                             </StyledSection>
                         )}
 
-                        {permission !== 'discoverable' &&
+                        {permission &&
+                            permission !== 'discoverable' &&
                             permission !== 'readOnly' && (
                                 <StyledSection ref={memberAccessRef}>
                                     <SectionHeading variant="h2">
@@ -527,6 +749,9 @@ export const AppDetailPage = () => {
                                                 id={appId}
                                                 mode="app"
                                                 name="app"
+                                                refreshPermission={() => {
+                                                    fetchUserSpecificData();
+                                                }}
                                             />
                                         </Stack>
                                     </SettingsContext.Provider>
@@ -541,8 +766,8 @@ export const AppDetailPage = () => {
                                 </SectionHeading>
                             </StyledSection>
                         )}
-                    </Sections>
-                </SidebarAndSectionsContainer>
+                    </PageBody>
+                </div>
             </InnerContainer>
 
             <Modal
@@ -560,14 +785,14 @@ export const AppDetailPage = () => {
                 open={isChangeAccessModalOpen}
                 onClose={handleCloseChangeAccessModal}
                 control={control}
+                getValues={getValues}
             />
 
             <EditDetailsModal
                 isOpen={isEditDetailsModalOpen}
                 onClose={handleCloseEditDetailsModal}
                 control={control}
-                getValues={getValues}
-                setValue={setValue}
+                onSubmit={onSubmit}
             />
 
             <EditDependenciesModal
@@ -583,29 +808,23 @@ export const AppDetailPage = () => {
 };
 
 const StyledSidebar = styled('div')(({ theme }) => ({
-    borderRight: `2px solid ${theme.palette.secondary.main}`,
+    width: '145px',
+    borderRight: `1px solid ${theme.palette.secondary.main}`,
     display: 'flex',
     flexDirection: 'column',
-    fontWeight: 'bold',
-    gap: '1rem',
-    paddingRight: '0.7rem',
+    gap: theme.spacing(0.5),
     position: 'fixed',
+    paddingRight: theme.spacing(1),
 }));
 
-const SidebarMenuItem = styled(MenuItem)({
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: 'inherit',
-    textDecoration: 'none',
-    '&:visited': {
-        color: 'inherit',
-    },
+const StyledSidebarItem = styled(Button)(({ theme }) => ({
+    justifyContent: 'flex-start',
     whiteSpace: 'nowrap',
-});
+}));
 
 interface SidebarProps {
     permission: string;
-    refs: React.MutableRefObject<HTMLElement>[];
+    refs: { ref: React.MutableRefObject<HTMLElement>; display: string }[];
 }
 
 const Sidebar = ({ permission, refs }: SidebarProps) => {
@@ -616,59 +835,86 @@ const Sidebar = ({ permission, refs }: SidebarProps) => {
         appAccessRef,
         memberAccessRef,
         similarAppsRef,
+        ...dynamicRefs
     ] = refs;
 
     const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
         ref.current.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const canEdit = permission !== 'discoverable' && permission !== 'readOnly';
+    const canEdit =
+        permission &&
+        permission !== 'discoverable' &&
+        permission !== 'readOnly';
 
     return (
         <StyledSidebar>
-            <SidebarMenuItem
-                onClick={() => scrollIntoView(mainUsesRef)}
+            <StyledSidebarItem
+                variant="text"
+                color="secondary"
+                onClick={() => scrollIntoView(mainUsesRef.ref)}
                 value={null}
             >
                 Main Uses
-            </SidebarMenuItem>
-            <SidebarMenuItem
-                onClick={() => scrollIntoView(tagsRef)}
+            </StyledSidebarItem>
+            <StyledSidebarItem
+                variant="text"
+                color="secondary"
+                onClick={() => scrollIntoView(tagsRef.ref)}
                 value={null}
             >
                 Tags
-            </SidebarMenuItem>
+            </StyledSidebarItem>
+            {dynamicRefs?.map((ref) => (
+                <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
+                    onClick={() => scrollIntoView(ref.ref)}
+                    value={null}
+                    key={ref.display}
+                >
+                    {ref.display}
+                </StyledSidebarItem>
+            ))}
             {permission !== 'discoverable' && (
-                <SidebarMenuItem
-                    onClick={() => scrollIntoView(dependenciesRef)}
+                <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
+                    onClick={() => scrollIntoView(dependenciesRef.ref)}
                     value={null}
                 >
                     Dependencies
-                </SidebarMenuItem>
+                </StyledSidebarItem>
             )}
             {permission === 'author' && (
-                <SidebarMenuItem
-                    onClick={() => scrollIntoView(appAccessRef)}
+                <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
+                    onClick={() => scrollIntoView(appAccessRef.ref)}
                     value={null}
                 >
                     App Access
-                </SidebarMenuItem>
+                </StyledSidebarItem>
             )}
             {canEdit && (
-                <SidebarMenuItem
-                    onClick={() => scrollIntoView(memberAccessRef)}
+                <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
+                    onClick={() => scrollIntoView(memberAccessRef.ref)}
                     value={null}
                 >
                     Member Access
-                </SidebarMenuItem>
+                </StyledSidebarItem>
             )}
             {!canEdit && (
-                <SidebarMenuItem
-                    onClick={() => scrollIntoView(similarAppsRef)}
+                <StyledSidebarItem
+                    variant="text"
+                    color="secondary"
+                    onClick={() => scrollIntoView(similarAppsRef.ref)}
                     value={null}
                 >
                     Similar Apps
-                </SidebarMenuItem>
+                </StyledSidebarItem>
             )}
         </StyledSidebar>
     );

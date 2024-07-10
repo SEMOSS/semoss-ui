@@ -1,12 +1,22 @@
 import { observer } from 'mobx-react-lite';
-import { styled, IconButton, Stack, Typography, Tooltip } from '@semoss/ui';
-import { ArrowBack, InfoOutlined } from '@mui/icons-material';
+import {
+    styled,
+    IconButton,
+    Stack,
+    Typography,
+    Tooltip,
+    Alert,
+    useNotification,
+} from '@semoss/ui';
+import { ArrowBack, InfoOutlined, ErrorOutlined } from '@mui/icons-material';
 
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore } from '@/stores';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { usePixel } from '@/hooks';
 
 const StyledMain = styled('div')(() => ({
     display: 'flex',
@@ -64,6 +74,8 @@ interface WorkspaceProps {
 }
 
 export const Workspace = observer((props: WorkspaceProps) => {
+    const notification = useNotification();
+
     const {
         startTopbar: startTopbar = null,
         endTopbar: endTopbar = null,
@@ -74,7 +86,33 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
     const { pathname } = useLocation();
     const navigate = useNavigate();
-    console.log('Workspace', workspace);
+
+    const validateDependencies = usePixel(
+        'ValidateUserProjectDependencies(project="' + workspace.appId + '");',
+    );
+
+    useEffect(() => {
+        if (validateDependencies.status !== 'SUCCESS') {
+            return;
+        } else if (validateDependencies.data !== null) {
+            const needsAccess = [];
+            Object.entries(validateDependencies.data).forEach((kv) => {
+                const hasAccess = kv[1];
+
+                if (!hasAccess) {
+                    needsAccess.push(kv[0]);
+                }
+            });
+            if (needsAccess.length) {
+                notification.add({
+                    color: 'warning',
+                    message:
+                        needsAccess.join(', ') +
+                        '- are dependencies you do not have access to',
+                });
+            }
+        }
+    }, [validateDependencies.status, validateDependencies.data]);
 
     return (
         <WorkspaceContext.Provider
@@ -134,6 +172,11 @@ export const Workspace = observer((props: WorkspaceProps) => {
                     {endTopbar}
                 </StyledHeader>
                 <StyledContent>
+                    {/* {alertOpen && (
+                        <Alert severity="warning" icon={<ErrorOutlined />} onClose={() => {setAlertOpen(false)}}>
+                            {alertMessage}
+                        </Alert>
+                    )} */}
                     <WorkspaceLoading />
                     {children}
                 </StyledContent>

@@ -42,8 +42,10 @@ import {
     CreateNewFolderOutlined,
     NoteAddOutlined,
     DeleteOutline,
+    FileUpload,
 } from '@mui/icons-material/';
 import { LLMContext } from '@/contexts';
+import { AddAppAssetsModal } from './AddAppAssetsModal';
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     overflow: 'hidden',
@@ -331,8 +333,8 @@ export const AppEditor = (props: AppEditorProps) => {
     // limit will often be exceeded due to unknown file count in folders but when limit is met no new folders will be opened
     const [initLoadComplete, setInitLoadComplete] = useState(false);
 
-    const initialLoadFileSet = useRef(new Set());
-    const [isLoading, setIsLoading] = useState(false);
+    const [isAddAppAssetsOpen, setIsAddAppAssetsOpen] =
+        useState<boolean>(false);
 
     const [models, setModels] = useState<
         { app_id: string; app_name: string }[]
@@ -738,7 +740,6 @@ export const AppEditor = (props: AppEditorProps) => {
      * @param nodeIds
      */
     const handleToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
-        console.log({ nodeIds });
         setOpenFolderSet(new Set(nodeIds));
         setExpanded(nodeIds);
     };
@@ -1281,6 +1282,22 @@ export const AppEditor = (props: AppEditorProps) => {
                                             -1 ? (
                                                 <StyledRow>
                                                     <IconButton
+                                                        title="Upload app assets"
+                                                        size={'small'}
+                                                        onClick={(e) => {
+                                                            console.log(
+                                                                'Upload asset files to app',
+                                                            );
+                                                            e.stopPropagation();
+                                                            setIsAddAppAssetsOpen(
+                                                                true,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <FileUpload />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        title="Create new app file"
                                                         size={'small'}
                                                         onClick={(e) => {
                                                             console.log(
@@ -1295,6 +1312,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                                         <NoteAddOutlined />
                                                     </IconButton>
                                                     <IconButton
+                                                        title="Create new app folder"
                                                         size={'small'}
                                                         onClick={(e) => {
                                                             console.log(
@@ -1398,7 +1416,13 @@ export const AppEditor = (props: AppEditorProps) => {
                         }}
                     />
                 </StyledTextEditorDiv>
-
+                <AddAppAssetsModal
+                    open={isAddAppAssetsOpen}
+                    onClose={() => {
+                        setIsAddAppAssetsOpen(false);
+                    }}
+                    appId={appId}
+                />
                 <Modal open={isDeleteConfirmOpen}>
                     <Modal.Title>Are you sure?</Modal.Title>
                     <StyledModalContent>

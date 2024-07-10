@@ -16,8 +16,9 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
-import { Job } from './jobs.types';
+import { Job, JobBuilder } from './job.types';
 import { runPixel } from '@/api';
+import { getHumanReadableCronExpression } from './job.utils';
 
 const StyledDataGrid = styled(DataGrid)(() => ({
     '.MuiDataGrid-overlayWrapper': {
@@ -38,6 +39,7 @@ export const JobsTable = (props: {
     rowSelectionModel: GridRowSelectionModel;
     setRowSelectionModel: (value: GridRowSelectionModel) => void;
     getHistory: () => void;
+    setInitialBuilderState: (builder: JobBuilder) => void;
     showDeleteJobModal: (job: Job) => void;
 }) => {
     const {
@@ -46,6 +48,7 @@ export const JobsTable = (props: {
         rowSelectionModel,
         setRowSelectionModel,
         getHistory,
+        setInitialBuilderState,
         showDeleteJobModal,
     } = props;
     const notification = useNotification();
@@ -56,7 +59,7 @@ export const JobsTable = (props: {
         setRunJobLoading(true);
         try {
             await runPixel(
-                `META | ExecuteScheduledJob ( jobId = [ \"${job.id}\" ] , jobGroup = [ \"${job.group}\" ] ) ;`,
+                `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
             );
         } catch (e) {
             notification.add({
@@ -82,14 +85,18 @@ export const JobsTable = (props: {
             flex: 1,
         },
         {
-            headerName: 'Type',
-            field: 'type',
-            flex: 1,
-        },
-        {
             headerName: 'Frequency',
-            field: 'frequencyString',
+            field: 'cronExpression',
             flex: 1,
+            renderCell: (params) => {
+                return (
+                    <>
+                        {getHumanReadableCronExpression(
+                            params.value.replaceAll('?', '*'),
+                        )}
+                    </>
+                );
+            },
         },
         {
             headerName: 'Time Zone',
@@ -111,7 +118,9 @@ export const JobsTable = (props: {
                         alignItems="center"
                     >
                         {params.value.map((tag, idx) => {
-                            return <Chip key={idx} label={tag} />;
+                            if (tag) {
+                                return <Chip key={idx} label={tag} />;
+                            }
                         })}
                     </Stack>
                 );
@@ -131,7 +140,7 @@ export const JobsTable = (props: {
                         params.value === 'INACTIVE'
                     )
                 ) {
-                    time = dayjs(params.value).format('MM/DD/YYYY HH:MMA');
+                    time = dayjs(params.value).format('MM/DD/YYYY h:MM A');
                 }
                 return <>{time}</>;
             },
@@ -156,6 +165,7 @@ export const JobsTable = (props: {
             sortable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
+                const job = jobs.find((job) => job.id == params.value);
                 return (
                     <>
                         <IconButton
@@ -163,9 +173,6 @@ export const JobsTable = (props: {
                             color="primary"
                             size="medium"
                             onClick={() => {
-                                const job = jobs.find(
-                                    (job) => (job.id = params.value),
-                                );
                                 runJob(job);
                             }}
                         >
@@ -178,17 +185,29 @@ export const JobsTable = (props: {
                                 <PlayArrow />
                             )}
                         </IconButton>
-                        {/* <IconButton color="primary" size="medium" disabled>
+                        <IconButton
+                            color="primary"
+                            size="medium"
+                            disabled={runJobLoading}
+                            onClick={() => {
+                                setInitialBuilderState({
+                                    id: job.id,
+                                    name: job.name,
+                                    pixel: job.pixel,
+                                    tags: job.tags,
+                                    cronExpression:
+                                        job.cronExpression.replaceAll('?', '*'),
+                                    cronTz: job.timeZone,
+                                });
+                            }}
+                        >
                             <Edit />
-                        </IconButton> */}
+                        </IconButton>
                         <IconButton
                             disabled={runJobLoading}
                             color="error"
                             size="medium"
                             onClick={() => {
-                                const job = jobs.find(
-                                    (job) => (job.id = params.value),
-                                );
                                 showDeleteJobModal(job);
                             }}
                         >

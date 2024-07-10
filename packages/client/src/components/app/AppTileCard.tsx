@@ -24,6 +24,8 @@ import {
 import { AppMetadata } from './app.types';
 import { APP_IMAGES } from './app.images';
 import { removeUnderscores } from '@/utility';
+import { AppDeleteModal } from '@/components/app';
+import { useNavigate } from 'react-router-dom';
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -194,6 +196,11 @@ interface AppTileCardProps {
      * is the app a default system app
      */
     systemApp?: boolean;
+
+    /**
+     * Action triggered when deleted
+     */
+    onDelete?: () => void;
 }
 
 export const AppTileCard = (props: AppTileCardProps) => {
@@ -206,11 +213,16 @@ export const AppTileCard = (props: AppTileCardProps) => {
         favorite,
         appType,
         systemApp,
+        onDelete,
     } = props;
 
     const notification = useNotification();
+    const navigate = useNavigate();
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+    const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
+
     const open = Boolean(anchorEl);
 
     const copyProjectId = (projectId: string) => {
@@ -464,7 +476,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
-                {app?.user_permission && app.user_permission <= 2 && (
+                {app?.user_permission && app.user_permission <= 3 && (
                     <Link
                         href={`${href}/detail`}
                         rel="noopener noreferrer"
@@ -472,12 +484,36 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         underline="none"
                         target="_blank"
                     >
-                        <Menu.Item value="copy" onClick={() => {}}>
-                            Edit App Details
+                        <Menu.Item value="copy">
+                            {app.user_permission === 3
+                                ? 'View App Details'
+                                : 'Edit App Details'}
                         </Menu.Item>
                     </Link>
                 )}
+                {app?.user_permission && app.user_permission < 2 && (
+                    <Menu.Item
+                        value="delete"
+                        onClick={() => {
+                            setIsAppDeleteModalOpen(true);
+                        }}
+                    >
+                        Delete App
+                    </Menu.Item>
+                )}
             </Menu>
+
+            <AppDeleteModal
+                isOpen={isAppDeleteModalOpen}
+                onClose={() => {
+                    setIsAppDeleteModalOpen(false);
+                    setAnchorEl(null);
+                }}
+                appId={app.project_id}
+                onDelete={() => {
+                    onDelete();
+                }}
+            />
         </StyledTileCard>
     );
 };

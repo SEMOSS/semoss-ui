@@ -26,8 +26,15 @@ import { DefaultBlocks, getIconForBlock } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
-import { capitalizeFirstLetter, splitAtPeriod } from '@/utility';
+import {
+    capitalizeFirstLetter,
+    getEngineImage,
+    splitAtPeriod,
+} from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import Editor, { OnMount } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+import { ENGINE_ROUTES } from '@/pages/engine';
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
     height: '10vh',
@@ -41,6 +48,16 @@ const StyledStack = styled(Stack)(({ theme }) => ({
 const StyledPopover = styled(Popover)(({ theme }) => ({
     padding: theme.spacing(2),
     marginLeft: theme.spacing(2),
+}));
+
+const QueryPreviewContainer = styled(Stack)(({ theme }) => ({
+    maxHeight: '275px',
+    width: '100%',
+    overflow: 'auto',
+}));
+
+const StyledImg = styled('img')(({ theme }) => ({
+    maxWidth: theme.spacing(5),
 }));
 
 interface AddVariableModalProps {
@@ -63,31 +80,47 @@ interface AddVariableModalProps {
      * Do we want edit variable
      */
     variable?: VariableWithId;
+
+    /**
+     * Engines
+     */
+    engines: {
+        models: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        databases: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        storages: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        functions: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+        vectors: {
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            app_subtype: string;
+        }[];
+    };
 }
 export const AddVariableModal = observer((props: AddVariableModalProps) => {
-    const {
-        open,
-        // tokenReference,
-        anchorEl,
-        onClose,
-        variable,
-    } = props;
+    const { open, anchorEl, onClose, variable, engines } = props;
     const { state } = useBlocks();
     const notification = useNotification();
-
-    const getEngines = usePixel<
-        { app_id: string; app_name: string; app_type: string }[]
-    >(`
-    MyEngines();
-    `);
-
-    const [engines, setEngines] = useState({
-        models: [],
-        databases: [],
-        storages: [],
-        functions: [],
-        vectors: [],
-    });
 
     const [variableName, setVariableName] = useState('');
     const [variableType, setVariableType] = useState<VariableType | ''>('');
@@ -96,13 +129,11 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         app_id: string;
         app_name: string;
         app_type: string;
+        app_subtype;
     } | null>(null);
 
-    /** To disable add button */
-    const tN = Boolean(variableType.length > 0 && variableName.length > 0);
-    const eP = Boolean(engine || variablePointer.length > 0);
-    const isTypeAlias = tN;
-    const isPointer = eP;
+    const [variableInputValue, setVariableInputValue] = useState(null);
+    const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
 
     // get the input type blocks as an array
     const inputBlocks = computed(() => {
@@ -141,47 +172,9 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         return cells;
     }, [state.queries]);
 
-    useEffect(() => {
-        if (getEngines.status !== 'SUCCESS') {
-            return;
-        }
-        const cleanedEngines = getEngines.data.map((d) => ({
-            app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-            app_id: d.app_id,
-            app_type: d.app_type,
-        }));
-
-        const newEngines = {
-            models: cleanedEngines.filter((e) => e.app_type === 'MODEL'),
-            databases: cleanedEngines.filter((e) => e.app_type === 'DATABASE'),
-            storages: cleanedEngines.filter((e) => e.app_type === 'STORAGE'),
-            functions: cleanedEngines.filter((e) => e.app_type === 'FUNCTION'),
-            vectors: cleanedEngines.filter((e) => e.app_type === 'VECTOR'),
-        };
-
-        if (variable) {
-            // debugger;
-            if (
-                variable.type !== 'cell' &&
-                variable.type !== 'query' &&
-                variable.type !== 'block'
-            ) {
-                const val = state.getVariable(variable.to, variable.type);
-                const eng = newEngines[`${variable.type}s`].find(
-                    (e) => e.app_id === val,
-                );
-                // console.log('Set Engine Preview', val);
-                // console.log(eng);
-                setEngine(eng);
-            }
-            setVariableType(variable.type);
-            setVariableName(variable.alias);
-            setVariablePointer(variable.to);
-        }
-
-        setEngines(newEngines);
-    }, [getEngines.status, getEngines.data]);
-
+    /**
+     * Select Box on different constants to tie to
+     */
     const values = useMemo(() => {
         if (variableType === 'block') {
             return inputBlocks.map((block) => {
@@ -262,133 +255,307 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     </Select.Item>
                 );
             });
+        } else {
+            return <Select.Item value="">No options</Select.Item>;
         }
     }, [variableType]);
 
-    const preview = useMemo(() => {
-        if (variableType && (variablePointer || engine)) {
-            if (variableType === 'block') {
-                const block = state.getBlock(variablePointer);
-                const s: SerializedState = {
-                    dependencies: {},
-                    variables: {},
-                    queries: {},
-                    blocks: {
-                        'page-1': {
-                            id: 'page-1',
-                            widget: 'page',
-                            parent: null,
-                            data: {
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                },
-                            },
-                            listeners: {
-                                onPageLoad: [],
-                            },
-                            slots: {
-                                content: {
-                                    name: 'content',
-                                    children: [variablePointer],
-                                },
-                            },
-                        },
-                        [variablePointer]: {
-                            id: block.id,
-                            widget: block.widget,
-                            data: block.data,
-                            parent: null,
-                            listeners: block.listeners,
-                            slots: block.slots,
-                        },
-                    },
-                };
-
-                return <BlocksRenderer state={s} />;
-            } else if (variableType === 'query') {
-                const query = state.getQuery(variablePointer);
-
-                if (query.output) {
-                    return (
-                        <Typography variant={'body2'}>
-                            {query.output}
-                        </Typography>
-                    );
-                } else {
-                    return (
-                        <Alert severity="warning" icon={<WarningRounded />}>
-                            <Alert.Title>
-                                Sheet {variablePointer} has not been executed.
-                                Would you like to execute?
-                            </Alert.Title>
-                        </Alert>
-                    );
-                }
-            } else if (variableType === 'cell') {
-                const query = state.getQuery(
-                    splitAtPeriod(variablePointer, 'left'),
-                );
-
-                const cell = query.getCell(
-                    splitAtPeriod(variablePointer, 'right'),
-                );
-
-                if (cell.output) {
-                    return (
-                        <Typography variant={'body2'}>
-                            {
-                                state
-                                    .getQuery(
-                                        splitAtPeriod(variablePointer, 'left'),
-                                    )
-                                    .getCell(
-                                        splitAtPeriod(variablePointer, 'right'),
-                                    ).output
-                            }
-                        </Typography>
-                    );
-                } else {
-                    return (
-                        <Alert severity="warning" icon={<WarningRounded />}>
-                            <Alert.Title>
-                                Cell {splitAtPeriod(variablePointer, 'right')}{' '}
-                                has not been executed. Would you like to
-                                execute?
-                            </Alert.Title>
-                        </Alert>
-                    );
-                }
-            } else {
-                return (
-                    <Stack direction="row" alignItems="center">
-                        <Icon>
-                            <MoreSharp />
-                        </Icon>
-                        <Stack direction="column">
-                            <Typography variant="body2">
-                                {engine.app_name}
-                            </Typography>
-                            <Typography variant="caption">
-                                {engine.app_id}
-                            </Typography>
-                        </Stack>
-                    </Stack>
-                );
-            }
-        } else if (variableType && (!engine || variablePointer)) {
-            return <StyledPlaceholder />;
-        }
-    }, [variableType, variablePointer, engine]);
-
-    const disabled = useMemo(() => {
-        if (isTypeAlias && isPointer) {
-            return false;
+    const input = useMemo(() => {
+        if (variableType === 'string') {
+            return (
+                <TextField
+                    variant="outlined"
+                    onChange={(e) =>
+                        setVariableInputValue(e.target.value.toString())
+                    }
+                    value={variableInputValue}
+                />
+            );
+        } else if (variableType === 'number') {
+            return (
+                <TextField
+                    variant="outlined"
+                    type="number"
+                    onChange={(e) => {
+                        setVariableInputValue(parseInt(e.target.value));
+                    }}
+                    value={variableInputValue}
+                />
+            );
+        } else if (variableType === 'JSON' || variableType === 'array') {
+            return (
+                <Editor
+                    width={'100%'}
+                    height={'10vh'}
+                    language={'json'}
+                    onChange={(newValue, e) => {
+                        setVariableInputValue(newValue);
+                    }}
+                    value={
+                        typeof variableInputValue === 'object'
+                            ? JSON.stringify(variableInputValue)
+                            : variableInputValue
+                    }
+                ></Editor>
+            );
+        } else if (variableType === 'date') {
+            return (
+                <TextField
+                    type="date"
+                    variant="outlined"
+                    onChange={(e) =>
+                        setVariableInputValue(e.target.value.toString())
+                    }
+                    value={variableInputValue}
+                />
+            );
         } else {
-            return true;
+            return (
+                <Select
+                    disabled={!variableType}
+                    value={
+                        (variableType === 'cell' ||
+                        variableType === 'query' ||
+                        variableType === 'block'
+                            ? variablePointer
+                            : engine) ?? ''
+                    }
+                    onChange={(e) => {
+                        const val = e.target.value as unknown;
+                        if (
+                            variableType === 'cell' ||
+                            variableType === 'query' ||
+                            variableType === 'block'
+                        ) {
+                            const p = val as string;
+                            setVariablePointer(p);
+                        } else {
+                            const p = val as {
+                                app_id: string;
+                                app_name: string;
+                                app_type: string;
+                                app_subtype: string;
+                            };
+                            setEngine(p);
+                        }
+                    }}
+                >
+                    {values}
+                </Select>
+            );
         }
-    }, [isTypeAlias, isPointer]);
+    }, [variableType, variableInputValue, variablePointer, engine]);
+
+    const preview = useMemo(() => {
+        try {
+            if (
+                variableType &&
+                (variablePointer || engine || variableInputValue)
+            ) {
+                if (variableType === 'block') {
+                    const block = state.getBlock(variablePointer);
+                    const s: SerializedState = {
+                        dependencies: {},
+                        variables: {},
+                        queries: {},
+                        blocks: {
+                            'page-1': {
+                                id: 'page-1',
+                                widget: 'page',
+                                parent: null,
+                                data: {
+                                    style: {
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    },
+                                },
+                                listeners: {
+                                    onPageLoad: [],
+                                },
+                                slots: {
+                                    content: {
+                                        name: 'content',
+                                        children: [variablePointer],
+                                    },
+                                },
+                            },
+                            [variablePointer]: {
+                                id: block.id,
+                                widget: block.widget,
+                                data: block.data,
+                                parent: null,
+                                listeners: block.listeners,
+                                slots: block.slots,
+                            },
+                        },
+                    };
+
+                    return <BlocksRenderer state={s} />;
+                } else if (variableType === 'query') {
+                    const query = state.getQuery(variablePointer);
+
+                    if (query.output) {
+                        return (
+                            <QueryPreviewContainer>
+                                <Typography variant={'body2'}>
+                                    {JSON.stringify(query.output)}
+                                </Typography>
+                            </QueryPreviewContainer>
+                        );
+                    } else {
+                        return (
+                            <Alert severity="warning" icon={<WarningRounded />}>
+                                <Alert.Title>
+                                    Sheet {variablePointer} has not been
+                                    executed. Click 'Run All' in order to
+                                    preview output.
+                                </Alert.Title>
+                            </Alert>
+                        );
+                    }
+                } else if (variableType === 'cell') {
+                    const query = state.getQuery(
+                        splitAtPeriod(variablePointer, 'left'),
+                    );
+
+                    const cell = query.getCell(
+                        splitAtPeriod(variablePointer, 'right'),
+                    );
+
+                    if (cell.output) {
+                        const rawOutput = state
+                            .getQuery(splitAtPeriod(variablePointer, 'left'))
+                            .getCell(
+                                splitAtPeriod(variablePointer, 'right'),
+                            ).output;
+                        return (
+                            <QueryPreviewContainer>
+                                <Typography variant={'body2'}>
+                                    {JSON.stringify(rawOutput)}
+                                </Typography>
+                            </QueryPreviewContainer>
+                        );
+                    } else {
+                        return (
+                            <Alert severity="warning" icon={<WarningRounded />}>
+                                <Alert.Title>
+                                    Cell{' '}
+                                    {splitAtPeriod(variablePointer, 'right')}{' '}
+                                    has not been executed. Click 'Run All' in
+                                    order to preview output.
+                                </Alert.Title>
+                            </Alert>
+                        );
+                    }
+                } else if (inputVariableTypeList.indexOf(variableType) > -1) {
+                    return JSON.stringify(variableInputValue);
+                } else {
+                    const image = getEngineImage(
+                        engine.app_type,
+                        engine.app_subtype,
+                        true,
+                    );
+                    const engineDisplay = ENGINE_ROUTES.find(
+                        (engineValue) => engineValue.type === engine.app_type,
+                    );
+                    return (
+                        <Stack direction="row" alignItems="center">
+                            {image ? (
+                                <StyledImg src={image} />
+                            ) : (
+                                <Icon>
+                                    {engineDisplay ? (
+                                        createElement(engineDisplay.icon)
+                                    ) : (
+                                        <MoreSharp />
+                                    )}
+                                </Icon>
+                            )}
+                            <Stack direction="column">
+                                <Typography variant="body2">
+                                    {engine.app_name}
+                                </Typography>
+                                <Typography variant="caption">
+                                    {engine.app_id}
+                                </Typography>
+                            </Stack>
+                        </Stack>
+                    );
+                }
+            } else if (
+                variableType &&
+                (!engine || variablePointer || variableInputValue)
+            ) {
+                return <StyledPlaceholder />;
+            }
+        } catch (e) {
+            return (
+                <Typography variant={'body2'}>Value is undefined</Typography>
+            );
+        }
+    }, [variableType, variablePointer, engine, variableInputValue]);
+
+    const addVariableDisabled = useMemo(() => {
+        const hasRequiredFields = Boolean(
+            variableType.length > 0 && variableName.length > 0,
+        );
+
+        const hasRequiredDependency = Boolean(
+            engine || variablePointer.length > 0 || variableInputValue,
+        );
+
+        const isValid = hasRequiredFields && hasRequiredDependency;
+
+        let v;
+
+        if (variable) {
+            v = state.getVariable(variable.to, variable.type);
+        }
+
+        const hasChanges = variable
+            ? variable.alias !== variableName ||
+              variable.to !== variablePointer ||
+              variable.type !== variableType ||
+              variableInputValue !== v
+            : true;
+
+        return !isValid || !hasChanges;
+    }, [
+        variableType,
+        variableName,
+        engine,
+        variablePointer,
+        variableInputValue,
+    ]);
+
+    useEffect(() => {
+        if (variable?.id) {
+            setVariableName(variable.alias);
+            setVariableType(variable.type);
+            setVariablePointer(variable.to);
+
+            if (
+                variable.type !== 'query' &&
+                variable.type !== 'block' &&
+                variable.type !== 'cell'
+            ) {
+                const val = state.getVariable(variable.to, variable.type);
+                if (inputVariableTypeList.includes(variable.type)) {
+                    setVariableInputValue(val);
+                } else {
+                    const variableEngine = engines[`${variable.type}s`]
+                        ? engines[`${variable.type}s`].find(
+                              (engineValue) => engineValue.app_id === val,
+                          )
+                        : null;
+                    if (variableEngine) {
+                        setEngine(variableEngine);
+                    }
+                }
+            }
+        }
+    }, [variable]);
 
     return (
         <StyledPopover
@@ -404,15 +571,20 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
             }}
             anchorEl={anchorEl}
         >
-            <StyledStack direction={'column'} gap={1} padding={2}>
+            <StyledStack
+                direction={'column'}
+                gap={1}
+                padding={2}
+                className="add-variable-modal__content"
+            >
                 <Typography variant={'h6'}>
                     {variable ? 'Edit' : 'Create'} Variable
                 </Typography>
                 {variable && (
                     <Alert icon={<WarningRounded />} severity={'warning'}>
                         <Alert.Title>
-                            Editing this variable may result in errors
-                            throughout your sheets.
+                            If this variable is actively being used, editing it
+                            may result in errors throughout your sheets.
                         </Alert.Title>
                     </Alert>
                 )}
@@ -431,6 +603,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         onChange={(e) => {
                             const val = e.target.value as VariableType;
                             setEngine(null);
+                            setVariableInputValue(null);
                             setVariablePointer('');
                             setVariableType(val);
                         }}
@@ -444,36 +617,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                         })}
                     </Select>
                     <Typography variant={'body1'}>Value</Typography>
-                    <Select
-                        disabled={!variableType}
-                        value={
-                            variableType === 'cell' ||
-                            variableType === 'query' ||
-                            variableType === 'block'
-                                ? variablePointer
-                                : engine
-                        }
-                        onChange={(e) => {
-                            const val = e.target.value as unknown;
-                            if (
-                                variableType === 'cell' ||
-                                variableType === 'query' ||
-                                variableType === 'block'
-                            ) {
-                                const p = val as string;
-                                setVariablePointer(p);
-                            } else {
-                                const p = val as {
-                                    app_id: string;
-                                    app_name: string;
-                                    app_type: string;
-                                };
-                                setEngine(p);
-                            }
-                        }}
-                    >
-                        {values}
-                    </Select>
+                    {input}
                     <Typography variant={'h6'}>Preview</Typography>
                     {preview}
                 </Stack>
@@ -490,7 +634,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                     <Button
                         color="primary"
                         variant={'contained'}
-                        disabled={disabled}
+                        disabled={addVariableDisabled}
                         onClick={async () => {
                             // Refactor this
                             if (variableType) {
@@ -517,7 +661,15 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.ADD_DEPENDENCY,
                                             payload: {
-                                                id: engine.app_id,
+                                                id: engine
+                                                    ? engine.app_id
+                                                    : variableType ===
+                                                          'array' ||
+                                                      variableType === 'JSON'
+                                                    ? JSON.parse(
+                                                          variableInputValue,
+                                                      )
+                                                    : variableInputValue,
                                                 type: variableType,
                                             },
                                         });
@@ -534,7 +686,6 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                                 },
                                             },
                                         });
-                                        console.log('add engine');
                                     }
 
                                     notification.add({
@@ -566,7 +717,15 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.ADD_DEPENDENCY,
                                             payload: {
-                                                id: engine.app_id,
+                                                id: engine
+                                                    ? engine.app_id
+                                                    : variableType ===
+                                                          'array' ||
+                                                      variableType === 'JSON'
+                                                    ? JSON.parse(
+                                                          variableInputValue,
+                                                      )
+                                                    : variableInputValue,
                                                 type: variableType,
                                             },
                                         });
@@ -591,7 +750,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                             }
                         }}
                     >
-                        {variable ? 'Edit' : 'Add'}
+                        {variable ? 'Save' : 'Add'}
                     </Button>
                 </Stack>
             </StyledStack>

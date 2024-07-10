@@ -81,7 +81,7 @@ export const NewQueryOverlay = observer(
                                 widget: 'code',
                                 parameters: {
                                     code: '',
-                                    type: 'pixel',
+                                    type: 'py',
                                 },
                             },
                         ],
