@@ -86,7 +86,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
 
     const handleOpenVariantEditor = (duplicate: boolean) => {
         setEditorVariant(index, duplicate);
-        setDesignerView('editVariant');
+        setDesignerView('variantEdit');
     };
 
     return (
