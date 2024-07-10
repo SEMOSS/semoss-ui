@@ -149,7 +149,7 @@ const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
     marginTop: '0px',
     marginLeft: '0px',
     marginBottom: '15px',
-    backgroundColor: '#E2F2FF', // primary 4
+    backgroundColor: theme.palette.primary.selected,
     width: 'fit-content',
     padding: '7.5px 17.5px',
     borderRadius: '10px',
@@ -214,18 +214,19 @@ const StyledBorderDiv = styled('div')(({ theme }) => ({
 }));
 
 const StyledJoinDiv = styled('div')(({ theme }) => ({
-    border: '1px solid #aaa',
+    border: 'none',
     padding: '4px 12px',
     borderRadius: '12px',
-    fontSize: '16px',
-    color: '#aaa',
+    fontSize: '14px',
+    color: 'black',
     cursor: 'default',
+    backgroundColor: theme.palette.primary.selected,
 }));
 
 const StyledJoinTypography = styled(Typography)(({ theme }) => ({
-    marginLeft: '7.5px',
-    marginRight: '7.5px',
-    color: 'gray',
+    marginLeft: '12.5px',
+    marginRight: '12.5px',
+    color: theme.palette.secondary.dark,
     cursor: 'default',
 }));
 
