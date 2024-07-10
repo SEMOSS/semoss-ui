@@ -1,27 +1,24 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    Collapse,
     Divider,
     Icon,
     IconButton,
-    List,
     Stack,
     TextField,
     TreeView,
     Typography,
     styled,
+    useNotification,
 } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
 import {
     ChevronRight,
+    ContentCopy,
     ExpandMore,
-    Home,
     Search,
     SearchOff,
 } from '@mui/icons-material/';
-
-import { Block } from '@/stores/state/state.types';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -35,16 +32,13 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
+    lineHeight: theme.spacing(5),
     width: '100%',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
     gap: theme.spacing(1),
-}));
-
-const Spacer = styled('div')(() => ({
-    flex: 1,
 }));
 
 const StyledMenuScroll = styled('div')(({ theme }) => ({
@@ -56,58 +50,77 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
-const StyledSearchedLabel = styled('span', {
+const StyledLabelContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'search',
 })<{
     /** Track if it is a search term */
     search: boolean;
 }>(({ search, theme }) => ({
+    flex: 1,
     color: search ? theme.palette.primary.main : '',
+    overflow: 'hidden',
 }));
 
-const StyledListItemButton = styled(List.ItemButton, {
-    shouldForwardProp: (prop) => prop !== 'hovered',
-})<{
-    /** Track if the drag is on */
-    hovered: boolean;
-}>(({ hovered, theme }) => ({
-    // outline: hovered ? '1px solid red' : '',
-    background: hovered ? theme.palette.action.selected : '',
-    '&:hover *[data-hover]': {
-        visibility: 'visible',
-    },
+const StyledLabelTitle = styled('div')(({ theme }) => ({
+    ...theme.typography.body2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
 }));
 
-const StyledIcon = styled(Icon)(({ theme }) => ({
+const StyledLabelSubtitleText = styled('div')(({ theme }) => ({
+    ...theme.typography.caption,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+}));
+
+const StyledTreeItemIcon = styled(Icon)(() => ({
     color: 'rgba(0, 0, 0, .3)',
+}));
+
+const StyledTreeItemIconButton = styled(IconButton)(() => ({
+    '&[data-onhover]': {
+        display: 'none',
+    },
 }));
 
 const StyledTreeItemLabel = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
+    alignItems: 'center',
     padding: theme.spacing(1),
     gap: theme.spacing(1),
+    '&:hover [data-onhover]': {
+        display: 'block',
+    },
 }));
 
-const StyledNoLayersContainer = styled('div')(({ theme }) => ({
-    padding: theme.spacing(2),
+const StyledTreeItemMessage = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
 }));
 
 /**
- * Render the OutlineMenu
+ * Render the LayersMenu
  */
-export const OutlineMenu = observer((): JSX.Element => {
+export const LayersMenu = observer((): JSX.Element => {
     // get the store
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
+    const notification = useNotification();
 
     const [expanded, setExpanded] = useState<string[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
-    console.log('queries', state.queries);
-    console.log('blocks', state.blocks);
+    // get the active page
+    const activePage = state.blocks[designer.rendered];
 
     /**
      * Render the block and it's children
@@ -136,23 +149,40 @@ export const OutlineMenu = observer((): JSX.Element => {
                 nodeId={block.id}
                 label={
                     <StyledTreeItemLabel>
-                        <StyledIcon>
+                        <StyledTreeItemIcon>
                             <WidgetIcon />
-                        </StyledIcon>
-                        <StyledSearchedLabel
+                        </StyledTreeItemIcon>
+                        <StyledLabelContainer
                             search={
-                                block.widget
-                                    .toLowerCase()
-                                    .indexOf(
-                                        search
-                                            ? search.toLowerCase()
-                                            : 'Not a widget',
-                                    ) > -1
+                                search
+                                    ? [block.widget, block.id]
+                                          .join('')
+                                          .toLowerCase()
+                                          .indexOf(search.toLowerCase()) > -1
+                                    : false
                             }
                         >
-                            {block.widget.charAt(0).toUpperCase() +
-                                block.widget.slice(1)}
-                        </StyledSearchedLabel>
+                            <StyledLabelTitle>
+                                {block.widget.charAt(0).toUpperCase() +
+                                    block.widget.slice(1)}
+                            </StyledLabelTitle>
+                            <StyledLabelSubtitleText>
+                                {block.id}
+                            </StyledLabelSubtitleText>
+                        </StyledLabelContainer>
+                        <StyledTreeItemIconButton
+                            aria-label="copy"
+                            title={`Copy ID`}
+                            color="default"
+                            size="small"
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation();
+                                copy(block.id);
+                            }}
+                            data-onhover
+                        >
+                            <ContentCopy fontSize="small" />
+                        </StyledTreeItemIconButton>
                     </StyledTreeItemLabel>
                 }
                 onClick={(e: React.SyntheticEvent) => {
@@ -167,6 +197,9 @@ export const OutlineMenu = observer((): JSX.Element => {
                     e.stopPropagation();
                     designer.setHovered('');
                 }}
+                sx={{
+                    minWidth: 0,
+                }}
             >
                 {children.map((c) => {
                     return renderBlock(c);
@@ -176,58 +209,29 @@ export const OutlineMenu = observer((): JSX.Element => {
     };
 
     /**
-     * @returns List of pages
-     * TODO: Go from active page from wherever we decide to hold this in state
+     * Copy text and add it to the clipboard
+     * @param text - text to copy
      */
-    const pages = useMemo(() => {
-        const blocks = Object.entries(state.blocks);
-        // Filters out pages that are not children of a page
-        return blocks.filter((v) => v[1].widget === 'page' && !v[1].parent);
-    }, [designer.rendered]);
+    const copy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
 
-    /**
-     * @returns Children of the Active Page
-     * TODO: Go off of Active_Page in depenedency array
-     */
-    const pageBlocks = useMemo(() => {
-        const renderedPage = state.blocks[designer.rendered];
-        const children = [];
-        if (renderedPage) {
-            for (const s in renderedPage.slots) {
-                children.push(...renderedPage.slots[s].children);
-            }
+            notification.add({
+                color: 'success',
+                message: 'Successfully copied ID',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to copy ID',
+            });
         }
-
-        return children;
-    }, [designer.rendered, search]);
+    };
 
     return (
         <StyledMenu>
-            {/* <StyledMenuHeader>
-                <Typography variant="body1">Pages</Typography>
-            </StyledMenuHeader>
-            {pages.length && (
-                <List>
-                    {pages.map((p: [string, Block]) => {
-                        return (
-                            <StyledListItemButton
-                                key={p[0]}
-                                dense={true}
-                                selected={false}
-                                hovered={true}
-                            >
-                                <List.ItemText primary={'/'} />
-                                <StyledIcon>
-                                    <Home />
-                                </StyledIcon>
-                            </StyledListItemButton>
-                        );
-                    })}
-                </List>
-            )} */}
-
             <StyledMenuHeader>
-                <Typography variant="body1">Layers</Typography>
+                <Typography variant="h6">Layers</Typography>
                 <Stack
                     flex={1}
                     spacing={1}
@@ -235,18 +239,21 @@ export const OutlineMenu = observer((): JSX.Element => {
                     alignItems="center"
                     justifyContent="end"
                 >
-                    <Collapse orientation="horizontal" in={showSearch}>
+                    {showSearch ? (
                         <TextField
                             placeholder="Search"
                             size="small"
                             sx={{
-                                width: '200px',
+                                width: '100%',
+                                maxWidth: '200px',
                             }}
                             value={search}
                             variant="outlined"
                             onChange={(e) => setSearch(e.target.value)}
                         />
-                    </Collapse>
+                    ) : (
+                        <>&nbsp;</>
+                    )}
                     <IconButton
                         color="default"
                         size="small"
@@ -282,24 +289,22 @@ export const OutlineMenu = observer((): JSX.Element => {
                         setSelected(nodeIds);
                     }}
                     defaultCollapseIcon={
-                        <StyledIcon>
+                        <StyledTreeItemIcon>
                             <ExpandMore />
-                        </StyledIcon>
+                        </StyledTreeItemIcon>
                     }
                     defaultExpandIcon={
-                        <StyledIcon>
+                        <StyledTreeItemIcon>
                             <ChevronRight />
-                        </StyledIcon>
+                        </StyledTreeItemIcon>
                     }
                 >
-                    {pageBlocks.length ? (
-                        pageBlocks.map((b: string) => {
-                            return renderBlock(b);
-                        })
+                    {activePage ? (
+                        renderBlock(activePage.id)
                     ) : (
-                        <StyledNoLayersContainer>
-                            No layers to display...
-                        </StyledNoLayersContainer>
+                        <StyledTreeItemMessage>
+                            <Typography variant="caption">No Layers</Typography>
+                        </StyledTreeItemMessage>
                     )}
                 </TreeView>
             </StyledMenuScroll>

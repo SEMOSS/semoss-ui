@@ -219,14 +219,14 @@ export const EngineShell = (props: EngineShellProps) => {
 
                                         notification.add({
                                             color: 'success',
-                                            message: 'Successfully copied id',
+                                            message: 'Successfully copied ID',
                                         });
                                     } catch (e) {
                                         console.error(e);
 
                                         notification.add({
                                             color: 'error',
-                                            message: 'Error copyng id',
+                                            message: 'Error copyng ID',
                                         });
                                     }
                                 }}
