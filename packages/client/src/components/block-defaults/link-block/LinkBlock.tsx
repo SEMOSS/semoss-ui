@@ -16,7 +16,7 @@ export interface LinkBlockDef extends BlockDef<'link'> {
 }
 
 /*
-TO-DO: If this is a link to somewhere internally on app switch to a Link (react-router)
+TODO: If this is a link to somewhere internally on app switch to a Link (react-router)
 */
 export const LinkBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<LinkBlockDef>(id);

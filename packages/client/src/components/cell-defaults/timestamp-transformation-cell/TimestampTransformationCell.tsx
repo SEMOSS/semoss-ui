@@ -71,7 +71,7 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
         /**
          * A list of cells that are query imports,
          * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TO-DO: Do we want to reference other queries
+         * TODO: Do we want to reference other queries
          */
         const frames = useMemo(() => {
             const frameList = [];

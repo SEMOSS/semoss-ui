@@ -176,12 +176,12 @@ export const SelectedMenu = observer(() => {
 
             notification.add({
                 color: 'success',
-                message: 'Successfully copied id',
+                message: 'Successfully copied ID',
             });
         } catch (e) {
             notification.add({
                 color: 'error',
-                message: 'Unable to copy id',
+                message: 'Unable to copy ID',
             });
         }
     };
