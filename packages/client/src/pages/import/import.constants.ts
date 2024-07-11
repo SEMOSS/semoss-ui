@@ -5243,17 +5243,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'CONNECTION_URL',
-                        label: 'Connection URL',
-                        hidden: true,
-                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -5644,17 +5633,6 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         hidden: true,
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CONNECTION_URL',
-                        label: 'Connection URL',
-                        hidden: true,
-                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
-                        options: {
-                            component: 'text-field',
-                        },
                         disabled: true,
                         rules: { required: true },
                     },
