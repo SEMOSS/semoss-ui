@@ -314,23 +314,23 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
             value: index,
         });
 
-        if (index === null) {
-            dispatch({
-                type: 'field',
-                field: 'editorVariant',
-                value: null,
-            });
-        } else {
-            const variant = duplicate
-                ? llmVariants[index]
-                : buildEmptyVariant(defaultLLMVariant.models.length);
+        let variant: null | TypeVariant = null;
 
-            dispatch({
-                type: 'field',
-                field: 'editorVariant',
-                value: variant,
-            });
+        if (duplicate) {
+            if (index === -1) {
+                variant = defaultLLMVariant;
+            } else {
+                variant = llmVariants[index];
+            }
+        } else {
+            variant = buildEmptyVariant(defaultLLMVariant.models.length);
         }
+
+        dispatch({
+            type: 'field',
+            field: 'editorVariant',
+            value: variant,
+        });
     };
 
     const setEditorModel = (
