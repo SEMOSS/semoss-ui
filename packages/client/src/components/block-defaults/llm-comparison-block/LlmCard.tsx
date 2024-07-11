@@ -96,7 +96,7 @@ export interface LlmCardProps {
 
 export const LlmCard = (props: LlmCardProps) => {
     const { llm, variantIndex, modelIndex, isDefault, size = 'medium' } = props;
-    const { setDesignerView } = useLLMComparison();
+    const { setDesignerView, setEditorModel } = useLLMComparison();
 
     const {
         alias,
@@ -110,6 +110,7 @@ export const LlmCard = (props: LlmCardProps) => {
     } = llm;
 
     const handleOpenLlmEditor = () => {
+        setEditorModel(variantIndex, modelIndex);
         setDesignerView('modelEdit');
     };
 
