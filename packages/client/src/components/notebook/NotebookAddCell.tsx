@@ -88,6 +88,7 @@ const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
     padding: '0px',
     marginBottom: '15px',
     justifyContent: 'space-between',
+    marginTop: '25px',
 }));
 
 const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
@@ -635,6 +636,7 @@ export const NotebookAddCell = observer(
                         // selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
                         // selectQuery: pixelStringRef.current, // construct query based on useForm inputs
                         selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
+                        foo: 'moo',
                     };
                 }
 
@@ -1479,7 +1481,6 @@ export const NotebookAddCell = observer(
                 <Modal open={isDataImportModalOpen} maxWidth="lg">
                     <Modal.Content sx={{ width: importModalPixelWidth }}>
                         <form onSubmit={newHandleSubmit(onImportDataSubmit)}>
-                            {/* Import Data from Database Selector */}
                             <StyledModalTitleWrapper>
                                 <div
                                     style={{

@@ -473,6 +473,7 @@ export const NotebookCell = observer(
                 <StyledRow direction="row" width="100%" spacing={1}>
                     <StyledName variant="subtitle2">
                         {cell.config.name}
+                        {/* {cell.config.parameters.foo} */}
                     </StyledName>
 
                     <StyledCellActions in={showCellActions}>
@@ -713,7 +714,15 @@ export const NotebookCell = observer(
                                     </StyledPlayWrapper>
                                 )}
                             </StyledRunIconButton>
-                            <StyledCardInput>{rendered}</StyledCardInput>
+                            {/* { cell.widget == 'data-import' ?
+                                <div>data import bubbles</div>
+                                : */}
+                            <StyledCardInput
+                                style={{ border: '1px solid blue' }}
+                            >
+                                {rendered}
+                            </StyledCardInput>
+                            {/* } */}
                         </StyledCardContent>
                         {cell.isExecuted && (
                             <>
@@ -722,6 +731,7 @@ export const NotebookCell = observer(
                                 <StyledCardActions
                                     id={`notebook-cell-${queryId}-${cellId}-card-actions`}
                                     ref={cardActionsRef}
+                                    style={{ border: '1px solid red' }}
                                 >
                                     <Stack
                                         id={`notebook-cell-actions-${queryId}-${cellId}`}

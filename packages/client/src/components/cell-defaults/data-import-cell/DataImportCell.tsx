@@ -51,6 +51,16 @@ const FRAME_TYPES = {
     },
 };
 
+const StyledBlueDiv = styled('div')(({ theme }) => ({
+    padding: '5px 10px',
+    borderRadius: '12px',
+    backgroundColor: '#F1E9FB',
+    // maxWidth: '150px',
+    fontSize: '13px',
+    textAlign: 'center',
+    width: 'fit-content',
+}));
+
 const StyledContent = styled('div')(({ theme }) => ({
     position: 'relative',
     width: '100%',
@@ -95,6 +105,11 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
 
         /** Select query rendered in the cell */
         selectQuery: string;
+
+        /** Select query rendered in the cell */
+        // parameters: {
+        foo: string;
+        // }
     };
 }
 
@@ -107,6 +122,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
         const { state } = useBlocks();
 
         const [showTables, setShowTables] = useState(false);
+        const [showStyledView, setShowStyledView] = useState(true);
 
         const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
             loading: true,
@@ -317,7 +333,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                         ),
                                     )}
                                 </StyledSelect>
-                                <Button
+                                {/* <Button
                                     variant={'text'}
                                     color={'secondary'}
                                     onClick={() => {
@@ -326,40 +342,59 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 >
                                     {showTables ? 'Hide' : 'Show'} Available
                                     Columns
+                                </Button> */}
+                                <Button
+                                    variant={'text'}
+                                    color={'secondary'}
+                                    onClick={() => {
+                                        setShowStyledView(!showStyledView);
+                                    }}
+                                >
+                                    {showStyledView ? 'Show' : 'Hide'} Pixel
                                 </Button>
                             </Stack>
-                            {showTables && cell.parameters.databaseId ? (
+                            {/* {showTables && cell.parameters.databaseId ? (
                                 <DatabaseTables
                                     databaseId={cell.parameters.databaseId}
                                 />
                             ) : (
                                 <></>
-                            )}
+                            )} */}
                         </Stack>
                     )}
-                    <StyledContainer>
-                        <Editor
-                            value={cell.parameters.selectQuery}
-                            defaultValue="--SELECT * FROM..."
-                            language="sql" /** TODO: language support? can we tell this from the database type? */
-                            options={{
-                                scrollbar: { alwaysConsumeMouseWheel: false },
-                                readOnly: false,
-                                // readOnly: true,
-                                minimap: { enabled: false },
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                lineHeight: EDITOR_LINE_HEIGHT,
-                                overviewRulerBorder: false,
-                                lineNumbers: 'on',
-                                glyphMargin: false,
-                                folding: false,
-                                lineNumbersMinChars: 2,
-                            }}
-                            onChange={handleEditorChange}
-                            onMount={handleEditorMount}
-                        />
-                    </StyledContainer>
+                    {showStyledView ? (
+                        <div>
+                            {/* cell.parameters.joins.map */}
+                            {/* cell.parameters.filters.map */}
+                            <StyledBlueDiv>Bubble View</StyledBlueDiv>
+                        </div>
+                    ) : (
+                        <StyledContainer>
+                            <Editor
+                                value={cell.parameters.selectQuery}
+                                defaultValue=""
+                                language="pixel" /** TODO: language support? can we tell this from the database type? */
+                                options={{
+                                    scrollbar: {
+                                        alwaysConsumeMouseWheel: false,
+                                    },
+                                    readOnly: false,
+                                    // readOnly: true,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: EDITOR_LINE_HEIGHT,
+                                    overviewRulerBorder: false,
+                                    lineNumbers: 'on',
+                                    glyphMargin: false,
+                                    folding: false,
+                                    lineNumbersMinChars: 2,
+                                }}
+                                onChange={handleEditorChange}
+                                onMount={handleEditorMount}
+                            />
+                        </StyledContainer>
+                    )}
                     {isExpanded && (
                         <Stack
                             direction="row"
@@ -407,7 +442,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 ))}
                             </StyledSelect>
                             <StyledTextField
-                                // ## TODO fix variable import pixel syntax, currently including db name for some reason
                                 title="Set Frame Variable Name"
                                 value={cell.parameters.frameVariableName}
                                 disabled={cell.isLoading}

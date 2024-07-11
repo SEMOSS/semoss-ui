@@ -10,6 +10,7 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         frameType: 'PY',
         frameVariableName: '',
         selectQuery: '',
+        foo: 'baz',
     },
     toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
         // this only runs when the cell runs
@@ -30,6 +31,9 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         // const combinedPixelString = selectQuery.slice(0, -1) + pixelImportString + pixelMetaString;
         const combinedPixelString =
             selectQuery.slice(0, -1) + pixelImportString;
+
+        console.log({ combinedPixelString });
+
         return combinedPixelString;
 
         // const firstPixel = `${splitPixelString[0]};`;
