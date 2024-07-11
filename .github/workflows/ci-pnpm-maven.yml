@@ -8,15 +8,15 @@ name: CI
 #                 required: true
 #                 default: '4.3.0'
 on:
-  push:
-    branches:
-      - dev
-      - main
-  pull_request:
-    branches:
-      - dev
-      - main
-  workflow_dispatch:
+    push:
+        branches:
+            - dev
+            - main
+    pull_request:
+        branches:
+            - dev
+            - main
+    workflow_dispatch:
 
 env:
     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
@@ -35,7 +35,7 @@ jobs:
             image: node:18.16.1-bullseye
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
 
             - name: Cache node modules and Maven repository
               uses: actions/cache@v3
@@ -68,7 +68,7 @@ jobs:
             #   with:
             #       name: semossweb-artifact
             #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
-                  
+
             # - name: Delete old artifacts
             #   run: |
             #     echo "Deleting old artifacts..."
@@ -88,7 +88,7 @@ jobs:
             image: node:18.16.1-bullseye
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
 
             - name: Cache node modules and Maven repository
               uses: actions/cache@v3
