@@ -89,13 +89,25 @@ export interface LlmCardProps {
     isDefault: boolean;
 
     /**
+     * Used to show/hide card's actions by noting if the parent variant is hovered/focused
+     */
+    isVariantHovered: boolean;
+
+    /**
      * Sets the width of the Card
      */
     size?: 'small' | 'medium';
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const { llm, variantIndex, modelIndex, isDefault, size = 'medium' } = props;
+    const {
+        llm,
+        variantIndex,
+        modelIndex,
+        isDefault,
+        isVariantHovered,
+        size = 'medium',
+    } = props;
     const { setDesignerView, setEditorModel } = useLLMComparison();
 
     const {
@@ -139,8 +151,8 @@ export const LlmCard = (props: LlmCardProps) => {
                             </StyledTypography>
                         </Stack>
                     </Stack>
-                    {!isDefault && (
-                        <Tooltip title={value}>
+                    {!isDefault && isVariantHovered && (
+                        <Tooltip title={`Swap ${value}`}>
                             <IconButton onClick={handleOpenLlmEditor}>
                                 <Edit />
                             </IconButton>

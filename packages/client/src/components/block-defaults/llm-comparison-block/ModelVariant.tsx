@@ -130,6 +130,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                         modelIndex={mIdx}
                         isDefault={isDefault}
                         size={cardProps?.size ? cardProps.size : 'medium'}
+                        isVariantHovered={hovered}
                     />
                 ))}
             </StyledVariantBox>
