@@ -11,8 +11,13 @@ const ComparisonFormDefaulValues = {
     models: [],
 };
 
-const StyledConfigureSubMenu = styled(Stack)(({ theme }) => ({
+const StyledView = styled(Stack)(({ theme }) => ({
     width: '100%',
+}));
+
+const StyledActionBar = styled('div')(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(2),
 }));
 
 export const ConfigureSubMenu = () => {
@@ -57,7 +62,7 @@ export const ConfigureSubMenu = () => {
 
     if (designerView === 'allVariants') {
         return (
-            <StyledConfigureSubMenu direction="column" gap={2}>
+            <StyledView direction="column" gap={2}>
                 <ModelVariant
                     isDefault={true}
                     variant={defaultVariant}
@@ -71,11 +76,11 @@ export const ConfigureSubMenu = () => {
                         key={`variant-${idx}`}
                     />
                 ))}
-            </StyledConfigureSubMenu>
+            </StyledView>
         );
     } else {
         return (
-            <StyledConfigureSubMenu direction="column" gap={2}>
+            <StyledView direction="column" gap={1}>
                 <div>
                     <Button
                         variant="text"
@@ -110,15 +115,23 @@ export const ConfigureSubMenu = () => {
                     )}
                 </div>
 
-                <Stack gap={2} direction="row">
-                    <Button color="primary" onClick={onSubmit}>
+                <StyledActionBar>
+                    <Button
+                        color="primary"
+                        variant="contained"
+                        onClick={onSubmit}
+                    >
                         Save
                     </Button>
-                    <Button variant="text" onClick={handleResetParams}>
+                    <Button
+                        color="secondary"
+                        variant="text"
+                        onClick={handleResetParams}
+                    >
                         Reset Parameters
                     </Button>
-                </Stack>
-            </StyledConfigureSubMenu>
+                </StyledActionBar>
+            </StyledView>
         );
     }
 };
