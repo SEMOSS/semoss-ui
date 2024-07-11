@@ -67,15 +67,16 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                     name={`models[${index}].value`}
                     control={control}
                     rules={{ required: true }}
-                    render={({ field }) => (
+                    render={({ field, fieldState }) => (
                         <Select
                             value={field.value ? field.value : ''}
                             onChange={field.onChange}
+                            error={!!fieldState.error}
                         >
                             {allModels.map((model, idx) => (
                                 <Select.Item
                                     key={`${model.value}-${idx}`}
-                                    value={model.data}
+                                    value={model.value}
                                 >
                                     {model.database_name}
                                 </Select.Item>
@@ -97,6 +98,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                         render={({ field }) => (
                             <Slider
                                 onChange={field.onChange}
+                                value={field.value ? field.value : 0}
                                 min={0}
                                 max={1}
                                 step={0.1}
@@ -113,7 +115,11 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                         name={`models[${index}].topP`}
                         control={control}
                         render={({ field }) => (
-                            <StyledTextField type="number" />
+                            <StyledTextField
+                                type="number"
+                                onChange={field.onChange}
+                                value={field.value ? field.value : 0}
+                            />
                         )}
                     />
                 </Stack>
@@ -131,6 +137,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                         render={({ field }) => (
                             <Slider
                                 onChange={field.onChange}
+                                value={field.value ? field.value : 0}
                                 min={0}
                                 max={1}
                                 step={0.1}
@@ -147,7 +154,11 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                         name={`models[${index}].temperature`}
                         control={control}
                         render={({ field }) => (
-                            <StyledTextField type="number" />
+                            <StyledTextField
+                                type="number"
+                                onChange={field.onChange}
+                                value={field.value ? field.value : 0}
+                            />
                         )}
                     />
                 </Stack>
@@ -165,6 +176,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                         render={({ field }) => (
                             <Slider
                                 onChange={field.onChange}
+                                value={field.value ? field.value : 0}
                                 min={0}
                                 max={1024}
                                 marks={[
@@ -180,7 +192,11 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                         name={`models[${index}].length`}
                         control={control}
                         render={({ field }) => (
-                            <StyledTextField type="number" />
+                            <StyledTextField
+                                type="number"
+                                onChange={field.onChange}
+                                value={field.value ? field.value : 0}
+                            />
                         )}
                     />
                 </Stack>

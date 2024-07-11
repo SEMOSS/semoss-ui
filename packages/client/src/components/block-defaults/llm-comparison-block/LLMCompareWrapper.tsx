@@ -18,24 +18,13 @@ const initialState = {
         models: [
             {
                 alias: 'llm1',
-                value: '001510f8-b86e-492e-a7f0-41299775e7d9',
-                database_name: 'AIC',
+                value: 'f7cc988b-8c74-406e-87e3-ba30ca42c6fd',
+                database_name: 'openAI test',
                 database_subtype: 'OPEN_AI',
                 database_type: 'MODEL',
-            },
-            {
-                alias: 'llm2',
-                value: '001510f8-b86e-492e-a7f0-41299775e7d8',
-                database_name: 'AIC',
-                database_subtype: 'OPEN_AI',
-                database_type: 'MODEL',
-            },
-            {
-                alias: 'llm3',
-                value: '001510f8-b86e-492e-a7f0-41299775e7d7',
-                database_name: 'AIC',
-                database_subtype: 'OPEN_AI',
-                database_type: 'MODEL',
+                topP: 0.2,
+                temperature: 0.7,
+                length: 690,
             },
         ],
     },
@@ -51,20 +40,6 @@ const initialState = {
                     database_subtype: 'OPEN_AI',
                     database_type: 'MODEL',
                 },
-                {
-                    alias: 'llm Y',
-                    value: '456',
-                    database_name: 'hhaha',
-                    database_subtype: 'OPEN_AI',
-                    database_type: 'MODEL',
-                },
-                {
-                    alias: 'llm X',
-                    value: '789',
-                    database_name: 'hhaha',
-                    database_subtype: 'OPEN_AI',
-                    database_type: 'MODEL',
-                },
             ],
         },
         {
@@ -75,20 +50,6 @@ const initialState = {
                     alias: 'llm W',
                     value: '321',
                     database_name: 'AIC',
-                    database_subtype: 'OPEN_AI',
-                    database_type: 'MODEL',
-                },
-                {
-                    alias: 'llm V',
-                    value: '654',
-                    database_name: 'hhaha',
-                    database_subtype: 'OPEN_AI',
-                    database_type: 'MODEL',
-                },
-                {
-                    alias: 'llm U',
-                    value: '987',
-                    database_name: 'hhaha',
                     database_subtype: 'OPEN_AI',
                     database_type: 'MODEL',
                 },
@@ -241,9 +202,9 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
     const addVariant = (index: number, variant: TypeVariant) => {
         let variantsCopy = llmVariants;
         variantsCopy = [
-            ...variantsCopy.slice(0, index),
+            ...variantsCopy.slice(0, index + 1),
             variant,
-            ...variantsCopy.slice(index),
+            ...variantsCopy.slice(index + 1),
         ];
 
         dispatch({

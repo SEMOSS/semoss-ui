@@ -23,16 +23,24 @@ const StyledActionBar = styled('div')(({ theme }) => ({
 export const ConfigureSubMenu = () => {
     const viewRef = useRef('allVariants');
     const {
+        allModels,
         variants,
         defaultVariant,
         designerView,
         setDesignerView,
+        addVariant,
+        swapVariantModel,
+        setEditorVariant,
+        setEditorModel,
+        editorVariantIndex,
+        editorModelIndex,
         editorVariant,
         editorModel,
     } = useLLMComparison();
-    const { handleSubmit, control, setValue } = useForm<TypeLlmComparisonForm>({
-        defaultValues: ComparisonFormDefaulValues,
-    });
+    const { control, setValue, handleSubmit, getValues } =
+        useForm<TypeLlmComparisonForm>({
+            defaultValues: ComparisonFormDefaulValues,
+        });
 
     useEffect(() => {
         if (designerView !== viewRef.current) {
@@ -48,9 +56,31 @@ export const ConfigureSubMenu = () => {
         }
     }, [designerView, editorVariant, editorModel]);
 
-    const onSubmit = () => {
-        //TODO
-    };
+    const onSubmit = handleSubmit((data: TypeLlmComparisonForm) => {
+        const models = getValues('models');
+        const selectedModels = models.map((model) => {
+            const match = allModels.find((mod) => mod.value === model.value);
+            return match;
+        });
+
+        if (designerView === 'variantEdit') {
+            addVariant(editorVariantIndex, {
+                name: 'new',
+                selected: false,
+                models: selectedModels,
+            });
+            setEditorVariant(null);
+        } else if (designerView === 'modelEdit') {
+            swapVariantModel(
+                editorVariantIndex,
+                editorModelIndex,
+                selectedModels[0],
+            );
+            setEditorModel(null, null);
+        }
+
+        setDesignerView('allVariants');
+    });
 
     const handleResetParams = () => {
         if (designerView === 'variantEdit') {
