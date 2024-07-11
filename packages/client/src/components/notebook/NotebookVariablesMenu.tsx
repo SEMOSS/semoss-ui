@@ -156,6 +156,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
 
         setEngines(newEngines);
     }, [getEngines.status, getEngines.data]);
+
     const variables = useMemo(() => {
         return Object.entries(state.variables).filter((kv) => {
             const id = kv[0];
@@ -168,10 +169,11 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                 return kv;
         });
     }, [
-        Object.entries(state.variables).length,
         filterWord,
         selectedFilter.length,
         Object.values(state.variables),
+        Object.entries(state.variables).length,
+        Object.keys(state.variables).join(''),
     ]);
 
     return (

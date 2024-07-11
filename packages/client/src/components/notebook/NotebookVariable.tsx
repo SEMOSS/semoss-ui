@@ -191,7 +191,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
         } else {
             return variable.type;
         }
-    }, [variable.type, engines]);
+    }, [
+        variable.type,
+        engines,
+        id,
+        Object.values(state.dependencies).join(''),
+    ]);
 
     return (
         <StyledListItem

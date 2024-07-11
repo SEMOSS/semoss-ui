@@ -211,7 +211,6 @@ export class StateStore {
         try {
             if (pointer) {
                 if (type === 'block') {
-                    // const block = this.getBlock(pointer);
                     const block = this._store.blocks[pointer];
 
                     // Old Version of JSON - notebooks, will be dependent on the .value and may crash
@@ -227,24 +226,39 @@ export class StateStore {
                 } else if (type === 'query') {
                     const query = this._store.queries[pointer];
 
-                    return query.output;
-                    if (pointer !== path[0]) {
-                    } else {
-                        const key = path[2];
-                        if (query) {
-                            if (key in query._exposed) {
-                                // get the search path
-                                const s = path.slice(2).join('.');
-                                return getValueByPath(query._exposed, s);
+                    if (query) {
+                        if (path.length === 1) {
+                            // Just get query output
+                            return query.output;
+                        } else {
+                            const key = path[1];
+                            if (query) {
+                                if (key in query._exposed) {
+                                    // get the search path
+                                    const s = path.slice(1).join('.');
+                                    return getValueByPath(query._exposed, s);
+                                }
                             }
                         }
                     }
+
                     // get the attribute key
                 } else if (type === 'cell') {
                     const query = this.getQuery(splitAtPeriod(pointer, 'left'));
                     const cell = query.getCell(splitAtPeriod(pointer, 'right'));
 
-                    return cell.output;
+                    if (cell) {
+                        if (path.length === 1) {
+                            return cell.output;
+                        } else {
+                            const key = path[1];
+                            if (key in cell._exposed) {
+                                // get the search path
+                                const s = path.slice(1).join('.');
+                                return getValueByPath(cell._exposed, s);
+                            }
+                        }
+                    }
                 } else if (
                     type === 'database' ||
                     type === 'model' ||
@@ -268,7 +282,7 @@ export class StateStore {
 
                     return value;
                 }
-                return '';
+                return undefined;
             } else {
                 return undefined;
             }
@@ -388,9 +402,9 @@ export class StateStore {
 
                 this.renameVariable(id, alias);
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
-                const { from, to } = action.payload;
+                const { id, from, to } = action.payload;
 
-                this.editVariable(from, to);
+                this.editVariable(id, from, to);
             } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
 
@@ -477,18 +491,12 @@ export class StateStore {
             }
         } else if (this._store.variables[path[0]]) {
             const variable = this._store.variables[path[0]];
-
-            if (
-                variable.type === 'query' &&
-                path.length > 1 &&
-                variable.to !== path[1]
-            ) {
-                return expression;
-            }
-
             const value = this.getVariable(variable.to, variable.type, path);
 
-            return value;
+            // Protects for false values
+            if (value !== undefined && value !== null) {
+                return value;
+            }
         }
 
         return expression;
@@ -1236,15 +1244,25 @@ export class StateStore {
      * @param from
      * @param to
      */
-    private editVariable = (oldVar: VariableWithId, newVar: Variable) => {
+    private editVariable = (
+        id: string,
+        oldVar: VariableWithId,
+        newVar: Variable,
+    ) => {
         if (this._store.dependencies[oldVar.to]) {
             console.log('----------------------------');
             console.log('remove old engine dependency');
             console.log('----------------------------');
             delete this._store.dependencies[oldVar.to];
         }
+        if (oldVar.id !== id) {
+            console.log('----------------------------');
+            console.log('remove old variable due to name change');
+            console.log('----------------------------');
+            delete this._store.variables[oldVar.id];
+        }
 
-        this._store.variables[oldVar.id] = newVar;
+        this._store.variables[id] = newVar;
     };
 
     /**

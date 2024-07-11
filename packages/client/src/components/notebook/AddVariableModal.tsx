@@ -648,6 +648,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.EDIT_VARIABLE,
                                             payload: {
+                                                id: variableName,
                                                 from: variable,
                                                 to: {
                                                     to: variablePointer,
@@ -677,6 +678,7 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             message:
                                                 ActionMessages.EDIT_VARIABLE,
                                             payload: {
+                                                id: variableName,
                                                 from: variable,
                                                 to: {
                                                     to: id,

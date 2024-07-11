@@ -242,8 +242,12 @@ export interface AddVariableAction extends Action {
 export interface EditVariableAction extends Action {
     message: ActionMessages.EDIT_VARIABLE;
     payload: {
+        id: string;
         from: VariableWithId;
-        to: Variable;
+        to: {
+            to: string;
+            type: VariableType;
+        };
     };
 }
 
