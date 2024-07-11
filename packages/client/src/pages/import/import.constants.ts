@@ -8634,7 +8634,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'database',
                         label: 'Database',
-                        defaultValue: '',
+                        defaultValue: 'postgres',
                         options: {
                             component: 'text-field',
                         },
@@ -8644,7 +8644,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'schema',
                         label: 'Schema',
-                        defaultValue: 'dbo',
+                        defaultValue: 'public',
                         options: {
                             component: 'text-field',
                         },
