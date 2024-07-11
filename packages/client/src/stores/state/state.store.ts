@@ -23,6 +23,7 @@ import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 import { splitAtPeriod } from '@/utility';
 import { STATE_STORE_CURRENT_VERSION } from './state.constants';
+import { MigrationRunner } from './migration-runner';
 
 interface StateStoreInterface {
     /** Mode */
@@ -742,9 +743,17 @@ export class StateStore {
      *
      * @param state - pixel to execute
      */
-    private setState = (state: SerializedState) => {
+    private setState = async (s: SerializedState) => {
+        let state = s;
+
+        // TODO: Lets do this before we even instantiate state store?
+        if (state.version !== STATE_STORE_CURRENT_VERSION) {
+            state = await MigrationRunner(state);
+        }
+
         // store the block information
         this._store.blocks = state.blocks;
+
         // load the queries
         this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
             acc[val] = new QueryState(state.queries[val], this);

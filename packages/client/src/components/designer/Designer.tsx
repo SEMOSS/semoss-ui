@@ -14,6 +14,7 @@ import { SelectedMenu } from './SelectedMenu';
 import { LayersMenu } from './LayersMenu';
 import { Screen } from './Screen';
 import { DEFAULT_MENU, VISUALIZATION_MENU } from './designer.constants';
+import { NotebookVariablesMenu } from '../notebook/NotebookVariablesMenu';
 
 const StyledLeftMenu = styled('div', {
     shouldForwardProp: (prop) => prop !== 'width',
@@ -89,7 +90,7 @@ export const Designer = observer((): JSX.Element => {
 
     // view
     const [view, setView] = useState<
-        'layers' | 'blocks' | 'visualization' | ''
+        'layers' | 'blocks' | 'visualization' | 'variables' | ''
     >('');
 
     // menu resize
@@ -221,6 +222,15 @@ export const Designer = observer((): JSX.Element => {
                             </Tooltip>
                             <SidebarText>Viz</SidebarText>
                         </SidebarItem>
+                        <SidebarItem
+                            selected={view === 'variables'}
+                            onClick={() => updateView('variables')}
+                        >
+                            <Tooltip title={'View Variables'} placement="right">
+                                <BarChartRounded color="inherit" />
+                            </Tooltip>
+                            <SidebarText>Variables</SidebarText>
+                        </SidebarItem>
                     </Sidebar>
                     {view ? (
                         <StyledSidebarContent elevation={7}>
@@ -238,6 +248,10 @@ export const Designer = observer((): JSX.Element => {
                                         title={'Add Visualization'}
                                         items={VISUALIZATION_MENU}
                                     />
+                                ) : null}
+
+                                {view === 'variables' ? (
+                                    <NotebookVariablesMenu />
                                 ) : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
