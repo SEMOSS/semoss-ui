@@ -5332,9 +5332,272 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'PGVector',
-                disable: true,
+                disable: false,
                 icon: POSTGRES,
-                fields: [],
+                fields: [
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'PGVECTOR',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'RDBMS_TYPE',
+                        label: 'Driver Name',
+                        defaultValue: 'POSTGRES',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                        hidden: true,
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'hostname',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'port',
+                        label: 'Port',
+                        defaultValue: '5432',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'database',
+                        label: 'Database',
+                        defaultValue: 'postgres',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'schema',
+                        label: 'Schema',
+                        defaultValue: 'public',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'additional',
+                        label: 'Additional Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'JDBC Url',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'PGVECTOR_TABLE_NAME',
+                        label: 'PGVector Table Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '0',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'Squared Euclidean (L2) distance',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'Squared Euclidean (L2) distance',
+                                },
+                                {
+                                    display: 'cosine similarity',
+                                    value: 'cosine similarity',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                ],
             },
             {
                 name: 'Pinecone',
@@ -5632,7 +5895,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ASTER,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ASTER_DB',
                         options: {
@@ -5805,7 +6068,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ATHENA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ATHENA',
                         options: {
@@ -5979,7 +6242,7 @@ export const CONNECTION_OPTIONS = {
                 icon: BIGQUERY,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'BIG_QUERY',
                         options: {
@@ -6117,7 +6380,7 @@ export const CONNECTION_OPTIONS = {
                 icon: CASSANDRA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'CASSANDRA',
                         options: {
@@ -6291,7 +6554,7 @@ export const CONNECTION_OPTIONS = {
                 icon: CLICKHOUSE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'CLICKHOUSE',
                         options: {
@@ -6475,7 +6738,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DATABRICKS,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DATABRICKS',
                         options: {
@@ -6669,7 +6932,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DATASTAX,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DATASTAX',
                         options: {
@@ -6767,7 +7030,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DB2,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DB2',
                         options: {
@@ -6941,7 +7204,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DERBY,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DERBY',
                         options: {
@@ -7116,7 +7379,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ELASTIC_SEARCH,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ELASTIC_SEARCH',
                         options: {
@@ -7234,7 +7497,7 @@ export const CONNECTION_OPTIONS = {
                 icon: H2_DB,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'HIVE',
                         options: {
@@ -7409,7 +7672,7 @@ export const CONNECTION_OPTIONS = {
                 icon: HIVE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'HIVE',
                         options: {
@@ -7584,7 +7847,7 @@ export const CONNECTION_OPTIONS = {
                 icon: IMPALA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'IMPALA',
                         options: {
@@ -7758,7 +8021,7 @@ export const CONNECTION_OPTIONS = {
                 icon: MARIA_DB,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'MARIA_DB',
                         options: {
@@ -7932,7 +8195,7 @@ export const CONNECTION_OPTIONS = {
                 icon: MYSQL,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'MYSQL',
                         options: {
@@ -8105,7 +8368,7 @@ export const CONNECTION_OPTIONS = {
                 icon: OPEN_SEARCH,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'OPEN_SEARCH',
                         options: {
@@ -8223,7 +8486,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ORACLE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ORACLE',
                         options: {
@@ -8397,7 +8660,7 @@ export const CONNECTION_OPTIONS = {
                 icon: PHOENIX,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'PHOENIX',
                         options: {
@@ -8571,7 +8834,7 @@ export const CONNECTION_OPTIONS = {
                 icon: POSTGRES,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'POSTGRES',
                         options: {
@@ -8755,7 +9018,7 @@ export const CONNECTION_OPTIONS = {
                 icon: REDSHIFT,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'REDSHIFT',
                         options: {
@@ -8939,7 +9202,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SAP_HANA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SAP_HANA',
                         options: {
@@ -9113,7 +9376,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SEMOSS,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SEMOSS',
                         options: {
@@ -9327,7 +9590,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SNOWFLAKE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SNOWFLAKE',
                         options: {
@@ -9532,7 +9795,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SQL_SERVER,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SQL_SERVER',
                         options: {
@@ -9717,7 +9980,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SQLITE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SQLITE',
                         options: {
@@ -9881,7 +10144,7 @@ export const CONNECTION_OPTIONS = {
                 icon: TERADATA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'TERADATA',
                         options: {
@@ -10045,7 +10308,7 @@ export const CONNECTION_OPTIONS = {
                 icon: TIBCO,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'TIBCO',
                         options: {
@@ -10219,7 +10482,7 @@ export const CONNECTION_OPTIONS = {
                 icon: TRINO,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'TRINO',
                         options: {
@@ -10339,7 +10602,6 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
