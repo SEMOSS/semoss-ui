@@ -11,8 +11,18 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         frameVariableName: '',
         selectQuery: '',
         foo: 'baz',
+        joins: [],
+        tableNames: [],
+        // filters: [],
     },
-    toPixel: ({ databaseId, frameType, frameVariableName, selectQuery }) => {
+    toPixel: ({
+        databaseId,
+        frameType,
+        frameVariableName,
+        selectQuery,
+        foo,
+        joins,
+    }) => {
         // this only runs when the cell runs
         // it will check the frame type and variable name which the user could change
         // so NotebookAddCell should track the static first part of the pixel with db id / cols and add Meta | Frame() etc without the import and var name

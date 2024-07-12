@@ -470,6 +470,7 @@ export const NotebookAddCell = observer(
 
         const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
         const [shownTables, setShownTables] = useState(new Set());
+        const [selectedTableNames, setSelectedTableNames] = useState(new Set());
         const [joinsSet, setJoinsSet] = useState(new Set()); // Set({ "USERS_TABLE:VISNS_TABLE" })
 
         const [pixelString, setPixelString] = useState('');
@@ -537,6 +538,10 @@ export const NotebookAddCell = observer(
         // region --- useEffects
 
         useEffect(() => {
+            console.log({ joinElements });
+        }, [joinElements]);
+
+        useEffect(() => {
             setSelectedLeftKey(null);
             setSelectedRightKey(null);
             removeEditableColumns();
@@ -575,6 +580,8 @@ export const NotebookAddCell = observer(
         useEffect(() => {
             // if any change occurs with checkboxes reassess all joins to display
             setJoinsStackHandler();
+            updateSelectedTables();
+            console.log({ selectedTableNames });
         }, [checkedColumnsCount]);
 
         useEffect(() => {
@@ -637,6 +644,8 @@ export const NotebookAddCell = observer(
                         // selectQuery: pixelStringRef.current, // construct query based on useForm inputs
                         selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
                         foo: 'moo',
+                        joins: joinElements,
+                        tableNames: Array.from(selectedTableNames),
                     };
                 }
 
@@ -966,6 +975,31 @@ export const NotebookAddCell = observer(
                 setTableEdges(newTableEdges);
                 setIsDatabaseLoading(false);
             });
+        };
+
+        const updateSelectedTables = () => {
+            // const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+            const pixelColumnAliases = [];
+            // const pixelJoins = [];
+
+            watchedTables?.forEach((tableObject) => {
+                const currTableName = tableObject.name;
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            setSelectedTableNames(pixelTables);
         };
 
         /** Old Get All Database Tables for Import Data --- remove? */
@@ -1357,6 +1391,7 @@ export const NotebookAddCell = observer(
             const joinsSetCopy = new Set(joinsSet);
             joinsSetCopy.add(newJoinSet);
             setJoinsSet(joinsSetCopy);
+            console.log({ joinsSetCopy });
         };
 
         return (

@@ -11,6 +11,9 @@ import {
     Stack,
     InputAdornment,
     Typography,
+    Tooltip,
+    Modal,
+    IconButton,
 } from '@semoss/ui';
 
 import {
@@ -18,6 +21,8 @@ import {
     CropFree,
     KeyboardArrowDown,
     DriveFileRenameOutlineRounded,
+    CalendarViewMonth,
+    JoinInner,
 } from '@mui/icons-material';
 import { editor } from 'monaco-editor';
 import { DatabaseTables } from './DatabaseTables';
@@ -51,11 +56,73 @@ const FRAME_TYPES = {
     },
 };
 
+const StyledJoinDiv = styled('div')(({ theme }) => ({
+    border: 'none',
+    padding: '0px 12px',
+    borderRadius: '12px',
+    fontSize: '12.5px',
+    color: 'black',
+    cursor: 'default',
+    // backgroundColor: theme.palette.primary.selected,
+    backgroundColor: '#F1E9FB',
+    fontWeight: '400',
+}));
+
+const StyledJoinTypography = styled(Typography)(({ theme }) => ({
+    marginLeft: '12.5px',
+    marginRight: '12.5px',
+    color: theme.palette.secondary.dark,
+    cursor: 'default',
+}));
+
+const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
+    display: 'flex',
+    alignContent: 'center',
+    padding: '0px',
+    // justifyContent: 'space-between',
+}));
+
+const TableIconButton = styled(Tooltip)(({ theme }) => ({
+    marginLeft: '-3px',
+    marginRight: '7px',
+    color: theme.palette.primary.main,
+}));
+
+const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
+    marginTop: '0px',
+    // marginBottom: '15px',
+    // marginLeft: '15px',
+    marginRight: '15px',
+    backgroundColor: theme.palette.primary.selected,
+    width: 'fit-content',
+    padding: '7.5px 17.5px',
+    borderRadius: '10px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    cursor: 'default',
+    fontSize: '12.5px',
+}));
+
+const StyledJoinElementBlueBubble = styled(Typography)(({ theme }) => ({
+    marginTop: '0px',
+    marginBottom: '15px',
+    // marginLeft: '15px',
+    marginRight: '15px',
+    backgroundColor: theme.palette.primary.selected,
+    width: 'fit-content',
+    padding: '10px 20px',
+    borderRadius: '10px',
+    // display: 'block',
+    // alignItems: 'center',
+    cursor: 'default',
+    fontSize: '12.5px',
+}));
+
 const StyledBlueDiv = styled('div')(({ theme }) => ({
     padding: '5px 10px',
     borderRadius: '12px',
-    backgroundColor: '#F1E9FB',
-    // maxWidth: '150px',
+    // backgroundColor: '#F1E9FB', // light purple
+    backgroundColor: theme.palette.primary.selected,
     fontSize: '13px',
     textAlign: 'center',
     width: 'fit-content',
@@ -91,6 +158,24 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 
 const StyledContainer = styled('div')(({ theme }) => ({}));
 
+interface JoinObject {
+    //     table1: string;
+    //     table2: string;
+    //     key1: string;
+    //     key2: string;
+    //     joinType: string;
+    id: string;
+    joinType: string;
+    leftKey: string;
+    leftTable: string;
+    rightKey: string;
+    rightTable: string;
+}
+
+interface FilterObject {
+    // structure for filters tbd
+}
+
 export interface DataImportCellDef extends CellDef<'data-import'> {
     widget: 'data-import';
     parameters: {
@@ -110,6 +195,13 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
         // parameters: {
         foo: string;
         // }
+
+        tableNames: string[];
+
+        joins: JoinObject[];
+
+        // filters will be added later
+        // filters: FilterObject[];
     };
 }
 
@@ -363,11 +455,127 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                         </Stack>
                     )}
                     {showStyledView ? (
-                        <div>
-                            {/* cell.parameters.joins.map */}
-                            {/* cell.parameters.filters.map */}
-                            <StyledBlueDiv>Bubble View</StyledBlueDiv>
-                        </div>
+                        <>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    marginBottom: '0',
+                                    paddingBottom: '0',
+                                }}
+                            >
+                                {/* <Typography variant='body1' sx={{ display: 'inline-block', paddingBottom: '20px' }}>
+                                    Data from: 
+                                </Typography> */}
+                                {cell.parameters.tableNames &&
+                                    cell.parameters.tableNames.map(
+                                        (tableName) => (
+                                            <StyledTableTitleBlueBubble
+                                                variant="body1"
+                                                title="Table"
+                                            >
+                                                <TableIconButton
+                                                    title={'Table'}
+                                                    placement="top"
+                                                >
+                                                    <CalendarViewMonth fontSize="medium" />
+                                                </TableIconButton>
+                                                {/* <StyledJoinTypography variant="body1"> */}
+                                                {tableName}
+                                                {/* </StyledJoinTypography> */}
+                                            </StyledTableTitleBlueBubble>
+                                        ),
+                                    )}
+                            </div>
+
+                            {/* stack for user-added joins filters and summaries */}
+                            {isExpanded &&
+                                cell.parameters.joins &&
+                                cell.parameters.joins.map(
+                                    (join, stackIndex) => (
+                                        <Stack
+                                            spacing={1}
+                                            direction="column"
+                                            sx={{
+                                                // backgroundColor: '#FAFAFA',
+                                                // padding: '16px 16px 16px 16px',
+                                                // marginBottom: '15px',
+                                                display: 'block',
+                                                // border: '1px solid red',
+                                            }}
+                                        >
+                                            <StyledModalTitleWrapper2>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                    }}
+                                                >
+                                                    <Tooltip title="Left Join Table">
+                                                        <StyledJoinDiv>
+                                                            {join.leftTable}
+                                                        </StyledJoinDiv>
+                                                    </Tooltip>
+
+                                                    <Tooltip
+                                                        title={`${'Inner Join'}`}
+                                                    >
+                                                        <IconButton
+                                                            size="small"
+                                                            color="secondary"
+                                                            sx={{
+                                                                marginLeft:
+                                                                    '7.5px',
+                                                                marginRight:
+                                                                    '7.5px',
+                                                            }}
+                                                        >
+                                                            <JoinInner />
+                                                        </IconButton>
+                                                    </Tooltip>
+
+                                                    <Tooltip title="Right Join Table">
+                                                        <StyledJoinDiv>
+                                                            {join.rightTable}
+                                                        </StyledJoinDiv>
+                                                    </Tooltip>
+
+                                                    <StyledJoinTypography variant="body1">
+                                                        where
+                                                    </StyledJoinTypography>
+
+                                                    <Tooltip title="Left Join Key">
+                                                        <StyledJoinDiv>
+                                                            {join.leftKey}
+                                                        </StyledJoinDiv>
+                                                    </Tooltip>
+
+                                                    <StyledJoinTypography variant="body1">
+                                                        =
+                                                    </StyledJoinTypography>
+
+                                                    <Tooltip title="Right Join Key">
+                                                        <StyledJoinDiv>
+                                                            {join.rightKey}
+                                                        </StyledJoinDiv>
+                                                    </Tooltip>
+                                                </div>
+                                                {/* <div>
+                                            <IconButton
+                                                size="small"
+                                                color="secondary"
+                                                onClick={() => {
+                                                    removeStack(stackIndex);
+                                                }}
+                                            >
+                                                <Close />
+                                            </IconButton>
+                                        </div> */}
+                                            </StyledModalTitleWrapper2>
+                                        </Stack>
+                                    ),
+                                )}
+                        </>
                     ) : (
                         <StyledContainer>
                             <Editor
@@ -401,6 +609,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             alignItems={'center'}
                             justifyContent={'flex-end'}
                             borderColor={'red'}
+                            paddingTop={'25px'}
                         >
                             <StyledSelect
                                 size={'small'}
