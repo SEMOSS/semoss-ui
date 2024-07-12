@@ -6,6 +6,12 @@ import {
 } from '@/components/workspace';
 
 export type LLMComparisonContextType = {
+    /** Determines whether the model's for a variant should be displayed in its response */
+    showModelsInResponse: boolean;
+
+    /** Toggles the value showModelsInResponse */
+    toggleShowModelsInResponse: (bool: boolean) => void;
+
     /** All Models available for configuring variants */
     allModels: any;
 

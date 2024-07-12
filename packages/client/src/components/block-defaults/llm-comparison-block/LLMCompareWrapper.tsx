@@ -12,6 +12,7 @@ import {
 
 // TODO: clean out fake data when BE is operational
 const initialState = {
+    showModelsInResponse: true,
     allModels: [],
     defaultLLMVariant: {
         name: 'default',
@@ -200,6 +201,14 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
         });
     };
 
+    const toggleShowModelsInResponse = (bool: boolean) => {
+        dispatch({
+            type: 'field',
+            field: 'showModelsInResponse',
+            value: bool,
+        });
+    };
+
     const addVariant = (index: number, variant: TypeVariant) => {
         let variantsCopy = llmVariants;
         variantsCopy = [
@@ -323,6 +332,8 @@ export const LLMCompareWrapper = observer((props: LLMCompareWrapperProps) => {
     return (
         <LLMComparisonContext.Provider
             value={{
+                showModelsInResponse: state.showModelsInResponse,
+                toggleShowModelsInResponse,
                 allModels: state.allModels,
                 variants: llmVariants,
                 defaultVariant: defaultLLMVariant,

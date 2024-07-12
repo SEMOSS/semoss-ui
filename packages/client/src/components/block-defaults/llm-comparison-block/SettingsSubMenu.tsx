@@ -1,4 +1,4 @@
-import { Stack, Typography, styled, Checkbox } from '@semoss/ui';
+import { Stack, Typography, styled, Checkbox, Switch } from '@semoss/ui';
 import { useLLMComparison } from '@/hooks';
 import { useEffect, useState } from 'react';
 import { TypeVariant } from '@/components/workspace';
@@ -19,7 +19,13 @@ const StyledSection = styled(Stack)(({ theme }) => ({
 }));
 
 export const SettingsSubMenu = () => {
-    const { defaultVariant, variants, editVariant } = useLLMComparison();
+    const {
+        showModelsInResponse,
+        toggleShowModelsInResponse,
+        defaultVariant,
+        variants,
+        editVariant,
+    } = useLLMComparison();
     const [selectedVars, setSelectedVars] = useState<TypeVariant[]>([]);
     const [unselectedVars, setUnselectedVars] = useState<TypeVariant[]>([]);
 
@@ -122,6 +128,16 @@ export const SettingsSubMenu = () => {
                         onChange={() => handleToggleSelected(variant)}
                     />
                 ))}
+            </StyledSection>
+
+            <StyledSection direction="row" gap={1}>
+                <Typography variant="body2">Display Model Name</Typography>
+                <Switch
+                    checked={showModelsInResponse}
+                    onChange={() =>
+                        toggleShowModelsInResponse(!showModelsInResponse)
+                    }
+                />
             </StyledSection>
         </StyledSettingsSubMenu>
     );
