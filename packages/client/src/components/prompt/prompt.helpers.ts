@@ -208,7 +208,7 @@ export function getQueryForPrompt(
                     INPUT_TYPE_VECTOR
                 ) {
                     functionCalls += `
-    ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"{{${customInputToken.key}}}",limit)
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"{{${customInputToken.key} ${customInputTypes[customInputTokenIndex].type}}}",limit)
 `;
                 }
                 if (
@@ -224,7 +224,7 @@ export function getQueryForPrompt(
                     INPUT_TYPE_DATABASE
                 ) {
                     functionCalls += `
-    ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"{{${customInputToken.key}}}")
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"{{${customInputToken.key} ${customInputTypes[customInputTokenIndex].type}}}")
 `;
                 }
             },
