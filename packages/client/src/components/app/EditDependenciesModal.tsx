@@ -20,27 +20,18 @@ import { Control, Controller } from 'react-hook-form';
 import { Autocomplete } from '@mui/material';
 import { Close } from '@mui/icons-material';
 
-const EditModalInnerContainer = styled('div')({
+const StyledModalHeading = styled(Modal.Title)({
     display: 'flex',
-    flexDirection: 'column',
-    padding: '20px',
-});
-
-const ModalHeaderWrapper = styled('div')({
-    alignItems: 'center',
-    display: 'flex',
-    marginBottom: '1rem',
     justifyContent: 'space-between',
+    alignItems: 'center',
 });
 
-const ModalHeading = styled(Typography)({
-    fontSize: 20,
+const StyledHeader = styled(Typography)({
     fontWeight: 500,
 });
 
 const StyledModalSubHeading = styled(Typography)(({ theme }) => ({
-    fontSize: '14px',
-    paddingBottom: theme.spacing(1),
+    paddingBottom: theme.spacing(2),
     fontWeight: 500,
 }));
 
@@ -139,18 +130,19 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
     };
 
     return (
-        <Modal open={isOpen} fullWidth>
-            <EditModalInnerContainer>
-                <ModalHeaderWrapper>
-                    <ModalHeading variant="h2">
-                        Add and Edit Dependencies
-                    </ModalHeading>
-                    <IconButton onClick={() => onClose(false)}>
-                        <Close />
-                    </IconButton>
-                </ModalHeaderWrapper>
+        <Modal open={isOpen} fullWidth onClose={() => onClose(false)}>
+            <StyledModalHeading>
+                <StyledHeader variant="h6">
+                    Add and Edit Dependencies
+                </StyledHeader>
 
-                <StyledModalSubHeading variant="h3">
+                <IconButton size="small" onClick={() => onClose(false)}>
+                    <Close />
+                </IconButton>
+            </StyledModalHeading>
+
+            <Modal.Content>
+                <StyledModalSubHeading variant="subtitle1">
                     Linked Dependencies
                 </StyledModalSubHeading>
 
@@ -204,19 +196,16 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
                         </StyledDependencyListItem>
                     );
                 })}
+            </Modal.Content>
 
-                <Modal.Actions>
-                    <Button onClick={() => onClose(false)} variant="text">
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleUpdateDependencies}
-                        variant="contained"
-                    >
-                        Save
-                    </Button>
-                </Modal.Actions>
-            </EditModalInnerContainer>
+            <Modal.Actions>
+                <Button onClick={() => onClose(false)} variant="text">
+                    Cancel
+                </Button>
+                <Button onClick={handleUpdateDependencies} variant="contained">
+                    Save
+                </Button>
+            </Modal.Actions>
         </Modal>
     );
 };

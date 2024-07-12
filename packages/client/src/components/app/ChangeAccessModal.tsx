@@ -6,22 +6,29 @@ import {
     TextField,
     Stack,
     RadioGroup,
+    useNotification,
 } from '@semoss/ui';
 import { Control, Controller } from 'react-hook-form';
 import { HdrAuto, Edit, Visibility } from '@mui/icons-material';
 import { AppDetailsFormTypes } from './app-details.utility';
+import { PERMISSION_DESCRIPTION_MAP } from '../settings/member-permissions.constants';
+import { useRootStore } from '@/hooks';
 
-const ContentBox = styled(Stack)(({ theme }) => ({
+const StyledContentBox = styled(Stack)(({ theme }) => ({
     backgroundColor: theme.palette.background.default,
     padding: theme.spacing(1),
     borderRadius: '4px',
 }));
 
-const ContentCard = styled(Stack)(({ theme }) => ({
+const StyledContentCard = styled(Stack)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(2),
     borderRadius: '4px',
 }));
+
+const StyledRoleInfo = styled('div')({
+    width: '100%',
+});
 
 const StyledHdrAutoIcon = styled(HdrAuto)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -42,15 +49,63 @@ const ModalSectionHeading = styled(Typography)({
 
 interface ChangeAccessModalProps {
     open: boolean;
-    onClose: () => void;
+    onClose: (refresh?: boolean) => void;
     control: Control<AppDetailsFormTypes>;
+    getValues: any;
 }
 
 export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
-    const { open, onClose, control } = props;
+    const { open, onClose, control, getValues } = props;
+    const permissionDescriptions = PERMISSION_DESCRIPTION_MAP['app'];
 
-    const handleChangeAccess = () => {
-        // TODO
+    const { monolithStore } = useRootStore();
+    const notification = useNotification();
+
+    const handleChangeAccess = async () => {
+        const current = getValues('permission');
+        const requested = getValues('requestedPermission');
+        const comment = getValues('roleChangeComment');
+        const id = getValues('appId');
+
+        if (requested === current || requested === '') {
+            notification.add({
+                color: 'error',
+                message:
+                    'No change in Access has been requested. Please select another and try again.',
+            });
+            return;
+        } else if (!comment) {
+            notification.add({
+                color: 'error',
+                message: 'A comment is required to request access.',
+            });
+            return;
+        }
+
+        try {
+            const res = await monolithStore.runQuery(
+                `RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
+            );
+
+            const { operationType, output } = res.pixelReturn[0];
+
+            if (operationType.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+
+                return;
+            }
+
+            notification.add({
+                color: 'success',
+                message: output,
+            });
+            onClose(true);
+        } catch (e) {
+            // TODO
+        }
     };
 
     return (
@@ -63,94 +118,86 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                     control={control}
                     render={({ field }) => {
                         return (
-                            <ContentBox direction="column" gap={1}>
-                                <ContentCard direction="row" gap={1}>
+                            <StyledContentBox direction="column" gap={1}>
+                                <StyledContentCard direction="row" gap={1}>
                                     <StyledHdrAutoIcon />
-                                    <div>
+                                    <StyledRoleInfo>
                                         <Typography variant="subtitle1">
                                             Author
                                         </Typography>
                                         <span>
-                                            Ability to hide or delete the data
-                                            app, provision other authors, and
-                                            all editor permissions.
+                                            {permissionDescriptions.author}
                                         </span>
-                                    </div>
+                                    </StyledRoleInfo>
                                     <RadioGroup
                                         label=""
                                         value={field.value}
                                         onChange={(val) => field.onChange(val)}
                                     >
                                         <RadioGroup.Item
-                                            value="author"
+                                            value="OWNER"
                                             label=""
                                         />
                                     </RadioGroup>
-                                </ContentCard>
+                                </StyledContentCard>
 
-                                <ContentCard direction="row" gap={1}>
+                                <StyledContentCard direction="row" gap={1}>
                                     <StyledEditIcon />
-                                    <div>
+                                    <StyledRoleInfo>
                                         <Typography variant="subtitle1">
                                             Editor
                                         </Typography>
                                         <span>
-                                            Ability to Edit the data app code,
-                                            provision other users as editors and
-                                            read-only users, and all read-only
-                                            permissions.
+                                            {permissionDescriptions.editor}
                                         </span>
-                                    </div>
+                                    </StyledRoleInfo>
                                     <RadioGroup
                                         label=""
                                         value={field.value}
                                         onChange={(val) => field.onChange(val)}
                                     >
                                         <RadioGroup.Item
-                                            value="editor"
+                                            value="EDIT"
                                             label=""
                                         />
                                     </RadioGroup>
-                                </ContentCard>
+                                </StyledContentCard>
 
-                                <ContentCard direction="row" gap={1}>
+                                <StyledContentCard direction="row" gap={1}>
                                     <StyledVisibilityIcon />
-                                    <div>
+                                    <StyledRoleInfo>
                                         <Typography variant="subtitle1">
                                             Read-Only
                                         </Typography>
                                         <span>
-                                            Ability to view the data app. User
-                                            still requires permission to all
-                                            dependent databases, models, remote
-                                            storage, vector databases, etc.
+                                            {permissionDescriptions.readonly}
                                         </span>
-                                    </div>
+                                    </StyledRoleInfo>
                                     <RadioGroup
                                         label=""
                                         value={field.value}
                                         onChange={(val) => field.onChange(val)}
                                     >
                                         <RadioGroup.Item
-                                            value="readOnly"
+                                            value="READ_ONLY"
                                             label=""
                                         />
                                     </RadioGroup>
-                                </ContentCard>
-                            </ContentBox>
+                                </StyledContentCard>
+                            </StyledContentBox>
                         );
                     }}
                 />
                 <ModalSectionHeading variant="subtitle1">
                     Comments:
                 </ModalSectionHeading>
-                <ContentBox>
+                <StyledContentBox>
                     <Controller
                         name="roleChangeComment"
                         control={control}
                         render={({ field }) => {
                             return (
-                                <ContentCard>
+                                <StyledContentCard>
                                     <TextField
                                         multiline
                                         fullWidth
@@ -159,15 +206,19 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                         value={field.value}
                                         onChange={field.onChange}
                                     />
-                                </ContentCard>
+                                </StyledContentCard>
                             );
                         }}
                     />
-                </ContentBox>
+                </StyledContentBox>
             </Modal.Content>
 
             <Modal.Actions>
-                <Button color="primary" variant="text" onClick={onClose}>
+                <Button
+                    color="primary"
+                    variant="text"
+                    onClick={() => onClose(false)}
+                >
                     Cancel
                 </Button>
                 <Button

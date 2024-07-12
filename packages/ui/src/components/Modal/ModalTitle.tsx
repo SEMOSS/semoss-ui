@@ -1,4 +1,8 @@
-import { DialogTitle as MuiModalTitle, SxProps } from "@mui/material";
+import { DialogTitle as MuiModalTitle, SxProps, styled } from "@mui/material";
+
+const StyledModalTitle = styled(MuiModalTitle)(({ theme }) => ({
+    padding: theme.spacing(3),
+}));
 
 export interface ModalTitleProps {
     /**
@@ -13,10 +17,11 @@ export interface ModalTitleProps {
 }
 
 export const ModalTitle = (props: ModalTitleProps) => {
-    const { sx, children } = props;
+    const { sx, children, ...rest } = props;
+
     return (
-        <MuiModalTitle sx={sx} {...props}>
+        <StyledModalTitle sx={sx} {...rest}>
             {children}
-        </MuiModalTitle>
+        </StyledModalTitle>
     );
 };
