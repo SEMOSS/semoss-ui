@@ -96,6 +96,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const [count, setCount] = useState(0);
     const { modelId } = useLLM();
 
+    // useEffect(() => {
+    //     generalReactors = notebook.generalReactors;
+    // }, []);
+
     /**
      * Ask a LLM a question to generate a response
      * @param prompt - prompt passed to the LLM
@@ -366,52 +370,47 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             if (completionItemProviders[language]) {
                 completionItemProviders[language].dispose();
             }
-            completionItemProviders = {
-                ...completionItemProviders,
-                [language]: monaco.languages.registerCompletionItemProvider(
-                    language,
-                    {
-                        provideCompletionItems: async (model, position) => {
-                            if (language == 'pixel') {
-                                const word =
-                                    model.getWordUntilPosition(position);
 
-                                const generalReactors =
-                                    await fetchGeneralReactors();
-
-                                const suggestions = generalReactors.map(
-                                    (reactor) => ({
-                                        label: {
-                                            label: reactor,
-                                            description: 'General Reactor',
-                                        },
-                                        kind: monaco.languages
-                                            .CompletionItemKind.Function,
-                                        insertText: reactor,
-                                        range: new monaco.Range(
-                                            position.lineNumber,
-                                            position.column - word.length,
-                                            position.lineNumber,
-                                            position.column,
-                                        ),
-                                    }),
-                                );
-
-                                return {
-                                    suggestions: suggestions,
-                                };
-                            } else {
+            //define completion item providers by language
+            let completionItemProvider;
+            if (language == 'pixel') {
+                completionItemProvider = {
+                    ...completionItemProviders,
+                    pixel: monaco.languages.registerCompletionItemProvider(
+                        language,
+                        {
+                            provideCompletionItems: async (model, position) => {
                                 // getWordUntilPosition doesn't track when words are led by special characters
                                 // we need to chack for wrapping curly brackets manually to know what to replace
                                 const word =
                                     model.getWordUntilPosition(position);
 
-                                // word is not empty, completion was triggered by a non-special character
+                                let reactorSuggestions = [];
                                 if (word.word !== '') {
-                                    // return empty suggestions to trigger built in typeahead
-                                    return {
-                                        suggestions: [],
-                                    };
+                                    const generalReactors =
+                                        await fetchGeneralReactors();
+
+                                    const suggestions = generalReactors.map(
+                                        (reactor) => ({
+                                            label: {
+                                                label: reactor,
+                                                description: 'General Reactor',
+                                            },
+                                            kind: monaco.languages
+                                                .CompletionItemKind.Function,
+                                            insertText: reactor,
+                                            range: {
+                                                startLineNumber:
+                                                    position.lineNumber,
+                                                endLineNumber:
+                                                    position.lineNumber,
+                                                startColumn: word.startColumn,
+                                                endColumn: word.startColumn,
+                                            },
+                                        }),
+                                    );
+
+                                    reactorSuggestions = suggestions;
                                 }
 
                                 // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
@@ -458,16 +457,91 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                         word.endColumn + replaceRangeEndBuffer,
                                 };
 
+                                const variableSuggestions =
+                                    generateSuggestions(replaceRange);
+
                                 return {
                                     suggestions:
-                                        generateSuggestions(replaceRange),
+                                        variableSuggestions.concat(
+                                            reactorSuggestions,
+                                        ),
                                 };
-                            }
+                            },
+                            triggerCharacters: ['{'],
                         },
-                        triggerCharacters: ['{'],
-                    },
-                ),
-            };
+                    ),
+                };
+            } else {
+                completionItemProvider = {
+                    ...completionItemProviders,
+                    [language]: monaco.languages.registerCompletionItemProvider(
+                        language,
+                        {
+                            provideCompletionItems: async (model, position) => {
+                                const word =
+                                    model.getWordUntilPosition(position);
+
+                                // word is not empty, completion was triggered by a non-special character
+                                if (word.word !== '') {
+                                    // return empty suggestions to trigger built in typeahead
+                                    return {
+                                        suggestions: [],
+                                    };
+                                }
+
+                                const specialCharacterStartRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.startColumn - 2,
+                                    endColumn: word.startColumn,
+                                };
+                                const preceedingTwoCharacters =
+                                    model.getValueInRange(
+                                        specialCharacterStartRange,
+                                    );
+                                const replaceRangeStartBuffer =
+                                    preceedingTwoCharacters === '{{' ? 2 : 1;
+
+                                const specialCharacterEndRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn: word.endColumn,
+                                    endColumn: word.endColumn + 2,
+                                };
+                                const followingTwoCharacters =
+                                    model.getValueInRange(
+                                        specialCharacterEndRange,
+                                    );
+                                const replaceRangeEndBuffer =
+                                    followingTwoCharacters === '}}'
+                                        ? 2
+                                        : followingTwoCharacters == '} ' ||
+                                          followingTwoCharacters == '}'
+                                        ? 1
+                                        : 0;
+
+                                const replaceRange = {
+                                    startLineNumber: position.lineNumber,
+                                    endLineNumber: position.lineNumber,
+                                    startColumn:
+                                        word.startColumn -
+                                        replaceRangeStartBuffer,
+                                    endColumn:
+                                        word.endColumn + replaceRangeEndBuffer,
+                                };
+
+                                const variableSuggestions =
+                                    generateSuggestions(replaceRange);
+
+                                return { suggestions: variableSuggestions };
+                            },
+                            triggerCharacters: ['{'],
+                        },
+                    ),
+                };
+            }
+
+            completionItemProviders = completionItemProvider;
         });
 
         const lines = editor.getModel().getLineCount();
