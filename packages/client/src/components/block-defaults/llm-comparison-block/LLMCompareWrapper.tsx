@@ -14,6 +14,7 @@ import {
 const initialState = {
     allModels: [],
     defaultLLMVariant: {
+        name: 'default',
         selected: true,
         models: [
             {
