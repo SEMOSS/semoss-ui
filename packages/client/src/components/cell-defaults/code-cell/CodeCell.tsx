@@ -1,15 +1,13 @@
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
 import { observer } from 'mobx-react-lite';
-import { styled, Button, Menu, MenuProps, List, Stack } from '@semoss/ui';
+import { styled, Button, Stack } from '@semoss/ui';
 import { Code, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef, Variable } from '@/stores';
 import { runPixel } from '@/api';
-import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
-import { useBlocks, useLLM, useRootStore } from '@/hooks';
+import { ActionMessages, CellComponent } from '@/stores';
+import { useBlocks, useLLM } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { DefaultBlocks } from '@/components/block-defaults';
-import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 import { StyledSelect, StyledSelectItem } from '../shared';
 
 import { PythonIcon, RIcon } from './icons';
@@ -81,7 +79,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const { cell, isExpanded } = props;
     const { state, notebook } = useBlocks();
-    const { monolithStore } = useRootStore();
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
@@ -95,10 +92,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
     const { modelId } = useLLM();
-
-    // useEffect(() => {
-    //     generalReactors = notebook.generalReactors;
-    // }, []);
 
     /**
      * Ask a LLM a question to generate a response
@@ -184,21 +177,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         });
     };
 
-    /**
-     * Fetch and set list of general reactors
-     */
-    const fetchGeneralReactors = async () => {
-        try {
-            const res = await monolithStore.runQuery('META|HelpJson();');
-
-            const generalReactorList = res.pixelReturn[0].output['General'];
-
-            return generalReactorList;
-        } catch {
-            console.error('Failed response from help pixel');
-            return [];
-        }
-    };
+    useEffect(() => {
+        console.log('get gen reactors', notebook.generalReactors);
+    }, []);
 
     const handleMount = (editor, monaco) => {
         // if diffedit code has been rejected set to old editor content
@@ -387,28 +368,29 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
                                 let reactorSuggestions = [];
                                 if (word.word !== '') {
-                                    const generalReactors =
-                                        await fetchGeneralReactors();
-
-                                    const suggestions = generalReactors.map(
-                                        (reactor) => ({
-                                            label: {
-                                                label: reactor,
-                                                description: 'General Reactor',
-                                            },
-                                            kind: monaco.languages
-                                                .CompletionItemKind.Function,
-                                            insertText: reactor,
-                                            range: {
-                                                startLineNumber:
-                                                    position.lineNumber,
-                                                endLineNumber:
-                                                    position.lineNumber,
-                                                startColumn: word.startColumn,
-                                                endColumn: word.startColumn,
-                                            },
-                                        }),
-                                    );
+                                    const suggestions =
+                                        notebook.generalReactors.map(
+                                            (reactor) => ({
+                                                label: {
+                                                    label: reactor,
+                                                    description:
+                                                        'General Reactor',
+                                                },
+                                                kind: monaco.languages
+                                                    .CompletionItemKind
+                                                    .Function,
+                                                insertText: reactor,
+                                                range: {
+                                                    startLineNumber:
+                                                        position.lineNumber,
+                                                    endLineNumber:
+                                                        position.lineNumber,
+                                                    startColumn:
+                                                        word.startColumn,
+                                                    endColumn: word.startColumn,
+                                                },
+                                            }),
+                                        );
 
                                     reactorSuggestions = suggestions;
                                 }
