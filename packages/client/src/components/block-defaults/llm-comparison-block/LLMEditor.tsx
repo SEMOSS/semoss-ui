@@ -12,7 +12,7 @@ import { useLLMComparison } from '@/hooks';
 
 const StyledLLMEditor = styled('div')(({ theme }) => ({
     width: '100%',
-    paddingBottom: theme.spacing(1),
+    padding: `0 ${theme.spacing(2)} ${theme.spacing(1)}`,
     borderBottom: `1px solid ${theme.palette.secondary.divider}`,
 
     '&:last-child': {

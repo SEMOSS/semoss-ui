@@ -11,13 +11,19 @@ const ComparisonFormDefaulValues = {
     models: [],
 };
 
-const StyledView = styled(Stack)(({ theme }) => ({
+const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
+}));
+
+const StyledAllView = styled(Stack)(({ theme }) => ({
+    width: '100%',
+    padding: theme.spacing(2),
 }));
 
 const StyledActionBar = styled('div')(({ theme }) => ({
     display: 'flex',
     gap: theme.spacing(2),
+    padding: `0 ${theme.spacing(2)}`,
 }));
 
 export const ConfigureSubMenu = () => {
@@ -92,7 +98,7 @@ export const ConfigureSubMenu = () => {
 
     if (designerView === 'allVariants') {
         return (
-            <StyledView direction="column" gap={2}>
+            <StyledAllView direction="column" gap={2}>
                 <ModelVariant
                     isDefault={true}
                     variant={defaultVariant}
@@ -106,20 +112,22 @@ export const ConfigureSubMenu = () => {
                         key={`variant-${idx}`}
                     />
                 ))}
-            </StyledView>
+            </StyledAllView>
         );
     } else {
         return (
-            <StyledView direction="column" gap={1}>
+            <StyledEditorView direction="column" gap={1}>
                 <div>
-                    <Button
-                        variant="text"
-                        color="secondary"
-                        startIcon={<ArrowBack />}
-                        onClick={() => setDesignerView('allVariants')}
-                    >
-                        Configure
-                    </Button>
+                    <StyledActionBar>
+                        <Button
+                            variant="text"
+                            color="secondary"
+                            startIcon={<ArrowBack />}
+                            onClick={() => setDesignerView('allVariants')}
+                        >
+                            Configure
+                        </Button>
+                    </StyledActionBar>
 
                     {designerView === 'variantEdit' && (
                         <>
@@ -161,7 +169,7 @@ export const ConfigureSubMenu = () => {
                         Reset Parameters
                     </Button>
                 </StyledActionBar>
-            </StyledView>
+            </StyledEditorView>
         );
     }
 };

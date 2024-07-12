@@ -7,7 +7,6 @@ import { ConfigureSubMenu } from './ConfigureSubMenu';
 import { LLMCompareWrapper } from './LLMCompareWrapper';
 
 const StyledMenu = styled('div')(({ theme }) => ({
-    padding: theme.spacing(2),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
