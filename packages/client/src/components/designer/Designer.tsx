@@ -1,6 +1,11 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Paper, Tooltip } from '@semoss/ui';
-import { BarChartRounded, DashboardRounded, Layers } from '@mui/icons-material';
+import {
+    BarChartRounded,
+    Code,
+    DashboardRounded,
+    Layers,
+} from '@mui/icons-material';
 import { useMemo, useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
@@ -227,7 +232,7 @@ export const Designer = observer((): JSX.Element => {
                             onClick={() => updateView('variables')}
                         >
                             <Tooltip title={'View Variables'} placement="right">
-                                <BarChartRounded color="inherit" />
+                                <Code color="inherit" />
                             </Tooltip>
                             <SidebarText>Variables</SidebarText>
                         </SidebarItem>

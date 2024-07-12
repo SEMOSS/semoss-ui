@@ -3,12 +3,17 @@ import { observer } from 'mobx-react-lite';
 import { useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
-import { SerializedState, StateStore } from '@/stores';
+import {
+    STATE_STORE_CURRENT_VERSION,
+    SerializedState,
+    StateStore,
+} from '@/stores';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 import { Typography } from '@semoss/ui';
+import { MigrationManager } from '@/stores/state/MigrationManager';
 
 const ACTIVE = 'page-1';
 
@@ -72,6 +77,12 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                 // ignore if there is state
                 if (!s) {
                     return;
+                }
+
+                // Run migration if not up to date
+                if (s.version !== STATE_STORE_CURRENT_VERSION) {
+                    const migration = await new MigrationManager();
+                    s = await migration.run(s);
                 }
 
                 // create a new state store

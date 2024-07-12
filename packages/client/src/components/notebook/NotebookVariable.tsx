@@ -280,7 +280,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                     <Stack>
                         <StyledTooltip
                             placement={'right'}
-                            title={<VariablePreview variable={variable} />}
+                            title={
+                                <VariablePreview variable={variable} id={id} />
+                            }
                             componentsProps={{
                                 tooltip: {
                                     sx: {

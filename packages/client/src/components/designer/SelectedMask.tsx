@@ -64,8 +64,6 @@ export const SelectedMask = observer(() => {
     const block = state.getBlock(designer.selected);
     const variable = state.getAlias(designer.selected);
 
-    console.log('variable', variable);
-
     // check if it is draggable
     const isDraggable =
         block && registry[block.widget] && block.widget !== 'page';

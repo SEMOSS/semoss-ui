@@ -1,6 +1,7 @@
 import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import {
+    Code,
     DashboardCustomizeRounded,
     DataArrayRounded,
     Layers,
@@ -95,7 +96,7 @@ export const Notebook = observer(() => {
                     onClick={() => updateView('variables')}
                 >
                     <Tooltip title={'Add'} placement="right">
-                        <Layers color="inherit" />
+                        <Code color="inherit" />
                     </Tooltip>
                     <SidebarText>Variables</SidebarText>
                 </SidebarItem>

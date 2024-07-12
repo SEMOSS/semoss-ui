@@ -3,18 +3,20 @@
  * @description - This addresses a change in how we store our variables.
  * The unique identifier will change to what it is aliased by.
  * From: 'variable-7829': { alias: "LLM", to: 'model-8282', type: 'model'}
- * To: 'LLM': { to: 'model-8282',type: 'model'}
+ * To: 'LLM': { to: 'model-8282', type: 'model'}
  */
 export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
     const newState = {
         ...state,
     };
 
+    // Clear out old variables
     newState.variables = {};
 
     try {
         Object.values(state.variables).forEach(
             (value: { alias: string; to: string; type: string }) => {
+                // id the variable by its previous alias
                 newState.variables[value.alias] = {
                     to: value.to,
                     type: value.type,
@@ -22,6 +24,7 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
             },
         );
     } catch {
+        // If issues just clear out the variables
         newState.variables = {};
     }
 
