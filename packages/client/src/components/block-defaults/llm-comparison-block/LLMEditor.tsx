@@ -53,7 +53,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
     return (
         <StyledLLMEditor>
             <StyledHeader>
-                <Typography variant="subtitle2" fontWeight="medium">
+                <Typography variant="subtitle1" fontWeight="medium">
                     Swap Model for {model.alias}
                 </Typography>
             </StyledHeader>
