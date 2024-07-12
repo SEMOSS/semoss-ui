@@ -132,8 +132,6 @@ export const PromptBuilderConstraint = (props: {
                     props.constraintSettings[props.constraint.key] ?? false
                 }
                 onChange={(e) => {
-                    // console.log({"props.constraintSettings": props.constraintSettings});
-
                     // copy the constraint settings
                     // these are probably specific to this options page
                     const copy = props.constraintSettings;
@@ -184,9 +182,6 @@ export function PromptBuilderConstraintsStep(props: {
     if (!constraintSettings) {
         return <></>;
     }
-
-    console.log({ inputConstraintValues: Object.values(inputConstraints) });
-    console.log({ outputConstraintsValues: Object.values(outputConstraints) });
 
     return (
         <StyledStepPaper elevation={2} square>

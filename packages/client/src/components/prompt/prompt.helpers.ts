@@ -13,6 +13,7 @@ import {
     MonolithStore,
     QueryStateConfig,
     SerializedState,
+    VariableType,
 } from '@/stores';
 import { AppMetadata } from '../app';
 
@@ -140,12 +141,7 @@ export function getInputFormatPrompt(
                 tokenStrings.push(token.display);
             } else {
                 const keyIndex = inputTokenParts.indexOf(token.key);
-                inputTokenParts[keyIndex] = `{{block.${getIdForInput(
-                    token.linkedInputToken !== undefined
-                        ? inputTypes[token.linkedInputToken].type
-                        : inputTypes[token.index].type,
-                    token.linkedInputToken ?? token.index,
-                )}.value}}`;
+                inputTokenParts[keyIndex] = `{{${token.key}}}`;
                 tokenStrings.push(inputTokenParts.join(''));
             }
         }
@@ -187,7 +183,6 @@ function getDatabaseQuery() {
 }
 
 export function getQueryForPrompt(
-    model: string,
     tokens: Token[],
     inputTypes: object,
 ): Record<string, QueryStateConfig> {
@@ -207,12 +202,13 @@ export function getQueryForPrompt(
         let functionCalls = '';
         Object.keys(customInputTypes).forEach(
             (customInputTokenIndex, index: number) => {
+                const customInputToken = tokens[customInputTokenIndex];
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_VECTOR
                 ) {
                     functionCalls += `
-    ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit)
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"{{${customInputToken.key}}}",limit)
 `;
                 }
                 if (
@@ -228,7 +224,7 @@ export function getQueryForPrompt(
                     INPUT_TYPE_DATABASE
                 ) {
                     functionCalls += `
-    ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}")
+    ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"{{${customInputToken.key}}}")
 `;
                 }
             },
@@ -296,7 +292,7 @@ export function getQueryForPrompt(
     }limit = 5) -> str:
     import json
     from gaas_gpt_model import ModelEngine
-    model = ModelEngine(engine_id = "${model}", insight_id = '\${i}')
+    model = ModelEngine(engine_id = "{{LLM}}", insight_id = '\${i}')
     ${buildQueryDefinitionFunctionCalls()}
     ${buildQueryDefinitionPromptStatement()}
     response = model.ask(question = prompt)
@@ -307,10 +303,8 @@ export function getQueryForPrompt(
         Object.keys(customInputTypes).length ? ', ' : ''
     }${Object.keys(customInputTypes)
         .map((customInputTokenIndex) => {
-            return `"{{block.${getIdForInput(
-                customInputTypes[customInputTokenIndex].type,
-                parseInt(customInputTokenIndex),
-            )}.value}}"`;
+            const customInputToken = tokens[customInputTokenIndex];
+            return `"{{${customInputToken.key}}}"`;
         })
         .join(', ')})`;
 
@@ -564,7 +558,7 @@ export async function setBlocksAndOpenUIBuilder(
         },
     };
 
-    // updat the title
+    // update the title
     state.blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
 
     // inputs
@@ -577,6 +571,14 @@ export async function setBlocksAndOpenUIBuilder(
         if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
             state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
+            state.variables = {
+                ...state.variables,
+                [`variable--${inputBlock.id}`]: {
+                    alias: token.key,
+                    to: inputBlock.id,
+                    type: 'block',
+                },
+            };
         }
     }
 
@@ -586,8 +588,48 @@ export async function setBlocksAndOpenUIBuilder(
         ...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
     ];
 
+    // handle LLM dependency
+    state.dependencies = {
+        ...state.dependencies,
+        'model--selected': builder.model.value,
+    };
+    state.variables = {
+        ...state.variables,
+        'variable--selected-model': {
+            alias: 'LLM',
+            to: 'model--selected',
+            type: 'model',
+        },
+    };
+
+    // handle other dependencies
+    const dependencyInputTypes = Object.fromEntries(
+        Object.entries(builder.inputTypes.value ?? {}).filter(
+            ([_, value]) =>
+                value?.type === INPUT_TYPE_VECTOR ||
+                value?.type === INPUT_TYPE_DATABASE,
+        ),
+    );
+
+    Object.keys(dependencyInputTypes).forEach((dependencyInputTokenIndex) => {
+        const dependencyInputToken =
+            builder.inputs.value[dependencyInputTokenIndex];
+        state.dependencies = {
+            ...state.dependencies,
+            [`${dependencyInputTypes[dependencyInputTokenIndex].type}--${dependencyInputToken.key}`]:
+                dependencyInputTypes[dependencyInputTokenIndex]?.meta,
+        };
+        state.variables = {
+            ...state.variables,
+            [`variable--${dependencyInputToken.display}`]: {
+                alias: `${dependencyInputToken.key} ${dependencyInputTypes[dependencyInputTokenIndex].type}`,
+                to: `${dependencyInputTypes[dependencyInputTokenIndex].type}--${dependencyInputToken.key}`,
+                type: `${dependencyInputTypes[dependencyInputTokenIndex].type}` as VariableType,
+            },
+        };
+    });
+
     state.queries = getQueryForPrompt(
-        builder.model.value as string,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );

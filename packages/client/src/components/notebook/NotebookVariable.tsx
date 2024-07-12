@@ -48,6 +48,7 @@ const StyledButton = styled('button')(({ theme }) => ({
     margin: 0,
     outline: 'none',
     width: '100%',
+    textAlign: 'start',
     display: 'flex',
     '&:hover': {
         cursor: 'pointer',
