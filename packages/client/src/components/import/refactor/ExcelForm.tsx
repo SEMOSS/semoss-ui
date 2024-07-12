@@ -59,7 +59,7 @@ export const ExcelForm: ImportFormComponent = (props) => {
     const nodes = React.useMemo(() => {
         const formattedNodes = [];
 
-        // TO-DO: fix TS errors on metamodel and node
+        // TODO: fix TS errors on metamodel and node
         if (metamodel) {
             Object.entries(metamodel.positions).forEach((table, i) => {
                 // table = ['db name', {x: '', y: '' }]
