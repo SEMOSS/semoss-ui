@@ -6,6 +6,17 @@ import { SettingsSubMenu } from './SettingsSubMenu';
 import { ConfigureSubMenu } from './ConfigureSubMenu';
 import { LLMCompareWrapper } from './LLMCompareWrapper';
 
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    height: '36px',
+    alignItems: 'center',
+    width: '306px',
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '32px',
+    width: '50%',
+}));
+
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
@@ -22,13 +33,19 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     return (
         <LLMCompareWrapper>
             <StyledMenu>
-                <ToggleTabsGroup
+                <StyledToggleTabsGroup
                     value={mode}
                     onChange={(e, val) => setMode(val as Mode)}
                 >
-                    <ToggleTabsGroup.Item label="Configure" value="configure" />
-                    <ToggleTabsGroup.Item label="Settings" value="settings" />
-                </ToggleTabsGroup>
+                    <StyledToggleTabsGroupItem
+                        label="Configure"
+                        value="configure"
+                    />
+                    <StyledToggleTabsGroupItem
+                        label="Settings"
+                        value="settings"
+                    />
+                </StyledToggleTabsGroup>
 
                 {mode === 'configure' && <ConfigureSubMenu />}
 
