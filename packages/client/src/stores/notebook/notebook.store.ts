@@ -21,7 +21,7 @@ export class NotebookStore {
         selectedQueryId: '',
         selectedCells: {},
     };
-    private _generalReactorList = [];
+    private _generalReactorList: string[];
 
     constructor(state: StateStore) {
         // set the state
@@ -85,7 +85,7 @@ export class NotebookStore {
      * Get the list of reactors
      */
     get generalReactors() {
-        return toJS(this._generalReactorList);
+        return this._generalReactorList;
     }
 
     /**

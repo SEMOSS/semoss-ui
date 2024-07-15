@@ -14,7 +14,7 @@ import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
-import { usePixel } from '@/hooks';
+import { usePixel, useBlocks } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
 
@@ -86,6 +86,14 @@ export const Notebook = observer(() => {
 
         setModelId(myModels.data.length ? myModels.data[0].app_id : '');
     }, [myModels.status, myModels.data]);
+
+    /**
+     * On mount, set general reactor list for CodeCells
+     */
+    const { notebook } = useBlocks();
+    useEffect(() => {
+        notebook.setGeneralReactors();
+    }, []);
 
     return (
         <StyledNotebook>

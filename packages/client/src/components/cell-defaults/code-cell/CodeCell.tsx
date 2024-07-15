@@ -177,10 +177,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         });
     };
 
-    useEffect(() => {
-        console.log('get gen reactors', notebook.generalReactors);
-    }, []);
-
     const handleMount = (editor, monaco) => {
         // if diffedit code has been rejected set to old editor content
         if (isLLMRejected) {
@@ -366,7 +362,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 const word =
                                     model.getWordUntilPosition(position);
 
-                                let reactorSuggestions = [];
+                                //trigger reactor suggestions
                                 if (word.word !== '') {
                                     const suggestions =
                                         notebook.generalReactors.map(
@@ -392,7 +388,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                             }),
                                         );
 
-                                    reactorSuggestions = suggestions;
+                                    return {
+                                        suggestions: suggestions,
+                                    };
                                 }
 
                                 // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
@@ -439,14 +437,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                         word.endColumn + replaceRangeEndBuffer,
                                 };
 
-                                const variableSuggestions =
-                                    generateSuggestions(replaceRange);
-
                                 return {
                                     suggestions:
-                                        variableSuggestions.concat(
-                                            reactorSuggestions,
-                                        ),
+                                        generateSuggestions(replaceRange),
                                 };
                             },
                             triggerCharacters: ['{'],
