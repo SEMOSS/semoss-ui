@@ -71,8 +71,9 @@ import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
 import RESTAPI from '@/assets/img/rest-api.svg';
 //Vector
-import WEVIATE from '@/assets/img/WEVIATE.png';
+import CHROMADB from '@/assets/img/CHROMADB.png';
 import PINECONE from '@/assets/img/PINECONE.png';
+import WEVIATE from '@/assets/img/WEVIATE.png';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -5091,131 +5092,153 @@ export const CONNECTION_OPTIONS = {
     },
     VECTOR: {
         Connections: [
-            // {
-            //     name: 'Azure AI Search',
-            //     disable: false,
-            //     icon: META,
-            //     fields: [
-            //         {
-            //             fieldName: 'NAME',
-            //             label: 'Catalog Name',
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'VECTOR_TYPE',
-            //             label: 'Type',
-            //             defaultValue: 'AZURE_AI_SEARCH',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             hidden: true,
-            //             disabled: true,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'URL',
-            //             label: 'URL',
-            //             hidden: false,
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'ACCESS_KEY',
-            //             label: 'Access Key',
-            //             hidden: false,
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'password',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'EMBEDDER_ENGINE_ID',
-            //             label: 'Embedder',
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'select',
-            //                 options: [],
-            //                 pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-            //                 optionDisplay: 'database_name',
-            //                 optionValue: 'database_id',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //             helperText:
-            //                 'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
-            //         },
-            //         {
-            //             fieldName: 'CONTENT_LENGTH',
-            //             label: 'Content Length',
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //             helperText:
-            //                 "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-            //             pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
-            //         },
-            //         {
-            //             fieldName: 'CONTENT_OVERLAP',
-            //             label: 'Content Overlap',
-            //             defaultValue: '0',
-            //             options: {
-            //                 component: 'text-field',
-            //                 options: [],
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //             helperText:
-            //                 'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
-            //         },
-            //         {
-            //             fieldName: 'DISTANCE_METHOD',
-            //             label: 'Distance Method',
-            //             defaultValue: 'Squared Euclidean (L2) distance',
-            //             options: {
-            //                 component: 'select',
-            //                 options: [
-            //                     {
-            //                         display: 'Squared Euclidean (L2) distance',
-            //                         value: 'Squared Euclidean (L2) distance',
-            //                     },
-            //                     {
-            //                         display: 'cosine similarity',
-            //                         value: 'cosine similarity',
-            //                     },
-            //                 ],
-            //             },
-            //             disabled: false,
-            //             rules: { required: false },
-            //             advanced: true,
-            //             helperText: '',
-            //         },
-            //         {
-            //             fieldName: 'EMBEDDINGS',
-            //             label: 'Embeddings',
-            //             defaultValue: null,
-            //             options: {
-            //                 component: 'file-upload',
-            //             },
-            //             disabled: true,
-            //             secondary: true,
-            //             rules: {},
-            //         },
-            //     ],
-            // },
+            {
+                name: 'Chroma',
+                disable: false,
+                icon: CHROMADB,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'CHROMA',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CHROMA_COLLECTION_NAME',
+                        label: 'Collection Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'cosine',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Cosine similarity',
+                                    value: 'cosine',
+                                },
+                                {
+                                    display: 'Squared L2',
+                                    value: 'l2',
+                                },
+                                {
+                                    display: 'Inner product',
+                                    value: 'ip',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                ],
+            },
             {
                 name: 'FAISS',
                 disable: false,
@@ -5259,6 +5282,17 @@ export const CONNECTION_OPTIONS = {
                             'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
                     },
                     {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
                         defaultValue: '',
@@ -5285,6 +5319,17 @@ export const CONNECTION_OPTIONS = {
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
                         fieldName: 'DISTANCE_METHOD',
                         label: 'Distance Method',
                         defaultValue: 'Squared Euclidean (L2) distance',
@@ -5306,17 +5351,6 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
-                    {
-                        fieldName: 'EMBEDDINGS',
-                        label: 'Embeddings',
-                        defaultValue: null,
-                        options: {
-                            component: 'file-upload',
-                        },
-                        disabled: true,
-                        secondary: true,
-                        rules: {},
-                    },
                 ],
             },
             {
@@ -5331,8 +5365,8 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        hidden: true,
                         disabled: true,
+                        hidden: true,
                         rules: { required: true },
                     },
                     {
@@ -5343,8 +5377,8 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: true,
-                        rules: { required: true },
                         hidden: true,
+                        rules: { required: true },
                     },
                     {
                         fieldName: 'NAME',
@@ -5447,6 +5481,91 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                     {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'PGVECTOR_TABLE_NAME',
+                        label: 'PGVector Table Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '0',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'Squared Euclidean (L2) distance',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'Squared Euclidean (L2) distance',
+                                },
+                                {
+                                    display: 'cosine similarity',
+                                    value: 'cosine similarity',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                    {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
                         defaultValue: '',
@@ -5501,6 +5620,34 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         advanced: true,
                     },
+                ],
+            },
+            {
+                name: 'Pinecone',
+                disable: false,
+                icon: PINECONE,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'PINECONE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
@@ -5518,19 +5665,20 @@ export const CONNECTION_OPTIONS = {
                             'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
                     },
                     {
-                        fieldName: 'PGVECTOR_TABLE_NAME',
-                        label: 'PGVector Table Name',
-                        defaultValue: '',
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
                         options: {
                             component: 'text-field',
                         },
-                        disabled: false,
+                        disabled: true,
+                        hidden: true,
                         rules: { required: true },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
-                        defaultValue: '',
+                        defaultValue: '512',
                         options: {
                             component: 'text-field',
                         },
@@ -5538,12 +5686,11 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
                         label: 'Content Overlap',
-                        defaultValue: '0',
+                        defaultValue: '20',
                         options: {
                             component: 'text-field',
                             options: [],
@@ -5552,6 +5699,57 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAMESPACE',
+                        label: 'Namespace',
+                        defaultValue: null,
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTORS',
+                        label: 'Vector',
+                        defaultValue: null,
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
                     },
                     {
                         fieldName: 'DISTANCE_METHOD',
@@ -5575,24 +5773,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
-                    {
-                        fieldName: 'EMBEDDINGS',
-                        label: 'Embeddings',
-                        defaultValue: null,
-                        options: {
-                            component: 'file-upload',
-                        },
-                        disabled: true,
-                        secondary: true,
-                        rules: {},
-                    },
                 ],
-            },
-            {
-                name: 'Pinecone',
-                disable: true,
-                icon: PINECONE,
-                fields: [],
             },
             {
                 name: 'Open Search',
@@ -5632,8 +5813,8 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        hidden: true,
                         disabled: true,
+                        hidden: true,
                         rules: { required: true },
                     },
                     {
@@ -5655,12 +5836,12 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'INDEX_CLASSES',
                         label: 'Index Classes',
-                        hidden: true,
                         defaultValue: 'default',
                         options: {
                             component: 'text-field',
                         },
                         disabled: true,
+                        hidden: true,
                         rules: { required: true },
                     },
                     {
