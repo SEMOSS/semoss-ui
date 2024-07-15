@@ -24,6 +24,7 @@ import {
     Error,
     Pending,
     Download,
+    DriveFileRenameOutline,
     Delete,
     MoreVert,
 } from '@mui/icons-material';
@@ -321,6 +322,14 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                                 <Download color="inherit" fontSize="small" />
                             </StyledListIcon>
                             <List.ItemText primary="Export" />
+                        </List.ItemButton>
+                    </List.Item>
+                    <List.Item disablePadding>
+                        <List.ItemButton onClick={openQueryOverlay}>
+                            <StyledListIcon>
+                                <DriveFileRenameOutline color="inherit" fontSize="small" />
+                            </StyledListIcon>
+                            <List.ItemText primary="Rename" />
                         </List.ItemButton>
                     </List.Item>
                     <Divider />
