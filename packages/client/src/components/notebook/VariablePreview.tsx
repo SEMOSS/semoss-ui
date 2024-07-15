@@ -53,6 +53,7 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
         try {
             const block = state.getBlock(to);
             const s: SerializedState = {
+                version: '1.0.0-alpha.1',
                 dependencies: {},
                 variables: {},
                 queries: {},

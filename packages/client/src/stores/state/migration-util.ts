@@ -6,15 +6,17 @@ type Versions = {
 // TODO: Migration Function for this, structure change queries to notebook
 // TODO: Migrate old syntax {{block.input-2712.value}}, {{query.python_code.cell.92121.output}}, {{query.python_code.output}} to variables
 // TODO: variables that are cells --> "queryId": "", "cellId": "", We don't want to do string manipulation to get left and right pointer
-
 // TODO: add isInput, isOutput to variables structure (will we need a UI to determine this or should this be set programatically)?
 
 /**
  * @name __1_0_0_alpha_to_1_0_0_alpha_1
  * @description - This addresses a change in how we store our variables.
- * The unique identifier will change to what it is aliased by.
+ * 1. The unique identifier will change to what it is aliased by.
  * From: 'variable-7829': { alias: "LLM", to: 'model-8282', type: 'model'}
  * To: 'LLM': { to: 'model-8282', type: 'model'}
+ * 2. Old syntax to new syntax - TODO:
+ * {{query.py_code.cell.2189.output}} --> {{py_cell.output}}
+ * {{query.py_code.output}} --> {{py_code.output}}
  */
 export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
     // TODO: Rename with migrate__1_0
@@ -22,7 +24,8 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
         ...state,
     };
 
-    // Clear out old variables
+    // 1. Replace unique identifier
+
     newState.variables = {};
 
     try {
@@ -39,6 +42,43 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
         // If issues just clear out the variables
         newState.variables = {};
     }
+
+    // 2. Remove old syntax referencing queries, cells, blocks with variables
+    Object.values(newState.queries).forEach(
+        (query: { cells: Record<string, unknown>[]; id: string }) => {
+            query.cells.forEach((cell) => {
+                const code = cell.parameters['code'];
+                if (code) {
+                    // 1. Remove block syntax
+                    const regex = /{{block\.([a-z]+--\d+)\.(.*?)}}/g;
+                    const newCode = code.replace(
+                        regex,
+                        (fullMatch, identifier, remainder) => {
+                            // Check and create a new variable for new instances
+                            if (!newState.variables[identifier]) {
+                                newState.variables[identifier] = {
+                                    to: identifier,
+                                    type: 'block',
+                                };
+                            }
+
+                            // Return the modified string replacing 'block.' with ''
+                            return `{{${identifier}.${remainder}}}`;
+                        },
+                    );
+
+                    // 2. Replace old query syntax
+                    debugger;
+
+                    // 3. Replace old cell syntax
+                    // Update the code with the new replaced value
+                    cell.parameters['code'] = newCode;
+                }
+            });
+        },
+    );
+
+    debugger;
 
     newState.version = '1.0.0-alpha.1';
 
