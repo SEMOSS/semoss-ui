@@ -242,7 +242,6 @@ export class StateStore {
                             }
                         }
                     }
-
                     // get the attribute key
                 } else if (type === 'cell') {
                     // TODO: "queryId": "", "cellId": "",
@@ -500,8 +499,12 @@ export class StateStore {
             const variable = this._store.variables[path[0]];
             const value = this.getVariable(variable.to, variable.type, path);
 
-            // Protects for false values
+            // TODO: Check this, protects for false values
             if (value !== undefined && value !== null) {
+                return value;
+            }
+
+            if (value === undefined) {
                 return value;
             }
         }
