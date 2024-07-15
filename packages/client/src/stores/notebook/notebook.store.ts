@@ -1,8 +1,6 @@
-import { makeAutoObservable, runInAction, toJS } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 
 import { StateStore } from '../state';
-
-import { runPixel } from '@/api';
 
 export interface NotebookStoreInterface {
     /** Current selected query */
@@ -21,7 +19,6 @@ export class NotebookStore {
         selectedQueryId: '',
         selectedCells: {},
     };
-    private _generalReactorList: string[];
 
     constructor(state: StateStore) {
         // set the state
@@ -82,13 +79,6 @@ export class NotebookStore {
     }
 
     /**
-     * Get the list of reactors
-     */
-    get generalReactors() {
-        return this._generalReactorList;
-    }
-
-    /**
      * Actions
      */
     /**
@@ -112,23 +102,5 @@ export class NotebookStore {
     selectCell(queryId: string, cellId: string) {
         // select the cell
         this._store.selectedCells[queryId] = cellId;
-    }
-
-    /**
-     * Set general reactors used for pixel cell suggestions
-     */
-    async setGeneralReactors() {
-        try {
-            const res = await runPixel('META|HelpJson();');
-
-            runInAction(() => {
-                const generalReactorList = res.pixelReturn[0].output['General'];
-
-                this._generalReactorList = generalReactorList;
-            });
-        } catch {
-            console.error('Failed response from help pixel');
-            return;
-        }
     }
 }

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
 import { observer } from 'mobx-react-lite';
 import { styled, Button, Stack } from '@semoss/ui';
@@ -6,7 +6,7 @@ import { Code, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef, Variable } from '@/stores';
 import { runPixel } from '@/api';
 import { ActionMessages, CellComponent } from '@/stores';
-import { useBlocks, useLLM } from '@/hooks';
+import { useBlocks, useLLM, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { StyledSelect, StyledSelectItem } from '../shared';
 
@@ -78,7 +78,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
 
     const { cell, isExpanded } = props;
-    const { state, notebook } = useBlocks();
+    const { state } = useBlocks();
+    const { configStore } = useRootStore();
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
@@ -352,7 +353,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             let completionItemProvider;
             if (language == 'pixel') {
                 completionItemProvider = {
-                    ...completionItemProviders,
                     pixel: monaco.languages.registerCompletionItemProvider(
                         language,
                         {
@@ -365,7 +365,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 //trigger reactor suggestions
                                 if (word.word !== '') {
                                     const suggestions =
-                                        notebook.generalReactors.map(
+                                        configStore.generalReactors.map(
                                             (reactor) => ({
                                                 label: {
                                                     label: reactor,
@@ -448,7 +448,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                 };
             } else {
                 completionItemProvider = {
-                    ...completionItemProviders,
                     [language]: monaco.languages.registerCompletionItemProvider(
                         language,
                         {

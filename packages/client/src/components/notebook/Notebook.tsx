@@ -1,11 +1,6 @@
 import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import {
-    DashboardCustomizeRounded,
-    DataArrayRounded,
-    Layers,
-    SwipeRightAltRounded,
-} from '@mui/icons-material';
+import { Layers } from '@mui/icons-material';
 
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 
@@ -14,7 +9,7 @@ import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
-import { usePixel, useBlocks } from '@/hooks';
+import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
 
@@ -86,14 +81,6 @@ export const Notebook = observer(() => {
 
         setModelId(myModels.data.length ? myModels.data[0].app_id : '');
     }, [myModels.status, myModels.data]);
-
-    /**
-     * On mount, set general reactor list for CodeCells
-     */
-    const { notebook } = useBlocks();
-    useEffect(() => {
-        notebook.setGeneralReactors();
-    }, []);
 
     return (
         <StyledNotebook>
