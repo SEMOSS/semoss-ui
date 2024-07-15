@@ -23,6 +23,7 @@ import {
     DriveFileRenameOutlineRounded,
     CalendarViewMonth,
     JoinInner,
+    Edit,
 } from '@mui/icons-material';
 import { editor } from 'monaco-editor';
 import { DatabaseTables } from './DatabaseTables';
@@ -56,16 +57,37 @@ const FRAME_TYPES = {
     },
 };
 
-const StyledJoinDiv = styled('div')(({ theme }) => ({
+const BlueStyledJoinDiv = styled('div')(({ theme }) => ({
     border: 'none',
     padding: '0px 12px',
     borderRadius: '12px',
     fontSize: '12.5px',
     color: 'black',
     cursor: 'default',
-    // backgroundColor: theme.palette.primary.selected,
+    backgroundColor: theme.palette.primary.selected,
+    fontWeight: '500',
+}));
+
+const GreenStyledJoinDiv = styled('div')(({ theme }) => ({
+    border: 'none',
+    padding: '0px 12px',
+    borderRadius: '12px',
+    fontSize: '12.5px',
+    color: 'black',
+    cursor: 'default',
+    backgroundColor: '#DEF4F3',
+    fontWeight: '500',
+}));
+
+const PurpleStyledJoinDiv = styled('div')(({ theme }) => ({
+    border: 'none',
+    padding: '0px 12px',
+    borderRadius: '12px',
+    fontSize: '12.5px',
+    color: '#BAB4C2',
+    cursor: 'default',
     backgroundColor: '#F1E9FB',
-    fontWeight: '400',
+    fontWeight: '500',
 }));
 
 const StyledJoinTypography = styled(Typography)(({ theme }) => ({
@@ -86,14 +108,16 @@ const TableIconButton = styled(Tooltip)(({ theme }) => ({
     marginLeft: '-3px',
     marginRight: '7px',
     color: theme.palette.primary.main,
+    // color: 'black',
 }));
 
-const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
+const StyledTableTitleBubble = styled('div')(({ theme }) => ({
     marginTop: '0px',
     // marginBottom: '15px',
     // marginLeft: '15px',
     marginRight: '15px',
-    backgroundColor: theme.palette.primary.selected,
+    // backgroundColor: theme.palette.primary.selected,
+    backgroundColor: '#F1E9FB',
     width: 'fit-content',
     padding: '7.5px 17.5px',
     borderRadius: '10px',
@@ -101,6 +125,7 @@ const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
     alignItems: 'center',
     cursor: 'default',
     fontSize: '12.5px',
+    fontWeight: '400',
 }));
 
 const StyledJoinElementBlueBubble = styled(Typography)(({ theme }) => ({
@@ -372,6 +397,15 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
             });
         };
 
+        const openEditModal = () => {
+            alert('openEditModal');
+            console.log({
+                databaseId: cell.parameters.databaseId,
+                tableNames: cell.parameters.tableNames,
+                joins: cell.parameters.joins,
+            });
+        };
+
         return (
             <StyledContent>
                 <Stack direction="column" spacing={1}>
@@ -381,15 +415,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 direction="row"
                                 justifyContent={'space-between'}
                             >
-                                {/* <Typography variant="body1">
-                                    {cfgLibraryDatabases.display[cell.parameters.databaseId]}
-                                </Typography> */}
                                 <StyledSelect
                                     size={'small'}
                                     variant="standard"
-                                    // disabled={cell.isLoading}
                                     disabled={true}
-                                    // title={'Select Database'}
                                     title={'Database Not Editable'}
                                     value={cell.parameters.databaseId}
                                     SelectProps={{
@@ -425,33 +454,17 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                         ),
                                     )}
                                 </StyledSelect>
-                                {/* <Button
-                                    variant={'text'}
-                                    color={'secondary'}
-                                    onClick={() => {
-                                        setShowTables(!showTables);
-                                    }}
-                                >
-                                    {showTables ? 'Hide' : 'Show'} Available
-                                    Columns
-                                </Button> */}
                                 <Button
                                     variant={'text'}
                                     color={'secondary'}
                                     onClick={() => {
-                                        setShowStyledView(!showStyledView);
+                                        openEditModal();
                                     }}
+                                    startIcon={<Edit />}
                                 >
-                                    {showStyledView ? 'Show' : 'Hide'} Pixel
+                                    Edit
                                 </Button>
                             </Stack>
-                            {/* {showTables && cell.parameters.databaseId ? (
-                                <DatabaseTables
-                                    databaseId={cell.parameters.databaseId}
-                                />
-                            ) : (
-                                <></>
-                            )} */}
                         </Stack>
                     )}
                     {showStyledView ? (
@@ -470,20 +483,39 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 {cell.parameters.tableNames &&
                                     cell.parameters.tableNames.map(
                                         (tableName) => (
-                                            <StyledTableTitleBlueBubble
-                                                variant="body1"
-                                                title="Table"
+                                            // <Tooltip title="Table">
+                                            //     <StyledTableTitleBubble
+                                            //         variant="body1"
+                                            //         // title="Table"
+                                            //     >
+                                            //         <TableIconButton
+                                            //             title={'Table'}
+                                            //             placement="top"
+                                            //         >
+                                            //             <CalendarViewMonth fontSize="medium" sx={{ stroke: "#ffffff", strokeWidth: 1 }} />
+                                            //         </TableIconButton>
+                                            //         {tableName}
+                                            //         </StyledTableTitleBubble>
+                                            // </Tooltip>
+                                            <Tooltip
+                                                title={`${tableName} Table`}
                                             >
-                                                <TableIconButton
-                                                    title={'Table'}
-                                                    placement="top"
-                                                >
-                                                    <CalendarViewMonth fontSize="medium" />
-                                                </TableIconButton>
-                                                {/* <StyledJoinTypography variant="body1"> */}
-                                                {tableName}
-                                                {/* </StyledJoinTypography> */}
-                                            </StyledTableTitleBlueBubble>
+                                                {/* <> */}
+                                                <StyledTableTitleBubble>
+                                                    <CalendarViewMonth
+                                                        fontSize="small"
+                                                        sx={{
+                                                            // stroke: "#BAB4C2",
+                                                            color: '#95909C',
+                                                            strokeWidth: 0.025,
+                                                            marginLeft: '-3px',
+                                                            marginRight: '7px',
+                                                        }}
+                                                    />
+                                                    {tableName}
+                                                </StyledTableTitleBubble>
+                                                {/* </> */}
+                                            </Tooltip>
                                         ),
                                     )}
                             </div>
@@ -512,9 +544,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                     }}
                                                 >
                                                     <Tooltip title="Left Join Table">
-                                                        <StyledJoinDiv>
+                                                        <BlueStyledJoinDiv>
                                                             {join.leftTable}
-                                                        </StyledJoinDiv>
+                                                        </BlueStyledJoinDiv>
                                                     </Tooltip>
 
                                                     <Tooltip
@@ -535,19 +567,19 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                     </Tooltip>
 
                                                     <Tooltip title="Right Join Table">
-                                                        <StyledJoinDiv>
+                                                        <GreenStyledJoinDiv>
                                                             {join.rightTable}
-                                                        </StyledJoinDiv>
+                                                        </GreenStyledJoinDiv>
                                                     </Tooltip>
 
                                                     <StyledJoinTypography variant="body1">
-                                                        where
+                                                        ON
                                                     </StyledJoinTypography>
 
                                                     <Tooltip title="Left Join Key">
-                                                        <StyledJoinDiv>
+                                                        <BlueStyledJoinDiv>
                                                             {join.leftKey}
-                                                        </StyledJoinDiv>
+                                                        </BlueStyledJoinDiv>
                                                     </Tooltip>
 
                                                     <StyledJoinTypography variant="body1">
@@ -555,9 +587,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                     </StyledJoinTypography>
 
                                                     <Tooltip title="Right Join Key">
-                                                        <StyledJoinDiv>
+                                                        <GreenStyledJoinDiv>
                                                             {join.rightKey}
-                                                        </StyledJoinDiv>
+                                                        </GreenStyledJoinDiv>
                                                     </Tooltip>
                                                 </div>
                                                 {/* <div>
@@ -608,9 +640,19 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             direction="row"
                             alignItems={'center'}
                             justifyContent={'flex-end'}
-                            borderColor={'red'}
-                            paddingTop={'25px'}
+                            paddingTop={'0px'}
                         >
+                            <Button
+                                variant={'text'}
+                                color={'primary'}
+                                size={'small'}
+                                onClick={() => {
+                                    setShowStyledView(!showStyledView);
+                                }}
+                            >
+                                {showStyledView ? 'Show' : 'Hide'} Pixel
+                            </Button>
+
                             <StyledSelect
                                 size={'small'}
                                 disabled={cell.isLoading}
