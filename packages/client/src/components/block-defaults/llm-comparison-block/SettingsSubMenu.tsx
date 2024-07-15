@@ -1,4 +1,13 @@
-import { Stack, Typography, styled, Checkbox, Switch } from '@semoss/ui';
+import {
+    Stack,
+    Typography,
+    styled,
+    Checkbox,
+    Switch,
+    RadioGroup,
+    TextField,
+    Slider,
+} from '@semoss/ui';
 import { useLLMComparison } from '@/hooks';
 import { useEffect, useState } from 'react';
 import { TypeVariant } from '@/components/workspace';
@@ -16,6 +25,11 @@ const StyledHeader = styled('div')(({ theme }) => ({
 
 const StyledSection = styled(Stack)(({ theme }) => ({
     padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+    width: '100%',
+}));
+
+const StyledRadioGroup = styled(RadioGroup)(({ theme }) => ({
+    margin: 0,
 }));
 
 export const SettingsSubMenu = () => {
@@ -74,6 +88,18 @@ export const SettingsSubMenu = () => {
         }
     };
 
+    const handleSetOrder = () => {
+        // TODO
+    };
+
+    const hanldeSampleSizeChange = () => {
+        // TODO
+    };
+
+    const handleTrafficChange = () => {
+        // TODO
+    };
+
     return (
         <StyledSettingsSubMenu>
             <StyledHeader>
@@ -130,14 +156,67 @@ export const SettingsSubMenu = () => {
                 ))}
             </StyledSection>
 
-            <StyledSection direction="row" gap={1}>
-                <Typography variant="body2">Display Model Name</Typography>
+            <StyledSection
+                direction="row"
+                gap={1}
+                sx={{ justifyContent: 'space-between' }}
+            >
+                <Typography variant="body2" color="secondary">
+                    Display Model Name
+                </Typography>
                 <Switch
                     checked={showModelsInResponse}
                     onChange={() =>
                         toggleShowModelsInResponse(!showModelsInResponse)
                     }
                 />
+            </StyledSection>
+
+            <StyledSection direction="column" gap={1}>
+                <Typography variant="caption" color="secondary">
+                    Display Order
+                </Typography>
+
+                <StyledRadioGroup hideLabel={true} onChange={handleSetOrder}>
+                    <RadioGroup.Item value="fixed" label="Fixed" />
+                    <RadioGroup.Item value="random" label="Random" />
+                    <RadioGroup.Item value="custom" label="Custom" />
+                </StyledRadioGroup>
+            </StyledSection>
+
+            <StyledHeader>
+                <Typography variant="subtitle1" fontWeight="medium">
+                    Traffic Allocation
+                </Typography>
+            </StyledHeader>
+
+            <StyledSection direction="column" gap={1}>
+                <Typography variant="caption" color="secondary">
+                    Sample Size
+                </Typography>
+
+                <TextField type="number" onChange={hanldeSampleSizeChange} />
+            </StyledSection>
+
+            <StyledSection direction="column" gap={1}>
+                <Typography variant="caption" color="secondary">
+                    Percentage of Traffic
+                </Typography>
+
+                <Stack gap={2} direction="row" alignItems="center">
+                    <Slider
+                        onChange={handleTrafficChange}
+                        min={0}
+                        max={100}
+                        marks={[
+                            { value: 0, label: '0' },
+                            { value: 100, label: '100%' },
+                        ]}
+                        valueLabelDisplay="auto"
+                    />
+
+                    <TextField type="number" onChange={handleTrafficChange} />
+                </Stack>
             </StyledSection>
         </StyledSettingsSubMenu>
     );
