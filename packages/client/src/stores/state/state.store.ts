@@ -245,6 +245,8 @@ export class StateStore {
 
                     // get the attribute key
                 } else if (type === 'cell') {
+                    // TODO: "queryId": "", "cellId": "",
+
                     const query = this.getQuery(splitAtPeriod(pointer, 'left'));
                     const cell = query.getCell(splitAtPeriod(pointer, 'right'));
 
@@ -437,6 +439,10 @@ export class StateStore {
         // get the keys in the path
         const path = cleaned.split('.');
 
+        // TODO: Migration function
+        // {{query.python_code.cell.291982.output}}
+
+        // {{py_code.output}}
         if (
             path[0] === 'query' &&
             this._store.queries[path[1]] && // checks for variables that are named "query"
@@ -760,6 +766,7 @@ export class StateStore {
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
         // store the version or the one we currently are on
+        // TODO: Look at this
         this._store.version = state.version
             ? state.version
             : STATE_STORE_CURRENT_VERSION;

@@ -27,16 +27,22 @@ export class MigrationManager {
         this.migrations = {
             '1.0.0-alpha': __1_0_0_alpha_to_1_0_0_alpha_1,
             '1.0.0-alpha.1': __1_0_0_alpha_1_to_1_0_0_alpha_2,
+
             // Add future migrations here
         };
     }
 
     async run(state) {
+        // TODO: break cycle if state.version does not change
         while (state.version !== this.latestVersion) {
             const migrationFunction = this.migrations[state.version];
             if (migrationFunction) {
                 state = await migrationFunction(state);
             } else {
+                throw new Error(
+                    `No migration function available for version ${state.version}`,
+                );
+
                 console.error(
                     `No migration function available for version ${state.version}`,
                 );
