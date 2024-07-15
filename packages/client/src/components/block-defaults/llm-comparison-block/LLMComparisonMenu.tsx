@@ -11,6 +11,7 @@ const StyledMenu = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     alignItems: 'center',
     gap: theme.spacing(1),
+    paddingTop: theme.spacing(2),
 }));
 
 type Mode = 'configure' | 'settings';
