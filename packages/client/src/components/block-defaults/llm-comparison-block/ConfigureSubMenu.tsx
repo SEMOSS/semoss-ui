@@ -1,4 +1,4 @@
-import { styled, Stack, Button } from '@semoss/ui';
+import { styled, Stack, Button, useNotification } from '@semoss/ui';
 import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLLMComparison } from '@/hooks';
@@ -28,6 +28,7 @@ const StyledActionBar = styled('div')(({ theme }) => ({
 
 export const ConfigureSubMenu = () => {
     const viewRef = useRef('allVariants');
+    const notification = useNotification();
     const {
         allModels,
         variants,
@@ -62,11 +63,16 @@ export const ConfigureSubMenu = () => {
         }
     }, [designerView, editorVariant, editorModel]);
 
-    const onSubmit = handleSubmit((data: TypeLlmComparisonForm) => {
-        const models = getValues('models');
+    const onSubmit = (data: TypeLlmComparisonForm) => {
+        const { models } = data;
         const selectedModels = models.map((model) => {
             const match = allModels.find((mod) => mod.value === model.value);
-            return match;
+            return {
+                ...match,
+                topP: model.topP || 0,
+                temperature: model.temperature || 0,
+                length: model.length || 0,
+            };
         });
 
         if (designerView === 'variantEdit') {
@@ -86,7 +92,14 @@ export const ConfigureSubMenu = () => {
         }
 
         setDesignerView('allVariants');
-    });
+    };
+
+    const onError = (errors) => {
+        notification.add({
+            color: 'error',
+            message: 'Fix the errors before saving.',
+        });
+    };
 
     const handleResetParams = () => {
         if (designerView === 'variantEdit') {
@@ -157,7 +170,7 @@ export const ConfigureSubMenu = () => {
                     <Button
                         color="primary"
                         variant="contained"
-                        onClick={onSubmit}
+                        onClick={handleSubmit(onSubmit, onError)}
                     >
                         Save
                     </Button>

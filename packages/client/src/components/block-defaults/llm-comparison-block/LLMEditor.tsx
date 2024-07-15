@@ -7,8 +7,10 @@ import {
     Select,
     Slider,
     TextField,
+    FormControl,
 } from '@semoss/ui';
 import { useLLMComparison } from '@/hooks';
+import { FormHelperText } from '@mui/material';
 
 const StyledLLMEditor = styled('div')(({ theme }) => ({
     width: '100%',
@@ -18,6 +20,10 @@ const StyledLLMEditor = styled('div')(({ theme }) => ({
     '&:last-child': {
         borderBottom: 'none',
     },
+}));
+
+const StyledError = styled(FormHelperText)(({ theme }) => ({
+    color: theme.palette.error.text,
 }));
 
 const StyledHeader = styled('div')(({ theme }) => ({
@@ -32,7 +38,7 @@ const StyledField = styled(Stack)(({ theme }) => ({
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
-    maxWidth: theme.spacing(6),
+    maxWidth: theme.spacing(9),
 }));
 
 interface PropsLLMEditor {
@@ -68,20 +74,27 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => (
-                        <Select
-                            value={field.value ? field.value : ''}
-                            onChange={field.onChange}
-                            error={!!fieldState.error}
-                        >
-                            {allModels.map((model, idx) => (
-                                <Select.Item
-                                    key={`${model.value}-${idx}`}
-                                    value={model.value}
-                                >
-                                    {model.database_name}
-                                </Select.Item>
-                            ))}
-                        </Select>
+                        <FormControl>
+                            <Select
+                                value={field.value ? field.value : ''}
+                                onChange={field.onChange}
+                                error={!!fieldState.error}
+                            >
+                                {allModels.map((model, idx) => (
+                                    <Select.Item
+                                        key={`${model.value}-${idx}`}
+                                        value={model.value}
+                                    >
+                                        {model.database_name}
+                                    </Select.Item>
+                                ))}
+                            </Select>
+                            {fieldState.error && (
+                                <StyledError>
+                                    Please select an option for the Model.
+                                </StyledError>
+                            )}
+                        </FormControl>
                     )}
                 />
             </StyledField>
@@ -91,38 +104,44 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                     Top P
                 </Typography>
 
-                <Stack gap={2} direction="row" justifyContent="center">
-                    <Controller
-                        name={`models[${index}].topP`}
-                        control={control}
-                        render={({ field }) => (
-                            <Slider
-                                onChange={field.onChange}
-                                value={field.value ? field.value : 0}
-                                min={0}
-                                max={1}
-                                step={0.1}
-                                marks={[
-                                    { value: 0, label: '0' },
-                                    { value: 1, label: '1' },
-                                ]}
-                                valueLabelDisplay="auto"
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        name={`models[${index}].topP`}
-                        control={control}
-                        render={({ field }) => (
-                            <StyledTextField
-                                type="number"
-                                onChange={field.onChange}
-                                value={field.value ? field.value : 0}
-                            />
-                        )}
-                    />
-                </Stack>
+                <Controller
+                    name={`models[${index}].topP`}
+                    control={control}
+                    rules={{ min: 0, max: 1 }}
+                    render={({ field, fieldState }) => (
+                        <FormControl>
+                            <Stack
+                                gap={2}
+                                direction="row"
+                                justifyContent="center"
+                            >
+                                <Slider
+                                    onChange={field.onChange}
+                                    value={field.value ? field.value : 0}
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    marks={[
+                                        { value: 0, label: '0' },
+                                        { value: 1, label: '1' },
+                                    ]}
+                                    valueLabelDisplay="auto"
+                                />
+                                <StyledTextField
+                                    type="number"
+                                    onChange={field.onChange}
+                                    error={!!fieldState.error}
+                                    value={field.value ? field.value : 0}
+                                />
+                            </Stack>
+                            {!!fieldState.error && (
+                                <StyledError>
+                                    The value for Top P must be between 0 and 1.
+                                </StyledError>
+                            )}
+                        </FormControl>
+                    )}
+                />
             </StyledField>
 
             <StyledField>
@@ -130,38 +149,45 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                     Temperature
                 </Typography>
 
-                <Stack gap={2} direction="row" justifyContent="center">
-                    <Controller
-                        name={`models[${index}].temperature`}
-                        control={control}
-                        render={({ field }) => (
-                            <Slider
-                                onChange={field.onChange}
-                                value={field.value ? field.value : 0}
-                                min={0}
-                                max={1}
-                                step={0.1}
-                                marks={[
-                                    { value: 0, label: '0' },
-                                    { value: 1, label: '1' },
-                                ]}
-                                valueLabelDisplay="auto"
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        name={`models[${index}].temperature`}
-                        control={control}
-                        render={({ field }) => (
-                            <StyledTextField
-                                type="number"
-                                onChange={field.onChange}
-                                value={field.value ? field.value : 0}
-                            />
-                        )}
-                    />
-                </Stack>
+                <Controller
+                    name={`models[${index}].temperature`}
+                    control={control}
+                    rules={{ min: 0, max: 1 }}
+                    render={({ field, fieldState }) => (
+                        <FormControl>
+                            <Stack
+                                gap={2}
+                                direction="row"
+                                justifyContent="center"
+                            >
+                                <Slider
+                                    onChange={field.onChange}
+                                    value={field.value ? field.value : 0}
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    marks={[
+                                        { value: 0, label: '0' },
+                                        { value: 1, label: '1' },
+                                    ]}
+                                    valueLabelDisplay="auto"
+                                />
+                                <StyledTextField
+                                    type="number"
+                                    onChange={field.onChange}
+                                    error={!!fieldState.error}
+                                    value={field.value ? field.value : 0}
+                                />
+                            </Stack>
+                            {!!fieldState.error && (
+                                <StyledError>
+                                    The value for Temperature must be between 0
+                                    and 1.
+                                </StyledError>
+                            )}
+                        </FormControl>
+                    )}
+                />
             </StyledField>
 
             <StyledField>
@@ -169,37 +195,45 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                     Token Length
                 </Typography>
 
-                <Stack gap={2} direction="row" justifyContent="center">
-                    <Controller
-                        name={`models[${index}].length`}
-                        control={control}
-                        render={({ field }) => (
-                            <Slider
-                                onChange={field.onChange}
-                                value={field.value ? field.value : 0}
-                                min={0}
-                                max={1024}
-                                marks={[
-                                    { value: 0, label: '0' },
-                                    { value: 1024, label: '1024' },
-                                ]}
-                                valueLabelDisplay="auto"
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        name={`models[${index}].length`}
-                        control={control}
-                        render={({ field }) => (
-                            <StyledTextField
-                                type="number"
-                                onChange={field.onChange}
-                                value={field.value ? field.value : 0}
-                            />
-                        )}
-                    />
-                </Stack>
+                <Controller
+                    name={`models[${index}].length`}
+                    control={control}
+                    rules={{ min: 0, max: 1024 }}
+                    render={({ field, fieldState }) => (
+                        <FormControl>
+                            <Stack
+                                gap={2}
+                                direction="row"
+                                justifyContent="center"
+                            >
+                                <Slider
+                                    onChange={field.onChange}
+                                    value={field.value ? field.value : 0}
+                                    min={0}
+                                    max={1024}
+                                    step={1}
+                                    marks={[
+                                        { value: 0, label: '0' },
+                                        { value: 1024, label: '1024' },
+                                    ]}
+                                    valueLabelDisplay="auto"
+                                />
+                                <StyledTextField
+                                    type="number"
+                                    onChange={field.onChange}
+                                    error={!!fieldState.error}
+                                    value={field.value ? field.value : 0}
+                                />
+                            </Stack>
+                            {!!fieldState.error && (
+                                <StyledError>
+                                    The value for Token Length must be between 0
+                                    and 1024.
+                                </StyledError>
+                            )}
+                        </FormControl>
+                    )}
+                />
             </StyledField>
         </StyledLLMEditor>
     );
