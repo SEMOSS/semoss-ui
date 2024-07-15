@@ -25,7 +25,6 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
     };
 
     // 1. Replace unique identifier
-
     newState.variables = {};
 
     try {
@@ -44,14 +43,17 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
     }
 
     // 2. Remove old syntax referencing queries, cells, blocks with variables
+
+    // 2a. Remove references from queries
     Object.values(newState.queries).forEach(
         (query: { cells: Record<string, unknown>[]; id: string }) => {
-            query.cells.forEach((cell) => {
+            query.cells.forEach(async (cell) => {
                 const code = cell.parameters['code'];
                 if (code) {
                     // 1. Remove block syntax
-                    const regex = /{{block\.([a-z]+--\d+)\.(.*?)}}/g;
-                    const newCode = code.replace(
+                    let regex = /{{block\.([a-z]+--\d+)\.(.*?)}}/g;
+
+                    const removedBlockSyntax = await code.replace(
                         regex,
                         (fullMatch, identifier, remainder) => {
                             // Check and create a new variable for new instances
@@ -68,17 +70,54 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
                     );
 
                     // 2. Replace old query syntax
-                    debugger;
+                    regex = /{{query\.([a-z-]+\d*)\.([a-zA-Z_]+)}}/g;
 
-                    // 3. Replace old cell syntax
+                    const removedQuerySyntax = await removedBlockSyntax.replace(
+                        regex,
+                        (fullMatch, identifier, remainder) => {
+                            // Check and create a new variable for new instances
+                            if (!newState.variables[identifier]) {
+                                newState.variables[identifier] = {
+                                    to: identifier,
+                                    type: 'query',
+                                };
+                            }
+                            // Return the modified string replacing 'query.' with ''
+                            return `{{${identifier}.${remainder}}}`;
+                        },
+                    );
+
+                    // 3. Remove the old cell syntax
+                    regex =
+                        /{{query\.([a-z-]+\d*)\.cell\.(\d+)\.([a-zA-Z_]+)}}/g;
+
+                    const cleaned = removedQuerySyntax.replace(
+                        regex,
+                        (fullMatch, queryPart, numberPart, outputPart) => {
+                            const identifier = `${queryPart}--${numberPart}`;
+                            if (!newState.variables[identifier]) {
+                                newState.variables[identifier] = {
+                                    to: `${queryPart}.${numberPart}`,
+                                    type: 'cell',
+                                };
+                            }
+
+                            // Return the modified string in the new format
+                            return `{{${queryPart}--${numberPart}.${outputPart}}}`;
+                        },
+                    );
+
                     // Update the code with the new replaced value
-                    cell.parameters['code'] = newCode;
+                    cell.parameters['code'] = cleaned;
                 }
             });
         },
     );
 
-    debugger;
+    // 2b. Remove references from blocks
+    Object.values(newState.blocks).forEach((block) => {
+        debugger;
+    });
 
     newState.version = '1.0.0-alpha.1';
 
