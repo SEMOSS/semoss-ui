@@ -236,6 +236,7 @@ export interface AddVariableAction extends Action {
         id: string;
         to: string;
         type: VariableType;
+        cellId?: string;
     };
 }
 
@@ -247,6 +248,7 @@ export interface EditVariableAction extends Action {
         to: {
             to: string;
             type: VariableType;
+            cellId?: string;
         };
     };
 }

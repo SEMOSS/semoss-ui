@@ -208,6 +208,7 @@ export class StateStore {
         pointer: string,
         type: VariableType,
         path?: string[],
+        cellId?: string,
     ): Variable | unknown {
         try {
             if (pointer) {
@@ -244,10 +245,8 @@ export class StateStore {
                     }
                     // get the attribute key
                 } else if (type === 'cell') {
-                    // TODO: "queryId": "", "cellId": "",
-
-                    const query = this.getQuery(splitAtPeriod(pointer, 'left'));
-                    const cell = query.getCell(splitAtPeriod(pointer, 'right'));
+                    const query = this.getQuery(pointer);
+                    const cell = query.getCell(cellId);
 
                     if (cell) {
                         if (path.length === 1) {
@@ -396,9 +395,9 @@ export class StateStore {
 
                 this.dispatchEvent(name, detail);
             } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { id, to, type } = action.payload;
+                const { id, to, type, cellId } = action.payload;
 
-                this.addVariable(id, to, type);
+                this.addVariable(id, to, type, cellId);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -406,7 +405,13 @@ export class StateStore {
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
                 const { id, from, to } = action.payload;
 
-                this.editVariable(id, from, to);
+                this.editVariable(
+                    id,
+                    from,
+                    to.type === 'cell'
+                        ? { to: to.to, cellId: to.cellId, type: 'cell' }
+                        : { to: to.to, type: to.type },
+                );
             } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
 
@@ -438,66 +443,14 @@ export class StateStore {
         // get the keys in the path
         const path = cleaned.split('.');
 
-        // TODO: Migration function
-        // {{query.python_code.cell.291982.output}}
-
-        // {{py_code.output}}
-        if (
-            path[0] === 'query' &&
-            this._store.queries[path[1]] && // checks for variables that are named "query"
-            path[2] === 'cell'
-        ) {
-            // check if the id is there
-            const queryId = path[1];
-            const cellId = path[3];
-
-            // get the query
-            const query = this._store.queries[queryId];
-            const cell = query ? query.getCell(cellId) : null;
-            if (cell) {
-                // if the key is a cell, calculate as a cell
-                const key = path[4];
-                if (key in cell._exposed) {
-                    // get the search path
-                    const s = path.slice(4).join('.');
-                    return getValueByPath(cell._exposed, s);
-                }
-            }
-        } else if (
-            path[0] === 'query' &&
-            this._store.queries[path[1]] && // checks for variables that are named "query"
-            path[2] !== 'cell'
-        ) {
-            // check if the id is there
-            const queryId = path[1];
-
-            // get the attribute key
-            const key = path[2];
-
-            // get the query
-            const query = this._store.queries[queryId];
-            if (query) {
-                if (key in query._exposed) {
-                    // get the search path
-                    const s = path.slice(2).join('.');
-                    return getValueByPath(query._exposed, s);
-                }
-            }
-        } else if (path[0] === 'block' && this._store.blocks[path[1]]) {
-            // checks for variables that are named block
-            // check if the id is there
-            const blockId = path[1];
-
-            // get the block
-            const block = this._store.blocks[blockId];
-            if (block) {
-                // get the search path
-                const s = path.slice(2).join('.');
-                return getValueByPath(block.data, s);
-            }
-        } else if (this._store.variables[path[0]]) {
+        if (this._store.variables[path[0]]) {
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(variable.to, variable.type, path);
+            const value = this.getVariable(
+                variable.to,
+                variable.type,
+                path,
+                variable.cellId,
+            );
 
             // TODO: Check this, protects for false values
             if (value !== undefined && value !== null) {
@@ -1221,15 +1174,24 @@ export class StateStore {
      * @param to - points to
      * @param type - type of variable
      */
-    private addVariable = (id: string, to: string, type: VariableType) => {
+    private addVariable = (
+        id: string,
+        to: string,
+        type: VariableType,
+        cellId?: string,
+    ) => {
         if (this._store.variables[id]) {
             return false;
         }
 
-        const token: Variable = {
-            to,
-            type,
-        };
+        const token: Variable =
+            type === 'cell'
+                ? {
+                      to,
+                      type,
+                      cellId,
+                  }
+                : { to, type };
 
         this._store.variables[id] = token;
 

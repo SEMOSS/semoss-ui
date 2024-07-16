@@ -4445,8 +4445,9 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     type: 'query',
                 },
                 cell: {
-                    to: 'python_code.21756',
+                    to: 'python_code',
                     type: 'cell',
+                    cellId: '21756',
                 },
                 py_code: {
                     to: 'py-code',

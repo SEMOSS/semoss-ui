@@ -41,14 +41,28 @@ export type VariableType =
 /**
  * Variables
  */
-export type Variable = {
-    to: string;
-    type: VariableType;
-};
+export type Variable =
+    | {
+          to: string;
+          type: Exclude<VariableType, 'cell'>; // Exclude 'cell' from VariableType for this case
+          cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
+      }
+    | {
+          to: string;
+          type: 'cell'; // Specific case when type is 'cell'
+          cellId: string;
+      };
 
-export interface VariableWithId extends Variable {
-    id: string;
-}
+export type VariableWithId =
+    | ({
+          to: string;
+          type: Exclude<VariableType, 'cell'>;
+      } & { id: string })
+    | ({
+          to: string;
+          type: 'cell';
+          cellId: string;
+      } & { id: string });
 
 /**
  * Block

@@ -533,7 +533,11 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
         if (variable?.id) {
             setVariableName(variable.id);
             setVariableType(variable.type);
-            setVariablePointer(variable.to);
+            setVariablePointer(
+                variable.type === 'cell'
+                    ? `${variable.to}.${variable.cellId}`
+                    : variable.to,
+            );
 
             if (
                 variable.type !== 'query' &&
@@ -650,10 +654,23 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                             payload: {
                                                 id: variableName,
                                                 from: variable,
-                                                to: {
-                                                    to: variablePointer,
-                                                    type: variableType,
-                                                },
+                                                to:
+                                                    variableType === 'cell'
+                                                        ? {
+                                                              to: splitAtPeriod(
+                                                                  variablePointer,
+                                                                  'left',
+                                                              ),
+                                                              type: variableType,
+                                                              cellId: splitAtPeriod(
+                                                                  variablePointer,
+                                                                  'right',
+                                                              ),
+                                                          }
+                                                        : {
+                                                              to: variablePointer,
+                                                              type: variableType,
+                                                          },
                                             },
                                         });
                                     } else {
@@ -702,14 +719,29 @@ export const AddVariableModal = observer((props: AddVariableModalProps) => {
                                         variableType === 'query' ||
                                         variableType === 'cell'
                                     ) {
+                                        debugger;
                                         state.dispatch({
                                             message:
                                                 ActionMessages.ADD_VARIABLE,
-                                            payload: {
-                                                id: variableName,
-                                                to: variablePointer,
-                                                type: variableType,
-                                            },
+                                            payload:
+                                                variableType === 'cell'
+                                                    ? {
+                                                          id: variableName,
+                                                          to: splitAtPeriod(
+                                                              variablePointer,
+                                                              'left',
+                                                          ),
+                                                          type: variableType,
+                                                          cellId: splitAtPeriod(
+                                                              variablePointer,
+                                                              'right',
+                                                          ),
+                                                      }
+                                                    : {
+                                                          id: variableName,
+                                                          to: variablePointer,
+                                                          type: variableType,
+                                                      },
                                         });
                                     } else {
                                         // Add dependency to reference
