@@ -1,0 +1,69 @@
+{
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "namedInputs": {
+        "noMarkdown": ["!{projectRoot}/**/*.md"],
+        "default": ["{projectRoot}/**/*", "sharedGlobals"],
+        "sharedGlobals": [{ "runtime": "node --version" }],
+        "production": [
+            "default",
+            "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+            "!{projectRoot}/tsconfig.spec.json",
+            "!{projectRoot}/.eslintrc.json",
+            "!{projectRoot}/eslint.config.js",
+            "!{projectRoot}/cypress/**/*",
+            "!{projectRoot}/**/*.cy.[jt]s?(x)",
+            "!{projectRoot}/cypress.config.[jt]s",
+            "!{projectRoot}/jest.config.[jt]s",
+            "!{projectRoot}/src/test-setup.[jt]s",
+            "!{projectRoot}/test-setup.[jt]s"
+        ]
+    },
+    "targetDefaults": {
+        "build": {
+            "dependsOn": ["^build"],
+            "outputs": ["{projectRoot}/dist"],
+            "cache": true
+        },
+        "build:dev": {
+            "dependsOn": ["^build:dev"],
+            "outputs": ["{projectRoot}/dist"],
+            "cache": true
+        },
+        "build-storybook": {
+            "outputs": ["{projectRoot}/dist"],
+            "cache": true
+        },
+        "type-check": {
+            "cache": true
+        },
+        "lint": {
+            "cache": true
+        }
+    },
+    "defaultBase": "dev",
+    "plugins": [
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "lint"
+            }
+        },
+        {
+            "plugin": "@nx/webpack/plugin",
+            "options": {
+                "buildTargetName": "webpack:build",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview"
+            }
+        },
+        {
+            "plugin": "@nx/cypress/plugin",
+            "options": {
+                "targetName": "e2e",
+                "openTargetName": "open-cypress",
+                "componentTestingTargetName": "component-test",
+                "ciTargetName": "e2e-ci"
+            }
+        }
+    ]
+}

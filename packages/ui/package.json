@@ -12,7 +12,6 @@
     "scripts": {
         "start": "pnpm run storybook",
         "dev": "run-p build:dev storybook",
-        "build": "rollup -c",
         "build:dev": "rollup -w -c",
         "storybook": "cross-env NODE_OPTIONS=--max_old_space_size=8192 storybook dev -p 6006",
         "lint": "eslint .",
@@ -21,6 +20,18 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "build-storybook": "storybook build"
+    },
+    "nx": {
+        "targets": {
+            "build": {
+                "executor": "@nx/rollup:rollup",
+                "options": {
+                    "main": "packages/ui/src/index.ts",
+                    "tsConfig": "./tsconfig.json",
+                    "outputPath": "dist"
+                }
+            }
+        }
     },
     "keywords": [],
     "author": "",

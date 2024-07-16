@@ -1,3 +1,8 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { NxReactWebpackPlugin } = require('@nx/react/webpack-plugin');
+
 /* eslint-disable @typescript-eslint/no-var-requires */
 const webpack = require('webpack');
 const path = require('path');
@@ -20,7 +25,25 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
         clean: true,
     },
+    stats: 'verbose',
     plugins: [
+        new NxAppWebpackPlugin({
+            tsConfig: './tsconfig.json',
+            compiler: 'babel',
+            main: './src/main.tsx',
+            // index: './src/template.html',
+            baseHref: '/',
+            assets: ['packages/client/src/assets'],
+            outputHashing:
+                process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
+            memoryLimit: 8192,
+            watch: process.env['NODE_ENV'] == 'production' ? true : false,
+        }),
+        new NxReactWebpackPlugin({
+            // Uncomment this line if you don't want to use SVGR
+            // See: https://react-svgr.com/
+            // svgr: false
+        }),
         new HtmlWebpackPlugin({
             title: process.env.THEME_TITLE,
             favicon: process.env.THEME_FAVICON,
@@ -59,16 +82,7 @@ const config = {
             },
             {
                 test: /\.css$/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: MiniCssExtractPlugin.loader,
-                        options: {
-                            esModule: false,
-                        },
-                    },
-                    'css-loader',
-                ],
+                use: ['style-loader', 'css-loader'],
             },
 
             {
@@ -97,7 +111,11 @@ const config = {
     },
 };
 
-module.exports = () => {
+module.exports = (_, context) => {
+    if (context.isDevServer) {
+        config.devServer.hot = true;
+    }
+
     if (isProduction) {
         config.mode = 'production';
     } else {

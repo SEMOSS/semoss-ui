@@ -1,0 +1,74 @@
+{
+    "name": "@semoss/client",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/client/src",
+    "projectType": "application",
+    "targets": {
+        "deploy": {
+            "dependsOn": ["build"],
+            "command": ""
+        },
+        "webpack:build1": {
+            "options": {
+                "cwd": "packages/client",
+                "args": ["--mode=production", "--node-env=production"],
+                "command": "webpack-cli build",
+                "nodeOptions": "--max-old-space-size=8192"
+            },
+            "cache": true,
+            "dependsOn": ["^webpack:build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["webpack-cli"]
+                }
+            ],
+            "outputs": ["{workspaceRoot}/packages\\client\\dist"],
+            "metadata": {
+                "technologies": ["webpack"],
+                "description": "Runs Webpack build",
+                "help": {
+                    "command": "pnpm exec webpack-cli build --help",
+                    "example": {
+                        "options": {
+                            "json": "stats.json"
+                        },
+                        "args": ["--profile"]
+                    }
+                }
+            },
+            "executor": "nx:run-commands",
+            "configurations": {}
+        },
+        "dev": {
+            "options": {
+                "cwd": "packages/client",
+                "args": [
+                    "--mode=development",
+                    "--node-env=development",
+                    "--watch"
+                ],
+                "command": "webpack-cli"
+            },
+            "metadata": {
+                "technologies": ["webpack"],
+                "description": "Starts Webpack dev",
+                "help": {
+                    "command": "pnpm exec webpack-cli --help",
+                    "example": {
+                        "options": {
+                            "args": [
+                                "--client-progress",
+                                "--history-api-fallback "
+                            ]
+                        }
+                    }
+                }
+            },
+            "executor": "nx:run-commands",
+            "configurations": {}
+        }
+    },
+    "tags": []
+}

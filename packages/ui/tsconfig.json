@@ -12,7 +12,8 @@
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
         "paths": {
-            "@/*": ["*"]
+            "@/*": ["*"],
+            "@semoss/ui": ["libs/shared/ui/src/index.ts"]
         },
 
         /* Emit */
@@ -22,7 +23,11 @@
         "outDir": "dist",
 
         /* Skip */
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true
     },
     "include": ["src"],
     "exclude": ["node_modules", "dist", "**/*.stories.tsx"]

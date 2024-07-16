@@ -1,4 +1,13 @@
 {
-    "presets": ["@babel/preset-react"],
+    "presets": [
+        "@babel/preset-react",
+        [
+            "@nx/react/babel",
+            {
+                "runtime": "automatic",
+                "useBuiltIns": "usage"
+            }
+        ]
+    ],
     "plugins": ["istanbul"]
 }

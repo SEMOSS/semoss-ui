@@ -17,10 +17,23 @@
     "devDependencies": {
         "@commitlint/cli": "^17.7.0",
         "@commitlint/config-conventional": "^17.7.0",
+        "@nx/cypress": "19.4.2",
+        "@nx/eslint": "19.4.2",
+        "@nx/eslint-plugin": "19.4.2",
+        "@nx/react": "19.4.2",
+        "@nx/rollup": "19.4.2",
+        "@nx/storybook": "19.4.2",
+        "@nx/web": "19.4.2",
+        "@nx/webpack": "19.4.2",
         "cross-env": "^7.0.3",
+        "cypress": "^13.13.0",
+        "eslint": "~8.57.0",
         "husky": "^8.0.3",
         "lint-staged": "^13.2.2",
-        "npm-run-all": "^4.1.5"
+        "npm-run-all": "^4.1.5",
+        "nx": "19.4.2",
+        "rollup": "^4.14.0",
+        "webpack-cli": "^5.1.4"
     },
     "dependencies": {
         "mermaid": "^10.9.1"

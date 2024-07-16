@@ -35,7 +35,9 @@ pnpm_build_dev:
         - npm install -g pnpm@8
         - pnpm install
         - pnpm -v
-        - pnpm run build
+        - nx build @semoss/ui
+        - nx build @semoss/client
+        - nx run @semoss/legacy:build
         - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${VERSION}-SNAPSHOT
         # So that the cache takes up less space
         - rm -rf .m2/repository/org/semoss
