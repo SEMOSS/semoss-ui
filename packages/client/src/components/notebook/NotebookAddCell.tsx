@@ -643,9 +643,10 @@ export const NotebookAddCell = observer(
                         // selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
                         // selectQuery: pixelStringRef.current, // construct query based on useForm inputs
                         selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
-                        foo: 'moo',
                         joins: joinElements,
                         tableNames: Array.from(selectedTableNames),
+                        selectedColumns: getSelectedColumnNames(),
+                        columnAliases: getColumnAliases(),
                     };
                 }
 
@@ -1062,18 +1063,11 @@ export const NotebookAddCell = observer(
             retrieveTableRows(tableName);
         };
 
-        const retrievePreviewData = async () => {
-            setIsDatabaseLoading(true);
-
-            // run database rows reactor
-            const databaseId = selectedDatabaseId;
+        const getSelectedColumnNames = () => {
             const pixelTables = new Set();
             const pixelColumnNames = [];
-            const pixelColumnAliases = [];
-            const pixelJoins = [];
 
             watchedTables.forEach((tableObject) => {
-                const currTableName = tableObject.name;
                 const currTableColumns = tableObject.columns;
 
                 currTableColumns.forEach((columnObject) => {
@@ -1082,12 +1076,57 @@ export const NotebookAddCell = observer(
                         pixelColumnNames.push(
                             `${columnObject.tableName}__${columnObject.columnName}`,
                         );
+                    }
+                });
+            });
+
+            return pixelColumnNames;
+        };
+
+        const getColumnAliases = () => {
+            const pixelTables = new Set();
+            const pixelColumnAliases = [];
+
+            watchedTables.forEach((tableObject) => {
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
                         pixelColumnAliases.push(columnObject.userAlias);
                     }
                 });
             });
 
-            console.log(joinsSet);
+            return pixelColumnAliases;
+        };
+
+        const retrievePreviewData = async () => {
+            setIsDatabaseLoading(true);
+
+            // run database rows reactor
+            const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = getSelectedColumnNames();
+            const pixelColumnAliases = getColumnAliases();
+            // const pixelColumnNames = [];
+            // const pixelColumnAliases = [];
+            const pixelJoins = [];
+
+            // watchedTables.forEach((tableObject) => {
+            //     const currTableName = tableObject.name;
+            //     const currTableColumns = tableObject.columns;
+
+            //     currTableColumns.forEach((columnObject) => {
+            //         if (columnObject.checked) {
+            //             pixelTables.add(columnObject.tableName);
+            //             pixelColumnNames.push(
+            //                 `${columnObject.tableName}__${columnObject.columnName}`,
+            //             );
+            //             pixelColumnAliases.push(columnObject.userAlias);
+            //         }
+            //     });
+            // });
 
             Array.from(joinsSet).forEach((joinEle: string) => {
                 console.log({ joinEle });
@@ -1095,15 +1134,6 @@ export const NotebookAddCell = observer(
                 pixelJoins.push(
                     `( ${splitJoinsString[0]} , inner.join , ${splitJoinsString[1]} )`,
                 );
-            });
-
-            console.log({
-                databaseId,
-                pixelTables,
-                pixelColumnNames,
-                pixelColumnAliases,
-                pixelJoins,
-                joinsSet,
             });
 
             // when constructing final pixel string seperate all these with '|'

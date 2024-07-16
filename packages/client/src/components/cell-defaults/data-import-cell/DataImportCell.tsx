@@ -31,6 +31,8 @@ import { DatabaseTables } from './DatabaseTables';
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
 
+import { DataImportFormModal } from '../../notebook/DataImportFormModal';
+
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
@@ -216,17 +218,18 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
         /** Select query rendered in the cell */
         selectQuery: string;
 
-        /** Select query rendered in the cell */
-        // parameters: {
-        foo: string;
-        // }
+        // foo: string;
 
         tableNames: string[];
 
         joins: JoinObject[];
 
-        // filters will be added later
+        selectedColumns: string[];
+
+        columnAliases: string[];
+
         // filters: FilterObject[];
+        // summaries: FilterObject[];
     };
 }
 
@@ -240,6 +243,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
         const [showTables, setShowTables] = useState(false);
         const [showStyledView, setShowStyledView] = useState(true);
+
+        const [isDataImportModalOpen, setIsDataImportModalOpen] =
+            useState(false);
 
         const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
             loading: true,
@@ -398,12 +404,12 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
         };
 
         const openEditModal = () => {
-            alert('openEditModal');
             console.log({
                 databaseId: cell.parameters.databaseId,
                 tableNames: cell.parameters.tableNames,
                 joins: cell.parameters.joins,
             });
+            setIsDataImportModalOpen(true);
         };
 
         return (
@@ -716,6 +722,20 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                         </Stack>
                     )}
                 </Stack>
+                <DataImportFormModal
+                    isDataImportModalOpen={isDataImportModalOpen}
+                    setIsDataImportModalOpen={setIsDataImportModalOpen}
+                    // query={cell.query}
+                    previousCellId={null} // ?
+                    cell={cell}
+                    // data={{
+                    //     query: cell.query,
+                    //     previousCellId: null, // ?
+                    //     // joins: ['join1', 'join2', 'join3'],
+                    //     // tables: ['table1', 'table2', 'table3'],
+                    //     // columns: ['column1', 'column2', 'column3'],
+                    // }}
+                />
             </StyledContent>
         );
     },

@@ -10,9 +10,10 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         frameType: 'PY',
         frameVariableName: '',
         selectQuery: '',
-        foo: 'baz',
         joins: [],
         tableNames: [],
+        selectedColumns: [],
+        columnAliases: [],
         // filters: [],
     },
     toPixel: ({
@@ -20,8 +21,9 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         frameType,
         frameVariableName,
         selectQuery,
-        foo,
         joins,
+        selectedColumns,
+        columnAliases,
     }) => {
         // this only runs when the cell runs
         // it will check the frame type and variable name which the user could change
