@@ -205,6 +205,31 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     };
 
     /**
+     * Edit a query
+     */
+    const editQuery = (oldQueryId: string) => {
+        workspace.openOverlay(() => (
+            <NewQueryOverlay
+                onClose={(newQueryId?: string) => {
+                    if (newQueryId) {
+                        notebook.selectQuery(newQueryId);
+                    }
+                    try {
+                        state.dispatch({
+                            message: ActionMessages.RENAME_VARIABLE,
+                            payload: {
+                                id: oldQueryId,
+                                alias: newQueryId,
+                            },
+                        });
+                    } catch (e) {}
+                    workspace.closeOverlay();
+                }}
+            />
+        ));
+    };
+
+    /**
      * Copy a query
      * @param id - id of the query to copy
      */
@@ -325,9 +350,12 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                         </List.ItemButton>
                     </List.Item>
                     <List.Item disablePadding>
-                        <List.ItemButton onClick={openQueryOverlay}>
+                        <List.ItemButton onClick={() => editQuery(query.q.id)}>
                             <StyledListIcon>
-                                <DriveFileRenameOutline color="inherit" fontSize="small" />
+                                <DriveFileRenameOutline
+                                    color="inherit"
+                                    fontSize="small"
+                                />
                             </StyledListIcon>
                             <List.ItemText primary="Rename" />
                         </List.ItemButton>
