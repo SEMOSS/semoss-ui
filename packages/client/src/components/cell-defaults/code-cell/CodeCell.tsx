@@ -350,9 +350,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             }
 
             //define completion item providers by language
-            let completionItemProvider;
             if (language == 'pixel') {
-                completionItemProvider = {
+                completionItemProviders = {
+                    ...completionItemProviders,
                     pixel: monaco.languages.registerCompletionItemProvider(
                         language,
                         {
@@ -447,7 +447,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     ),
                 };
             } else {
-                completionItemProvider = {
+                completionItemProviders = {
+                    ...completionItemProviders,
                     [language]: monaco.languages.registerCompletionItemProvider(
                         language,
                         {
@@ -514,8 +515,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                     ),
                 };
             }
-
-            completionItemProviders = completionItemProvider;
         });
 
         const lines = editor.getModel().getLineCount();

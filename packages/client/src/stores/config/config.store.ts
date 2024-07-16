@@ -92,7 +92,7 @@ export class ConfigStore {
             },
         },
     };
-    private _generalReactors: string[];
+    private _generalReactors: Array<string> = [];
 
     constructor(root: RootStore) {
         // register the root
