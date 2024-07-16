@@ -1,7 +1,7 @@
 import { STATE_STORE_CURRENT_VERSION } from './state.constants';
 import {
-    __1_0_0_alpha_to_1_0_0_alpha_1,
-    __1_0_0_alpha_1_to_1_0_0_alpha_2,
+    migrate__1_0_0_alpha_to_1_0_0_alpha_1,
+    migrate__1_0_0_alpha_1_to_1_0_0_alpha_2,
 } from './migration-util';
 
 // Define an interface for the state
@@ -25,10 +25,9 @@ export class MigrationManager {
     constructor() {
         this.latestVersion = STATE_STORE_CURRENT_VERSION;
         this.migrations = {
-            '1.0.0-alpha': __1_0_0_alpha_to_1_0_0_alpha_1,
-            '1.0.0-alpha.1': __1_0_0_alpha_1_to_1_0_0_alpha_2,
-
+            '1.0.0-alpha': migrate__1_0_0_alpha_to_1_0_0_alpha_1,
             // Add future migrations here
+            '1.0.0-alpha.1': migrate__1_0_0_alpha_1_to_1_0_0_alpha_2,
         };
     }
 

@@ -9,7 +9,7 @@ type Versions = {
 // TODO: add isInput, isOutput to variables structure (will we need a UI to determine this or should this be set programatically)?
 
 /**
- * @name __1_0_0_alpha_to_1_0_0_alpha_1
+ * @name migrate__1_0_0_alpha_to_1_0_0_alpha_1
  * @description - This addresses a change in how we store our variables.
  * 1. The unique identifier will change to what it is aliased by.
  * From: 'variable-7829': { alias: "LLM", to: 'model-8282', type: 'model'}
@@ -18,7 +18,7 @@ type Versions = {
  * {{query.py_code.cell.2189.output}} --> {{py_cell.output}}
  * {{query.py_code.output}} --> {{py_code.output}}
  */
-export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
+export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
     // TODO: Rename with migrate__1_0
     const newState = {
         ...state,
@@ -185,10 +185,10 @@ export const __1_0_0_alpha_to_1_0_0_alpha_1 = (state) => {
 };
 
 /**
- * @name __1_0_0_alpha_1_to_1_0_0_alpha_2
+ * @name migrate__1_0_0_alpha_1_to_1_0_0_alpha_2
  * @description - explain what this migration function does
  */
-export const __1_0_0_alpha_1_to_1_0_0_alpha_2 = (state) => {
+export const migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 = (state) => {
     const newState = {
         ...state,
     };
