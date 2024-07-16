@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock, useDebounce } from '@/hooks';
@@ -31,12 +31,13 @@ const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
 
 export const CheckboxBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<CheckboxBlockDef>(id);
+    const [changedValue, setChangedValue] = useState(false);
 
     useDebounce(
         () => {
             listeners.onChange();
         },
-        [listeners, data.value],
+        [changedValue],
         200,
     );
 
@@ -52,6 +53,7 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
                     const value = e.target.checked;
                     // update the value
                     setData('value', value);
+                    setChangedValue(value);
                 }}
             />
         </StyledContainer>

@@ -1,4 +1,4 @@
-import { useMemo, CSSProperties } from 'react';
+import { useMemo, CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock, useDebounce } from '@/hooks';
@@ -36,6 +36,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
  */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
+    const [changedValue, setChangedValue] = useState('');
 
     const stringifiedOptions: string[] = useMemo(() => {
         let arr = [];
@@ -64,7 +65,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         () => {
             listeners.onChange();
         },
-        [listeners, data.value],
+        [changedValue],
         200,
     );
 
@@ -123,6 +124,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 
                 debugger;
                 setData('value', value);
+                setChangedValue(value);
             }}
             sx={{
                 ...data.style,

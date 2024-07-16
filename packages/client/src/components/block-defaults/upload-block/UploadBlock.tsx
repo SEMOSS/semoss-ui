@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock, useDebounce } from '@/hooks';
@@ -26,6 +26,7 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
 export const UploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, uploadFile, listeners } =
         useBlock<UploadBlockDef>(id);
+    const [changedValue, setChangedValue] = useState(false);
 
     /**
      * Upload a file to the server
@@ -71,7 +72,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
         () => {
             listeners.onChange();
         },
-        [listeners, data.value],
+        [changedValue],
         200,
     );
 
@@ -96,9 +97,10 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             type={'file'}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
-
                 // upload the new file on change
                 upload(files[0]);
+
+                setChangedValue(!changedValue);
             }}
             {...attrs}
         />

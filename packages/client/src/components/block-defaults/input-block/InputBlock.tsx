@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -30,12 +30,13 @@ export interface InputBlockDef extends BlockDef<'input'> {
 
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
+    const [changedValue, setChangedValue] = useState('');
 
     useDebounce(
         () => {
             listeners.onChange();
         },
-        [listeners, data.value],
+        [changedValue],
         500,
     );
 
@@ -59,6 +60,8 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                 const value = e.target.value;
                 // update the value
                 setData('value', value);
+                //Trigger the onChange
+                setChangedValue(e.target.value);
             }}
             {...attrs}
         />

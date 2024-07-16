@@ -1,4 +1,5 @@
 import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
 
 import { useBlock, useDebounce } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
@@ -27,11 +28,13 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } =
         useBlock<ToggleButtonBlockDef>(id);
 
+    const [changedValue, setChangedValue] = useState(false);
+
     useDebounce(
         () => {
             listeners.onChange();
         },
-        [listeners, data.value],
+        [changedValue],
         200,
     );
 
@@ -46,14 +49,17 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
                         if (Array.isArray(newValue)) {
                             if (newValue.length) {
                                 setData('value', newValue);
+                                setChangedValue(!changedValue);
                             }
                         } else {
                             if (newValue !== null) {
                                 setData('value', newValue);
+                                setChangedValue(!changedValue);
                             }
                         }
                     } else {
                         setData('value', newValue);
+                        setChangedValue(!changedValue);
                     }
                 }}
                 value={data.value}
