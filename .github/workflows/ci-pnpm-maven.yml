@@ -1,22 +1,15 @@
 name: CI
 
-# on:
-#     workflow_dispatch:
-#         inputs:
-#             VERSION:
-#                 description: 'VERSION'
-#                 required: true
-#                 default: '4.3.0'
 on:
-  push:
-    branches:
-      - dev
-      - main
-  pull_request:
-    branches:
-      - dev
-      - main
-  workflow_dispatch:
+    push:
+        branches:
+            - dev
+            - main
+    pull_request:
+        branches:
+            - dev
+            - main
+    workflow_dispatch:
 
 env:
     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
@@ -68,7 +61,7 @@ jobs:
             #   with:
             #       name: semossweb-artifact
             #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
-                  
+
             # - name: Delete old artifacts
             #   run: |
             #     echo "Deleting old artifacts..."
@@ -83,7 +76,7 @@ jobs:
 
     pnpm_build_deploy:
         runs-on: self-hosted
-        if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
+        if: github.ref == 'refs/head/dev' && vars.RELEASE != 'TRUE' && github.event_name =='workflow_dispatch'
         container:
             image: node:18.16.1-bullseye
         steps:
