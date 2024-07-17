@@ -21,9 +21,7 @@ import {
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
-import { splitAtPeriod } from '@/utility';
-import { STATE_STORE_CURRENT_VERSION } from './state.constants';
-import { MigrationManager } from './MigrationManager';
+import { STATE_STORE_CURRENT_VERSION } from './MigrationManager';
 
 interface StateStoreInterface {
     /** Mode */
@@ -288,7 +286,7 @@ export class StateStore {
                 return undefined;
             }
         } catch (e) {
-            return 'undefined';
+            return undefined;
         }
     }
 
@@ -298,13 +296,16 @@ export class StateStore {
      * @param type
      * @returns
      */
-    getAlias(pointer: string): string {
+    getAlias(pointer: string, cellId?: string): string {
         let alias = '';
+
         // Do we need to change how variables are stored to get rid of this iteration
         Object.entries(this._store.variables).forEach((keyValue) => {
             const variable = keyValue[1];
 
-            if (variable.to === pointer) {
+            if (variable.to === pointer && !cellId) {
+                alias = keyValue[0];
+            } else if (variable.to === pointer && variable.cellId === cellId) {
                 alias = keyValue[0];
             }
         });

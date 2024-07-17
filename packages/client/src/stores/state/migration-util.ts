@@ -1,14 +1,21 @@
 import { splitAtPeriod } from '@/utility';
 import { Variable } from './state.types';
 
-// TODO: Define versions else where maybe in state.types --> this is just so we don't have harcoded values
-type Versions = {
-    // 1.0.0-alpha: '1.0.0-alpha2'
-};
-
-// TODO: Migration Function for this, structure change queries to notebook
 // DONE: Migrate old syntax {{block.input-2712.value}}, {{query.python_code.cell.92121.output}}, {{query.python_code.output}} to variables
-// Done: variables that are cells --> "queryId": "", "cellId": "", We don't want to do string manipulation to get left and right pointer
+// DONE: variables that are cells --> "queryId": "", "cellId": "", We don't want to do string manipulation to get left and right pointer
+// DONE: In designer only give variables as options with settings select, TODO: Make sure necessary blocks use QueryInputSettings, keep concise
+// DONE: In designer, Selected and Hovered mask show variable name if it is a variable
+// DONE: rename cell allows creates a variable
+// DONE: rename block creates a variable
+// DONE: Fix Migration logic, If old app does not have version it's safe to assume they are at the first version
+
+// TODO: Migration, if pointer is already in variables don't create just change it to whats already there.
+
+// TODO: Ensure periods can't be in alias (will mess with syntax perhaps)
+// TODO: Ensure no duplicating variable names, all have to be unique (error message)
+// TODO: String concat in designer with variables
+
+// TODO: Migration Function for this, structure change --> queries to notebook
 // TODO: add isInput, isOutput to variables structure (will we need a UI to determine this or should this be set programatically)?
 
 /**
@@ -25,7 +32,7 @@ type Versions = {
  * {{query.py_code.cell.2189.output}} --> {{py_cell.output}}
  * {{query.py_code.output}} --> {{py_code.output}}
  */
-export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
+export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
     const newState = {
         ...state,
     };
@@ -87,6 +94,8 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
                             const queryId = split[1];
                             const cellId = split[3];
 
+                            // TODO: lets check if there is already a varaiable
+
                             const identifier = `${queryId}--${cellId}`;
 
                             if (!newState.variables[identifier]) {
@@ -110,6 +119,8 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
                             const queryId = split[1];
                             // check if the id is there
 
+                            // TODO: Check if there is already variable for query
+
                             if (!newState.variables[queryId]) {
                                 newState.variables[queryId] = {
                                     to: queryId,
@@ -126,6 +137,7 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
                             split[0] === 'block' &&
                             newState.blocks[split[1]]
                         ) {
+                            // TODO: Check if there is already variable for block
                             if (!newState.variables[split[1]]) {
                                 newState.variables[split[1]] = {
                                     to: split[1],
@@ -149,7 +161,7 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
     );
 
     // 3b. Remove references from blocks
-    await Object.values(newState.blocks).forEach(async (block) => {
+    await Object.values(newState.blocks).forEach((block) => {
         const properties = block['data'];
 
         if (properties) {
@@ -167,6 +179,8 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
                 ) {
                     const queryId = split[1];
                     const cellId = split[3];
+
+                    // TODO: Check if there is already variable for query
 
                     const identifier = `${queryId}--${cellId}`;
 
@@ -189,8 +203,10 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
                     split[2] !== 'cell'
                 ) {
                     const queryId = split[1];
-                    // check if the id is there
 
+                    // TODO: Check if there is already variable for query
+
+                    // check if the id is there
                     if (!newState.variables[queryId]) {
                         newState.variables[queryId] = {
                             to: queryId,
@@ -207,6 +223,12 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
                     split[0] === 'block' &&
                     newState.blocks[split[1]]
                 ) {
+                    // TODO: Check if there is already variable for block
+                    // const alias = await getAlias(
+                    //     newState.variables,
+                    //     split[1],
+                    // );
+
                     if (!newState.variables[split[1]]) {
                         newState.variables[split[1]] = {
                             to: split[1],
@@ -227,7 +249,7 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
         }
     });
 
-    newState.version = '1.0.0-alpha.1';
+    newState.version = to;
 
     return newState;
 };
@@ -236,14 +258,14 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state) => {
  * @name migrate__1_0_0_alpha_1_to_1_0_0_alpha_2
  * @description - explain what this migration function does
  */
-export const migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 = (state) => {
+export const migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 = (state, to) => {
     const newState = {
         ...state,
     };
 
     newState.variables = {};
 
-    newState.version = '1.0.0-alpha.2';
+    newState.version = to;
 
     return newState;
 };

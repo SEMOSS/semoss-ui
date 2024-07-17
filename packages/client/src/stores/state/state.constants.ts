@@ -13,7 +13,13 @@ import QUERY from '@/assets/img/query.jpeg';
 import CHATAI from '@/assets/img/chatai.jpeg';
 import LANDINGPAGE from '@/assets/img/LandingPage.jpeg';
 
-export const STATE_STORE_CURRENT_VERSION = '1.0.0-alpha.1';
+export const INPUT_BLOCK_TYPES = [
+    'input',
+    'select',
+    'upload',
+    'checkbox',
+    'toggle-button',
+];
 
 export const VARIABLE_TYPES = [
     'block',

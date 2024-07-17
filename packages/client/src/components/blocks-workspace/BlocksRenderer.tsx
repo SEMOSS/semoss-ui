@@ -3,11 +3,8 @@ import { observer } from 'mobx-react-lite';
 import { useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
-import {
-    STATE_STORE_CURRENT_VERSION,
-    SerializedState,
-    StateStore,
-} from '@/stores';
+import { SerializedState, StateStore } from '@/stores';
+import { STATE_STORE_CURRENT_VERSION } from '@/stores/state/MigrationManager';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';

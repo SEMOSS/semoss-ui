@@ -1,4 +1,3 @@
-import { STATE_STORE_CURRENT_VERSION } from './state.constants';
 import {
     migrate__1_0_0_alpha_to_1_0_0_alpha_1,
     migrate__1_0_0_alpha_1_to_1_0_0_alpha_2,
@@ -11,12 +10,17 @@ interface State {
 }
 
 // Define a type for the migration functions
-type MigrationFunction = (state: State) => Promise<State>;
+type MigrationFunction = (state: State, to: string) => Promise<State>;
 
 // Define a type for the migrations map
 interface Migrations {
-    [version: string]: MigrationFunction;
+    [version: string]: {
+        migrate: MigrationFunction;
+        to: string;
+    };
 }
+
+export const STATE_STORE_CURRENT_VERSION = '1.0.0-alpha.1';
 
 export class MigrationManager {
     private latestVersion: string;
@@ -25,23 +29,26 @@ export class MigrationManager {
     constructor() {
         this.latestVersion = STATE_STORE_CURRENT_VERSION;
         this.migrations = {
-            '1.0.0-alpha': migrate__1_0_0_alpha_to_1_0_0_alpha_1,
+            '1.0.0-alpha': {
+                migrate: migrate__1_0_0_alpha_to_1_0_0_alpha_1,
+                to: '1.0.0-alpha.1',
+            },
             // Add future migrations here
-            '1.0.0-alpha.1': migrate__1_0_0_alpha_1_to_1_0_0_alpha_2,
+            '1.0.0-alpha.1': {
+                migrate: migrate__1_0_0_alpha_1_to_1_0_0_alpha_2,
+                to: '1.0.0-alpha.2',
+            },
         };
     }
 
     async run(state) {
-        // TODO: break cycle if state.version does not change
         while (state.version !== this.latestVersion) {
-            const migrationFunction = this.migrations[state.version];
-            if (migrationFunction) {
-                state = await migrationFunction(state);
+            //  If state.version is undefined, it is safe to assume this was an old app before we introduced version
+            const migration =
+                this.migrations[state.version ? state.version : '1.0.0-alpha'];
+            if (migration) {
+                state = await migration.migrate(state, migration.to);
             } else {
-                throw new Error(
-                    `No migration function available for version ${state.version}`,
-                );
-
                 console.error(
                     `No migration function available for version ${state.version}`,
                 );

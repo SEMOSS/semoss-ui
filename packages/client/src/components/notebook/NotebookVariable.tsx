@@ -15,7 +15,7 @@ import {
 } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
-import { AddVariableModal } from './AddVariableModal';
+import { AddVariablePopover } from './AddVariablePopover';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
@@ -384,7 +384,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             e.preventDefault();
                                         }}
                                     >
-                                        <AddVariableModal
+                                        <AddVariablePopover
                                             variable={{
                                                 ...variable,
                                                 id: id,

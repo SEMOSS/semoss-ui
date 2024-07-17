@@ -128,7 +128,7 @@ export const ENGINE_ROUTES: {
         type: 'DATABASE',
         description:
             'Database catalog is an integrated data nexus connecting to diverse databases and serving as a springboard for unified data orchestration, innovation, and insights. Access structured data sources like relational database management systems (RDBMS), Triplestore/RDF, graph databases, Excel/CSVs, and data exposed via API.  ',
-        icon: Database,
+        icon: Database as React.FunctionComponent,
         specific: [
             {
                 name: 'Overview',

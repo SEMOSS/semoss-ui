@@ -14,7 +14,7 @@ import {
     Popover,
 } from '@semoss/ui';
 import { useBlocks, usePixel } from '@/hooks';
-import { AddVariableModal } from './AddVariableModal';
+import { AddVariablePopover } from './AddVariablePopover';
 import { NotebookVariable } from './NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
 import { VARIABLE_TYPES } from '@/stores';
@@ -265,7 +265,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                     </List>
                 </StyledMenuScroll>
                 {isPopoverOpen && (
-                    <AddVariableModal
+                    <AddVariablePopover
                         open={isPopoverOpen}
                         anchorEl={popoverAnchorEle}
                         onClose={() => {

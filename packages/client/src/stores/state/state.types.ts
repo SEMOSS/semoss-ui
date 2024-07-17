@@ -24,16 +24,16 @@ export type SerializedState = {
  * Variable Types
  */
 export type VariableType =
-    | 'block' // X
+    | 'block'
     | 'cell'
     | 'query'
     | 'string'
     | 'number'
-    | 'database' // X
-    | 'model' // X
-    | 'vector' // X
-    | 'storage' // X
-    | 'function' // X
+    | 'database'
+    | 'model'
+    | 'vector'
+    | 'storage'
+    | 'function'
     | 'JSON'
     | 'date'
     | 'array';
