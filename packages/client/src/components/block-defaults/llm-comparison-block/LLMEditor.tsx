@@ -1,5 +1,5 @@
 import { TypeLlmConfig } from '@/components/workspace';
-import { Control, Controller } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 import {
     styled,
     Typography,
@@ -47,14 +47,11 @@ interface PropsLLMEditor {
 
     /** Model's index within the form's 'models' */
     index: number;
-
-    /** control used for managing state in form hook */
-    control: Control<any, any>;
 }
 
 export const LLMEditor = (props: PropsLLMEditor) => {
-    const { allModels } = useLLMComparison();
-    const { model, index, control } = props;
+    const { allModels, control } = useLLMComparison();
+    const { model, index } = props;
 
     return (
         <StyledLLMEditor>
@@ -70,7 +67,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`models[${index}].value`}
+                    name={`modelsToEdit[${index}].value`}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => (
@@ -105,7 +102,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`models[${index}].topP`}
+                    name={`modelsToEdit[${index}].topP`}
                     control={control}
                     rules={{ min: 0, max: 1 }}
                     render={({ field, fieldState }) => (
@@ -150,7 +147,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`models[${index}].temperature`}
+                    name={`modelsToEdit[${index}].temperature`}
                     control={control}
                     rules={{ min: 0, max: 1 }}
                     render={({ field, fieldState }) => (
@@ -196,7 +193,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`models[${index}].length`}
+                    name={`modelsToEdit[${index}].length`}
                     control={control}
                     rules={{ min: 0, max: 1024 }}
                     render={({ field, fieldState }) => (

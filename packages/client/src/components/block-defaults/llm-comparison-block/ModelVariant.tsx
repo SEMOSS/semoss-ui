@@ -17,6 +17,7 @@ import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useLLMComparison } from '@/hooks';
+import { buildEmptyVariant } from './LlmComparison.utility';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -75,18 +76,27 @@ export const ModelVariant = (props: ModelVariantProps) => {
         cardProps,
     } = props;
     const [hovered, setHovered] = useState(false);
-    const { deleteVariant, editVariant, setDesignerView, setEditorVariant } =
-        useLLMComparison();
+    const { setValue, getValues } = useLLMComparison();
 
     const handleToggleSelected = () => {
-        const updatedVariant = { ...variant };
-        updatedVariant.selected = !variant.selected;
-        editVariant(index, updatedVariant);
+        const variantsCopy = [...getValues('variants')];
+        variantsCopy[index].selected = !variant.selected;
+        setValue('variants', variantsCopy);
+    };
+
+    const handleDeleteVariant = () => {
+        const variantsCopy = [...getValues('variants')];
+        variantsCopy.splice(index, 1);
+        setValue('variants', variantsCopy);
     };
 
     const handleOpenVariantEditor = (duplicate: boolean) => {
-        setEditorVariant(index, duplicate);
-        setDesignerView('variantEdit');
+        setValue('editorVariantIndex', index);
+        const editorVariant = duplicate
+            ? variant
+            : buildEmptyVariant(variant.models.length);
+        setValue('editorVariant', editorVariant);
+        setValue('designerView', 'variantEdit');
     };
 
     return (
@@ -115,7 +125,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
                 </Stack>
 
                 {index !== -1 && (
-                    <IconButton onClick={() => deleteVariant(index)}>
+                    <IconButton onClick={handleDeleteVariant}>
                         <Close />
                     </IconButton>
                 )}

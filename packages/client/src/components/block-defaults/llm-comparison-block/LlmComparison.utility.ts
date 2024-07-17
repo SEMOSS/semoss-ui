@@ -1,4 +1,8 @@
-import { TypeLlmConfig, TypeLlmComparisonForm } from '@/components/workspace';
+import {
+    TypeLlmConfig,
+    TypeLlmComparisonForm,
+    TypeVariant,
+} from '@/components/workspace';
 
 /**
  * METHODS ==================================================================
@@ -20,9 +24,34 @@ export const modelEngineOutput = (output: any[]): TypeLlmConfig[] => {
     });
 };
 
+export const buildEmptyVariant = (modelCount: number): TypeVariant => {
+    const emptyVariantCopy = emptyVariant;
+
+    emptyVariantCopy.models = Array(modelCount).fill(emptyModel);
+
+    return emptyVariant;
+};
+
 /**
  * CONSTANTS ================================================================
  */
+
+export const emptyVariant: TypeVariant = {
+    name: 'Empty Variant',
+    selected: false,
+    models: [],
+};
+
+export const emptyModel: TypeLlmConfig = {
+    alias: null,
+    value: null,
+    database_name: null,
+    database_type: null,
+    database_subtype: null,
+    topP: 0,
+    temperature: 0,
+    length: 0,
+};
 
 export const LlmComparisonFormDefaultValues: TypeLlmComparisonForm = {
     defaultVariant: {

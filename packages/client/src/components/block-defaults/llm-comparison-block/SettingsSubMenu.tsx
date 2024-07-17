@@ -11,6 +11,7 @@ import {
 import { useLLMComparison } from '@/hooks';
 import { useEffect, useState } from 'react';
 import { TypeVariant } from '@/components/workspace';
+import { Controller } from 'react-hook-form';
 
 const StyledSettingsSubMenu = styled('div')(({ theme }) => ({
     width: '100%',
@@ -33,15 +34,11 @@ const StyledRadioGroup = styled(RadioGroup)(({ theme }) => ({
 }));
 
 export const SettingsSubMenu = () => {
-    const {
-        showModelsInResponse,
-        toggleShowModelsInResponse,
-        defaultVariant,
-        variants,
-        editVariant,
-    } = useLLMComparison();
+    const { control, getValues, setValue, watch } = useLLMComparison();
     const [selectedVars, setSelectedVars] = useState<TypeVariant[]>([]);
     const [unselectedVars, setUnselectedVars] = useState<TypeVariant[]>([]);
+    const defaultVariant = watch('defaultVariant');
+    const variants = watch('variants');
 
     useEffect(() => {
         setVariantsState(variants);
@@ -72,17 +69,15 @@ export const SettingsSubMenu = () => {
                 ...defaultVariant,
                 selected: !defaultVariant.selected,
             };
-            editVariant(-1, newDefault);
+            setValue('defaultVariant', newDefault);
         } else {
             const copy = [...variants];
             const idx = copy.findIndex((vrnt) => variant.name === vrnt.name);
-            const updatedVariant = {
-                ...copy[idx],
-                selected: !copy[idx].selected,
-            };
-            editVariant(idx, updatedVariant);
+            copy[idx].selected = !copy[idx].selected;
+            setValue('variants', copy);
 
-            // TODO: Context change for 'variants' is not triggering a rerender, need to find a better solution.
+            // TODO MORE TDODOOOOOO
+            // Context change for 'variants' is not triggering a rerender, need to find a better solution.
             copy[idx].selected = !copy[idx].selected;
             setVariantsState(copy);
         }
@@ -164,16 +159,21 @@ export const SettingsSubMenu = () => {
                 <Typography variant="body2" color="secondary">
                     Display Model Name
                 </Typography>
-                <Switch
-                    checked={showModelsInResponse}
-                    onChange={() =>
-                        toggleShowModelsInResponse(!showModelsInResponse)
-                    }
+
+                <Controller
+                    name="showModelsInResponse"
+                    control={control}
+                    render={({ field }) => (
+                        <Switch
+                            checked={field.value}
+                            onChange={field.onChange}
+                        />
+                    )}
                 />
             </StyledSection>
 
             <StyledSection direction="column" gap={1}>
-                <Typography variant="caption" color="secondary">
+                <Typography variant="body2" color="secondary">
                     Display Order
                 </Typography>
 

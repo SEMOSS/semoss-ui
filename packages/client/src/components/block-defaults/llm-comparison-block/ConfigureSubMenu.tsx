@@ -1,15 +1,10 @@
 import { styled, Stack, Button, useNotification } from '@semoss/ui';
 import { useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
 import { useLLMComparison } from '@/hooks';
 import { ModelVariant } from './ModelVariant';
 import { TypeLlmComparisonForm, TypeLlmConfig } from '@/components/workspace';
 import { LLMEditor } from './LLMEditor';
 import { ArrowBack } from '@mui/icons-material';
-
-const ComparisonFormDefaulValues = {
-    models: [],
-};
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -29,43 +24,33 @@ const StyledActionBar = styled('div')(({ theme }) => ({
 export const ConfigureSubMenu = () => {
     const viewRef = useRef('allVariants');
     const notification = useNotification();
-    const {
-        allModels,
-        variants,
-        defaultVariant,
-        designerView,
-        setDesignerView,
-        addVariant,
-        swapVariantModel,
-        setEditorVariant,
-        setEditorModel,
-        editorVariantIndex,
-        editorModelIndex,
-        editorVariant,
-        editorModel,
-    } = useLLMComparison();
-    const { control, setValue, handleSubmit, getValues } =
-        useForm<TypeLlmComparisonForm>({
-            defaultValues: ComparisonFormDefaulValues,
-        });
+    const { allModels, setValue, watch, handleSubmit, getValues } =
+        useLLMComparison();
+    const defaultVariant = watch('defaultVariant');
+    const variants = watch('variants');
+    const designerView = watch('designerView');
+    const modelsToEdit = watch('modelsToEdit');
 
     useEffect(() => {
         if (designerView !== viewRef.current) {
             viewRef.current = designerView;
+            const editorVariant = getValues('editorVariant');
+            const editorModel = getValues('editorModel');
 
             if (designerView === 'allVariants') {
-                setValue('models', []);
+                setValue('modelsToEdit', []);
             } else if (designerView === 'variantEdit') {
-                setValue('models', editorVariant.models);
+                setValue('modelsToEdit', editorVariant.models);
             } else if (designerView === 'modelEdit') {
-                setValue('models', [editorModel]);
+                setValue('modelsToEdit', [editorModel]);
             }
         }
-    }, [designerView, editorVariant, editorModel]);
+    }, [designerView]);
 
     const onSubmit = (data: TypeLlmComparisonForm) => {
-        const { models } = data;
-        const selectedModels = models.map((model) => {
+        const { modelsToEdit, editorVariantIndex, editorModelIndex } = data;
+
+        const selectedModels = modelsToEdit.map((model) => {
             const match = allModels.find((mod) => mod.value === model.value);
             return {
                 ...match,
@@ -76,22 +61,22 @@ export const ConfigureSubMenu = () => {
         });
 
         if (designerView === 'variantEdit') {
-            addVariant(editorVariantIndex, {
-                name: 'new',
-                selected: false,
-                models: selectedModels,
-            });
-            setEditorVariant(null);
+            setValue('variants', [
+                ...variants.slice(0, editorVariantIndex + 1),
+                {
+                    name: 'new',
+                    selected: true,
+                    models: selectedModels,
+                },
+                ...variants.slice(editorVariantIndex + 1),
+            ]);
+            clearEditor('variant');
         } else if (designerView === 'modelEdit') {
-            swapVariantModel(
-                editorVariantIndex,
-                editorModelIndex,
-                selectedModels[0],
-            );
-            setEditorModel(null, null);
+            // TODO
+            clearEditor('model');
         }
 
-        setDesignerView('allVariants');
+        setValue('designerView', 'allVariants');
     };
 
     const onError = (errors) => {
@@ -101,11 +86,27 @@ export const ConfigureSubMenu = () => {
         });
     };
 
+    const clearEditor = (type: 'model' | 'variant') => {
+        if (type === 'variant') {
+            setValue('editorVariantIndex', null);
+            setValue('editorVariant', null);
+            setValue('modelsToEdit', []);
+        } else {
+            setValue('editorVariantIndex', null);
+            setValue('editorModelIndex', null);
+            setValue('editorModel', null);
+            setValue('modelsToEdit', []);
+        }
+    };
+
     const handleResetParams = () => {
+        const editorVariant = getValues('editorVariant');
+        const editorModel = getValues('editorModel');
+
         if (designerView === 'variantEdit') {
-            setValue('models', editorVariant.models);
+            setValue('modelsToEdit', editorVariant.models);
         } else if (designerView === 'modelEdit') {
-            setValue('models', [editorModel]);
+            setValue('modelsToEdit', [editorModel]);
         }
     };
 
@@ -136,34 +137,26 @@ export const ConfigureSubMenu = () => {
                             variant="text"
                             color="secondary"
                             startIcon={<ArrowBack />}
-                            onClick={() => setDesignerView('allVariants')}
+                            onClick={() => {
+                                clearEditor(
+                                    designerView === 'variantEdit'
+                                        ? 'variant'
+                                        : 'model',
+                                );
+                                setValue('designerView', 'allVariants');
+                            }}
                         >
                             Configure
                         </Button>
                     </StyledActionBar>
 
-                    {designerView === 'variantEdit' && (
-                        <>
-                            {editorVariant.models.map(
-                                (model: TypeLlmConfig, idx: number) => (
-                                    <LLMEditor
-                                        key={`${model.alias}-${idx}`}
-                                        control={control}
-                                        index={idx}
-                                        model={model}
-                                    />
-                                ),
-                            )}
-                        </>
-                    )}
-
-                    {designerView === 'modelEdit' && (
+                    {modelsToEdit.map((model: TypeLlmConfig, idx: number) => (
                         <LLMEditor
-                            index={0}
-                            control={control}
-                            model={editorModel}
+                            key={`LLM-${model.value}-${idx}`}
+                            model={model}
+                            index={idx}
                         />
-                    )}
+                    ))}
                 </div>
 
                 <StyledActionBar>

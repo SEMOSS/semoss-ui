@@ -108,7 +108,7 @@ export const LlmCard = (props: LlmCardProps) => {
         isVariantHovered,
         size = 'medium',
     } = props;
-    const { setDesignerView, setEditorModel } = useLLMComparison();
+    const { setValue } = useLLMComparison();
 
     const {
         alias,
@@ -122,8 +122,9 @@ export const LlmCard = (props: LlmCardProps) => {
     } = llm;
 
     const handleOpenLlmEditor = () => {
-        setEditorModel(variantIndex, modelIndex);
-        setDesignerView('modelEdit');
+        setValue('editorVariantIndex', variantIndex);
+        setValue('editorModelIndex', modelIndex);
+        setValue('designerView', 'modelEdit');
     };
 
     return (
