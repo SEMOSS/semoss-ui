@@ -722,20 +722,23 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                         </Stack>
                     )}
                 </Stack>
-                <DataImportFormModal
-                    isDataImportModalOpen={isDataImportModalOpen}
-                    setIsDataImportModalOpen={setIsDataImportModalOpen}
-                    // query={cell.query}
-                    previousCellId={null} // ?
-                    cell={cell}
-                    // data={{
-                    //     query: cell.query,
-                    //     previousCellId: null, // ?
-                    //     // joins: ['join1', 'join2', 'join3'],
-                    //     // tables: ['table1', 'table2', 'table3'],
-                    //     // columns: ['column1', 'column2', 'column3'],
-                    // }}
-                />
+                {isDataImportModalOpen && (
+                    <DataImportFormModal
+                        isDataImportModalOpen={isDataImportModalOpen}
+                        setIsDataImportModalOpen={setIsDataImportModalOpen}
+                        query={cell.query} // this is redundant
+                        previousCellId={null} // this may not be needed for edit
+                        cell={cell}
+                        editMode={true}
+                        // data={{
+                        //     query: cell.query,
+                        //     previousCellId: null, // ?
+                        //     // joins: ['join1', 'join2', 'join3'],
+                        //     // tables: ['table1', 'table2', 'table3'],
+                        //     // columns: ['column1', 'column2', 'column3'],
+                        // }}
+                    />
+                )}
             </StyledContent>
         );
     },
