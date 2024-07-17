@@ -8,13 +8,11 @@ import { Variable } from './state.types';
 // DONE: rename cell allows creates a variable
 // DONE: rename block creates a variable
 // DONE: Fix Migration logic, If old app does not have version it's safe to assume they are at the first version
+// DONE: Ensure no duplicating variable names, all have to be unique (error message), check the renaming too TODO: TEST
+// DONE: Ensure periods can't be in alias (will mess with syntax perhaps)
 
 // TODO: Migration, if pointer is already in variables don't create just change it to whats already there.
-
-// TODO: Ensure periods can't be in alias (will mess with syntax perhaps)
-// TODO: Ensure no duplicating variable names, all have to be unique (error message), check the renaming too
 // TODO: String concat in designer with variables
-
 // TODO: Migration Function for this, structure change --> queries to notebook
 // TODO: add isInput, isOutput to variables structure (will we need a UI to determine this or should this be set programatically)?
 

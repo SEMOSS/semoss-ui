@@ -57,12 +57,18 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
                     <TextField
                         fullWidth
                         label={'Alias'}
-                        error={Boolean(state.variables[newAlias])}
+                        error={
+                            Boolean(state.variables[newAlias]) ||
+                            newAlias.includes('.')
+                        }
                         onChange={(e) => setNewAlias(e.target.value)}
                         helperText={
-                            state.variables[newAlias] ? (
+                            state.variables[newAlias] ||
+                            newAlias.includes('.') ? (
                                 <Typography variant={'caption'} color={'error'}>
-                                    This is not a unique alias
+                                    {newAlias.includes('.')
+                                        ? "Periods aren't acceptable characters"
+                                        : 'Please provide a unique alias'}
                                 </Typography>
                             ) : (
                                 ''
@@ -75,9 +81,13 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
                 <Button onClick={() => onClose()}>Cancel</Button>
                 <Button
                     variant={'contained'}
-                    disabled={!newAlias || Boolean(state.variables[newAlias])}
+                    disabled={
+                        !newAlias ||
+                        Boolean(state.variables[newAlias]) ||
+                        newAlias.includes('.')
+                    }
                     onClick={() => {
-                        state.dispatch({
+                        const success = state.dispatch({
                             message: ActionMessages.ADD_VARIABLE,
                             payload: {
                                 id: newAlias,
@@ -88,11 +98,15 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
                         });
 
                         notification.add({
-                            color: 'success',
-                            message: `Successfully added ${newAlias}`,
+                            color: success ? 'success' : 'error',
+                            message: success
+                                ? `Successfully added ${newAlias}`
+                                : `Unable to add ${newAlias}, due to syntax or a duplicated alias`,
                         });
 
-                        onClose();
+                        if (success) {
+                            onClose();
+                        }
                     }}
                 >
                     Add

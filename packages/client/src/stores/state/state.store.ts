@@ -421,6 +421,10 @@ export class StateStore {
                 const { id, type } = action.payload;
 
                 return this.addDependency(id, type);
+            } else if (ActionMessages.REMOVE_DEPENDENCY === action.message) {
+                const { id } = action.payload;
+
+                return this.removeDependency(id);
             }
         } catch (e) {
             console.error(e);
@@ -1181,6 +1185,10 @@ export class StateStore {
         type: VariableType,
         cellId?: string,
     ) => {
+        if (id.includes('.')) {
+            return false;
+        }
+
         if (this._store.variables[id]) {
             return false;
         }
@@ -1205,6 +1213,10 @@ export class StateStore {
      * @param id - new id for variable
      */
     private renameVariable = (old: string, id: string) => {
+        if (id.includes('.')) {
+            return false;
+        }
+
         if (this._store.variables[id]) {
             return false;
         } else {
@@ -1263,9 +1275,22 @@ export class StateStore {
      * @returns id of newly added dependency for token value
      */
     private addDependency = (value: unknown, type: string) => {
-        const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+        let id;
+
+        do {
+            id = `${type}--${Math.floor(Math.random() * 10000)}`;
+        } while (this._store.dependencies[id]);
 
         this._store.dependencies[id] = value;
+
         return id;
+    };
+
+    /**
+     * Removes a dependency if unsuccesful variable creation
+     * @param id id to remove
+     */
+    private removeDependency = (id: string) => {
+        delete this._store.dependencies[id];
     };
 }

@@ -361,7 +361,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                             : 'error',
                                                         message: success
                                                             ? `Succesfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
-                                                            : `Unable to rename ${id} to ${newTokenAlias}, there is currently a variable aliased as ${newTokenAlias}.`,
+                                                            : `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
                                                     });
 
                                                     setNewTokenAlias(

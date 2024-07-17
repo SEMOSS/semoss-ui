@@ -735,12 +735,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                     console.warn(
                                         `Adding variable ${variableName}`,
                                     );
+
+                                    let success;
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
                                         variableType === 'cell'
                                     ) {
-                                        state.dispatch({
+                                        success = state.dispatch({
                                             message:
                                                 ActionMessages.ADD_VARIABLE,
                                             payload:
@@ -782,7 +784,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                             },
                                         });
 
-                                        state.dispatch({
+                                        success = state.dispatch({
                                             message:
                                                 ActionMessages.ADD_VARIABLE,
                                             payload: {
@@ -791,11 +793,23 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                                 type: variableType,
                                             },
                                         });
+
+                                        if (!success) {
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.REMOVE_DEPENDENCY,
+                                                payload: {
+                                                    id: id,
+                                                },
+                                            });
+                                        }
                                     }
 
                                     notification.add({
-                                        color: 'success',
-                                        message: `Succesfully added ${variableName}, remember to save your app.`,
+                                        color: success ? 'success' : 'error',
+                                        message: success
+                                            ? `Succesfully added ${variableName}, remember to save your app.`
+                                            : `Unable to create ${variableName}`,
                                     });
                                     onClose();
                                 }
