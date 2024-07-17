@@ -5777,14 +5777,8 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'Open Search',
-                disable: true,
-                icon: OPEN_SEARCH,
-                fields: [],
-            },
-            {
-                name: 'Weaviate',
                 disable: false,
-                icon: WEVIATE,
+                icon: OPEN_SEARCH,
                 fields: [
                     {
                         fieldName: 'NAME',
@@ -5796,6 +5790,127 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'OPEN_SEARCH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INDEX_NAME',
+                        label: 'Index Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                ],
+            },
+            {
+                name: 'Weaviate',
+                disable: false,
+                icon: WEVIATE,
+                fields: [
                     {
                         fieldName: 'NAME',
                         label: 'Catalog Name',
