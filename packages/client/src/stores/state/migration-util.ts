@@ -12,7 +12,7 @@ import { Variable } from './state.types';
 // TODO: Migration, if pointer is already in variables don't create just change it to whats already there.
 
 // TODO: Ensure periods can't be in alias (will mess with syntax perhaps)
-// TODO: Ensure no duplicating variable names, all have to be unique (error message)
+// TODO: Ensure no duplicating variable names, all have to be unique (error message), check the renaming too
 // TODO: String concat in designer with variables
 
 // TODO: Migration Function for this, structure change --> queries to notebook

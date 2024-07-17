@@ -344,23 +344,31 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     setOpenRenameAlias(false);
-                                                    setNewTokenAlias(
-                                                        newTokenAlias,
-                                                    );
+
+                                                    const success =
+                                                        state.dispatch({
+                                                            message:
+                                                                ActionMessages.RENAME_VARIABLE,
+                                                            payload: {
+                                                                id: id,
+                                                                alias: newTokenAlias,
+                                                            },
+                                                        });
 
                                                     notification.add({
-                                                        color: 'success',
-                                                        message: `Succesfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`,
+                                                        color: success
+                                                            ? 'success'
+                                                            : 'error',
+                                                        message: success
+                                                            ? `Succesfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
+                                                            : `Unable to rename ${id} to ${newTokenAlias}, there is currently a variable aliased as ${newTokenAlias}.`,
                                                     });
 
-                                                    state.dispatch({
-                                                        message:
-                                                            ActionMessages.RENAME_VARIABLE,
-                                                        payload: {
-                                                            id: id,
-                                                            alias: newTokenAlias,
-                                                        },
-                                                    });
+                                                    setNewTokenAlias(
+                                                        success
+                                                            ? newTokenAlias
+                                                            : id,
+                                                    );
                                                 }
                                             }}
                                             onBlur={() => {

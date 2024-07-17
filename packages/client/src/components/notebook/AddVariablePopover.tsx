@@ -135,6 +135,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
     const [variableInputValue, setVariableInputValue] = useState(null);
     const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
 
+    let alreadyAliased = false;
+
+    if (variable) {
+        if (variable.id !== variableName) {
+            alreadyAliased = Boolean(state.variables[variableName]);
+        }
+    } else {
+        alreadyAliased = Boolean(state.variables[variableName]);
+    }
+
     // get the input type blocks as an array
     const inputBlocks = computed(() => {
         return Object.values(state.blocks)
@@ -520,13 +530,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
               variableInputValue !== v
             : true;
 
-        return !isValid || !hasChanges;
+        return !isValid || !hasChanges || alreadyAliased;
     }, [
         variableType,
         variableName,
         engine,
         variablePointer,
         variableInputValue,
+        alreadyAliased,
     ]);
 
     useEffect(() => {
@@ -597,9 +608,19 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     <TextField
                         placeholder={'Name'}
                         value={variableName}
+                        error={alreadyAliased}
                         onChange={(e) => {
                             setVariableName(e.target.value);
                         }}
+                        helperText={
+                            alreadyAliased ? (
+                                <Typography variant={'caption'} color={'error'}>
+                                    This is not a unique alias
+                                </Typography>
+                            ) : (
+                                ''
+                            )
+                        }
                     />
                     <Typography variant={'body1'}>Type</Typography>
                     <Select
