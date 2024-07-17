@@ -11719,6 +11719,10 @@ export const ENGINE_IMAGES = {
             icon: POSTGRES,
         },
         {
+            name: 'OPEN_SEARCH',
+            icon: OPEN_SEARCH,
+        },
+        {
             name: 'ZIP',
             icon: ZIP,
         },
@@ -11788,12 +11792,10 @@ export const ENGINE_IMAGES = {
             name: 'DB2',
             icon: DB2,
         },
-
         {
             name: 'DERBY',
             icon: DERBY,
         },
-
         {
             name: 'ELASTIC_SEARCH',
             icon: ELASTIC_SEARCH,
@@ -11802,12 +11804,10 @@ export const ENGINE_IMAGES = {
             name: 'H2',
             icon: H2_DB,
         },
-
         {
             name: 'HIVE',
             icon: HIVE,
         },
-
         {
             name: 'IMPALA',
             icon: IMPALA,
@@ -11856,7 +11856,6 @@ export const ENGINE_IMAGES = {
             name: 'SQL_SERVER',
             icon: SQL_SERVER,
         },
-
         {
             name: 'SQLITE',
             icon: SQLITE,
