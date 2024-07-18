@@ -3784,7 +3784,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     slots: {},
                 },
             },
-            version: '1.0.0-alpha.1',
+            version: '1.0.0-alpha',
         },
     },
     {
@@ -4687,7 +4687,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     slots: {},
                 },
             },
-            version: '1.0.0-alpha.1',
+            version: '1.0.0-alpha',
         },
     },
     {
@@ -4901,6 +4901,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     slots: {},
                 },
             },
+            version: '1.0.0-alpha',
         },
     },
 ];

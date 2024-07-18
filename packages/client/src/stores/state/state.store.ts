@@ -458,6 +458,7 @@ export class StateStore {
             );
 
             // TODO: Check this, protects for false values
+            // (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
                 return value;
             }
@@ -487,49 +488,6 @@ export class StateStore {
 
             return v;
         });
-    };
-
-    replaceVariable = (placeholder) => {
-        const path = placeholder.split('.');
-        let value = placeholder; // Default to placeholder itself for unmatched cases
-
-        // Check for 'query' and 'cell' specific logic
-        if (path[0] === 'query' && path[2] === 'cell') {
-            const queryId = path[1];
-            const cellId = path[3];
-            const query = this._store.queries[queryId];
-            const cell = query ? query.getCell(cellId) : null;
-            if (cell) {
-                const key = path[4];
-                if (key in cell._exposed) {
-                    const s = path.slice(4).join('.');
-                    value = getValueByPath(cell._exposed, s);
-                }
-            }
-        }
-        // Check for 'query' but not 'cell'
-        else if (path[0] === 'query' && path[2] !== 'cell') {
-            const queryId = path[1];
-            const key = path[2];
-            const query = this._store.queries[queryId];
-            if (query && key in query._exposed) {
-                const s = path.slice(2).join('.');
-
-                value = getValueByPath(query._exposed, s);
-            }
-        }
-        // Check for 'block'
-        else if (path[0] === 'block') {
-            const blockId = path[1];
-            const block = this._store.blocks[blockId];
-            if (block) {
-                const s = path.slice(2).join('.');
-                value = getValueByPath(block.data, s);
-            }
-        }
-
-        // Return the evaluated value or the original placeholder
-        return value;
     };
 
     /**
