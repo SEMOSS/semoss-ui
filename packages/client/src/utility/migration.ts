@@ -145,6 +145,7 @@ export const cleanQueryOfOldSyntax = async (s) => {
                                     ) {
                                         let alias = '';
 
+                                        debugger;
                                         // TODO: I could not do async await in a string replace
                                         Object.entries(s.variables).forEach(
                                             (keyValue: [string, Variable]) => {

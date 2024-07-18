@@ -119,7 +119,6 @@ export const QuerySelectionSettings = observer(
             }, 300);
         };
 
-        console.log('queries', queries);
         return (
             <BaseSettingSection label={label}>
                 <Autocomplete

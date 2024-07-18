@@ -225,7 +225,7 @@ export class StateStore {
                     }
                 } else if (type === 'query') {
                     const query = this._store.queries[pointer];
-
+                    debugger;
                     if (query) {
                         if (path.length === 1) {
                             // Just get query output

@@ -4517,6 +4517,10 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     to: 'question',
                     type: 'block',
                 },
+                'ask-llm': {
+                    to: 'ask-llm',
+                    type: 'query',
+                },
             },
             dependencies: {},
             queries: {
@@ -4657,7 +4661,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: ButtonBlockConfig.data.style,
                         label: 'Ask',
-                        loading: '{{query.ask-llm.isLoading}}',
+                        loading: '{{ask-llm.isLoading}}',
                         variant: 'contained',
                     },
                     listeners: {
@@ -4681,13 +4685,13 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     },
                     data: {
                         style: TextBlockConfig.data.style,
-                        text: '{{query.ask-llm.output.response}}',
+                        text: '{{ask-llm.output.response}}',
                     },
                     listeners: {},
                     slots: {},
                 },
             },
-            version: '1.0.0-alpha',
+            version: '1.0.0-alpha.1',
         },
     },
     {
@@ -4707,6 +4711,10 @@ export const DEFAULT_TEMPLATE: Template[] = [
                 question: {
                     to: 'question',
                     type: 'block',
+                },
+                'ask-model': {
+                    to: 'ask-model',
+                    type: 'query',
                 },
             },
             queries: {
@@ -4871,7 +4879,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     data: {
                         style: ButtonBlockConfig.data.style,
                         label: 'Ask',
-                        loading: '{{query.ask-model.isLoading}}',
+                        loading: '{{ask-model.isLoading}}',
                         variant: 'contained',
                     },
                     listeners: {
@@ -4895,13 +4903,13 @@ export const DEFAULT_TEMPLATE: Template[] = [
                     },
                     data: {
                         style: TextBlockConfig.data.style,
-                        text: '{{query.ask-model.output.value.0.Query}}',
+                        text: '{{ask-model.output.output.Query}}',
                     },
                     listeners: {},
                     slots: {},
                 },
             },
-            version: '1.0.0-alpha',
+            version: '1.0.0-alpha.1',
         },
     },
 ];

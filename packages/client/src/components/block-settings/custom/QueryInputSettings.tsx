@@ -170,7 +170,6 @@ export const QueryInputSettings = observer(
 
                     if (variable.type === 'query') {
                         const q = state.getQuery(variable.to);
-
                         for (const f in q._exposed) {
                             pathMap[`${alias}.${f}`] = {
                                 id: `${alias}.${f}`,
