@@ -438,7 +438,7 @@ export const DataImportFormModal = observer(
             handleSubmit: newHandleSubmit,
             reset: newReset,
             getValues: _newGetValues,
-            setValue: _newSetValue,
+            setValue: newSetValue,
             watch: dataImportwatch,
         } = useForm<NewFormValues>();
 
@@ -486,6 +486,7 @@ export const DataImportFormModal = observer(
         const [checkedColumnsSet, setCheckedColumnsSet] = useState(new Set());
         const [hiddenTablesSet, setHiddenTablesSet] = useState({});
         const [aliasesCountObj, setAliasesCountObj] = useState({}); // { emailAlias: 1, phoneAlias: 2 }
+        const aliasesCountObjRef = useRef({}); // { emailAlias: 1, phoneAlias: 2 }
         const [tableEdges, setTableEdges] = useState({}); //
         const [rootTable, setRootTable] = useState(null);
 
@@ -630,9 +631,10 @@ export const DataImportFormModal = observer(
 
         useEffect(() => {
             // if any change occurs with checkboxes reassess all joins to display
-            setJoinsStackHandler();
-            updateSelectedTables();
-            console.log({ selectedTableNames });
+            if (!editMode) {
+                setJoinsStackHandler();
+                updateSelectedTables();
+            }
         }, [checkedColumnsCount]);
 
         useEffect(() => {
@@ -1323,6 +1325,7 @@ export const DataImportFormModal = observer(
 
             console.log({ newAliasesCountObj });
             setAliasesCountObj(newAliasesCountObj);
+            aliasesCountObjRef.current = { ...newAliasesCountObj };
         };
 
         /** Find Joinable Tables */
@@ -1344,7 +1347,6 @@ export const DataImportFormModal = observer(
         /** Checkbox Handler */
         const checkBoxHandler = (tableIndex, columnIndex) => {
             const columnObject = watchedTables[tableIndex].columns[columnIndex];
-            console.log({ columnObject });
             updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
             if (columnObject?.checked) {
                 if (checkedColumnsCount == 0) {
@@ -1362,48 +1364,84 @@ export const DataImportFormModal = observer(
         };
 
         const prepoulateFormForEdit = (cell) => {
-            // $$$
-            alert('prepoulateFormForEdit');
-
             const tablesWithCheckedBoxes = new Set();
             const checkedColumns = new Set();
             const columnAliasMap = {};
+            const newAliasesCountObj = {};
+
+            setCheckedColumnsCount(cell.parameters.selectedColumns.length);
+            // checkedColumnsCountRef
 
             cell.parameters.selectedColumns.forEach(
                 (selectedColumnTableCombinedString, idx) => {
                     const [currTableName, currColumnName] =
                         selectedColumnTableCombinedString.split('__');
                     const currColumnAlias = cell.parameters.columnAliases[idx];
-
                     tablesWithCheckedBoxes.add(currTableName);
-                    checkedColumns.add(currColumnAlias);
+                    checkedColumns.add(selectedColumnTableCombinedString);
                     columnAliasMap[selectedColumnTableCombinedString] =
                         currColumnAlias;
+                    newAliasesCountObj[currColumnAlias || currColumnName] = 1;
                 },
             );
 
-            if (newTableFields) {
-                // $$$
-                alert('newTableFields');
-                console.log({ newTableFields });
-                newTableFields.forEach((newTableObj, tableIdx) => {
-                    alert(newTableObj.name);
+            setAliasesCountObj({ ...newAliasesCountObj });
+            aliasesCountObjRef.current = { ...newAliasesCountObj }; // is this needed?
 
-                    // go through watched tables...
-                    // for tables in checkedTables set...
-                    // for columns in checkedColumns set...
-                    // check column in fieldArray
-                    // update alias in fieldArray -- regardless of if the alias is different from col name
+            if (newTableFields) {
+                newTableFields.forEach((newTableObj, tableIdx) => {
+                    if (tablesWithCheckedBoxes.has(newTableObj.name)) {
+                        const watchedTableColumns =
+                            watchedTables[tableIdx].columns;
+                        watchedTableColumns.forEach(
+                            (tableColumnObj, columnIdx) => {
+                                const columnName = `${tableColumnObj.tableName}__${tableColumnObj.columnName}`;
+                                if (checkedColumns.has(columnName)) {
+                                    const columnAlias =
+                                        columnAliasMap[columnName];
+                                    console.log(
+                                        `${columnName} / ${columnAlias} is checked`,
+                                    );
+                                    newSetValue(
+                                        `tables.${tableIdx}.columns.${columnIdx}.checked`,
+                                        true,
+                                    );
+                                    newSetValue(
+                                        `tables.${tableIdx}.columns.${columnIdx}.userAlias`,
+                                        columnAlias,
+                                    );
+                                }
+                            },
+                        );
+                    }
                 });
             }
 
-            // watchedTables.forEach((watchedTable, tableIdx) => {
-            //     console.log({ watchedTable, tableIdx });
-            // })
+            // checking all columns
+            // adding all aliases
+            // updating checked count
 
-            // console.log({tablesWithCheckedBoxes, checkedColumns, columnAliasMap});
+            setTimeout(() => {
+                console.log('------------------------------');
+                console.log({
+                    checkedColumnsCount,
+                    'cell.parameters.selectedColumns.length':
+                        cell.parameters.selectedColumns.length,
+                });
+                // setCheckedColumnsCount(cell.parameters.selectedColumns.length);
+                console.log('------------------------------');
+            }, 0);
+            // need to add joins
+            cell.parameters.joins.forEach((joinObject) => {
+                appendJoinElement(joinObject);
+            });
 
-            // console.log({"cell.parameters.selectedColumns": cell.parameters.selectedColumns})
+            // need to update shown tables
+
+            // issues...
+            // preview disabled
+            // joins not updating, useEffect watching count only running if not in edit mode
+            // preview crashing app
         };
 
         const checkTableForSelectedColumns = (tableName) => {
