@@ -710,7 +710,7 @@ export class StateStore {
      *
      * @param state - pixel to execute
      */
-    private setState = async (state: SerializedState) => {
+    private setState = (state: SerializedState) => {
         // store the block information
         this._store.blocks = state.blocks;
 

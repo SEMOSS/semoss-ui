@@ -3,7 +3,7 @@ import { Variable } from './state.types';
 
 // DONE: Migrate old syntax {{block.input-2712.value}}, {{query.python_code.cell.92121.output}}, {{query.python_code.output}} to variables
 // DONE: variables that are cells --> "queryId": "", "cellId": "", We don't want to do string manipulation to get left and right pointer
-// DONE: In designer only give variables as options with settings select, TODO: Make sure necessary blocks use QueryInputSettings, keep concise
+// DONE: In designer only give variables as options with settings select
 // DONE: In designer, Selected and Hovered mask show variable name if it is a variable
 // DONE: rename cell allows creates a variable
 // DONE: rename block creates a variable
@@ -11,7 +11,8 @@ import { Variable } from './state.types';
 // DONE: Ensure no duplicating variable names, all have to be unique (error message), check the renaming too TODO: TEST
 // DONE: Ensure periods can't be in alias (will mess with syntax perhaps)
 
-// TODO: Migration, if pointer is already in variables don't create just change it to whats already there.
+// TODO: Migration Manager, if pointer is already in variables don't create a variable just change it to whats already there.
+// TODO: Make sure necessary blocks use QueryInputSettings, keep concise
 // TODO: String concat in designer with variables
 // TODO: Migration Function for this, structure change --> queries to notebook
 // TODO: add isInput, isOutput to variables structure (will we need a UI to determine this or should this be set programatically)?
@@ -115,11 +116,22 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                             split[2] !== 'cell'
                         ) {
                             const queryId = split[1];
-                            // check if the id is there
+                            let alias = '';
 
-                            // TODO: Check if there is already variable for query
+                            // TODO: I could not do async await in a string replace
+                            Object.entries(newState.variables).forEach(
+                                (keyValue: [string, Variable]) => {
+                                    const variable = keyValue[1];
+                                    if (
+                                        variable.to === split[1] &&
+                                        !variable.cellId
+                                    ) {
+                                        alias = keyValue[0];
+                                    }
+                                },
+                            );
 
-                            if (!newState.variables[queryId]) {
+                            if (!alias && !newState.variables[queryId]) {
                                 newState.variables[queryId] = {
                                     to: queryId,
                                     type: 'query',
@@ -127,7 +139,9 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                             }
 
                             const remainder = split.slice(2).join('.');
-                            const formatted = split[1] + '.' + remainder;
+                            const formatted = alias
+                                ? alias
+                                : split[1] + '.' + remainder;
 
                             return `{{${formatted}}}`;
                         } else if (
@@ -135,8 +149,22 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                             split[0] === 'block' &&
                             newState.blocks[split[1]]
                         ) {
-                            // TODO: Check if there is already variable for block
-                            if (!newState.variables[split[1]]) {
+                            let alias = '';
+
+                            // TODO: I could not do async await in a string replace
+                            Object.entries(newState.variables).forEach(
+                                (keyValue: [string, Variable]) => {
+                                    const variable = keyValue[1];
+                                    if (
+                                        variable.to === split[1] &&
+                                        !variable.cellId
+                                    ) {
+                                        alias = keyValue[0];
+                                    }
+                                },
+                            );
+
+                            if (!alias && !newState.variables[split[1]]) {
                                 newState.variables[split[1]] = {
                                     to: split[1],
                                     type: 'block',
@@ -144,7 +172,9 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                             }
 
                             const remainder = split.slice(2).join('.');
-                            const formatted = split[1] + '.' + remainder;
+                            const formatted = alias
+                                ? alias
+                                : split[1] + '.' + remainder;
 
                             return `{{${formatted}}}`;
                         }
@@ -179,7 +209,6 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                     const cellId = split[3];
 
                     // TODO: Check if there is already variable for query
-
                     const identifier = `${queryId}--${cellId}`;
 
                     if (!newState.variables[identifier]) {
@@ -202,10 +231,20 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                 ) {
                     const queryId = split[1];
 
-                    // TODO: Check if there is already variable for query
+                    let alias = '';
+
+                    // TODO: I could not do async await in a string replace
+                    Object.entries(newState.variables).forEach(
+                        (keyValue: [string, Variable]) => {
+                            const variable = keyValue[1];
+                            if (variable.to === split[1] && !variable.cellId) {
+                                alias = keyValue[0];
+                            }
+                        },
+                    );
 
                     // check if the id is there
-                    if (!newState.variables[queryId]) {
+                    if (!alias && !newState.variables[queryId]) {
                         newState.variables[queryId] = {
                             to: queryId,
                             type: 'query',
@@ -213,7 +252,9 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                     }
 
                     const remainder = split.slice(2).join('.');
-                    const formatted = split[1] + '.' + remainder;
+                    const formatted = alias
+                        ? alias
+                        : split[1] + '.' + remainder;
 
                     return `{{${formatted}}}`;
                 } else if (
@@ -221,13 +262,19 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                     split[0] === 'block' &&
                     newState.blocks[split[1]]
                 ) {
-                    // TODO: Check if there is already variable for block
-                    // const alias = await getAlias(
-                    //     newState.variables,
-                    //     split[1],
-                    // );
+                    let alias = '';
 
-                    if (!newState.variables[split[1]]) {
+                    // TODO: I could not do async await in a string replace
+                    Object.entries(newState.variables).forEach(
+                        (keyValue: [string, Variable]) => {
+                            const variable = keyValue[1];
+                            if (variable.to === split[1] && !variable.cellId) {
+                                alias = keyValue[0];
+                            }
+                        },
+                    );
+
+                    if (!alias && !newState.variables[split[1]]) {
                         newState.variables[split[1]] = {
                             to: split[1],
                             type: 'block',
@@ -235,7 +282,9 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
                     }
 
                     const remainder = split.slice(2).join('.');
-                    const formatted = split[1] + '.' + remainder;
+                    const formatted = alias
+                        ? alias
+                        : split[1] + '.' + remainder;
 
                     return `{{${formatted}}}`;
                 }

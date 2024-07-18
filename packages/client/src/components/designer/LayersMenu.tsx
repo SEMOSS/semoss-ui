@@ -89,12 +89,6 @@ const StyledTreeItemIconButton = styled(IconButton)(() => ({
     },
 }));
 
-const StyledTreeItemButton = styled(Button)(() => ({
-    '&[data-onhover]': {
-        display: 'none',
-    },
-}));
-
 const StyledTreeItemLabel = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
