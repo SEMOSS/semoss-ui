@@ -38,8 +38,15 @@ export const cleanQueryOfOldSyntax = async (s) => {
             async (query: { cells: { parameters: { code?: string } }[] }) => {
                 await Promise.all(
                     query.cells.map(async (cell) => {
-                        const code = cell.parameters['code'];
+                        let code = cell.parameters['code'];
+
                         if (code) {
+                            let stringified = false;
+                            if (typeof code !== 'string') {
+                                code = JSON.stringify(code);
+                                stringified = true;
+                            }
+
                             const regex = /{{(.*?)}}/g;
 
                             const cleaned = await code.replace(
@@ -173,7 +180,9 @@ export const cleanQueryOfOldSyntax = async (s) => {
                                 },
                             );
 
-                            cell.parameters['code'] = cleaned;
+                            cell.parameters['code'] = stringified
+                                ? JSON.parse(cleaned)
+                                : cleaned;
                         }
                     }),
                 );
@@ -199,10 +208,6 @@ export const cleanBlocksOfOldSyntax = async (s) => {
                     regex,
                     (match, content) => {
                         const split = content.split('.');
-
-                        if (split.includes('88109') > -1) {
-                            debugger;
-                        }
 
                         // Replace old cell syntax
                         if (
@@ -325,7 +330,6 @@ export const cleanBlocksOfOldSyntax = async (s) => {
         }),
     );
 
-    debugger;
     return s;
 };
 
