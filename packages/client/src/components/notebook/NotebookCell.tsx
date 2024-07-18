@@ -103,7 +103,7 @@ const StyledCard = styled(Card, {
     const shape = theme.shape as CustomShapeOptions;
 
     return {
-        overflow: 'hidden',
+        overflow: 'visible',
         flexGrow: 1,
         cursor: isCardCellSelected ? 'inherit' : 'pointer',
         border: isCardCellSelected
@@ -451,6 +451,7 @@ export const NotebookCell = observer(
 
         return (
             <StyledStack
+                className="notebook-cell"
                 direction={'column'}
                 gap={1}
                 onMouseEnter={() => {
@@ -674,6 +675,7 @@ export const NotebookCell = observer(
                         </Stack>
                     </StyledSidebar>
                     <StyledCard
+                        className="notebook-cell__card"
                         isCardCellSelected={
                             (notebook?.selectedCell?.id ?? '') == cell.id
                         }
