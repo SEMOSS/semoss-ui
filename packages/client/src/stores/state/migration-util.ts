@@ -1,5 +1,8 @@
-import { splitAtPeriod } from '@/utility';
-import { Variable } from './state.types';
+import {
+    cleanBlocksOfOldSyntax,
+    cleanCellVariables,
+    cleanQueryOfOldSyntax,
+} from '@/utility/migration';
 
 // DONE: Migrate old syntax {{block.input-2712.value}}, {{query.python_code.cell.92121.output}}, {{query.python_code.output}} to variables
 // DONE: variables that are cells --> "queryId": "", "cellId": "", We don't want to do string manipulation to get left and right pointer
@@ -10,8 +13,8 @@ import { Variable } from './state.types';
 // DONE: Fix Migration logic, If old app does not have version it's safe to assume they are at the first version
 // DONE: Ensure no duplicating variable names, all have to be unique (error message), check the renaming too TODO: TEST
 // DONE: Ensure periods can't be in alias (will mess with syntax perhaps)
+// DONE: Migration Manager, if pointer is already in variables don't create a variable just change it to whats already there.
 
-// TODO: Migration Manager, if pointer is already in variables don't create a variable just change it to whats already there.
 // TODO: Make sure necessary blocks use QueryInputSettings, keep concise
 // TODO: String concat in designer with variables
 // TODO: Migration Function for this, structure change --> queries to notebook
@@ -55,250 +58,255 @@ export const migrate__1_0_0_alpha_to_1_0_0_alpha_1 = async (state, to) => {
     }
 
     // 2. Fix old cell variables
-    await Object.entries(newState.variables).forEach(
-        async (kv: [string, Variable]) => {
-            const variable = kv[1];
-            if (variable.type === 'cell') {
-                const queryId = await splitAtPeriod(variable.to, 'left');
-                const cellId = await splitAtPeriod(variable.to, 'right');
+    const cleanedState = await cleanCellVariables(newState);
 
-                newState.variables[kv[0]] = {
-                    to: queryId,
-                    type: variable.type,
-                    cellId: cellId,
-                };
-            }
-        },
-    );
-
-    // 3. Remove old syntax referencing queries, cells, blocks with variables
-
+    // 3. Remove old syntax referencing queries, cells, blocks with variables, TODO: needs refactor
     // 3a. Remove references from queries
-    await Object.values(newState.queries).forEach(
-        (query: { cells: Record<string, unknown>[]; id: string }) => {
-            query.cells.forEach(async (cell) => {
-                const code = cell.parameters['code'];
-                if (code) {
-                    const regex = /{{(.*?)}}/g;
-
-                    const cleaned = code.replace(regex, (match, content) => {
-                        const split = content.split('.');
-
-                        // Replace old cell syntax
-                        if (
-                            split[0] === 'query' &&
-                            newState.queries[split[1]] &&
-                            split[2] === 'cell'
-                        ) {
-                            const queryId = split[1];
-                            const cellId = split[3];
-
-                            // TODO: lets check if there is already a varaiable
-
-                            const identifier = `${queryId}--${cellId}`;
-
-                            if (!newState.variables[identifier]) {
-                                newState.variables[identifier] = {
-                                    to: queryId,
-                                    type: 'cell',
-                                    cellId: cellId,
-                                };
-                            }
-
-                            const remainder = split.slice(4).join('.');
-                            const formatted = identifier + '.' + remainder;
-
-                            return `{{${formatted}}}`;
-                        } else if (
-                            // replace old query syntax
-                            split[0] === 'query' &&
-                            newState.queries[split[1]] && // checks for variables that are named "query"
-                            split[2] !== 'cell'
-                        ) {
-                            const queryId = split[1];
-                            let alias = '';
-
-                            // TODO: I could not do async await in a string replace
-                            Object.entries(newState.variables).forEach(
-                                (keyValue: [string, Variable]) => {
-                                    const variable = keyValue[1];
-                                    if (
-                                        variable.to === split[1] &&
-                                        !variable.cellId
-                                    ) {
-                                        alias = keyValue[0];
-                                    }
-                                },
-                            );
-
-                            if (!alias && !newState.variables[queryId]) {
-                                newState.variables[queryId] = {
-                                    to: queryId,
-                                    type: 'query',
-                                };
-                            }
-
-                            const remainder = split.slice(2).join('.');
-                            const formatted = alias
-                                ? alias
-                                : split[1] + '.' + remainder;
-
-                            return `{{${formatted}}}`;
-                        } else if (
-                            // replace old block syntax
-                            split[0] === 'block' &&
-                            newState.blocks[split[1]]
-                        ) {
-                            let alias = '';
-
-                            // TODO: I could not do async await in a string replace
-                            Object.entries(newState.variables).forEach(
-                                (keyValue: [string, Variable]) => {
-                                    const variable = keyValue[1];
-                                    if (
-                                        variable.to === split[1] &&
-                                        !variable.cellId
-                                    ) {
-                                        alias = keyValue[0];
-                                    }
-                                },
-                            );
-
-                            if (!alias && !newState.variables[split[1]]) {
-                                newState.variables[split[1]] = {
-                                    to: split[1],
-                                    type: 'block',
-                                };
-                            }
-
-                            const remainder = split.slice(2).join('.');
-                            const formatted = alias
-                                ? alias
-                                : split[1] + '.' + remainder;
-
-                            return `{{${formatted}}}`;
-                        }
-
-                        return match;
-                    });
-
-                    cell.parameters['code'] = cleaned;
-                }
-            });
-        },
-    );
+    const cleanedQueryState = await cleanQueryOfOldSyntax(cleanedState);
 
     // 3b. Remove references from blocks
-    await Object.values(newState.blocks).forEach((block) => {
-        const properties = block['data'];
+    const cleanedBlockState = await cleanBlocksOfOldSyntax(cleanedQueryState);
 
-        if (properties) {
-            const jsonString = JSON.stringify(properties);
-            const regex = /{{(.*?)}}/g;
+    cleanedBlockState.version = to;
 
-            const cleaned = jsonString.replace(regex, (match, content) => {
-                const split = content.split('.');
+    return cleanedBlockState;
+    // await Object.values(cleanedState.queries).forEach(
+    //     (query: { cells: Record<string, unknown>[]; id: string }) => {
+    //         query.cells.forEach(async (cell) => {
+    //             const code = cell.parameters['code'];
+    //             if (code) {
+    //                 const regex = /{{(.*?)}}/g;
 
-                // Replace old cell syntax
-                if (
-                    split[0] === 'query' &&
-                    newState.queries[split[1]] &&
-                    split[2] === 'cell'
-                ) {
-                    const queryId = split[1];
-                    const cellId = split[3];
+    //                 const cleaned = code.replace(regex, (match, content) => {
+    //                     const split = content.split('.');
 
-                    // TODO: Check if there is already variable for query
-                    const identifier = `${queryId}--${cellId}`;
+    //                     // Replace old cell syntax
+    //                     if (
+    //                         split[0] === 'query' &&
+    //                         cleanedState.queries[split[1]] &&
+    //                         split[2] === 'cell'
+    //                     ) {
+    //                         const queryId = split[1];
+    //                         const cellId = split[3];
 
-                    if (!newState.variables[identifier]) {
-                        newState.variables[identifier] = {
-                            to: queryId,
-                            type: 'cell',
-                            cellId: cellId,
-                        };
-                    }
+    //                         let alias = '';
 
-                    const remainder = split.slice(4).join('.');
-                    const formatted = identifier + '.' + remainder;
+    //                         // TODO: I could not do async await in a string replace
+    //                         Object.entries(cleanedState.variables).forEach(
+    //                             (keyValue: [string, Variable]) => {
+    //                                 const variable = keyValue[1];
+    //                                 if (variable.cellId === '88109') {
+    //                                 }
+    //                                 if (
+    //                                     variable.to === split[1] &&
+    //                                     variable.cellId === cellId
+    //                                 ) {
+    //                                     alias = keyValue[0];
+    //                                 }
+    //                             },
+    //                         );
+    //                         const identifier = `${queryId}--${cellId}`;
 
-                    return `{{${formatted}}}`;
-                } else if (
-                    // replace old query syntax
-                    split[0] === 'query' &&
-                    newState.queries[split[1]] && // checks for variables that are named "query"
-                    split[2] !== 'cell'
-                ) {
-                    const queryId = split[1];
+    //                         if (!alias && !cleanedState.variables[identifier]) {
+    //                             cleanedState.variables[identifier] = {
+    //                                 to: queryId,
+    //                                 type: 'cell',
+    //                                 cellId: cellId,
+    //                             };
+    //                         }
 
-                    let alias = '';
+    //                         const remainder = split.slice(4).join('.');
+    //                         const formatted = alias
+    //                             ? alias
+    //                             : identifier + '.' + remainder;
 
-                    // TODO: I could not do async await in a string replace
-                    Object.entries(newState.variables).forEach(
-                        (keyValue: [string, Variable]) => {
-                            const variable = keyValue[1];
-                            if (variable.to === split[1] && !variable.cellId) {
-                                alias = keyValue[0];
-                            }
-                        },
-                    );
+    //                         return `{{${formatted}}}`;
+    //                     } else if (
+    //                         // replace old query syntax
+    //                         split[0] === 'query' &&
+    //                         cleanedState.queries[split[1]] && // checks for variables that are named "query"
+    //                         split[2] !== 'cell'
+    //                     ) {
+    //                         const queryId = split[1];
+    //                         let alias = '';
 
-                    // check if the id is there
-                    if (!alias && !newState.variables[queryId]) {
-                        newState.variables[queryId] = {
-                            to: queryId,
-                            type: 'query',
-                        };
-                    }
+    //                         // TODO: I could not do async await in a string replace
+    //                         Object.entries(cleanedState.variables).forEach(
+    //                             (keyValue: [string, Variable]) => {
+    //                                 const variable = keyValue[1];
+    //                                 if (
+    //                                     variable.to === split[1] &&
+    //                                     !variable.cellId
+    //                                 ) {
+    //                                     alias = keyValue[0];
+    //                                 }
+    //                             },
+    //                         );
 
-                    const remainder = split.slice(2).join('.');
-                    const formatted = alias
-                        ? alias
-                        : split[1] + '.' + remainder;
+    //                         if (!alias && !cleanedState.variables[queryId]) {
+    //                             cleanedState.variables[queryId] = {
+    //                                 to: queryId,
+    //                                 type: 'query',
+    //                             };
+    //                         }
 
-                    return `{{${formatted}}}`;
-                } else if (
-                    // replace old block syntax
-                    split[0] === 'block' &&
-                    newState.blocks[split[1]]
-                ) {
-                    let alias = '';
+    //                         const remainder = split.slice(2).join('.');
+    //                         const formatted = alias
+    //                             ? alias
+    //                             : split[1] + '.' + remainder;
 
-                    // TODO: I could not do async await in a string replace
-                    Object.entries(newState.variables).forEach(
-                        (keyValue: [string, Variable]) => {
-                            const variable = keyValue[1];
-                            if (variable.to === split[1] && !variable.cellId) {
-                                alias = keyValue[0];
-                            }
-                        },
-                    );
+    //                         return `{{${formatted}}}`;
+    //                     } else if (
+    //                         // replace old block syntax
+    //                         split[0] === 'block' &&
+    //                         cleanedState.blocks[split[1]]
+    //                     ) {
+    //                         let alias = '';
 
-                    if (!alias && !newState.variables[split[1]]) {
-                        newState.variables[split[1]] = {
-                            to: split[1],
-                            type: 'block',
-                        };
-                    }
+    //                         // TODO: I could not do async await in a string replace
+    //                         Object.entries(cleanedState.variables).forEach(
+    //                             (keyValue: [string, Variable]) => {
+    //                                 const variable = keyValue[1];
+    //                                 if (
+    //                                     variable.to === split[1] &&
+    //                                     !variable.cellId
+    //                                 ) {
+    //                                     alias = keyValue[0];
+    //                                 }
+    //                             },
+    //                         );
 
-                    const remainder = split.slice(2).join('.');
-                    const formatted = alias
-                        ? alias
-                        : split[1] + '.' + remainder;
+    //                         if (!alias && !cleanedState.variables[split[1]]) {
+    //                             cleanedState.variables[split[1]] = {
+    //                                 to: split[1],
+    //                                 type: 'block',
+    //                             };
+    //                         }
 
-                    return `{{${formatted}}}`;
-                }
+    //                         const remainder = split.slice(2).join('.');
+    //                         const formatted = alias
+    //                             ? alias
+    //                             : split[1] + '.' + remainder;
 
-                return match;
-            });
+    //                         return `{{${formatted}}}`;
+    //                     }
 
-            block['data'] = JSON.parse(cleaned);
-        }
-    });
+    //                     return match;
+    //                 });
 
-    newState.version = to;
+    //                 cell.parameters['code'] = cleaned;
+    //             }
+    //         });
+    //     },
+    // );
 
-    return newState;
+    // await Object.values(cleanedState.blocks).forEach((block) => {
+    //     const properties = block['data'];
+
+    //     if (properties) {
+    //         const jsonString = JSON.stringify(properties);
+    //         const regex = /{{(.*?)}}/g;
+
+    //         const cleaned = jsonString.replace(regex, (match, content) => {
+    //             const split = content.split('.');
+
+    //             // Replace old cell syntax
+    //             if (
+    //                 split[0] === 'query' &&
+    //                 cleanedState.queries[split[1]] &&
+    //                 split[2] === 'cell'
+    //             ) {
+    //                 const queryId = split[1];
+    //                 const cellId = split[3];
+
+    //                 const identifier = `${queryId}--${cellId}`;
+
+    //                 if (!cleanedState.variables[identifier]) {
+    //                     cleanedState.variables[identifier] = {
+    //                         to: queryId,
+    //                         type: 'cell',
+    //                         cellId: cellId,
+    //                     };
+    //                 }
+
+    //                 const remainder = split.slice(4).join('.');
+    //                 const formatted = identifier + '.' + remainder;
+
+    //                 return `{{${formatted}}}`;
+    //             } else if (
+    //                 // replace old query syntax
+    //                 split[0] === 'query' &&
+    //                 cleanedState.queries[split[1]] && // checks for variables that are named "query"
+    //                 split[2] !== 'cell'
+    //             ) {
+    //                 const queryId = split[1];
+
+    //                 let alias = '';
+
+    //                 // Check if there is already a variable
+    //                 // TODO: I could not do async await in a string replace
+    //                 Object.entries(cleanedState.variables).forEach(
+    //                     (keyValue: [string, Variable]) => {
+    //                         const variable = keyValue[1];
+    //                         if (variable.to === split[1] && !variable.cellId) {
+    //                             alias = keyValue[0];
+    //                         }
+    //                     },
+    //                 );
+
+    //                 // check if the id is there
+    //                 if (!alias && !cleanedState.variables[queryId]) {
+    //                     cleanedState.variables[queryId] = {
+    //                         to: queryId,
+    //                         type: 'query',
+    //                     };
+    //                 }
+
+    //                 const remainder = split.slice(2).join('.');
+    //                 const formatted = alias
+    //                     ? alias
+    //                     : split[1] + '.' + remainder;
+
+    //                 return `{{${formatted}}}`;
+    //             } else if (
+    //                 // replace old block syntax
+    //                 split[0] === 'block' &&
+    //                 cleanedState.blocks[split[1]]
+    //             ) {
+    //                 let alias = '';
+
+    //                 // Check if there is already a variable
+    //                 // TODO: I could not do async await in a string replace
+    //                 Object.entries(cleanedState.variables).forEach(
+    //                     (keyValue: [string, Variable]) => {
+    //                         const variable = keyValue[1];
+    //                         if (variable.to === split[1] && !variable.cellId) {
+    //                             alias = keyValue[0];
+    //                         }
+    //                     },
+    //                 );
+
+    //                 if (!alias && !cleanedState.variables[split[1]]) {
+    //                     cleanedState.variables[split[1]] = {
+    //                         to: split[1],
+    //                         type: 'block',
+    //                     };
+    //                 }
+
+    //                 const remainder = split.slice(2).join('.');
+    //                 const formatted = alias
+    //                     ? alias
+    //                     : split[1] + '.' + remainder;
+
+    //                 return `{{${formatted}}}`;
+    //             }
+
+    //             return match;
+    //         });
+
+    //         block['data'] = JSON.parse(cleaned);
+    //     }
+    // });
 };
 
 /**
