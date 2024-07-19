@@ -392,13 +392,15 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                 return;
             }
 
+            alert('handleEditorChange');
+
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
                 payload: {
                     queryId: cell.query.id,
                     cellId: cell.id,
                     path: 'parameters.selectQuery',
-                    value: newValue,
+                    value: 'newValue',
                 },
             });
         };

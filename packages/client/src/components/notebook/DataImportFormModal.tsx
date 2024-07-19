@@ -562,16 +562,16 @@ export const DataImportFormModal = observer(
         // region --- useEffects
 
         useEffect(() => {
-            if (editMode) {
-                console.log('useEffect watchedTables');
-                if (editMode && !checkedColumnsCount) {
-                    retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
-                    // alert("add selected columns into useForm")
-                    // alert("add joins into useForm")
-                    // alert("add filters into useForm")
-                    // alert("add summaries into useForm")
-                }
-            }
+            // if (editMode) {
+            //     console.log('useEffect watchedTables');
+            //     if (editMode && !checkedColumnsCount) {
+            retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
+            // alert("add selected columns into useForm")
+            // alert("add joins into useForm")
+            // alert("add filters into useForm")
+            // alert("add summaries into useForm")
+            //     }
+            // }
         }, []);
 
         useEffect(() => {
@@ -679,97 +679,97 @@ export const DataImportFormModal = observer(
         // endregion
 
         /** Create a New Cell and Add to Notebook */
-        // const appendCell = (widget: string) => {
-        //     try {
-        //         const newCellId = `${Math.floor(Math.random() * 100000)}`;
+        const appendCell = (widget: string) => {
+            try {
+                const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
-        //         const config: NewCellAction['payload']['config'] = {
-        //             widget: DefaultCells[widget].widget,
-        //             parameters: DefaultCells[widget].parameters,
-        //         };
+                const config: NewCellAction['payload']['config'] = {
+                    widget: DefaultCells[widget].widget,
+                    parameters: DefaultCells[widget].parameters,
+                };
 
-        //         if (widget === DataImportCellConfig.widget) {
-        //             config.parameters = {
-        //                 ...DefaultCells[widget].parameters,
-        //                 frameVariableName: `FRAME_${newCellId}`,
-        //                 databaseId: selectedDatabaseId,
-        //                 // selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
-        //                 // selectQuery: pixelStringRef.current, // construct query based on useForm inputs
-        //                 selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
-        //                 foo: 'moo',
-        //                 joins: joinElements,
-        //                 tableNames: Array.from(selectedTableNames),
-        //             };
-        //         }
+                if (widget === DataImportCellConfig.widget) {
+                    config.parameters = {
+                        ...DefaultCells[widget].parameters,
+                        frameVariableName: `FRAME_${newCellId}`,
+                        databaseId: selectedDatabaseId,
+                        // selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
+                        // selectQuery: pixelStringRef.current, // construct query based on useForm inputs
+                        selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
+                        foo: 'moo',
+                        joins: joinElements,
+                        tableNames: Array.from(selectedTableNames),
+                    };
+                }
 
-        //         if (widget === QueryImportCellConfig.widget) {
-        //             config.parameters = {
-        //                 ...DefaultCells[widget].parameters,
-        //                 frameVariableName: `FRAME_${newCellId}`,
-        //             };
-        //         }
+                if (widget === QueryImportCellConfig.widget) {
+                    config.parameters = {
+                        ...DefaultCells[widget].parameters,
+                        frameVariableName: `FRAME_${newCellId}`,
+                    };
+                }
 
-        //         if (
-        //             previousCellId &&
-        //             state.queries[query.id].cells[previousCellId].widget ===
-        //                 widget &&
-        //             widget === CodeCellConfig.widget
-        //         ) {
-        //             const previousCellType =
-        //                 state.queries[query.id].cells[previousCellId].parameters
-        //                     ?.type ?? 'pixel';
-        //             config.parameters = {
-        //                 ...DefaultCells[widget].parameters,
-        //                 type: previousCellType,
-        //             };
-        //         }
+                if (
+                    previousCellId &&
+                    state.queries[query.id].cells[previousCellId].widget ===
+                        widget &&
+                    widget === CodeCellConfig.widget
+                ) {
+                    const previousCellType =
+                        state.queries[query.id].cells[previousCellId].parameters
+                            ?.type ?? 'pixel';
+                    config.parameters = {
+                        ...DefaultCells[widget].parameters,
+                        type: previousCellType,
+                    };
+                }
 
-        //         // copy and add the step
-        //         state.dispatch({
-        //             message: ActionMessages.NEW_CELL,
-        //             payload: {
-        //                 queryId: query.id,
-        //                 cellId: newCellId,
-        //                 previousCellId: previousCellId,
-        //                 config: config as Omit<CellStateConfig, 'id'>,
-        //             },
-        //         });
-        //         notebook.selectCell(query.id, newCellId);
-        //     } catch (e) {
-        //         console.error(e);
-        //     }
-        // };
+                // copy and add the step
+                state.dispatch({
+                    message: ActionMessages.NEW_CELL,
+                    payload: {
+                        queryId: query.id,
+                        cellId: newCellId,
+                        previousCellId: previousCellId,
+                        config: config as Omit<CellStateConfig, 'id'>,
+                    },
+                });
+                notebook.selectCell(query.id, newCellId);
+            } catch (e) {
+                console.error(e);
+            }
+        };
 
         /** Construct a Raw SQL String for Data Import --- remove */
-        // const constructSQLString = ({ submitData }) => {
-        //     console.log({ submitData });
-        //     let newSQLString = 'SELECT ';
+        const constructSQLString = ({ submitData }) => {
+            console.log({ submitData });
+            let newSQLString = 'SELECT ';
 
-        //     newSQLString += submitData.columns
-        //         .filter((ele) => ele.checked)
-        //         .map((colObj) => {
-        //             if (colObj.columnName === colObj.userAlias) {
-        //                 return colObj.columnName;
-        //             } else {
-        //                 return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
-        //             }
-        //         })
-        //         .join(', ');
+            newSQLString += submitData.columns
+                .filter((ele) => ele.checked)
+                .map((colObj) => {
+                    if (colObj.columnName === colObj.userAlias) {
+                        return colObj.columnName;
+                    } else {
+                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+                    }
+                })
+                .join(', ');
 
-        //     newSQLString += ` FROM ${submitData.tableSelect}`;
-        //     newSQLString += ';';
+            newSQLString += ` FROM ${submitData.tableSelect}`;
+            newSQLString += ';';
 
-        //     if (
-        //         selectedLeftTable &&
-        //         selectedRightTable &&
-        //         selectedLeftKey &&
-        //         selectedRightKey
-        //     ) {
-        //         newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
-        //     }
+            if (
+                selectedLeftTable &&
+                selectedRightTable &&
+                selectedLeftKey &&
+                selectedRightKey
+            ) {
+                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+            }
 
-        //     importDataSQLStringRef.current = newSQLString;
-        // };
+            importDataSQLStringRef.current = newSQLString;
+        };
 
         /** Construct Submit Pixel for Data Import --- remove? */
         const constructDataBasePixel = ({ submitData }) => {
@@ -846,21 +846,71 @@ export const DataImportFormModal = observer(
             // TODO: check all columns from table
         };
 
+        const updateSubmitDispatches = () => {
+            const currTableNamesSet = retrieveSelectedTableNames();
+            const currTableNames = Array.from(currTableNamesSet);
+
+            const currSelectedColumns = retrieveSelectedColumnNames();
+            const currColumnAliases = retrieveColumnAliasNames();
+
+            console.log({
+                currTableNames,
+                currSelectedColumns,
+                currColumnAliases,
+            });
+
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: 'parameters.tableNames',
+                    value: currTableNames,
+                },
+            });
+
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: 'parameters.selectedColumns',
+                    value: currSelectedColumns,
+                },
+            });
+
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: 'parameters.columnAliases',
+                    value: currColumnAliases,
+                },
+            });
+
+            // #TODO
+            // still need to rebuild and update queryString
+            // still need to fix and update joins
+            // still need to add filters and summaries
+        };
+
         /** New Submit for Import Data --- empty */
         const onImportDataSubmit = (data: NewFormData) => {
             if (editMode) {
-                alert('edit onImportDataSubmit');
+                console.log({ editModeData: data });
+                updateSubmitDispatches();
+                // #TODO
+                // preview needs to be fixed
+                // instead of appending cell it will have to be updated
+            } else {
+                constructSQLString({ submitData: data });
+                retrievePreviewData();
+                appendCell('data-import');
             }
 
-            // constructSQLString({ submitData });
-
-            // preview needs to be fixed
-            // retrievePreviewData();
-
-            // instead of appending cell it will have to be updated
-            // appendCell('data-import');
+            closeImportModalHandler();
             setIsDataImportModalOpen(false);
-            // closeImportModalHandler();
         };
 
         /** Close and Reset Import Data Form Modal */
@@ -1039,6 +1089,84 @@ export const DataImportFormModal = observer(
             setIsInitLoadComplete(true);
         };
 
+        const retrieveColumnAliasNames = () => {
+            // const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+            const pixelColumnAliases = [];
+            // const pixelJoins = [];
+
+            watchedTables?.forEach((tableObject) => {
+                const currTableName = tableObject.name;
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            // setSelectedTableNames(pixelTables);
+            return pixelColumnAliases;
+        };
+
+        const retrieveSelectedColumnNames = () => {
+            // const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+            const pixelColumnAliases = [];
+            // const pixelJoins = [];
+
+            watchedTables?.forEach((tableObject) => {
+                const currTableName = tableObject.name;
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            // setSelectedTableNames(pixelTables);
+            return pixelColumnNames;
+        };
+
+        const retrieveSelectedTableNames = () => {
+            // const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+            const pixelColumnAliases = [];
+            // const pixelJoins = [];
+
+            watchedTables?.forEach((tableObject) => {
+                const currTableName = tableObject.name;
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            // setSelectedTableNames(pixelTables);
+            return pixelTables;
+        };
+
         const updateSelectedTables = () => {
             // const databaseId = selectedDatabaseId;
             const pixelTables = new Set();
@@ -1062,6 +1190,7 @@ export const DataImportFormModal = observer(
             });
 
             setSelectedTableNames(pixelTables);
+            // return pixelTables;
         };
 
         /** Old Get All Database Tables for Import Data --- remove? */
@@ -1149,10 +1278,7 @@ export const DataImportFormModal = observer(
                 });
             });
 
-            console.log(joinsSet);
-
             Array.from(joinsSet).forEach((joinEle: string) => {
-                console.log({ joinEle });
                 const splitJoinsString = joinEle.split(':');
                 pixelJoins.push(
                     `( ${splitJoinsString[0]} , inner.join , ${splitJoinsString[1]} )`,
