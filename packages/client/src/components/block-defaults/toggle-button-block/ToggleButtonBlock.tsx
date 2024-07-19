@@ -5,6 +5,7 @@ import { useBlock, useDebounce } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 import { styled, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { debounce } from '@/utility';
 
 const StyledContainer = styled('div')(() => ({
     padding: '4px',
@@ -30,13 +31,13 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
 
     const [changedValue, setChangedValue] = useState(false);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [changedValue],
-        200,
-    );
+    // useDebounce(
+    //     () => {
+    //         listeners.onChange();
+    //     },
+    //     [changedValue],
+    //     200,
+    // );
 
     return (
         <StyledContainer {...attrs}>
@@ -49,17 +50,26 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
                         if (Array.isArray(newValue)) {
                             if (newValue.length) {
                                 setData('value', newValue);
-                                setChangedValue(!changedValue);
+                                debounce(() => {
+                                    listeners.onChange();
+                                }, 200);
+                                //setChangedValue(!changedValue);
                             }
                         } else {
                             if (newValue !== null) {
                                 setData('value', newValue);
-                                setChangedValue(!changedValue);
+                                debounce(() => {
+                                    listeners.onChange();
+                                }, 200);
+                                //setChangedValue(!changedValue);
                             }
                         }
                     } else {
                         setData('value', newValue);
-                        setChangedValue(!changedValue);
+                        debounce(() => {
+                            listeners.onChange();
+                        }, 200);
+                        //setChangedValue(!changedValue);
                     }
                 }}
                 value={data.value}

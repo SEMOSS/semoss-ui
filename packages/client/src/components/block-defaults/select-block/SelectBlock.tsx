@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { useBlock, useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
+import { debounce } from '@/utility';
 
 import {
     Autocomplete,
@@ -61,13 +62,13 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         });
     }, [data.options]);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [changedValue],
-        200,
-    );
+    // useDebounce(
+    //     () => {
+    //         listeners.onChange();
+    //     },
+    //     [changedValue],
+    //     200,
+    // );
 
     return (
         <Autocomplete
@@ -124,7 +125,10 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 
                 debugger;
                 setData('value', value);
-                setChangedValue(value);
+                debounce(() => {
+                    listeners.onChange();
+                }, 500);
+                //setChangedValue(value);
             }}
             sx={{
                 ...data.style,

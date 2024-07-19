@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
 import { useDebounce } from '@/hooks';
+import { debounce } from '@/utility';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
 
@@ -32,13 +33,13 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
     const [changedValue, setChangedValue] = useState('');
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [changedValue],
-        500,
-    );
+    // useDebounce(
+    //     () => {
+    //         listeners.onChange();
+    //     },
+    //     [changedValue],
+    //     500,
+    // );
 
     return (
         <StyledTextField
@@ -61,7 +62,10 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                 // update the value
                 setData('value', value);
                 //Trigger the onChange
-                setChangedValue(e.target.value);
+                debounce(() => {
+                    listeners.onChange();
+                }, 500);
+                //setChangedValue(e.target.value);
             }}
             {...attrs}
         />

@@ -4,6 +4,8 @@ import { observer } from 'mobx-react-lite';
 import { useBlock, useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
+import { debounce } from '@/utility';
+
 const StyledTextField = styled(TextField)({
     '& .MuiFormLabel-root.MuiInputLabel-root': {
         top: 'auto',
@@ -68,13 +70,13 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [changedValue],
-        200,
-    );
+    // useDebounce(
+    //     () => {
+    //         listeners.onChange();
+    //     },
+    //     [changedValue],
+    //     200,
+    // );
 
     return (
         <StyledTextField
@@ -99,8 +101,10 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 const files = (e.target as HTMLInputElement).files;
                 // upload the new file on change
                 upload(files[0]);
-
-                setChangedValue(!changedValue);
+                debounce(() => {
+                    listeners.onChange();
+                }, 200);
+                //setChangedValue(!changedValue);
             }}
             {...attrs}
         />
