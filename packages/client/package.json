@@ -3,12 +3,173 @@
     "scripts": {
         "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
         "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --mode=production --node-env=production",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
+        "lint": "nx eslint:lint",
+        "lint:fix": "nx eslint:lint --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "type-check": "tsc --pretty --noEmit"
+    },
+    "nx": {
+        "targets": {
+            "build1": {
+                "executor": "@nx/webpack:webpack",
+                "options": {
+                    "webpackConfig": "packages/client/webpack.config.js",
+                    "args": [
+                        "--mode=production",
+                        "--node-env=production"
+                    ]
+                },
+                "cache": true,
+                "dependsOn": [
+                    "^build1"
+                ],
+                "inputs": [
+                    {
+                        "externalDependencies": [
+                            "webpack-cli"
+                        ]
+                    }
+                ],
+                "outputs": [
+                    "{workspaceRoot}/packages\\client\\dist"
+                ],
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Runs Webpack build",
+                    "help": {
+                        "command": "pnpm exec webpack-cli build --help",
+                        "example": {
+                            "options": {
+                                "json": "stats.json"
+                            },
+                            "args": [
+                                "--profile"
+                            ]
+                        }
+                    }
+                },
+                "configurations": {}
+            },
+            "build1": {
+                "executor": "@nx/webpack:webpack",
+                "options": {
+                    "webpackConfig": "packages/client/webpack.config.js"
+                },
+                "cache": true,
+                "dependsOn": [
+                    "^build1"
+                ],
+                "inputs": [
+                    "production",
+                    "^production",
+                    {
+                        "externalDependencies": [
+                            "webpack-cli"
+                        ]
+                    }
+                ],
+                "outputs": [
+                    "{workspaceRoot}/packages\\client\\dist"
+                ],
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Runs Webpack build",
+                    "help": {
+                        "command": "pnpm exec webpack-cli build --help",
+                        "example": {
+                            "options": {
+                                "json": "stats.json"
+                            },
+                            "args": [
+                                "--profile"
+                            ]
+                        }
+                    }
+                },
+                "configurations": {}
+            },
+            "webpack:build1": {
+                "options": {
+                    "cwd": "packages/client",
+                    "args": [
+                        "--mode=production",
+                        "--node-env=production"
+                    ],
+                    "command": "webpack-cli build"
+                },
+                "cache": true,
+                "dependsOn": [
+                    "^webpack:build1"
+                ],
+                "inputs": [
+                    "production",
+                    "^production",
+                    {
+                        "externalDependencies": [
+                            "webpack-cli"
+                        ]
+                    }
+                ],
+                "outputs": [
+                    "{workspaceRoot}/packages\\client\\dist"
+                ],
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Runs Webpack build",
+                    "help": {
+                        "command": "pnpm exec webpack-cli build --help",
+                        "example": {
+                            "options": {
+                                "json": "stats.json"
+                            },
+                            "args": [
+                                "--profile"
+                            ]
+                        }
+                    }
+                },
+                "executor": "nx:run-commands",
+                "configurations": {}
+            },
+            "dev": {
+                "options": {
+                    "cwd": "packages/client",
+                    "args": [
+                        "--mode=development",
+                        "--node-env=development",
+                        "--watch"
+                    ],
+                    "command": "webpack-cli"
+                },
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Starts Webpack dev",
+                    "help": {
+                        "command": "pnpm exec webpack-cli --help",
+                        "example": {
+                            "options": {
+                                "args": [
+                                    "--client-progress",
+                                    "--history-api-fallback "
+                                ]
+                            }
+                        }
+                    }
+                },
+                "executor": "nx:run-commands",
+                "configurations": {}
+            }
+        }
     },
     "dependencies": {
         "@emotion/react": "^11.11.1",
