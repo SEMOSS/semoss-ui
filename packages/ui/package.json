@@ -29,7 +29,7 @@
                 "options": {
                     "main": "packages/ui/src/index.ts",
                     "tsConfig": "./tsconfig.json",
-                    "outputPath": "${workspace}/packages/ui/dist"
+                    "outputPath": "packages/ui/dist"
                 }
             }
         }
