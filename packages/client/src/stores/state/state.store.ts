@@ -1170,7 +1170,7 @@ export class StateStore {
      * @param old - points to old id
      * @param id - new id for variable
      */
-    private renameVariable = (old: string, id: string) => {
+    private renameVariable = (old: string, id: string): boolean => {
         if (id.includes('.')) {
             return false;
         }
@@ -1181,6 +1181,8 @@ export class StateStore {
             this._store.variables[id] = this._store.variables[old];
 
             delete this._store.variables[old];
+
+            return true;
         }
     };
 
