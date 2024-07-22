@@ -158,16 +158,13 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
     }, [getEngines.status, getEngines.data]);
 
     const variables = useMemo(() => {
-        return Object.entries(state.variables).filter((kv) => {
-            const id = kv[0];
-            const val = kv[1];
-
-            if (
-                id.includes(filterWord) &&
-                selectedFilter.indexOf(val.type) > -1
+        return Object.entries(state.variables)
+            .filter(
+                ([id, val]) =>
+                    id.includes(filterWord) &&
+                    selectedFilter.indexOf(val.type) > -1,
             )
-                return kv;
-        });
+            .sort((a, b) => a[0].localeCompare(b[0]));
     }, [
         filterWord,
         selectedFilter.length,

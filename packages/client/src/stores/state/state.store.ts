@@ -225,7 +225,6 @@ export class StateStore {
                     }
                 } else if (type === 'query') {
                     const query = this._store.queries[pointer];
-                    debugger;
                     if (query) {
                         if (path.length === 1) {
                             // Just get query output
@@ -402,7 +401,7 @@ export class StateStore {
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
-                this.renameVariable(id, alias);
+                return this.renameVariable(id, alias);
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
                 const { id, from, to } = action.payload;
 

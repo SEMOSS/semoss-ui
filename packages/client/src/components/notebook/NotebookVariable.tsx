@@ -341,12 +341,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                     e.target.value,
                                                 );
                                             }}
-                                            onKeyDown={(e) => {
+                                            onKeyDown={async (e) => {
                                                 if (e.key === 'Enter') {
                                                     setOpenRenameAlias(false);
 
                                                     const success =
-                                                        state.dispatch({
+                                                        await state.dispatch({
                                                             message:
                                                                 ActionMessages.RENAME_VARIABLE,
                                                             payload: {
@@ -354,6 +354,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                                 alias: newTokenAlias,
                                                             },
                                                         });
+
+                                                    debugger;
 
                                                     notification.add({
                                                         color: success
