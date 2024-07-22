@@ -47,3 +47,10 @@ Make sure to follow these steps before submitting your issue - thank you!
 ### Additional context
 
 Add any other context about the problem here.
+
+### Tasks
+
+Create a list of tasks that a developer should focus on finishing to consider this ticket complete
+
+- [ ] 
+- [ ]
