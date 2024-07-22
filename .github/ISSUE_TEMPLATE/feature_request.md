@@ -24,7 +24,7 @@ Add any other context or screenshots about the feature request here.
 
 ### Tasks
 
-Create a list of tasks that a developer should focus on finishing to consider this ticket complete
+A list of individual tasks / issues that need to be completed before the ticket is resolved
 
 - [ ]
 - [ ]
