@@ -276,6 +276,26 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
+        section: SECTION_LAYOUT,
+        image: BLOCK_CONTAINER,
+        name: 'Chat',
+        json: {
+            widget: 'chat',
+            data: {
+                loading: false,
+                ask: '',
+                history: [],
+            },
+            listeners: {
+                onLoad: [],
+                onAsk: [],
+            },
+            slots: {
+                children: [],
+            },
+        },
+    },
+    {
         section: SECTION_PROGRESS,
         image: BLOCK_PROGRESS_BAR,
         name: 'Progress',
