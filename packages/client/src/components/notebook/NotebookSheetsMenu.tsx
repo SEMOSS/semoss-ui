@@ -212,17 +212,21 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
             <NewQueryOverlay
                 onClose={(newQueryId?: string) => {
                     if (newQueryId) {
-                        notebook.selectQuery(newQueryId);
+                        notebook.selectQuery(oldQueryId);
                     }
+                    duplicateQuery(oldQueryId, newQueryId);
                     try {
                         state.dispatch({
-                            message: ActionMessages.RENAME_VARIABLE,
+                            message: ActionMessages.DELETE_QUERY,
                             payload: {
-                                id: oldQueryId,
-                                alias: newQueryId,
+                                queryId: oldQueryId,
                             },
                         });
-                    } catch (e) {}
+                    } catch (e) {
+                        console.log(
+                            'Failed to rename, old query could not be deleted',
+                        );
+                    }
                     workspace.closeOverlay();
                 }}
             />
@@ -233,7 +237,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
      * Copy a query
      * @param id - id of the query to copy
      */
-    const duplicateQuery = (id: string) => {
+    const duplicateQuery = (id: string, newId?: string) => {
         try {
             // get the query
             const query = state.getQuery(id);
@@ -248,7 +252,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
             const json = query.toJSON();
 
             // get a new id
-            const newQueryId = `${json.id} Copy`;
+            const newQueryId = !newId ? `${json.id} Copy` : newId;
 
             // dispatch it
             state.dispatch({
