@@ -233,7 +233,7 @@ export const JobsTable = (props: {
             rowSelectionModel={rowSelectionModel}
             onRowSelectionModelChange={(value) => setRowSelectionModel(value)}
             slots={{
-                loadingOverlay: LinearProgress as GridSlots['loadingOverlay'],
+                loadingOverlay: LinearProgress,
                 noRowsOverlay: () => (
                     <Stack
                         height="100%"
