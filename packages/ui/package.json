@@ -12,7 +12,7 @@
     "scripts": {
         "start": "pnpm run storybook",
         "dev": "run-p build:dev storybook",
-        "build-roll": "rollup -c",
+        "build": "rollup -c",
         "build:dev": "rollup -w -c",
         "storybook": "cross-env NODE_OPTIONS=--max_old_space_size=8192 storybook dev -p 6006",
         "lint": "nx eslint:lint",
@@ -24,13 +24,20 @@
     },
     "nx": {
         "targets": {
-            "build": {
+            "build-nx": {
                 "executor": "@nx/rollup:rollup",
+                "cache": true,
+                "inputs": [
+                    "production",
+                    "^production"
+                ],
                 "options": {
-                    "main": "packages/ui/src/index.ts",
-                    "tsConfig": "./tsconfig.json",
-                    "outputPath": "packages/ui/dist"
-                }
+                    "main": "${projectRoot}/src/index.ts",
+                    "tsConfig": "packages/ui/tsconfig.json",
+                    "outputPath": "packages/ui/dist",
+                    "rollupConfig": "packages/ui/rollup.config.js"
+                },
+                "configurations": {}
             }
         }
     },

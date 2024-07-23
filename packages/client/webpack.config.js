@@ -33,10 +33,8 @@ const config = {
             babelConfig: 'packages/client/.babelrc',
             // index: './src/template.html',
             baseHref: '/',
-            assets: ['packages/client/src/assets'],
             outputHashing:
                 process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
-            memoryLimit: 8192,
             watch: process.env['NODE_ENV'] == 'production' ? false : true,
             nodeOptions: {
                 // Specify NODE_OPTIONS here
@@ -53,7 +51,7 @@ const config = {
             title: process.env.THEME_TITLE,
             favicon: process.env.THEME_FAVICON,
             scriptLoading: 'module',
-            template: './src/template.html',
+            template: path.resolve(__dirname, './src/template.html'),
             filename: 'index.html',
         }),
         // importMetaEnv.webpack({ example: '.env.local' }),

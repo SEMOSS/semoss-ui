@@ -2,7 +2,7 @@
     "name": "@semoss/client",
     "scripts": {
         "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
-        "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --mode=production --node-env=production",
+        "buildold": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --mode=production --node-env=production",
         "lint": "nx eslint:lint",
         "lint:fix": "nx eslint:lint --fix",
         "format": "prettier . --check --plugin-search-dir=.",
@@ -12,7 +12,52 @@
     },
     "nx": {
         "targets": {
-            "build1": {
+            "build": {
+                "options": {
+                    "cwd": "packages/client",
+                    "args": [
+                        "--node-env=production"
+                    ],
+                    "command": "webpack-cli build"
+                },
+                "cache": true,
+                "dependsOn": [
+                    "^build"
+                ],
+                "inputs": [
+                    "production",
+                    "^production",
+                    {
+                        "externalDependencies": [
+                            "webpack-cli"
+                        ]
+                    }
+                ],
+                "outputs": [
+                    "{projectRoot}/dist"
+                ],
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Runs Webpack build",
+                    "help": {
+                        "command": "pnpm exec webpack-cli build --help",
+                        "example": {
+                            "options": {
+                                "json": "stats.json"
+                            },
+                            "args": [
+                                "--profile"
+                            ]
+                        }
+                    }
+                },
+                "executor": "nx:run-commands",
+                "configurations": {},
+                "parallelism": true
+            },
+            "build2": {
                 "executor": "@nx/webpack:webpack",
                 "options": {
                     "webpackConfig": "packages/client/webpack.config.js",
@@ -23,9 +68,11 @@
                 },
                 "cache": true,
                 "dependsOn": [
-                    "^build1"
+                    "^build2"
                 ],
                 "inputs": [
+                    "production",
+                    "^production",
                     {
                         "externalDependencies": [
                             "webpack-cli"
@@ -54,14 +101,14 @@
                 },
                 "configurations": {}
             },
-            "build1": {
+            "build3": {
                 "executor": "@nx/webpack:webpack",
                 "options": {
                     "webpackConfig": "packages/client/webpack.config.js"
                 },
                 "cache": true,
                 "dependsOn": [
-                    "^build1"
+                    "^build3"
                 ],
                 "inputs": [
                     "production",

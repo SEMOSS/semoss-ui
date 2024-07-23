@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const { resolve } = require("@rollup/plugin-node-resolve");
-const { commonjs } = require("@rollup/plugin-commonjs");
-const { typescript } = require("@rollup/plugin-typescript");
-const { bundleSize } = require("rollup-plugin-bundle-size");
-const { postcss } = require("rollup-plugin-postcss");
-const { del } = require("rollup-plugin-delete");
+import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import typescript from "@rollup/plugin-typescript";
 
-const { packageJson } = require("./package.json");
+import bundleSize from "rollup-plugin-bundle-size";
+import postcss from "rollup-plugin-postcss";
+import del from "rollup-plugin-delete";
+import packageJson from "./package.json";
 
 const config = [
     // Outputs separate declarations files and builds
@@ -36,4 +35,4 @@ const config = [
     },
 ];
 
-module.exports = config;
+export default config;

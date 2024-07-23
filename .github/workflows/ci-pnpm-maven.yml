@@ -45,6 +45,7 @@ jobs:
                       .m2/repository
                       dist
                       index.html
+                      .nx/cache
                   key: ${{ github.ref_name }}
 
             - name: Install dependencies
@@ -55,7 +56,7 @@ jobs:
                   pnpm install
 
             - name: Build
-              run: pnpm run build
+              run: npx nx run-many -t build -p @semoss/client @semoss/legacy
 
             - name: Maven clean install
               run: |
