@@ -996,7 +996,7 @@ function formDirective($compile, $timeout, semossCoreService) {
                                 )[0]
                             );
                             groupingData.model = attributes[attrIdx].value
-                                .replace(/=\s*[^;]*;/, '')
+                                .replace(/=[\s\w]*(;|$)/, '')
                                 .trim();
                         }
 
@@ -2809,7 +2809,7 @@ function formDirective($compile, $timeout, semossCoreService) {
             scope.form.content.items[idx].html = scope.form.content.items[
                 idx
             ].html.replace(
-                /smss-form-model\s*=\s*"\s*[^"]*?\s*"/,
+                /smss-form-model\s*=\s*"[^"]*?"/,
                 'smss-form-model="' + scope.form.content.items[idx].model + '"'
             );
         }
@@ -4038,7 +4038,7 @@ function formDirective($compile, $timeout, semossCoreService) {
                 scope.form.content.items[idx].html = scope.form.content.items[
                     idx
                 ].html.replace(
-                    /options\s*=\s*"\s*[\w.\s]*\s*"/,
+                    /options\s*=\s*"\s*\w+(\s+\w+)*\s*"/,
                     'options="form.dataModel.' +
                         scope.form.dataBinding[scope.form.content.selected]
                             .name +
@@ -4069,7 +4069,7 @@ function formDirective($compile, $timeout, semossCoreService) {
                 scope.form.content.items[idx].html = scope.form.content.items[
                     idx
                 ].html.replace(
-                    /options\s*=\s*"\s*[\w.\s]*?"/,
+                    /options\s*=\s*"\s*\w+(\s+\w+)*\s*"/,
                     'options="item.options"'
                 );
             }
