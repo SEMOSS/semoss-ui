@@ -129,6 +129,7 @@ export const fetchAppInfo = async (
 
     const type = res.pixelReturn[0].operationType;
     const output = res.pixelReturn[0].output;
+    console.log('type', type);
 
     if (type.indexOf('ERROR') === -1) {
         return {
