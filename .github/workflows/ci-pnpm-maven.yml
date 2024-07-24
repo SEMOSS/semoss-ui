@@ -56,7 +56,7 @@ jobs:
                   pnpm install
 
             - name: Build
-              run: npx nx run-many -t build -p @semoss/client @semoss/legacy
+              run: npx NX_REJECT_UNKNOWN_LOCAL_CACHE=0 nx run-many -t build -p @semoss/client @semoss/legacy --verbose
 
             - name: Maven clean install
               run: |
