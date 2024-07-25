@@ -393,6 +393,10 @@ export function getQueryForPrompt(
     return queryJson;
 }
 
+/**
+ *
+ * TODO: move to new variables
+ */
 export async function setBlocksAndOpenUIBuilder(
     builder: Builder,
     monolithStore: MonolithStore,
