@@ -70,14 +70,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
-    // useDebounce(
-    //     () => {
-    //         listeners.onChange();
-    //     },
-    //     [changedValue],
-    //     200,
-    // );
-
     return (
         <StyledTextField
             size="small"
