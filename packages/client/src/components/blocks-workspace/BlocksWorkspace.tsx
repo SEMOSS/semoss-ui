@@ -3,8 +3,13 @@ import { observer } from 'mobx-react-lite';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
 
 import { runPixel } from '@/api';
-import { SerializedState, StateStore, WorkspaceStore } from '@/stores';
-import { STATE_STORE_CURRENT_VERSION } from '@/stores/state/MigrationManager';
+import {
+    SerializedState,
+    StateStore,
+    WorkspaceStore,
+    MigrationManager,
+    STATE_VERSION,
+} from '@/stores';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
@@ -16,7 +21,6 @@ import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
 import { ConstructionOutlined } from '@mui/icons-material';
 import { BlocksWorkspaceTabs } from './BlocksWorkspaceTabs';
-import { MigrationManager } from '@/stores/state/MigrationManager';
 
 const StyledMain = styled('div')(({ theme }) => ({
     height: '100%',
@@ -38,7 +42,6 @@ const StyledFooter = styled('div')(({ theme }) => ({
 }));
 
 const ACTIVE = 'page-1';
-
 interface BlocksWorkspaceProps {
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -75,12 +78,13 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 // get the output (SerializedState)
                 const { output } = pixelReturn[0];
 
+                // assume the output is the current state
                 let state = output;
 
-                // Run migration if not up to date
-                if (state.version !== STATE_STORE_CURRENT_VERSION) {
-                    const migration = await new MigrationManager();
-                    state = await migration.run(state);
+                // run migration if not up to date
+                if (state.version !== STATE_VERSION) {
+                    const migration = new MigrationManager();
+                    state = migration.run(output);
                 }
 
                 // create a new state store

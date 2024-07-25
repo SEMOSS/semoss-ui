@@ -21,7 +21,7 @@ import {
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
-import { STATE_STORE_CURRENT_VERSION } from './MigrationManager';
+import { STATE_VERSION } from './migration/MigrationManager';
 
 interface StateStoreInterface {
     /** Mode */
@@ -685,9 +685,7 @@ export class StateStore {
 
         // store the version or the one we currently are on
         // TODO: Look at this
-        this._store.version = state.version
-            ? state.version
-            : STATE_STORE_CURRENT_VERSION;
+        this._store.version = state.version ? state.version : STATE_VERSION;
     };
 
     /**

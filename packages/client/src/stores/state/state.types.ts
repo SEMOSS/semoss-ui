@@ -4,6 +4,9 @@ import { CellState } from './cell.state';
 import { QueryStateConfig } from './query.state';
 
 export type SerializedState = {
+    /** What version the state store we currently are on link: https://semver.org/ */
+    version: string;
+
     /** Queries rendered in the insight */
     queries: Record<string, QueryStateConfig>;
 
@@ -15,9 +18,6 @@ export type SerializedState = {
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
-
-    /** What version the state store we currently are on link: https://semver.org/ */
-    version?: string;
 };
 
 /**

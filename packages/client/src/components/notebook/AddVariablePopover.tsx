@@ -17,6 +17,7 @@ import { useBlocks, usePixel } from '@/hooks';
 import {
     ActionMessages,
     SerializedState,
+    STATE_VERSION,
     VariableType,
     VariableWithId,
 } from '@/stores';
@@ -365,6 +366,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                 if (variableType === 'block') {
                     const block = state.getBlock(variablePointer);
                     const s: SerializedState = {
+                        version: STATE_VERSION,
                         dependencies: {},
                         variables: {},
                         queries: {},

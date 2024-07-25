@@ -13,6 +13,7 @@ import {
     MonolithStore,
     QueryStateConfig,
     SerializedState,
+    STATE_VERSION,
 } from '@/stores';
 import { AppMetadata } from '../app';
 
@@ -404,6 +405,7 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
+        version: STATE_VERSION,
         variables: {},
         dependencies: {},
         queries: {},
