@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -238,10 +238,12 @@ interface TypeUserRegister {
  * LoginPage
  */
 export const LoginPage = observer(() => {
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
+    const location = useLocation();
 
     const [forgotPassword, setForgotPassword] = useState(false);
-    const [loginType, setLoginType] = useState('Native');
+    const [availableLogins, setAvailableLogins] = useState<string[]>([]);
+    const [loginType, setLoginType] = useState('');
     const [register, setRegister] = useState(false);
     const [showOTPCodeField, setShowOTPCodeField] = useState(false);
     const [snackbar, setSnackbar] = useState<{
@@ -279,8 +281,28 @@ export const LoginPage = observer(() => {
             PASSWORD_CONFIRMATION: '',
         },
     });
+    useEffect(() => {
+        fetchLoginTypesAllowed();
+    }, []);
 
-    const location = useLocation();
+    /**
+     * Find which types of logins are available to the user.
+     */
+    const fetchLoginTypesAllowed = async () => {
+        const response = await monolithStore.config();
+        const userLoginTypes = [];
+        if (response.loginsAllowed.native) {
+            userLoginTypes.push('Native');
+        }
+        if (response.loginsAllowed.ldap) {
+            userLoginTypes.push('LDAP');
+        }
+        if (response.loginsAllowed.linOtp) {
+            userLoginTypes.push('LinOTP');
+        }
+        setAvailableLogins(userLoginTypes);
+        setLoginType(userLoginTypes[0]);
+    };
 
     /**
      * Allow the user to login
@@ -509,36 +531,42 @@ export const LoginPage = observer(() => {
                             </div>
                             {!register && (
                                 <StyledButtonGroup variant="outlined">
-                                    <StyledButtonGroupItem
-                                        onClick={() => {
-                                            setLoginType('Native');
-                                            setSuccess('');
-                                            setError('');
-                                        }}
-                                        selected={loginType === 'Native'}
-                                    >
-                                        Native
-                                    </StyledButtonGroupItem>
-                                    <StyledButtonGroupItem
-                                        onClick={() => {
-                                            setLoginType('LDAP');
-                                            setSuccess('');
-                                            setError('');
-                                        }}
-                                        selected={loginType === 'LDAP'}
-                                    >
-                                        LDAP
-                                    </StyledButtonGroupItem>
-                                    <StyledButtonGroupItem
-                                        onClick={() => {
-                                            setLoginType('LinOTP');
-                                            setSuccess('');
-                                            setError('');
-                                        }}
-                                        selected={loginType === 'LinOTP'}
-                                    >
-                                        LinOTP
-                                    </StyledButtonGroupItem>
+                                    {availableLogins.includes('Native') && (
+                                        <StyledButtonGroupItem
+                                            onClick={() => {
+                                                setLoginType('Native');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
+                                            selected={loginType === 'Native'}
+                                        >
+                                            Native
+                                        </StyledButtonGroupItem>
+                                    )}
+                                    {availableLogins.includes('LDAP') && (
+                                        <StyledButtonGroupItem
+                                            onClick={() => {
+                                                setLoginType('LDAP');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
+                                            selected={loginType === 'LDAP'}
+                                        >
+                                            LDAP
+                                        </StyledButtonGroupItem>
+                                    )}
+                                    {availableLogins.includes('LinOTP') && (
+                                        <StyledButtonGroupItem
+                                            onClick={() => {
+                                                setLoginType('LinOTP');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
+                                            selected={loginType === 'LinOTP'}
+                                        >
+                                            LinOTP
+                                        </StyledButtonGroupItem>
+                                    )}
                                 </StyledButtonGroup>
                             )}
                             {error && <Alert color="error">{error}</Alert>}
