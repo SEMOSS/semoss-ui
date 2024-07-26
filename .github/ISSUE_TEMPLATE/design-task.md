@@ -23,9 +23,9 @@ Provide current, past, or potential visual references to give the designer as mu
 
 This issue references . . . [Link to Ticket]
 
-33 Task Suggestions (What)
+## Task Suggestions (What)
 
-What are more specific tasks that a developer needs to take to consider this issue resolved 
+What are more specific tasks that a designer needs to take to consider this issue resolved 
 
 - []
 - []
