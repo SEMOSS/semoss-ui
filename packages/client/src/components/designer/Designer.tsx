@@ -11,7 +11,12 @@ import { useMemo, useState } from 'react';
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
+import {
+    ErrorBoundary,
+    Sidebar,
+    SidebarItem,
+    SidebarText,
+} from '@/components/common';
 import { Renderer } from '@/components/blocks';
 
 import { AddBlocksMenu } from './AddBlocksMenu';
@@ -288,7 +293,9 @@ export const Designer = observer((): JSX.Element => {
                     ) : null}
                 </StyledLeftMenu>
                 <Screen>
-                    <Renderer id={designer.rendered} />
+                    <ErrorBoundary title={'designer - Something went wrong!'}>
+                        <Renderer id={designer.rendered} />
+                    </ErrorBoundary>
                 </Screen>
                 <StyledRightMenu width={rightMenuResize.width} elevation={7}>
                     <StyledDragger

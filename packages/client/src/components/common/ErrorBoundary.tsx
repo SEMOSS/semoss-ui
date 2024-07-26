@@ -1,50 +1,101 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { Typography, styled } from '@semoss/ui';
+import { styled, Alert, Typography } from '@semoss/ui';
 import Error from '@/assets/img/Error.svg';
 
-const StyledContainer = styled('div')(() => ({
-    position: 'fixed',
+const StyledContainer = styled('div')(({ theme }) => ({
+    position: 'absolute',
     inset: '0',
     display: 'flex',
     flexDirection: 'column',
+    gap: theme.spacing(1),
     alignItems: 'center',
     justifyContent: 'center',
 }));
 
-interface Props {
+const StyledImg = styled('img')(() => ({
+    height: '25%',
+    maxHeight: '200px',
+}));
+
+const StyledAlert = styled(Alert)(({ theme }) => ({
+    marginTop: theme.spacing(2),
+}));
+
+interface ErrorBoundaryProps {
+    /**
+     * Title of the boundary
+     **/
+    title?: string;
+
+    /**
+     * Description of the boundary
+     **/
+    description?: string;
+
+    /**
+     * Component that will be rendered if errored.
+     */
+    fallback?: ReactNode;
+
     children?: ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
+    error: Error | null;
     hasError: boolean;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-    public state: State = {
+export class ErrorBoundary extends Component<
+    ErrorBoundaryProps,
+    ErrorBoundaryState
+> {
+    public state: ErrorBoundaryState = {
+        error: null,
         hasError: false,
     };
 
-    public static getDerivedStateFromError(): State {
-        // Update state so the next render will show the fallback UI.
+    /**
+     * Update state so the next render will show the fallback UI.
+     */
+    public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
         return {
             hasError: true,
+            error: error,
         };
     }
 
+    /**
+     * Catch the error an log it
+     */
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error('Uncaught error:', error, errorInfo);
     }
 
     public render() {
+        console.log('rendering');
         if (this.state.hasError) {
+            // render nothing if its passed in as "null"
+            if (this.props.fallback === null || this.props.fallback) {
+                return this.props.fallback;
+            }
+
             return (
                 <StyledContainer>
-                    <img src={Error} height="50%" />
-                    <Typography variant="h6">Something went wrong!</Typography>
-                    <Typography variant="body1">
-                        We&apos;re working hard to fix it. If the issue
-                        persists, please reach out and let us know.
-                    </Typography>
+                    <StyledImg src={Error} />
+                    {this.props.title ? (
+                        <Typography variant="h6">{this.props.title}</Typography>
+                    ) : null}
+
+                    {this.props.description ? (
+                        <Typography variant="body2">
+                            {this.props.description}
+                        </Typography>
+                    ) : null}
+                    {this.state.error ? (
+                        <StyledAlert severity="error" variant={'filled'}>
+                            {this.state.error.message}
+                        </StyledAlert>
+                    ) : null}
                 </StyledContainer>
             );
         }
