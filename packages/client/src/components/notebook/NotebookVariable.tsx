@@ -259,6 +259,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             id: id,
                                         },
                                     });
+
+                                    notification.add({
+                                        color: 'warning',
+                                        message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
+                                    });
+
                                     setAnchorEl(null);
                                 }}
                             >

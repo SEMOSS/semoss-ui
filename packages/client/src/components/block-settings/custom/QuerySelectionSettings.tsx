@@ -83,12 +83,15 @@ export const QuerySelectionSettings = observer(
             return Object.keys(state.variables).reduce((acc, queryKey) => {
                 if (
                     state.variables[queryKey].type === 'query' ||
-                    state.variables[queryKey].type === 'cell' ||
-                    state.variables[queryKey].type === 'array'
+                    state.variables[queryKey].type === 'cell'
                 ) {
                     return {
                         ...acc,
                         [`{{${queryKey}.${queryPath}}}`]: queryKey,
+                    };
+                } else {
+                    return {
+                        ...acc,
                     };
                 }
             }, {});
@@ -121,15 +124,16 @@ export const QuerySelectionSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
+                <></>
                 <Autocomplete
                     fullWidth
                     disableClearable={value === ''}
                     size="small"
                     value={value}
                     options={Object.keys(queries)}
-                    getOptionLabel={(mustachedQueryPath: string) =>
-                        queries[mustachedQueryPath] ?? ''
-                    }
+                    getOptionLabel={(id: string) => {
+                        return queries[id] ?? '';
+                    }}
                     onChange={(_, value) => {
                         onChange(value);
                     }}

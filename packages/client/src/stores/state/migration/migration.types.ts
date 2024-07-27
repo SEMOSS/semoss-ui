@@ -34,5 +34,5 @@ export type Migration<
     /**
      * Run the migration and transform the state
      */
-    run: (state: F) => T;
+    run: (state: F) => T | Promise<T>;
 };

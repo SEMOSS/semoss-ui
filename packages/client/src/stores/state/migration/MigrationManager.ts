@@ -29,7 +29,9 @@ export class MigrationManager {
      * @param state - state that will be transformed
      * @returns
      */
-    run<T extends MigrationState = MigrationState>(state: MigrationState): T {
+    async run<T extends MigrationState = MigrationState>(
+        state: MigrationState,
+    ): Promise<T> {
         // lazy deep copy
         let newState = JSON.parse(JSON.stringify(state));
 
@@ -43,7 +45,7 @@ export class MigrationManager {
             if (migration) {
                 try {
                     // migrate the state
-                    newState = migration.run(newState);
+                    newState = await migration.run(newState);
 
                     // update the version to the new one
                     newState.version = migration.versionTo;

@@ -66,6 +66,7 @@ interface Option {
      * option display
      */
     display: string;
+
     /**
      * type of block
      */

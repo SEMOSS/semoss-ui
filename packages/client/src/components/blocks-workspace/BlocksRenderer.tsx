@@ -82,7 +82,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                 // run migration if not up to date
                 if (s.version !== STATE_VERSION) {
                     const migration = new MigrationManager();
-                    s = migration.run(s);
+                    s = await migration.run(s);
                 }
 
                 // create a new state store

@@ -397,7 +397,7 @@ export class StateStore {
             } else if (ActionMessages.ADD_VARIABLE === action.message) {
                 const { id, to, type, cellId } = action.payload;
 
-                this.addVariable(id, to, type, cellId);
+                return this.addVariable(id, to, type, cellId);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -1213,7 +1213,7 @@ export class StateStore {
      * Deletes variable and corresponding dependency that can be referenced
      * @param id - id to delete
      */
-    private deleteVariable = (id: string) => {
+    private deleteVariable = async (id: string) => {
         const variable = this._store.variables[id];
         if (
             variable.type !== 'block' &&
@@ -1222,6 +1222,16 @@ export class StateStore {
         ) {
             delete this._store.dependencies[variable.to];
         }
+
+        // remove the references of it from ui (don't touch users code notebook)
+        // Stringify blocks
+        const blocksToMutate = JSON.stringify(this._store.blocks);
+        const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, 'g');
+
+        const modifiedBlocks = await blocksToMutate.replace(regex, '');
+
+        this._store.blocks = JSON.parse(modifiedBlocks);
+
         delete this._store.variables[id];
     };
 

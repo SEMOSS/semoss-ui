@@ -84,7 +84,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 // run migration if not up to date
                 if (state.version !== STATE_VERSION) {
                     const migration = new MigrationManager();
-                    state = migration.run(output);
+                    state = await migration.run(output);
                 }
 
                 // create a new state store
