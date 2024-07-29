@@ -72,7 +72,6 @@ export class ErrorBoundary extends Component<
     }
 
     public render() {
-        console.log('rendering');
         if (this.state.hasError) {
             // render nothing if its passed in as "null"
             if (this.props.fallback === null || this.props.fallback) {

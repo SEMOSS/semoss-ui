@@ -293,7 +293,7 @@ export const Designer = observer((): JSX.Element => {
                     ) : null}
                 </StyledLeftMenu>
                 <Screen>
-                    <ErrorBoundary title={'designer - Something went wrong!'}>
+                    <ErrorBoundary title={'Something went wrong!'}>
                         <Renderer id={designer.rendered} />
                     </ErrorBoundary>
                 </Screen>

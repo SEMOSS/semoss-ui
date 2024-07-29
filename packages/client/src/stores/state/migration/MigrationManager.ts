@@ -35,6 +35,13 @@ export class MigrationManager {
         // lazy deep copy
         let newState = JSON.parse(JSON.stringify(state));
 
+        // notifiy developers
+        if (newState.version !== this.latestVersion) {
+            console.warn(
+                `Migrating version ${state.version} to ${STATE_VERSION}`,
+            );
+        }
+
         while (newState.version !== this.latestVersion) {
             //  If state.version is undefined, it is safe to assume this was an old app before we introduced version
             const migration =
@@ -53,12 +60,12 @@ export class MigrationManager {
                     console.log(e);
 
                     throw new Error(
-                        `Error upgrading from ${migration.versionFrom} to ${migration.versionTo}`,
+                        `Error migrating from ${migration.versionFrom} to ${migration.versionTo}`,
                     );
                 }
             } else {
                 throw new Error(
-                    `No migration function available for version ${state.version}`,
+                    `No migration available for version ${state.version}`,
                 );
             }
         }
