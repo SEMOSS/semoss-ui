@@ -39,7 +39,8 @@ export const AppSettingsDetailPage = () => {
     const [view, setView] = useState<VIEW>('CURRENT');
     const [permission, setPermission] = useState<Role | null>(null);
 
-    const getUserEnginePermission = useAPI(['getUserProjectPermission', id]);
+    const getUserEnginePermission =
+        !adminMode && useAPI(['getUserProjectPermission', id]);
 
     /**
      * @name useEffect

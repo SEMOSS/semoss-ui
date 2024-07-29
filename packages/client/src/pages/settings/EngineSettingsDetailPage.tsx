@@ -56,7 +56,8 @@ export const EngineSettingsDetailPage = (
     const [view, setView] = useState<VIEW>('CURRENT');
     const [permission, setPermission] = useState<Role | null>(null);
 
-    const getUserEnginePermission = useAPI(['getUserEnginePermission', id]);
+    const getUserEnginePermission =
+        !adminMode && useAPI(['getUserEnginePermission', id]);
 
     /**
      * @name useEffect
