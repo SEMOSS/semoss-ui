@@ -62,7 +62,7 @@ const StyledContentInner = styled('div', {
         },
         // page scrolling is handled in the designer in design mode
         '[data-page]': {
-            height: 'unset!important',
+            overflow: 'unset!important',
             minHeight: '100%',
         },
     }),

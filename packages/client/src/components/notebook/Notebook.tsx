@@ -1,12 +1,6 @@
 import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import {
-    Code,
-    DashboardCustomizeRounded,
-    DataArrayRounded,
-    Layers,
-    SwipeRightAltRounded,
-} from '@mui/icons-material';
+import { Code } from '@mui/icons-material';
 
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 

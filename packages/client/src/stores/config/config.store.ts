@@ -92,6 +92,7 @@ export class ConfigStore {
             },
         },
     };
+    private _generalReactors: Array<string> = [];
 
     constructor(root: RootStore) {
         // register the root
@@ -118,6 +119,13 @@ export class ConfigStore {
         return this._store.config.loginsAllowed;
     }
 
+    /**
+     * Get the list of reactors
+     */
+    get generalReactors() {
+        return this._generalReactors;
+    }
+
     // *********************************************************
     // Actions
     // *********************************************************
@@ -138,6 +146,9 @@ export class ConfigStore {
 
         // get the user information
         await this.getUser();
+
+        //set the reactors
+        await this.setGeneralReactors();
     }
 
     /**
@@ -527,5 +538,23 @@ export class ConfigStore {
 
         // create the newly loaded workspace
         return new WorkspaceStore(this._root, workspace);
+    }
+
+    /**
+     * Set general reactors used for pixel cell suggestions
+     */
+    async setGeneralReactors() {
+        try {
+            const res = await runPixel('META|HelpJson();');
+
+            runInAction(() => {
+                const generalReactorList = res.pixelReturn[0].output['General'];
+
+                this._generalReactors = generalReactorList;
+            });
+        } catch {
+            console.error('Failed response from help pixel');
+            return;
+        }
     }
 }
