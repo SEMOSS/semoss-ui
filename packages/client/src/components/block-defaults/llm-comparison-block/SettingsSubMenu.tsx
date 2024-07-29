@@ -12,6 +12,7 @@ import { useLLMComparison } from '@/hooks';
 import { useEffect, useState } from 'react';
 import { TypeVariant } from '@/components/workspace';
 import { Controller } from 'react-hook-form';
+import { VariantDragAndDrop } from './VariantDragAndDrop';
 
 const StyledSettingsSubMenu = styled('div')(({ theme }) => ({
     width: '100%',
@@ -37,8 +38,11 @@ export const SettingsSubMenu = () => {
     const { control, getValues, setValue, watch } = useLLMComparison();
     const [selectedVars, setSelectedVars] = useState<TypeVariant[]>([]);
     const [unselectedVars, setUnselectedVars] = useState<TypeVariant[]>([]);
+    const orderType = watch('orderType');
     const defaultVariant = watch('defaultVariant');
     const variants = watch('variants');
+
+    console.log('render', orderType);
 
     useEffect(() => {
         setVariantsState(variants);
@@ -76,7 +80,7 @@ export const SettingsSubMenu = () => {
             copy[idx].selected = !copy[idx].selected;
             setValue('variants', copy);
 
-            // TODO MORE TDODOOOOOO
+            // TODO
             // Context change for 'variants' is not triggering a rerender, need to find a better solution.
             copy[idx].selected = !copy[idx].selected;
             setVariantsState(copy);
@@ -177,11 +181,31 @@ export const SettingsSubMenu = () => {
                     Display Order
                 </Typography>
 
-                <StyledRadioGroup hideLabel={true} onChange={handleSetOrder}>
-                    <RadioGroup.Item value="fixed" label="Fixed" />
-                    <RadioGroup.Item value="random" label="Random" />
-                    <RadioGroup.Item value="custom" label="Custom" />
-                </StyledRadioGroup>
+                <Controller
+                    name="orderType"
+                    control={control}
+                    render={({ field }) => (
+                        <StyledRadioGroup
+                            onChange={field.onChange}
+                            name="orderType"
+                        >
+                            <RadioGroup.Item value="fixed" label="Fixed" />
+                            <RadioGroup.Item value="random" label="Random" />
+                            <RadioGroup.Item value="custom" label="Custom" />
+                        </StyledRadioGroup>
+                    )}
+                />
+
+                {orderType === 'custom' && (
+                    <Stack direction="row" gap={1}>
+                        <Typography variant="caption">
+                            Drag items into the display order (1 = first
+                            response generated).
+                        </Typography>
+
+                        <VariantDragAndDrop />
+                    </Stack>
+                )}
             </StyledSection>
 
             <StyledHeader>
