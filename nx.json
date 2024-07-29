@@ -28,6 +28,11 @@
             "outputs": ["{projectRoot}/dist"],
             "cache": true
         },
+        "webpack:build": {
+            "dependsOn": ["^build"],
+            "outputs": ["{projectRoot}/dist"],
+            "cache": true
+        },
         "lint": {
             "cache": true
         },

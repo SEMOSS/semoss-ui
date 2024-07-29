@@ -1,0 +1,7 @@
+{
+    "**/*(.json|.js|.jsx|.ts|.tsx)": [
+        "prettier --write --ignore-unknown",
+        "eslint --fix"
+    ],
+    "**/*!(.json|.js|.jsx|.ts|.tsx)": ["prettier --write --ignore-unknown"]
+}

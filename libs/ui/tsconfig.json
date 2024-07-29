@@ -1,0 +1,47 @@
+{
+    "compilerOptions": {
+        /* Lang and Env */
+        "lib": ["es6", "dom", "ES2015"],
+        "target": "es5",
+        "jsx": "react-jsx",
+
+        /* Modules */
+        "baseUrl": "src",
+        "rootDir": ".",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+
+        /* Emit */
+        "declaration": true,
+        "declarationDir": ".",
+        "emitDeclarationOnly": true,
+        "outDir": "dist",
+
+        /* Skip */
+        "skipLibCheck": true,
+        "allowJs": true,
+        "esModuleInterop": true,
+        "composite": true,
+
+        /* Lang and Env */
+
+        "paths": {
+            "@/*": ["*"]
+        }
+    },
+    "include": ["src"],
+    "exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.stories.tsx"],
+    "references": [
+        {
+            "path": "./tsconfig.lib.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
+        },
+        {
+            "path": "./tsconfig.storybook.json"
+        }
+    ]
+    // "extends": "../../../tsconfig.base.json"
+}
