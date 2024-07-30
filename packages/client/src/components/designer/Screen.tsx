@@ -54,16 +54,10 @@ const StyledContentInner = styled('div', {
         flex: 1,
         position: 'relative',
         minWidth: '100%',
-        height: '100%',
         cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
         // iframes should not get pointer events in design mode
         iframe: {
             pointerEvents: 'none!important',
-        },
-        // page scrolling is handled in the designer in design mode
-        '[data-page]': {
-            overflow: 'unset!important',
-            minHeight: '100%',
         },
     }),
 );

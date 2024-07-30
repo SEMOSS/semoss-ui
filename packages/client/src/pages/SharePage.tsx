@@ -11,9 +11,9 @@ import { AppType, AppMetadata } from '@/components/app';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
-    height: '100vh',
+    height: 'auto',
     width: '100vw',
-    overflow: 'hidden',
+    overflow: 'auto',
 }));
 
 export const SharePage = observer(() => {

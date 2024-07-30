@@ -42,13 +42,13 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 // position Set to relative so we can have a modal to attach to page block
                 position: 'relative',
                 width: '100%',
-                height: '100%',
                 background: '#FFFFFF',
-                overflow: 'scroll',
+                overflow: 'hidden',
+                height: 'auto',
+                minHeight: '100%',
                 ...data.style,
             }}
             {...attrs}
-            data-page
         >
             {/* TODO: Make Loading Screen relative to the Page */}
             <LoadingScreen>
