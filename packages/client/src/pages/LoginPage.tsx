@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { toJS } from 'mobx';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { THEME } from '@/constants';
@@ -239,7 +238,7 @@ interface TypeUserRegister {
  * LoginPage
  */
 export const LoginPage = observer(() => {
-    const { configStore, monolithStore } = useRootStore();
+    const { configStore } = useRootStore();
     const location = useLocation();
 
     const [forgotPassword, setForgotPassword] = useState(false);
@@ -284,21 +283,18 @@ export const LoginPage = observer(() => {
     });
 
     useEffect(() => {
-        getLoginsAvailable();
-    }, [configStore]);
+        setDefaultLoginType();
+    }, []);
 
     /**
-     * Find which types of logins are available to the user and set the initial type.
+     * set Initial Selected login type from config.
      */
-    const getLoginsAvailable = async () => {
-        const loginsAllowed = toJS(configStore.loginsAllowed);
-        setAvailableLogins(loginsAllowed);
-
-        if (loginsAllowed.includes('native')) {
+    const setDefaultLoginType = async () => {
+        if (configStore.loginsAllowed.includes('native')) {
             setLoginType('native');
-        } else if (loginsAllowed.includes('ldap')) {
+        } else if (configStore.loginsAllowed.includes('ldap')) {
             setLoginType('ldap');
-        } else if (loginsAllowed.includes('linOtp')) {
+        } else if (configStore.loginsAllowed.includes('linOtp')) {
             setLoginType('LinOTP');
         }
     };
@@ -530,7 +526,9 @@ export const LoginPage = observer(() => {
                             </div>
                             {!register && (
                                 <StyledButtonGroup variant="outlined">
-                                    {availableLogins.includes('native') && (
+                                    {configStore.loginsAllowed.includes(
+                                        'native',
+                                    ) && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
                                                 setLoginType('Native');
@@ -542,7 +540,9 @@ export const LoginPage = observer(() => {
                                             Native
                                         </StyledButtonGroupItem>
                                     )}
-                                    {availableLogins.includes('ldap') && (
+                                    {configStore.loginsAllowed.includes(
+                                        'ldap',
+                                    ) && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
                                                 setLoginType('LDAP');
@@ -554,7 +554,9 @@ export const LoginPage = observer(() => {
                                             LDAP
                                         </StyledButtonGroupItem>
                                     )}
-                                    {availableLogins.includes('linotp') && (
+                                    {configStore.loginsAllowed.includes(
+                                        'linotp',
+                                    ) && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
                                                 setLoginType('LinOTP');
