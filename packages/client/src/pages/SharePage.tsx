@@ -12,6 +12,7 @@ import { AppType, AppMetadata } from '@/components/app';
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
     height: 'auto',
+    minHeight: '100vh',
     width: '100vw',
     overflow: 'auto',
 }));
