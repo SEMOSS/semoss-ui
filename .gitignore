@@ -15,6 +15,9 @@ index.html.gz
 !packages/**/index.html
 !packages/**/index.html.gz
 
+# Ignore legacy playsheet branch
+packages/playsheet/
+
 # Project teams keep pushing their module into app.constants.js
 # will gitignore this now
 packages/legacy/app.constants.js

@@ -3,11 +3,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Stack, Typography, styled } from '@semoss/ui';
 import Error from '@/assets/img/Error.svg';
 
-const StyledContainer = styled(Stack)(() => ({
+const StyledContainer = styled('div')(({ theme }) => ({
     width: '100vw',
     height: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
     alignItems: 'center',
     justifyContent: 'center',
+}));
+
+const StyledImg = styled('img')(() => ({
+    height: '25%',
+    maxHeight: '200px',
 }));
 
 /**
@@ -39,7 +47,7 @@ export const ErrorPage = () => {
 
     return (
         <StyledContainer>
-            <img src={Error} height="50%" />
+            <StyledImg src={Error} />
             <Typography variant="h6">Something went wrong!</Typography>
             <Typography variant="body1">
                 We&apos;re working hard to fix it. If the issue persists, please

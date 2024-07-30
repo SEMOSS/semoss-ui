@@ -250,7 +250,7 @@ export const Screen = observer((props: ScreenProps) => {
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
+        <StyledContainer data-block="root" ref={rootRef} className="helllo man">
             {designer.selected && <SelectedMask />}
             {designer.hovered && <HoveredMask />}
             {designer.selected && !designer.drag.active && (
