@@ -3,6 +3,7 @@ import { styled, Button, Stack, Typography } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { FileUploadOutlined } from '@mui/icons-material';
 
+import { STATE_VERSION } from '@/stores';
 import {
     NewAppStep,
     AddAppModal,
@@ -228,6 +229,7 @@ export const NewAppPage = () => {
                                             setNewAppOptions({
                                                 type: 'blocks',
                                                 state: {
+                                                    version: STATE_VERSION,
                                                     dependencies: {},
                                                     variables: {},
                                                     queries: {},

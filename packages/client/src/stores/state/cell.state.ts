@@ -269,8 +269,8 @@ export class CellState<D extends CellDef = CellDef> {
             const raw = this.toPixel();
 
             // Gets rid of braces and evaluate parameters in query
-            const filled = this._state.flattenVar(raw);
-            // Before: const filled = this._state.flattenVariable(raw);
+            // const filled = this._state.flattenVar(raw);
+            const filled = this._state.flattenVariable(raw);
 
             // clear the previous messages + operation + output
             this._store.messages = [];

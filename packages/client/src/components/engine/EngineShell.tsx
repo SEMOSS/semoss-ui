@@ -140,8 +140,6 @@ export const EngineShell = (props: EngineShellProps) => {
         return <LoadingScreen.Trigger description="Opening Engine" />;
     }
 
-    console.log('metavals', metaVals);
-
     return (
         <Page
             header={

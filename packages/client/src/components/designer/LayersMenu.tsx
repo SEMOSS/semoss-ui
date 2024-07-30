@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Button,
     Divider,
     Icon,
     IconButton,
@@ -16,9 +17,12 @@ import {
     ChevronRight,
     ContentCopy,
     ExpandMore,
+    LibraryAdd,
     Search,
     SearchOff,
 } from '@mui/icons-material/';
+import { INPUT_BLOCK_TYPES } from '@/stores';
+import { AddVariableModal } from '../notebook/AddVariableModal';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -119,6 +123,8 @@ export const LayersMenu = observer((): JSX.Element => {
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
+    const [variableModal, setVariableModal] = useState('');
+
     // get the active page
     const activePage = state.blocks[designer.rendered];
 
@@ -130,6 +136,9 @@ export const LayersMenu = observer((): JSX.Element => {
     const renderBlock = (id: string) => {
         // get the block
         const block = state.blocks[id];
+
+        const variableName = state.getAlias(id);
+        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
 
         // render each of hte c
         if (!block) {
@@ -167,22 +176,38 @@ export const LayersMenu = observer((): JSX.Element => {
                                     block.widget.slice(1)}
                             </StyledLabelTitle>
                             <StyledLabelSubtitleText>
-                                {block.id}
+                                {variableName ? variableName : block.id}
                             </StyledLabelSubtitleText>
                         </StyledLabelContainer>
-                        <StyledTreeItemIconButton
-                            aria-label="copy"
-                            title={`Copy ID`}
-                            color="default"
-                            size="small"
-                            onClick={(e: React.SyntheticEvent) => {
-                                e.stopPropagation();
-                                copy(block.id);
-                            }}
-                            data-onhover
-                        >
-                            <ContentCopy fontSize="small" />
-                        </StyledTreeItemIconButton>
+                        {variableName ? (
+                            <StyledTreeItemIconButton
+                                aria-label="copy"
+                                title={`Copy variable`}
+                                color="default"
+                                size="small"
+                                onClick={(e: React.SyntheticEvent) => {
+                                    e.stopPropagation();
+                                    copy(`{{${variableName}}}`);
+                                }}
+                                data-onhover
+                            >
+                                <ContentCopy fontSize="small" />
+                            </StyledTreeItemIconButton>
+                        ) : canVariabilize ? (
+                            <StyledTreeItemIconButton
+                                aria-label="add"
+                                title={`Add variable`}
+                                size="small"
+                                color={'primary'}
+                                onClick={(e: React.SyntheticEvent) => {
+                                    e.stopPropagation();
+                                    setVariableModal(block.id);
+                                }}
+                                data-onhover
+                            >
+                                <LibraryAdd fontSize="small" />
+                            </StyledTreeItemIconButton>
+                        ) : null}
                     </StyledTreeItemLabel>
                 }
                 onClick={(e: React.SyntheticEvent) => {
@@ -308,6 +333,14 @@ export const LayersMenu = observer((): JSX.Element => {
                     )}
                 </TreeView>
             </StyledMenuScroll>
+            {variableModal ? (
+                <AddVariableModal
+                    open={true}
+                    to={variableModal}
+                    type={'block'}
+                    onClose={() => setVariableModal('')}
+                />
+            ) : null}
         </StyledMenu>
     );
 });

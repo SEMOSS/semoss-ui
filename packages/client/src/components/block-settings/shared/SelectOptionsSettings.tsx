@@ -236,28 +236,6 @@ export const SelectOptionsSettings = observer(
                                     onChange={(_, newValue) => {
                                         // sync the data on change
                                         onChange(newValue as string, d.path);
-
-                                        // I need to update the Select Block Value
-                                        // if (d.updateDataField) {
-                                        //     const v = JSON.parse(
-                                        //         parsedData.value as string,
-                                        //     );
-                                        //     const updateValue =
-                                        //         v[d.updateDataField];
-
-                                        //     if (parsedData.options && v) {
-                                        //         setData(
-                                        //             'value' as Paths<
-                                        //                 Block<D>['data'],
-                                        //                 4
-                                        //             >,
-                                        //             updateValue as PathValue<
-                                        //                 D['data'],
-                                        //                 typeof path
-                                        //             >,
-                                        //         );
-                                        //     }
-                                        // }
                                     }}
                                     renderInput={(params) => (
                                         <TextField

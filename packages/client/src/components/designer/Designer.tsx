@@ -1,12 +1,22 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Paper, Tooltip } from '@semoss/ui';
-import { BarChartRounded, DashboardRounded, Layers } from '@mui/icons-material';
+import {
+    BarChartRounded,
+    Code,
+    DashboardRounded,
+    Layers,
+} from '@mui/icons-material';
 import { useMemo, useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
+import {
+    ErrorBoundary,
+    Sidebar,
+    SidebarItem,
+    SidebarText,
+} from '@/components/common';
 import { Renderer } from '@/components/blocks';
 
 import { AddBlocksMenu } from './AddBlocksMenu';
@@ -14,6 +24,7 @@ import { SelectedMenu } from './SelectedMenu';
 import { LayersMenu } from './LayersMenu';
 import { Screen } from './Screen';
 import { DEFAULT_MENU, VISUALIZATION_MENU } from './designer.constants';
+import { NotebookVariablesMenu } from '../notebook/NotebookVariablesMenu';
 
 const StyledLeftMenu = styled('div', {
     shouldForwardProp: (prop) => prop !== 'width',
@@ -89,7 +100,7 @@ export const Designer = observer((): JSX.Element => {
 
     // view
     const [view, setView] = useState<
-        'layers' | 'blocks' | 'visualization' | ''
+        'layers' | 'blocks' | 'visualization' | 'variables' | ''
     >('');
 
     // menu resize
@@ -221,6 +232,15 @@ export const Designer = observer((): JSX.Element => {
                             </Tooltip>
                             <SidebarText>Viz</SidebarText>
                         </SidebarItem>
+                        <SidebarItem
+                            selected={view === 'variables'}
+                            onClick={() => updateView('variables')}
+                        >
+                            <Tooltip title={'View Variables'} placement="right">
+                                <Code color="inherit" />
+                            </Tooltip>
+                            <SidebarText>Variables</SidebarText>
+                        </SidebarItem>
                     </Sidebar>
                     {view ? (
                         <StyledSidebarContent elevation={7}>
@@ -238,6 +258,10 @@ export const Designer = observer((): JSX.Element => {
                                         title={'Add Visualization'}
                                         items={VISUALIZATION_MENU}
                                     />
+                                ) : null}
+
+                                {view === 'variables' ? (
+                                    <NotebookVariablesMenu />
                                 ) : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
@@ -269,7 +293,9 @@ export const Designer = observer((): JSX.Element => {
                     ) : null}
                 </StyledLeftMenu>
                 <Screen>
-                    <Renderer id={designer.rendered} />
+                    <ErrorBoundary title={'Something went wrong!'}>
+                        <Renderer id={designer.rendered} />
+                    </ErrorBoundary>
                 </Screen>
                 <StyledRightMenu width={rightMenuResize.width} elevation={7}>
                     <StyledDragger
