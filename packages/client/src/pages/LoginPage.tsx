@@ -242,7 +242,6 @@ export const LoginPage = observer(() => {
     const location = useLocation();
 
     const [forgotPassword, setForgotPassword] = useState(false);
-    const [availableLogins, setAvailableLogins] = useState<string[]>([]);
     const [loginType, setLoginType] = useState<string>('');
     const [register, setRegister] = useState(false);
     const [showOTPCodeField, setShowOTPCodeField] = useState(false);
