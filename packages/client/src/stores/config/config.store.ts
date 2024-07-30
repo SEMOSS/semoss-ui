@@ -167,10 +167,14 @@ export class ConfigStore {
                     this._store.user.loggedIn = true;
                 }
 
-                //save loginsALlowed
+                //save loginsAllowed
+                const loginsAllowed: string[] = [];
                 for (const type in data.loginsAllowed) {
-                    this._store.config.loginsAllowed.push(type);
+                    if (data.loginsAllowed[type] === true) {
+                        loginsAllowed.push(type);
+                    }
                 }
+                this._store.config.loginsAllowed = loginsAllowed;
 
                 // save the providers
                 this._store.config.providers = [];
@@ -182,7 +186,8 @@ export class ConfigStore {
 
                 // save the other config data
                 for (const key in data) {
-                    this._store.config[key] = data[key];
+                    if (key !== 'providers' && key !== 'loginsAllowed')
+                        this._store.config[key] = data[key];
                 }
 
                 // sort the keys
