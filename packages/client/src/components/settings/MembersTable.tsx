@@ -418,7 +418,6 @@ export const MembersTable = (props: MembersTableProps) => {
 
         memberSearchRef.current?.focus();
         return () => {
-            console.log('Cleaning members table');
             setValue('MEMBERS', []);
             setSelectedMembers([]);
         };
@@ -949,9 +948,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 ]
                                                             }
                                                             onChange={(e) => {
-                                                                console.log(
-                                                                    'Hit Update Permission fn and fix in state',
-                                                                );
                                                                 updateSelectedUsers(
                                                                     [user],
                                                                     permissionMapper[

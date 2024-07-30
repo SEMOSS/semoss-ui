@@ -5201,6 +5201,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'EMBEDDINGS',
                         label: 'Embeddings',
                         defaultValue: null,
@@ -5533,6 +5553,26 @@ export const CONNECTION_OPTIONS = {
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'EMBEDDINGS',
                         label: 'Embeddings',
                         defaultValue: null,
@@ -5741,6 +5781,26 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'EMBEDDINGS',
                         label: 'Embeddings',
                         defaultValue: null,
@@ -5889,6 +5949,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -6048,6 +6128,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '1',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },

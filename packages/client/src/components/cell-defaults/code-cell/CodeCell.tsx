@@ -306,18 +306,21 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
             const suggestions = [];
-            Object.values(state.variables).forEach((variable: Variable) => {
+            Object.entries(state.variables).forEach((keyValue) => {
+                const id = keyValue[0];
+                const variable = keyValue[1] as Variable;
+
                 suggestions.push({
                     label: {
-                        label: `{{${variable.alias}}}`,
+                        label: `{{${id}}}`,
                         description: `${state.getVariable(
                             variable.to,
                             variable.type,
                         )}`,
                     },
                     kind: monaco.languages.CompletionItemKind.Variable,
-                    documentation: `This returns the value of ${variable.alias}, which is a ${variable.type}.  Feel free to change reference value in the variables panel on the left.`,
-                    insertText: `{{${variable.alias}}}`,
+                    documentation: `This returns the value of ${id}, which is a ${variable.type}.  Feel free to change reference value in the variables panel on the left.`,
+                    insertText: `{{${id}}}`,
                     range: range,
                 });
             });
