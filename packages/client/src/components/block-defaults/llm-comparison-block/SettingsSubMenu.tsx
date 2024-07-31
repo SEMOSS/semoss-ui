@@ -196,16 +196,7 @@ export const SettingsSubMenu = () => {
                     )}
                 />
 
-                {orderType === 'custom' && (
-                    <Stack direction="row" gap={1}>
-                        <Typography variant="caption">
-                            Drag items into the display order (1 = first
-                            response generated).
-                        </Typography>
-
-                        <VariantDragAndDrop />
-                    </Stack>
-                )}
+                {orderType === 'custom' && <VariantDragAndDrop />}
             </StyledSection>
 
             <StyledHeader>
