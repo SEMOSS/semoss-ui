@@ -123,6 +123,7 @@ export const LlmCard = (props: LlmCardProps) => {
     const handleOpenLlmEditor = () => {
         setValue('editorVariantIndex', variantIndex);
         setValue('editorModelIndex', modelIndex);
+        setValue('editorModel', llm);
         setValue('designerView', 'modelEdit');
     };
 
