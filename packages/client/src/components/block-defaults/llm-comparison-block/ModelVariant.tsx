@@ -38,6 +38,7 @@ const StyledVariantBox = styled('div', {
 
     ...(isVertical && {
         flexDirection: 'column',
+        alignItems: 'stretch',
     }),
 }));
 
@@ -60,21 +61,10 @@ interface ModelVariantProps {
 
     /** sets the orientation for how the models are displayed */
     orientation?: 'column' | 'row';
-
-    /** Props passed to each Llm Card */
-    cardProps?: {
-        size: 'small' | 'medium';
-    };
 }
 
 export const ModelVariant = (props: ModelVariantProps) => {
-    const {
-        index,
-        variant,
-        isDefault = false,
-        orientation = 'column',
-        cardProps,
-    } = props;
+    const { index, variant, isDefault = false, orientation = 'column' } = props;
     const [hovered, setHovered] = useState(false);
     const { setValue, getValues } = useLLMComparison();
 
@@ -109,7 +99,7 @@ export const ModelVariant = (props: ModelVariantProps) => {
             onBlur={() => setHovered(false)}
         >
             <StyledVariantHeader>
-                <Stack direction="row" alignContent="center">
+                <Stack direction="row" alignItems="center">
                     <IconButton onClick={handleToggleSelected}>
                         {variant.selected ? (
                             <PushPinRounded />
@@ -139,7 +129,6 @@ export const ModelVariant = (props: ModelVariantProps) => {
                         variantIndex={index}
                         modelIndex={mIdx}
                         isDefault={isDefault}
-                        size={cardProps?.size ? cardProps.size : 'medium'}
                         isVariantHovered={hovered}
                     />
                 ))}

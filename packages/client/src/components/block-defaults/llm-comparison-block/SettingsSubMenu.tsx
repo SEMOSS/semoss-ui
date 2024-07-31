@@ -23,6 +23,7 @@ const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     paddingLeft: theme.spacing(2),
+    textTransform: 'capitalize',
 }));
 
 const StyledSection = styled(Stack)(({ theme }) => ({
@@ -41,8 +42,6 @@ export const SettingsSubMenu = () => {
     const orderType = watch('orderType');
     const defaultVariant = watch('defaultVariant');
     const variants = watch('variants');
-
-    console.log('render', orderType);
 
     useEffect(() => {
         setVariantsState(variants);
@@ -102,7 +101,7 @@ export const SettingsSubMenu = () => {
     return (
         <StyledSettingsSubMenu>
             <StyledHeader>
-                <Typography variant="subtitle1" fontWeight="medium">
+                <Typography variant="h6" fontWeight="bold">
                     Variant Response
                 </Typography>
             </StyledHeader>
@@ -200,7 +199,7 @@ export const SettingsSubMenu = () => {
             </StyledSection>
 
             <StyledHeader>
-                <Typography variant="subtitle1" fontWeight="medium">
+                <Typography variant="h6" fontWeight="bold">
                     Traffic Allocation
                 </Typography>
             </StyledHeader>

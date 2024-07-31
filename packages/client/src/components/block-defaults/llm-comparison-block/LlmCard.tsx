@@ -12,25 +12,13 @@ import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';
 import ImageSkeleton from '@/assets/img/ImageSkeleton.png';
 
-const StyledCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'disableHover' && prop !== 'size',
-})<{ disableHover?: boolean; size: string }>(
-    ({ theme, disableHover, size }) => ({
-        padding: theme.spacing(2),
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '16px',
-
-        ...(size === 'small' && {
-            width: '288px',
-        }),
-
-        ...(size === 'medium' && {
-            width: '362px',
-        }),
-    }),
-);
+const StyledCard = styled(Card)(({ theme }) => ({
+    padding: theme.spacing(2),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '16px',
+}));
 
 const StyledCardHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -91,22 +79,11 @@ export interface LlmCardProps {
      * Used to show/hide card's actions by noting if the parent variant is hovered/focused
      */
     isVariantHovered: boolean;
-
-    /**
-     * Sets the width of the Card
-     */
-    size?: 'small' | 'medium';
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const {
-        llm,
-        variantIndex,
-        modelIndex,
-        isDefault,
-        isVariantHovered,
-        size = 'medium',
-    } = props;
+    const { llm, variantIndex, modelIndex, isDefault, isVariantHovered } =
+        props;
     const { setValue } = useLLMComparison();
 
     const {
@@ -129,9 +106,9 @@ export const LlmCard = (props: LlmCardProps) => {
 
     return (
         <>
-            <StyledCard size={size}>
+            <StyledCard>
                 <StyledCardHeader>
-                    <Stack direction={'row'} gap={2}>
+                    <Stack direction={'row'} gap={2} alignItems="center">
                         <StyledCardImg
                             src="img"
                             image={
@@ -144,10 +121,10 @@ export const LlmCard = (props: LlmCardProps) => {
                             }
                         />
                         <Stack direction="column">
-                            <Typography variant={'caption'}>
+                            <Typography variant="caption">
                                 {alias || 'Undefined Variable'}
                             </Typography>
-                            <StyledTypography variant={'body1'}>
+                            <StyledTypography variant="body1">
                                 {database_name || 'Model'}
                             </StyledTypography>
                         </Stack>
