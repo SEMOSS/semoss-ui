@@ -326,14 +326,14 @@ export const DataImportFormModal = observer(
         query?: QueryState;
         previousCellId?: string;
         editMode?: boolean;
-        isDataImportModalOpen?: boolean;
+        // isDataImportModalOpen?: boolean;
         setIsDataImportModalOpen?;
         cell?;
     }): JSX.Element => {
         const {
             query,
             previousCellId,
-            isDataImportModalOpen,
+            // isDataImportModalOpen,
             setIsDataImportModalOpen,
             editMode,
             cell,
@@ -371,43 +371,43 @@ export const DataImportFormModal = observer(
 
         const [userDatabases, setUserDatabases] = useState(null);
         const [queryElementCounter, setQueryElementCounter] = useState(0);
-        const [databaseTableRawHeaders, setDatabaseTableRawHeaders] = useState(
-            [],
-        );
+        // const [databaseTableRawHeaders, setDatabaseTableRawHeaders] = useState(
+        //     [],
+        // );
         const [importModalPixelWidth, setImportModalPixelWidth] =
             useState<string>(IMPORT_MODAL_WIDTHS.small);
-        const [hiddenColumnIdsSet, setHiddenColumnIdsSet] = useState(new Set());
+        // const [hiddenColumnIdsSet, setHiddenColumnIdsSet] = useState(new Set());
         const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
         const [selectedDatabaseId, setSelectedDatabaseId] = useState(
             cell ? cell.parameters.databaseId : null,
         );
-        const [tableColumnsObject, setTableColumnsObject] = useState({});
+        // const [tableColumnsObject, setTableColumnsObject] = useState({});
         const [databaseTableRows, setDatabaseTableRows] = useState([]);
         const [tableNames, setTableNames] = useState<string[]>([]);
-        const [selectedTable, setSelectedTable] = useState(null);
-        const importDataSQLStringRef = useRef<string>('');
+        // const [selectedTable, setSelectedTable] = useState(null);
+        // const importDataSQLStringRef = useRef<string>('');
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
         const [isDatabaseLoading, setIsDatabaseLoading] =
             useState<boolean>(false);
         const [showPreview, setShowTablePreview] = useState<boolean>(false);
         const [showEditColumns, setShowEditColumns] = useState<boolean>(true); // ### change back to false
-        const [checkAllColumns, setCheckAllColumns] = useState<boolean>(true);
-        const { configStore, monolithStore } = useRootStore();
+        // const [checkAllColumns, setCheckAllColumns] = useState<boolean>(true);
+        const { monolithStore } = useRootStore();
 
         // // State Vars for Old useForm --- all uneeded / deletable
-        const [selectedLeftTable, setSelectedLeftTable] =
-            useState<string>(null);
-        const [selectedRightTable, setSelectedRightTable] =
-            useState<string>(null);
-        const [selectedRightKey, setSelectedRightKey] = useState<string>(null);
-        const [columnDataTypesDict, setColumnDataTypesDict] = useState(null);
-        const [selectedLeftKey, setSelectedLeftKey] = useState<string>(null);
+        // const [selectedLeftTable, setSelectedLeftTable] =
+        //     useState<string>(null);
+        // const [selectedRightTable, setSelectedRightTable] =
+        //     useState<string>(null);
+        // const [selectedRightKey, setSelectedRightKey] = useState<string>(null);
+        // const [columnDataTypesDict, setColumnDataTypesDict] = useState(null);
+        // const [selectedLeftKey, setSelectedLeftKey] = useState<string>(null);
         const [tableEdgesObject, setTableEdgesObject] = useState(null);
 
         // // State Vars for new useForm Structure
         // // checkedColumnsSet
-        const [checkedColumnsSet, setCheckedColumnsSet] = useState(new Set());
-        const [hiddenTablesSet, setHiddenTablesSet] = useState({});
+        // const [checkedColumnsSet, setCheckedColumnsSet] = useState(new Set());
+        // const [hiddenTablesSet, setHiddenTablesSet] = useState({});
         const [aliasesCountObj, setAliasesCountObj] = useState({}); // { emailAlias: 1, phoneAlias: 2 }
         const aliasesCountObjRef = useRef({}); // { emailAlias: 1, phoneAlias: 2 }
         const [tableEdges, setTableEdges] = useState({}); //
@@ -491,11 +491,12 @@ export const DataImportFormModal = observer(
         }, []);
 
         useEffect(() => {
-            setSelectedLeftKey(null);
-            setSelectedRightKey(null);
+            // setSelectedLeftKey(null);
+            // setSelectedRightKey(null);
             removeEditableColumns();
             removeStack();
-        }, [selectedDatabaseId, selectedTable]);
+        }, [selectedDatabaseId]);
+        // }, [selectedDatabaseId, selectedTable]);
 
         useEffect(() => {
             removeEditableColumns();
@@ -516,19 +517,19 @@ export const DataImportFormModal = observer(
             }
         }, [newTableFields]);
 
-        useEffect(() => {
-            removeEditableColumns();
-            tableColumnsObject[selectedTable]?.forEach((tableObject, idx) => {
-                appendEditableColumns({
-                    id: idx,
-                    tableName: tableObject.tableName,
-                    columnName: tableObject.columnName,
-                    userAlias: tableObject.columnName,
-                    columnType: tableObject.columnType,
-                    checked: true,
-                });
-            });
-        }, [selectedTable]);
+        // useEffect(() => {
+        //     removeEditableColumns();
+        //     tableColumnsObject[selectedTable]?.forEach((tableObject, idx) => {
+        //         appendEditableColumns({
+        //             id: idx,
+        //             tableName: tableObject.tableName,
+        //             columnName: tableObject.columnName,
+        //             userAlias: tableObject.columnName,
+        //             columnType: tableObject.columnType,
+        //             checked: true,
+        //         });
+        //     });
+        // }, [selectedTable]);
 
         useEffect(() => {
             if (getDatabases.status !== 'SUCCESS') {
@@ -557,8 +558,52 @@ export const DataImportFormModal = observer(
 
         // endregion
 
+        const getSelectedColumnNames = () => {
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+
+            watchedTables.forEach((tableObject) => {
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                    }
+                });
+            });
+
+            return pixelColumnNames;
+        };
+
+        const getColumnAliases = () => {
+            const pixelTables = new Set();
+            const pixelColumnAliases = [];
+
+            watchedTables.forEach((tableObject) => {
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            return pixelColumnAliases;
+        };
+
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
+            console.log({
+                previousCellId,
+                widget,
+                DefaultCells,
+                // "DefaultCells[widget].parameters": DefaultCells[widget].parameters,
+            });
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
@@ -572,19 +617,24 @@ export const DataImportFormModal = observer(
                         ...DefaultCells[widget].parameters,
                         frameVariableName: `FRAME_${newCellId}`,
                         databaseId: selectedDatabaseId,
-                        selectQuery: pixelStringRefPart1.current,
-                        foo: 'moo',
+                        // selectQuery: importDataSQLStringRef.current, // construct query based on useForm inputs
+                        // selectQuery: pixelStringRef.current, // construct query based on useForm inputs
+                        selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
                         joins: joinElements,
                         tableNames: Array.from(selectedTableNames),
+                        selectedColumns: getSelectedColumnNames(),
+                        columnAliases: getColumnAliases(),
+                        rootTable: rootTable,
+                        // filters: filters,
                     };
                 }
 
-                if (widget === QueryImportCellConfig.widget) {
-                    config.parameters = {
-                        ...DefaultCells[widget].parameters,
-                        frameVariableName: `FRAME_${newCellId}`,
-                    };
-                }
+                // if (widget === QueryImportCellConfig.widget) {
+                //     config.parameters = {
+                //         ...DefaultCells[widget].parameters,
+                //         frameVariableName: `FRAME_${newCellId}`,
+                //     };
+                // }
 
                 if (
                     previousCellId &&
@@ -617,64 +667,64 @@ export const DataImportFormModal = observer(
         };
 
         /** Construct a Raw SQL String for Data Import */
-        const constructSQLString = ({ submitData }) => {
-            let newSQLString = 'SELECT ';
+        // const constructSQLString = ({ submitData }) => {
+        //     let newSQLString = 'SELECT ';
 
-            newSQLString += submitData.columns
-                .filter((ele) => ele.checked)
-                .map((colObj) => {
-                    if (colObj.columnName === colObj.userAlias) {
-                        return colObj.columnName;
-                    } else {
-                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
-                    }
-                })
-                .join(', ');
+        //     newSQLString += submitData.columns
+        //         .filter((ele) => ele.checked)
+        //         .map((colObj) => {
+        //             if (colObj.columnName === colObj.userAlias) {
+        //                 return colObj.columnName;
+        //             } else {
+        //                 return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+        //             }
+        //         })
+        //         .join(', ');
 
-            newSQLString += ` FROM ${submitData.tableSelect}`;
-            newSQLString += ';';
+        //     newSQLString += ` FROM ${submitData.tableSelect}`;
+        //     newSQLString += ';';
 
-            if (
-                selectedLeftTable &&
-                selectedRightTable &&
-                selectedLeftKey &&
-                selectedRightKey
-            ) {
-                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
-            }
+        //     if (
+        //         selectedLeftTable &&
+        //         selectedRightTable &&
+        //         selectedLeftKey &&
+        //         selectedRightKey
+        //     ) {
+        //         newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+        //     }
 
-            importDataSQLStringRef.current = newSQLString;
-        };
+        //     importDataSQLStringRef.current = newSQLString;
+        // };
 
         /** Construct SQL Pixel for Data Import */
-        const constructDataBasePixel = ({ submitData }) => {
-            let newSQLString = 'SELECT ';
+        // const constructDataBasePixel = ({ submitData }) => {
+        //     let newSQLString = 'SELECT ';
 
-            newSQLString += submitData.columns
-                .filter((ele) => ele.checked)
-                .map((colObj) => {
-                    if (colObj.columnName === colObj.userAlias) {
-                        return colObj.columnName;
-                    } else {
-                        return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
-                    }
-                })
-                .join(', ');
+        //     newSQLString += submitData.columns
+        //         .filter((ele) => ele.checked)
+        //         .map((colObj) => {
+        //             if (colObj.columnName === colObj.userAlias) {
+        //                 return colObj.columnName;
+        //             } else {
+        //                 return `${colObj.columnName} AS \"${colObj.userAlias}\"`;
+        //             }
+        //         })
+        //         .join(', ');
 
-            newSQLString += ` FROM ${submitData.tableSelect}`;
-            newSQLString += ';';
+        //     newSQLString += ` FROM ${submitData.tableSelect}`;
+        //     newSQLString += ';';
 
-            if (
-                selectedLeftTable &&
-                selectedRightTable &&
-                selectedLeftKey &&
-                selectedRightKey
-            ) {
-                newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
-            }
+        //     if (
+        //         selectedLeftTable &&
+        //         selectedRightTable &&
+        //         selectedLeftKey &&
+        //         selectedRightKey
+        //     ) {
+        //         newSQLString = `SELECT ${'*'} FROM ${selectedLeftTable} INNER JOIN ${selectedRightTable} ON ${selectedLeftTable}.${selectedLeftKey}=${selectedRightTable}.${selectedRightKey};`;
+        //     }
 
-            importDataSQLStringRef.current = newSQLString;
-        };
+        //     importDataSQLStringRef.current = newSQLString;
+        // };
 
         /** Add all the columns from a Table */
         const addAllTableColumnsHandler = (event) => {
@@ -747,6 +797,16 @@ export const DataImportFormModal = observer(
                     value: pixelStringRefPart1.current,
                 },
             });
+
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: 'parameters.databaseId',
+                    value: selectedDatabaseId,
+                },
+            });
         };
 
         /** New Submit for Import Data --- empty */
@@ -755,7 +815,6 @@ export const DataImportFormModal = observer(
                 retrievePreviewData();
                 updateSubmitDispatches();
             } else {
-                constructSQLString({ submitData: data });
                 retrievePreviewData();
                 appendCell('data-import');
             }
@@ -766,17 +825,17 @@ export const DataImportFormModal = observer(
 
         /** Close and Reset Import Data Form Modal */
         const closeImportModalHandler = () => {
-            setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.small);
-            setHiddenColumnIdsSet(new Set());
+            // setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.small);
+            // setHiddenColumnIdsSet(new Set());
             setIsDataImportModalOpen(false);
-            setDatabaseTableHeaders([]);
-            setSelectedDatabaseId(null);
-            setShowTablePreview(false);
-            setTableColumnsObject({});
-            setDatabaseTableRows([]);
-            setSelectedTable(null);
-            setTableNames([]);
-            reset();
+            // setDatabaseTableHeaders([]);
+            // setSelectedDatabaseId(null);
+            // setShowTablePreview(false);
+            // setTableColumnsObject({});
+            // setDatabaseTableRows([]);
+            // setSelectedTable(null);
+            // setTableNames([]);
+            // reset();
         };
 
         /** Get Database Information for Data Import Modal */
@@ -835,29 +894,31 @@ export const DataImportFormModal = observer(
                         {},
                     );
 
-                    const newTableColumnsObject: Table[] = Object.keys(
-                        tableColumnsObject,
-                    ).map((tableName, tableIdx) => ({
-                        id: tableIdx,
-                        name: tableName,
-                        columns: tableColumnsObject[tableName].map(
-                            (colObj, colIdx) => ({
-                                id: colIdx,
-                                tableName: tableName,
-                                columnName: colObj.columnName,
-                                columnType: colObj.columnType,
-                                userAlias: colObj.userAlias,
-                                checked: false,
-                            }),
-                        ),
-                    }));
+                    const newTableColumnsObject: Table[] = tableColumnsObject
+                        ? Object.keys(tableColumnsObject).map(
+                              (tableName, tableIdx) => ({
+                                  id: tableIdx,
+                                  name: tableName,
+                                  columns: tableColumnsObject[tableName].map(
+                                      (colObj, colIdx) => ({
+                                          id: colIdx,
+                                          tableName: tableName,
+                                          columnName: colObj.columnName,
+                                          columnType: colObj.columnType,
+                                          userAlias: colObj.userAlias,
+                                          checked: false,
+                                      }),
+                                  ),
+                              }),
+                          )
+                        : [];
 
                     newReset({
                         databaseSelect: databaseId,
                         tables: newTableColumnsObject,
                     });
                 } else {
-                    console.error('Error retrieving database tables');
+                    console.error('Error retrieving database tables (920)');
                 }
 
                 if (isResponseTableEdgesStructureGood) {
@@ -926,16 +987,44 @@ export const DataImportFormModal = observer(
                 setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.large);
 
                 setTableNames(newTableNames);
-                if (editMode) {
+
+                // shown tables filtered only on init load of edit mode
+                if (editMode && !isInitLoadComplete) {
                     const newEdges = [
                         rootTable,
-                        ...Object.keys(newTableEdges[rootTable]),
+                        ...(newTableEdges[rootTable]
+                            ? Object.keys(newTableEdges[rootTable])
+                            : []),
                     ];
                     setShownTables(new Set(newEdges));
                 } else {
                     setShownTables(new Set(newTableNames));
                 }
+
+                if (!editMode || isInitLoadComplete) {
+                    setAliasesCountObj({});
+                    aliasesCountObjRef.current = {};
+                    removeJoinElement();
+                    setJoinsSet(new Set());
+                }
             });
+
+            // TODO bugs when changing database, temporarily diabled
+            // correctly resetting joins in UI
+            // not in cell pixel though
+            // run cell broken
+            // preview crashing app
+
+            // resetting aliases and joins needed for new and edit modes
+            // moving these to databaseId useEffect
+            setAliasesCountObj({});
+            aliasesCountObjRef.current = {};
+            removeJoinElement();
+            // updateQueryPixelString()
+            // retrievePreviewData();
+            // newReset()
+            // reset()
+
             setIsInitLoadComplete(true);
         };
 
@@ -1031,6 +1120,87 @@ export const DataImportFormModal = observer(
             setSelectedTableNames(pixelTables);
         };
 
+        const updateQueryPixelString = async () => {
+            // setIsDatabaseLoading(true);
+
+            const databaseId = selectedDatabaseId;
+            const pixelTables = new Set();
+            const pixelColumnNames = [];
+            const pixelColumnAliases = [];
+            const pixelJoins = [];
+
+            watchedTables.forEach((tableObject) => {
+                const currTableName = tableObject.name;
+                const currTableColumns = tableObject.columns;
+
+                currTableColumns.forEach((columnObject) => {
+                    if (columnObject.checked) {
+                        pixelTables.add(columnObject.tableName);
+                        pixelColumnNames.push(
+                            `${columnObject.tableName}__${columnObject.columnName}`,
+                        );
+                        pixelColumnAliases.push(columnObject.userAlias);
+                    }
+                });
+            });
+
+            Array.from(joinsSet).forEach((joinEle: string) => {
+                const splitJoinsString = joinEle.split(':');
+                pixelJoins.push(
+                    `( ${splitJoinsString[0]} , inner.join , ${splitJoinsString[1]} )`,
+                );
+            });
+
+            let pixelStringPart1 = `Database ( database = [ \"${databaseId}\" ] )`;
+            pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(' , ')} )`;
+            pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(' , ')} ] )`;
+            if (pixelJoins.length > 0) {
+                pixelStringPart1 += ` | Join ( ${pixelJoins.join(' , ')} ) `;
+            }
+            pixelStringPart1 += ` | Distinct ( false ) | Limit ( 20 )`;
+
+            // const pixelStringPart2 = ` | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] )`;
+            // const pixelStringPart3 = ` ; META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+
+            const combinedJoinString =
+                pixelJoins.length > 0
+                    ? `| Join ( ${pixelJoins.join(' , ')} ) `
+                    : '';
+
+            const reactorPixel = `Database ( database = [ \"${databaseId}\" ] ) | Select ( ${pixelColumnNames.join(
+                ' , ',
+            )} ) .as ( [ ${pixelColumnAliases.join(
+                ' , ',
+            )} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+
+            setPixelString(reactorPixel);
+            pixelStringRef.current = reactorPixel;
+
+            pixelStringRefPart1.current = pixelStringPart1 + ';';
+
+            // return pixelStringRefPart1.current
+
+            // await monolithStore.runQuery(reactorPixel).then((response) => {
+            //     const type = response.pixelReturn[0]?.operationType;
+            //     const tableHeadersData =
+            //         response.pixelReturn[1]?.output?.data?.headers;
+            //     const tableRawHeadersData =
+            //         response.pixelReturn[1]?.output?.data?.rawHeaders;
+            //     const tableRowsData =
+            //         response.pixelReturn[1]?.output?.data?.values;
+
+            //     setDatabaseTableHeaders(tableHeadersData);
+            //     // setDatabaseTableRawHeaders(tableRawHeadersData);
+            //     setDatabaseTableRows(tableRowsData);
+
+            //     if (type.indexOf('ERROR') != -1) {
+            //         console.error('Error retrieving database tables');
+            //     }
+
+            //     setIsDatabaseLoading(false);
+            // });
+        };
+
         const retrievePreviewData = async () => {
             setIsDatabaseLoading(true);
 
@@ -1099,11 +1269,11 @@ export const DataImportFormModal = observer(
                     response.pixelReturn[1]?.output?.data?.values;
 
                 setDatabaseTableHeaders(tableHeadersData);
-                setDatabaseTableRawHeaders(tableRawHeadersData);
+                // setDatabaseTableRawHeaders(tableRawHeadersData);
                 setDatabaseTableRows(tableRowsData);
 
                 if (type.indexOf('ERROR') != -1) {
-                    console.error('Error retrieving database tables');
+                    console.error('Error retrieving database tables (1270)');
                 }
 
                 setIsDatabaseLoading(false);
@@ -1330,7 +1500,8 @@ export const DataImportFormModal = observer(
         };
 
         return (
-            <Modal open={isDataImportModalOpen} maxWidth="lg">
+            // <Modal open={isDataImportModalOpen} maxWidth="lg">
+            <Modal open={true} maxWidth="lg">
                 <Modal.Content sx={{ width: importModalPixelWidth }}>
                     <form onSubmit={newHandleSubmit(onImportDataSubmit)}>
                         <StyledModalTitleWrapper>
@@ -1757,13 +1928,16 @@ export const DataImportFormModal = observer(
                                                 <Table.Body>
                                                     <Table.Row>
                                                         {databaseTableHeaders
-                                                            .filter(
-                                                                (v, colIdx) => {
-                                                                    return !hiddenColumnIdsSet.has(
-                                                                        colIdx,
-                                                                    );
-                                                                },
-                                                            )
+                                                            // .filter(
+                                                            //     (v, colIdx) => {
+                                                            //         console.log(!hiddenColumnIdsSet.has(
+                                                            //             colIdx,
+                                                            //         ));
+                                                            //         return !hiddenColumnIdsSet.has(
+                                                            //             colIdx,
+                                                            //         );
+                                                            //     },
+                                                            // )
                                                             .map((h, hIdx) => (
                                                                 <Table.Cell
                                                                     key={hIdx}
@@ -1780,16 +1954,17 @@ export const DataImportFormModal = observer(
                                                                 key={rIdx}
                                                             >
                                                                 {r
-                                                                    .filter(
-                                                                        (
-                                                                            v,
-                                                                            colIdx,
-                                                                        ) => {
-                                                                            return !hiddenColumnIdsSet.has(
-                                                                                colIdx,
-                                                                            );
-                                                                        },
-                                                                    )
+                                                                    // .filter(
+                                                                    //     (
+                                                                    //         v,
+                                                                    //         colIdx,
+                                                                    //     ) => {
+
+                                                                    //         return !hiddenColumnIdsSet.has(
+                                                                    //             colIdx,
+                                                                    //         );
+                                                                    //     },
+                                                                    // )
                                                                     .map(
                                                                         (
                                                                             v,

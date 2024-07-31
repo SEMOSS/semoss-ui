@@ -722,7 +722,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                 </Stack>
                 {isDataImportModalOpen && (
                     <DataImportFormModal
-                        isDataImportModalOpen={isDataImportModalOpen}
+                        // isDataImportModalOpen={isDataImportModalOpen}
                         setIsDataImportModalOpen={setIsDataImportModalOpen}
                         query={cell.query} // this is redundant
                         previousCellId={null} // this may not be needed for edit
