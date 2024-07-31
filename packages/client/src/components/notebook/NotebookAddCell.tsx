@@ -558,7 +558,6 @@ export const NotebookAddCell = observer(
         useEffect(() => {
             removeEditableColumns();
             tableColumnsObject[selectedTable]?.forEach((tableObject, idx) => {
-                console.log({ tableObject });
                 appendEditableColumns({
                     id: idx,
                     tableName: tableObject.tableName,
@@ -581,7 +580,6 @@ export const NotebookAddCell = observer(
             // if any change occurs with checkboxes reassess all joins to display
             setJoinsStackHandler();
             updateSelectedTables();
-            console.log({ selectedTableNames });
         }, [checkedColumnsCount]);
 
         useEffect(() => {
@@ -647,6 +645,8 @@ export const NotebookAddCell = observer(
                         tableNames: Array.from(selectedTableNames),
                         selectedColumns: getSelectedColumnNames(),
                         columnAliases: getColumnAliases(),
+                        rootTable: rootTable,
+                        // filters: filters,
                     };
                 }
 
@@ -1323,7 +1323,6 @@ export const NotebookAddCell = observer(
         /** Checkbox Handler */
         const checkBoxHandler = (tableIndex, columnIndex) => {
             const columnObject = watchedTables[tableIndex].columns[columnIndex];
-            console.log({ columnObject });
             updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
             if (columnObject?.checked) {
                 if (checkedColumnsCount == 0) {

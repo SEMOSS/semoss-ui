@@ -228,6 +228,8 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
 
         columnAliases: string[];
 
+        rootTable: string;
+
         // filters: FilterObject[];
         // summaries: FilterObject[];
     };
@@ -406,11 +408,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
         };
 
         const openEditModal = () => {
-            console.log({
-                databaseId: cell.parameters.databaseId,
-                tableNames: cell.parameters.tableNames,
-                joins: cell.parameters.joins,
-            });
             setIsDataImportModalOpen(true);
         };
 
@@ -626,8 +623,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                     scrollbar: {
                                         alwaysConsumeMouseWheel: false,
                                     },
-                                    readOnly: false,
-                                    // readOnly: true,
+                                    readOnly: true,
                                     minimap: { enabled: false },
                                     automaticLayout: true,
                                     scrollBeyondLastLine: false,
