@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import {
     Breadcrumbs,
     Button,
-    Link,
     IconButton,
     Menu,
     styled,
@@ -48,6 +47,8 @@ import {
     EditLocation,
     RemoveRedEyeRounded,
 } from '@mui/icons-material';
+
+import { Link } from 'react-router-dom';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -489,7 +490,7 @@ export const AppDetailPage = () => {
         <OuterContainer>
             <InnerContainer>
                 <Breadcrumbs separator="/">
-                    <StyledLink href="/">
+                    <StyledLink to="../../..">
                         <StyledCrumb variant="body1">App Library</StyledCrumb>
                     </StyledLink>
                     <StyledCrumb variant="body1" disabled>

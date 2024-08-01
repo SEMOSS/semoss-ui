@@ -353,9 +353,6 @@ importers:
       react-dom:
         specifier: ^17.0.2
         version: 17.0.2(react@17.0.2)
-      react-error-boundary:
-        specifier: ^4.0.12
-        version: 4.0.12(react@17.0.2)
       react-flow-renderer:
         specifier: ^10.3.16
         version: 10.3.17(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
@@ -30528,14 +30525,26 @@ snapshots:
       react-dom: 17.0.2(react@17.0.2)
       react-is: 18.1.0
 
-  react-error-boundary@4.0.12(react@17.0.2):
+  /react-error-boundary@4.0.12(react@17.0.2):
+    resolution: {integrity: sha512-kJdxdEYlb7CPC1A0SeUY38cHpjuu6UkvzKiAmqmOFL21VRfMhOcWxTCBgLVCO0VEMh9JhFNcVaXlV4/BTpiwOA==}
+    peerDependencies:
+      react: '>=16.13.1'
     dependencies:
       '@babel/runtime': 7.22.15
       react: 17.0.2
+    dev: false
 
-  react-fast-compare@3.2.2: {}
+  /react-fast-compare@3.2.2:
+    resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
+    dev: false
 
-  react-flow-renderer@10.3.17(react-dom@17.0.2(react@17.0.2))(react@17.0.2):
+  /react-flow-renderer@10.3.17(react-dom@17.0.2)(react@17.0.2):
+    resolution: {integrity: sha512-bywiqVErlh5kCDqw3x0an5Ur3mT9j9CwJsDwmhmz4i1IgYM1a0SPqqEhClvjX+s5pU4nHjmVaGXWK96pwsiGcQ==}
+    engines: {node: '>=14'}
+    deprecated: react-flow-renderer has been renamed to reactflow, please use this package from now on https://reactflow.dev/docs/guides/migrate-to-v11/
+    peerDependencies:
+      react: 16 || 17 || 18
+      react-dom: 16 || 17 || 18
     dependencies:
       '@babel/runtime': 7.22.10
       '@types/d3': 7.4.0

@@ -245,11 +245,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
         }
 
         return () => {
-            console.log('cleaning Pending Members');
-            // setValue('PENDING_MEMBERS', []);
-            // setSelectedPendingMembers([]);
-            // setSelectAllPendingMembers(false);
-            // setPendingMembersIndeterminate(false);
+            // TODO
         };
     }, [pendingUserAccess.status, pendingUserAccess.data]);
 

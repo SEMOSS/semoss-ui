@@ -703,9 +703,6 @@ export const AppEditor = (props: AppEditorProps) => {
                     commitAssetResponse.pixelReturn[0].operationType;
 
             // TODO: FE code for commit asset
-            console.log(
-                'TODO: Committing the Asset, view parent directory to refresh app structure after?',
-            );
         }
 
         // if id matches recently deleted file or directory needs to be removed from the deleted files set so it renders
@@ -791,12 +788,10 @@ export const AppEditor = (props: AppEditorProps) => {
             name: '',
             path: '',
             type: type,
-            // id: `${foundNode.id}<>`,
         };
 
         // 1. See where we are in app directory, needed to know where to add file/dir
         if (!expanded.length) {
-            console.log('Handle top level dir addition', appDirectory);
             const appDirCopy = appDirectory;
             newNode.id = 'version/assets/<>';
 
@@ -823,7 +818,6 @@ export const AppEditor = (props: AppEditorProps) => {
             // Band Aid fix update UI with state change
             setCounter(counter + 1);
         } else {
-            console.log('Handles nodes that have a parent');
             const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
 
             let foundNode;
@@ -1109,9 +1103,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                     );
                                 }}
                                 onClick={(e) => {
-                                    console.log(
-                                        'removed event bubbling on TreeItem',
-                                    );
+                                    // Remove event bubble
                                     e.stopPropagation();
                                 }}
                                 onKeyDown={async (e) => {
@@ -1285,9 +1277,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                                         title="Upload app assets"
                                                         size={'small'}
                                                         onClick={(e) => {
-                                                            console.log(
-                                                                'Upload asset files to app',
-                                                            );
                                                             e.stopPropagation();
                                                             setIsAddAppAssetsOpen(
                                                                 true,
@@ -1300,9 +1289,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                                         title="Create new app file"
                                                         size={'small'}
                                                         onClick={(e) => {
-                                                            console.log(
-                                                                'Add a file to App',
-                                                            );
                                                             e.stopPropagation();
                                                             addPlaceholderNode(
                                                                 'file',
@@ -1315,10 +1301,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                                         title="Create new app folder"
                                                         size={'small'}
                                                         onClick={(e) => {
-                                                            console.log(
-                                                                'Add a directory to App',
-                                                            );
-
                                                             e.stopPropagation();
                                                             addPlaceholderNode(
                                                                 'directory',

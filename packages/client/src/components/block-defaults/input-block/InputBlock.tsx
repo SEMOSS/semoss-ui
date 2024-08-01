@@ -43,7 +43,11 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
         <StyledTextField
             size="small"
             value={data.value}
-            label={data.label}
+            label={
+                typeof data.label !== 'string'
+                    ? JSON.stringify(data.label)
+                    : data.label
+            }
             rows={data.rows}
             multiline={data.rows > 1 && data.type === 'text'}
             required={data.required}

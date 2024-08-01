@@ -233,8 +233,6 @@ export const PromptBuilder = () => {
         return completed;
     };
 
-    console.log('BUILDER', builder);
-
     return (
         <>
             <Grid container>

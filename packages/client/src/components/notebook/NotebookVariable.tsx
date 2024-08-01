@@ -15,7 +15,7 @@ import {
 } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
-import { AddVariableModal } from './AddVariableModal';
+import { AddVariablePopover } from './AddVariablePopover';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
@@ -141,7 +141,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
     const [openRenameAlias, setOpenRenameAlias] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [newTokenAlias, setNewTokenAlias] = useState(variable.alias);
+    const [newTokenAlias, setNewTokenAlias] = useState(id);
     const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
         null,
     );
@@ -191,11 +191,16 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
         } else {
             return variable.type;
         }
-    }, [variable.type, engines]);
+    }, [
+        variable.type,
+        engines,
+        id,
+        Object.values(state.dependencies).join(''),
+    ]);
 
     return (
         <StyledListItem
-            key={variable.alias}
+            key={id}
             secondaryAction={
                 <>
                     <Stack
@@ -206,7 +211,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                     >
                         <IconButton
                             onClick={() => {
-                                copyAlias(variable.alias);
+                                copyAlias(id);
                                 setAnchorEl(null);
                             }}
                         >
@@ -254,6 +259,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             id: id,
                                         },
                                     });
+
+                                    notification.add({
+                                        color: 'warning',
+                                        message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
+                                    });
+
                                     setAnchorEl(null);
                                 }}
                             >
@@ -275,7 +286,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                     <Stack>
                         <StyledTooltip
                             placement={'right'}
-                            title={<VariablePreview variable={variable} />}
+                            title={
+                                <VariablePreview variable={variable} id={id} />
+                            }
                             componentsProps={{
                                 tooltip: {
                                     sx: {
@@ -305,7 +318,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             variant="body1"
                                             fontWeight="medium"
                                         >
-                                            {variable.alias}
+                                            {id}
                                         </Typography>
                                         <StyledCapitalizedTypography variant="body2">
                                             {getVariableTypeDisplay}
@@ -334,33 +347,41 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                     e.target.value,
                                                 );
                                             }}
-                                            onKeyDown={(e) => {
+                                            onKeyDown={async (e) => {
                                                 if (e.key === 'Enter') {
                                                     setOpenRenameAlias(false);
-                                                    setNewTokenAlias(
-                                                        newTokenAlias,
-                                                    );
+
+                                                    const success =
+                                                        await state.dispatch({
+                                                            message:
+                                                                ActionMessages.RENAME_VARIABLE,
+                                                            payload: {
+                                                                id: id,
+                                                                alias: newTokenAlias,
+                                                            },
+                                                        });
+
+                                                    debugger;
 
                                                     notification.add({
-                                                        color: 'success',
-                                                        message: `Succesfully renamed variable ${variable.alias} to ${newTokenAlias}, remember to save your app.`,
+                                                        color: success
+                                                            ? 'success'
+                                                            : 'error',
+                                                        message: success
+                                                            ? `Succesfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
+                                                            : `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
                                                     });
 
-                                                    state.dispatch({
-                                                        message:
-                                                            ActionMessages.RENAME_VARIABLE,
-                                                        payload: {
-                                                            id: id,
-                                                            alias: newTokenAlias,
-                                                        },
-                                                    });
+                                                    setNewTokenAlias(
+                                                        success
+                                                            ? newTokenAlias
+                                                            : id,
+                                                    );
                                                 }
                                             }}
                                             onBlur={() => {
                                                 setOpenRenameAlias(false);
-                                                setNewTokenAlias(
-                                                    variable.alias,
-                                                );
+                                                setNewTokenAlias(id);
                                             }}
                                             InputProps={{
                                                 disableUnderline: true,
@@ -379,7 +400,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                             e.preventDefault();
                                         }}
                                     >
-                                        <AddVariableModal
+                                        <AddVariablePopover
                                             variable={{
                                                 ...variable,
                                                 id: id,
