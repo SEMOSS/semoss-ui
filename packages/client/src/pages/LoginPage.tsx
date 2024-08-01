@@ -135,6 +135,10 @@ const StyledActionText = styled('span')(() => ({
     color: '#000',
 }));
 
+const StyledDivider = styled(Divider)({
+    background: 'transparent',
+});
+
 const StyledDividerBox = styled(Box)({
     color: '#000',
     fontFeatureSettings: '"clig" off, "liga" off',
@@ -282,21 +286,15 @@ export const LoginPage = observer(() => {
     });
 
     useEffect(() => {
-        setDefaultLoginType();
-    }, []);
-
-    /**
-     * set Initial Selected login type from config.
-     */
-    const setDefaultLoginType = async () => {
-        if (configStore.loginsAllowed.includes('native')) {
+        // set initial selected login type from config.
+        if (configStore.store.config.providers.includes('native')) {
             setLoginType('native');
-        } else if (configStore.loginsAllowed.includes('ldap')) {
+        } else if (configStore.store.config.providers.includes('ldap')) {
             setLoginType('ldap');
-        } else if (configStore.loginsAllowed.includes('linOtp')) {
+        } else if (configStore.store.config.providers.includes('linOtp')) {
             setLoginType('LinOTP');
         }
-    };
+    }, []);
 
     /**
      * Allow the user to login
@@ -479,13 +477,12 @@ export const LoginPage = observer(() => {
     }
 
     // get the proviers
-    const providers = [...configStore.store.config.providers, 'ms'];
+    const providers = [...configStore.store.config.providers];
 
-    // Will need to display the oAuth types here -> Will have to remove native, registration, linotp, ldap
-    // const providersToDisplay = []
-
-    // Different Authorization Types / Endpoints that are Semoss Specific
-    // const semossAuthorization =
+    // show the or
+    const showOrDivider =
+        providers.indexOf('native') > -1 &&
+        (providers.indexOf('ms') || providers.indexOf('google'));
 
     return (
         <>
@@ -525,7 +522,7 @@ export const LoginPage = observer(() => {
                             </div>
                             {!register && (
                                 <StyledButtonGroup variant="outlined">
-                                    {configStore.loginsAllowed.includes(
+                                    {configStore.store.config.providers.includes(
                                         'native',
                                     ) && (
                                         <StyledButtonGroupItem
@@ -539,7 +536,7 @@ export const LoginPage = observer(() => {
                                             Native
                                         </StyledButtonGroupItem>
                                     )}
-                                    {configStore.loginsAllowed.includes(
+                                    {configStore.store.config.providers.includes(
                                         'ldap',
                                     ) && (
                                         <StyledButtonGroupItem
@@ -553,7 +550,7 @@ export const LoginPage = observer(() => {
                                             LDAP
                                         </StyledButtonGroupItem>
                                     )}
-                                    {configStore.loginsAllowed.includes(
+                                    {configStore.store.config.providers.includes(
                                         'linotp',
                                     ) && (
                                         <StyledButtonGroupItem
@@ -1150,17 +1147,15 @@ export const LoginPage = observer(() => {
                                     )}
                                     {!register && (
                                         <>
-                                            {providers.indexOf('native') > -1 &&
-                                                providers.indexOf('ms') >
-                                                    -1 && (
-                                                    <>
-                                                        <Divider>
-                                                            <StyledDividerBox>
-                                                                or
-                                                            </StyledDividerBox>
-                                                        </Divider>
-                                                    </>
-                                                )}
+                                            {showOrDivider && (
+                                                <>
+                                                    <StyledDivider>
+                                                        <StyledDividerBox>
+                                                            or
+                                                        </StyledDividerBox>
+                                                    </StyledDivider>
+                                                </>
+                                            )}
                                             {providers.indexOf('ms') > -1 && (
                                                 <StyledAction
                                                     variant="outlined"

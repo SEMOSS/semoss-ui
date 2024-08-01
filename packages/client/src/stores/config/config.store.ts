@@ -55,8 +55,10 @@ interface ConfigStoreInterface {
             single_multi: string;
             display_values?: string;
         }[];
+        /**
+         * List of available providers (logins) that are available
+         */
         providers: string[];
-        loginsAllowed: string[];
         version: {
             datetime: string;
             version: string;
@@ -85,7 +87,6 @@ export class ConfigStore {
             databaseMetaKeys: [],
             projectMetaKeys: [],
             providers: [],
-            loginsAllowed: [],
             version: {
                 version: '',
                 datetime: '',
@@ -110,13 +111,6 @@ export class ConfigStore {
      */
     get store(): ConfigStoreInterface {
         return this._store;
-    }
-
-    /**
-     * Get data from the current store
-     */
-    get loginsAllowed() {
-        return this._store.config.loginsAllowed;
     }
 
     /**
@@ -167,15 +161,6 @@ export class ConfigStore {
                     this._store.user.loggedIn = true;
                 }
 
-                //save loginsAllowed
-                const loginsAllowed: string[] = [];
-                for (const type in data.loginsAllowed) {
-                    if (data.loginsAllowed[type] === true) {
-                        loginsAllowed.push(type);
-                    }
-                }
-                this._store.config.loginsAllowed = loginsAllowed;
-
                 // save the providers
                 this._store.config.providers = [];
                 for (const provider in data.loginsAllowed) {
@@ -186,8 +171,7 @@ export class ConfigStore {
 
                 // save the other config data
                 for (const key in data) {
-                    if (key !== 'providers' && key !== 'loginsAllowed')
-                        this._store.config[key] = data[key];
+                    this._store.config[key] = data[key];
                 }
 
                 // sort the keys
