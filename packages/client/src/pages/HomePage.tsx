@@ -138,6 +138,31 @@ const TERMINAL_APP: AppMetadata = {
     description: 'Execute commands and see a response',
 };
 
+const AI_CONDUCTOR_APP: AppMetadata = {
+    project_id: '',
+    project_name: 'AI Conductor',
+    project_type: '',
+    project_cost: '',
+    project_global: '',
+    project_catalog_name: '',
+    project_created_by: 'SYSTEM',
+    project_created_by_type: '',
+    project_date_created: '',
+    project_has_portal: false,
+    project_portal_name: '',
+    project_portal_published_date: '',
+    project_published_user: '',
+    project_published_user_type: '',
+    project_reactors_compiled_date: '',
+    project_reactors_compiled_user: '',
+    project_reactors_compiled_user_type: '',
+    project_favorite: '',
+    user_permission: null,
+    group_permission: '',
+    tag: [],
+    description: 'Prototype UI for AI Conductor',
+};
+
 /**
  * Landing page
  */
@@ -490,6 +515,19 @@ export const HomePage = observer((): JSX.Element => {
                                     }
                                     systemApp={true}
                                     appType={'TERMINAL'}
+                                />
+                            )}
+
+                            {'aiconductor'.includes(search.toLowerCase()) && (
+                                <AppTileCard
+                                    // image={UPDATED_TERMINAL}
+                                    app={AI_CONDUCTOR_APP}
+                                    background="#BADEFF"
+                                    onAction={() =>
+                                        navigate(`/app/new/conductor`)
+                                    }
+                                    systemApp={true}
+                                    appType={'CONDUCTOR'}
                                 />
                             )}
                         </StyledSection>

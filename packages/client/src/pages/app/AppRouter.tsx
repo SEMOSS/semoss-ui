@@ -9,6 +9,7 @@ import { NavigatorLayout } from '../NavigatorLayout';
 import { HeaderLayout } from '../HeaderLayout';
 import { NewPromptBuilderAppPage } from './NewPromptBuilderAppPage';
 import { EditAppPage } from './EditAppPage';
+import { Conductor } from './Conductor';
 
 export const AppRouter = observer(() => {
     return (
@@ -17,6 +18,7 @@ export const AppRouter = observer(() => {
             <Route path="new" element={<NavigatorLayout />}>
                 <Route index element={<NewAppPage />} />
                 <Route path="prompt" element={<NewPromptBuilderAppPage />} />
+                <Route path="conductor" element={<Conductor />} />
             </Route>
             {/* Already Built App */}
             <Route path=":appId" element={<HeaderLayout />}>
@@ -24,6 +26,7 @@ export const AppRouter = observer(() => {
                 <Route path="edit" element={<EditAppPage />} />
                 <Route path="detail" element={<AppDetailPage />} />
             </Route>
+
             <Route path="*" element={<Navigate to={`/`} replace />} />
         </Routes>
     );
