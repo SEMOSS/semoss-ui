@@ -91,6 +91,7 @@ export const ImportForm = (props) => {
 
     const watchedFieldRef = useRef({});
 
+    //** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
     const {
         control,
         handleSubmit,
@@ -98,8 +99,8 @@ export const ImportForm = (props) => {
         watch,
         setValue,
         getValues,
-        setError,
-    } = useForm();
+        setFocus,
+    } = useForm({ mode: 'onSubmit' });
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -644,18 +645,18 @@ export const ImportForm = (props) => {
     }
 
     /**
-     * Check engine name for uniqueness
+     * Check engine name for uniqueness, store helper text for errors
      * @param engineName user has entered
      * @returns boolean
      */
+    const [nameHelperText, setNameHelperText] = useState('');
     const validateEngineName = async (engineName: string) => {
-        let validName = false;
+        let validName = true;
         const response = await monolithStore.runQuery(
             `CheckEngineName('${engineName}');`,
         );
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
-
         if (operationType.indexOf('ERROR') > -1) {
             notification.add({
                 color: 'error',
@@ -668,15 +669,11 @@ export const ImportForm = (props) => {
         //set the form field error
         output.exists
             ? ((validName = false),
-              setError(
-                  'NAME',
-                  {
-                      type: 'checkName',
-                      message:
-                          'This Catalog name has already been used, please try another.',
-                  },
-                  { shouldFocus: true },
-              ))
+              setNameHelperText(
+                  'This Catalog name has already been used, please try another.',
+              ),
+              setFocus('NAME'),
+              (validName = false))
             : (validName = true);
 
         return validName;
@@ -696,7 +693,7 @@ export const ImportForm = (props) => {
                                         required: val.rules.required,
                                         validate: {
                                             ...(val.rules.validateName && {
-                                                checkName: (v) =>
+                                                checkName: async (v) =>
                                                     validateEngineName(v),
                                             }),
                                         },
@@ -709,7 +706,7 @@ export const ImportForm = (props) => {
                                         },
                                     }}
                                     render={({
-                                        field,
+                                        field: { ref, ...field },
                                         fieldState: { invalid, error },
                                     }) => {
                                         if (
@@ -719,6 +716,7 @@ export const ImportForm = (props) => {
                                             return (
                                                 <TextField
                                                     id={`${val.fieldName}`}
+                                                    inputRef={ref}
                                                     fullWidth
                                                     required={
                                                         val.rules.required
@@ -754,10 +752,14 @@ export const ImportForm = (props) => {
                                                     // }}
                                                     helperText={
                                                         invalid
-                                                            ? error?.message
+                                                            ? error?.type ==
+                                                              'checkName'
+                                                                ? nameHelperText
+                                                                : error?.message
                                                             : val.helperText
                                                     }
                                                     error={invalid}
+                                                    {...field}
                                                 ></TextField>
                                             );
                                         } else if (

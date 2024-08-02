@@ -335,6 +335,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -499,6 +504,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -623,6 +633,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -788,6 +803,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                            },
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                         },
                         {
@@ -957,6 +977,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: 'This field is required',
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -1136,6 +1161,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -1305,6 +1335,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -1474,6 +1509,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -1645,6 +1685,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -1811,6 +1856,11 @@ export const CONNECTION_OPTIONS = {
                             rules: {
                                 required: true,
                                 validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
                             },
                         },
                         {
@@ -1980,6 +2030,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -2140,6 +2195,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -2300,6 +2360,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -2460,6 +2525,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -2620,6 +2690,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -2780,6 +2855,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -2940,6 +3020,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -3100,6 +3185,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -3260,6 +3350,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -3420,6 +3515,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -3580,6 +3680,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -3746,6 +3851,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -3906,6 +4016,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -4066,6 +4181,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -4226,6 +4346,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -4386,6 +4511,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -4554,6 +4684,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -4710,6 +4845,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -4866,6 +5006,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -5055,6 +5200,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -5206,6 +5356,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -5376,6 +5531,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -5515,6 +5675,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -5785,6 +5950,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -5961,6 +6131,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -6115,6 +6290,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -6406,6 +6586,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -6582,6 +6767,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -6759,6 +6949,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -6900,6 +7095,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -7077,6 +7277,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -7264,6 +7469,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -7461,6 +7671,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -7562,6 +7777,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -7739,6 +7959,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -7917,6 +8142,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -8038,6 +8268,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -8216,6 +8451,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -8394,6 +8634,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -8571,6 +8816,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -8748,6 +8998,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -8924,6 +9179,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -9045,6 +9305,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -9222,6 +9487,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -9399,6 +9669,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -9586,6 +9861,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -9773,6 +10053,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -9950,6 +10235,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -10167,6 +10457,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -10375,6 +10670,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -10563,6 +10863,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -10730,6 +11035,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -10897,6 +11207,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11074,6 +11389,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11264,6 +11584,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11325,6 +11650,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11396,6 +11726,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11467,6 +11802,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11538,6 +11878,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11605,6 +11950,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11646,6 +11996,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11716,6 +12071,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11787,6 +12147,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11868,6 +12233,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
@@ -11940,6 +12310,11 @@ export const CONNECTION_OPTIONS = {
                         rules: {
                             required: true,
                             validateName: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
                         },
                     },
                     {
