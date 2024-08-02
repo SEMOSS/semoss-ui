@@ -159,7 +159,15 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -324,7 +332,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -485,7 +496,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -606,7 +620,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -768,7 +785,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -934,7 +954,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: 'This field is required',
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1110,7 +1133,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1276,7 +1302,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1442,7 +1471,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1610,7 +1642,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1773,7 +1808,10 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                validateName: true,
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1939,7 +1977,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2096,7 +2137,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2253,7 +2297,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2410,7 +2457,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2567,7 +2617,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2724,7 +2777,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2881,7 +2937,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3038,7 +3097,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3195,7 +3257,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3352,7 +3417,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3509,7 +3577,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3672,7 +3743,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3829,7 +3903,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3986,7 +4063,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4143,7 +4223,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4300,7 +4383,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4465,7 +4551,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4618,7 +4707,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4771,7 +4863,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4957,7 +5052,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'URL',
@@ -5105,7 +5203,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5272,7 +5373,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5408,7 +5512,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_TAGS',
@@ -5675,7 +5782,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5848,7 +5958,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5999,7 +6112,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -6287,7 +6403,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6460,7 +6579,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6634,7 +6756,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6772,7 +6897,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6946,7 +7074,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7130,7 +7261,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7324,7 +7458,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7422,7 +7559,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7596,7 +7736,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7771,7 +7914,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7889,7 +8035,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8064,7 +8213,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8239,7 +8391,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8413,7 +8568,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8587,7 +8745,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8760,7 +8921,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8878,7 +9042,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9052,7 +9219,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9226,7 +9396,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9410,7 +9583,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9594,7 +9770,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9768,7 +9947,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9982,7 +10164,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10187,7 +10372,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10372,7 +10560,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10536,7 +10727,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10700,7 +10894,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10874,7 +11071,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -11061,7 +11261,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11119,7 +11322,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'CEPH_ACCESS_KEY',
@@ -11187,7 +11393,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11255,7 +11464,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11323,7 +11535,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'GCS_REGION',
@@ -11387,7 +11602,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'PATH_PREFIX',
@@ -11425,7 +11643,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'AZ_ACCOUNT_NAME',
@@ -11492,7 +11713,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11560,7 +11784,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'MINIO_REGION',
@@ -11638,7 +11865,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'NETWORK_DOMAIN',
@@ -11707,7 +11937,10 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            validateName: true,
+                        },
                     },
                     {
                         fieldName: 'HOSTNAME',
