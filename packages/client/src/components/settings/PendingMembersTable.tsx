@@ -18,7 +18,8 @@ import { AxiosResponse } from 'axios';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
 
-import { SETTINGS_ROLE, SETTINGS_MODE } from './settings.types';
+import { SETTINGS_ROLE } from './settings.types';
+import { ALL_TYPES } from '@/types';
 
 const StyledMemberContent = styled('div')({
     display: 'flex',
@@ -152,18 +153,18 @@ const StyledNoPendingReqs = styled('div')(({ theme }) => ({
 
 interface PendingMemberTableProps {
     /**
-     * Mode of setting
-     */
-    mode: SETTINGS_MODE;
-
-    /**
-     * Id of the setting
+     * Id of the engine
      */
     id: string;
+
+    /**
+     * Type of the engine
+     */
+    type: ALL_TYPES;
 }
 
 export const PendingMembersTable = (props: PendingMemberTableProps) => {
-    const { mode, id } = props;
+    const { id, type } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -194,9 +195,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
     }, [pendingMembers]);
 
     const pendingUserAccessPixel =
-        mode === 'engine'
+        type === 'DATABASE' ||
+        type === 'STORAGE' ||
+        type === 'MODEL' ||
+        type === 'VECTOR' ||
+        type === 'FUNCTION'
             ? `GetEngineUserAccessRequest(engine='${id}');`
-            : mode === 'app'
+            : type === 'APP'
             ? `GetProjectUserAccessRequest(project='${id}')`
             : '';
 
@@ -279,13 +284,19 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
+            if (
+                type === 'DATABASE' ||
+                type === 'STORAGE' ||
+                type === 'MODEL' ||
+                type === 'VECTOR' ||
+                type === 'FUNCTION'
+            ) {
                 response = await monolithStore.approveEngineUserAccessRequest(
                     adminMode,
                     id,
                     requests,
                 );
-            } else if (mode === 'app') {
+            } else if (type === 'APP') {
                 response = await monolithStore.approveProjectUserAccessRequest(
                     adminMode,
                     id,
@@ -376,13 +387,19 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
+            if (
+                type === 'DATABASE' ||
+                type === 'STORAGE' ||
+                type === 'MODEL' ||
+                type === 'VECTOR' ||
+                type === 'FUNCTION'
+            ) {
                 response = await monolithStore.denyEngineUserAccessRequest(
                     adminMode,
                     id,
                     requests,
                 );
-            } else if (mode === 'app') {
+            } else if (type === 'APP') {
                 response = await monolithStore.denyProjectUserAccessRequest(
                     adminMode,
                     id,

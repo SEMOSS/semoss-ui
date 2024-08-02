@@ -34,7 +34,6 @@ export interface AutocompleteProps<
         | "PaperComponent"
         | "PopperComponent"
         | "renderGroup"
-        | "renderOption"
         | "renderTags"
         | "slotProps"
         | "unstable_classNamePrefix"

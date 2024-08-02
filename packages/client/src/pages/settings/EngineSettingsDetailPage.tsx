@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { styled, ToggleTabsGroup } from '@semoss/ui';
 
-import { ENGINE_TYPES, Role } from '@/types';
+import { Role, ALL_TYPES } from '@/types';
 import { useSettings, useAPI } from '@/hooks';
 import {
     SettingsTiles,
@@ -36,18 +36,13 @@ type VIEW = 'CURRENT' | 'PENDING';
  */
 interface EngineSettingsDetailPageProps {
     /** Type of the page to render */
-    type: ENGINE_TYPES;
+    type: ALL_TYPES;
 }
 
 export const EngineSettingsDetailPage = (
     props: EngineSettingsDetailPageProps,
 ) => {
     const { type } = props;
-
-    // get a pretty name
-    const name = type
-        .replace(/^[-_]*(.)/, (_, c) => c.toUpperCase())
-        .replace(/[-_]+(.)/g, (_, c) => ' ' + c.toUpperCase());
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -98,8 +93,8 @@ export const EngineSettingsDetailPage = (
         <StyledContainer>
             {permission === 'OWNER' ? (
                 <SettingsTiles
-                    mode="engine"
-                    name={name}
+                    type={type}
+                    name={'engine'}
                     id={id}
                     onDelete={() => {
                         navigate('..', { relative: 'path' });
@@ -120,21 +115,18 @@ export const EngineSettingsDetailPage = (
                 </ToggleTabsGroup>
                 {view === 'CURRENT' && (
                     <MembersTable
-                        mode={'engine'}
+                        type={type}
                         id={id}
-                        name={name}
                         refreshPermission={() =>
                             getUserEnginePermission.refresh()
                         }
                     />
                 )}
                 {view === 'PENDING' && (
-                    <PendingMembersTable id={id} mode={'engine'} />
+                    <PendingMembersTable type={type} id={id} />
                 )}
             </StyledContent>
-            {permission === 'OWNER' ? (
-                <UpdateSMSS mode="engine" id={id} />
-            ) : null}
+            {permission === 'OWNER' ? <UpdateSMSS type={type} id={id} /> : null}
         </StyledContainer>
     );
 };

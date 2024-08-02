@@ -622,7 +622,15 @@ export class MonolithStore {
 
         // get the response
         const response = await axios
-            .get<Record<string, unknown>[]>(url, {
+            .get<
+                {
+                    id: string;
+                    email: string;
+                    name: string;
+                    type: string;
+                    username: string;
+                }[]
+            >(url, {
                 params: { engineId: appId },
             })
             .catch((error) => {
@@ -1828,7 +1836,15 @@ export class MonolithStore {
 
         // get the response
         const response = await axios
-            .get<Record<string, unknown>[]>(url, {
+            .get<
+                {
+                    id: string;
+                    email: string;
+                    name: string;
+                    type: string;
+                    username: string;
+                }[]
+            >(url, {
                 params: { projectId: projectId },
             })
             .catch((error) => {

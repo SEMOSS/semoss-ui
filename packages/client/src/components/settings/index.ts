@@ -1,5 +1,7 @@
+export * from './settings.types';
+export * from './members/';
+
 export * from './PendingMembersTable';
-export * from './MembersTable';
 export * from './TeamMembersTable';
 export * from './TeamProjectsTable';
 export * from './TeamEnginesTable';
