@@ -21,8 +21,7 @@ import {
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
-import { splitAtPeriod } from '@/utility';
-import { STATE_STORE_CURRENT_VERSION } from './state.constants';
+import { STATE_VERSION } from './migration/MigrationManager';
 
 interface StateStoreInterface {
     /** Mode */
@@ -197,28 +196,67 @@ export class StateStore {
     }
 
     /**
-     * Gets the token by it's pointer
+     * Gets the variable by it's pointer
      * @param pointer
      * @param type
+     * @param path - {{.isLoading}} {{.data.value}}
      * @returns
      */
-    getVariable(pointer: string, type: VariableType): Variable | unknown {
+    getVariable(
+        pointer: string,
+        type: VariableType,
+        path?: string[],
+        cellId?: string,
+    ): Variable | unknown {
         try {
             if (pointer) {
                 if (type === 'block') {
-                    const block = this.getBlock(pointer);
+                    const block = this._store.blocks[pointer];
 
-                    // TO DO: Genericize this, is it always going to be block.value -- other properties user would like to tie to?
-                    return block.data.value as string;
+                    // Old Version of JSON - notebooks, will be dependent on the .value and may crash
+                    if (path && path.length === 1) {
+                        return block.data.value as string;
+                    } else {
+                        if (block) {
+                            // get the search path
+                            const s = path.slice(1).join('.');
+                            return getValueByPath(block.data, s);
+                        }
+                    }
                 } else if (type === 'query') {
-                    const query = this.getQuery(pointer);
-
-                    return query.output;
+                    const query = this._store.queries[pointer];
+                    if (query) {
+                        if (path.length === 1) {
+                            // Just get query output
+                            return query.output;
+                        } else {
+                            const key = path[1];
+                            if (query) {
+                                if (key in query._exposed) {
+                                    // get the search path
+                                    const s = path.slice(1).join('.');
+                                    return getValueByPath(query._exposed, s);
+                                }
+                            }
+                        }
+                    }
+                    // get the attribute key
                 } else if (type === 'cell') {
-                    const query = this.getQuery(splitAtPeriod(pointer, 'left'));
-                    const cell = query.getCell(splitAtPeriod(pointer, 'right'));
+                    const query = this.getQuery(pointer);
+                    const cell = query.getCell(cellId);
 
-                    return cell.output;
+                    if (cell) {
+                        if (path.length === 1) {
+                            return cell.output;
+                        } else {
+                            const key = path[1];
+                            if (key in cell._exposed) {
+                                // get the search path
+                                const s = path.slice(1).join('.');
+                                return getValueByPath(cell._exposed, s);
+                            }
+                        }
+                    }
                 } else if (
                     type === 'database' ||
                     type === 'model' ||
@@ -242,12 +280,12 @@ export class StateStore {
 
                     return value;
                 }
-                return '';
+                return undefined;
             } else {
                 return undefined;
             }
         } catch (e) {
-            return 'undefined';
+            return undefined;
         }
     }
 
@@ -257,14 +295,17 @@ export class StateStore {
      * @param type
      * @returns
      */
-    getAlias(pointer: string): string {
+    getAlias(pointer: string, cellId?: string): string {
         let alias = '';
-        // Do we need to change how variables are stored to get rid of this iteration
-        Object.entries(this._store.variables).forEach((val) => {
-            const variable = val[1];
 
-            if (variable.to === pointer) {
-                alias = variable.alias;
+        // Do we need to change how variables are stored to get rid of this iteration
+        Object.entries(this._store.variables).forEach((keyValue) => {
+            const variable = keyValue[1];
+
+            if (variable.to === pointer && !cellId) {
+                alias = keyValue[0];
+            } else if (variable.to === pointer && variable.cellId === cellId) {
+                alias = keyValue[0];
             }
         });
         return alias;
@@ -354,17 +395,23 @@ export class StateStore {
 
                 this.dispatchEvent(name, detail);
             } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { alias, to, type } = action.payload;
+                const { id, to, type, cellId } = action.payload;
 
-                this.addVariable(alias, to, type);
+                return this.addVariable(id, to, type, cellId);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
-                this.renameVariable(id, alias);
+                return this.renameVariable(id, alias);
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
-                const { from, to } = action.payload;
+                const { id, from, to } = action.payload;
 
-                this.editVariable(from, to);
+                this.editVariable(
+                    id,
+                    from,
+                    to.type === 'cell'
+                        ? { to: to.to, cellId: to.cellId, type: 'cell' }
+                        : { to: to.to, type: to.type },
+                );
             } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
 
@@ -373,6 +420,10 @@ export class StateStore {
                 const { id, type } = action.payload;
 
                 return this.addDependency(id, type);
+            } else if (ActionMessages.REMOVE_DEPENDENCY === action.message) {
+                const { id } = action.payload;
+
+                return this.removeDependency(id);
             }
         } catch (e) {
             console.error(e);
@@ -396,91 +447,27 @@ export class StateStore {
         // get the keys in the path
         const path = cleaned.split('.');
 
-        if (path[0] === 'query' && path[2] === 'cell') {
-            // check if the id is there
-            const queryId = path[1];
-            const cellId = path[3];
+        if (this._store.variables[path[0]]) {
+            const variable = this._store.variables[path[0]];
+            const value = this.getVariable(
+                variable.to,
+                variable.type,
+                path,
+                variable.cellId,
+            );
 
-            // get the query
-            const query = this._store.queries[queryId];
-            const cell = query ? query.getCell(cellId) : null;
-            if (cell) {
-                // if the key is a cell, calculate as a cell
-                const key = path[4];
-                if (key in cell._exposed) {
-                    // get the search path
-                    const s = path.slice(4).join('.');
-                    return getValueByPath(cell._exposed, s);
-                }
+            // TODO: Check this, protects for false values
+            // (query.isLoading tied to a block.label **bad use-case)
+            if (value !== undefined && value !== null) {
+                return value;
             }
-        } else if (path[0] === 'query' && path[2] !== 'cell') {
-            // check if the id is there
-            const queryId = path[1];
 
-            // get the attribute key
-            const key = path[2];
-
-            // get the query
-            const query = this._store.queries[queryId];
-            if (query) {
-                if (key in query._exposed) {
-                    // get the search path
-                    const s = path.slice(2).join('.');
-                    return getValueByPath(query._exposed, s);
-                }
-            }
-        } else if (path[0] === 'block') {
-            // check if the id is there
-            const blockId = path[1];
-
-            // get the block
-            const block = this._store.blocks[blockId];
-            if (block) {
-                // get the search path
-                const s = path.slice(2).join('.');
-                return getValueByPath(block.data, s);
+            if (value === undefined) {
+                return value;
             }
         }
 
         return expression;
-    };
-
-    flattenVar = (expression: string): string => {
-        return expression.replace(/{{(.*?)}}/g, (match) => {
-            let v;
-            Object.values(this._store.variables).forEach((token) => {
-                // Early return if we find token already
-                if (v) return;
-
-                let copy = match;
-                // remove the brackets
-                if (copy.startsWith('{{') && copy.endsWith('}}')) {
-                    copy = copy.slice(2, -2);
-                }
-
-                if (token.alias === copy) {
-                    v = this.getVariable(token.to, token.type);
-                }
-            });
-
-            // Need to wrap in string for the code
-            if (v) {
-                if (typeof v !== 'string') {
-                    return JSON.stringify(v);
-                } else {
-                    return v;
-                }
-            }
-
-            // TODO: Handle old notebooks that don't use variables
-            v = this.flattenVariable(match);
-
-            if (typeof v !== 'string') {
-                return JSON.stringify(v);
-            } else {
-                return v;
-            }
-        });
     };
 
     /**
@@ -500,49 +487,6 @@ export class StateStore {
 
             return v;
         });
-    };
-
-    replaceVariable = (placeholder) => {
-        const path = placeholder.split('.');
-        let value = placeholder; // Default to placeholder itself for unmatched cases
-
-        // Check for 'query' and 'cell' specific logic
-        if (path[0] === 'query' && path[2] === 'cell') {
-            const queryId = path[1];
-            const cellId = path[3];
-            const query = this._store.queries[queryId];
-            const cell = query ? query.getCell(cellId) : null;
-            if (cell) {
-                const key = path[4];
-                if (key in cell._exposed) {
-                    const s = path.slice(4).join('.');
-                    value = getValueByPath(cell._exposed, s);
-                }
-            }
-        }
-        // Check for 'query' but not 'cell'
-        else if (path[0] === 'query' && path[2] !== 'cell') {
-            const queryId = path[1];
-            const key = path[2];
-            const query = this._store.queries[queryId];
-            if (query && key in query._exposed) {
-                const s = path.slice(2).join('.');
-
-                value = getValueByPath(query._exposed, s);
-            }
-        }
-        // Check for 'block'
-        else if (path[0] === 'block') {
-            const blockId = path[1];
-            const block = this._store.blocks[blockId];
-            if (block) {
-                const s = path.slice(2).join('.');
-                value = getValueByPath(block.data, s);
-            }
-        }
-
-        // Return the evaluated value or the original placeholder
-        return value;
     };
 
     /**
@@ -726,6 +670,7 @@ export class StateStore {
     private setState = (state: SerializedState) => {
         // store the block information
         this._store.blocks = state.blocks;
+
         // load the queries
         this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
             acc[val] = new QueryState(state.queries[val], this);
@@ -739,9 +684,8 @@ export class StateStore {
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
         // store the version or the one we currently are on
-        this._store.version = state.version
-            ? state.version
-            : STATE_STORE_CURRENT_VERSION;
+        // TODO: Look at this
+        this._store.version = state.version ? state.version : STATE_VERSION;
     };
 
     /**
@@ -1186,38 +1130,57 @@ export class StateStore {
     // -----------------------------------
     /**
      * Adds to variable that can be referenced
-     * @param alias - referenced as
+     * @param id - referenced as
      * @param to - points to
      * @param type - type of variable
      */
-    private addVariable = (alias: string, to: string, type: VariableType) => {
-        let id = `variable--${Math.floor(Math.random() * 10000)}`;
-        let uniq = false;
-
-        while (!uniq) {
-            id = `variable--${Math.floor(Math.random() * 10000)}`;
-            if (!this._store.variables[id]) {
-                uniq = true;
-            }
+    private addVariable = (
+        id: string,
+        to: string,
+        type: VariableType,
+        cellId?: string,
+    ) => {
+        if (id.includes('.')) {
+            return false;
         }
 
-        const token: Variable = {
-            alias,
-            to,
-            type,
-        };
+        if (this._store.variables[id]) {
+            return false;
+        }
+
+        const token: Variable =
+            type === 'cell'
+                ? {
+                      to,
+                      type,
+                      cellId,
+                  }
+                : { to, type };
 
         this._store.variables[id] = token;
+
+        return token;
     };
 
     /**
      * Renames variable that can be referenced
-     * @param alias - referenced as
-     * @param to - points to
-     * @param type - type of token
+     * @param old - points to old id
+     * @param id - new id for variable
      */
-    private renameVariable = (id: string, alias: string) => {
-        this._store.variables[id].alias = alias;
+    private renameVariable = (old: string, id: string): boolean => {
+        if (id.includes('.')) {
+            return false;
+        }
+
+        if (this._store.variables[id]) {
+            return false;
+        } else {
+            this._store.variables[id] = this._store.variables[old];
+
+            delete this._store.variables[old];
+
+            return true;
+        }
     };
 
     /**
@@ -1225,22 +1188,32 @@ export class StateStore {
      * @param from
      * @param to
      */
-    private editVariable = (oldVar: VariableWithId, newVar: Variable) => {
+    private editVariable = (
+        id: string,
+        oldVar: VariableWithId,
+        newVar: Variable,
+    ) => {
         if (this._store.dependencies[oldVar.to]) {
             console.log('----------------------------');
             console.log('remove old engine dependency');
             console.log('----------------------------');
             delete this._store.dependencies[oldVar.to];
         }
+        if (oldVar.id !== id) {
+            console.log('----------------------------');
+            console.log('remove old variable due to name change');
+            console.log('----------------------------');
+            delete this._store.variables[oldVar.id];
+        }
 
-        this._store.variables[oldVar.id] = newVar;
+        this._store.variables[id] = newVar;
     };
 
     /**
      * Deletes variable and corresponding dependency that can be referenced
      * @param id - id to delete
      */
-    private deleteVariable = (id: string) => {
+    private deleteVariable = async (id: string) => {
         const variable = this._store.variables[id];
         if (
             variable.type !== 'block' &&
@@ -1249,6 +1222,16 @@ export class StateStore {
         ) {
             delete this._store.dependencies[variable.to];
         }
+
+        // remove the references of it from ui (don't touch users code notebook)
+        // Stringify blocks
+        const blocksToMutate = JSON.stringify(this._store.blocks);
+        const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, 'g');
+
+        const modifiedBlocks = await blocksToMutate.replace(regex, '');
+
+        this._store.blocks = JSON.parse(modifiedBlocks);
+
         delete this._store.variables[id];
     };
 
@@ -1259,9 +1242,22 @@ export class StateStore {
      * @returns id of newly added dependency for token value
      */
     private addDependency = (value: unknown, type: string) => {
-        const id = `${type}--${Math.floor(Math.random() * 10000)}`;
+        let id;
+
+        do {
+            id = `${type}--${Math.floor(Math.random() * 10000)}`;
+        } while (this._store.dependencies[id]);
 
         this._store.dependencies[id] = value;
+
         return id;
+    };
+
+    /**
+     * Removes a dependency if unsuccesful variable creation
+     * @param id id to remove
+     */
+    private removeDependency = (id: string) => {
+        delete this._store.dependencies[id];
     };
 }

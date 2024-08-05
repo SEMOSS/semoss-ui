@@ -250,12 +250,7 @@ export const TeamsSettingsPage = () => {
         }
     });
 
-    const loginTypes = [];
-    for (const type in configStore.store.config.loginsAllowed) {
-        if (configStore.store.config.loginsAllowed[type]) {
-            loginTypes.push(type);
-        }
-    }
+    const loginTypes = configStore.store.config.providers;
 
     return (
         <>
