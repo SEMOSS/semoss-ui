@@ -1,4 +1,4 @@
-import { CSSProperties, useState } from 'react';
+import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock, useDebounce } from '@/hooks';
@@ -20,14 +20,13 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
         loading: boolean;
         disabled: boolean;
         hint?: string;
-        extensions?: string[];
+        options?: string[];
     };
 }
 
 export const UploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, uploadFile, listeners } =
         useBlock<UploadBlockDef>(id);
-    const [acceptExtensions] = useState(data.extensions);
 
     /**
      * Upload a file to the server
@@ -48,6 +47,17 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             // upload the file
             const uploadedFiles = await uploadFile(file);
 
+            // extract te file extension from the file name
+            const fileExtension = `.${file.name
+                .split('.')
+                .pop()
+                .toLowerCase()}`;
+
+            // clear the value if fileExtension does not exist
+            if (!data.options.includes(fileExtension)) {
+                setData('value', '');
+                alert('file type not supported');
+            }
             // ignore if false is returned
             if (!uploadedFiles) {
                 return;
@@ -61,18 +71,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
 
             // save it as the value
             setData('value', fileLocation);
-
-            // extract te file extension from the file name
-            const fileExtension = `.${file.name
-                .split('.')
-                .pop()
-                .toLowerCase()}`;
-
-            // clear the value if fileExtension does not exist
-            if (!acceptExtensions.includes(fileExtension)) {
-                setData('value', '');
-                alert('file type not supported');
-            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -108,7 +106,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 shrink: true,
             }}
             type={'file'}
-            inputProps={{ accept: acceptExtensions }}
+            inputProps={{ accept: data.options }}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
 

@@ -26,10 +26,9 @@ interface SelectSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 
     /**
-     * TODO: Rename to options
-     * extensions
+     * Options
      */
-    extensions: string[];
+    options: string[];
 }
 
 export const SelectSettings = observer(
@@ -37,7 +36,7 @@ export const SelectSettings = observer(
         id,
         label = '',
         path,
-        extensions,
+        options,
     }: SelectSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const { state } = useBlocks();
@@ -99,7 +98,7 @@ export const SelectSettings = observer(
                     fullWidth
                     multiple
                     value={value}
-                    options={extensions}
+                    options={options}
                     getOptionLabel={(option) => option}
                     onChange={(_, value) => {
                         onChange(value);

@@ -9,7 +9,6 @@ import { UploadBlockDef, UploadBlock } from './UploadBlock';
 import { Upload } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { buildListener } from '../block-defaults.shared';
-import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 import { UploadSettings } from '@/components/block-settings/shared/UploadSettings';
 import { SelectSettings } from '@/components/block-settings/shared/SelectSettings';
 export const DefaultStyles: CSSProperties = {
@@ -53,7 +52,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         value: '',
         label: 'Example Input',
         hint: '',
-        extensions: [],
+        options: [],
         loading: false,
         disabled: false,
         required: false,
@@ -80,8 +79,8 @@ export const config: BlockConfig<UploadBlockDef> = {
                         <SelectSettings
                             id={id}
                             label="Extensions"
-                            path={'extensions'}
-                            extensions={FileTypes}
+                            path={'options'}
+                            options={FileTypes}
                         />
                     ),
                 },
