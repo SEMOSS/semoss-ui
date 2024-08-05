@@ -6111,13 +6111,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Weaviate Classname',
                         defaultValue: 'Vector_Table',
                         options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Vector Table',
-                                    value: 'Vector_Table',
-                                },
-                            ],
+                            component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: true },

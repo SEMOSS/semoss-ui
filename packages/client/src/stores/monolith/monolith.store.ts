@@ -581,7 +581,7 @@ export class MonolithStore {
             }>(url, {
                 params: {
                     engineId: databaseId,
-                    userId: user,
+                    searchTerm: user,
                     permission: permission,
                     offset: offset,
                     limit: limit,
