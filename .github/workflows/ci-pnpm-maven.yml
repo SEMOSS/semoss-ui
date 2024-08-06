@@ -122,7 +122,10 @@ jobs:
 
             - name: Remove cache to save space
               run: rm -rf .m2/repository/org/semoss
-            
+              
+            - name: list all files in the target directory
+              run: ls -lah target
+
             - name: Upload JAR to Nexus
               if: github.ref_name != 'dev' && github.ref_name != 'main'
               env:
