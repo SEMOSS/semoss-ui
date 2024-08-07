@@ -607,10 +607,19 @@ export class MonolithStore {
     /**
      * @name getEngineUsersNoCredentials
      * @param admin
-     * @param appId
+     * @param engineId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
      * @returns
      */
-    async getEngineUsersNoCredentials(admin: boolean, appId: string) {
+    async getEngineUsersNoCredentials(
+        admin: boolean,
+        engineId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/`;
 
         // Currently no admin ENDPOINT;
@@ -631,7 +640,12 @@ export class MonolithStore {
                     username: string;
                 }[]
             >(url, {
-                params: { engineId: appId },
+                params: {
+                    engineId: engineId,
+                    limit: limit,
+                    offset: offset,
+                    searchTerm: searchTerm,
+                },
             })
             .catch((error) => {
                 throw Error(error);
@@ -1822,10 +1836,19 @@ export class MonolithStore {
     /**
      * @name getProjectUsersNoCredentials
      * @param admin if admin initiated the call
-     * @param projectId the id of app
+     * @param appId the id of app
+     * @param limit
+     * @param offSet
+     * @param searchTerm
      * @desc get the existing users and their permissions for this app
      */
-    async getProjectUsersNoCredentials(admin: boolean, projectId: string) {
+    async getProjectUsersNoCredentials(
+        admin: boolean,
+        appId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
@@ -1845,7 +1868,12 @@ export class MonolithStore {
                     username: string;
                 }[]
             >(url, {
-                params: { projectId: projectId },
+                params: {
+                    projectId: appId,
+                    limit: limit,
+                    offset: offset,
+                    searchTerm: searchTerm,
+                },
             })
             .catch((error) => {
                 throw Error(error);
@@ -2551,7 +2579,12 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns MemberInterface[]
      */
-    async getAllUsers(admin: boolean) {
+    async getAllUsers(
+        admin: boolean,
+        searchTerm?: string,
+        offset?: number,
+        limit?: number,
+    ) {
         let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
@@ -2572,8 +2605,18 @@ export class MonolithStore {
                     publisher?: boolean;
                     exporter?: boolean;
                     email?: string;
+                    phone?: string;
+                    phoneextension?: string;
+                    countrycode?: string;
+                    username?: string;
                 }[]
-            >(url)
+            >(url, {
+                params: {
+                    filterWord: searchTerm,
+                    offset: offset,
+                    limit: limit,
+                },
+            })
             .catch((error) => {
                 throw Error(error);
             });
@@ -2604,7 +2647,7 @@ export class MonolithStore {
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
         const response = await axios
-            .post<{ success: boolean }>(url, postData, {
+            .post<boolean>(url, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -2635,7 +2678,7 @@ export class MonolithStore {
         postData += 'userId=' + encodeURIComponent(userId);
         postData += '&type=' + encodeURIComponent(userType);
 
-        const response = await axios.post<{ success: boolean }>(url, postData, {
+        const response = await axios.post<boolean>(url, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },
@@ -2680,15 +2723,11 @@ export class MonolithStore {
             newUserInfo += '&password=' + encodeURIComponent(user.password);
         }
 
-        const response = await axios.post<{ success: boolean }>(
-            url,
-            newUserInfo,
-            {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
+        const response = await axios.post<boolean>(url, newUserInfo, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
             },
-        );
+        });
 
         return response;
     }

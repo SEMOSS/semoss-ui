@@ -91,7 +91,7 @@ export const SettingsView = () => {
                             <MembersTable
                                 type={'APP'}
                                 id={workspace.appId}
-                                refreshPermission={() => console.log('TODO')}
+                                onChange={() => console.log('TODO')}
                             />
                         )}
                         {view === 'PENDING' && (

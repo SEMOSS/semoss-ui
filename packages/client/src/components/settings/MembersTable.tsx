@@ -19,10 +19,10 @@ import { AxiosResponse } from 'axios';
 import { ALL_TYPES } from '@/types';
 import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { SETTINGS_MEMBER } from '../settings.types';
+import { SETTINGS_PROVISIONED_USER } from './settings.types';
 
-import { DeleteMembersOverlay } from './DeleteMembersOverlay';
-import { AddMembersOverlay } from './AddMembersOverlay';
+import { MembersDeleteOverlay } from './MembersDeleteOverlay';
+import { MembersAddOverlay } from './MembersAddOverlay';
 
 const UserInfoTableCell = styled(Table.Cell)({
     display: 'flex',
@@ -145,15 +145,15 @@ const StyledAddMemberContainer = styled('div')({
     gap: '10px',
 });
 
-const StyledNoMembersDiv = styled('div')({
+const StyledNoMembersDiv = styled('div')(({ theme }) => ({
     width: '100%',
     height: '503px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: theme.spacing(1),
     justifyContent: 'center',
     alignItems: 'center',
-});
+}));
 
 const StyledTableCell = styled(Table.Cell)({
     paddingLeft: '16px',
@@ -187,15 +187,14 @@ interface MembersTableProps {
      */
     type: ALL_TYPES;
 
-    refreshPermission?: () => void;
+    /**
+     * Called when permissions are changed
+     */
+    onChange?: () => void;
 }
 
 export const MembersTable = (props: MembersTableProps) => {
-    const {
-        id,
-        type,
-        refreshPermission = () => console.log('pass refresh function'),
-    } = props;
+    const { id, type, onChange = () => null } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -204,20 +203,20 @@ export const MembersTable = (props: MembersTableProps) => {
     /** Member Table State */
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
-    const [searchFilter, setSearchFilter] = useState<string>('');
+    const [search, setSearch] = useState<string>('');
     const [permissionFilter, setPermissionFilter] = useState<string>('');
-    const [selectedMembers, setSelectedMembers] = useState<SETTINGS_MEMBER[]>(
-        [],
-    );
+    const [selectedMembers, setSelectedMembers] = useState<
+        SETTINGS_PROVISIONED_USER[]
+    >([]);
 
     // debounce the input
-    const debouncedSearchFilter = useDebounceValue(searchFilter);
+    const debouncedSearch = useDebounceValue(search);
 
     /** Delete Member */
     const [deleteMembersModal, setDeleteMembersModal] =
         useState<boolean>(false);
     const [pendingDeletedMembers, setPendingDeletedMembers] = useState<
-        SETTINGS_MEMBER[]
+        SETTINGS_PROVISIONED_USER[]
     >([]);
 
     /** Add Member State */
@@ -236,7 +235,7 @@ export const MembersTable = (props: MembersTableProps) => {
                   'getEngineUsers',
                   adminMode,
                   id,
-                  debouncedSearchFilter ? debouncedSearchFilter : undefined,
+                  debouncedSearch ? debouncedSearch : undefined,
                   permissionMapper[permissionFilter],
                   (page + 1) * rowsPerPage - rowsPerPage, // offset
                   rowsPerPage, // limit
@@ -246,7 +245,7 @@ export const MembersTable = (props: MembersTableProps) => {
                   'getProjectUsers',
                   adminMode,
                   id,
-                  debouncedSearchFilter ? debouncedSearchFilter : undefined,
+                  debouncedSearch ? debouncedSearch : undefined,
                   permissionMapper[permissionFilter],
                   (page + 1) * rowsPerPage - rowsPerPage, // offset
                   rowsPerPage, // limit
@@ -336,7 +335,10 @@ export const MembersTable = (props: MembersTableProps) => {
                     message: 'Succesfully updated user permissions',
                 });
 
-                refreshPermission();
+                // refresh the members
+                getMembers.refresh();
+
+                onChange();
             } else {
                 notification.add({
                     color: 'error',
@@ -348,9 +350,6 @@ export const MembersTable = (props: MembersTableProps) => {
                 color: 'error',
                 message: String(e),
             });
-        } finally {
-            // refresh the members
-            getMembers.refresh();
         }
     };
 
@@ -359,7 +358,7 @@ export const MembersTable = (props: MembersTableProps) => {
      *
      * @param members - members that will be deleted
      */
-    const openDeleteMembersModal = (members: SETTINGS_MEMBER[]) => {
+    const openDeleteMembersModal = (members: SETTINGS_PROVISIONED_USER[]) => {
         // notify if no members
         if (members.length === 0) {
             notification.add({
@@ -453,10 +452,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                 inputRef={memberSearchRef}
                                 placeholder="Search Members"
                                 size="small"
-                                disabled={isLoading}
-                                value={searchFilter}
+                                value={search}
                                 onChange={(e) => {
-                                    setSearchFilter(e.target.value);
+                                    setSearch(e.target.value);
                                 }}
                             />
                         </StyledSearchButtonContainer>
@@ -537,7 +535,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 Permission Date
                                             </Table.Cell>
                                             <Table.Cell size="small">
-                                                Action
+                                                &nbsp;
                                             </Table.Cell>
                                         </Table.Row>
                                     </Table.Head>
@@ -724,7 +722,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     )}
                 </StyledTableContainer>
             </StyledMemberInnerContent>
-            <DeleteMembersOverlay
+            <MembersDeleteOverlay
                 type={type}
                 id={id}
                 members={pendingDeletedMembers}
@@ -738,11 +736,15 @@ export const MembersTable = (props: MembersTableProps) => {
 
                     // refresh if successful
                     if (success) {
+                        // trigger the update
+                        onChange();
+
+                        // refresh
                         getMembers.refresh();
                     }
                 }}
             />
-            <AddMembersOverlay
+            <MembersAddOverlay
                 type={type}
                 id={id}
                 open={addMembersModal}
@@ -752,6 +754,9 @@ export const MembersTable = (props: MembersTableProps) => {
 
                     // refresh if successful
                     if (success) {
+                        // trigger the update
+                        onChange();
+
                         getMembers.refresh();
                     }
                 }}

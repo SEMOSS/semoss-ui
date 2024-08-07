@@ -21,7 +21,7 @@ const StyledSecondaryText = styled(Typography)(({ theme }) => ({
     color: theme.palette.text.secondary,
 }));
 
-interface AddMembersOverlayUserProps {
+interface UserTableUserProps {
     /**
      * Name of the user
      */
@@ -30,7 +30,7 @@ interface AddMembersOverlayUserProps {
     /**
      * Name of the user
      */
-    username: string;
+    id: string;
 
     /**
      * Email of the user
@@ -65,8 +65,8 @@ const extractInitials = (str: string): string => {
     }, '');
 };
 
-export const AddMembersOverlayUser = (props: AddMembersOverlayUserProps) => {
-    const { name, username, email, type, action } = props;
+export const UserTableUser = (props: UserTableUserProps) => {
+    const { name, id, email, type, action } = props;
 
     const initials = extractInitials(name);
 
@@ -74,7 +74,11 @@ export const AddMembersOverlayUser = (props: AddMembersOverlayUserProps) => {
         <StyledUser direction="row" alignItems={'center'} spacing={1}>
             <StyledAvatar variant="circular">{initials}</StyledAvatar>
             <Stack direction={'column'} spacing={0} flex={1}>
-                <StyledPrimaryText variant="body1" noWrap={true}>
+                <StyledPrimaryText
+                    variant="body1"
+                    noWrap={true}
+                    title={`Name: ${name}`}
+                >
                     {name || <>&nbsp;</>}
                 </StyledPrimaryText>
                 <Stack
@@ -84,16 +88,17 @@ export const AddMembersOverlayUser = (props: AddMembersOverlayUserProps) => {
                     spacing={2}
                 >
                     <Stack
-                        flex={1}
                         direction={'row'}
                         alignItems={'center'}
                         spacing={1}
+                        width={'150px'}
+                        title={`User Id: ${id}`}
                     >
                         <StyledSecondaryText variant="body2" noWrap={true}>
                             User ID:
                         </StyledSecondaryText>
                         <StyledPrimaryText variant="body2" noWrap={true}>
-                            {username || <>&nbsp;</>}
+                            {id || <>&nbsp;</>}
                         </StyledPrimaryText>
                     </Stack>
                     <Stack
@@ -101,6 +106,7 @@ export const AddMembersOverlayUser = (props: AddMembersOverlayUserProps) => {
                         direction={'row'}
                         alignItems={'center'}
                         spacing={1}
+                        title={`Email: ${email}`}
                     >
                         <StyledSecondaryText variant="body2" noWrap={true}>
                             Email:
@@ -110,10 +116,11 @@ export const AddMembersOverlayUser = (props: AddMembersOverlayUserProps) => {
                         </StyledPrimaryText>
                     </Stack>
                     <Stack
-                        flex={1}
                         direction={'row'}
                         alignItems={'center'}
                         spacing={1}
+                        width={'200px'}
+                        title={`Type: ${type}`}
                     >
                         <StyledSecondaryText variant="body2" noWrap={true}>
                             Type:

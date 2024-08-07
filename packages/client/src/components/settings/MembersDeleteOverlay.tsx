@@ -4,9 +4,9 @@ import { AxiosResponse } from 'axios';
 import { ALL_TYPES } from '@/types';
 import { useRootStore, useSettings } from '@/hooks';
 
-import { SETTINGS_MEMBER } from '../settings.types';
+import { SETTINGS_PROVISIONED_USER } from './settings.types';
 
-interface DeleteMembersOverlayProps {
+interface MembersDeleteOverlayProps {
     /**
      * Type of engine
      */
@@ -20,7 +20,7 @@ interface DeleteMembersOverlayProps {
     /**
      * Members
      */
-    members: SETTINGS_MEMBER[];
+    members: SETTINGS_PROVISIONED_USER[];
 
     /**
      * Track if the model is open or close
@@ -35,7 +35,7 @@ interface DeleteMembersOverlayProps {
     onClose: (success: boolean) => void;
 }
 
-export const DeleteMembersOverlay = (props: DeleteMembersOverlayProps) => {
+export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
     const {
         type,
         id,
@@ -54,7 +54,9 @@ export const DeleteMembersOverlay = (props: DeleteMembersOverlayProps) => {
      *
      * delete the selected members from the app or engine
      */
-    const deleteSelectedMembers = async (members: SETTINGS_MEMBER[]) => {
+    const deleteSelectedMembers = async (
+        members: SETTINGS_PROVISIONED_USER[],
+    ) => {
         let success = false;
 
         try {

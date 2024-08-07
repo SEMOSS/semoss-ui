@@ -111,9 +111,7 @@ export const AppSettingsDetailPage = () => {
                     <MembersTable
                         id={id}
                         type={'APP'}
-                        refreshPermission={() =>
-                            getUserEnginePermission.refresh()
-                        }
+                        onChange={() => getUserEnginePermission.refresh()}
                     />
                 )}
                 {view === 'PENDING' && (

@@ -48,7 +48,9 @@ const StyledGrid = styled(Grid)(() => ({
     flex: '1',
 }));
 
-const StyledTypography = styled(Typography)<{
+const StyledTypography = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'isDisabled',
+})<{
     // Track if discoverable will be disabled or not
     isDisabled: boolean;
 }>(({ isDisabled, theme }) => ({

@@ -117,9 +117,7 @@ export const EngineSettingsDetailPage = (
                     <MembersTable
                         type={type}
                         id={id}
-                        refreshPermission={() =>
-                            getUserEnginePermission.refresh()
-                        }
+                        onChange={() => getUserEnginePermission.refresh()}
                     />
                 )}
                 {view === 'PENDING' && (

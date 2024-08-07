@@ -749,7 +749,7 @@ export const AppDetailPage = () => {
                                             <MembersTable
                                                 type={'APP'}
                                                 id={appId}
-                                                refreshPermission={() => {
+                                                onChange={() => {
                                                     fetchUserSpecificData();
                                                 }}
                                             />
