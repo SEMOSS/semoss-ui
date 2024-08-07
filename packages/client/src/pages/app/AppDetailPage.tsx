@@ -717,9 +717,9 @@ export const AppDetailPage = () => {
                                     }}
                                 >
                                     <SettingsTiles
-                                        mode="app"
-                                        name="app"
+                                        type={'APP'}
                                         direction="row"
+                                        name={appInfo?.project_name || 'app'}
                                         id={appId}
                                         onDelete={() => {
                                             navigate('/settings/app');
@@ -743,14 +743,13 @@ export const AppDetailPage = () => {
                                     >
                                         <Stack direction="column" spacing={2}>
                                             <PendingMembersTable
-                                                mode="app"
+                                                type={'APP'}
                                                 id={appId}
                                             />
                                             <MembersTable
+                                                type={'APP'}
                                                 id={appId}
-                                                mode="app"
-                                                name="app"
-                                                refreshPermission={() => {
+                                                onChange={() => {
                                                     fetchUserSpecificData();
                                                 }}
                                             />

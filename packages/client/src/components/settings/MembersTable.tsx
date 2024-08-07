@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
 import {
     styled,
     Button,
@@ -8,44 +7,22 @@ import {
     IconButton,
     AvatarGroup,
     Avatar,
-    Modal,
     RadioGroup,
     Typography,
-    Autocomplete,
-    Card,
-    Box,
-    Chip,
-    Icon,
-    Link,
     Search,
-    Select,
     Stack,
     useNotification,
 } from '@semoss/ui';
-import {
-    Delete,
-    EditRounded,
-    RemoveRedEyeRounded,
-    ClearRounded,
-} from '@mui/icons-material';
+import { Delete } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
-import { useRootStore, useAPI, useSettings } from '@/hooks';
+import { ALL_TYPES } from '@/types';
+import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { SETTINGS_MODE, SETTINGS_ROLE } from './settings.types';
+import { SETTINGS_PROVISIONED_USER } from './settings.types';
 
-import { PERMISSION_DESCRIPTION_MAP } from './member-permissions.constants';
-import { TextField } from '@mui/material';
-
-const colors = [
-    '#22A4FF',
-    '#FA3F20',
-    '#FA3F20',
-    '#FF9800',
-    '#FF9800',
-    '#22A4FF',
-    '#4CAF50',
-];
+import { MembersDeleteOverlay } from './MembersDeleteOverlay';
+import { MembersAddOverlay } from './MembersAddOverlay';
 
 const UserInfoTableCell = styled(Table.Cell)({
     display: 'flex',
@@ -84,7 +61,17 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
     border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledMemberTable = styled(Table)({ backgroundColor: 'white' });
+const StyledMemberLoading = styled('div')(({ theme }) => ({
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '160px',
+}));
+
+const StyledMemberTable = styled(Table)({
+    backgroundColor: 'white',
+});
 
 const StyledTableTitleContainer = styled('div')({
     display: 'flex',
@@ -158,25 +145,15 @@ const StyledAddMemberContainer = styled('div')({
     gap: '10px',
 });
 
-const StyledNoMembersContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    borderRadius: '12px',
-    border: `1px solid ${theme.palette.secondary.border}`,
-}));
-
-const StyledNoMembersDiv = styled('div')({
+const StyledNoMembersDiv = styled('div')(({ theme }) => ({
     width: '100%',
     height: '503px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: theme.spacing(1),
     justifyContent: 'center',
     alignItems: 'center',
-});
-
-const StyledCard = styled(Card)({
-    borderRadius: '12px',
-});
+}));
 
 const StyledTableCell = styled(Table.Cell)({
     paddingLeft: '16px',
@@ -185,75 +162,6 @@ const StyledTableCell = styled(Table.Cell)({
 const StyledCheckbox = styled(Checkbox)({
     paddingBottom: '0px',
 });
-
-const StyledModalContentText = styled(Modal.ContentText)({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '.5rem',
-    marginTop: '12px',
-});
-
-const StyledCardHeader = styled(Card.Header)({
-    color: '#000',
-    width: '100%',
-});
-
-const StyledIconButton = styled(IconButton)({
-    marginTop: '16px',
-    color: 'rgba(0, 0, 0, 0.7)',
-    marginRight: '24px',
-});
-
-const StyledOuterBox = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'userLength',
-})<{
-    userLength: number;
-}>(({ userLength }) => ({
-    maxHeight: userLength > 2 ? '300px' : 'auto',
-    overflow: 'auto',
-    transition: 'max-height 0.3s ease',
-}));
-
-const StyledFlexBox = styled(Box, {
-    shouldForwardProp: (prop) => prop !== 'index',
-})<{
-    index: number;
-}>(({ index }) => ({
-    display: 'flex',
-    justifyContent: 'left',
-    alignItems: 'center',
-    backgroundColor: index % 2 !== 0 ? 'rgba(0, 0, 0, 0.03)' : 'transparent',
-}));
-
-const StyledCenterBox = styled(Box)({
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: '6px',
-    marginLeft: '8px',
-    marginRight: '8px',
-});
-
-const StyledAvatarBox = styled(Box)({
-    display: 'flex',
-    height: '80px',
-    width: '80px',
-    justifyContent: 'center',
-    alignItems: 'center',
-    border: '0.5px solid rgba(0, 0, 0, 0.05)',
-    borderRadius: '50%',
-});
-
-const StyledUserAvatar = styled(Avatar, {
-    shouldForwardProp: (prop) => prop !== 'userColor',
-})<{
-    userColor: string;
-}>(({ userColor }) => ({
-    display: 'flex',
-    width: '60px',
-    height: '60px',
-    fontSize: '24px',
-    backgroundColor: userColor,
-}));
 
 // maps for permissions,
 const permissionMapper = {
@@ -268,162 +176,114 @@ const permissionMapper = {
     'Read-Only': 'READ_ONLY', // DISPLAY: BE
 };
 
-// Members Table
-interface Member {
-    id: string;
-    name: string;
-    type: string;
-    EMAIL: string;
-    SELECTED: boolean;
-    permission: string;
-    OG_PERMISSION?: string;
-    CONFIRM_DELETE?: boolean;
-}
-
 interface MembersTableProps {
     /**
-     * Type of setting
-     */
-    mode: SETTINGS_MODE;
-
-    /**
-     * Id of the setting
+     * Id of the engine
      */
     id: string;
 
     /**
-     * Name for the item of the setting
+     * Type of the engine
      */
-    name: string;
+    type: ALL_TYPES;
 
     /**
-     * Condensed view
+     * Called when permissions are changed
      */
-    condensed?: boolean;
-
-    refreshPermission?: () => void;
+    onChange?: () => void;
 }
 
 export const MembersTable = (props: MembersTableProps) => {
-    const {
-        mode,
-        id,
-        name,
-        condensed,
-        refreshPermission = () => console.log('pass refresh function'),
-    } = props;
+    const { id, type, onChange = () => null } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
     const { adminMode } = useSettings();
 
     /** Member Table State */
-    const [membersCount, setMembersCount] = useState<number>(0);
-    const [filteredMembersCount, setFilteredMembersCount] = useState<number>(0);
-    const [membersPage, setMembersPage] = useState<number>(1);
-    const [limit, setLimit] = useState<number>(5);
-    const [selectedMembers, setSelectedMembers] = useState<Member[]>([]);
+    const [page, setPage] = useState<number>(0);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+    const [search, setSearch] = useState<string>('');
+    const [permissionFilter, setPermissionFilter] = useState<string>('');
+    const [selectedMembers, setSelectedMembers] = useState<
+        SETTINGS_PROVISIONED_USER[]
+    >([]);
+
+    // debounce the input
+    const debouncedSearch = useDebounceValue(search);
 
     /** Delete Member */
     const [deleteMembersModal, setDeleteMembersModal] =
         useState<boolean>(false);
-    const [deleteMemberModal, setDeleteMemberModal] = useState<boolean>(false);
-    const [userToDelete, setUserToDelete] = useState<Member | null>();
+    const [pendingDeletedMembers, setPendingDeletedMembers] = useState<
+        SETTINGS_PROVISIONED_USER[]
+    >([]);
 
     /** Add Member State */
     const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
-    const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
-    const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
-        useState([]);
-    const [addMemberRole, setAddMemberRole] = useState<SETTINGS_ROLE>();
 
     const memberSearchRef = useRef(undefined);
-    const didMount = useRef<boolean>(false);
-
-    const { control, watch, setValue } = useForm<{
-        MEMBERS: Member[];
-
-        SEARCH_FILTER: string;
-        ACCESS_FILTER: string;
-    }>({
-        defaultValues: {
-            // Members Table
-            MEMBERS: [],
-            // Filters for Members table
-            SEARCH_FILTER: '',
-            ACCESS_FILTER: '',
-        },
-    });
-
-    const { remove: memberRemove } = useFieldArray({
-        control,
-        name: 'MEMBERS',
-    });
-
-    const searchFilter = watch('SEARCH_FILTER');
-    const permissionFilter = watch('ACCESS_FILTER');
-    const verifiedMembers = watch('MEMBERS');
 
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
-        mode === 'engine'
+        type === 'DATABASE' ||
+        type === 'STORAGE' ||
+        type === 'MODEL' ||
+        type === 'VECTOR' ||
+        type === 'FUNCTION'
             ? [
                   'getEngineUsers',
                   adminMode,
                   id,
-                  searchFilter ? searchFilter : undefined,
+                  debouncedSearch ? debouncedSearch : undefined,
                   permissionMapper[permissionFilter],
-                  membersPage * limit - limit, // offset
-                  limit,
+                  (page + 1) * rowsPerPage - rowsPerPage, // offset
+                  rowsPerPage, // limit
               ]
-            : mode === 'app'
+            : type === 'APP'
             ? [
                   'getProjectUsers',
                   adminMode,
                   id,
-                  searchFilter ? searchFilter : undefined,
+                  debouncedSearch ? debouncedSearch : undefined,
                   permissionMapper[permissionFilter],
-                  membersPage * limit - limit, // offset
-                  limit,
+                  (page + 1) * rowsPerPage - rowsPerPage, // offset
+                  rowsPerPage, // limit
               ]
             : null;
 
     const getMembers = useAPI(getMembersApi);
 
     /**
-     * @name useEffect
-     * @desc - sets members in react hook form
-     */
+     * When
+     **/
     useEffect(() => {
         if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
             return;
         }
 
-        const members = [];
+        setPage(0);
+        setSelectedMembers([]);
 
-        getMembers.data['members'].forEach((mem) => {
-            members.push(mem);
-        });
-
-        setValue('MEMBERS', members);
-
-        if (!didMount.current) {
-            // set total members
-            setMembersCount(getMembers.data['totalMembers']);
-            didMount.current = true;
-        }
-
-        // Needed for total pages on pagination
-        setFilteredMembersCount(getMembers.data['totalMembers']);
-
+        // select the member when done mounting
         memberSearchRef.current?.focus();
-        return () => {
-            setValue('MEMBERS', []);
-            setSelectedMembers([]);
-        };
-    }, [getMembers.status, getMembers.data, searchFilter, permissionFilter]);
+    }, [getMembers.status, getMembers.data]);
 
-    /** MEMBER TABLE FUNCTIONS */
+    // useLayoutEffect(() => {
+    //     if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
+    //         return;
+    //     }
+
+    //     // select the member when done mounting
+    //     memberSearchRef.current?.focus();
+    // }, [getMembers.status, getMembers.data]);
+
+    /**
+     * Update the selected users
+     * @param members
+     * @param quickUpdate
+     * @returns
+     */
     const updateSelectedUsers = async (members, quickUpdate) => {
         try {
             // construct requests for post data
@@ -444,13 +304,19 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
+            if (
+                type === 'DATABASE' ||
+                type === 'STORAGE' ||
+                type === 'MODEL' ||
+                type === 'VECTOR' ||
+                type === 'FUNCTION'
+            ) {
                 response = await monolithStore.editEngineUserPermissions(
                     adminMode,
                     id,
                     requests,
                 );
-            } else if (mode === 'app') {
+            } else if (type === 'APP') {
                 response = await monolithStore.editProjectUserPermissions(
                     adminMode,
                     id,
@@ -469,7 +335,10 @@ export const MembersTable = (props: MembersTableProps) => {
                     message: 'Succesfully updated user permissions',
                 });
 
-                refreshPermission();
+                // refresh the members
+                getMembers.refresh();
+
+                onChange();
             } else {
                 notification.add({
                     color: 'error',
@@ -481,245 +350,62 @@ export const MembersTable = (props: MembersTableProps) => {
                 color: 'error',
                 message: String(e),
             });
-        } finally {
-            // refresh the members
-            getMembers.refresh();
         }
     };
 
     /**
-     * @name deleteSelectedMembers
-     * @param members
+     * Open the delete modal
+     *
+     * @param members - members that will be deleted
      */
-    const deleteSelectedMembers = async (members: Member[]) => {
-        try {
-            // construct requests for post data
-            const requests = members.map((m, i) => {
-                return m.id;
-            });
-
-            if (requests.length === 0) {
-                notification.add({
-                    color: 'warning',
-                    message: `No permissions to change`,
-                });
-
-                return;
-            }
-
-            let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
-                response = await monolithStore.removeEngineUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            } else if (mode === 'app') {
-                response = await monolithStore.removeProjectUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            }
-
-            if (!response) {
-                return;
-            }
-
-            // ignore if there is no response
-            if (response.data.success) {
-                if (
-                    verifiedMembers.length === requests.length &&
-                    membersPage !== 1 &&
-                    membersPage !== filteredMembersCount / limit
-                ) {
-                    setMembersPage(membersPage - 1);
-                }
-
-                // get index of members in order to remove
-                const indexesToRemove = [];
-                requests.forEach((mem) => {
-                    verifiedMembers.find((m, i) => {
-                        if (mem === m.id) indexesToRemove.push(i);
-                    });
-                });
-
-                // remove indexes from react hook form
-                memberRemove(indexesToRemove);
-
-                const newMemberCount = membersCount - requests.length;
-                setMembersCount(newMemberCount);
-
-                // Clean selected Members in state
-                if (!userToDelete) {
-                    setSelectedMembers([]);
-                    setDeleteMembersModal(false);
-                } else {
-                    // Quick Delete one member
-                    const filteredSelectedMembers = selectedMembers.filter(
-                        // find the single member that is being deleted and remove from selected members
-                        (m) => m.id !== userToDelete.id,
-                    );
-
-                    // set new selected members
-                    setSelectedMembers(filteredSelectedMembers);
-                    setDeleteMemberModal(false);
-                }
-
-                notification.add({
-                    color: 'success',
-                    message: `Successfully removed ${
-                        requests.length > 1 ? 'members' : 'member'
-                    }`,
-                });
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: `Error changing user permissions`,
-                });
-            }
-        } catch (e) {
+    const openDeleteMembersModal = (members: SETTINGS_PROVISIONED_USER[]) => {
+        // notify if no members
+        if (members.length === 0) {
             notification.add({
-                color: 'error',
-                message: String(e),
+                color: 'warning',
+                message: `No permissions to change`,
             });
-        } finally {
-            // refresh the members
-            getMembers.refresh();
+
+            return;
         }
-    };
 
-    /** ADD MEMBER FUNCTIONS */
-    /**
-     * @name getUsersNoCreds
-     * @desc Gets all users without credentials
-     */
-    const getUsersNoCreds = async () => {
-        try {
-            let response: AxiosResponse<Record<string, unknown>[]> | null =
-                null;
-            if (mode === 'engine') {
-                // possibly add more db table columns / keys here to get id type for display under username
-                response = await monolithStore.getEngineUsersNoCredentials(
-                    adminMode,
-                    id,
-                );
-            } else if (mode === 'app') {
-                response = await monolithStore.getProjectUsersNoCredentials(
-                    adminMode,
-                    id,
-                );
-            } else {
-                return;
-            }
+        // set the pending members
+        setPendingDeletedMembers(members);
 
-            // ignore if there is no response
-            if (response.data) {
-                const users = response.data.map((val) => {
-                    return {
-                        ...val,
-                        color: colors[
-                            Math.floor(Math.random() * colors.length)
-                        ],
-                    };
-                });
-
-                setNonCredentialedUsers(users);
-                setAddMembersModal(true);
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        }
+        // close the model
+        setDeleteMembersModal(true);
     };
 
     /**
-     * @name submitNonCredUsers
+     * Open the add modal
      */
-    const submitNonCredUsers = async () => {
-        try {
-            // construct requests for post data
-            const requests = selectedNonCredentialedUsers.map((m) => {
-                return {
-                    userid: m.id,
-                    permission: permissionMapper[addMemberRole],
-                };
-            });
-
-            if (requests.length === 0) {
-                notification.add({
-                    color: 'warning',
-                    message: `No permissions to change`,
-                });
-
-                return;
-            }
-
-            let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
-                response = await monolithStore.addEngineUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            } else if (mode === 'app') {
-                response = await monolithStore.addProjectUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            }
-
-            if (!response) {
-                return;
-            }
-
-            // ignore if there is no response
-            if (response.data.success) {
-                setMembersCount(
-                    membersCount + selectedNonCredentialedUsers.length,
-                );
-                setAddMembersModal(false);
-                setSelectedNonCredentialedUsers([]);
-                setAddMemberRole(undefined);
-
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully added member permissions',
-                });
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: `Error changing user permissions`,
-                });
-            }
-        } catch (e) {
-            setAddMembersModal(false);
-            setSelectedNonCredentialedUsers([]);
-            setAddMemberRole(undefined);
-
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        } finally {
-            // refresh the members
-            getMembers.refresh();
-        }
+    const openAddMembersModal = () => {
+        // close the model
+        setAddMembersModal(true);
     };
 
-    /** HELPERS */
+    // track if the page is loading
+    const isLoading =
+        getMembers.status === 'INITIAL' || getMembers.status === 'LOADING';
+    const renderedMembers =
+        getMembers.status === 'SUCCESS' ? getMembers.data['members'] : [];
+    const totalMembers =
+        getMembers.status === 'SUCCESS' ? getMembers.data['totalMembers'] : 0;
+    const hasMembers =
+        getMembers.status === 'SUCCESS' && getMembers.data['totalMembers'] > 0;
+
+    // Avatars rendered
     const Avatars = useMemo(() => {
-        if (!verifiedMembers.length) return [];
+        if (!renderedMembers.length) {
+            return [];
+        }
 
         let i = 0;
         const avatarList = [];
-        while (i < 5 && i < verifiedMembers.length) {
+        while (i < 5 && i < renderedMembers.length) {
             avatarList.push(
                 <Avatar key={i}>
-                    {verifiedMembers[i].name.charAt(0).toUpperCase()}
+                    {(renderedMembers[i].name || ' ').charAt(0).toUpperCase()}
                 </Avatar>,
             );
 
@@ -727,880 +413,354 @@ export const MembersTable = (props: MembersTableProps) => {
         }
 
         return avatarList;
-    }, [filteredMembersCount, verifiedMembers.length]);
-
-    const paginationOptions = {
-        membersPageCounts: [5],
-    };
-
-    membersCount > 9 && paginationOptions.membersPageCounts.push(10);
-    membersCount > 19 && paginationOptions.membersPageCounts.push(20);
-
-    /** END OF HELPERS */
-
-    /** LOADING */
-    if (getMembers.status !== 'SUCCESS' && !didMount.current) {
-        return <LoadingScreen.Trigger description="Getting members" />;
-    }
+    }, [renderedMembers.length]);
 
     return (
         <StyledMemberContent>
-            {!condensed ? (
-                <StyledMemberInnerContent>
-                    {membersCount > 0 ? (
-                        <StyledTableContainer>
-                            <StyledTableTitleContainer>
-                                <StyledTableTitleDiv>
-                                    <Typography variant={'h6'}>
-                                        Members
-                                    </Typography>
-                                </StyledTableTitleDiv>
-
-                                <StyledTableTitleMemberContainer>
-                                    {Avatars.length > 0 ? (
-                                        <StyledAvatarGroupContainer>
-                                            <AvatarGroup
-                                                spacing={'small'}
-                                                variant={'circular'}
-                                                max={4}
-                                                total={filteredMembersCount}
-                                            >
-                                                {Avatars.map((el) => {
-                                                    return el;
-                                                })}
-                                            </AvatarGroup>
-                                        </StyledAvatarGroupContainer>
-                                    ) : null}
-                                    <StyledTableTitleMemberCountContainer>
-                                        <StyledTableTitleMemberCount>
-                                            <Typography variant={'body1'}>
-                                                {filteredMembersCount} Members
-                                            </Typography>
-                                        </StyledTableTitleMemberCount>
-                                    </StyledTableTitleMemberCountContainer>
-                                </StyledTableTitleMemberContainer>
-
-                                {/* <StyledFilterButtonContainer>
-                                    <IconButton>
-                                        <FilterAltRounded></FilterAltRounded>
-                                    </IconButton>
-                                </StyledFilterButtonContainer> */}
-
-                                <StyledSearchButtonContainer>
-                                    <Search
-                                        ref={memberSearchRef}
-                                        placeholder="Search Members"
-                                        size="small"
-                                        value={searchFilter}
-                                        onChange={(e) => {
-                                            setValue(
-                                                'SEARCH_FILTER',
-                                                e.target.value,
-                                            );
-                                        }}
-                                    />
-                                </StyledSearchButtonContainer>
-
-                                <StyledDeleteSelectedContainer>
-                                    {selectedMembers.length > 0 && (
-                                        <Button
-                                            variant={'outlined'}
-                                            color="error"
-                                            onClick={() =>
-                                                setDeleteMembersModal(true)
-                                            }
-                                        >
-                                            Delete Selected
-                                        </Button>
-                                    )}
-                                </StyledDeleteSelectedContainer>
-                                <StyledAddMemberContainer>
-                                    <Button
-                                        variant={'contained'}
-                                        onClick={() => {
-                                            getUsersNoCreds();
-                                        }}
+            <StyledMemberInnerContent>
+                <StyledTableContainer>
+                    <StyledTableTitleContainer>
+                        <StyledTableTitleDiv>
+                            <Typography variant={'h6'}>Members</Typography>
+                        </StyledTableTitleDiv>
+                        <StyledTableTitleMemberContainer>
+                            {Avatars.length > 0 ? (
+                                <StyledAvatarGroupContainer>
+                                    <AvatarGroup
+                                        spacing={'small'}
+                                        variant={'circular'}
+                                        max={4}
+                                        total={totalMembers}
                                     >
-                                        Add Members{' '}
-                                    </Button>
-                                </StyledAddMemberContainer>
-                            </StyledTableTitleContainer>
-                            <StyledMemberTable>
-                                <Table.Head>
-                                    <Table.Row>
-                                        <Table.Cell
-                                            size="small"
-                                            padding="checkbox"
-                                        >
-                                            <Checkbox
-                                                checked={
-                                                    selectedMembers.length ===
-                                                        verifiedMembers.length &&
-                                                    verifiedMembers.length > 0
-                                                }
-                                                onChange={() => {
-                                                    if (
-                                                        selectedMembers.length !==
-                                                        verifiedMembers.length
-                                                    ) {
-                                                        setSelectedMembers(
-                                                            verifiedMembers,
-                                                        );
-                                                    } else {
-                                                        setSelectedMembers([]);
-                                                    }
-                                                }}
-                                            />
-                                        </Table.Cell>
-                                        <Table.Cell size="small">
-                                            Name
-                                        </Table.Cell>
-                                        <Table.Cell size="small">
-                                            Permission
-                                        </Table.Cell>
-                                        <Table.Cell size="small">
-                                            Permission Date
-                                        </Table.Cell>
-                                        <Table.Cell size="small">
-                                            Action
-                                        </Table.Cell>
-                                    </Table.Row>
-                                </Table.Head>
-                                <Table.Body>
-                                    {verifiedMembers.map((x, i) => {
-                                        const user = verifiedMembers[i];
-
-                                        let isSelected = false;
-
-                                        if (user) {
-                                            isSelected = selectedMembers.some(
-                                                (value) => {
-                                                    return value.id === user.id;
-                                                },
-                                            );
-                                        }
-                                        if (user) {
-                                            return (
-                                                <Table.Row key={user.name + i}>
-                                                    <StyledTableCell
-                                                        size="medium"
-                                                        padding="checkbox"
-                                                    >
-                                                        <StyledCheckbox
-                                                            checked={isSelected}
-                                                            onChange={() => {
-                                                                if (
-                                                                    isSelected
-                                                                ) {
-                                                                    const selMembers =
-                                                                        [];
-                                                                    selectedMembers.forEach(
-                                                                        (u) => {
-                                                                            if (
-                                                                                u.id !==
-                                                                                user.id
-                                                                            )
-                                                                                selMembers.push(
-                                                                                    u,
-                                                                                );
-                                                                        },
-                                                                    );
-                                                                    setSelectedMembers(
-                                                                        selMembers,
-                                                                    );
-                                                                } else {
-                                                                    setSelectedMembers(
-                                                                        [
-                                                                            ...selectedMembers,
-                                                                            user,
-                                                                        ],
-                                                                    );
-                                                                }
-                                                            }}
-                                                        />
-                                                    </StyledTableCell>
-                                                    <UserInfoTableCell
-                                                        size="medium"
-                                                        component="td"
-                                                        scope="row"
-                                                    >
-                                                        <AvatarWrapper>
-                                                            <Avatar>
-                                                                {user.name[0].toUpperCase()}
-                                                            </Avatar>
-                                                        </AvatarWrapper>
-                                                        <NameIDWrapper>
-                                                            <Stack>
-                                                                {user.name}
-                                                            </Stack>
-                                                            <Stack>
-                                                                {`${user.type} ID: ${user.id}`}
-                                                            </Stack>
-                                                        </NameIDWrapper>
-                                                    </UserInfoTableCell>
-                                                    <Table.Cell size="medium">
-                                                        <RadioGroup
-                                                            row
-                                                            defaultValue={
-                                                                permissionMapper[
-                                                                    user
-                                                                        .permission
-                                                                ]
-                                                            }
-                                                            onChange={(e) => {
-                                                                updateSelectedUsers(
-                                                                    [user],
-                                                                    permissionMapper[
-                                                                        e.target
-                                                                            .value
-                                                                    ],
-                                                                );
-                                                            }}
-                                                        >
-                                                            <RadioGroup.Item
-                                                                value="Author"
-                                                                label="Author"
-                                                            />
-                                                            <RadioGroup.Item
-                                                                value="Editor"
-                                                                label="Editor"
-                                                            />
-                                                            <RadioGroup.Item
-                                                                value="Read-Only"
-                                                                label="Read-Only"
-                                                            />
-                                                        </RadioGroup>
-                                                    </Table.Cell>
-                                                    <Table.Cell size="medium">
-                                                        Not Available
-                                                    </Table.Cell>
-                                                    <Table.Cell size="medium">
-                                                        <IconButton
-                                                            onClick={() => {
-                                                                // set user
-                                                                setUserToDelete(
-                                                                    user,
-                                                                );
-                                                                // open modal
-                                                                setDeleteMemberModal(
-                                                                    true,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Delete></Delete>
-                                                        </IconButton>
-                                                    </Table.Cell>
-                                                </Table.Row>
-                                            );
-                                        } else {
-                                            return (
-                                                <Table.Row
-                                                    key={
-                                                        i + 'No data available'
-                                                    }
-                                                >
-                                                    <Table.Cell size="medium"></Table.Cell>
-                                                    <Table.Cell size="medium"></Table.Cell>
-                                                    <Table.Cell size="medium"></Table.Cell>
-                                                    <Table.Cell size="medium"></Table.Cell>
-                                                    <Table.Cell size="medium"></Table.Cell>
-                                                </Table.Row>
-                                            );
-                                        }
-                                    })}
-                                </Table.Body>
-                                <Table.Footer>
-                                    <Table.Row>
-                                        <Table.Pagination
-                                            rowsPerPageOptions={
-                                                paginationOptions.membersPageCounts
-                                            }
-                                            onPageChange={(e, v) => {
-                                                setMembersPage(v + 1);
-                                                setSelectedMembers([]);
-                                            }}
-                                            page={membersPage - 1}
-                                            rowsPerPage={5}
-                                            count={filteredMembersCount}
-                                        />
-                                    </Table.Row>
-                                </Table.Footer>
-                            </StyledMemberTable>
-                        </StyledTableContainer>
-                    ) : (
-                        <StyledNoMembersContainer>
-                            <StyledTableTitleContainer>
-                                <StyledTableTitleDiv>
-                                    <Typography variant={'h6'}>
-                                        Members
+                                        {Avatars.map((el) => {
+                                            return el;
+                                        })}
+                                    </AvatarGroup>
+                                </StyledAvatarGroupContainer>
+                            ) : null}
+                            <StyledTableTitleMemberCountContainer>
+                                <StyledTableTitleMemberCount>
+                                    <Typography variant={'caption'}>
+                                        {totalMembers} Members
                                     </Typography>
-                                </StyledTableTitleDiv>
-                            </StyledTableTitleContainer>
-                            <StyledNoMembersDiv>
-                                <Typography variant={'body1'}>
-                                    No members present
-                                </Typography>
-                                <Button
-                                    variant={'contained'}
-                                    onClick={() => {
-                                        getUsersNoCreds();
-                                    }}
-                                >
-                                    Add Members{' '}
-                                </Button>
-                            </StyledNoMembersDiv>
-                        </StyledNoMembersContainer>
-                    )}
-                </StyledMemberInnerContent>
-            ) : (
-                <>
-                    <div
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            padding: '8px',
-                        }}
-                    >
-                        <Search
-                            ref={memberSearchRef}
-                            placeholder="Search Members"
-                            size="small"
-                            value={searchFilter}
-                            onChange={(e) => {
-                                setValue('SEARCH_FILTER', e.target.value);
-                            }}
-                        />
-                        <Button
-                            variant={'contained'}
-                            onClick={() => {
-                                getUsersNoCreds();
-                            }}
-                        >
-                            Add{' '}
-                        </Button>
-                    </div>
-                    <StyledMemberTable>
-                        <Table.Head>
-                            <Table.Row>
-                                <Table.Cell size="small">Name</Table.Cell>
-                                <Table.Cell size="small">Permission</Table.Cell>
-                                {/* <Table.Cell size="small">Action</Table.Cell> */}
-                            </Table.Row>
-                        </Table.Head>
-                        <Table.Body>
-                            {verifiedMembers.map((x, i) => {
-                                const user = verifiedMembers[i];
+                                </StyledTableTitleMemberCount>
+                            </StyledTableTitleMemberCountContainer>
+                        </StyledTableTitleMemberContainer>
 
-                                let isSelected = false;
-
-                                if (user) {
-                                    isSelected = selectedMembers.some(
-                                        (value) => {
-                                            return value.id === user.id;
-                                        },
-                                    );
-                                }
-                                if (user) {
-                                    return (
-                                        <Table.Row key={user.id + i}>
-                                            {/* leaving this in case we want to add separate columns for name, id, login type */}
-                                            {/* <Table.Cell
-                                                size="small"
-                                                component="td"
-                                                scope="row"
-                                            >
-                                                {user.name}
-                                            </Table.Cell> */}
-
-                                            <UserInfoTableCell
-                                                size="medium"
-                                                component="td"
-                                                scope="row"
-                                            >
-                                                <AvatarWrapper>
-                                                    <Avatar>
-                                                        {user.name[0].toUpperCase()}
-                                                    </Avatar>
-                                                </AvatarWrapper>
-                                                <NameIDWrapper>
-                                                    <Stack>{user.name}</Stack>
-                                                    <Stack>
-                                                        {`${user.type} ID: ${user.id}`}
-                                                    </Stack>
-                                                </NameIDWrapper>
-                                            </UserInfoTableCell>
-
-                                            <Table.Cell size="small">
-                                                <Select
-                                                    value={
-                                                        permissionMapper[
-                                                            user.permission
-                                                        ]
-                                                    }
-                                                    onChange={(e) => {
-                                                        updateSelectedUsers(
-                                                            [user],
-                                                            permissionMapper[
-                                                                e.target.value
-                                                            ],
-                                                        );
-                                                    }}
-                                                    size="small"
-                                                >
-                                                    <Select.Item
-                                                        value={'Author'}
-                                                    >
-                                                        Author
-                                                    </Select.Item>
-                                                    <Select.Item
-                                                        value={'Editor'}
-                                                    >
-                                                        Editor
-                                                    </Select.Item>
-                                                    <Select.Item
-                                                        value={'Read-Only'}
-                                                    >
-                                                        Read-Only
-                                                    </Select.Item>
-                                                </Select>
-                                                {/* <RadioGroup
-                                                row
-                                                defaultValue={
-                                                    permissionMapper[
-                                                        user.permission
-                                                    ]
-                                                }
-                                                onChange={(e) => {
-                                                    updateSelectedUsers(
-                                                        [user],
-                                                        permissionMapper[
-                                                            e.target.value
-                                                        ],
-                                                    );
-                                                }}
-                                                sx={{
-                                                    flexWrap: 'nowrap',
-                                                    WebkitFlexWrap: 'nowrap',
-                                                }}
-                                            >
-                                                <RadioGroup.Item
-                                                    value="Author"
-                                                    label="Author"
-                                                />
-                                                <RadioGroup.Item
-                                                    value="Editor"
-                                                    label="Editor"
-                                                />
-                                                <RadioGroup.Item
-                                                    value="Read-Only"
-                                                    label="Read-Only"
-                                                />
-                                            </RadioGroup> */}
-                                            </Table.Cell>
-                                            {/* <Table.Cell size="small">
-                                            <IconButton
-                                                onClick={() => {
-                                                    // set user
-                                                    setUserToDelete(user);
-                                                    // open modal
-                                                    setDeleteMemberModal(true);
-                                                }}
-                                            >
-                                                <Delete></Delete>
-                                            </IconButton>
-                                        </Table.Cell> */}
-                                        </Table.Row>
-                                    );
-                                }
-                            })}
-                        </Table.Body>
-                        <Table.Footer>
-                            <Table.Row>
-                                <Table.Pagination
-                                    rowsPerPageOptions={
-                                        paginationOptions.membersPageCounts
-                                    }
-                                    onPageChange={(e, v) => {
-                                        setMembersPage(v + 1);
-                                        setSelectedMembers([]);
-                                    }}
-                                    page={membersPage - 1}
-                                    rowsPerPage={5}
-                                    count={filteredMembersCount}
-                                />
-                            </Table.Row>
-                        </Table.Footer>
-                    </StyledMemberTable>
-                </>
-            )}
-            <Modal open={deleteMembersModal}>
-                <Modal.Title>Are you sure?</Modal.Title>
-                <Modal.Content>
-                    Would you like to delete all selected members
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        variant="text"
-                        onClick={() => setDeleteMembersModal(false)}
-                    >
-                        Close
-                    </Button>
-                    <Button
-                        variant={'contained'}
-                        color="error"
-                        onClick={() => {
-                            deleteSelectedMembers(selectedMembers);
-                        }}
-                    >
-                        Confirm
-                    </Button>
-                </Modal.Actions>
-            </Modal>
-            <Modal open={deleteMemberModal} maxWidth="md">
-                <Modal.Title>
-                    <Typography variant="h6">Are you sure?</Typography>
-                </Modal.Title>
-                <Modal.Content>
-                    <Modal.ContentText>
-                        {userToDelete && (
-                            <Typography variant="body1">
-                                This will remove <b>{userToDelete.name}</b>
-                            </Typography>
-                        )}
-                    </Modal.ContentText>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        variant="text"
-                        onClick={() => setDeleteMemberModal(false)}
-                    >
-                        Close
-                    </Button>
-                    <Button
-                        color="error"
-                        variant={'contained'}
-                        onClick={() => {
-                            if (!userToDelete) {
-                                console.error('No user to delete');
-                            }
-                            deleteSelectedMembers([userToDelete]);
-                        }}
-                    >
-                        Confirm
-                    </Button>
-                </Modal.Actions>
-            </Modal>
-
-            <Modal open={addMembersModal} maxWidth="lg">
-                <Modal.Title>Add Members</Modal.Title>
-                <Modal.Content sx={{ width: '50rem' }}>
-                    <StyledModalContentText>
-                        <Autocomplete
-                            label="Search"
-                            multiple={true}
-                            options={nonCredentialedUsers}
-                            limitTags={2}
-                            getLimitTagsText={() =>
-                                ` +${selectedNonCredentialedUsers.length - 2}`
-                            }
-                            value={[...selectedNonCredentialedUsers]}
-                            getOptionLabel={(option: any) => {
-                                return `${option.name}`;
-                            }}
-                            isOptionEqualToValue={(option, value) => {
-                                return option.name === value.name;
-                            }}
-                            onChange={(event, newValue: any) => {
-                                setSelectedNonCredentialedUsers([...newValue]);
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    variant="outlined"
-                                    placeholder="Search users"
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        value: '',
-                                        startAdornment: null,
-                                    }}
-                                />
-                            )}
-                        />
-                        <StyledOuterBox
-                            userLength={selectedNonCredentialedUsers.length}
-                        >
-                            {selectedNonCredentialedUsers.map((user, idx) => (
-                                <StyledFlexBox key={idx} index={idx}>
-                                    <StyledCenterBox>
-                                        <StyledAvatarBox>
-                                            <StyledUserAvatar
-                                                userColor={user.color}
-                                            >
-                                                {user.name[0].toUpperCase() +
-                                                    (user.name.indexOf(' ') > -1
-                                                        ? user.name[
-                                                              user.name.indexOf(
-                                                                  ' ',
-                                                              ) + 1
-                                                          ].toUpperCase()
-                                                        : '')}
-                                            </StyledUserAvatar>
-                                        </StyledAvatarBox>
-                                    </StyledCenterBox>
-                                    <StyledCardHeader
-                                        title={
-                                            <Typography variant="h5">
-                                                {user.name}
-                                            </Typography>
-                                        }
-                                        subheader={
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    gap: 2,
-                                                    marginTop: '4px',
-                                                }}
-                                            >
-                                                <span
-                                                    style={{
-                                                        opacity: 0.9,
-                                                        fontSize: '14px',
-                                                    }}
-                                                >
-                                                    {`User ID: `}
-                                                    <Chip
-                                                        label={user.id}
-                                                        size="small"
-                                                    />
-                                                </span>
-                                                {`• `}
-                                                <span>
-                                                    {`Email: `}
-                                                    <Link
-                                                        href={`mailto:${user.email}`}
-                                                        underline="none"
-                                                    >
-                                                        {user.email}
-                                                    </Link>
-                                                </span>
-                                            </Box>
-                                        }
-                                        action={
-                                            <StyledIconButton
-                                                onClick={() => {
-                                                    const filtered =
-                                                        selectedNonCredentialedUsers.filter(
-                                                            (val) =>
-                                                                val.id !==
-                                                                user.id,
-                                                        );
-                                                    setSelectedNonCredentialedUsers(
-                                                        filtered,
-                                                    );
-                                                }}
-                                            >
-                                                <ClearRounded />
-                                            </StyledIconButton>
-                                        }
-                                    />
-                                </StyledFlexBox>
-                            ))}
-                        </StyledOuterBox>
-
-                        <Typography
-                            variant="subtitle1"
-                            sx={{
-                                pt: '12px',
-                                pb: '12px',
-                                fontWeight: 'bold',
-                                fontSize: '16',
-                            }}
-                        >
-                            Permissions
-                        </Typography>
-                        <Box
-                            sx={{
-                                backgroundColor: 'rgba(0,0,0,.03)',
-                                padding: '10px',
-                                borderRadius: '8px',
-                            }}
-                        >
-                            <RadioGroup
-                                label={''}
+                        <StyledSearchButtonContainer>
+                            <Search
+                                inputRef={memberSearchRef}
+                                placeholder="Search Members"
+                                size="small"
+                                value={search}
                                 onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val) {
-                                        setAddMemberRole(val as SETTINGS_ROLE);
+                                    setSearch(e.target.value);
+                                }}
+                            />
+                        </StyledSearchButtonContainer>
+
+                        <StyledDeleteSelectedContainer>
+                            {selectedMembers.length > 0 && (
+                                <Button
+                                    disabled={isLoading}
+                                    variant={'outlined'}
+                                    color="error"
+                                    onClick={() =>
+                                        openDeleteMembersModal(selectedMembers)
                                     }
+                                >
+                                    Delete Selected
+                                </Button>
+                            )}
+                        </StyledDeleteSelectedContainer>
+                        <StyledAddMemberContainer>
+                            <Button
+                                disabled={isLoading}
+                                variant={'contained'}
+                                onClick={() => {
+                                    openAddMembersModal();
                                 }}
                             >
-                                <Stack spacing={1}>
-                                    <StyledCard>
-                                        <StyledCardHeader
-                                            title={
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        fontSize: '16px',
+                                Add Members
+                            </Button>
+                        </StyledAddMemberContainer>
+                    </StyledTableTitleContainer>
+
+                    {isLoading ? (
+                        <StyledMemberLoading>
+                            <LoadingScreen relative={true}>
+                                <LoadingScreen.Trigger description="Getting members" />
+                            </LoadingScreen>
+                        </StyledMemberLoading>
+                    ) : (
+                        <>
+                            {hasMembers ? (
+                                <StyledMemberTable>
+                                    <Table.Head>
+                                        <Table.Row>
+                                            <Table.Cell
+                                                size="small"
+                                                padding="checkbox"
+                                            >
+                                                <Checkbox
+                                                    checked={
+                                                        selectedMembers.length ===
+                                                            renderedMembers.length &&
+                                                        renderedMembers.length >
+                                                            0
+                                                    }
+                                                    onChange={() => {
+                                                        if (
+                                                            selectedMembers.length !==
+                                                            renderedMembers.length
+                                                        ) {
+                                                            setSelectedMembers(
+                                                                renderedMembers,
+                                                            );
+                                                        } else {
+                                                            setSelectedMembers(
+                                                                [],
+                                                            );
+                                                        }
                                                     }}
-                                                >
-                                                    <Avatar
-                                                        sx={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            mt: '6px',
-                                                            marginRight: '12px',
-                                                            fontSize: '12px',
-                                                            fontWeight: 'bold',
-                                                            backgroundColor:
-                                                                'rgba(0, 0, 0, .5)',
-                                                        }}
-                                                    >
-                                                        A
-                                                    </Avatar>
-                                                    Author
-                                                </Box>
-                                            }
-                                            sx={{ color: '#000' }}
-                                            subheader={
-                                                <Box
-                                                    sx={{
-                                                        marginLeft: '30px',
-                                                    }}
-                                                >
-                                                    {PERMISSION_DESCRIPTION_MAP[
-                                                        name.toLowerCase()
-                                                    ]?.author ||
-                                                        `Error: update key in test-editor.constants to "${name}"`}
-                                                </Box>
-                                            }
-                                            action={
-                                                <RadioGroup.Item
-                                                    value="Author"
-                                                    label=""
                                                 />
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                Name
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                Permission
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                Permission Date
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                &nbsp;
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    </Table.Head>
+                                    <Table.Body>
+                                        {renderedMembers.map((x, i) => {
+                                            const user = renderedMembers[i];
+
+                                            let isSelected = false;
+
+                                            if (user) {
+                                                isSelected =
+                                                    selectedMembers.some(
+                                                        (value) => {
+                                                            return (
+                                                                value.id ===
+                                                                user.id
+                                                            );
+                                                        },
+                                                    );
                                             }
-                                        />
-                                    </StyledCard>
-                                    <StyledCard>
-                                        <Card.Header
-                                            title={
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        fontSize: '16px',
-                                                    }}
-                                                >
-                                                    <Icon
-                                                        sx={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            mt: '6px',
-                                                            marginRight: '12px',
-                                                            fontSize: '12px',
-                                                            fontWeight: 'bold',
-                                                            color: 'rgba(0, 0, 0, .5)',
-                                                        }}
-                                                    >
-                                                        <EditRounded />
-                                                    </Icon>
-                                                    Editor
-                                                </Box>
+
+                                            if (user) {
+                                                return (
+                                                    <Table.Row key={user.id}>
+                                                        <StyledTableCell
+                                                            size="medium"
+                                                            padding="checkbox"
+                                                        >
+                                                            <StyledCheckbox
+                                                                checked={
+                                                                    isSelected
+                                                                }
+                                                                onChange={() => {
+                                                                    if (
+                                                                        isSelected
+                                                                    ) {
+                                                                        const selMembers =
+                                                                            [];
+                                                                        selectedMembers.forEach(
+                                                                            (
+                                                                                u,
+                                                                            ) => {
+                                                                                if (
+                                                                                    u.id !==
+                                                                                    user.id
+                                                                                )
+                                                                                    selMembers.push(
+                                                                                        u,
+                                                                                    );
+                                                                            },
+                                                                        );
+                                                                        setSelectedMembers(
+                                                                            selMembers,
+                                                                        );
+                                                                    } else {
+                                                                        setSelectedMembers(
+                                                                            [
+                                                                                ...selectedMembers,
+                                                                                user,
+                                                                            ],
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </StyledTableCell>
+                                                        <UserInfoTableCell
+                                                            size="medium"
+                                                            component="td"
+                                                            scope="row"
+                                                        >
+                                                            <AvatarWrapper>
+                                                                <Avatar>
+                                                                    {user.name[0].toUpperCase()}
+                                                                </Avatar>
+                                                            </AvatarWrapper>
+                                                            <NameIDWrapper>
+                                                                <Stack>
+                                                                    {user.name}
+                                                                </Stack>
+                                                                <Stack>
+                                                                    {`${user.type} ID: ${user.id}`}
+                                                                </Stack>
+                                                            </NameIDWrapper>
+                                                        </UserInfoTableCell>
+                                                        <Table.Cell size="medium">
+                                                            <RadioGroup
+                                                                row
+                                                                defaultValue={
+                                                                    permissionMapper[
+                                                                        user
+                                                                            .permission
+                                                                    ]
+                                                                }
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    updateSelectedUsers(
+                                                                        [user],
+                                                                        permissionMapper[
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        ],
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <RadioGroup.Item
+                                                                    value="Author"
+                                                                    label="Author"
+                                                                />
+                                                                <RadioGroup.Item
+                                                                    value="Editor"
+                                                                    label="Editor"
+                                                                />
+                                                                <RadioGroup.Item
+                                                                    value="Read-Only"
+                                                                    label="Read-Only"
+                                                                />
+                                                            </RadioGroup>
+                                                        </Table.Cell>
+                                                        <Table.Cell size="medium">
+                                                            Not Available
+                                                        </Table.Cell>
+                                                        <Table.Cell size="medium">
+                                                            <IconButton
+                                                                onClick={() => {
+                                                                    openDeleteMembersModal(
+                                                                        [user],
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Delete></Delete>
+                                                            </IconButton>
+                                                        </Table.Cell>
+                                                    </Table.Row>
+                                                );
                                             }
-                                            sx={{ color: '#000' }}
-                                            subheader={
-                                                <Box
-                                                    sx={{
-                                                        marginLeft: '30px',
-                                                    }}
-                                                >
-                                                    {PERMISSION_DESCRIPTION_MAP[
-                                                        name.toLowerCase()
-                                                    ]?.editor ||
-                                                        `Error: update key in test-editor.constants to "${name}"`}
-                                                </Box>
-                                            }
-                                            action={
-                                                <RadioGroup.Item
-                                                    value="Editor"
-                                                    label=""
-                                                />
-                                            }
-                                        />
-                                    </StyledCard>
-                                    <StyledCard>
-                                        <Card.Header
-                                            title={
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        fontSize: '16px',
-                                                    }}
-                                                >
-                                                    <Icon
-                                                        sx={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            mt: '6px',
-                                                            marginRight: '12px',
-                                                            fontSize: '12px',
-                                                            fontWeight: 'bold',
-                                                            color: 'rgba(0, 0, 0, .5)',
-                                                        }}
-                                                    >
-                                                        <RemoveRedEyeRounded />
-                                                    </Icon>
-                                                    Read-Only
-                                                </Box>
-                                            }
-                                            sx={{ color: '#000' }}
-                                            subheader={
-                                                <Box
-                                                    sx={{
-                                                        marginLeft: '30px',
-                                                    }}
-                                                >
-                                                    {PERMISSION_DESCRIPTION_MAP[
-                                                        name.toLowerCase()
-                                                    ]?.readonly ||
-                                                        `Error: update key in test-editor.constants to "${name}"`}
-                                                </Box>
-                                            }
-                                            action={
-                                                <RadioGroup.Item
-                                                    value="Read-Only"
-                                                    label=""
-                                                />
-                                            }
-                                        />
-                                    </StyledCard>
-                                </Stack>
-                            </RadioGroup>
-                        </Box>
-                    </StyledModalContentText>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        variant="outlined"
-                        onClick={() => setAddMembersModal(false)}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant={'contained'}
-                        disabled={
-                            !addMemberRole ||
-                            selectedNonCredentialedUsers.length < 1
-                        }
-                        onClick={() => {
-                            submitNonCredUsers();
-                        }}
-                    >
-                        Save
-                    </Button>
-                </Modal.Actions>
-            </Modal>
+
+                                            return null;
+                                        })}
+                                    </Table.Body>
+                                    <Table.Footer>
+                                        <Table.Row>
+                                            <Table.Pagination
+                                                disabled={isLoading}
+                                                onPageChange={(e, v) => {
+                                                    setPage(v);
+                                                    setSelectedMembers([]);
+                                                }}
+                                                page={page}
+                                                rowsPerPage={rowsPerPage}
+                                                rowsPerPageOptions={[5, 10, 20]}
+                                                onRowsPerPageChange={(e) => {
+                                                    // set the new limit
+                                                    setRowsPerPage(
+                                                        parseInt(
+                                                            e.target.value,
+                                                            10,
+                                                        ),
+                                                    );
+                                                }}
+                                                count={totalMembers}
+                                            />
+                                        </Table.Row>
+                                    </Table.Footer>
+                                </StyledMemberTable>
+                            ) : (
+                                <StyledNoMembersDiv>
+                                    <Typography variant={'body2'}>
+                                        No members
+                                    </Typography>
+                                    <Button
+                                        disabled={isLoading}
+                                        variant={'contained'}
+                                        onClick={() => {
+                                            openAddMembersModal();
+                                        }}
+                                    >
+                                        Add Members
+                                    </Button>
+                                </StyledNoMembersDiv>
+                            )}
+                        </>
+                    )}
+                </StyledTableContainer>
+            </StyledMemberInnerContent>
+            <MembersDeleteOverlay
+                type={type}
+                id={id}
+                members={pendingDeletedMembers}
+                open={deleteMembersModal}
+                onClose={(success) => {
+                    // clear out the deleted members
+                    setPendingDeletedMembers([]);
+
+                    // close the model
+                    setDeleteMembersModal(false);
+
+                    // refresh if successful
+                    if (success) {
+                        // trigger the update
+                        onChange();
+
+                        // refresh
+                        getMembers.refresh();
+                    }
+                }}
+            />
+            <MembersAddOverlay
+                type={type}
+                id={id}
+                open={addMembersModal}
+                onClose={(success) => {
+                    // clear out the deleted members
+                    setAddMembersModal(false);
+
+                    // refresh if successful
+                    if (success) {
+                        // trigger the update
+                        onChange();
+
+                        getMembers.refresh();
+                    }
+                }}
+            />
         </StyledMemberContent>
     );
 };

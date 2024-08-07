@@ -4,12 +4,15 @@ import { Backdrop, CircularProgress, Typography, Stack } from '@semoss/ui';
 import { LoadingScreenContext } from './LoadingScreenContext';
 
 export interface LoadingScreenProps {
+    /** Relative loading screen */
+    relative?: boolean;
+
     /** Content to overlay the Loading Screen on */
     children: React.ReactNode;
 }
 
 export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
-    const { children } = props;
+    const { relative = false, children } = props;
 
     // when the count is > 0 it is loading
     const [count, setCount] = useState(0);
@@ -73,6 +76,7 @@ export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
                     // zIndex: (theme) =>
                     //     Math.max.apply(Math, Object.values(theme.zIndex)) + 1,
                     zIndex: 1501,
+                    position: relative ? 'relative' : undefined,
                 }}
             >
                 <Stack

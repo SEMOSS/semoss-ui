@@ -20,9 +20,6 @@ const StyledEditorContainer = styled('div')(({ theme }) => ({
 }));
 
 interface EditEngineDetailsProps {
-    /** Type of Engine */
-    type: string;
-
     /** Track if the edit is open */
     open: boolean;
 
@@ -37,7 +34,7 @@ interface EditEngineDetailsProps {
  * Wrap the Engine routes and provide styling/functionality
  */
 export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
-    const { open = false, type, onClose = () => null, values = {} } = props;
+    const { open = false, onClose = () => null, values = {} } = props;
 
     // get the notification
     const notification = useNotification();
@@ -54,7 +51,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
     );
 
     // get the engine information
-    const { id } = useEngine();
+    const { id, type } = useEngine();
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
