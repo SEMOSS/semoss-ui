@@ -13,3 +13,4 @@ export { AIGenerationSettings } from './AIGenerationSettings';
 export { JsonSettings } from './JsonSettings';
 export { CodeEditorSettings } from './CodeEditorSettings';
 export { SelectOptionsSettings } from './SelectOptionsSettings';
+export { SelectSettings } from './SelectSettings';
