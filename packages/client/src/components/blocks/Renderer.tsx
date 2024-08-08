@@ -26,7 +26,7 @@ export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
     // get the widget
     const b = registry[block.widget];
     if (!b) {
-        throw Error(`Widget ${b} for block ${id} is not registered`);
+        throw Error(`Widget ${block.widget} for block ${id} is not registered`);
     }
 
     // render the view
