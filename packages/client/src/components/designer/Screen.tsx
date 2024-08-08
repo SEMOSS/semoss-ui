@@ -62,7 +62,7 @@ const StyledContentInner = styled('div', {
         },
         // page scrolling is handled in the designer in design mode
         '[data-page]': {
-            height: 'unset!important',
+            overflow: 'unset!important',
             minHeight: '100%',
         },
     }),
@@ -250,7 +250,7 @@ export const Screen = observer((props: ScreenProps) => {
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
+        <StyledContainer data-block="root" ref={rootRef} className="helllo man">
             {designer.selected && <SelectedMask />}
             {designer.hovered && <HoveredMask />}
             {designer.selected && !designer.drag.active && (

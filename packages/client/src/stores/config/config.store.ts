@@ -55,8 +55,10 @@ interface ConfigStoreInterface {
             single_multi: string;
             display_values?: string;
         }[];
+        /**
+         * List of available providers (logins) that are available
+         */
         providers: string[];
-        loginsAllowed: string[];
         version: {
             datetime: string;
             version: string;
@@ -85,13 +87,13 @@ export class ConfigStore {
             databaseMetaKeys: [],
             projectMetaKeys: [],
             providers: [],
-            loginsAllowed: [],
             version: {
                 version: '',
                 datetime: '',
             },
         },
     };
+    private _generalReactors: Array<string> = [];
 
     constructor(root: RootStore) {
         // register the root
@@ -112,10 +114,10 @@ export class ConfigStore {
     }
 
     /**
-     * Get data from the current store
+     * Get the list of reactors
      */
-    get loginsAllowed() {
-        return this._store.config.loginsAllowed;
+    get generalReactors() {
+        return this._generalReactors;
     }
 
     // *********************************************************
@@ -138,6 +140,9 @@ export class ConfigStore {
 
         // get the user information
         await this.getUser();
+
+        //set the reactors
+        await this.setGeneralReactors();
     }
 
     /**
@@ -154,11 +159,6 @@ export class ConfigStore {
                 // set the user information
                 if (Object.keys(data.logins).length > 0) {
                     this._store.user.loggedIn = true;
-                }
-
-                //save loginsALlowed
-                for (const type in data.loginsAllowed) {
-                    this._store.config.loginsAllowed.push(type);
                 }
 
                 // save the providers
@@ -527,5 +527,23 @@ export class ConfigStore {
 
         // create the newly loaded workspace
         return new WorkspaceStore(this._root, workspace);
+    }
+
+    /**
+     * Set general reactors used for pixel cell suggestions
+     */
+    async setGeneralReactors() {
+        try {
+            const res = await runPixel('META|HelpJson();');
+
+            runInAction(() => {
+                const generalReactorList = res.pixelReturn[0].output['General'];
+
+                this._generalReactors = generalReactorList;
+            });
+        } catch {
+            console.error('Failed response from help pixel');
+            return;
+        }
     }
 }

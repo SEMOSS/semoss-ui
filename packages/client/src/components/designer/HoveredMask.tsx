@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Typography, styled } from '@semoss/ui';
 
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
-import { useDesigner } from '@/hooks';
+import { useBlocks, useDesigner } from '@/hooks';
 
 interface StyledContainerProps {
     top: number;
@@ -70,6 +70,9 @@ export const HoveredMask = observer(() => {
 
     // get the store
     const { designer } = useDesigner();
+    const { registry, state } = useBlocks();
+
+    const variableName = state.getAlias(designer.hovered);
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
@@ -120,7 +123,9 @@ export const HoveredMask = observer(() => {
             }
         >
             <StyledTitle>
-                <Typography variant={'body2'}>{designer.hovered}</Typography>
+                <Typography variant={'body2'}>
+                    {variableName ? variableName : designer.hovered}
+                </Typography>
             </StyledTitle>
         </StyledContainer>
     );

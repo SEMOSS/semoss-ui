@@ -33,10 +33,15 @@ interface VariablePreviewProps {
      * Which variable to preview
      */
     variable: Variable;
+
+    /**
+     * id of the variable
+     */
+    id: string;
 }
 
 export const VariablePreview = observer((props: VariablePreviewProps) => {
-    const { variable } = props;
+    const { variable, id } = props;
     const { state } = useBlocks();
 
     /**
@@ -48,6 +53,7 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
         try {
             const block = state.getBlock(to);
             const s: SerializedState = {
+                version: '1.0.0-alpha.1',
                 dependencies: {},
                 variables: {},
                 queries: {},
@@ -108,18 +114,15 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                 );
             }
         } else {
+            const found = state.parseVariable(`{{${id}}}`);
+
             return (
                 <Typography variant="body2" fontWeight="bold">
-                    {typeof state.getVariable(variable.to, variable.type) !==
-                    'string'
-                        ? JSON.stringify(
-                              state.getVariable(variable.to, variable.type),
-                          )
-                        : state.getVariable(variable.to, variable.type)}{' '}
+                    {typeof found !== 'string' ? JSON.stringify(found) : found}{' '}
                 </Typography>
             );
         }
-    }, [variable]);
+    }, [variable, id]);
 
     const previewValue = useMemo(() => {
         let val;
@@ -131,15 +134,12 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                 val = 'undefined';
             }
         } else {
-            if (
-                typeof state.getVariable(variable.to, variable.type) !==
-                'string'
-            ) {
-                val = JSON.stringify(
-                    state.getVariable(variable.to, variable.type),
-                );
+            const found = state.parseVariable(`{{${id}}}`);
+
+            if (typeof found !== 'string') {
+                val = JSON.stringify(found);
             } else {
-                val = state.getVariable(variable.to, variable.type);
+                val = found;
             }
         }
         return (
@@ -158,7 +158,7 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                 </Stack>
             </>
         );
-    }, [variable]);
+    }, [variable, id]);
 
     return (
         <StyledStack spacing={0}>

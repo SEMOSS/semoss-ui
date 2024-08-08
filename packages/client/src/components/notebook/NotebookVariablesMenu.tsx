@@ -14,7 +14,7 @@ import {
     Popover,
 } from '@semoss/ui';
 import { useBlocks, usePixel } from '@/hooks';
-import { AddVariableModal } from './AddVariableModal';
+import { AddVariablePopover } from './AddVariablePopover';
 import { NotebookVariable } from './NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
 import { VARIABLE_TYPES } from '@/stores';
@@ -156,21 +156,21 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
 
         setEngines(newEngines);
     }, [getEngines.status, getEngines.data]);
-    const variables = useMemo(() => {
-        return Object.entries(state.variables).filter((kv) => {
-            const val = kv[1];
 
-            if (
-                val.alias.includes(filterWord) &&
-                selectedFilter.indexOf(val.type) > -1
+    const variables = useMemo(() => {
+        return Object.entries(state.variables)
+            .filter(
+                ([id, val]) =>
+                    id.includes(filterWord) &&
+                    selectedFilter.indexOf(val.type) > -1,
             )
-                return kv;
-        });
+            .sort((a, b) => a[0].localeCompare(b[0]));
     }, [
-        Object.entries(state.variables).length,
         filterWord,
         selectedFilter.length,
         Object.values(state.variables),
+        Object.entries(state.variables).length,
+        Object.keys(state.variables).join(''),
     ]);
 
     return (
@@ -247,12 +247,13 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                 </Stack>
                 <StyledMenuScroll>
                     <List disablePadding>
-                        {variables.map((t, index) => {
-                            const variable = t[1];
+                        {variables.map((keyValue, index) => {
+                            const id = keyValue[0];
+                            const variable = keyValue[1];
                             return (
                                 <NotebookVariable
-                                    key={variable.alias}
-                                    id={t[0]}
+                                    key={id}
+                                    id={id}
                                     variable={variable}
                                     engines={engines}
                                 />
@@ -261,7 +262,7 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
                     </List>
                 </StyledMenuScroll>
                 {isPopoverOpen && (
-                    <AddVariableModal
+                    <AddVariablePopover
                         open={isPopoverOpen}
                         anchorEl={popoverAnchorEle}
                         onClose={() => {

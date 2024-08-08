@@ -3,7 +3,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
-import { Block, BlockDef, CellState, QueryState } from '@/stores';
+import { Block, BlockDef, CellState, QueryState, Variable } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 import {
@@ -17,7 +17,20 @@ import {
     styled,
 } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
-import { Close, DataObject, Layers, OpenInNew } from '@mui/icons-material';
+import {
+    CalendarMonth,
+    Close,
+    DataArray,
+    DataObject,
+    Gesture,
+    Inventory2Outlined,
+    Layers,
+    OpenInNew,
+    SwitchAccessShortcutOutlined,
+    TokenOutlined,
+} from '@mui/icons-material';
+import { ModelBrain } from '@/assets/img/ModelBrain';
+import { Database } from '@/assets/img/Database';
 
 interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -53,10 +66,11 @@ interface Option {
      * option display
      */
     display: string;
+
     /**
      * type of block
      */
-    blockType: 'block' | 'query' | 'cell' | 'cell-prop';
+    blockType: 'block' | 'query' | 'cell' | 'query-prop' | 'cell-prop';
 }
 
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
@@ -139,57 +153,51 @@ export const QueryInputSettings = observer(
         const optionMap = useMemo<Record<string, Option>>(() => {
             const pathMap = {};
 
-            Object.values(state.blocks).forEach((block: Block) => {
-                // only input block types will have values
-                // FixMe: Error importing default blocks here, hardcoding for now
-                const inputBlockWidgets = [
-                    'input',
-                    'checkbox',
-                    'select',
-                    'upload',
-                ];
-                if (inputBlockWidgets.includes(block.widget)) {
-                    pathMap[`block.${block.id}.value`] = {
-                        id: block.id,
-                        path: `block.${block.id}.value`,
-                        type: typeof block.data?.value,
-                        display: `${block.id}`,
-                        blockType: 'block',
-                    };
-                }
-            });
-            notebook.queriesList.forEach((query: QueryState) => {
-                pathMap[`query.${query.id}`] = {
-                    id: query.id,
-                    path: `query.${query.id}.output`,
-                    type: typeof query.output,
-                    display: `${query.id}`,
-                    blockType: 'query',
-                };
-                query.list.forEach((subQ: string) => {
-                    const cell: CellState = query.cells[subQ];
-                    pathMap[`query.${query.id}.${cell.id}`] = {
-                        id: cell.id,
-                        path: `query.${query.id}.cell.${cell.id}`,
-                        query: `${query.id}`,
-                        type: typeof cell._exposed,
-                        display: `${cell.id}`,
-                        blockType: 'cell',
+            Object.entries(state.variables).forEach(
+                (keyValue: [string, Variable]) => {
+                    console.log(keyValue[0]);
+                    const alias = keyValue[0];
+                    const variable = keyValue[1];
+
+                    const ref = state.getVariable(variable.to, variable.type);
+
+                    pathMap[alias] = {
+                        id: alias,
+                        path: alias,
+                        type: typeof ref,
+                        display: alias,
+                        blockType: variable.type,
                     };
 
-                    for (const f in cell._exposed) {
-                        pathMap[`query.${query.id}.${cell.id}.${f}`] = {
-                            id: cell.id + f,
-                            path: `query.${query.id}.cell.${cell.id}.${f}`,
-                            query: `${query.id}`,
-                            type: typeof cell._exposed[f],
-                            display: `${cell.id}-${f}`,
-                            blockType: 'cell-prop',
-                        };
+                    if (variable.type === 'query') {
+                        const q = state.getQuery(variable.to);
+                        for (const f in q._exposed) {
+                            pathMap[`${alias}.${f}`] = {
+                                id: `${alias}.${f}`,
+                                path: `${alias}.${f}`,
+                                type: typeof q[f], // TODO: get value
+                                display: `${alias}.${f}`,
+                                blockType: 'query-prop',
+                            };
+                        }
                     }
-                });
-            });
 
+                    if (variable.type === 'cell') {
+                        const q = state.getQuery(variable.to);
+                        const c = q.getCell(variable.cellId);
+
+                        for (const f in c._exposed) {
+                            pathMap[`${alias}.${f}`] = {
+                                id: `${alias}.${f}`,
+                                path: `${alias}.${f}`,
+                                type: typeof c[f], // TODO: get value
+                                display: `${alias}.${f}`,
+                                blockType: 'cell-prop',
+                            };
+                        }
+                    }
+                },
+            );
             return pathMap;
         }, [state, notebook]);
 
@@ -214,12 +222,52 @@ export const QueryInputSettings = observer(
             switch (type) {
                 case 'cell-prop':
                     return 2;
+                case 'query-prop':
+                    return 2;
                 case 'cell':
                     return 1;
                 case 'query':
-                    return 0;
+                    return 1;
                 default:
                     return 0;
+            }
+        };
+
+        /**
+         * @name getIcon
+         * Used for the Select Dropdown
+         * TODO: Add the icons for other data types
+         */
+        const getIcon = (type: string) => {
+            switch (type) {
+                case 'cell-prop':
+                    return <DataObject />;
+                case 'query-prop':
+                    return <DataObject />;
+                case 'cell':
+                    return <DataObject />;
+                case 'query':
+                    return <DataObject />;
+                case 'array':
+                    return <DataArray />;
+                case 'string':
+                    return <Gesture />;
+                case 'date':
+                    return <CalendarMonth />;
+                case 'JSON':
+                    return <DataObject />;
+                case 'vector':
+                    return <TokenOutlined />;
+                case 'database':
+                    return <Database color="black" />;
+                case 'model':
+                    return <ModelBrain color="black" />;
+                case 'function':
+                    return <SwitchAccessShortcutOutlined />;
+                case 'storage':
+                    return <Inventory2Outlined />;
+                default:
+                    return <DataObject />;
             }
         };
 
@@ -276,23 +324,13 @@ export const QueryInputSettings = observer(
                                         sx={{
                                             width: '100%',
                                             pl: getIndent(option.blockType),
-                                            // paddingTop: '2px',
-                                            // paddingLeft: '16px',
-                                            // paddingRight: '16px',
                                         }}
                                     >
                                         <Typography variant="body2">
                                             {option.display}
                                         </Typography>
-                                        {option.blockType === 'block' ? (
-                                            <Icon>
-                                                <Layers fontSize="small" />
-                                            </Icon>
-                                        ) : (
-                                            <Icon>
-                                                <DataObject fontSize="small" />
-                                            </Icon>
-                                        )}
+                                        {/* TODO: Icon should actually reflect value data type */}
+                                        <Icon>{getIcon(option.blockType)}</Icon>
                                     </Stack>
                                 </li>
                             );

@@ -24,6 +24,7 @@ export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
 export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
 export const PROMPT_QUERY_ID = 'Prompt Query';
 export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
+export const MODEL_ID = 'Model';
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -58,7 +59,9 @@ function getTextFieldInputBlock(
                 padding: '4px',
             },
         },
-        listeners: {},
+        listeners: {
+            onChange: [],
+        },
         slots: {},
     };
 }
@@ -140,7 +143,7 @@ export function getInputFormatPrompt(
                 tokenStrings.push(token.display);
             } else {
                 const keyIndex = inputTokenParts.indexOf(token.key);
-                inputTokenParts[keyIndex] = `{{block.${getIdForInput(
+                inputTokenParts[keyIndex] = `{{${getIdForInput(
                     token.linkedInputToken !== undefined
                         ? inputTypes[token.linkedInputToken].type
                         : inputTypes[token.index].type,
@@ -187,7 +190,6 @@ function getDatabaseQuery() {
 }
 
 export function getQueryForPrompt(
-    model: string,
     tokens: Token[],
     inputTypes: object,
 ): Record<string, QueryStateConfig> {
@@ -296,7 +298,7 @@ export function getQueryForPrompt(
     }limit = 5) -> str:
     import json
     from gaas_gpt_model import ModelEngine
-    model = ModelEngine(engine_id = "${model}", insight_id = '\${i}')
+    model = ModelEngine(engine_id = "{{${MODEL_ID}}}", insight_id = '\${i}')
     ${buildQueryDefinitionFunctionCalls()}
     ${buildQueryDefinitionPromptStatement()}
     response = model.ask(question = prompt)
@@ -307,7 +309,7 @@ export function getQueryForPrompt(
         Object.keys(customInputTypes).length ? ', ' : ''
     }${Object.keys(customInputTypes)
         .map((customInputTokenIndex) => {
-            return `"{{block.${getIdForInput(
+            return `"{{${getIdForInput(
                 customInputTypes[customInputTokenIndex].type,
                 parseInt(customInputTokenIndex),
             )}.value}}"`;
@@ -400,8 +402,24 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
-        variables: {},
-        dependencies: {},
+        version: '1.0.0-alpha.1',
+        variables: {
+            [PROMPT_QUERY_DEFINITION_ID]: {
+                type: 'query',
+                to: PROMPT_QUERY_DEFINITION_ID,
+            },
+            [PROMPT_QUERY_ID]: {
+                type: 'query',
+                to: PROMPT_QUERY_ID,
+            },
+            [MODEL_ID]: {
+                type: 'model',
+                to: MODEL_ID,
+            },
+        },
+        dependencies: {
+            [MODEL_ID]: builder.model.value,
+        },
         queries: {},
         blocks: {
             'page-1': {
@@ -412,7 +430,7 @@ export async function setBlocksAndOpenUIBuilder(
                     style: {
                         fontFamily: 'roboto',
                     },
-                    loading: `{{query.${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
+                    loading: `{{${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
                 },
                 listeners: {
                     onPageLoad: [
@@ -488,7 +506,7 @@ export async function setBlocksAndOpenUIBuilder(
                         textAlign: 'center',
                         padding: '4px',
                     },
-                    text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
+                    text: 'Welcome! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
                 listeners: {},
                 slots: {},
@@ -530,7 +548,7 @@ export async function setBlocksAndOpenUIBuilder(
                 data: {
                     style: {},
                     label: 'Submit',
-                    loading: `{{query.${PROMPT_QUERY_ID}.isLoading}}`,
+                    loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
                     variant: 'contained',
                 },
                 listeners: {
@@ -556,7 +574,7 @@ export async function setBlocksAndOpenUIBuilder(
                     style: {
                         padding: '4px',
                     },
-                    markdown: `{{query.${PROMPT_QUERY_ID}.output}}`,
+                    markdown: `{{${PROMPT_QUERY_ID}.output}}`,
                 },
                 listeners: {},
                 slots: {},
@@ -577,6 +595,14 @@ export async function setBlocksAndOpenUIBuilder(
         if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
             state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
+
+            // for each input add a variable
+            const inputId = getIdForInput(inputType.type, token.index);
+
+            state.variables[inputId] = {
+                type: 'block',
+                to: inputId,
+            };
         }
     }
 
@@ -587,7 +613,6 @@ export async function setBlocksAndOpenUIBuilder(
     ];
 
     state.queries = getQueryForPrompt(
-        builder.model.value as string,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );
