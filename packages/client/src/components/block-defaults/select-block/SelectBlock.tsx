@@ -1,8 +1,9 @@
-import { useMemo, CSSProperties } from 'react';
+import { useMemo, CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDebounce } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
+import { debounce } from '@/utility';
 
 import {
     Autocomplete,
@@ -36,6 +37,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
  */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
+    const [changedValue, setChangedValue] = useState('');
 
     const stringifiedOptions: string[] = useMemo(() => {
         let arr = [];
@@ -60,13 +62,9 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         });
     }, [data.options]);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [listeners, data.value],
-        200,
-    );
+    const debouncedCallback = debounce(() => {
+        listeners.onChange();
+    }, 500);
 
     return (
         <Autocomplete
@@ -123,6 +121,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 
                 debugger;
                 setData('value', value);
+                debouncedCallback();
             }}
             sx={{
                 ...data.style,

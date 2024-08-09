@@ -2,6 +2,7 @@ import { Role } from '@/types';
 import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
 import { Env } from '@/env';
+import { useEffect, useMemo, useRef } from 'react';
 
 /**
  * @desc splits a string at the period
@@ -128,6 +129,29 @@ export const copyTextToClipboard = (text: string, notificationService) => {
             message: e.message,
         });
     }
+};
+
+/**
+ * @desc debounce utility function
+ */
+export const debounce = (callback, delay) => {
+    const ref = useRef(() => {});
+
+    useEffect(() => {
+        ref.current = callback;
+    }, [callback]);
+
+    const debouncedCallback = useMemo(() => {
+        const func = () => {
+            if (ref != null && ref != undefined) {
+                ref.current();
+            }
+        };
+        const timeout = setTimeout(func, delay);
+        return () => clearTimeout(timeout);
+    }, []);
+
+    return debouncedCallback;
 };
 
 export const getSDKSnippet = (
