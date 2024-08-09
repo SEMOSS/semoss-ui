@@ -70,6 +70,10 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
+    const debouncedCallback = debounce(() => {
+        listeners.onChange();
+    }, 200);
+
     return (
         <StyledTextField
             size="small"
@@ -93,10 +97,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 const files = (e.target as HTMLInputElement).files;
                 // upload the new file on change
                 upload(files[0]);
-                debounce(() => {
-                    listeners.onChange();
-                }, 200);
-                //setChangedValue(!changedValue);
+                debouncedCallback();
             }}
             {...attrs}
         />

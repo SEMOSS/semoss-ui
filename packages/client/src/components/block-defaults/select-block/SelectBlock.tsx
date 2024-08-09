@@ -62,6 +62,10 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         });
     }, [data.options]);
 
+    const debouncedCallback = debounce(() => {
+        listeners.onChange();
+    }, 500);
+
     return (
         <Autocomplete
             fullWidth
@@ -117,9 +121,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 
                 debugger;
                 setData('value', value);
-                debounce(() => {
-                    listeners.onChange();
-                }, 500);
+                debouncedCallback();
             }}
             sx={{
                 ...data.style,

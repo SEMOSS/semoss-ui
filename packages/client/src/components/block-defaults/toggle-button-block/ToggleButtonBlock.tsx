@@ -29,15 +29,9 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } =
         useBlock<ToggleButtonBlockDef>(id);
 
-    const [changedValue, setChangedValue] = useState(false);
-
-    // useDebounce(
-    //     () => {
-    //         listeners.onChange();
-    //     },
-    //     [changedValue],
-    //     200,
-    // );
+    const debouncedCallback = debounce(() => {
+        listeners.onChange();
+    }, 200);
 
     return (
         <StyledContainer {...attrs}>
@@ -50,26 +44,17 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
                         if (Array.isArray(newValue)) {
                             if (newValue.length) {
                                 setData('value', newValue);
-                                debounce(() => {
-                                    listeners.onChange();
-                                }, 200);
-                                //setChangedValue(!changedValue);
+                                debouncedCallback();
                             }
                         } else {
                             if (newValue !== null) {
                                 setData('value', newValue);
-                                debounce(() => {
-                                    listeners.onChange();
-                                }, 200);
-                                //setChangedValue(!changedValue);
+                                debouncedCallback();
                             }
                         }
                     } else {
                         setData('value', newValue);
-                        debounce(() => {
-                            listeners.onChange();
-                        }, 200);
-                        //setChangedValue(!changedValue);
+                        debouncedCallback();
                     }
                 }}
                 value={data.value}

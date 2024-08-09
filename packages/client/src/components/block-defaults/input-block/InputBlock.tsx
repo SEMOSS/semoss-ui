@@ -31,6 +31,10 @@ export interface InputBlockDef extends BlockDef<'input'> {
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
 
+    const debouncedCallback = debounce(() => {
+        listeners.onChange();
+    }, 200);
+
     return (
         <StyledTextField
             size="small"
@@ -52,9 +56,7 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                 // update the value
                 setData('value', value);
                 //Trigger the onChange
-                debounce(() => {
-                    listeners.onChange();
-                }, 500);
+                debouncedCallback();
                 //setChangedValue(e.target.value);
             }}
             {...attrs}

@@ -33,6 +33,9 @@ const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
 export const CheckboxBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<CheckboxBlockDef>(id);
 
+    const debouncedCallback = debounce(() => {
+        listeners.onChange();
+    }, 200);
 
     return (
         <StyledContainer {...attrs}>
@@ -46,9 +49,7 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
                     const value = e.target.checked;
                     // update the value
                     setData('value', value);
-                    debounce(() => {
-                        listeners.onChange();
-                    }, 200);
+                    debouncedCallback();
                 }}
             />
         </StyledContainer>
