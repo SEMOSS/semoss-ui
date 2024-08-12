@@ -117,6 +117,7 @@ export const UploadSettings = observer(
             <BaseSettingSection label={label}>
                 <TextField
                     fullWidth
+                    inputProps={{ accept: data.options }}
                     onChange={(e) => {
                         const files = (e.target as HTMLInputElement).files;
 
