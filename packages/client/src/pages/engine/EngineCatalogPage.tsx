@@ -16,7 +16,7 @@ import {
 } from '@semoss/ui';
 import { SearchOff, Search as SearchIcon } from '@mui/icons-material';
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
@@ -137,6 +137,7 @@ export const EngineCatalogPage = observer(
         const [state, dispatch] = useReducer(reducer, initialState);
         const { favoritedDbs, databases } = state;
 
+        const [searchParams, setSearchParams] = useSearchParams();
         const [offset, setOffset] = useState(0);
         const [canCollect, setCanCollect] = useState(true);
         const canCollectRef = useRef(true);
@@ -152,9 +153,6 @@ export const EngineCatalogPage = observer(
 
         // which view we are on
         const [mode, setMode] = useState<MODE>('Mine');
-        const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>(
-            {},
-        );
 
         const dbPixelPrefix: string =
             mode === 'Mine' ? `MyEngines` : 'MyDiscoverableEngines';
@@ -165,7 +163,7 @@ export const EngineCatalogPage = observer(
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
             metaKeysDescription,
         )}, metaFilters = [ ${JSON.stringify(
-            metaFilters,
+            searchParams,
         )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
             route ? `engineTypes=['${route.type}']` : ''
         });
@@ -194,8 +192,8 @@ export const EngineCatalogPage = observer(
         >(
             `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
                 metaKeysDescription,
-            )} , metaFilters = [ ${JSON.stringify(
-                metaFilters,
+            )} , searchParams = [ ${JSON.stringify(
+                searchParams,
             )} ] , filterWord=["${search}"], userT = [true], ${
                 route ? `engineTypes=['${route.type}'], ` : ''
             } offset=[${offset}], limit=[${limit}]) ;`,
@@ -380,7 +378,7 @@ export const EngineCatalogPage = observer(
             });
             setCanCollect(true);
             setOffset(0);
-            setMetaFilters({});
+            setSearchParams({});
         }, [route.type]);
 
         /**
@@ -541,13 +539,13 @@ export const EngineCatalogPage = observer(
                 <StyledContainer>
                     <Filterbox
                         type={type}
-                        onChange={(filters: Record<string, unknown>) => {
+                        onChange={(filters: { [key: string]: string[] }) => {
                             dispatch({
                                 type: 'field',
                                 field: 'databases',
                                 value: [],
                             });
-                            setMetaFilters(filters);
+                            setSearchParams(filters);
                             setOffset(0);
                         }}
                     />
@@ -585,7 +583,7 @@ export const EngineCatalogPage = observer(
                         </Stack>
 
                         {'bi'.includes(search.toLowerCase()) &&
-                            Object.entries(metaFilters).length === 0 &&
+                            Object.entries(searchParams).length === 0 &&
                             'terminal'.includes(search.toLowerCase()) &&
                             favoritedDbs.length > 0 && (
                                 <StyledSectionLabel variant="subtitle1">
@@ -594,7 +592,7 @@ export const EngineCatalogPage = observer(
                             )}
 
                         {favoritedDbs.length &&
-                        Object.entries(metaFilters).length === 0 ? (
+                        Object.entries(searchParams).length === 0 ? (
                             <Grid container spacing={3}>
                                 {favoritedDbs.map((db) => {
                                     return (
@@ -643,7 +641,7 @@ export const EngineCatalogPage = observer(
                         ) : null}
 
                         {'bi'.includes(search.toLowerCase()) &&
-                            Object.entries(metaFilters).length === 0 &&
+                            Object.entries(searchParams).length === 0 &&
                             'terminal'.includes(search.toLowerCase()) &&
                             databases.length > 0 && (
                                 <StyledSectionLabel variant="subtitle1">

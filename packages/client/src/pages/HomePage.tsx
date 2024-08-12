@@ -10,7 +10,7 @@ import {
     InputAdornment,
 } from '@semoss/ui';
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
@@ -144,12 +144,12 @@ const TERMINAL_APP: AppMetadata = {
 export const HomePage = observer((): JSX.Element => {
     const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedApps, apps } = state;
 
     const [search, setSearch] = useState<string>('');
-    const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
 
     // get a list of the keys
@@ -178,7 +178,7 @@ export const HomePage = observer((): JSX.Element => {
         ...metaKeys,
         'description',
     ])}, metaFilters=[${JSON.stringify(
-        metaFilters,
+        searchParams,
     )}], filterWord=["${search}"], onlyPortals=[true]);`;
 
     /**
@@ -211,8 +211,8 @@ export const HomePage = observer((): JSX.Element => {
     favoritePixel += `(metaKeys = ${JSON.stringify([
         ...metaKeys,
         'description',
-    ])}, metaFilters=[${JSON.stringify(
-        metaFilters,
+    ])}, searchParams=[${JSON.stringify(
+        searchParams,
     )}], filterWord=["${search}"], onlyFavorites=[true]);`;
     const getFavoritedApps = usePixel(favoritePixel);
 
@@ -349,8 +349,8 @@ export const HomePage = observer((): JSX.Element => {
                 <div>
                     <Filterbox
                         type={'APP'}
-                        onChange={(filters: Record<string, unknown>) => {
-                            setMetaFilters(filters);
+                        onChange={(filters: { [key: string]: string[] }) => {
+                            setSearchParams(filters);
                         }}
                     />
                 </div>
