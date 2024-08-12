@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { Autocomplete, TextField } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
-import { Block, BlockDef } from '@/stores';
+import { Block, BlockDef, Variable } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
@@ -80,13 +80,24 @@ export const QuerySelectionSettings = observer(
 
         // available queries for autocomplete
         const queries = useMemo(() => {
-            return Object.keys(state.queries).reduce((acc, queryKey) => {
-                return {
-                    ...acc,
-                    [`{{query.${queryKey}.${queryPath}}}`]: queryKey,
-                };
+            return Object.keys(state.variables).reduce((acc, queryKey) => {
+                if (
+                    state.variables[queryKey].type === 'query' ||
+                    state.variables[queryKey].type === 'cell'
+                ) {
+                    return {
+                        ...acc,
+                        [`{{${queryKey}.${queryPath}}}`]: queryKey,
+                    };
+                } else {
+                    return {
+                        ...acc,
+                    };
+                }
             }, {});
-        }, [Object.keys(state.queries).length]);
+
+            // return queryVariables
+        }, [Object.keys(state.variables).length]);
 
         /**
          * Sync the data on change
@@ -113,15 +124,16 @@ export const QuerySelectionSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
+                <></>
                 <Autocomplete
                     fullWidth
                     disableClearable={value === ''}
                     size="small"
                     value={value}
                     options={Object.keys(queries)}
-                    getOptionLabel={(mustachedQueryPath: string) =>
-                        queries[mustachedQueryPath] ?? ''
-                    }
+                    getOptionLabel={(id: string) => {
+                        return queries[id] ?? '';
+                    }}
                     onChange={(_, value) => {
                         onChange(value);
                     }}

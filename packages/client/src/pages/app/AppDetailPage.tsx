@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import {
     Breadcrumbs,
     Button,
-    Link,
     IconButton,
     Menu,
     styled,
@@ -48,6 +47,8 @@ import {
     EditLocation,
     RemoveRedEyeRounded,
 } from '@mui/icons-material';
+
+import { Link } from 'react-router-dom';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -489,7 +490,7 @@ export const AppDetailPage = () => {
         <OuterContainer>
             <InnerContainer>
                 <Breadcrumbs separator="/">
-                    <StyledLink href="/">
+                    <StyledLink to="../../..">
                         <StyledCrumb variant="body1">App Library</StyledCrumb>
                     </StyledLink>
                     <StyledCrumb variant="body1" disabled>
@@ -716,9 +717,9 @@ export const AppDetailPage = () => {
                                     }}
                                 >
                                     <SettingsTiles
-                                        mode="app"
-                                        name="app"
+                                        type={'APP'}
                                         direction="row"
+                                        name={appInfo?.project_name || 'app'}
                                         id={appId}
                                         onDelete={() => {
                                             navigate('/settings/app');
@@ -742,14 +743,13 @@ export const AppDetailPage = () => {
                                     >
                                         <Stack direction="column" spacing={2}>
                                             <PendingMembersTable
-                                                mode="app"
+                                                type={'APP'}
                                                 id={appId}
                                             />
                                             <MembersTable
+                                                type={'APP'}
                                                 id={appId}
-                                                mode="app"
-                                                name="app"
-                                                refreshPermission={() => {
+                                                onChange={() => {
                                                     fetchUserSpecificData();
                                                 }}
                                             />

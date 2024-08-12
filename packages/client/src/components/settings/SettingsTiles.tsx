@@ -15,10 +15,9 @@ import {
 
 import { AxiosResponse } from 'axios';
 
+import { ALL_TYPES } from '@/types';
 import { useRootStore, usePixel, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-
-import { SETTINGS_MODE } from './settings.types';
 
 const StyledAlert = styled(Alert, {
     shouldForwardProp: (prop) => prop !== 'setBounds',
@@ -49,7 +48,9 @@ const StyledGrid = styled(Grid)(() => ({
     flex: '1',
 }));
 
-const StyledTypography = styled(Typography)<{
+const StyledTypography = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'isDisabled',
+})<{
     // Track if discoverable will be disabled or not
     isDisabled: boolean;
 }>(({ isDisabled, theme }) => ({
@@ -58,9 +59,9 @@ const StyledTypography = styled(Typography)<{
 
 interface SettingsTilesProps {
     /**
-     * Mode of setting
+     * Type of setting
      */
-    mode: SETTINGS_MODE;
+    type: ALL_TYPES;
 
     /**
      * Id of the setting
@@ -68,7 +69,7 @@ interface SettingsTilesProps {
     id: string;
 
     /**
-     * Name of setting
+     * Name of the setting
      */
     name: string;
 
@@ -90,7 +91,7 @@ interface SettingsTilesProps {
 }
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
-    const { id, mode, name, condensed, onDelete, direction = 'column' } = props;
+    const { id, type, name, condensed, onDelete, direction = 'column' } = props;
 
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
@@ -103,11 +104,15 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const [loading, setLoading] = useState(false);
 
     const engineInfo = usePixel(
-        mode === 'engine'
+        type === 'DATABASE' ||
+            type === 'STORAGE' ||
+            type === 'MODEL' ||
+            type === 'VECTOR' ||
+            type === 'FUNCTION'
             ? adminMode
                 ? `AdminEngineInfo(engine='${id}');`
                 : `EngineInfo(engine='${id}');`
-            : mode === 'app'
+            : type === 'APP'
             ? adminMode
                 ? `AdminProjectInfo(project='${id}')`
                 : `ProjectInfo(project='${id}')`
@@ -120,7 +125,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             return;
         }
 
-        if (mode === 'engine') {
+        if (
+            type === 'DATABASE' ||
+            type === 'STORAGE' ||
+            type === 'MODEL' ||
+            type === 'VECTOR' ||
+            type === 'FUNCTION'
+        ) {
             const data = engineInfo.data as {
                 database_global: boolean;
                 database_discoverable: boolean;
@@ -128,7 +139,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
             setDiscoverable(data.database_discoverable);
             setGlobal(data.database_global);
-        } else if (mode === 'app') {
+        } else if (type === 'APP') {
             const data = engineInfo.data as {
                 project_global: boolean;
                 project_discoverable: boolean;
@@ -149,9 +160,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
             // run the pixel
             const response = await monolithStore.runQuery(
-                mode === 'engine'
+                type === 'DATABASE' ||
+                    type === 'STORAGE' ||
+                    type === 'MODEL' ||
+                    type === 'VECTOR' ||
+                    type === 'FUNCTION'
                     ? `DeleteEngine(engine=['${id}']);`
-                    : mode === 'app'
+                    : type === 'APP'
                     ? `DeleteProject(project=['${id}']);`
                     : '',
             );
@@ -194,7 +209,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
             // run the pixel
             const response = await monolithStore.runQuery(
-                mode === 'engine' ? `CloseEngine(engine=['${id}']);` : '',
+                type === 'DATABASE' ||
+                    type === 'STORAGE' ||
+                    type === 'MODEL' ||
+                    type === 'VECTOR' ||
+                    type === 'FUNCTION'
+                    ? `CloseEngine(engine=['${id}']);`
+                    : '',
             );
 
             const operationType = response.pixelReturn[0].operationType;
@@ -232,13 +253,19 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             setLoading(true);
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
+            if (
+                type === 'DATABASE' ||
+                type === 'STORAGE' ||
+                type === 'MODEL' ||
+                type === 'VECTOR' ||
+                type === 'FUNCTION'
+            ) {
                 response = await monolithStore.setEngineVisiblity(
                     adminMode,
                     id,
                     !discoverable,
                 );
-            } else if (mode === 'app') {
+            } else if (type === 'APP') {
                 response = await monolithStore.setProjectVisiblity(
                     adminMode,
                     id,
@@ -284,13 +311,19 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             setLoading(true);
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (mode === 'engine') {
+            if (
+                type === 'DATABASE' ||
+                type === 'STORAGE' ||
+                type === 'MODEL' ||
+                type === 'VECTOR' ||
+                type === 'FUNCTION'
+            ) {
                 response = await monolithStore.setEngineGlobal(
                     adminMode,
                     id,
                     !global,
                 );
-            } else if (mode === 'app') {
+            } else if (type === 'APP') {
                 response = await monolithStore.setProjectGlobal(
                     adminMode,
                     id,

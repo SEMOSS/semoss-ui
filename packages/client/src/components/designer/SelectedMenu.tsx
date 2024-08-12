@@ -11,11 +11,18 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
-import { ContentCopy, Search, SearchOff } from '@mui/icons-material';
+import {
+    ContentCopy,
+    LibraryAdd,
+    Search,
+    SearchOff,
+} from '@mui/icons-material';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
 // import { getIconForMenuItemByKey } from './designer.constants';
 import { getIconForBlock } from '../block-defaults';
+import { AddVariableModal } from '../notebook/AddVariableModal';
+import { INPUT_BLOCK_TYPES } from '@/stores';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -71,9 +78,15 @@ export const SelectedMenu = observer(() => {
     >({});
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
+    const [addVariableModal, setAddVariableModal] = useState(false);
 
     // get the selected block
     const block = designer.selected ? state.getBlock(designer.selected) : null;
+
+    const variableName = state.getAlias(designer.selected);
+    const canVariabilize = block
+        ? INPUT_BLOCK_TYPES.indexOf(block.widget) > -1
+        : false;
 
     // get the content menu
     const contentMenu = useMemo(() => {
@@ -224,15 +237,29 @@ export const SelectedMenu = observer(() => {
                         <StyledTitle variant="h6">
                             {getBlockDisplay()}
                         </StyledTitle>
-                        <IconButton
-                            aria-label="copy"
-                            color="default"
-                            size="small"
-                            title={`{{${block.id}}}`}
-                            onClick={() => copy(`{{${block.id}}}`)}
-                        >
-                            <ContentCopy fontSize="small" />
-                        </IconButton>
+                        {variableName ? (
+                            <IconButton
+                                aria-label="copy"
+                                color="default"
+                                size="small"
+                                title={`{{${variableName}}}`}
+                                onClick={() => copy(`{{${variableName}}}`)}
+                            >
+                                <ContentCopy fontSize="small" />
+                            </IconButton>
+                        ) : canVariabilize ? (
+                            <IconButton
+                                aria-label="copy"
+                                color="default"
+                                size="small"
+                                title={'Add variable'}
+                                onClick={() => {
+                                    setAddVariableModal(true);
+                                }}
+                            >
+                                <LibraryAdd fontSize="small" />
+                            </IconButton>
+                        ) : null}
                     </Stack>
 
                     {!menu && (
@@ -301,6 +328,14 @@ export const SelectedMenu = observer(() => {
                     <></>
                 )}
             </StyledMenuScroll>
+            {addVariableModal ? (
+                <AddVariableModal
+                    open={true}
+                    type="block"
+                    to={designer.selected}
+                    onClose={() => setAddVariableModal(false)}
+                />
+            ) : null}
         </StyledMenu>
     );
 });
