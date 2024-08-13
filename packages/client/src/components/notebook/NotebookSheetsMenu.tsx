@@ -217,6 +217,13 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                     duplicateQuery(oldQueryId, newQueryId);
                     try {
                         state.dispatch({
+                            message: ActionMessages.RENAME_QUERY,
+                            payload: {
+                                queryId: oldQueryId,
+                                newQueryId: newQueryId
+                            },
+                        });
+                        state.dispatch({
                             message: ActionMessages.DELETE_QUERY,
                             payload: {
                                 queryId: oldQueryId,

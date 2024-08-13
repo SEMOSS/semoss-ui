@@ -328,6 +328,10 @@ export class StateStore {
                 const { queryId, path, value } = action.payload;
 
                 this.updateQuery(queryId, path, value);
+            } else if (ActionMessages.RENAME_QUERY === action.message) {
+                const { queryId, newQueryId } = action.payload;
+
+                this.renameQuery(queryId, newQueryId);
             } else if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
@@ -1007,6 +1011,64 @@ export class StateStore {
     private deleteQuery = (queryId: string): void => {
         delete this._store.queries[queryId];
     };
+
+    /**
+     * Update the name of the query
+     * @param queryId - id of the updated query
+     * @param newQueryId - new id of the query
+     */
+    private renameQuery = (
+        queryId: string,
+        newQueryId: string,
+    ): void => {
+        Object.keys(this._store.variables).forEach(item=>{
+            if(this.getQueryNameFromVariableName(item) == queryId){
+                this.updateVariableReference(item,newQueryId)
+            }
+        })
+    };
+
+     /**
+     * Update a variable's reference (the "to" field)
+     * @param id - id of the var to update
+     * @param newReference - new id of the query
+     */
+    private updateVariableReference (id: string, newReference: string): void {
+        let oldVar = this._store.variables[id];
+
+        let alias = oldVar.alias;
+        let to = `${newReference}.${this.getQueryIdFromRef(oldVar.to)}`;
+        let type = oldVar.type;
+
+        const token: Variable = {
+            alias,
+            to,
+            type,
+        };
+        this._store.variables[id] = token;
+        delete this._store.dependencies[oldVar.to];
+    }
+
+     /**
+     * Get a query's name from its variable name without the ID portion
+     * @param varName - variable in question
+     * @returns string representing the query's name
+     */
+    private getQueryNameFromVariableName (varName: string): string {
+        const splitted = this._store.variables[varName].to.split('.')
+        splitted.pop()
+        return splitted.join('.');
+    }
+
+     /**
+     * Get a query's id from its reference name
+     * @param refName - ref in question
+     * @returns string representing the query's id
+     */
+    private getQueryIdFromRef (refName: string): string {
+        const splitted = this._store.variables[refName].to.split('--')
+        return splitted.pop();
+    }
 
     /**
      * Update the store in the query
