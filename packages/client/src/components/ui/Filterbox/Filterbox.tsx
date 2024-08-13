@@ -287,7 +287,6 @@ export const Filterbox = (props: FilterboxProps) => {
             }
         });
         // Pass filters to parent
-        console.log('HANDLING IT', constructedFilters);
         onChange(constructedFilters);
         // Update query params in the URL
         setSearchParams(constructedFilters);

@@ -16,7 +16,7 @@ import {
 } from '@semoss/ui';
 import { SearchOff, Search as SearchIcon } from '@mui/icons-material';
 
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { ENGINE_TYPES } from '@/types';
 import { usePixel, useRootStore } from '@/hooks';
@@ -102,6 +102,7 @@ export const EngineCatalogPage = observer(
         const { type } = props;
 
         // get the matching route
+        const routeTypeRef = useRef('');
         const route: (typeof ENGINE_ROUTES)[number] | null = useMemo(() => {
             for (const r of ENGINE_ROUTES) {
                 if (r.type === type) {
@@ -137,7 +138,6 @@ export const EngineCatalogPage = observer(
         const [state, dispatch] = useReducer(reducer, initialState);
         const { favoritedDbs, databases } = state;
 
-        const [searchParams, setSearchParams] = useSearchParams();
         const [offset, setOffset] = useState(0);
         const [canCollect, setCanCollect] = useState(true);
         const canCollectRef = useRef(true);
@@ -153,6 +153,9 @@ export const EngineCatalogPage = observer(
 
         // which view we are on
         const [mode, setMode] = useState<MODE>('Mine');
+        const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>(
+            {},
+        );
 
         const dbPixelPrefix: string =
             mode === 'Mine' ? `MyEngines` : 'MyDiscoverableEngines';
@@ -163,7 +166,7 @@ export const EngineCatalogPage = observer(
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
             metaKeysDescription,
         )}, metaFilters = [ ${JSON.stringify(
-            searchParams,
+            metaFilters,
         )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
             route ? `engineTypes=['${route.type}']` : ''
         });
@@ -192,8 +195,8 @@ export const EngineCatalogPage = observer(
         >(
             `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
                 metaKeysDescription,
-            )} , searchParams = [ ${JSON.stringify(
-                searchParams,
+            )} , metaFilters = [ ${JSON.stringify(
+                metaFilters,
             )} ] , filterWord=["${search}"], userT = [true], ${
                 route ? `engineTypes=['${route.type}'], ` : ''
             } offset=[${offset}], limit=[${limit}]) ;`,
@@ -371,6 +374,12 @@ export const EngineCatalogPage = observer(
          * @desc anytime we change catalogType clean up engines
          */
         useEffect(() => {
+            // Prevent cleanup on first render.
+            if (routeTypeRef.current === '') {
+                routeTypeRef.current = route.type;
+                return;
+            }
+
             dispatch({
                 type: 'field',
                 field: 'databases',
@@ -378,7 +387,8 @@ export const EngineCatalogPage = observer(
             });
             setCanCollect(true);
             setOffset(0);
-            setSearchParams({});
+            setMetaFilters({});
+            routeTypeRef.current = route.type;
         }, [route.type]);
 
         /**
@@ -539,13 +549,13 @@ export const EngineCatalogPage = observer(
                 <StyledContainer>
                     <Filterbox
                         type={type}
-                        onChange={(filters: { [key: string]: string[] }) => {
+                        onChange={(filters: Record<string, unknown>) => {
                             dispatch({
                                 type: 'field',
                                 field: 'databases',
                                 value: [],
                             });
-                            setSearchParams(filters);
+                            setMetaFilters(filters);
                             setOffset(0);
                         }}
                     />
@@ -583,7 +593,7 @@ export const EngineCatalogPage = observer(
                         </Stack>
 
                         {'bi'.includes(search.toLowerCase()) &&
-                            Object.entries(searchParams).length === 0 &&
+                            Object.entries(metaFilters).length === 0 &&
                             'terminal'.includes(search.toLowerCase()) &&
                             favoritedDbs.length > 0 && (
                                 <StyledSectionLabel variant="subtitle1">
@@ -592,7 +602,7 @@ export const EngineCatalogPage = observer(
                             )}
 
                         {favoritedDbs.length &&
-                        Object.entries(searchParams).length === 0 ? (
+                        Object.entries(metaFilters).length === 0 ? (
                             <Grid container spacing={3}>
                                 {favoritedDbs.map((db) => {
                                     return (
@@ -641,7 +651,7 @@ export const EngineCatalogPage = observer(
                         ) : null}
 
                         {'bi'.includes(search.toLowerCase()) &&
-                            Object.entries(searchParams).length === 0 &&
+                            Object.entries(metaFilters).length === 0 &&
                             'terminal'.includes(search.toLowerCase()) &&
                             databases.length > 0 && (
                                 <StyledSectionLabel variant="subtitle1">
