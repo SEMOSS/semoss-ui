@@ -4,6 +4,9 @@ import { CellState } from './cell.state';
 import { QueryStateConfig } from './query.state';
 
 export type SerializedState = {
+    /** What version the state store we currently are on link: https://semver.org/ */
+    version: string;
+
     /** Queries rendered in the insight */
     queries: Record<string, QueryStateConfig>;
 
@@ -15,25 +18,22 @@ export type SerializedState = {
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
-
-    /** What version the state store we currently are on link: https://semver.org/ */
-    version?: string;
 };
 
 /**
  * Variable Types
  */
 export type VariableType =
-    | 'block' // X
+    | 'block'
     | 'cell'
     | 'query'
     | 'string'
     | 'number'
-    | 'database' // X
-    | 'model' // X
-    | 'vector' // X
-    | 'storage' // X
-    | 'function' // X
+    | 'database'
+    | 'model'
+    | 'vector'
+    | 'storage'
+    | 'function'
     | 'JSON'
     | 'date'
     | 'array';
@@ -41,16 +41,28 @@ export type VariableType =
 /**
  * Variables
  */
-export type Variable = {
-    alias: string;
-    to: string;
-    type: VariableType;
-};
+export type Variable =
+    | {
+          to: string;
+          type: Exclude<VariableType, 'cell'>; // Exclude 'cell' from VariableType for this case
+          cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
+      }
+    | {
+          to: string;
+          type: 'cell'; // Specific case when type is 'cell'
+          cellId: string;
+      };
 
-// John merge with this, dont be lazy..... ^
-export interface VariableWithId extends Variable {
-    id: string;
-}
+export type VariableWithId =
+    | ({
+          to: string;
+          type: Exclude<VariableType, 'cell'>;
+      } & { id: string })
+    | ({
+          to: string;
+          type: 'cell';
+          cellId: string;
+      } & { id: string });
 
 /**
  * Block
@@ -266,27 +278,4 @@ export type CellConfig<D extends CellDef = CellDef> = {
         /** Parameters associated with the cell */
         parameters: D['parameters'],
     ) => string;
-};
-
-export type Template = {
-    /** Name of the template */
-    name: string;
-
-    /** Description associated with the template */
-    description: string;
-
-    /** State associated with the template */
-    state: SerializedState;
-
-    /** Image for the template */
-    image: string;
-
-    /** Author for the template */
-    author: string;
-
-    /** Date updated template */
-    lastUpdatedDate: string;
-
-    /** Tags associated with the template */
-    tags: string[];
 };

@@ -1,8 +1,21 @@
 import { styled, Stack, Typography, Card, Button, Chip } from '@semoss/ui';
 import { Person, QueryBuilder } from '@mui/icons-material';
-import { DEFAULT_TEMPLATE, Template } from '@/stores';
 import { AppMetadata } from './app.types';
 import { AppTileCard } from './AppTileCard';
+import {
+    Template,
+    AskCSVTemplate,
+    AskLLMTemplate,
+    BlocksGuideTemplate,
+    LandingPageTemplate,
+} from './templates';
+
+const DEFAULT_TEMPLATE = [
+    LandingPageTemplate,
+    AskLLMTemplate,
+    AskCSVTemplate,
+    BlocksGuideTemplate,
+];
 
 // const StyledFilter = styled('div')(({ theme }) => ({
 //     display: 'flex',

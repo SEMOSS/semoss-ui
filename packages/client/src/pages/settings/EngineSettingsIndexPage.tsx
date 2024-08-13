@@ -1,9 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { ENGINE_TYPES } from '@/types';
-import { useRootStore, usePixel, useAPI, useSettings } from '@/hooks';
-
 import {
     Grid,
     Search,
@@ -23,6 +20,8 @@ import {
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
 
+import { ALL_TYPES } from '@/types';
+import { useRootStore, usePixel, useAPI, useSettings } from '@/hooks';
 import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 import { removeUnderscores } from '@/utility';
 
@@ -96,7 +95,7 @@ const reducer = (state, action) => {
  */
 interface EngineSettingsIndexPageProps {
     /** Type of the page to render */
-    type: ENGINE_TYPES;
+    type: ALL_TYPES;
 }
 
 export const EngineSettingsIndexPage = (

@@ -32,6 +32,7 @@ export enum ActionMessages {
     EDIT_VARIABLE = 'EDIT_VARIABLE',
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
+    REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
 }
 
 export type Actions =
@@ -55,7 +56,8 @@ export type Actions =
     | RenameVariableAction
     | EditVariableAction
     | DeleteVariableAction
-    | AddDependencyAction;
+    | AddDependencyAction
+    | RemoveDependencyAction;
 
 export interface Action {
     message: string;
@@ -230,16 +232,33 @@ export interface AddDependencyAction extends Action {
     };
 }
 
+export interface RemoveDependencyAction extends Action {
+    message: ActionMessages.REMOVE_DEPENDENCY;
+    payload: {
+        id: string;
+    };
+}
+
 export interface AddVariableAction extends Action {
     message: ActionMessages.ADD_VARIABLE;
-    payload: Variable;
+    payload: {
+        id: string;
+        to: string;
+        type: VariableType;
+        cellId?: string;
+    };
 }
 
 export interface EditVariableAction extends Action {
     message: ActionMessages.EDIT_VARIABLE;
     payload: {
+        id: string;
         from: VariableWithId;
-        to: Variable;
+        to: {
+            to: string;
+            type: VariableType;
+            cellId?: string;
+        };
     };
 }
 

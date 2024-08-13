@@ -23,6 +23,9 @@ import {
     DriveFileRenameOutlineRounded,
     CalendarViewMonth,
     JoinInner,
+    JoinRight,
+    JoinLeft,
+    JoinFull,
     Edit,
 } from '@mui/icons-material';
 import { editor } from 'monaco-editor';
@@ -57,6 +60,13 @@ const FRAME_TYPES = {
         display: 'Grid',
         value: 'GRID',
     },
+};
+
+const JOIN_ICONS = {
+    inner: <JoinInner />,
+    'right.outer': <JoinRight />,
+    'left.outer': <JoinLeft />,
+    outer: <JoinFull />,
 };
 
 const BlueStyledJoinDiv = styled('div')(({ theme }) => ({
@@ -394,8 +404,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                 return;
             }
 
-            alert('handleEditorChange');
-
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
                 payload: {
@@ -555,7 +563,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                     </Tooltip>
 
                                                     <Tooltip
-                                                        title={`${'Inner Join'}`}
+                                                        title={`${join.joinType} join`}
                                                     >
                                                         <IconButton
                                                             size="small"
@@ -567,7 +575,12 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                                     '7.5px',
                                                             }}
                                                         >
-                                                            <JoinInner />
+                                                            {
+                                                                JOIN_ICONS[
+                                                                    join
+                                                                        .joinType
+                                                                ]
+                                                            }
                                                         </IconButton>
                                                     </Tooltip>
 

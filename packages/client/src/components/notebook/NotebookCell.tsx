@@ -4,6 +4,7 @@ import {
     styled,
     Stack,
     Typography,
+    Button,
     ButtonGroup,
     CircularProgress,
     Card,
@@ -13,8 +14,10 @@ import {
     IconButton,
     Divider,
     CustomShapeOptions,
+    TextField,
     Menu,
     MenuProps,
+    Modal,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -29,6 +32,8 @@ import {
     ArrowUpward,
     ArrowDownward,
     PlayArrowRounded,
+    LowPriority,
+    LibraryAdd,
 } from '@mui/icons-material';
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
@@ -36,6 +41,7 @@ import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
 import { copyTextToClipboard } from '@/utility';
+import { AddVariableModal } from './AddVariableModal';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
@@ -250,6 +256,9 @@ export const NotebookCell = observer(
 
         const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
+        const [variableModal, setVariableModal] = useState(false);
+        const [newAlias, setNewAlias] = useState('');
+
         const cardContentRef = useRef(null);
         const cardActionsRef = useRef(null);
         const targetContentCollapseRef = useRef(null);
@@ -258,6 +267,8 @@ export const NotebookCell = observer(
         // get the cell
         const query = state.getQuery(queryId);
         const cell = query.getCell(cellId);
+
+        const variableName = state.getAlias(queryId, cellId);
 
         useEffect(() => {
             if (cardContentRef.current) {
@@ -472,8 +483,7 @@ export const NotebookCell = observer(
             >
                 <StyledRow direction="row" width="100%" spacing={1}>
                     <StyledName variant="subtitle2">
-                        {cell.config.name}
-                        {/* {cell.config.parameters.foo} */}
+                        {variableName ? variableName : cell.config.name}
                     </StyledName>
 
                     <StyledCellActions in={showCellActions}>
@@ -538,28 +548,6 @@ export const NotebookCell = observer(
                                     </StyledButtonLabel>
                                 </StyledButtonGroupButton>
                                 <StyledButtonGroupButton
-                                    title={`Copy cell ID (${cell.id})`}
-                                    size="small"
-                                    disabled={cell.isLoading}
-                                    onClick={(e) => {
-                                        // stop propogation to card parent so newly created cell will be selected
-                                        e.stopPropagation();
-                                        copyTextToClipboard(
-                                            `{{query.${cell.query.id}.cell.${cell.id}.output}}`,
-                                            notification,
-                                        );
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <Link
-                                            fontSize="medium"
-                                            sx={{
-                                                padding: '2px',
-                                            }}
-                                        />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                <StyledButtonGroupButton
                                     title="Duplicate cell"
                                     size="small"
                                     disabled={cell.isLoading}
@@ -570,14 +558,58 @@ export const NotebookCell = observer(
                                     }}
                                 >
                                     <StyledButtonLabel>
-                                        <ContentCopy
-                                            fontSize="small"
+                                        <LowPriority
+                                            fontSize="medium"
                                             sx={{
                                                 padding: '2px',
                                             }}
                                         />
                                     </StyledButtonLabel>
                                 </StyledButtonGroupButton>
+                                {variableName ? (
+                                    <StyledButtonGroupButton
+                                        title={`Copy (${variableName})`}
+                                        size="small"
+                                        disabled={cell.isLoading}
+                                        onClick={(e) => {
+                                            // stop propogation to card parent so newly created cell will be selected
+                                            e.stopPropagation();
+                                            copyTextToClipboard(
+                                                `{{${variableName}}}`,
+                                                notification,
+                                            );
+                                        }}
+                                    >
+                                        <StyledButtonLabel>
+                                            <ContentCopy
+                                                fontSize="small"
+                                                sx={{
+                                                    padding: '2px',
+                                                }}
+                                            />
+                                        </StyledButtonLabel>
+                                    </StyledButtonGroupButton>
+                                ) : (
+                                    <StyledButtonGroupButton
+                                        title="Use as variable"
+                                        size="small"
+                                        disabled={cell.isLoading}
+                                        onClick={(e) => {
+                                            // stop propogation to card parent so newly created cell will be selected
+                                            e.stopPropagation();
+                                            setVariableModal(true);
+                                        }}
+                                    >
+                                        <StyledButtonLabel>
+                                            <LibraryAdd
+                                                fontSize="medium"
+                                                sx={{
+                                                    padding: '2px',
+                                                }}
+                                            />
+                                        </StyledButtonLabel>
+                                    </StyledButtonGroupButton>
+                                )}
                                 <StyledButtonGroupButton
                                     title="Delete cell"
                                     disabled={cell.isLoading}
@@ -799,6 +831,16 @@ export const NotebookCell = observer(
                         />
                     </Collapse>
                 </StyledAddCellContainer>
+
+                <AddVariableModal
+                    open={variableModal}
+                    type={'cell'}
+                    to={queryId}
+                    cellId={cellId}
+                    onClose={() => {
+                        setVariableModal(false);
+                    }}
+                />
             </StyledStack>
         );
     },

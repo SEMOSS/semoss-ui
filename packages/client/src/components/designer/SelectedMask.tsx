@@ -62,9 +62,7 @@ export const SelectedMask = observer(() => {
 
     // get the block
     const block = state.getBlock(designer.selected);
-    const variable = state.getAlias(designer.selected);
-
-    console.log('variable', variable);
+    const variableName = state.getAlias(designer.selected);
 
     // check if it is draggable
     const isDraggable =
@@ -238,14 +236,8 @@ export const SelectedMask = observer(() => {
         >
             <StyledTitle onMouseDown={handleMouseDown}>
                 <Stack direction={'row'}>
-                    {variable && (
-                        <Typography variant={'body2'} fontWeight="bold">
-                            {variable} ---
-                        </Typography>
-                    )}
-
-                    <Typography variant={variable ? 'caption' : 'body2'}>
-                        {designer.selected}
+                    <Typography variant={'body2'}>
+                        {variableName ? variableName : designer.selected}
                     </Typography>
                 </Stack>
                 {isDraggable && (

@@ -71,8 +71,9 @@ import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
 import RESTAPI from '@/assets/img/rest-api.svg';
 //Vector
-import WEVIATE from '@/assets/img/WEVIATE.png';
+import CHROMADB from '@/assets/img/CHROMADB.png';
 import PINECONE from '@/assets/img/PINECONE.png';
+import WEVIATE from '@/assets/img/WEVIATE.png';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -5091,131 +5092,173 @@ export const CONNECTION_OPTIONS = {
     },
     VECTOR: {
         Connections: [
-            // {
-            //     name: 'Azure AI Search',
-            //     disable: false,
-            //     icon: META,
-            //     fields: [
-            //         {
-            //             fieldName: 'NAME',
-            //             label: 'Catalog Name',
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'VECTOR_TYPE',
-            //             label: 'Type',
-            //             defaultValue: 'AZURE_AI_SEARCH',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             hidden: true,
-            //             disabled: true,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'URL',
-            //             label: 'URL',
-            //             hidden: false,
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'ACCESS_KEY',
-            //             label: 'Access Key',
-            //             hidden: false,
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'password',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //         },
-            //         {
-            //             fieldName: 'EMBEDDER_ENGINE_ID',
-            //             label: 'Embedder',
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'select',
-            //                 options: [],
-            //                 pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-            //                 optionDisplay: 'database_name',
-            //                 optionValue: 'database_id',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //             helperText:
-            //                 'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
-            //         },
-            //         {
-            //             fieldName: 'CONTENT_LENGTH',
-            //             label: 'Content Length',
-            //             defaultValue: '',
-            //             options: {
-            //                 component: 'text-field',
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //             helperText:
-            //                 "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-            //             pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
-            //         },
-            //         {
-            //             fieldName: 'CONTENT_OVERLAP',
-            //             label: 'Content Overlap',
-            //             defaultValue: '0',
-            //             options: {
-            //                 component: 'text-field',
-            //                 options: [],
-            //             },
-            //             disabled: false,
-            //             rules: { required: true },
-            //             helperText:
-            //                 'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
-            //         },
-            //         {
-            //             fieldName: 'DISTANCE_METHOD',
-            //             label: 'Distance Method',
-            //             defaultValue: 'Squared Euclidean (L2) distance',
-            //             options: {
-            //                 component: 'select',
-            //                 options: [
-            //                     {
-            //                         display: 'Squared Euclidean (L2) distance',
-            //                         value: 'Squared Euclidean (L2) distance',
-            //                     },
-            //                     {
-            //                         display: 'cosine similarity',
-            //                         value: 'cosine similarity',
-            //                     },
-            //                 ],
-            //             },
-            //             disabled: false,
-            //             rules: { required: false },
-            //             advanced: true,
-            //             helperText: '',
-            //         },
-            //         {
-            //             fieldName: 'EMBEDDINGS',
-            //             label: 'Embeddings',
-            //             defaultValue: null,
-            //             options: {
-            //                 component: 'file-upload',
-            //             },
-            //             disabled: true,
-            //             secondary: true,
-            //             rules: {},
-            //         },
-            //     ],
-            // },
+            {
+                name: 'Chroma',
+                disable: false,
+                icon: CHROMADB,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'CHROMA',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CHROMA_COLLECTION_NAME',
+                        label: 'Collection Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'cosine',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Cosine similarity',
+                                    value: 'cosine',
+                                },
+                                {
+                                    display: 'Squared L2',
+                                    value: 'l2',
+                                },
+                                {
+                                    display: 'Inner product',
+                                    value: 'ip',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                ],
+            },
             {
                 name: 'FAISS',
                 disable: false,
@@ -5243,17 +5286,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'CONNECTION_URL',
-                        label: 'Connection URL',
-                        hidden: true,
-                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
@@ -5268,6 +5300,17 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                         helperText:
                             'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        hidden: true,
+                        disabled: true,
+                        rules: { required: true },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -5296,6 +5339,251 @@ export const CONNECTION_OPTIONS = {
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'Squared Euclidean (L2) distance',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'Squared Euclidean (L2) distance',
+                                },
+                                {
+                                    display: 'cosine similarity',
+                                    value: 'cosine similarity',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                ],
+            },
+            {
+                name: 'PGVector',
+                disable: false,
+                icon: POSTGRES,
+                fields: [
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'PGVECTOR',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'RDBMS_TYPE',
+                        label: 'Driver Name',
+                        defaultValue: 'POSTGRES',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'hostname',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'port',
+                        label: 'Port',
+                        defaultValue: '5432',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'database',
+                        label: 'Database',
+                        defaultValue: 'postgres',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'schema',
+                        label: 'Schema',
+                        defaultValue: 'public',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'additional',
+                        label: 'Additional Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'JDBC Url',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'PGVECTOR_TABLE_NAME',
+                        label: 'PGVector Table Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '0',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
                         fieldName: 'DISTANCE_METHOD',
                         label: 'Distance Method',
                         defaultValue: 'Squared Euclidean (L2) distance',
@@ -5318,54 +5606,70 @@ export const CONNECTION_OPTIONS = {
                         helperText: '',
                     },
                     {
-                        fieldName: 'EMBEDDINGS',
-                        label: 'Embeddings',
-                        defaultValue: null,
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
                         options: {
-                            component: 'file-upload',
+                            component: 'number',
                         },
-                        disabled: true,
-                        secondary: true,
-                        rules: {},
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
             {
-                name: 'PGVector',
-                disable: true,
-                icon: POSTGRES,
-                fields: [],
-            },
-            {
                 name: 'Pinecone',
-                disable: true,
-                icon: PINECONE,
-                fields: [],
-            },
-            {
-                name: 'Open Search',
-                disable: true,
-                icon: OPEN_SEARCH,
-                fields: [],
-            },
-            {
-                name: 'Weaviate',
                 disable: false,
-                icon: WEVIATE,
+                icon: PINECONE,
                 fields: [
                     {
                         fieldName: 'NAME',
-                        label: 'Catalog Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Catalog Name',
+                        label: 'Name',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5376,23 +5680,12 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'VECTOR_TYPE',
                         label: 'Type',
-                        defaultValue: 'WEAVIATE',
-                        options: {
-                            component: 'text-field',
-                        },
-                        hidden: true,
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CONNECTION_URL',
-                        label: 'Connection URL',
-                        hidden: true,
-                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
+                        defaultValue: 'PINECONE',
                         options: {
                             component: 'text-field',
                         },
                         disabled: true,
+                        hidden: true,
                         rules: { required: true },
                     },
                     {
@@ -5414,12 +5707,336 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'INDEX_CLASSES',
                         label: 'Index Classes',
-                        hidden: true,
                         defaultValue: 'default',
                         options: {
                             component: 'text-field',
                         },
                         disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAMESPACE',
+                        label: 'Namespace',
+                        defaultValue: null,
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTORS',
+                        label: 'Vector',
+                        defaultValue: null,
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'Squared Euclidean (L2) distance',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'Squared Euclidean (L2) distance',
+                                },
+                                {
+                                    display: 'cosine similarity',
+                                    value: 'cosine similarity',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                ],
+            },
+            {
+                name: 'Open Search',
+                disable: false,
+                icon: OPEN_SEARCH,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'OPEN_SEARCH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'text-field',
+                            options: [],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'INDEX_NAME',
+                        label: 'Index Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                ],
+            },
+            {
+                name: 'Weaviate',
+                disable: false,
+                icon: WEVIATE,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'WEAVIATE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
                         rules: { required: true },
                     },
                     {
@@ -5494,13 +6111,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Weaviate Classname',
                         defaultValue: 'Vector_Table',
                         options: {
-                            component: 'select',
-                            options: [
-                                {
-                                    display: 'Vector Table',
-                                    value: 'Vector_Table',
-                                },
-                            ],
+                            component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: true },
@@ -5511,6 +6122,26 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '1',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
@@ -5632,7 +6263,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ASTER,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ASTER_DB',
                         options: {
@@ -5805,7 +6436,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ATHENA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ATHENA',
                         options: {
@@ -5979,7 +6610,7 @@ export const CONNECTION_OPTIONS = {
                 icon: BIGQUERY,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'BIG_QUERY',
                         options: {
@@ -6117,7 +6748,7 @@ export const CONNECTION_OPTIONS = {
                 icon: CASSANDRA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'CASSANDRA',
                         options: {
@@ -6291,7 +6922,7 @@ export const CONNECTION_OPTIONS = {
                 icon: CLICKHOUSE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'CLICKHOUSE',
                         options: {
@@ -6475,7 +7106,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DATABRICKS,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DATABRICKS',
                         options: {
@@ -6669,7 +7300,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DATASTAX,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DATASTAX',
                         options: {
@@ -6767,7 +7398,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DB2,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DB2',
                         options: {
@@ -6941,7 +7572,7 @@ export const CONNECTION_OPTIONS = {
                 icon: DERBY,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'DERBY',
                         options: {
@@ -7116,7 +7747,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ELASTIC_SEARCH,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ELASTIC_SEARCH',
                         options: {
@@ -7234,7 +7865,7 @@ export const CONNECTION_OPTIONS = {
                 icon: H2_DB,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'HIVE',
                         options: {
@@ -7409,7 +8040,7 @@ export const CONNECTION_OPTIONS = {
                 icon: HIVE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'HIVE',
                         options: {
@@ -7584,7 +8215,7 @@ export const CONNECTION_OPTIONS = {
                 icon: IMPALA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'IMPALA',
                         options: {
@@ -7758,7 +8389,7 @@ export const CONNECTION_OPTIONS = {
                 icon: MARIA_DB,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'MARIA_DB',
                         options: {
@@ -7932,7 +8563,7 @@ export const CONNECTION_OPTIONS = {
                 icon: MYSQL,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'MYSQL',
                         options: {
@@ -8105,7 +8736,7 @@ export const CONNECTION_OPTIONS = {
                 icon: OPEN_SEARCH,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'OPEN_SEARCH',
                         options: {
@@ -8223,7 +8854,7 @@ export const CONNECTION_OPTIONS = {
                 icon: ORACLE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'ORACLE',
                         options: {
@@ -8397,7 +9028,7 @@ export const CONNECTION_OPTIONS = {
                 icon: PHOENIX,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'PHOENIX',
                         options: {
@@ -8571,7 +9202,7 @@ export const CONNECTION_OPTIONS = {
                 icon: POSTGRES,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'POSTGRES',
                         options: {
@@ -8634,7 +9265,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'database',
                         label: 'Database',
-                        defaultValue: '',
+                        defaultValue: 'postgres',
                         options: {
                             component: 'text-field',
                         },
@@ -8644,7 +9275,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'schema',
                         label: 'Schema',
-                        defaultValue: 'dbo',
+                        defaultValue: 'public',
                         options: {
                             component: 'text-field',
                         },
@@ -8755,7 +9386,7 @@ export const CONNECTION_OPTIONS = {
                 icon: REDSHIFT,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'REDSHIFT',
                         options: {
@@ -8939,7 +9570,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SAP_HANA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SAP_HANA',
                         options: {
@@ -9113,7 +9744,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SEMOSS,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SEMOSS',
                         options: {
@@ -9327,7 +9958,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SNOWFLAKE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SNOWFLAKE',
                         options: {
@@ -9532,7 +10163,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SQL_SERVER,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SQL_SERVER',
                         options: {
@@ -9717,7 +10348,7 @@ export const CONNECTION_OPTIONS = {
                 icon: SQLITE,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'SQLITE',
                         options: {
@@ -9881,7 +10512,7 @@ export const CONNECTION_OPTIONS = {
                 icon: TERADATA,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'TERADATA',
                         options: {
@@ -10045,7 +10676,7 @@ export const CONNECTION_OPTIONS = {
                 icon: TIBCO,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'TIBCO',
                         options: {
@@ -10219,7 +10850,7 @@ export const CONNECTION_OPTIONS = {
                 icon: TRINO,
                 fields: [
                     {
-                        fieldName: 'dbDriver',
+                        fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
                         defaultValue: 'TRINO',
                         options: {
@@ -10339,7 +10970,6 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
-
                     {
                         fieldName: 'FETCH_SIZE',
                         label: 'Fetch Size',
@@ -11298,6 +11928,10 @@ export const ENGINE_IMAGES = {
             icon: POSTGRES,
         },
         {
+            name: 'OPEN_SEARCH',
+            icon: OPEN_SEARCH,
+        },
+        {
             name: 'ZIP',
             icon: ZIP,
         },
@@ -11367,12 +12001,10 @@ export const ENGINE_IMAGES = {
             name: 'DB2',
             icon: DB2,
         },
-
         {
             name: 'DERBY',
             icon: DERBY,
         },
-
         {
             name: 'ELASTIC_SEARCH',
             icon: ELASTIC_SEARCH,
@@ -11381,12 +12013,10 @@ export const ENGINE_IMAGES = {
             name: 'H2',
             icon: H2_DB,
         },
-
         {
             name: 'HIVE',
             icon: HIVE,
         },
-
         {
             name: 'IMPALA',
             icon: IMPALA,
@@ -11435,7 +12065,6 @@ export const ENGINE_IMAGES = {
             name: 'SQL_SERVER',
             icon: SQL_SERVER,
         },
-
         {
             name: 'SQLITE',
             icon: SQLITE,

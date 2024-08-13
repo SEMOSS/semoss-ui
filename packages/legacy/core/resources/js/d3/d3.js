@@ -54,7 +54,7 @@
             d3_element_prototype.setAttributeNS = function (
                 space,
                 local,
-                value,
+                value
             ) {
                 d3_element_setAttributeNS.call(this, space, local, value + '');
             };
@@ -270,7 +270,7 @@
                 ? function (d, x) {
                       return d3_ascending(f(d), x);
                   }
-                : f,
+                : f
         );
     };
     d3.shuffle = function (array, i0, i1) {
@@ -500,7 +500,7 @@
             while (++i < n) {
                 if (
                     (values = valuesByKey.get(
-                        (keyValue = key((object = array[i]))),
+                        (keyValue = key((object = array[i])))
                     ))
                 ) {
                     values.push(object);
@@ -597,7 +597,7 @@
             target[(method = arguments[i])] = d3_rebind(
                 target,
                 source,
-                source[method],
+                source[method]
             );
         return target;
     };
@@ -670,7 +670,7 @@
                 listeners.push(
                     listenerByName.set(name, {
                         on: listener,
-                    }),
+                    })
                 );
             return dispatch;
         };
@@ -759,7 +759,7 @@
             for (var i = -1, n = group.length; ++i < n; ) {
                 if ((node = group[i])) {
                     subgroup.push(
-                        (subnode = selector.call(node, node.__data__, i, j)),
+                        (subnode = selector.call(node, node.__data__, i, j))
                     );
                     if (subnode && '__data__' in node)
                         subnode.__data__ = node.__data__;
@@ -787,8 +787,8 @@
                 if ((node = group[i])) {
                     subgroups.push(
                         (subgroup = d3_array(
-                            selector.call(node, node.__data__, i, j),
-                        )),
+                            selector.call(node, node.__data__, i, j)
+                        ))
                     );
                     subgroup.parentNode = node;
                 }
@@ -943,7 +943,7 @@
                 if (n < 2) value = '';
                 for (priority in name)
                     this.each(
-                        d3_selection_style(priority, name[priority], value),
+                        d3_selection_style(priority, name[priority], value)
                     );
                 return this;
             }
@@ -1016,7 +1016,7 @@
                         }
                       : function () {
                             this.textContent = value;
-                        },
+                        }
               )
             : this.node().textContent;
     };
@@ -1034,7 +1034,7 @@
                         }
                       : function () {
                             this.innerHTML = value;
-                        },
+                        }
               )
             : this.node().innerHTML;
     };
@@ -1067,7 +1067,7 @@
         return this.select(function () {
             return this.insertBefore(
                 name.apply(this, arguments),
-                before.apply(this, arguments) || null,
+                before.apply(this, arguments) || null
             );
         });
     };
@@ -1110,7 +1110,7 @@
                     if ((node = group[i])) {
                         if (
                             nodeByKeyValue.has(
-                                (keyValue = key.call(node, node.__data__, i)),
+                                (keyValue = key.call(node, node.__data__, i))
                             )
                         ) {
                             exitNodes[i] = node;
@@ -1126,8 +1126,8 @@
                             (keyValue = key.call(
                                 groupData,
                                 (nodeData = groupData[i]),
-                                i,
-                            )),
+                                i
+                            ))
                         ))
                     ) {
                         enterNodes[i] = d3_selection_dataNode(nodeData);
@@ -1179,7 +1179,7 @@
             while (++i < n) {
                 bind(
                     (group = this[i]),
-                    value.call(group, group.parentNode.__data__, i),
+                    value.call(group, group.parentNode.__data__, i)
                 );
             }
         } else {
@@ -1332,8 +1332,8 @@
                                 group.parentNode,
                                 node.__data__,
                                 i,
-                                j,
-                            )),
+                                j
+                            ))
                     );
                     subnode.__data__ = node.__data__;
                 } else {
@@ -1388,7 +1388,7 @@
                 if (n < 2) listener = false;
                 for (capture in type)
                     this.each(
-                        d3_selection_on(capture, type[capture], listener),
+                        d3_selection_on(capture, type[capture], listener)
                     );
                 return this;
             }
@@ -1505,7 +1505,7 @@
                         d3_eventPreventDefault();
                         off();
                     },
-                    true,
+                    true
                 );
                 setTimeout(off, 0);
             }
@@ -1533,7 +1533,7 @@
                             padding: 0,
                             border: 'none',
                         },
-                        'important',
+                        'important'
                     );
                     var ctm = svg[0][0].getScreenCTM();
                     d3_mouse_bug44083 = !(ctm.f || ctm.e);
@@ -1569,19 +1569,19 @@
                 d3.mouse,
                 d3_window,
                 'mousemove',
-                'mouseup',
+                'mouseup'
             ),
             touchstart = dragstart(
                 d3_behavior_dragTouchId,
                 d3.touch,
                 d3_identity,
                 'touchmove',
-                'touchend',
+                'touchend'
             );
         function drag() {
             this.on('mousedown.drag', mousedown).on(
                 'touchstart.drag',
-                touchstart,
+                touchstart
             );
         }
         function dragstart(id, position, subject, move, end) {
@@ -1815,7 +1815,7 @@
                                         (cx - view1.x) / view1.k,
                                         (cy - view1.y) / view1.k,
                                         dx / view1.k,
-                                    ],
+                                    ]
                                 );
                             return function (t) {
                                 var l = i(t),
@@ -1939,7 +1939,7 @@
                         .map(function (x) {
                             return (x - view.x) / view.k;
                         })
-                        .map(x0.invert),
+                        .map(x0.invert)
                 );
             if (y1)
                 y1.domain(
@@ -1948,7 +1948,7 @@
                         .map(function (y) {
                             return (y - view.y) / view.k;
                         })
-                        .map(y0.invert),
+                        .map(y0.invert)
                 );
         }
         function zoomstarted(dispatch) {
@@ -2036,7 +2036,7 @@
                             that,
                             p,
                             locations0[p.identifier],
-                            Math.floor(Math.log(view.k) / Math.LN2) + 1,
+                            Math.floor(Math.log(view.k) / Math.LN2) + 1
                         );
                         d3_eventPreventDefault();
                     }
@@ -2098,7 +2098,7 @@
             else
                 d3_selection_interrupt.call(this),
                     (translate0 = location(
-                        (center0 = center || d3.mouse(this)),
+                        (center0 = center || d3.mouse(this))
                     )),
                     zoomstarted(dispatch);
             mousewheelTimer = setTimeout(function () {
@@ -2117,7 +2117,7 @@
                 this,
                 p,
                 location(p),
-                d3.event.shiftKey ? Math.ceil(k) - 1 : Math.floor(k) + 1,
+                d3.event.shiftKey ? Math.ceil(k) - 1 : Math.floor(k) + 1
             );
         }
         return d3.rebind(zoom, event, 'on');
@@ -2184,7 +2184,7 @@
                 : d3_lab_hcl(
                       (h = d3_rgb_lab((h = d3.rgb(h)).r, h.g, h.b)).l,
                       h.a,
-                      h.b,
+                      h.b
                   )
             : new d3_hcl(h, c, l);
     }
@@ -2193,14 +2193,14 @@
         return new d3_hcl(
             this.h,
             this.c,
-            Math.min(100, this.l + d3_lab_K * (arguments.length ? k : 1)),
+            Math.min(100, this.l + d3_lab_K * (arguments.length ? k : 1))
         );
     };
     d3_hclPrototype.darker = function (k) {
         return new d3_hcl(
             this.h,
             this.c,
-            Math.max(0, this.l - d3_lab_K * (arguments.length ? k : 1)),
+            Math.max(0, this.l - d3_lab_K * (arguments.length ? k : 1))
         );
     };
     d3_hclPrototype.rgb = function () {
@@ -2232,14 +2232,14 @@
         return new d3_lab(
             Math.min(100, this.l + d3_lab_K * (arguments.length ? k : 1)),
             this.a,
-            this.b,
+            this.b
         );
     };
     d3_labPrototype.darker = function (k) {
         return new d3_lab(
             Math.max(0, this.l - d3_lab_K * (arguments.length ? k : 1)),
             this.a,
-            this.b,
+            this.b
         );
     };
     d3_labPrototype.rgb = function () {
@@ -2255,7 +2255,7 @@
         return new d3_rgb(
             d3_xyz_rgb(3.2404542 * x - 1.5371385 * y - 0.4985314 * z),
             d3_xyz_rgb(-0.969266 * x + 1.8760108 * y + 0.041556 * z),
-            d3_xyz_rgb(0.0556434 * x - 0.2040259 * y + 1.0572252 * z),
+            d3_xyz_rgb(0.0556434 * x - 0.2040259 * y + 1.0572252 * z)
         );
     }
     function d3_lab_hcl(l, a, b) {
@@ -2263,7 +2263,7 @@
             ? new d3_hcl(
                   Math.atan2(b, a) * d3_degrees,
                   Math.sqrt(a * a + b * b),
-                  l,
+                  l
               )
             : new d3_hcl(NaN, NaN, l);
     }
@@ -2278,7 +2278,7 @@
             255 *
                 (r <= 0.00304
                     ? 12.92 * r
-                    : 1.055 * Math.pow(r, 1 / 2.4) - 0.055),
+                    : 1.055 * Math.pow(r, 1 / 2.4) - 0.055)
         );
     }
     d3.rgb = d3_rgb;
@@ -2311,7 +2311,7 @@
         return new d3_rgb(
             Math.min(255, r / k),
             Math.min(255, g / k),
-            Math.min(255, b / k),
+            Math.min(255, b / k)
         );
     };
     d3_rgbPrototype.darker = function (k) {
@@ -2346,7 +2346,7 @@
                     return hsl(
                         parseFloat(m2[0]),
                         parseFloat(m2[1]) / 100,
-                        parseFloat(m2[2]) / 100,
+                        parseFloat(m2[2]) / 100
                     );
                 }
 
@@ -2354,7 +2354,7 @@
                     return rgb(
                         d3_rgb_parseNumber(m2[0]),
                         d3_rgb_parseNumber(m2[1]),
-                        d3_rgb_parseNumber(m2[2]),
+                        d3_rgb_parseNumber(m2[2])
                     );
                 }
             }
@@ -2406,13 +2406,13 @@
         g = d3_rgb_xyz(g);
         b = d3_rgb_xyz(b);
         var x = d3_xyz_lab(
-                (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / d3_lab_X,
+                (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / d3_lab_X
             ),
             y = d3_xyz_lab(
-                (0.2126729 * r + 0.7151522 * g + 0.072175 * b) / d3_lab_Y,
+                (0.2126729 * r + 0.7151522 * g + 0.072175 * b) / d3_lab_Y
             ),
             z = d3_xyz_lab(
-                (0.0193339 * r + 0.119192 * g + 0.9503041 * b) / d3_lab_Z,
+                (0.0193339 * r + 0.119192 * g + 0.9503041 * b) / d3_lab_Z
             );
         return d3_lab(116 * y - 16, 500 * (x - y), 200 * (y - z));
     }
@@ -2664,7 +2664,7 @@
             xhr[method] = function () {
                 return xhr.send.apply(
                     xhr,
-                    [method].concat(d3_array(arguments)),
+                    [method].concat(d3_array(arguments))
                 );
             };
         });
@@ -2717,12 +2717,12 @@
                 url,
                 mimeType,
                 row == null ? response : typedResponse(row),
-                callback,
+                callback
             );
             xhr.row = function (_) {
                 return arguments.length
                     ? xhr.response(
-                          (row = _) == null ? response : typedResponse(_),
+                          (row = _) == null ? response : typedResponse(_)
                       )
                     : row;
             };
@@ -2748,7 +2748,7 @@
                                 return JSON.stringify(name) + ': d[' + i + ']';
                             })
                             .join(',') +
-                        '}',
+                        '}'
                 );
                 o = f
                     ? function (row, i) {
@@ -2830,7 +2830,7 @@
                                 return formatValue(row[field]);
                             })
                             .join(delimiter);
-                    }),
+                    })
                 )
                 .join('\n');
         };
@@ -3107,13 +3107,13 @@
                     padding =
                         length < width
                             ? new Array((length = width - length + 1)).join(
-                                  fill,
+                                  fill
                               )
                             : '';
                 if (zcomma)
                     before = formatGroup(
                         padding + before,
-                        padding.length ? width - after.length : Infinity,
+                        padding.length ? width - after.length : Infinity
                     );
                 negative += prefix;
                 value = before + after;
@@ -3164,8 +3164,8 @@
             return (x = d3.round(x, d3_format_precision(x, p))).toFixed(
                 Math.max(
                     0,
-                    Math.min(20, d3_format_precision(x * (1 + 1e-15), p)),
-                ),
+                    Math.min(20, d3_format_precision(x * (1 + 1e-15), p))
+                )
             );
         },
     });
@@ -3178,7 +3178,7 @@
         this._ = new Date(
             arguments.length > 1
                 ? Date.UTC.apply(this, arguments)
-                : arguments[0],
+                : arguments[0]
         );
     }
     d3_date_utc.prototype = {
@@ -3317,7 +3317,7 @@
         },
         function (date) {
             return date.getFullYear();
-        },
+        }
     );
     d3_time.years = d3_time.year.range;
     d3_time.years.utc = d3_time.year.utc.range;
@@ -3327,7 +3327,7 @@
             day.setFullYear(
                 date.getFullYear(),
                 date.getMonth(),
-                date.getDate(),
+                date.getDate()
             );
             return day;
         },
@@ -3336,7 +3336,7 @@
         },
         function (date) {
             return date.getDate() - 1;
-        },
+        }
     );
     d3_time.days = d3_time.day.range;
     d3_time.days.utc = d3_time.day.utc.range;
@@ -3346,7 +3346,7 @@
             (date -
                 year -
                 (date.getTimezoneOffset() - year.getTimezoneOffset()) * 6e4) /
-                864e5,
+                864e5
         );
     };
     [
@@ -3362,7 +3362,7 @@
         var interval = (d3_time[day] = d3_time_interval(
             function (date) {
                 (date = d3_time.day(date)).setDate(
-                    date.getDate() - ((date.getDay() + i) % 7),
+                    date.getDate() - ((date.getDay() + i) % 7)
                 );
                 return date;
             },
@@ -3373,11 +3373,11 @@
                 var day = d3_time.year(date).getDay();
                 return (
                     Math.floor(
-                        (d3_time.dayOfYear(date) + ((day + i) % 7)) / 7,
+                        (d3_time.dayOfYear(date) + ((day + i) % 7)) / 7
                     ) -
                     (day !== i)
                 );
-            },
+            }
         ));
         d3_time[day + 's'] = interval.range;
         d3_time[day + 's'].utc = interval.utc.range;
@@ -3421,7 +3421,7 @@
                         if ((f = d3_time_formats[c]))
                             c = f(
                                 date,
-                                p == null ? (c === 'e' ? ' ' : '0') : p,
+                                p == null ? (c === 'e' ? ' ' : '0') : p
                             );
                         string.push(c);
                         j = i + 1;
@@ -3457,14 +3457,14 @@
                             ? ((d.w + 6) % 7) +
                                   d.W * 7 -
                                   ((date.getDay() + 5) % 7)
-                            : d.w + d.U * 7 - ((date.getDay() + 6) % 7),
+                            : d.w + d.U * 7 - ((date.getDay() + 6) % 7)
                     );
                 } else date.setFullYear(d.y, d.m, d.d);
                 date.setHours(
                     d.H + ((d.Z / 100) | 0),
                     d.M + (d.Z % 100),
                     d.S,
-                    d.L,
+                    d.L
                 );
                 return localZ ? date._ : date;
             };
@@ -3669,7 +3669,7 @@
         }
         function d3_time_parseAmPm(date, string, i) {
             var n = d3_time_periodLookup.get(
-                string.slice(i, (i += 2)).toLowerCase(),
+                string.slice(i, (i += 2)).toLowerCase()
             );
             return n == null ? -1 : ((date.p = n), i);
         }
@@ -4268,7 +4268,7 @@
         d3_geo_centroidPointXYZ(
             cosφ * Math.cos(λ),
             cosφ * Math.sin(λ),
-            Math.sin(φ),
+            Math.sin(φ)
         );
     }
     function d3_geo_centroidPointXYZ(x, y, z) {
@@ -4298,9 +4298,9 @@
                     Math.sqrt(
                         (w = y0 * z - z0 * y) * w +
                             (w = z0 * x - x0 * z) * w +
-                            (w = x0 * y - y0 * x) * w,
+                            (w = x0 * y - y0 * x) * w
                     ),
-                    x0 * x + y0 * y + z0 * z,
+                    x0 * x + y0 * y + z0 * z
                 );
             d3_geo_centroidW1 += w;
             d3_geo_centroidX1 += w * (x0 + (x0 = x));
@@ -4370,7 +4370,7 @@
         compare,
         clipStartInside,
         interpolate,
-        listener,
+        listener
     ) {
         var subject = [],
             clip = [];
@@ -4484,7 +4484,7 @@
                     segments = d3.merge(segments);
                     var clipStartInside = d3_geo_pointInPolygon(
                         rotatedClipStart,
-                        polygon,
+                        polygon
                     );
                     if (segments.length) {
                         if (!polygonStarted)
@@ -4494,7 +4494,7 @@
                             d3_geo_clipSort,
                             clipStartInside,
                             interpolate,
-                            listener,
+                            listener
                         );
                     } else if (clipStartInside) {
                         if (!polygonStarted)
@@ -4575,7 +4575,7 @@
                 }
                 if (n > 1 && clean & 2)
                     ringSegments.push(
-                        ringSegments.pop().concat(ringSegments.shift()),
+                        ringSegments.pop().concat(ringSegments.shift())
                     );
                 segments.push(ringSegments.filter(d3_geo_clipSegmentLength1));
             }
@@ -4618,7 +4618,7 @@
         d3_true,
         d3_geo_clipAntimeridianLine,
         d3_geo_clipAntimeridianInterpolate,
-        [-π, -π / 2],
+        [-π, -π / 2]
     );
     function d3_geo_clipAntimeridianLine(listener) {
         var λ0 = NaN,
@@ -4636,7 +4636,7 @@
                 if (abs(dλ - π) < ε) {
                     listener.point(
                         λ0,
-                        (φ0 = (φ0 + φ1) / 2 > 0 ? halfπ : -halfπ),
+                        (φ0 = (φ0 + φ1) / 2 > 0 ? halfπ : -halfπ)
                     );
                     listener.point(sλ0, φ0);
                     listener.lineEnd();
@@ -4674,7 +4674,7 @@
             ? Math.atan(
                   (Math.sin(φ0) * (cosφ1 = Math.cos(φ1)) * Math.sin(λ1) -
                       Math.sin(φ1) * (cosφ0 = Math.cos(φ0)) * Math.sin(λ0)) /
-                      (cosφ0 * cosφ1 * sinλ0_λ1),
+                      (cosφ0 * cosφ1 * sinλ0_λ1)
               )
             : (φ0 + φ1) / 2;
     }
@@ -4733,19 +4733,19 @@
                 d3_geo_areaRingSum.add(
                     Math.atan2(
                         k * sdλ * Math.sin(adλ),
-                        cosφ0 * cosφ + k * Math.cos(adλ),
-                    ),
+                        cosφ0 * cosφ + k * Math.cos(adλ)
+                    )
                 );
                 polarAngle += antimeridian ? dλ + sdλ * τ : dλ;
                 if (antimeridian ^ (λ0 >= meridian) ^ (λ >= meridian)) {
                     var arc = d3_geo_cartesianCross(
                         d3_geo_cartesian(point0),
-                        d3_geo_cartesian(point),
+                        d3_geo_cartesian(point)
                     );
                     d3_geo_cartesianNormalize(arc);
                     var intersection = d3_geo_cartesianCross(
                         meridianNormal,
-                        arc,
+                        arc
                     );
                     d3_geo_cartesianNormalize(intersection);
                     var φarc =
@@ -4776,7 +4776,7 @@
             visible,
             clipLine,
             interpolate,
-            smallRadius ? [0, -radius] : [-π, radius - π],
+            smallRadius ? [0, -radius] : [-π, radius - π]
         );
         function visible(λ, φ) {
             return Math.cos(λ) * Math.cos(φ) > cr;
@@ -5009,7 +5009,7 @@
                         (x0 = +_[0][0]),
                         (y0 = +_[0][1]),
                         (x1 = +_[1][0]),
-                        (y1 = +_[1][1]),
+                        (y1 = +_[1][1])
                     );
                     if (stream) (stream.valid = false), (stream = null);
                     return clipExtent;
@@ -5057,7 +5057,7 @@
                                 compare,
                                 clipStartInside,
                                 interpolate,
-                                listener,
+                                listener
                             );
                         }
                         listener.polygonEnd();
@@ -5098,7 +5098,7 @@
                     do {
                         listener.point(
                             a === 0 || a === 3 ? x0 : x1,
-                            a > 1 ? y1 : y0,
+                            a > 1 ? y1 : y0
                         );
                     } while ((a = (a + direction + 4) % 4) !== a1);
                 } else {
@@ -5131,11 +5131,11 @@
             function linePoint(x, y) {
                 x = Math.max(
                     -d3_geo_clipExtentMAX,
-                    Math.min(d3_geo_clipExtentMAX, x),
+                    Math.min(d3_geo_clipExtentMAX, x)
                 );
                 y = Math.max(
                     -d3_geo_clipExtentMAX,
-                    Math.min(d3_geo_clipExtentMAX, y),
+                    Math.min(d3_geo_clipExtentMAX, y)
                 );
                 var v = pointVisible(x, y);
                 if (polygon) ring.push([x, y]);
@@ -5644,7 +5644,7 @@
                     (b0 = c[1]),
                     (c0 = c[2]),
                     maxDepth,
-                    stream,
+                    stream
                 );
                 stream.point(x0, y0);
             }
@@ -5681,7 +5681,7 @@
                     b00,
                     c00,
                     maxDepth,
-                    stream,
+                    stream
                 );
                 resample.lineEnd = lineEnd;
                 lineEnd();
@@ -5702,7 +5702,7 @@
             b1,
             c1,
             depth,
-            stream,
+            stream
         ) {
             var dx = x1 - x0,
                 dy = y1 - y0,
@@ -5742,7 +5742,7 @@
                         (b /= m),
                         c,
                         depth,
-                        stream,
+                        stream
                     );
                     stream.point(x2, y2);
                     resampleLineTo(
@@ -5759,7 +5759,7 @@
                         b1,
                         c1,
                         depth,
-                        stream,
+                        stream
                     );
                 }
             }
@@ -5782,7 +5782,7 @@
             if (object) {
                 if (typeof pointRadius === 'function')
                     contextStream.pointRadius(
-                        +pointRadius.apply(this, arguments),
+                        +pointRadius.apply(this, arguments)
                     );
                 if (!cacheStream || !cacheStream.valid)
                     cacheStream = projectStream(contextStream);
@@ -5962,14 +5962,14 @@
         function invert(point) {
             point = projectRotate.invert(
                 (point[0] - δx) / k,
-                (δy - point[1]) / k,
+                (δy - point[1]) / k
             );
             return point && [point[0] * d3_degrees, point[1] * d3_degrees];
         }
         projection.stream = function (output) {
             if (stream) stream.valid = false;
             stream = d3_geo_projectionRadians(
-                preclip(rotate, projectResample(postclip(output))),
+                preclip(rotate, projectResample(postclip(output)))
             );
             stream.valid = true;
             return stream;
@@ -6019,7 +6019,7 @@
         function reset() {
             projectRotate = d3_geo_compose(
                 (rotate = d3_geo_rotation(δλ, δφ, δγ)),
-                project,
+                project
             );
             var center = project(λ, φ);
             δx = x - center[0] * k;
@@ -6051,12 +6051,12 @@
         rotate = d3_geo_rotation(
             (rotate[0] % 360) * d3_radians,
             rotate[1] * d3_radians,
-            rotate.length > 2 ? rotate[2] * d3_radians : 0,
+            rotate.length > 2 ? rotate[2] * d3_radians : 0
         );
         function forward(coordinates) {
             coordinates = rotate(
                 coordinates[0] * d3_radians,
-                coordinates[1] * d3_radians,
+                coordinates[1] * d3_radians
             );
             return (
                 (coordinates[0] *= d3_degrees),
@@ -6067,7 +6067,7 @@
         forward.invert = function (coordinates) {
             coordinates = rotate.invert(
                 coordinates[0] * d3_radians,
-                coordinates[1] * d3_radians,
+                coordinates[1] * d3_radians
             );
             return (
                 (coordinates[0] *= d3_degrees),
@@ -6086,7 +6086,7 @@
             ? δφ || δγ
                 ? d3_geo_compose(
                       d3_geo_rotationλ(δλ),
-                      d3_geo_rotationφγ(δφ, δγ),
+                      d3_geo_rotationφγ(δφ, δγ)
                   )
                 : d3_geo_rotationλ(δλ)
             : δφ || δγ
@@ -6145,7 +6145,7 @@
                 rotate = d3_geo_rotation(
                     -center[0] * d3_radians,
                     -center[1] * d3_radians,
-                    0,
+                    0
                 ).invert,
                 ring = [];
             interpolate(null, null, 1, {
@@ -6168,7 +6168,7 @@
             if (!arguments.length) return angle;
             interpolate = d3_geo_circleInterpolate(
                 (angle = +x) * d3_radians,
-                precision * d3_radians,
+                precision * d3_radians
             );
             return circle;
         };
@@ -6176,7 +6176,7 @@
             if (!arguments.length) return precision;
             interpolate = d3_geo_circleInterpolate(
                 angle * d3_radians,
-                (precision = +_) * d3_radians,
+                (precision = +_) * d3_radians
             );
             return circle;
         };
@@ -6207,7 +6207,7 @@
                         -sr * Math.cos(t),
                         -sr * Math.sin(t),
                     ]))[0],
-                    point[1],
+                    point[1]
                 );
             }
         };
@@ -6233,9 +6233,9 @@
         return Math.atan2(
             Math.sqrt(
                 (t = cosφ1 * sinΔλ) * t +
-                    (t = cosφ0 * sinφ1 - sinφ0 * cosφ1 * cosΔλ) * t,
+                    (t = cosφ0 * sinφ1 - sinφ0 * cosφ1 * cosΔλ) * t
             ),
-            sinφ0 * sinφ1 + cosφ0 * cosφ1 * cosΔλ,
+            sinφ0 * sinφ1 + cosφ0 * cosφ1 * cosΔλ
         );
     };
     d3.geo.graticule = function () {
@@ -6273,7 +6273,7 @@
                         .filter(function (x) {
                             return abs(x % DX) > ε;
                         })
-                        .map(x),
+                        .map(x)
                 )
                 .concat(
                     d3
@@ -6281,7 +6281,7 @@
                         .filter(function (y) {
                             return abs(y % DY) > ε;
                         })
-                        .map(y),
+                        .map(y)
                 );
         }
         graticule.lines = function () {
@@ -6299,7 +6299,7 @@
                     X(X0).concat(
                         Y(Y1).slice(1),
                         X(X1).reverse().slice(1),
-                        Y(Y0).reverse().slice(1),
+                        Y(Y0).reverse().slice(1)
                     ),
                 ],
             };
@@ -6404,7 +6404,7 @@
         greatArc.distance = function () {
             return d3.geo.distance(
                 source_ || source.apply(this, arguments),
-                target_ || target.apply(this, arguments),
+                target_ || target.apply(this, arguments)
             );
         };
         greatArc.source = function (_) {
@@ -6427,7 +6427,7 @@
             source[0] * d3_radians,
             source[1] * d3_radians,
             target[0] * d3_radians,
-            target[1] * d3_radians,
+            target[1] * d3_radians
         );
     };
     function d3_geo_interpolate(x0, y0, x1, y1) {
@@ -6443,8 +6443,8 @@
                 2 *
                 Math.asin(
                     Math.sqrt(
-                        d3_haversin(y1 - y0) + cy0 * cy1 * d3_haversin(x1 - x0),
-                    ),
+                        d3_haversin(y1 - y0) + cy0 * cy1 * d3_haversin(x1 - x0)
+                    )
                 ),
             k = 1 / Math.sin(d);
         var interpolate = d
@@ -6498,9 +6498,9 @@
             d3_geo_lengthSum += Math.atan2(
                 Math.sqrt(
                     (t = cosφ * Math.sin(t)) * t +
-                        (t = cosφ0 * sinφ - sinφ0 * cosφ * cosΔλ) * t,
+                        (t = cosφ0 * sinφ - sinφ0 * cosφ * cosΔλ) * t
                 ),
-                sinφ0 * sinφ + cosφ0 * cosφ * cosΔλ,
+                sinφ0 * sinφ + cosφ0 * cosφ * cosΔλ
             );
             (λ0 = λ), (sinφ0 = sinφ), (cosφ0 = cosφ);
         }
@@ -6530,7 +6530,7 @@
         },
         function (ρ) {
             return 2 * Math.asin(ρ / 2);
-        },
+        }
     );
     (d3.geo.azimuthalEqualArea = function () {
         return d3_geo_projection(d3_geo_azimuthalEqualArea);
@@ -6655,7 +6655,7 @@
         },
         function (ρ) {
             return 2 * Math.atan(ρ);
-        },
+        }
     );
     (d3.geo.stereographic = function () {
         return d3_geo_projection(d3_geo_stereographic);
@@ -6738,7 +6738,7 @@
                 d3_cross2d(
                     points[hull[hs - 2]],
                     points[hull[hs - 1]],
-                    points[i],
+                    points[i]
                 ) <= 0
             )
                 --hs;
@@ -6913,7 +6913,7 @@
             lArc.site,
             rArc.site,
             null,
-            vertex,
+            vertex
         );
         d3_geom_voronoiAttachCircle(lArc);
         d3_geom_voronoiAttachCircle(rArc);
@@ -6960,7 +6960,7 @@
             d3_geom_voronoiBeaches.insert(newArc, rArc);
             newArc.edge = rArc.edge = d3_geom_voronoiCreateEdge(
                 lArc.site,
-                newArc.site,
+                newArc.site
             );
             d3_geom_voronoiAttachCircle(lArc);
             d3_geom_voronoiAttachCircle(rArc);
@@ -7020,7 +7020,7 @@
                                     lfocy +
                                     plby2 / 2 +
                                     rfocy -
-                                    pby2 / 2),
+                                    pby2 / 2)
                     )) /
                     aby2 +
                 rfocx
@@ -7104,11 +7104,11 @@
                                           x: abs(y2 - y0) < ε ? x2 : x0,
                                           y: y0,
                                       }
-                                    : null,
+                                    : null
                             ),
                             cell.site,
-                            null,
-                        ),
+                            null
+                        )
                     );
                     ++nHalfEdges;
                 }
@@ -7190,7 +7190,7 @@
                 extent[0][0],
                 extent[0][1],
                 extent[1][0],
-                extent[1][1],
+                extent[1][1]
             ),
             i = edges.length,
             e;
@@ -7317,10 +7317,10 @@
         if (va) d3_geom_voronoiSetEdgeEnd(edge, lSite, rSite, va);
         if (vb) d3_geom_voronoiSetEdgeEnd(edge, rSite, lSite, vb);
         d3_geom_voronoiCells[lSite.i].edges.push(
-            new d3_geom_voronoiHalfEdge(edge, lSite, rSite),
+            new d3_geom_voronoiHalfEdge(edge, lSite, rSite)
         );
         d3_geom_voronoiCells[rSite.i].edges.push(
-            new d3_geom_voronoiHalfEdge(edge, rSite, lSite),
+            new d3_geom_voronoiHalfEdge(edge, rSite, lSite)
         );
         return edge;
     }
@@ -7596,7 +7596,7 @@
             ) {
                 if (site.x !== x0 || site.y !== y0) {
                     d3_geom_voronoiCells[site.i] = new d3_geom_voronoiCell(
-                        site,
+                        site
                     );
                     d3_geom_voronoiAddBeach(site);
                     (x0 = site.x), (y0 = site.y);
@@ -7639,7 +7639,7 @@
                 y1 = clipExtent[1][1];
             d3_geom_voronoi(sites(data), clipExtent).cells.forEach(function (
                 cell,
-                i,
+                i
             ) {
                 var edges = cell.edges,
                     site = cell.site,
@@ -7852,7 +7852,7 @@
                     x1_,
                     y1_,
                     x2_,
-                    y2_,
+                    y2_
                 );
             };
             i = -1;
@@ -8073,7 +8073,7 @@
                   return s.join('');
               });
     }
-    var d3_interpolate_numberA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g,
+    var d3_interpolate_numberA = /[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?/g,
         d3_interpolate_numberB = new RegExp(d3_interpolate_numberA.source, 'g');
     d3.interpolate = d3_interpolate;
     function d3_interpolate(a, b) {
@@ -8159,7 +8159,7 @@
         t = d3_ease.get(t) || d3_ease_default;
         m = d3_ease_mode.get(m) || d3_identity;
         return d3_ease_clamp(
-            m(t.apply(null, d3_arraySlice.call(arguments, 1))),
+            m(t.apply(null, d3_arraySlice.call(arguments, 1)))
         );
     };
     function d3_ease_clamp(f) {
@@ -8366,7 +8366,7 @@
                 {
                     i: i - 2,
                     x: d3_interpolateNumber(ta[1], tb[1]),
-                },
+                }
             );
         } else if (tb[0] || tb[1]) {
             s.push('translate(' + tb + ')');
@@ -8381,7 +8381,7 @@
                     s.push(
                         d3_interpolateTransformPop(s) + 'rotate(',
                         null,
-                        ')',
+                        ')'
                     ) - 2,
                 x: d3_interpolateNumber(ra, rb),
             });
@@ -8396,7 +8396,7 @@
                     s.push(
                         d3_interpolateTransformPop(s) + 'skewX(',
                         null,
-                        ')',
+                        ')'
                     ) - 2,
                 x: d3_interpolateNumber(wa, wb),
             });
@@ -8411,7 +8411,7 @@
                 null,
                 ',',
                 null,
-                ')',
+                ')'
             );
             q.push(
                 {
@@ -8421,7 +8421,7 @@
                 {
                     i: i - 2,
                     x: d3_interpolateNumber(ka[1], kb[1]),
-                },
+                }
             );
         } else if (kb[0] !== 1 || kb[1] !== 1) {
             s.push(d3_interpolateTransformPop(s) + 'scale(' + kb + ')');
@@ -8593,7 +8593,7 @@
                                 : {
                                       source: source,
                                       target: target,
-                                  },
+                                  }
                         );
                     }
                 }
@@ -8604,7 +8604,7 @@
             chords.sort(function (a, b) {
                 return sortChords(
                     (a.source.value + a.target.value) / 2,
-                    (b.source.value + b.target.value) / 2,
+                    (b.source.value + b.target.value) / 2
                 );
             });
         }
@@ -8751,7 +8751,7 @@
                 d3_layout_forceAccumulate(
                     (q = d3.geom.quadtree(nodes)),
                     alpha,
-                    charges,
+                    charges
                 );
                 i = -1;
                 while (++i < n) {
@@ -9103,7 +9103,7 @@
                         target: child,
                     };
                 });
-            }),
+            })
         );
     }
     d3.layout.partition = function () {
@@ -9171,7 +9171,7 @@
                     Math.abs(da) / n,
                     +(typeof padAngle === 'function'
                         ? padAngle.apply(this, arguments)
-                        : padAngle),
+                        : padAngle)
                 ),
                 pa = p * (da < 0 ? -1 : 1),
                 sum = d3.sum(values),
@@ -9187,7 +9187,7 @@
                           }
                         : function (i, j) {
                               return sort(data[i], data[j]);
-                          },
+                          }
                 );
             index.forEach(function (i) {
                 arcs[i] = {
@@ -9259,14 +9259,14 @@
                     stack,
                     series[0][j],
                     (o = offsets[j]),
-                    points[0][j][1],
+                    points[0][j][1]
                 );
                 for (i = 1; i < n; ++i) {
                     out.call(
                         stack,
                         series[i][j],
                         (o += points[i - 1][j][1]),
-                        points[i][j][1],
+                        points[i][j][1]
                     );
                 }
             }
@@ -9519,7 +9519,7 @@
     function d3_layout_histogramBinSturges(range, values) {
         return d3_layout_histogramBinFixed(
             range,
-            Math.ceil(Math.log(values.length) / Math.LN2 + 1),
+            Math.ceil(Math.log(values.length) / Math.LN2 + 1)
         );
     }
     function d3_layout_histogramBinFixed(range, n) {
@@ -9575,7 +9575,7 @@
                 root,
                 w / 2,
                 h / 2,
-                radius ? 1 : 1 / Math.max((2 * root.r) / w, (2 * root.r) / h),
+                radius ? 1 : 1 / Math.max((2 * root.r) / w, (2 * root.r) / h)
             );
             return nodes;
         }
@@ -9733,8 +9733,8 @@
                     Math.sqrt(
                         Math.max(
                             0,
-                            2 * da * (db + dc) - (db -= dc) * db - da * da,
-                        ),
+                            2 * da * (db + dc) - (db -= dc) * db - da * da
+                        )
                     ) /
                     (2 * dc);
             c.x = a.x + x * dx + y * dy;
@@ -9809,7 +9809,7 @@
                                 s: 0,
                                 t: null,
                                 i: i,
-                            }).a = child),
+                            }).a = child)
                     );
                 }
             }
@@ -9863,7 +9863,7 @@
                         d3_layout_treeMove(
                             d3_layout_treeAncestor(vim, v, ancestor),
                             v,
-                            shift,
+                            shift
                         );
                         sip += shift;
                         sop += shift;
@@ -9980,7 +9980,7 @@
                           node.x = ((node.x - x0) / (x1 - x0)) * size[0];
                           node.y =
                               (1 - (root.y ? node.y / root.y : 1)) * size[1];
-                      },
+                      }
             );
             return nodes;
         }
@@ -10112,7 +10112,7 @@
                             row,
                             child.z ? rect.dx : rect.dy,
                             rect,
-                            !remaining.length,
+                            !remaining.length
                         );
                         row.length = row.area = 0;
                     }
@@ -10154,7 +10154,7 @@
                     o.dy = v;
                     x += o.dx = Math.min(
                         rect.x + rect.dx - x,
-                        v ? round(o.area / v) : 0,
+                        v ? round(o.area / v) : 0
                     );
                 }
                 o.z = true;
@@ -10170,7 +10170,7 @@
                     o.dx = v;
                     y += o.dy = Math.min(
                         rect.y + rect.dy - y,
-                        v ? round(o.area / v) : 0,
+                        v ? round(o.area / v) : 0
                     );
                 }
                 o.z = false;
@@ -10204,7 +10204,7 @@
                     ? d3_layout_treemapPadNull(node)
                     : d3_layout_treemapPad(
                           node,
-                          typeof p === 'number' ? [p, p, p, p] : p,
+                          typeof p === 'number' ? [p, p, p, p] : p
                       );
             }
             function padConstant(node) {
@@ -10440,17 +10440,17 @@
             'range',
             'rangeRound',
             'interpolate',
-            'clamp',
+            'clamp'
         );
     }
     function d3_scale_linearNice(domain, m) {
         d3_scale_nice(
             domain,
-            d3_scale_niceStep(d3_scale_linearTickRange(domain, m)[2]),
+            d3_scale_niceStep(d3_scale_linearTickRange(domain, m)[2])
         );
         d3_scale_nice(
             domain,
-            d3_scale_niceStep(d3_scale_linearTickRange(domain, m)[2]),
+            d3_scale_niceStep(d3_scale_linearTickRange(domain, m)[2])
         );
         return domain;
     }
@@ -10478,7 +10478,7 @@
             match.shift();
             if (match[8] === 's') {
                 var prefix = d3.formatPrefix(
-                    Math.max(abs(range[0]), abs(range[1])),
+                    Math.max(abs(range[0]), abs(range[1]))
                 );
                 if (!match[7])
                     match[7] =
@@ -10514,8 +10514,8 @@
             ? Math.abs(
                   p -
                       d3_scale_linearPrecision(
-                          Math.max(abs(range[0]), abs(range[1])),
-                      ),
+                          Math.max(abs(range[0]), abs(range[1]))
+                      )
               ) + +(type !== 'e')
             : p - (type === '%') * 2;
     }
@@ -10524,7 +10524,7 @@
             d3.scale.linear().domain([0, 1]),
             10,
             true,
-            [1, 10],
+            [1, 10]
         );
     };
     function d3_scale_log(linear, base, positive, domain) {
@@ -10559,7 +10559,7 @@
         scale.nice = function () {
             var niced = d3_scale_nice(
                 domain.map(log),
-                positive ? Math : d3_scale_logNiceNegative,
+                positive ? Math : d3_scale_logNiceNegative
             );
             linear.domain(niced);
             domain = niced.map(pow);
@@ -10735,9 +10735,9 @@
                             (stop -
                                 start -
                                 (domain.length - 1 + padding) * step) /
-                                2,
+                                2
                     ),
-                step,
+                step
             );
             rangeBand = 0;
             ranger = {
@@ -10772,14 +10772,14 @@
                 stop = x[1 - reverse],
                 step = Math.floor(
                     (stop - start) /
-                        (domain.length - padding + 2 * outerPadding),
+                        (domain.length - padding + 2 * outerPadding)
                 );
             range = steps(
                 start +
                     Math.round(
-                        (stop - start - (domain.length - padding) * step) / 2,
+                        (stop - start - (domain.length - padding) * step) / 2
                     ),
-                step,
+                step
             );
             if (reverse) range.reverse();
             rangeBand = Math.round(step * (1 - padding));
@@ -11043,7 +11043,7 @@
                 da > ε &&
                 (rc = Math.min(
                     Math.abs(r1 - r0) / 2,
-                    +cornerRadius.apply(this, arguments),
+                    +cornerRadius.apply(this, arguments)
                 )) > 0.001
             ) {
                 cr = (r0 < r1) ^ cw ? 0 : 1;
@@ -11059,7 +11059,7 @@
                                       [x0, y0],
                                       [x3, y3],
                                       [x1, y1],
-                                      [x2, y2],
+                                      [x2, y2]
                                   ),
                         ax = x0 - oc[0],
                         ay = y0 - oc[1],
@@ -11071,8 +11071,8 @@
                                 Math.acos(
                                     (ax * bx + ay * by) /
                                         (Math.sqrt(ax * ax + ay * ay) *
-                                            Math.sqrt(bx * bx + by * by)),
-                                ) / 2,
+                                            Math.sqrt(bx * bx + by * by))
+                                ) / 2
                             ),
                         lc = Math.sqrt(oc[0] * oc[0] + oc[1] * oc[1]);
                     rc0 = Math.min(rc, (r0 - lc) / (kc - 1));
@@ -11084,14 +11084,14 @@
                             [x0, y0],
                             r1,
                             rc1,
-                            cw,
+                            cw
                         ),
                         t12 = d3_svg_arcCornerTangents(
                             [x1, y1],
                             [x2, y2],
                             r1,
                             rc1,
-                            cw,
+                            cw
                         );
                     if (rc === rc1) {
                         path.push(
@@ -11115,7 +11115,7 @@
                                     t30[1][0],
                                     t30[1][1],
                                     t12[1][0],
-                                    t12[1][1],
+                                    t12[1][1]
                                 ),
                             ',',
                             cw,
@@ -11128,7 +11128,7 @@
                             ' 0 0,',
                             cr,
                             ' ',
-                            t12[0],
+                            t12[0]
                         );
                     } else {
                         path.push(
@@ -11141,7 +11141,7 @@
                             ' 0 1,',
                             cr,
                             ' ',
-                            t12[0],
+                            t12[0]
                         );
                     }
                 } else {
@@ -11153,14 +11153,14 @@
                             [x3, y3],
                             r0,
                             -rc0,
-                            cw,
+                            cw
                         ),
                         t21 = d3_svg_arcCornerTangents(
                             [x2, y2],
                             x1 == null ? [x0, y0] : [x1, y1],
                             r0,
                             -rc0,
-                            cw,
+                            cw
                         );
                     if (rc === rc0) {
                         path.push(
@@ -11184,7 +11184,7 @@
                                     t21[1][0],
                                     t21[1][1],
                                     t03[1][0],
-                                    t03[1][1],
+                                    t03[1][1]
                                 ),
                             ',',
                             1 - cw,
@@ -11197,7 +11197,7 @@
                             ' 0 0,',
                             cr,
                             ' ',
-                            t03[0],
+                            t03[0]
                         );
                     } else {
                         path.push(
@@ -11210,7 +11210,7 @@
                             ' 0 0,',
                             cr,
                             ' ',
-                            t03[0],
+                            t03[0]
                         );
                     }
                 } else {
@@ -11231,7 +11231,7 @@
                         ' ',
                         x1,
                         ',',
-                        y1,
+                        y1
                     );
                 path.push('L', x2, ',', y2);
                 if (x3 != null)
@@ -11247,7 +11247,7 @@
                         ' ',
                         x3,
                         ',',
-                        y3,
+                        y3
                     );
             }
             path.push('Z');
@@ -11495,7 +11495,7 @@
             : points[1] +
                   d3_svg_lineHermite(
                       points.slice(1, -1),
-                      d3_svg_lineCardinalTangents(points, tension),
+                      d3_svg_lineCardinalTangents(points, tension)
                   );
     }
     function d3_svg_lineCardinalClosed(points, tension) {
@@ -11508,8 +11508,8 @@
                           [points[points.length - 2]].concat(points, [
                               points[1],
                           ]),
-                          tension,
-                      ),
+                          tension
+                      )
                   );
     }
     function d3_svg_lineCardinal(points, tension) {
@@ -11518,7 +11518,7 @@
             : points[0] +
                   d3_svg_lineHermite(
                       points,
-                      d3_svg_lineCardinalTangents(points, tension),
+                      d3_svg_lineCardinalTangents(points, tension)
                   );
     }
     function d3_svg_lineHermite(points, tangents) {
@@ -11657,7 +11657,7 @@
         path.push(
             d3_svg_lineDot4(d3_svg_lineBasisBezier3, px) +
                 ',' +
-                d3_svg_lineDot4(d3_svg_lineBasisBezier3, py),
+                d3_svg_lineDot4(d3_svg_lineBasisBezier3, py)
         );
         --i;
         while (++i < n) {
@@ -11737,7 +11737,7 @@
             ',',
             d3_svg_lineDot4(d3_svg_lineBasisBezier3, x),
             ',',
-            d3_svg_lineDot4(d3_svg_lineBasisBezier3, y),
+            d3_svg_lineDot4(d3_svg_lineBasisBezier3, y)
         );
     }
     function d3_svg_lineSlope(p0, p1) {
@@ -11798,7 +11798,7 @@
             : points[0] +
                   d3_svg_lineHermite(
                       points,
-                      d3_svg_lineMonotoneTangents(points),
+                      d3_svg_lineMonotoneTangents(points)
                   );
     }
     d3.svg.line.radial = function () {
@@ -11862,7 +11862,7 @@
                     interpolate(projection(points1), tension),
                     L,
                     interpolateReverse(projection(points0.reverse()), tension),
-                    'Z',
+                    'Z'
                 );
             }
             while (++i < n) {
@@ -12249,11 +12249,11 @@
         return this.each(
             name == null
                 ? d3_selection_interrupt
-                : d3_selection_interruptNS(d3_transitionNamespace(name)),
+                : d3_selection_interruptNS(d3_transitionNamespace(name))
         );
     };
     var d3_selection_interrupt = d3_selection_interruptNS(
-        d3_transitionNamespace(),
+        d3_transitionNamespace()
     );
     function d3_selection_interruptNS(ns) {
         return function () {
@@ -12271,7 +12271,7 @@
                     active.event.interrupt.call(
                         this,
                         this.__data__,
-                        active.index,
+                        active.index
                     );
             }
         };
@@ -12380,7 +12380,7 @@
                   }
                 : function (node) {
                       node[ns][id].tween.set(name, tween);
-                  },
+                  }
         );
     };
     function d3_transition_tween(groups, name, value, tween) {
@@ -12392,13 +12392,13 @@
                 ? function (node, i, j) {
                       node[ns][id].tween.set(
                           name,
-                          tween(value.call(node, node.__data__, i, j)),
+                          tween(value.call(node, node.__data__, i, j))
                       );
                   }
                 : ((value = tween(value)),
                   function (node) {
                       node[ns][id].tween.set(name, value);
-                  }),
+                  })
         );
     }
     d3_transitionPrototype.attr = function (nameNS, value) {
@@ -12453,7 +12453,7 @@
             this,
             'attr.' + nameNS,
             value,
-            name.local ? attrTweenNS : attrTween,
+            name.local ? attrTweenNS : attrTween
         );
     };
     d3_transitionPrototype.attrTween = function (nameNS, tween) {
@@ -12472,7 +12472,7 @@
                 this,
                 d,
                 i,
-                this.getAttributeNS(name.space, name.local),
+                this.getAttributeNS(name.space, name.local)
             );
             return (
                 f &&
@@ -12483,7 +12483,7 @@
         }
         return this.tween(
             'attr.' + nameNS,
-            name.local ? attrTweenNS : attrTween,
+            name.local ? attrTweenNS : attrTween
         );
     };
     d3_transitionPrototype.style = function (name, value, priority) {
@@ -12529,7 +12529,7 @@
                 i,
                 d3_window(this)
                     .getComputedStyle(this, null)
-                    .getPropertyValue(name),
+                    .getPropertyValue(name)
             );
             return (
                 f &&
@@ -12578,13 +12578,13 @@
                           node,
                           node.__data__,
                           i,
-                          j,
+                          j
                       );
                   }
                 : ((value = +value),
                   function (node) {
                       node[ns][id].delay = value;
-                  }),
+                  })
         );
     };
     d3_transitionPrototype.duration = function (value) {
@@ -12597,13 +12597,13 @@
                 ? function (node, i, j) {
                       node[ns][id].duration = Math.max(
                           1,
-                          value.call(node, node.__data__, i, j),
+                          value.call(node, node.__data__, i, j)
                       );
                   }
                 : ((value = Math.max(1, value)),
                   function (node) {
                       node[ns][id].duration = value;
-                  }),
+                  })
         );
     };
     d3_transitionPrototype.each = function (type, listener) {
@@ -12630,7 +12630,7 @@
                     (transition.event = d3.dispatch(
                         'start',
                         'end',
-                        'interrupt',
+                        'interrupt'
                     ))
                 ).on(type, listener);
             });
@@ -12697,7 +12697,7 @@
                     active.event.interrupt.call(
                         node,
                         node.__data__,
-                        active.index,
+                        active.index
                     );
             }
             for (var cancelId in lock) {
@@ -12719,7 +12719,7 @@
                     return 1;
                 },
                 0,
-                time,
+                time
             );
             lock.active = id;
             transition.event &&
@@ -12789,7 +12789,7 @@
                             ? scale1.tickFormat
                                 ? scale1.tickFormat.apply(
                                       scale1,
-                                      tickArguments_,
+                                      tickArguments_
                                   )
                                 : d3_identity
                             : tickFormat_,
@@ -12833,7 +12833,7 @@
                         (y2 = 'y2');
                     text.attr('dy', sign < 0 ? '0em' : '.71em').style(
                         'text-anchor',
-                        'middle',
+                        'middle'
                     );
                     pathUpdate.attr(
                         'd',
@@ -12844,7 +12844,7 @@
                             'V0H' +
                             range[1] +
                             'V' +
-                            sign * outerTickSize,
+                            sign * outerTickSize
                     );
                 } else {
                     (tickTransform = d3_svg_axisY),
@@ -12854,7 +12854,7 @@
                         (y2 = 'x2');
                     text.attr('dy', '.32em').style(
                         'text-anchor',
-                        sign < 0 ? 'end' : 'start',
+                        sign < 0 ? 'end' : 'start'
                     );
                     pathUpdate.attr(
                         'd',
@@ -12865,7 +12865,7 @@
                             'H0V' +
                             range[1] +
                             'H' +
-                            sign * outerTickSize,
+                            sign * outerTickSize
                     );
                 }
                 lineEnter.attr(y2, sign * innerTickSize);
@@ -13109,14 +13109,14 @@
             g.select('.extent').attr('x', xExtent[0]);
             g.selectAll('.extent,.n>rect,.s>rect').attr(
                 'width',
-                xExtent[1] - xExtent[0],
+                xExtent[1] - xExtent[0]
             );
         }
         function redrawY(g) {
             g.select('.extent').attr('y', yExtent[0]);
             g.selectAll('.extent,.e>rect,.w>rect').attr(
                 'height',
-                yExtent[1] - yExtent[0],
+                yExtent[1] - yExtent[0]
             );
         }
         function brushstart() {
@@ -13139,12 +13139,12 @@
             if (d3.event.changedTouches) {
                 w.on('touchmove.brush', brushmove).on(
                     'touchend.brush',
-                    brushend,
+                    brushend
                 );
             } else {
                 w.on('mousemove.brush', brushmove).on(
                     'mouseup.brush',
-                    brushend,
+                    brushend
                 );
             }
             g.interrupt().selectAll('*').interrupt();
@@ -13244,7 +13244,7 @@
                     if (center)
                         position = Math.max(
                             r0,
-                            Math.min(r1, 2 * center[i] - min),
+                            Math.min(r1, 2 * center[i] - min)
                         );
                     if (position < min) {
                         max = min;
@@ -13408,7 +13408,7 @@
         },
         function (date) {
             return date.getSeconds();
-        },
+        }
     );
     d3_time.seconds = d3_time.second.range;
     d3_time.seconds.utc = d3_time.second.utc.range;
@@ -13421,7 +13421,7 @@
         },
         function (date) {
             return date.getMinutes();
-        },
+        }
     );
     d3_time.minutes = d3_time.minute.range;
     d3_time.minutes.utc = d3_time.minute.utc.range;
@@ -13429,7 +13429,7 @@
         function (date) {
             var timezone = date.getTimezoneOffset() / 60;
             return new d3_date(
-                (Math.floor(date / 36e5 - timezone) + timezone) * 36e5,
+                (Math.floor(date / 36e5 - timezone) + timezone) * 36e5
             );
         },
         function (date, offset) {
@@ -13437,7 +13437,7 @@
         },
         function (date) {
             return date.getHours();
-        },
+        }
     );
     d3_time.hours = d3_time.hour.range;
     d3_time.hours.utc = d3_time.hour.utc.range;
@@ -13452,7 +13452,7 @@
         },
         function (date) {
             return date.getMonth();
-        },
+        }
     );
     d3_time.months = d3_time.month.range;
     d3_time.months.utc = d3_time.month.utc.range;
@@ -13480,7 +13480,7 @@
                           extent.map(function (d) {
                               return d / 31536e6;
                           }),
-                          count,
+                          count
                       )[2],
                   ]
                 : !i
@@ -13527,8 +13527,8 @@
                                   return date;
                               },
                           }
-                        : interval,
-                ),
+                        : interval
+                )
             );
         };
         scale.ticks = function (interval, skip) {
@@ -13548,7 +13548,7 @@
             return interval.range(
                 extent[0],
                 d3_time_scaleDate(+extent[1] + 1),
-                skip < 1 ? 1 : skip,
+                skip < 1 ? 1 : skip
             );
         };
         scale.tickFormat = function () {
@@ -13645,7 +13645,7 @@
         return d3_time_scale(
             d3.scale.linear(),
             d3_time_scaleLocalMethods,
-            d3_time_scaleLocalFormat,
+            d3_time_scaleLocalFormat
         );
     };
     var d3_time_scaleUtcMethods = d3_time_scaleLocalMethods.map(function (m) {
@@ -13701,7 +13701,7 @@
         return d3_time_scale(
             d3.scale.linear(),
             d3_time_scaleUtcMethods,
-            d3_time_scaleUtcFormat,
+            d3_time_scaleUtcFormat
         );
     };
     d3.text = d3_xhrType(function (request) {

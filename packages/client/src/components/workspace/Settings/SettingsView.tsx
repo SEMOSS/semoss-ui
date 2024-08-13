@@ -58,9 +58,9 @@ export const SettingsView = () => {
                 <StyledContainer>
                     {workspace.role === 'OWNER' ? (
                         <SettingsTiles
-                            mode={'app'}
-                            name={'app'}
+                            type={'APP'}
                             id={workspace.appId}
+                            name={workspace.metadata?.project_name || 'app'}
                             direction="row"
                             onDelete={() => {
                                 navigate('/settings/app');
@@ -89,15 +89,14 @@ export const SettingsView = () => {
                         </ToggleTabsGroup>
                         {view === 'CURRENT' && (
                             <MembersTable
+                                type={'APP'}
                                 id={workspace.appId}
-                                mode={'app'}
-                                name={'app'}
-                                refreshPermission={() => console.log('TODO')}
+                                onChange={() => console.log('TODO')}
                             />
                         )}
                         {view === 'PENDING' && (
                             <PendingMembersTable
-                                mode={'app'}
+                                type={'APP'}
                                 id={workspace.appId}
                             />
                         )}

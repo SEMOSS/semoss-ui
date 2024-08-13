@@ -40,14 +40,11 @@ export const ABTesting = () => {
                 }
 
                 const newVariable: Variable = {
-                    alias: `${model.alias}--${Math.floor(
-                        Math.random() * 10000,
-                    )}`,
                     to: dependencyId,
                     type: 'model',
                 };
 
-                currentState.variables[variableId] = newVariable;
+                currentState.variables[model.alias] = newVariable;
 
                 // 2. What queries in state use this model, get a copy of them, swap out variable reference and add to state
                 Object.entries(state.toJSON().queries).forEach((q) => {
@@ -63,7 +60,7 @@ export const ABTesting = () => {
                             if (code.includes(`{{${model.alias}}}`)) {
                                 const newCode = codeCopy.replace(
                                     new RegExp(`{{${model.alias}}}`, 'g'),
-                                    `{{${newVariable.alias}}}`,
+                                    `{{${model.alias}}}`,
                                 );
 
                                 cellsCopy[i].parameters.code = newCode;

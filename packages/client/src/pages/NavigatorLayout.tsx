@@ -3,10 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
 import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
-import { ErrorBoundary } from 'react-error-boundary';
 
 import { Navbar } from '@/components/ui';
-
+import { ErrorBoundary } from '@/components/common';
 import { ENGINE_ROUTES } from '@/pages/engine';
 import { ErrorPage } from './ErrorPage';
 
