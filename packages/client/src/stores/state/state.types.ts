@@ -16,6 +16,9 @@ export type SerializedState = {
     /** Variables used in notebook */
     variables: Record<string, Variable>;
 
+    /** Variants used for LLM Comparison */
+    variants: Record<string, Variant>;
+
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
 };
@@ -63,6 +66,22 @@ export type VariableWithId =
           type: 'cell';
           cellId: string;
       } & { id: string });
+
+/**
+ * Variants
+ */
+export type Variant = {
+    to: string;
+    isDefault: string;
+    models: VariantModel[];
+};
+
+export type VariantModel = {
+    id: string;
+    topP: number;
+    temperature: number;
+    length: number;
+};
 
 /**
  * Block

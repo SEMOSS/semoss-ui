@@ -232,6 +232,7 @@ export const NewAppPage = () => {
                                                     version: STATE_VERSION,
                                                     dependencies: {},
                                                     variables: {},
+                                                    variants: {},
                                                     queries: {},
                                                     blocks: BASE_PAGE_BLOCKS,
                                                 },

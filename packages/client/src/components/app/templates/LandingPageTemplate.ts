@@ -13,6 +13,7 @@ export const LandingPageTemplate: Template = {
         version: '1.0.0-alpha.1',
         dependencies: {},
         variables: {},
+        variants: {},
         queries: {},
         blocks: {
             'text--584': {

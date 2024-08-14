@@ -16,6 +16,7 @@ import {
     ListenerActions,
     SerializedState,
     Variable,
+    Variant,
     VariableType,
     VariableWithId,
 } from './state.types';
@@ -32,6 +33,9 @@ interface StateStoreInterface {
 
     /** token to reference (blocks, cells, dependencies) */
     variables: Record<string, Variable>;
+
+    /** composition of Models for use with LLM Comparison */
+    variants: Record<string, Variant>;
 
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
@@ -76,6 +80,7 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         dependencies: {}, // Maher said change to constants
+        variants: {},
     };
 
     /**
@@ -500,6 +505,7 @@ export class StateStore {
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
+            variants: toJS(this._store.variants),
             dependencies: toJS(this._store.dependencies),
             version: this._store.version,
         };
