@@ -82,7 +82,7 @@ export const AppSettingsDetailPage = () => {
         <StyledContainer>
             {permission === 'OWNER' ? (
                 <SettingsTiles
-                    mode={'app'}
+                    type={'APP'}
                     name={'app'}
                     id={id}
                     direction={'row'}
@@ -111,15 +111,12 @@ export const AppSettingsDetailPage = () => {
                 {view === 'CURRENT' && (
                     <MembersTable
                         id={id}
-                        mode={'app'}
-                        name={'app'}
-                        refreshPermission={() =>
-                            getUserEnginePermission.refresh()
-                        }
+                        type={'APP'}
+                        onChange={() => getUserEnginePermission.refresh()}
                     />
                 )}
                 {view === 'PENDING' && (
-                    <PendingMembersTable mode={'app'} id={id} />
+                    <PendingMembersTable id={id} type={'APP'} />
                 )}
                 {view === 'APP' && <AppSettings id={id} />}
             </StyledContent>

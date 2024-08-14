@@ -13,6 +13,7 @@ import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
 import { useLLMComparison } from './useLLMCompare';
 import { useDebounce } from './useDebounce';
+import { useDebounceValue } from './useDebounceValue';
 
 export {
     useAPI,
@@ -30,4 +31,5 @@ export {
     useWorkspace,
     useLLMComparison,
     useDebounce,
+    useDebounceValue,
 };

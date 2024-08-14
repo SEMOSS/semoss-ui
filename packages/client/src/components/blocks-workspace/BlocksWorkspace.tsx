@@ -3,7 +3,13 @@ import { observer } from 'mobx-react-lite';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
 
 import { runPixel } from '@/api';
-import { SerializedState, StateStore, WorkspaceStore } from '@/stores';
+import {
+    SerializedState,
+    StateStore,
+    WorkspaceStore,
+    MigrationManager,
+    STATE_VERSION,
+} from '@/stores';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
@@ -36,7 +42,6 @@ const StyledFooter = styled('div')(({ theme }) => ({
 }));
 
 const ACTIVE = 'page-1';
-
 interface BlocksWorkspaceProps {
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -73,11 +78,20 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 // get the output (SerializedState)
                 const { output } = pixelReturn[0];
 
+                // assume the output is the current state
+                let state = output;
+
+                // run migration if not up to date
+                if (state.version !== STATE_VERSION) {
+                    const migration = new MigrationManager();
+                    state = await migration.run(output);
+                }
+
                 // create a new state store
                 const s = new StateStore({
                     mode: 'static',
                     insightId: insightId,
-                    state: output,
+                    state: state,
                     cellRegistry: DefaultCells,
                 });
 
