@@ -88,6 +88,7 @@ export const ConfigureDefaultVariant = () => {
     const handleAddModel = () => {
         const newVariant = { ...variant };
         newVariant.models.push({ ...emptyModel });
+        setVariant(newVariant);
     };
 
     const handleDeleteModel = (idx: number) => {
