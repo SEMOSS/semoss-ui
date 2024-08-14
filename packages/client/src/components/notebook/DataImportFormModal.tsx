@@ -1,25 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { computed } from 'mobx';
 import {
-    styled,
-    Button,
-    Divider,
-    MenuProps,
-    Typography,
-    Menu,
-    Stack,
-    Modal,
     Checkbox,
+    useNotification,
+    Typography,
     TextField,
     IconButton,
+    MenuProps,
     Tooltip,
+    Button,
+    Menu,
+    Stack,
     Select,
+    Modal,
     Table,
-    Grid,
-    useNotification,
+    styled,
 } from '@semoss/ui';
-
 import { useBlocks, usePixel, useRootStore } from '@/hooks';
 import {
     ActionMessages,
@@ -28,59 +24,24 @@ import {
     QueryState,
 } from '@/stores';
 import {
-    ArrowDownwardRounded,
     ControlPointDuplicateRounded,
-    ChangeCircleOutlined,
-    IndeterminateCheckBox,
-    AddCircleOutline,
-    AccountTree,
-    Functions,
-    Storage,
-    Add,
-    Code,
-    ImportExport,
+    CalendarViewMonth,
     KeyboardArrowDown,
     FilterListRounded,
-    JoinLeftRounded,
-    KeyboardArrowUp,
-    TextFields,
-    TableRows,
-    Label,
-    CheckBox,
-    AddCircle,
     AddBox,
-    Close,
     JoinInner,
     JoinRight,
     JoinLeft,
     JoinFull,
     Warning,
-    WarningAmber,
-    TableView,
-    TableChart,
-    CalendarViewMonth,
 } from '@mui/icons-material';
-import {
-    DefaultCellDefinitions,
-    DefaultCells,
-    TransformationCells,
-} from '@/components/cell-defaults';
-import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
+import { DefaultCells } from '@/components/cell-defaults';
 import { DataImportCellConfig } from '../cell-defaults/data-import-cell';
+import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
-import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
-
-import { LoadingScreen } from '@/components/ui';
-
-import { runPixel } from '@/api';
-import { TableContainer, alertTitleClasses } from '@mui/material';
-import { debug } from 'console';
+import { TableContainer } from '@mui/material';
 
 // region --- Styled Elements
-
-const StyledImportDataForm = styled('form')(({ theme }) => ({
-    margin: '30px 41px',
-}));
 
 const StyledModalTitle = styled(Typography)(({ theme }) => ({
     alignContent: 'center',
@@ -88,28 +49,19 @@ const StyledModalTitle = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
-    display: 'flex',
+    justifyContent: 'space-between',
     alignContent: 'center',
+    display: 'flex',
     padding: '0px',
     marginBottom: '15px',
-    justifyContent: 'space-between',
     marginTop: '25px',
 }));
 
-const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
-    display: 'flex',
-    alignContent: 'center',
-    padding: '0px',
+const StyledModalTitleUnpaddedWrapper = styled(Modal.Title)(({ theme }) => ({
     justifyContent: 'space-between',
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-    backgroundColor: 'unset!important',
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-    flexGrow: 1,
+    alignContent: 'center',
+    display: 'flex',
+    padding: '0px',
 }));
 
 const ScrollTableSetContainer = styled(TableContainer)(({ theme }) => ({
@@ -128,45 +80,33 @@ const StyledTableTitle = styled(Typography)(({ theme }) => ({
     marginBottom: '20px',
 }));
 
-const StyledTableTitleGreenBubble = styled(Typography)(({ theme }) => ({
-    marginTop: '20px',
-    marginLeft: '15px',
-    marginBottom: '20px',
-    backgroundColor: '#E7F4E5x`', // primary 4
-    width: 'fit-content',
-    padding: '7.5px 17.5px',
-    borderRadius: '10px',
-}));
-
 const FlexWrapper = styled('div')(({ theme }) => ({
+    marginTop: '15px',
     display: 'flex',
     padding: '0px',
-    marginTop: '15px',
 }));
 
 const FlexTableCell = styled('div')(({ theme }) => ({
-    display: 'flex',
     alignItems: 'center',
-    // padding: '0px',
-    // marginTop: '15px',
+    display: 'flex',
 }));
 
 const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
+    backgroundColor: theme.palette.primary.selected,
+    padding: '7.5px 17.5px',
+    borderRadius: '10px',
+    width: 'fit-content',
+    display: 'flex',
     marginTop: '0px',
     marginLeft: '0px',
     marginBottom: '15px',
-    backgroundColor: theme.palette.primary.selected,
-    width: 'fit-content',
-    padding: '7.5px 17.5px',
-    borderRadius: '10px',
-    display: 'flex',
     alignItems: 'center',
 }));
 
 const SingleTableWrapper = styled('div')(({ theme }) => ({
+    marginRight: '12.5px',
     marginBottom: '60px',
     marginLeft: '12.5px',
-    marginRight: '12.5px',
 }));
 
 const CheckAllIconButton = styled(IconButton)(({ theme }) => ({
@@ -174,14 +114,14 @@ const CheckAllIconButton = styled(IconButton)(({ theme }) => ({
 }));
 
 const AliasWarningIcon = styled(Tooltip)(({ theme }) => ({
-    color: 'goldenrod',
     marginLeft: '10px',
+    color: 'goldenrod',
 }));
 
 const TableIconButton = styled(Tooltip)(({ theme }) => ({
+    color: theme.palette.primary.main,
     marginLeft: '-3px',
     marginRight: '7px',
-    color: theme.palette.primary.main,
 }));
 
 const ColumnNameText = styled(Typography)(({ theme }) => ({
@@ -191,12 +131,12 @@ const ColumnNameText = styled(Typography)(({ theme }) => ({
 const StyledMenu = styled((props: MenuProps) => (
     <Menu
         anchorOrigin={{
-            vertical: 'bottom',
             horizontal: 'left',
+            vertical: 'bottom',
         }}
         transformOrigin={{
-            vertical: 'top',
             horizontal: 'left',
+            vertical: 'top',
         }}
         {...props}
     />
@@ -213,51 +153,29 @@ const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
 }));
 
-const StyledBorderDiv = styled('div')(({ theme }) => ({
-    border: `1px solid ${theme.palette.secondary.main}`,
-    padding: '8px 16px',
-    borderRadius: '8px',
-}));
-
 const StyledJoinDiv = styled('div')(({ theme }) => ({
-    border: 'none',
-    padding: '4px 12px',
     borderRadius: '12px',
+    padding: '4px 12px',
     fontSize: '14px',
     color: 'black',
+    border: 'none',
     cursor: 'default',
     backgroundColor: theme.palette.primary.selected,
 }));
 
 const StyledJoinTypography = styled(Typography)(({ theme }) => ({
+    cursor: 'default',
     marginLeft: '12.5px',
     marginRight: '12.5px',
     color: theme.palette.secondary.dark,
-    cursor: 'default',
 }));
 
 // endregion
 
 // region --- Old Data Import useForm Types & Interfaces
 
-interface AddCellOption {
-    display: string;
-    icon: React.ReactNode;
-    defaultCellType?: DefaultCellDefinitions['widget'];
-    options?: {
-        display: string;
-        defaultCellType: DefaultCellDefinitions['widget'];
-    }[];
-    disabled?: boolean;
-}
-
 type QueryChildElement = {
     childElementName: string;
-};
-
-type QueryStackElement = {
-    queryType: string; // Data, Join or Filter
-    queryChildren: QueryChildElement[];
 };
 
 type JoinElement = {
@@ -266,15 +184,6 @@ type JoinElement = {
     joinType: string;
     leftKey: string;
     rightKey: string;
-};
-
-type FormValues = {
-    queryStackElements: QueryStackElement[];
-    joinElements: JoinElement[];
-    databaseSelect: string;
-    tableSelect: string;
-    columns: Column[];
-    tables: Table[];
 };
 
 // endregion
@@ -292,8 +201,8 @@ interface Column {
 
 interface Table {
     id: number;
-    name: string;
     columns: Column[];
+    name: string;
 }
 
 interface NewFormData {
@@ -303,8 +212,8 @@ interface NewFormData {
 
 type NewFormValues = {
     databaseSelect: string;
-    tables: Table[];
     joins: JoinElement[];
+    tables: Table[];
 };
 
 // endregion
@@ -326,78 +235,14 @@ const JOIN_ICONS = {
     outer: <JoinFull />,
 };
 
-const DataImportDropdownOptions = [
-    {
-        display: `From Data Catalog`,
-        defaultCellType: null,
-    },
-    {
-        display: `From CSV`,
-        defaultCellType: null,
-    },
-];
-
-const AddCellOptions: Record<string, AddCellOption> = {
-    code: {
-        display: 'Cell',
-        defaultCellType: 'code',
-        icon: <Code />,
-    },
-    'query-import': {
-        display: 'Query Import',
-        defaultCellType: 'query-import',
-        // no DB MUI icon using the icon path from main menu
-        icon: (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-            >
-                <g clipPath="url(#clip0_2378_103062)">
-                    <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
-                        fill="#666666"
-                    ></path>
-                </g>
-                <defs>
-                    <clipPath id="clip0_2378_103062">
-                        <rect width="24" height="24" fill="#666666"></rect>
-                    </clipPath>
-                </defs>
-            </svg>
-        ),
-    },
-    transformation: {
-        display: 'Transformation',
-        icon: <ChangeCircleOutlined />,
-        // options: Transformations,
-        options: [],
-    },
-    'import-data': {
-        display: 'Import Data',
-        icon: <ImportExport />,
-        options: DataImportDropdownOptions,
-        disabled: false,
-    },
-    text: {
-        display: 'Text',
-        icon: <TextFields />,
-        disabled: true,
-    },
-};
-
 // endregion
 
 export const DataImportFormModal = observer(
     (props: {
         query?: QueryState;
         previousCellId?: string;
-        editMode?: boolean;
         setIsDataImportModalOpen?;
+        editMode?: boolean;
         cell?;
     }): JSX.Element => {
         const {
@@ -407,30 +252,16 @@ export const DataImportFormModal = observer(
             editMode,
             cell,
         } = props;
+
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-        // const [selectedAddCell, setSelectedAddCell] = useState<string>('');
-        // const [importModalType, setImportModalType] = useState<string>('');
-
-        const open = Boolean(anchorEl);
         const { state, notebook } = useBlocks();
-
-        // Old useForm for Data Import --- remove
-        const { control, handleSubmit, reset, watch, setValue, getValues } =
-            useForm<FormValues>({
-                defaultValues: {
-                    queryStackElements: [],
-                    databaseSelect: '',
-                    tableSelect: '',
-                },
-            });
 
         //  New useForm for Data Import
         const {
             control: newControl,
-            handleSubmit: newHandleSubmit,
-            reset: newReset,
-            getValues: _newGetValues,
             setValue: newSetValue,
+            reset: newReset,
+            handleSubmit: newHandleSubmit,
             watch: dataImportwatch,
         } = useForm<NewFormValues>();
 
@@ -440,23 +271,22 @@ export const DataImportFormModal = observer(
         // region --- useStates / useRefs
 
         const [userDatabases, setUserDatabases] = useState(null);
-        const [queryElementCounter, setQueryElementCounter] = useState(0);
         const [importModalPixelWidth, setImportModalPixelWidth] =
             useState<string>(IMPORT_MODAL_WIDTHS.small);
         const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
         const [selectedDatabaseId, setSelectedDatabaseId] = useState(
             cell ? cell.parameters.databaseId : null,
         );
+        const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
         const [databaseTableRows, setDatabaseTableRows] = useState([]);
         const [tableNames, setTableNames] = useState<string[]>([]);
-        const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
         const [isDatabaseLoading, setIsDatabaseLoading] =
             useState<boolean>(false);
         const [showPreview, setShowTablePreview] = useState<boolean>(false);
         const [showEditColumns, setShowEditColumns] = useState<boolean>(true);
-        const { monolithStore } = useRootStore();
         const [tableEdgesObject, setTableEdgesObject] = useState(null);
         const [aliasesCountObj, setAliasesCountObj] = useState({});
+        const { monolithStore } = useRootStore();
         const aliasesCountObjRef = useRef({});
         const [tableEdges, setTableEdges] = useState({}); //
         const [rootTable, setRootTable] = useState(
@@ -464,60 +294,21 @@ export const DataImportFormModal = observer(
         );
 
         const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
-        const [shownTables, setShownTables] = useState(new Set());
         const [selectedTableNames, setSelectedTableNames] = useState(new Set());
+        const [shownTables, setShownTables] = useState(new Set());
         const [joinsSet, setJoinsSet] = useState(new Set());
-
-        const [pixelString, setPixelString] = useState('');
         const pixelStringRef = useRef<string>('');
-        const pixelStringRefPart1 = useRef<string>('');
-
+        const pixelPartialRef = useRef<string>('');
         const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
+        const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
         const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
             useState(editMode ? false : true);
-
-        const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
-
-        // endregion
-
-        // region --- Import Data Old useFieldArrays
-
-        const {
-            fields: _stackFields,
-            append: appendStack,
-            remove: removeStack,
-        } = useFieldArray({
-            control,
-            name: 'queryStackElements',
-        });
-
-        const {
-            fields: _editableColumnFields,
-            append: appendEditableColumns,
-            remove: removeEditableColumns,
-        } = useFieldArray({
-            control,
-            name: 'columns',
-        });
-
-        const {
-            fields: _tableFields,
-            append: _appendEditableTableColumns,
-            remove: _removeEditableTableColumns,
-        } = useFieldArray({
-            control,
-            name: 'tables',
-        });
 
         // endregion
 
         // region --- Import Data New useFieldArray
 
-        const {
-            fields: newTableFields,
-            append: _newTableAppend,
-            remove: _newTableRemove,
-        } = useFieldArray({
+        const { fields: newTableFields } = useFieldArray({
             control: newControl,
             name: 'tables',
         });
@@ -543,13 +334,6 @@ export const DataImportFormModal = observer(
         }, []);
 
         useEffect(() => {
-            removeEditableColumns();
-            removeStack();
-        }, [selectedDatabaseId]);
-
-        useEffect(() => {
-            removeEditableColumns();
-            removeStack();
             setShowTablePreview(false);
             setShowEditColumns(true);
         }, [selectedDatabaseId]);
@@ -633,11 +417,6 @@ export const DataImportFormModal = observer(
 
         /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
-            console.log({
-                previousCellId,
-                widget,
-                DefaultCells,
-            });
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
@@ -647,19 +426,12 @@ export const DataImportFormModal = observer(
                 };
 
                 if (widget === DataImportCellConfig.widget) {
-                    alert('test555');
-                    console.log({
-                        'pixelStringRefPart1.current':
-                            pixelStringRefPart1.current,
-                        [`FRAME_${newCellId}`]: `FRAME_${newCellId}`,
-                    });
-
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
                         frameVariableName: `FRAME_${newCellId}`,
                         databaseId: selectedDatabaseId,
-                        selectQuery: pixelStringRefPart1.current, // construct query based on useForm inputs
                         joins: watchedJoins,
+                        selectQuery: pixelPartialRef.current,
                         tableNames: Array.from(selectedTableNames),
                         selectedColumns: getSelectedColumnNames(),
                         columnAliases: getColumnAliases(),
@@ -706,7 +478,6 @@ export const DataImportFormModal = observer(
         const updateSubmitDispatches = () => {
             const currTableNamesSet = retrieveSelectedTableNames();
             const currTableNames = Array.from(currTableNamesSet);
-
             const currSelectedColumns = retrieveSelectedColumnNames();
             const currColumnAliases = retrieveColumnAliasNames();
 
@@ -766,7 +537,7 @@ export const DataImportFormModal = observer(
                     queryId: cell.query.id,
                     cellId: cell.id,
                     path: 'parameters.selectQuery',
-                    value: pixelStringRefPart1.current,
+                    value: pixelPartialRef.current,
                 },
             });
 
@@ -807,17 +578,7 @@ export const DataImportFormModal = observer(
 
         /** Close and Reset Import Data Form Modal */
         const closeImportModalHandler = () => {
-            // setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.small);
-            // setHiddenColumnIdsSet(new Set());
             setIsDataImportModalOpen(false);
-            // setDatabaseTableHeaders([]);
-            // setSelectedDatabaseId(null);
-            // setShowTablePreview(false);
-            // setTableColumnsObject({});
-            // setDatabaseTableRows([]);
-            // setSelectedTable(null);
-            // setTableNames([]);
-            // reset();
         };
 
         /** Get Database Information for Data Import Modal */
@@ -851,7 +612,7 @@ export const DataImportFormModal = observer(
                     ];
 
                     const tableColumnsObject = responseTableStructure.reduce(
-                        (acc, ele, idx) => {
+                        (acc, ele) => {
                             const tableName = ele[0];
                             const columnName = ele[1];
                             const columnType = ele[2];
@@ -1011,9 +772,7 @@ export const DataImportFormModal = observer(
             const pixelColumnAliases = [];
 
             watchedTables?.forEach((tableObject) => {
-                const currTableName = tableObject.name;
                 const currTableColumns = tableObject.columns;
-
                 currTableColumns.forEach((columnObject) => {
                     if (columnObject.checked) {
                         pixelTables.add(columnObject.tableName);
@@ -1034,9 +793,7 @@ export const DataImportFormModal = observer(
             const pixelColumnAliases = [];
 
             watchedTables?.forEach((tableObject) => {
-                const currTableName = tableObject.name;
                 const currTableColumns = tableObject.columns;
-
                 currTableColumns.forEach((columnObject) => {
                     if (columnObject.checked) {
                         pixelTables.add(columnObject.tableName);
@@ -1057,9 +814,7 @@ export const DataImportFormModal = observer(
             const pixelColumnAliases = [];
 
             watchedTables?.forEach((tableObject) => {
-                const currTableName = tableObject.name;
                 const currTableColumns = tableObject.columns;
-
                 currTableColumns.forEach((columnObject) => {
                     if (columnObject.checked) {
                         pixelTables.add(columnObject.tableName);
@@ -1080,9 +835,7 @@ export const DataImportFormModal = observer(
             const pixelColumnAliases = [];
 
             watchedTables?.forEach((tableObject) => {
-                const currTableName = tableObject.name;
                 const currTableColumns = tableObject.columns;
-
                 currTableColumns.forEach((columnObject) => {
                     if (columnObject.checked) {
                         pixelTables.add(columnObject.tableName);
@@ -1097,70 +850,6 @@ export const DataImportFormModal = observer(
             setSelectedTableNames(pixelTables);
         };
 
-        // Unused ---
-        // const updateQueryPixelString = async () => {
-        //     // setIsDatabaseLoading(true);
-
-        //     const databaseId = selectedDatabaseId;
-        //     const pixelTables = new Set();
-        //     const pixelColumnNames = [];
-        //     const pixelColumnAliases = [];
-        //     const pixelJoins = [];
-
-        //     watchedTables.forEach((tableObject) => {
-        //         const currTableName = tableObject.name;
-        //         const currTableColumns = tableObject.columns;
-
-        //         currTableColumns.forEach((columnObject) => {
-        //             if (columnObject.checked) {
-        //                 pixelTables.add(columnObject.tableName);
-        //                 pixelColumnNames.push(
-        //                     `${columnObject.tableName}__${columnObject.columnName}`,
-        //                 );
-        //                 pixelColumnAliases.push(columnObject.userAlias);
-        //             }
-        //         });
-        //     });
-
-        //     Array.from(joinsSet).forEach((joinEle: string) => {
-        //         const splitJoinsString = joinEle.split(':');
-        //         pixelJoins.push(
-        //             `( ${splitJoinsString[0]} , inner.join , ${splitJoinsString[1]} )`,
-        //         );
-        //     });
-
-        //     let pixelStringPart1 = `Database ( database = [ \"${databaseId}\" ] )`;
-        //     pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(' , ')} )`;
-        //     pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(' , ')} ] )`;
-
-        //     // Joins Reactor apparantly not needed unless non-inner join type is selected
-        //     // Join type selector has apparantly been partially dead on legacy, specifically when select all for a table is used
-
-        //     // if (pixelJoins.length > 0) {
-        //     //     pixelStringPart1 += ` | Join ( ${pixelJoins.join(' , ')} ) `;
-        //     // }
-
-        //     pixelStringPart1 += ` | Distinct ( false ) | Limit ( 20 )`;
-
-        //     // See Join note above
-        //     const combinedJoinString = ""
-        //     // const combinedJoinString =
-        //     //     pixelJoins.length > 0
-        //     //         ? `| Join ( ${pixelJoins.join(' , ')} ) `
-        //     //         : '';
-
-        //     const reactorPixel = `Database ( database = [ \"${databaseId}\" ] ) | Select ( ${pixelColumnNames.join(
-        //         ' , ',
-        //     )} ) .as ( [ ${pixelColumnAliases.join(
-        //         ' , ',
-        //     )} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
-
-        //     setPixelString(reactorPixel);
-        //     pixelStringRef.current = reactorPixel;
-
-        //     pixelStringRefPart1.current = pixelStringPart1 + ';';
-        // };
-
         const retrievePreviewData = async () => {
             setIsDatabaseLoading(true);
 
@@ -1171,9 +860,7 @@ export const DataImportFormModal = observer(
             const pixelJoins = [];
 
             watchedTables.forEach((tableObject) => {
-                const currTableName = tableObject.name;
                 const currTableColumns = tableObject.columns;
-
                 currTableColumns.forEach((columnObject) => {
                     if (columnObject.checked) {
                         pixelTables.add(columnObject.tableName);
@@ -1185,15 +872,7 @@ export const DataImportFormModal = observer(
                 });
             });
 
-            // Array.from(joinsSet).forEach((joinEle: string) => {
-            //     const splitJoinsString = joinEle.split(':');
-            //     pixelJoins.push(
-            //         `( ${splitJoinsString[0]} , inner.join , ${splitJoinsString[1]} )`,
-            //     );
-            // });
-
             watchedJoins.forEach((joinEle) => {
-                // const splitJoinsString = joinEle.split(':');
                 pixelJoins.push(
                     `( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
                 );
@@ -1207,10 +886,6 @@ export const DataImportFormModal = observer(
             }
             pixelStringPart1 += ` | Distinct ( false ) | Limit ( 20 )`;
 
-            // unused
-            // const pixelStringPart2 = ` | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] )`;
-            // const pixelStringPart3 = ` ; META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
-
             const combinedJoinString =
                 pixelJoins.length > 0
                     ? `| Join ( ${pixelJoins.join(' , ')} ) `
@@ -1222,17 +897,13 @@ export const DataImportFormModal = observer(
                 ' , ',
             )} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ \"consolidated_settings_FRAME932867__Preview\" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
-            setPixelString(reactorPixel);
             pixelStringRef.current = reactorPixel;
-
-            pixelStringRefPart1.current = pixelStringPart1 + ';';
+            pixelPartialRef.current = pixelStringPart1 + ';';
 
             await monolithStore.runQuery(reactorPixel).then((response) => {
                 const type = response.pixelReturn[0]?.operationType;
                 const tableHeadersData =
                     response.pixelReturn[1]?.output?.data?.headers;
-                const tableRawHeadersData =
-                    response.pixelReturn[1]?.output?.data?.rawHeaders;
                 const tableRowsData =
                     response.pixelReturn[1]?.output?.data?.values;
 
@@ -1249,9 +920,7 @@ export const DataImportFormModal = observer(
                 }
 
                 setDatabaseTableHeaders(tableHeadersData);
-                // setDatabaseTableRawHeaders(tableRawHeadersData);
                 setDatabaseTableRows(tableRowsData);
-
                 setIsDatabaseLoading(false);
             });
         };
@@ -1476,7 +1145,6 @@ export const DataImportFormModal = observer(
         };
 
         return (
-            // <Modal open={isDataImportModalOpen} maxWidth="lg">
             <Modal open={true} maxWidth="lg">
                 <Modal.Content sx={{ width: importModalPixelWidth }}>
                     <form onSubmit={newHandleSubmit(onImportDataSubmit)}>
@@ -1545,7 +1213,7 @@ export const DataImportFormModal = observer(
                                     marginBottom: '15px',
                                 }}
                             >
-                                <StyledModalTitleWrapper2>
+                                <StyledModalTitleUnpaddedWrapper>
                                     <div
                                         style={{
                                             display: 'flex',
@@ -1599,7 +1267,7 @@ export const DataImportFormModal = observer(
                                             Preview
                                         </Button>
                                     </div>
-                                </StyledModalTitleWrapper2>
+                                </StyledModalTitleUnpaddedWrapper>
 
                                 {showEditColumns && (
                                     <StyledTableSetWrapper>
@@ -1903,18 +1571,8 @@ export const DataImportFormModal = observer(
                                             <Table stickyHeader size={'small'}>
                                                 <Table.Body>
                                                     <Table.Row>
-                                                        {databaseTableHeaders
-                                                            // .filter(
-                                                            //     (v, colIdx) => {
-                                                            //         console.log(!hiddenColumnIdsSet.has(
-                                                            //             colIdx,
-                                                            //         ));
-                                                            //         return !hiddenColumnIdsSet.has(
-                                                            //             colIdx,
-                                                            //         );
-                                                            //     },
-                                                            // )
-                                                            .map((h, hIdx) => (
+                                                        {databaseTableHeaders.map(
+                                                            (h, hIdx) => (
                                                                 <Table.Cell
                                                                     key={hIdx}
                                                                 >
@@ -1922,7 +1580,8 @@ export const DataImportFormModal = observer(
                                                                         {h}
                                                                     </strong>
                                                                 </Table.Cell>
-                                                            ))}
+                                                            ),
+                                                        )}
                                                     </Table.Row>
                                                     {databaseTableRows.map(
                                                         (r, rIdx) => (
@@ -1962,7 +1621,7 @@ export const DataImportFormModal = observer(
                                     marginBottom: '15px',
                                 }}
                             >
-                                <StyledModalTitleWrapper2>
+                                <StyledModalTitleUnpaddedWrapper>
                                     <div
                                         style={{
                                             display: 'flex',
@@ -2066,64 +1725,6 @@ export const DataImportFormModal = observer(
                                             >
                                                 Outer Join
                                             </StyledMenuItem>
-                                            {/* {selectedAddCell === 'transformation' &&
-                                                Array.from(
-                                                    AddCellOptions[selectedAddCell]?.options || [],
-                                                    ({ display, defaultCellType }, index) => {
-                                                        return (
-                                                            <StyledMenuItem
-                                                                key={index}
-                                                                value={display}
-                                                                onClick={() => {
-                                                                    appendCell(defaultCellType);
-                                                                    setAnchorEl(null);
-                                                                }}
-                                                            >
-                                                                {display}
-                                                            </StyledMenuItem>
-                                                        );
-                                                    },
-                                                )}
-
-                                            {selectedAddCell === 'import-data' && (
-                                                <>
-                                                    {Array.from(
-                                                        AddCellOptions[selectedAddCell]?.options ||
-                                                            [],
-                                                        ({ display }, index) => {
-                                                            return (
-                                                                <StyledMenuItem
-                                                                    key={index}
-                                                                    value={display}
-                                                                    disabled={display == 'From CSV'} // temporary
-                                                                    onClick={() => {
-                                                                        // loadDatabaseStructure();
-                                                                        setImportModalPixelWidth(
-                                                                            IMPORT_MODAL_WIDTHS.small,
-                                                                        );
-                                                                        setIsDataImportModalOpen(
-                                                                            true,
-                                                                        );
-                                                                        if (
-                                                                            display ==
-                                                                            'From Data Catalog'
-                                                                        ) {
-                                                                            setImportModalType(
-                                                                                display,
-                                                                            );
-                                                                        } else {
-                                                                            // open seperate modal / form for From CSV
-                                                                        }
-                                                                        setAnchorEl(null);
-                                                                    }}
-                                                                >
-                                                                    {display}
-                                                                </StyledMenuItem>
-                                                            );
-                                                        },
-                                                    )}
-                                                </>
-                                            )} */}
                                         </StyledMenu>
 
                                         <Tooltip title="Right Table">
@@ -2152,7 +1753,7 @@ export const DataImportFormModal = observer(
                                             </StyledJoinDiv>
                                         </Tooltip>
                                     </div>
-                                </StyledModalTitleWrapper2>
+                                </StyledModalTitleUnpaddedWrapper>
                             </Stack>
                         ))}
 
@@ -2172,13 +1773,7 @@ export const DataImportFormModal = observer(
                                 disabled
                                 startIcon={<FilterListRounded />}
                                 onClick={() => {
-                                    setQueryElementCounter(
-                                        queryElementCounter + 1,
-                                    );
-                                    appendStack({
-                                        queryType: `Filter ${queryElementCounter}`,
-                                        queryChildren: [],
-                                    });
+                                    // create addFilterHandler
                                 }}
                             >
                                 Add Filter
@@ -2190,13 +1785,7 @@ export const DataImportFormModal = observer(
                                 disabled
                                 startIcon={<ControlPointDuplicateRounded />}
                                 onClick={() => {
-                                    setQueryElementCounter(
-                                        queryElementCounter + 1,
-                                    );
-                                    appendStack({
-                                        queryType: `Summarization  ${queryElementCounter}`,
-                                        queryChildren: [],
-                                    });
+                                    // create addSummaryHandler
                                 }}
                             >
                                 Summarize
@@ -2208,13 +1797,7 @@ export const DataImportFormModal = observer(
                                 disabled
                                 startIcon={<ControlPointDuplicateRounded />}
                                 onClick={() => {
-                                    setQueryElementCounter(
-                                        queryElementCounter + 1,
-                                    );
-                                    appendStack({
-                                        queryType: `Calculate  ${queryElementCounter}`,
-                                        queryChildren: [],
-                                    });
+                                    // create addCalculationHandler
                                 }}
                             >
                                 Calculate

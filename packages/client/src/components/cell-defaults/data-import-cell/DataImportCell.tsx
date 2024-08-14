@@ -63,6 +63,30 @@ const JOIN_ICONS = {
     outer: <JoinFull />,
 };
 
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    marginRight: '7.5px',
+    marginLeft: '7.5px',
+}));
+
+const StyledPaddedFlexDiv = styled('div')(({ theme }) => ({
+    alignItems: 'center',
+    display: 'flex',
+}));
+
+const StyledFlexDiv = styled('div')(({ theme }) => ({
+    alignItems: 'center',
+    paddingBottom: '0',
+    marginBottom: '0',
+    display: 'flex',
+}));
+
+const StyledCalendarViewMonth = styled(CalendarViewMonth)(({ theme }) => ({
+    strokeWidth: 0.025,
+    marginLeft: '-3px',
+    marginRight: '7px',
+    color: '#95909C',
+}));
+
 const BlueStyledJoinDiv = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.primary.selected,
     padding: '0px 12px',
@@ -92,7 +116,7 @@ const StyledJoinTypography = styled(Typography)(({ theme }) => ({
     cursor: 'default',
 }));
 
-const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
+const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
     alignContent: 'center',
     display: 'flex',
     padding: '0px',
@@ -127,7 +151,9 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     },
 }));
 
-const StyledContainer = styled('div')(({ theme }) => ({}));
+const StyledBlockStack = styled(Stack)(({ theme }) => ({
+    display: 'block',
+}));
 
 interface JoinObject {
     id: string;
@@ -402,14 +428,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                     )}
                     {showStyledView ? (
                         <>
-                            <div
-                                style={{
-                                    alignItems: 'center',
-                                    paddingBottom: '0',
-                                    marginBottom: '0',
-                                    display: 'flex',
-                                }}
-                            >
+                            <StyledFlexDiv>
                                 {cell.parameters.tableNames &&
                                     cell.parameters.tableNames.map(
                                         (tableName) => (
@@ -417,39 +436,23 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                 title={`${tableName} Table`}
                                             >
                                                 <StyledTableTitleBubble>
-                                                    <CalendarViewMonth
-                                                        fontSize="small"
-                                                        sx={{
-                                                            strokeWidth: 0.025,
-                                                            marginLeft: '-3px',
-                                                            marginRight: '7px',
-                                                            color: '#95909C',
-                                                        }}
-                                                    />
+                                                    <StyledCalendarViewMonth fontSize="small" />
                                                     {tableName}
                                                 </StyledTableTitleBubble>
                                             </Tooltip>
                                         ),
                                     )}
-                            </div>
+                            </StyledFlexDiv>
 
                             {isExpanded &&
                                 cell.parameters.joins &&
                                 cell.parameters.joins.map((join) => (
-                                    <Stack
-                                        spacing={1}
+                                    <StyledBlockStack
                                         direction="column"
-                                        sx={{
-                                            display: 'block',
-                                        }}
+                                        spacing={1}
                                     >
-                                        <StyledModalTitleWrapper2>
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
+                                        <StyledModalTitleWrapper>
+                                            <StyledPaddedFlexDiv>
                                                 <Tooltip title="Left Join Table">
                                                     <BlueStyledJoinDiv>
                                                         {join.leftTable}
@@ -459,21 +462,16 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                 <Tooltip
                                                     title={`${join.joinType} join`}
                                                 >
-                                                    <IconButton
+                                                    <StyledIconButton
                                                         size="small"
                                                         color="secondary"
-                                                        sx={{
-                                                            marginLeft: '7.5px',
-                                                            marginRight:
-                                                                '7.5px',
-                                                        }}
                                                     >
                                                         {
                                                             JOIN_ICONS[
                                                                 join.joinType
                                                             ]
                                                         }
-                                                    </IconButton>
+                                                    </StyledIconButton>
                                                 </Tooltip>
 
                                                 <Tooltip title="Right Join Table">
@@ -501,16 +499,15 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                                         {join.rightKey}
                                                     </GreenStyledJoinDiv>
                                                 </Tooltip>
-                                            </div>
-                                        </StyledModalTitleWrapper2>
-                                    </Stack>
+                                            </StyledPaddedFlexDiv>
+                                        </StyledModalTitleWrapper>
+                                    </StyledBlockStack>
                                 ))}
                         </>
                     ) : (
-                        <StyledContainer>
+                        <div>
                             <Editor
                                 // value is appended to make pixel valid for copy / paste to other pixel cell
-                                // value=
                                 defaultValue={
                                     cell.parameters.selectQuery.slice(0, -1) +
                                     ` | Import ( frame = [ CreateFrame ( frameType = [ \"${cell.parameters.frameType}\" ] , override = [ true ] ) .as ( [ \"${cell.parameters.frameVariableName}\" ] ) ] ) ; Frame ( frame = [ \"${cell.parameters.frameVariableName}\" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
@@ -534,7 +531,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 onChange={handleEditorChange}
                                 onMount={handleEditorMount}
                             />
-                        </StyledContainer>
+                        </div>
                     )}
                     {isExpanded && (
                         <Stack
