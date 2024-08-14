@@ -1,23 +1,20 @@
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
-import Editor, { Monaco } from '@monaco-editor/react';
 import { StyledSelect, StyledSelectItem } from '../shared';
+import Editor, { Monaco } from '@monaco-editor/react';
 import {
     styled,
     Button,
-    Menu,
-    MenuProps,
     TextField,
-    Stack,
     InputAdornment,
     Typography,
-    Tooltip,
-    Modal,
     IconButton,
+    Tooltip,
+    Stack,
+    Modal,
 } from '@semoss/ui';
 
 import {
-    AccountTree,
     CropFree,
     KeyboardArrowDown,
     DriveFileRenameOutlineRounded,
@@ -28,13 +25,10 @@ import {
     JoinFull,
     Edit,
 } from '@mui/icons-material';
-import { editor } from 'monaco-editor';
-import { DatabaseTables } from './DatabaseTables';
-
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
-import { useBlocks, usePixel } from '@/hooks';
-
 import { DataImportFormModal } from '../../notebook/DataImportFormModal';
+import { useBlocks, usePixel } from '@/hooks';
+import { editor } from 'monaco-editor';
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -70,99 +64,52 @@ const JOIN_ICONS = {
 };
 
 const BlueStyledJoinDiv = styled('div')(({ theme }) => ({
-    border: 'none',
+    backgroundColor: theme.palette.primary.selected,
     padding: '0px 12px',
     borderRadius: '12px',
     fontSize: '12.5px',
+    border: 'none',
     color: 'black',
     cursor: 'default',
-    backgroundColor: theme.palette.primary.selected,
     fontWeight: '500',
 }));
 
 const GreenStyledJoinDiv = styled('div')(({ theme }) => ({
     border: 'none',
     padding: '0px 12px',
+    backgroundColor: '#DEF4F3',
     borderRadius: '12px',
     fontSize: '12.5px',
     color: 'black',
     cursor: 'default',
-    backgroundColor: '#DEF4F3',
-    fontWeight: '500',
-}));
-
-const PurpleStyledJoinDiv = styled('div')(({ theme }) => ({
-    border: 'none',
-    padding: '0px 12px',
-    borderRadius: '12px',
-    fontSize: '12.5px',
-    color: '#BAB4C2',
-    cursor: 'default',
-    backgroundColor: '#F1E9FB',
     fontWeight: '500',
 }));
 
 const StyledJoinTypography = styled(Typography)(({ theme }) => ({
-    marginLeft: '12.5px',
-    marginRight: '12.5px',
     color: theme.palette.secondary.dark,
+    marginRight: '12.5px',
+    marginLeft: '12.5px',
     cursor: 'default',
 }));
 
 const StyledModalTitleWrapper2 = styled(Modal.Title)(({ theme }) => ({
-    display: 'flex',
     alignContent: 'center',
+    display: 'flex',
     padding: '0px',
-    // justifyContent: 'space-between',
-}));
-
-const TableIconButton = styled(Tooltip)(({ theme }) => ({
-    marginLeft: '-3px',
-    marginRight: '7px',
-    color: theme.palette.primary.main,
-    // color: 'black',
 }));
 
 const StyledTableTitleBubble = styled('div')(({ theme }) => ({
     marginTop: '0px',
-    // marginBottom: '15px',
-    // marginLeft: '15px',
     marginRight: '15px',
-    // backgroundColor: theme.palette.primary.selected,
+    width: 'fit-content',
     backgroundColor: '#F1E9FB',
-    width: 'fit-content',
     padding: '7.5px 17.5px',
-    borderRadius: '10px',
     display: 'inline-flex',
-    alignItems: 'center',
-    cursor: 'default',
-    fontSize: '12.5px',
-    fontWeight: '400',
-}));
-
-const StyledJoinElementBlueBubble = styled(Typography)(({ theme }) => ({
-    marginTop: '0px',
-    marginBottom: '15px',
-    // marginLeft: '15px',
-    marginRight: '15px',
-    backgroundColor: theme.palette.primary.selected,
-    width: 'fit-content',
-    padding: '10px 20px',
     borderRadius: '10px',
-    // display: 'block',
-    // alignItems: 'center',
-    cursor: 'default',
+    alignItems: 'center',
+    fontWeight: '400',
     fontSize: '12.5px',
-}));
-
-const StyledBlueDiv = styled('div')(({ theme }) => ({
-    padding: '5px 10px',
-    borderRadius: '12px',
-    // backgroundColor: '#F1E9FB', // light purple
-    backgroundColor: theme.palette.primary.selected,
-    fontSize: '13px',
-    textAlign: 'center',
-    width: 'fit-content',
+    cursor: 'default',
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -170,24 +117,11 @@ const StyledContent = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-    border: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledButtonLabel = styled('span', {
-    shouldForwardProp: (prop) => prop !== 'width',
-})<{ width: number }>(({ theme, width }) => ({
-    width: theme.spacing(width),
-    display: 'block',
-    textAlign: 'start',
-}));
-
 const StyledTextField = styled(TextField)(({ theme }) => ({
     '& .MuiInputBase-root': {
         color: theme.palette.text.secondary,
-        display: 'flex',
         gap: theme.spacing(1),
+        display: 'flex',
         height: '30px',
         width: '200px',
     },
@@ -196,50 +130,36 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 const StyledContainer = styled('div')(({ theme }) => ({}));
 
 interface JoinObject {
-    //     table1: string;
-    //     table2: string;
-    //     key1: string;
-    //     key2: string;
-    //     joinType: string;
     id: string;
     joinType: string;
-    leftKey: string;
     leftTable: string;
-    rightKey: string;
     rightTable: string;
+    rightKey: string;
+    leftKey: string;
 }
 
-interface FilterObject {
-    // structure for filters tbd
-}
+// TODO add filters and summaries
+// interface FilterObject {
+//     // structure for filters
+// }
+// interface summaryObject {
+//     // structure for summaries
+// }
 
 export interface DataImportCellDef extends CellDef<'data-import'> {
     widget: 'data-import';
     parameters: {
-        /** Database associated with the cell */
         databaseId: string;
-
-        /** Output frame type */
         frameType: 'NATIVE' | 'PY' | 'R' | 'GRID' | 'PIXEL';
-
-        /** Ouput variable name */
         frameVariableName: string;
-
-        /** Select query rendered in the cell */
         selectQuery: string;
-
-        // foo: string;
-
+        rootTable: string;
+        selectedColumns: string[];
+        columnAliases: string[];
         tableNames: string[];
-
         joins: JoinObject[];
 
-        selectedColumns: string[];
-
-        columnAliases: string[];
-
-        rootTable: string;
-
+        // TODO add filters and summaries
         // filters: FilterObject[];
         // summaries: FilterObject[];
     };
@@ -249,24 +169,23 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
 export const DataImportCell: CellComponent<DataImportCellDef> = observer(
     (props) => {
         const editorRef = useRef(null);
-
+        const [showStyledView, setShowStyledView] = useState(true);
         const { cell, isExpanded } = props;
         const { state } = useBlocks();
-
-        const [showTables, setShowTables] = useState(false);
-        const [showStyledView, setShowStyledView] = useState(true);
 
         const [isDataImportModalOpen, setIsDataImportModalOpen] =
             useState(false);
 
         const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
             loading: true,
-            ids: [],
             display: {},
+            ids: [],
         });
+
         const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
             `MyEngines(engineTypes=['DATABASE']);`,
         );
+
         useEffect(() => {
             if (myDbs.status !== 'SUCCESS') {
                 return;
@@ -274,23 +193,25 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
             const dbIds: string[] = [];
             const dbDisplay = {};
+
             myDbs.data.forEach((db) => {
                 dbIds.push(db.app_id);
                 dbDisplay[db.app_id] = db.app_name;
             });
+
             setCfgLibraryDatabases({
                 loading: false,
-                ids: dbIds,
                 display: dbDisplay,
+                ids: dbIds,
             });
 
             if (!cell.parameters.databaseId && dbIds.length) {
                 state.dispatch({
                     message: ActionMessages.UPDATE_CELL,
                     payload: {
+                        path: 'parameters.databaseId',
                         queryId: cell.query.id,
                         cellId: cell.id,
-                        path: 'parameters.databaseId',
                         value: dbIds[0],
                     },
                 });
@@ -299,7 +220,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
         /**
          * Handle mounting of the editor
-         *
          * @param editor - editor that mounted
          * @param monaco - monaco instance
          */
@@ -337,9 +257,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                     state.dispatch({
                         message: ActionMessages.UPDATE_CELL,
                         payload: {
+                            path: 'parameters.selectQuery',
                             queryId: cell.query.id,
                             cellId: cell.id,
-                            path: 'parameters.selectQuery',
                             value: newValue,
                         },
                     });
@@ -359,8 +279,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                 inherit: false,
                 rules: [],
                 colors: {
-                    'editor.background': '#FAFAFA', // Background color
-                    // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
+                    'editor.background': '#FAFAFA',
                 },
             });
 
@@ -395,11 +314,12 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
         };
 
         /**
-         * Handle changes in the editor
+         * Handle changes in the editor - currently not in use, will need work if edits are enabled
          * @param newValue - newValue
          * @returns
          */
         const handleEditorChange = (newValue: string) => {
+            console.log('handleEditorChange');
             if (cell.isLoading) {
                 return;
             }
@@ -407,10 +327,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
                 payload: {
+                    value: newValue,
+                    path: 'parameters.selectQuery',
                     queryId: cell.query.id,
                     cellId: cell.id,
-                    path: 'parameters.selectQuery',
-                    value: 'newValue',
                 },
             });
         };
@@ -425,15 +345,15 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                     {isExpanded && (
                         <Stack direction={'column'}>
                             <Stack
-                                direction="row"
                                 justifyContent={'space-between'}
+                                direction="row"
                             >
                                 <StyledSelect
-                                    size={'small'}
+                                    value={cell.parameters.databaseId}
+                                    title={'Database Not Editable'}
                                     variant="standard"
                                     disabled={true}
-                                    title={'Database Not Editable'}
-                                    value={cell.parameters.databaseId}
+                                    size={'small'}
                                     SelectProps={{
                                         IconComponent: KeyboardArrowDown,
                                     }}
@@ -445,9 +365,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                         state.dispatch({
                                             message: ActionMessages.UPDATE_CELL,
                                             payload: {
+                                                path: 'parameters.databaseId',
                                                 queryId: cell.query.id,
                                                 cellId: cell.id,
-                                                path: 'parameters.databaseId',
                                                 value: value,
                                             },
                                         });
@@ -484,168 +404,132 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                         <>
                             <div
                                 style={{
-                                    display: 'flex',
                                     alignItems: 'center',
-                                    marginBottom: '0',
                                     paddingBottom: '0',
+                                    marginBottom: '0',
+                                    display: 'flex',
                                 }}
                             >
-                                {/* <Typography variant='body1' sx={{ display: 'inline-block', paddingBottom: '20px' }}>
-                                    Data from: 
-                                </Typography> */}
                                 {cell.parameters.tableNames &&
                                     cell.parameters.tableNames.map(
                                         (tableName) => (
-                                            // <Tooltip title="Table">
-                                            //     <StyledTableTitleBubble
-                                            //         variant="body1"
-                                            //         // title="Table"
-                                            //     >
-                                            //         <TableIconButton
-                                            //             title={'Table'}
-                                            //             placement="top"
-                                            //         >
-                                            //             <CalendarViewMonth fontSize="medium" sx={{ stroke: "#ffffff", strokeWidth: 1 }} />
-                                            //         </TableIconButton>
-                                            //         {tableName}
-                                            //         </StyledTableTitleBubble>
-                                            // </Tooltip>
                                             <Tooltip
                                                 title={`${tableName} Table`}
                                             >
-                                                {/* <> */}
                                                 <StyledTableTitleBubble>
                                                     <CalendarViewMonth
                                                         fontSize="small"
                                                         sx={{
-                                                            // stroke: "#BAB4C2",
-                                                            color: '#95909C',
                                                             strokeWidth: 0.025,
                                                             marginLeft: '-3px',
                                                             marginRight: '7px',
+                                                            color: '#95909C',
                                                         }}
                                                     />
                                                     {tableName}
                                                 </StyledTableTitleBubble>
-                                                {/* </> */}
                                             </Tooltip>
                                         ),
                                     )}
                             </div>
 
-                            {/* stack for user-added joins filters and summaries */}
                             {isExpanded &&
                                 cell.parameters.joins &&
-                                cell.parameters.joins.map(
-                                    (join, stackIndex) => (
-                                        <Stack
-                                            spacing={1}
-                                            direction="column"
-                                            sx={{
-                                                // backgroundColor: '#FAFAFA',
-                                                // padding: '16px 16px 16px 16px',
-                                                // marginBottom: '15px',
-                                                display: 'block',
-                                                // border: '1px solid red',
-                                            }}
-                                        >
-                                            <StyledModalTitleWrapper2>
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                    }}
-                                                >
-                                                    <Tooltip title="Left Join Table">
-                                                        <BlueStyledJoinDiv>
-                                                            {join.leftTable}
-                                                        </BlueStyledJoinDiv>
-                                                    </Tooltip>
-
-                                                    <Tooltip
-                                                        title={`${join.joinType} join`}
-                                                    >
-                                                        <IconButton
-                                                            size="small"
-                                                            color="secondary"
-                                                            sx={{
-                                                                marginLeft:
-                                                                    '7.5px',
-                                                                marginRight:
-                                                                    '7.5px',
-                                                            }}
-                                                        >
-                                                            {
-                                                                JOIN_ICONS[
-                                                                    join
-                                                                        .joinType
-                                                                ]
-                                                            }
-                                                        </IconButton>
-                                                    </Tooltip>
-
-                                                    <Tooltip title="Right Join Table">
-                                                        <GreenStyledJoinDiv>
-                                                            {join.rightTable}
-                                                        </GreenStyledJoinDiv>
-                                                    </Tooltip>
-
-                                                    <StyledJoinTypography variant="body1">
-                                                        ON
-                                                    </StyledJoinTypography>
-
-                                                    <Tooltip title="Left Join Key">
-                                                        <BlueStyledJoinDiv>
-                                                            {join.leftKey}
-                                                        </BlueStyledJoinDiv>
-                                                    </Tooltip>
-
-                                                    <StyledJoinTypography variant="body1">
-                                                        =
-                                                    </StyledJoinTypography>
-
-                                                    <Tooltip title="Right Join Key">
-                                                        <GreenStyledJoinDiv>
-                                                            {join.rightKey}
-                                                        </GreenStyledJoinDiv>
-                                                    </Tooltip>
-                                                </div>
-                                                {/* <div>
-                                            <IconButton
-                                                size="small"
-                                                color="secondary"
-                                                onClick={() => {
-                                                    removeStack(stackIndex);
+                                cell.parameters.joins.map((join) => (
+                                    <Stack
+                                        spacing={1}
+                                        direction="column"
+                                        sx={{
+                                            display: 'block',
+                                        }}
+                                    >
+                                        <StyledModalTitleWrapper2>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                 }}
                                             >
-                                                <Close />
-                                            </IconButton>
-                                        </div> */}
-                                            </StyledModalTitleWrapper2>
-                                        </Stack>
-                                    ),
-                                )}
+                                                <Tooltip title="Left Join Table">
+                                                    <BlueStyledJoinDiv>
+                                                        {join.leftTable}
+                                                    </BlueStyledJoinDiv>
+                                                </Tooltip>
+
+                                                <Tooltip
+                                                    title={`${join.joinType} join`}
+                                                >
+                                                    <IconButton
+                                                        size="small"
+                                                        color="secondary"
+                                                        sx={{
+                                                            marginLeft: '7.5px',
+                                                            marginRight:
+                                                                '7.5px',
+                                                        }}
+                                                    >
+                                                        {
+                                                            JOIN_ICONS[
+                                                                join.joinType
+                                                            ]
+                                                        }
+                                                    </IconButton>
+                                                </Tooltip>
+
+                                                <Tooltip title="Right Join Table">
+                                                    <GreenStyledJoinDiv>
+                                                        {join.rightTable}
+                                                    </GreenStyledJoinDiv>
+                                                </Tooltip>
+
+                                                <StyledJoinTypography variant="body1">
+                                                    ON
+                                                </StyledJoinTypography>
+
+                                                <Tooltip title="Left Join Key">
+                                                    <BlueStyledJoinDiv>
+                                                        {join.leftKey}
+                                                    </BlueStyledJoinDiv>
+                                                </Tooltip>
+
+                                                <StyledJoinTypography variant="body1">
+                                                    =
+                                                </StyledJoinTypography>
+
+                                                <Tooltip title="Right Join Key">
+                                                    <GreenStyledJoinDiv>
+                                                        {join.rightKey}
+                                                    </GreenStyledJoinDiv>
+                                                </Tooltip>
+                                            </div>
+                                        </StyledModalTitleWrapper2>
+                                    </Stack>
+                                ))}
                         </>
                     ) : (
                         <StyledContainer>
                             <Editor
-                                value={cell.parameters.selectQuery}
-                                defaultValue=""
-                                language="pixel" /** TODO: language support? can we tell this from the database type? */
+                                // value is appended to make pixel valid for copy / paste to other pixel cell
+                                // value=
+                                defaultValue={
+                                    cell.parameters.selectQuery.slice(0, -1) +
+                                    ` | Import ( frame = [ CreateFrame ( frameType = [ \"${cell.parameters.frameType}\" ] , override = [ true ] ) .as ( [ \"${cell.parameters.frameVariableName}\" ] ) ] ) ; Frame ( frame = [ \"${cell.parameters.frameVariableName}\" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+                                }
+                                language="pixel"
                                 options={{
                                     scrollbar: {
                                         alwaysConsumeMouseWheel: false,
                                     },
-                                    readOnly: true,
-                                    minimap: { enabled: false },
-                                    automaticLayout: true,
-                                    scrollBeyondLastLine: false,
                                     lineHeight: EDITOR_LINE_HEIGHT,
+                                    scrollBeyondLastLine: false,
                                     overviewRulerBorder: false,
-                                    lineNumbers: 'on',
-                                    glyphMargin: false,
-                                    folding: false,
+                                    minimap: { enabled: false },
                                     lineNumbersMinChars: 2,
+                                    automaticLayout: true,
+                                    glyphMargin: false,
+                                    lineNumbers: 'on',
+                                    readOnly: true,
+                                    folding: false,
                                 }}
                                 onChange={handleEditorChange}
                                 onMount={handleEditorMount}
@@ -654,10 +538,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                     )}
                     {isExpanded && (
                         <Stack
-                            direction="row"
-                            alignItems={'center'}
                             justifyContent={'flex-end'}
+                            alignItems={'center'}
                             paddingTop={'0px'}
+                            direction="row"
                         >
                             <Button
                                 variant={'text'}
@@ -672,6 +556,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
                             <StyledSelect
                                 size={'small'}
+                                // disabled={cell.isLoading || !showStyledView}
                                 disabled={cell.isLoading}
                                 title={'Select Type'}
                                 value={cell.parameters.frameType}
@@ -692,9 +577,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                     state.dispatch({
                                         message: ActionMessages.UPDATE_CELL,
                                         payload: {
+                                            path: 'parameters.frameType',
                                             queryId: cell.query.id,
                                             cellId: cell.id,
-                                            path: 'parameters.frameType',
                                             value: value,
                                         },
                                     });
@@ -712,6 +597,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             <StyledTextField
                                 title="Set Frame Variable Name"
                                 value={cell.parameters.frameVariableName}
+                                // disabled={cell.isLoading || !showStyledView}
                                 disabled={cell.isLoading}
                                 InputProps={{
                                     startAdornment: (
@@ -722,10 +608,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                     state.dispatch({
                                         message: ActionMessages.UPDATE_CELL,
                                         payload: {
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
                                             path: 'parameters.frameVariableName',
+                                            queryId: cell.query.id,
                                             value: e.target.value,
+                                            cellId: cell.id,
                                         },
                                     });
                                 }}
@@ -735,19 +621,11 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                 </Stack>
                 {isDataImportModalOpen && (
                     <DataImportFormModal
-                        // isDataImportModalOpen={isDataImportModalOpen}
                         setIsDataImportModalOpen={setIsDataImportModalOpen}
-                        query={cell.query} // this is redundant
-                        previousCellId={null} // this may not be needed for edit
-                        cell={cell}
+                        query={cell.query}
+                        previousCellId={null}
                         editMode={true}
-                        // data={{
-                        //     query: cell.query,
-                        //     previousCellId: null, // ?
-                        //     // joins: ['join1', 'join2', 'join3'],
-                        //     // tables: ['table1', 'table2', 'table3'],
-                        //     // columns: ['column1', 'column2', 'column3'],
-                        // }}
+                        cell={cell}
                     />
                 )}
             </StyledContent>

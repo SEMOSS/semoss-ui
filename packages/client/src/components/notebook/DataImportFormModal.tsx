@@ -647,6 +647,13 @@ export const DataImportFormModal = observer(
                 };
 
                 if (widget === DataImportCellConfig.widget) {
+                    alert('test555');
+                    console.log({
+                        'pixelStringRefPart1.current':
+                            pixelStringRefPart1.current,
+                        [`FRAME_${newCellId}`]: `FRAME_${newCellId}`,
+                    });
+
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
                         frameVariableName: `FRAME_${newCellId}`,
