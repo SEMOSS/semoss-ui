@@ -31,28 +31,20 @@ const StyledContent = styled('div')(({ theme }) => ({
 
 type VIEW = 'CURRENT' | 'PENDING' | 'APP';
 
-export const AppSettingsDetailPage = () => {
+export const AppSettingsUserDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { adminMode } = useSettings();
 
     const [view, setView] = useState<VIEW>('CURRENT');
     const [permission, setPermission] = useState<Role | null>(null);
 
-    const getUserEnginePermission =
-        !adminMode && useAPI(['getUserProjectPermission', id]);
+    const getUserEnginePermission = useAPI(['getUserProjectPermission', id]);
 
     /**
      * @name useEffect
      * @desc - Set Permission to see Pending Requests
      */
     useEffect(() => {
-        // if it is an admin set as an owner
-        if (adminMode) {
-            setPermission('OWNER');
-            return;
-        }
-
         if (getUserEnginePermission.status !== 'SUCCESS') {
             return;
         }
@@ -67,11 +59,7 @@ export const AppSettingsDetailPage = () => {
 
         // set the permission
         setPermission(getUserEnginePermission.data.permission);
-    }, [
-        getUserEnginePermission.status,
-        getUserEnginePermission.data,
-        adminMode,
-    ]);
+    }, [getUserEnginePermission.status, getUserEnginePermission.data]);
 
     // if there is no permission, ignore
     if (!permission) {
@@ -121,5 +109,58 @@ export const AppSettingsDetailPage = () => {
                 {view === 'APP' && <AppSettings id={id} />}
             </StyledContent>
         </StyledContainer>
+    );
+};
+
+export const AppSettingsAdminDetailPage = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    const [view, setView] = useState<VIEW>('CURRENT');
+
+    return (
+        <StyledContainer>
+            <SettingsTiles
+                type={'APP'}
+                name={'app'}
+                id={id}
+                direction={'row'}
+                onDelete={() => {
+                    navigate('/settings/app');
+                }}
+            />
+            <StyledContent>
+                <ToggleTabsGroup
+                    value={view}
+                    onChange={(e, v) => setView(v as VIEW)}
+                >
+                    <ToggleTabsGroup.Item label="Member" value={'CURRENT'} />
+                    <ToggleTabsGroup.Item
+                        label="Pending Requests"
+                        value={'PENDING'}
+                    />
+                    <ToggleTabsGroup.Item label="Data Apps" value={'APP'} />
+                </ToggleTabsGroup>
+                {view === 'CURRENT' && <MembersTable id={id} type={'APP'} />}
+                {view === 'PENDING' && (
+                    <PendingMembersTable id={id} type={'APP'} />
+                )}
+                {view === 'APP' && <AppSettings id={id} />}
+            </StyledContent>
+        </StyledContainer>
+    );
+};
+
+export const AppSettingsDetailPage = () => {
+    const { adminMode } = useSettings();
+
+    return (
+        <>
+            {adminMode ? (
+                <AppSettingsAdminDetailPage />
+            ) : (
+                <AppSettingsUserDetailPage />
+            )}
+        </>
     );
 };
