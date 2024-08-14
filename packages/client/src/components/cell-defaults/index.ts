@@ -43,6 +43,10 @@ import {
     JoinTransformationCellDef,
 } from './join-transformation-cell';
 
+import { LLMCellConfig, LLMCellDef } from './llm-cell';
+
+// import { LLMCellConfig, LLMCellDef } from './llm-cell';
+
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
@@ -54,7 +58,8 @@ export type DefaultCellDefinitions =
     | JoinTransformationCellDef
     | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef
-    | CollapseTransformationCellDef;
+    | CollapseTransformationCellDef
+    | LLMCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
@@ -75,6 +80,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [EncodeColumnTransformationCellConfig.widget]:
         EncodeColumnTransformationCellConfig,
     [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
+    [LLMCellConfig.widget]: LLMCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =

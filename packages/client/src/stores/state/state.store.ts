@@ -506,6 +506,14 @@ export class StateStore {
     }
 
     /**
+     * Process a query not stored in our state in order to do comparison
+     * @param query
+     */
+    _processCompare = (query) => {
+        console.log(query);
+    };
+
+    /**
      * Internal
      */
     /**

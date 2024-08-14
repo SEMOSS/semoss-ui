@@ -462,6 +462,7 @@ export const NotebookCell = observer(
 
         return (
             <StyledStack
+                className="notebook-cell"
                 direction={'column'}
                 gap={1}
                 onMouseEnter={() => {

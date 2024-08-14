@@ -222,7 +222,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
             const json = query.toJSON();
 
             // get a new id
-            const newQueryId = `${json.id} Copy`;
+            const newQueryId = `${json.id}-copy`;
 
             // dispatch it
             state.dispatch({
@@ -237,6 +237,8 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
 
             // close the options and select it
             handleQueryOptionsMenuClose();
+
+            // select it
             notebook.selectQuery(newQueryId);
         } catch (e) {
             // log it

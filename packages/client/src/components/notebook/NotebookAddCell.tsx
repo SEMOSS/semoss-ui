@@ -23,11 +23,11 @@ import {
     KeyboardArrowDown,
     TableRows,
 } from '@mui/icons-material';
+import { ModelBrain } from '@/assets/img/ModelBrain';
 import {
     DefaultCellDefinitions,
     DefaultCells,
     TransformationCells,
-    // ImportDataCells, // need options for Import Data dropdown options
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
@@ -93,6 +93,11 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
 );
 
 const AddCellOptions: Record<string, AddCellOption> = {
+    llm: {
+        display: 'LLM',
+        defaultCellType: 'llm',
+        icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
+    },
     code: {
         display: 'Cell',
         defaultCellType: 'code',
@@ -229,7 +234,12 @@ export const NotebookAddCell = observer(
         };
 
         return (
-            <Stack direction={'row'} alignItems={'center'} gap={1}>
+            <Stack
+                gap={1}
+                direction={'row'}
+                alignItems={'center'}
+                className={'notebook-add-cell'}
+            >
                 <StyledDivider />
                 <StyledBorderDiv>
                     {Object.entries(AddCellOptions).map((add, i) => {

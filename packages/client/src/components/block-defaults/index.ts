@@ -45,6 +45,8 @@ import {
 import { config as MermaidBlockConfig, MermaidBlockDef } from './mermaid-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 
+import { config as LLMBlockConfig, LLMBlockDef } from './llm-block';
+
 export type DefaultBlockDefinitions =
     | BodyBlockDef
     | ButtonBlockDef
@@ -72,7 +74,8 @@ export type DefaultBlockDefinitions =
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | MermaidBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | LLMBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -95,6 +98,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
     [ModalBlockConfig.widget]: ModalBlockConfig,
+    [LLMBlockConfig.widget]: LLMBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -124,4 +128,5 @@ export {
     VegaVisualizationBlockConfig,
     MermaidBlockConfig,
     ModalBlockConfig,
+    LLMBlockConfig,
 };

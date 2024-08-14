@@ -155,6 +155,21 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_CHECKBOX,
+        name: 'LLM Compare',
+        json: {
+            widget: 'llm',
+            data: {
+                style: {
+                    padding: 'none',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
     // {
     //     section: SECTION_INPUT,
     //     image: BLOCK_MODAL,
