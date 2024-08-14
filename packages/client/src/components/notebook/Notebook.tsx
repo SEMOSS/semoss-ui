@@ -9,9 +9,11 @@ import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
-import { usePixel } from '@/hooks';
+import { useBlocks, usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
+import { NotebookVariantsMenu } from './NoteBookVariantsMenu';
+import { ConfigureDefaultVariant } from './ConfigureDefaultVariant';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -38,9 +40,11 @@ const StyledRightPanel = styled('div')(() => ({
 }));
 
 export const Notebook = observer(() => {
+    const { state } = useBlocks();
+
     // view
     const [view, setView] = useState<
-        'variables' | 'sources' | 'blocks' | 'transform' | ''
+        'variables' | 'sources' | 'blocks' | 'transform' | 'variants' | ''
     >('variables');
 
     /**
@@ -94,10 +98,20 @@ export const Notebook = observer(() => {
                     </Tooltip>
                     <SidebarText>Variables</SidebarText>
                 </SidebarItem>
+                <SidebarItem
+                    selected={view === 'variants'}
+                    onClick={() => updateView('variants')}
+                >
+                    <Tooltip title={'Add'} placement="right">
+                        <Code color="inherit" />
+                    </Tooltip>
+                    <SidebarText>Variants</SidebarText>
+                </SidebarItem>
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
-                    {view === 'variables' ? <NotebookVariablesMenu /> : null}
+                    {view === 'variables' && <NotebookVariablesMenu />}
+                    {view === 'variants' && <NotebookVariantsMenu />}
                 </StyledLeftPanel>
             ) : null}
 
@@ -111,6 +125,7 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
+                    {view === 'variants' && <ConfigureDefaultVariant />}
                     <NotebookSheetsMenu />
                     <NotebookSheet />
                 </LLMContext.Provider>
