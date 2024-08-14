@@ -20,6 +20,7 @@ export enum ActionMessages {
     SET_QUERY = 'SET_QUERY',
     NEW_QUERY = 'NEW_QUERY',
     DELETE_QUERY = 'DELETE_QUERY',
+    RENAME_QUERY = 'RENAME_QUERY',
     UPDATE_QUERY = 'UPDATE_QUERY',
     RUN_QUERY = 'RUN_QUERY',
     NEW_CELL = 'NEW_CELL',
@@ -45,6 +46,7 @@ export type Actions =
     | SetListenerAction
     | NewQueryAction
     | DeleteQueryAction
+    | RenameQueryAction
     | UpdateQueryAction
     | RunQueryAction
     | NewCellAction
@@ -161,6 +163,14 @@ export interface DeleteQueryAction extends Action {
     message: ActionMessages.DELETE_QUERY;
     payload: {
         queryId: string;
+    };
+}
+
+export interface RenameQueryAction extends Action {
+    message: ActionMessages.RENAME_QUERY;
+    payload: {
+        queryId: string;
+        newQueryId: string;
     };
 }
 

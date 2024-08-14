@@ -24,6 +24,7 @@ import {
     Error,
     Pending,
     Download,
+    DriveFileRenameOutline,
     Delete,
     MoreVert,
 } from '@mui/icons-material';
@@ -204,10 +205,46 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     };
 
     /**
+     * Edit a query
+     */
+    const editQuery = (oldQueryId: string) => {
+        workspace.openOverlay(() => (
+            <NewQueryOverlay
+                onClose={(newQueryId?: string) => {
+                    if (newQueryId) {
+                        notebook.selectQuery(oldQueryId);
+                    }
+                    duplicateQuery(oldQueryId, newQueryId);
+                    try {
+                        state.dispatch({
+                            message: ActionMessages.RENAME_QUERY,
+                            payload: {
+                                queryId: oldQueryId,
+                                newQueryId: newQueryId
+                            },
+                        });
+                        state.dispatch({
+                            message: ActionMessages.DELETE_QUERY,
+                            payload: {
+                                queryId: oldQueryId,
+                            },
+                        });
+                    } catch (e) {
+                        console.log(
+                            'Failed to rename, old query could not be deleted',
+                        );
+                    }
+                    workspace.closeOverlay();
+                }}
+            />
+        ));
+    };
+
+    /**
      * Copy a query
      * @param id - id of the query to copy
      */
-    const duplicateQuery = (id: string) => {
+    const duplicateQuery = (id: string, newId?: string) => {
         try {
             // get the query
             const query = state.getQuery(id);
@@ -222,7 +259,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
             const json = query.toJSON();
 
             // get a new id
-            const newQueryId = `${json.id} Copy`;
+            const newQueryId = !newId ? `${json.id} Copy` : newId;
 
             // dispatch it
             state.dispatch({
@@ -321,6 +358,17 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                                 <Download color="inherit" fontSize="small" />
                             </StyledListIcon>
                             <List.ItemText primary="Export" />
+                        </List.ItemButton>
+                    </List.Item>
+                    <List.Item disablePadding>
+                        <List.ItemButton onClick={() => editQuery(query.q.id)}>
+                            <StyledListIcon>
+                                <DriveFileRenameOutline
+                                    color="inherit"
+                                    fontSize="small"
+                                />
+                            </StyledListIcon>
+                            <List.ItemText primary="Rename" />
                         </List.ItemButton>
                     </List.Item>
                     <Divider />
