@@ -126,8 +126,12 @@ export const Notebook = observer(() => {
                     }}
                 >
                     {view === 'variants' && <ConfigureDefaultVariant />}
-                    <NotebookSheetsMenu />
-                    <NotebookSheet />
+                    {view === 'variables' && (
+                        <>
+                            <NotebookSheetsMenu />
+                            <NotebookSheet />
+                        </>
+                    )}
                 </LLMContext.Provider>
             </StyledRightPanel>
         </StyledNotebook>

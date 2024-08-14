@@ -159,6 +159,14 @@ export class StateStore {
     }
 
     /**
+     * Gets all variants
+     * @returns the variants
+     */
+    get variants() {
+        return this._store.variants;
+    }
+
+    /**
      * Gets all tokens
      * @returns the tokens
      */
@@ -429,6 +437,10 @@ export class StateStore {
                 const { id } = action.payload;
 
                 return this.removeDependency(id);
+            } else if (ActionMessages.ADD_VARIANT === action.message) {
+                const { id, variant } = action.payload;
+
+                return this.addVariant(id, variant);
             }
         } catch (e) {
             console.error(e);
@@ -1299,5 +1311,17 @@ export class StateStore {
      */
     private removeDependency = (id: string) => {
         delete this._store.dependencies[id];
+    };
+
+    /**
+     * Adds a variant to use for LLM Comparison
+     */
+    private addVariant = (id: string, variant: Variant) => {
+        if (this._store.variants[id]) {
+            return false;
+        }
+
+        this._store.variants[id] = variant;
+        return id;
     };
 }

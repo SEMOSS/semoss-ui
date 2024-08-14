@@ -72,12 +72,12 @@ export type VariableWithId =
  */
 export type Variant = {
     to: string;
-    isDefault: string;
     models: VariantModel[];
 };
 
 export type VariantModel = {
     id: string;
+    name: string;
     topP: number;
     temperature: number;
     length: number;
