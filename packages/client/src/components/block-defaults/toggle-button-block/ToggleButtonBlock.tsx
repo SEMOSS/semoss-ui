@@ -1,9 +1,11 @@
 import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
 
-import { useBlock, useDebounce } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 import { styled, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { debounced } from '@/utility';
 
 const StyledContainer = styled('div')(() => ({
     padding: '4px',
@@ -27,13 +29,9 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } =
         useBlock<ToggleButtonBlockDef>(id);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [listeners, data.value],
-        200,
-    );
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 200);
 
     return (
         <StyledContainer {...attrs}>
@@ -46,14 +44,17 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
                         if (Array.isArray(newValue)) {
                             if (newValue.length) {
                                 setData('value', newValue);
+                                debouncedCallback();
                             }
                         } else {
                             if (newValue !== null) {
                                 setData('value', newValue);
+                                debouncedCallback();
                             }
                         }
                     } else {
                         setData('value', newValue);
+                        debouncedCallback();
                     }
                 }}
                 value={data.value}

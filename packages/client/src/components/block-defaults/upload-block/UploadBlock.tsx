@@ -1,9 +1,11 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDebounce } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
+import { debounced } from '@/utility';
+
 const StyledTextField = styled(TextField)({
     '& .MuiFormLabel-root.MuiInputLabel-root': {
         top: 'auto',
@@ -26,6 +28,7 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
 export const UploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, uploadFile, listeners } =
         useBlock<UploadBlockDef>(id);
+    const [changedValue, setChangedValue] = useState(false);
 
     /**
      * Upload a file to the server
@@ -67,13 +70,9 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [listeners, data.value],
-        200,
-    );
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 200);
 
     return (
         <StyledTextField
@@ -96,9 +95,9 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             type={'file'}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
-
                 // upload the new file on change
                 upload(files[0]);
+                debouncedCallback();
             }}
             {...attrs}
         />

@@ -2,6 +2,8 @@ import { Role } from '@/types';
 import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
 import { Env } from '@/env';
+import { useEffect, useMemo, useRef } from 'react';
+import { debounce } from 'lodash';
 
 /**
  * @desc splits a string at the period
@@ -128,6 +130,27 @@ export const copyTextToClipboard = (text: string, notificationService) => {
             message: e.message,
         });
     }
+};
+
+/**
+ * @desc useDebounce utility function returns a debounced function
+ */
+export const debounced = (callback, delay) => {
+    const ref = useRef(() => {});
+
+    useEffect(() => {
+        ref.current = callback;
+    }, [callback]);
+
+    const debouncedCallback = useMemo(() => {
+        const func = () => {
+            ref.current?.();
+        };
+
+        return debounce(func, delay);
+    }, []);
+
+    return debouncedCallback;
 };
 
 export const getSDKSnippet = (

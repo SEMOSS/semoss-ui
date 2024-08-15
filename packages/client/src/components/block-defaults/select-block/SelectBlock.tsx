@@ -1,8 +1,9 @@
-import { useMemo, CSSProperties } from 'react';
+import { useMemo, CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDebounce } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
+import { debounced } from '@/utility';
 
 import {
     Autocomplete,
@@ -60,13 +61,9 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         });
     }, [data.options]);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [listeners, data.value],
-        200,
-    );
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 500);
 
     return (
         <Autocomplete
@@ -123,6 +120,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 
                 debugger;
                 setData('value', value);
+                debouncedCallback();
             }}
             sx={{
                 ...data.style,

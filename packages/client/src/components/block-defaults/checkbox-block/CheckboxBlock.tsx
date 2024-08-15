@@ -3,9 +3,10 @@ import React from 'react';
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDebounce } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { Checkbox, FormControlLabel, styled } from '@mui/material';
+import { debounced } from '@/utility';
 
 export interface CheckboxBlockDef extends BlockDef<'checkbox'> {
     widget: 'checkbox';
@@ -32,13 +33,9 @@ const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
 export const CheckboxBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<CheckboxBlockDef>(id);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [listeners, data.value],
-        200,
-    );
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 200);
 
     return (
         <StyledContainer {...attrs}>
@@ -52,6 +49,7 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
                     const value = e.target.checked;
                     // update the value
                     setData('value', value);
+                    debouncedCallback();
                 }}
             />
         </StyledContainer>
