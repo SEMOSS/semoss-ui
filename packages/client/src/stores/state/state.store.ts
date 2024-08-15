@@ -358,8 +358,11 @@ export class StateStore {
 
                 this.setListener(id, listener, actions);
             } else if (ActionMessages.NEW_QUERY === action.message) {
-                const { queryId, config } = action.payload;
+                const { queryId, config, temp } = action.payload;
 
+                /**
+                 * TODO: add temp flag for queries that need to be deleted on cleanup
+                 */
                 return this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
                 const { queryId } = action.payload;

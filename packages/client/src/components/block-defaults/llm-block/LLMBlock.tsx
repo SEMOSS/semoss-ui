@@ -6,7 +6,14 @@ import { useBlock, useBlocks } from '@/hooks';
 import { BlockDef, BlockComponent, ActionMessages } from '@/stores';
 import { Slot } from '@/components/blocks';
 
-import { IconButton, Stack, Tabs, Typography, styled } from '@semoss/ui';
+import {
+    CircularProgress,
+    IconButton,
+    Stack,
+    Tabs,
+    Typography,
+    styled,
+} from '@semoss/ui';
 import { Star, StarBorder } from '@mui/icons-material';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
@@ -96,7 +103,7 @@ const variants = [
             alias: '',
             value: 'variant 1',
             database_id: 'e338934d-bef1-4920-9136-dc0e37060dfa',
-            database_name: '',
+            database_name: 'Mistral-Orca',
             database_type: '',
             database_subtype: '',
             topP: '',
@@ -115,15 +122,22 @@ const variants = [
             alias: '',
             value: 'variant 2',
             database_id: 'dbf6d2d7-dfba-4400-a214-6ac403350b04',
-            database_name: '',
+            database_name: 'CFG AI GPT3.5 Turbo',
             database_type: '',
             database_subtype: '',
             topP: '',
             temperature: '',
             length: '',
+            paramValues: {
+                topP: '',
+                temperature: '',
+                length: '',
+            },
         },
     ],
 ];
+
+// NOTES ---
 
 // TODO: Show the selected variable response, a varaiable is:
 // A: query that last cell is an llm-cell
@@ -131,15 +145,31 @@ const variants = [
 
 // TODO: Create Settings component for block and add variants
 
-// TODO: How will i swap out a variant and execute its flow to see responses
-// A: Will i go pull those llm cells, just swap and execute here
-// B: copy the sheets cells, look through them all and find llm-cells, and swap the models for whats in the variant
+// THOUGHT PROCESS 2
+
+// DO WE NEED TO WAIT FOR IT?
+// 4. WAIT FOR IT TO PROCESS
+// 5. ONCE PROCESSED, GO GET ALL LLM-CELL VALUES ITERATE THROUGH QUERY CELLS AND SEND OUTPUT FOR EACH LLM TO STORE IN STATE HERE
+// 6. GET RID OF QUERY SHEET, FOR CLEAN UP
+
+// THOUGHT PROCESS 1
+// (GOT STUCK) So if we just try to make a copy and direct modification without attaching it to our state store methods,
+// it will directly modify the state when we try to do swaps. Thought about making a new state Store for each variant, but not ideal.
+
+// 1. Go find the sheet that needs to be reexecuted
+// 2. go through those cells and find all llm-cells
+// 2a. For each llm cell replace the placeholders with its respective variant index and model index.
+
+// 3. with this new sheet copied. do we need a new dispatch. Execute LLM Compare
+// where we execute sheet and it sends me back all of the llm-cell responses
+// comp();
 
 export const LLMBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<LLMBlockDef>(id); // TODO: use data here to set the tabs, and data displayed for each tab.
-    const [selectedTab, setSelectedTab] = useState('0');
+    const [selectedTab, setSelectedTab] = useState('-1');
     const [highlightedRating, setHighlightedRating] = useState(0);
-    const displayedRes = fakeData[Number(selectedTab)];
+
+    const [variantQuerySheet, setVariantQuerySheet] = useState([]);
 
     const { state } = useBlocks();
 
@@ -165,39 +195,28 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
             // 1. DUPLICATE THE QUERY SHEET (GET ID)
             // 2. REPLACE LLM CELL VALUES THERE FOR THE ITERATION
             // 3. EXECUTE QUERY BY NEW_ID
-            // 4. WAIT FOR IT TO PROCESS
-            // 5. ONCE PROCESSED, GO GET ALL LLM-CELL VALUES ITERATE THROUGH QUERY CELLS AND SEND OUTPUT FOR EACH LLM TO STORE IN STATE HERE
-            // 6. GET RID OF QUERY SHEET, FOR CLEAN UP
 
             compare();
-
-            // THOUGHT PROCESS 1
-            // (GOT STUCK) So if we just try to make a copy and direct modification without attaching it to our state store methods,
-            // it will directly modify the state when we try to do swaps. Thought about making a new state Store for each variant, but not ideal.
-
-            // 1. Go find the sheet that needs to be reexecuted
-            // 2. go through those cells and find all llm-cells
-            // 2a. For each llm cell replace the placeholders with its respective variant index and model index.
-
-            // 3. with this new sheet copied. do we need a new dispatch. Execute LLM Compare
-            // where we execute sheet and it sends me back all of the llm-cell responses
-            // comp();
         }
     }, [parsedResponse]);
 
     const compare = async () => {
+        // setPolling(true);
+
         // VERIFIED: Creates duplicate queries
         // Duplicate the query that we are attached to on this block - O(n)
         const variantQueries = await createVariantsForQuery();
-        state.queries;
 
-        debugger;
+        // state.queries;
+        // debugger;
 
         // VERIFIED: It swaps LLM cells, TODO: Handle multi-model swap
         // replace each queries llm cells - O(n^2)
 
         await replaceVariantQueryLLMCells(variantQueries);
-        state.queries;
+
+        // state.queries;
+        // debugger
 
         // VERIFIED: It executes the new queries with the variant info
         await variantQueries.forEach(async (id) => {
@@ -212,14 +231,7 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
         // TODO: Go find responses for each variant
         // I may have to poll the query ids to see if they have been .isExecuted
 
-        debugger;
-
-        return 'Set up the DS for how you want to display variants responses';
-
-        // [
-        // [{}, {}],
-        // [{}, {}],
-        // ]
+        setVariantQuerySheet(variantQueries);
     };
 
     const createVariantsForQuery = async () => {
@@ -250,8 +262,8 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
                 },
             });
 
-            state.queries;
-            debugger;
+            // state.queries;
+            // debugger;
 
             variantIds.push(id);
             currentVariantIndex += 1;
@@ -268,7 +280,7 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
             await cells.forEach(async (c) => {
                 if (c.widget === 'llm') {
                     const modelToSwap = variants[i][0];
-                    debugger;
+                    // debugger;
 
                     await state.dispatch({
                         message: ActionMessages.UPDATE_CELL,
@@ -288,116 +300,17 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
         });
     };
 
-    // TODO: DEAD CODE BELOW
-    const createNewCompareSheets = async () => {
-        const sheetToExecute = state.queries[variable.to];
+    const displayVariant = () => {
+        const queryIdVariant = variantQuerySheet[parseInt(selectedTab)];
 
-        const cells = Object.entries(sheetToExecute.cells);
-
-        variants;
-
-        let currentVariantIndex = 0;
-        let currentVariantModelIndex = 0;
-
-        // Keep a copy of the modified sheets to pass to our new action that executes the whole sheet
-        const createdSheets = [];
-
-        while (currentVariantIndex < variants.length) {
-            const NEW_STATE = state.toJSON();
-
-            const q = NEW_STATE.queries[variable.to];
-            const c = Object.entries(q.cells);
-
-            debugger;
-            const cells_copy = c;
-
-            const new_q = {
-                cells: {},
-            };
-
-            cells_copy.forEach((cellValue) => {
-                const c = cellValue[1];
-                if (c.widget === 'llm') {
-                    const modelToSwap = variants[currentVariantIndex][0];
-                    debugger;
-
-                    c.parameters = {
-                        ...c.parameters,
-                        model: modelToSwap.database_id,
-                        paramValues: modelToSwap.paramValues,
-                    };
-
-                    new_q.cells[cellValue[0]] = c;
-                } else {
-                    new_q.cells[cellValue[0]] = c;
-                }
-            });
-
-            q.cells = new_q.cells;
-
-            debugger;
-
-            // cells_copy.forEach((list) => {
-            //     new_q.cells[list[0]] = list[1]
-            // })
-
-            // Push to our storage of sheets that have correctly parsed data to pass to the Sheet Runner
-            createdSheets.push(NEW_STATE);
-
-            currentVariantIndex += 1;
-        }
-
-        // Should i return a list of state stores in order to execute them independently and let the state store process the runs
-        return createdSheets;
-    };
-
-    const comp = async () => {
-        const createdSheets = await createNewCompareSheets();
-        debugger;
-
-        createdSheets.forEach(() => {
-            // EXECUTE THE SHEET WITH STATE STORE.
-            // PASS THE QUERY REGISTRY AND IDEALLY send outputs for each cell and show the last the last response
-        });
-    };
-
-    return (
-        <StyledLLMComparisonBlock {...attrs}>
-            <Typography variant="h6">Response</Typography>
-            <Typography variant="caption">{value}</Typography>
-
-            <StyledTabBox gap={2}>
-                <Tabs
-                    value={selectedTab}
-                    onChange={(_, value: string) => {
-                        setSelectedTab(value);
-                    }}
-                    color="primary"
-                >
-                    {fakeData.map((entry, idx: number) => (
-                        <Tabs.Item
-                            key={`${entry.name}-${idx}`}
-                            label={`Variant ${entry.name}`}
-                            value={idx.toString()}
-                        />
-                    ))}
-                </Tabs>
-
-                <Stack direction="column" gap={2}>
-                    <Typography color="secondary" variant="body2">
-                        {displayedRes.models.length === 1
-                            ? 'Model: '
-                            : 'Models: '}
-                        {displayedRes.models.map((model, idx: number) => {
-                            let returnString = model;
-                            if (idx + 1 !== displayedRes.models.length)
-                                returnString += ', ';
-                            return returnString;
-                        })}
+        if (selectedTab === '-1') {
+            return (
+                <Stack>
+                    <Typography variant="caption">
+                        {parsedResponse
+                            ? JSON.stringify(parsedResponse.response)
+                            : 'n/a'}
                     </Typography>
-
-                    {parsedResponse}
-
                     <StyledRatingRow>
                         <Typography color="secondary" variant="body2">
                             What would you rate this response?
@@ -469,6 +382,184 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
                             </StyledStarButton>
                         </Stack>
                     </StyledRatingRow>
+                </Stack>
+            );
+        }
+
+        return (
+            <Stack>
+                <Typography variant="caption">
+                    {!queryIdVariant
+                        ? 'Ex:'
+                        : state.queries[queryIdVariant].output
+                        ? JSON.stringify(
+                              state.queries[queryIdVariant].output.response,
+                          )
+                        : 'nulls'}
+                </Typography>
+                <StyledRatingRow>
+                    <Typography color="secondary" variant="body2">
+                        What would you rate this response?
+                    </Typography>
+
+                    <Stack
+                        direction="row"
+                        onMouseLeave={() => {
+                            setHighlightedRating(0);
+                        }}
+                        onBlur={() => {
+                            setHighlightedRating(0);
+                        }}
+                    >
+                        <StyledStarButton
+                            onClick={() => handleRateResponse(1)}
+                            onMouseEnter={() => setHighlightedRating(1)}
+                            onFocus={() => setHighlightedRating(1)}
+                            disabled={
+                                !queryIdVariant
+                                    ? true
+                                    : !state.queries[queryIdVariant].output
+                            }
+                        >
+                            {highlightedRating >= 1 ? <Star /> : <StarBorder />}
+                        </StyledStarButton>
+                        <StyledStarButton
+                            onClick={() => handleRateResponse(2)}
+                            onMouseEnter={() => setHighlightedRating(2)}
+                            onFocus={() => setHighlightedRating(2)}
+                            disabled={
+                                !queryIdVariant
+                                    ? true
+                                    : !state.queries[queryIdVariant].output
+                            }
+                        >
+                            {highlightedRating >= 2 ? <Star /> : <StarBorder />}
+                        </StyledStarButton>
+                        <StyledStarButton
+                            onClick={() => handleRateResponse(3)}
+                            onMouseEnter={() => setHighlightedRating(3)}
+                            onFocus={() => setHighlightedRating(3)}
+                            disabled={
+                                !queryIdVariant
+                                    ? true
+                                    : !state.queries[queryIdVariant].output
+                            }
+                        >
+                            {highlightedRating >= 3 ? <Star /> : <StarBorder />}
+                        </StyledStarButton>
+                        <StyledStarButton
+                            onClick={() => handleRateResponse(4)}
+                            onMouseEnter={() => setHighlightedRating(4)}
+                            onFocus={() => setHighlightedRating(4)}
+                            disabled={
+                                !queryIdVariant
+                                    ? true
+                                    : !state.queries[queryIdVariant].output
+                            }
+                        >
+                            {highlightedRating >= 4 ? <Star /> : <StarBorder />}
+                        </StyledStarButton>
+                        <StyledStarButton
+                            onClick={() => handleRateResponse(5)}
+                            onMouseEnter={() => setHighlightedRating(5)}
+                            onFocus={() => setHighlightedRating(5)}
+                            disabled={
+                                !queryIdVariant
+                                    ? true
+                                    : !state.queries[queryIdVariant].output
+                            }
+                        >
+                            {highlightedRating === 5 ? (
+                                <Star />
+                            ) : (
+                                <StarBorder />
+                            )}
+                        </StyledStarButton>
+                    </Stack>
+                </StyledRatingRow>
+            </Stack>
+        );
+    };
+
+    const modelOrModels = (): string => {
+        if (selectedTab === '-1') {
+            const llmCells = [];
+            state.queries[variable.to].list.forEach((id) => {
+                const q = state.queries[variable.to];
+                const c = q.getCell(id);
+                if (c.widget === 'llm') {
+                    llmCells.push(id);
+                }
+            });
+
+            if (llmCells.length === 1) {
+                return 'Model: ';
+            } else {
+                return 'Models: ';
+            }
+        } else {
+            if (variants[selectedTab].length === 1) {
+                return 'Model: ';
+            } else {
+                return 'Models: ';
+            }
+        }
+    };
+
+    return (
+        <StyledLLMComparisonBlock {...attrs}>
+            <Typography variant="h6">Response</Typography>
+
+            <StyledTabBox gap={2}>
+                <Tabs
+                    value={selectedTab}
+                    onChange={(_, value: string) => {
+                        setSelectedTab(value);
+                    }}
+                    color="primary"
+                >
+                    <Tabs.Item
+                        key={'default variant tab'}
+                        label={'Default'}
+                        value={'-1'}
+                    />
+                    {variants.map((v, i) => {
+                        return (
+                            <Tabs.Item
+                                key={`variant-tab-${i}`}
+                                label={`Variant ${i}`}
+                                value={i.toString()}
+                            />
+                        );
+                    })}
+                </Tabs>
+
+                <Stack direction="column" gap={2}>
+                    <Typography color="secondary" variant="body2">
+                        {modelOrModels()}
+                        {selectedTab === '-1'
+                            ? state.queries[variable.to].list.map((id, idx) => {
+                                  const q = state.queries[variable.to];
+                                  const c = q.getCell(id);
+                                  if (c.widget === 'llm') {
+                                      let returnString = c.parameters.model;
+                                      if (
+                                          idx + 1 !==
+                                          state.queries[variable.to].list.length
+                                      )
+                                          returnString += ', ';
+                                      return returnString;
+                                  }
+                              })
+                            : variants[selectedTab].map((model, idx) => {
+                                  let returnString = model.database_name;
+                                  if (idx + 1 !== variants[selectedTab].length)
+                                      returnString += ', ';
+                                  return returnString;
+                              })}
+                    </Typography>
+
+                    {displayVariant()}
                 </Stack>
             </StyledTabBox>
         </StyledLLMComparisonBlock>

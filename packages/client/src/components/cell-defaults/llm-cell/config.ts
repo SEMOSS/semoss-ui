@@ -14,8 +14,6 @@ export const LLMCellConfig: CellConfig<LLMCellDef> = {
         paramValues: {},
     },
     toPixel: ({ model, paramValues, command }) => {
-        return `LLM(engine=["${model}"], command=["${command}"], paramValues=[${JSON.stringify(
-            paramValues,
-        )}])`;
+        return `LLM(engine=["${model}"], command=["${command}"], paramValues=[])`;
     },
 };
