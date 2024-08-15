@@ -26,7 +26,6 @@ import {
 import {
     ControlPointDuplicateRounded,
     CalendarViewMonth,
-    KeyboardArrowDown,
     FilterListRounded,
     AddBox,
     JoinInner,
@@ -34,6 +33,7 @@ import {
     JoinLeft,
     JoinFull,
     Warning,
+    Close,
 } from '@mui/icons-material';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DataImportCellConfig } from '../cell-defaults/data-import-cell';
@@ -115,6 +115,7 @@ const StyledPaddedStack = styled(Stack)(() => ({
     backgroundColor: '#FAFAFA',
     padding: '16px 16px 16px 16px',
     marginBottom: '15px',
+    minHeight: '7.5px',
 }));
 
 const StyledModalTitle = styled(Typography)(() => ({
@@ -542,8 +543,11 @@ export const DataImportFormModal = observer(
         };
 
         /** Add all the columns from a Table */
-        const addAllTableColumnsHandler = (event) => {
-            // TODO: check all columns from table
+        const addAllTableColumnsHandler = (table, tableIndex) => {
+            table.columns.forEach((column, columnIndex) => {
+                // causing bugg behavior in joins stack
+                // checkBoxHandler(parseInt(tableIndex), parseInt(columnIndex), true)
+            });
         };
 
         const updateSubmitDispatches = () => {
@@ -1048,11 +1052,22 @@ export const DataImportFormModal = observer(
         };
 
         /** Checkbox Handler */
-        const checkBoxHandler = (tableIndex, columnIndex) => {
+        const checkBoxHandler = (tableIndex, columnIndex, checkAll = false) => {
             const columnObject = watchedTables[tableIndex].columns[columnIndex];
             updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
+
+            // if (checkAll) {
+            //     formSetValue(
+            //         `tables.${tableIndex}.columns.${columnIndex}.checked`,
+            //         true,
+            //     );
+            // }
+
             if (columnObject?.checked) {
                 if (checkedColumnsCount == 0) {
+                    // if (!checkAll || columnIndex == 1) {
+                    //     findAllJoinableTables(watchedTables[tableIndex].name);
+                    // }
                     findAllJoinableTables(watchedTables[tableIndex].name);
                     setRootTable(watchedTables[tableIndex].name);
                 }
@@ -1261,8 +1276,8 @@ export const DataImportFormModal = observer(
                                     )}
                                 />
                             </StyledDivFitContent>
-                            <IconButton disabled={true}>
-                                <KeyboardArrowDown />
+                            <IconButton onClick={closeImportModalHandler}>
+                                <Close />
                             </IconButton>
                         </StyledModalTitleWrapper>
 
@@ -1270,14 +1285,16 @@ export const DataImportFormModal = observer(
                             <LoadingScreen.Trigger description="Awaiting database response..." />
                         )}
 
-                        {!selectedDatabaseId && (
+                        {(isDatabaseLoading || !selectedDatabaseId) && (
                             <StyledPaddedStack spacing={1} direction="column">
-                                <Typography
-                                    variant="subtitle2"
-                                    color="secondary"
-                                >
-                                    Select a Database for Import
-                                </Typography>
+                                {!selectedDatabaseId && (
+                                    <Typography
+                                        variant="subtitle2"
+                                        color="secondary"
+                                    >
+                                        Select a Database for Import
+                                    </Typography>
+                                )}
                             </StyledPaddedStack>
                         )}
 
@@ -1362,13 +1379,16 @@ export const DataImportFormModal = observer(
                                                                         <Table.Row>
                                                                             <Table.Cell>
                                                                                 <CheckAllIconButton
-                                                                                    onClick={
-                                                                                        addAllTableColumnsHandler
-                                                                                    }
+                                                                                    onClick={() => {
+                                                                                        addAllTableColumnsHandler(
+                                                                                            table,
+                                                                                            tableIndex,
+                                                                                        );
+                                                                                    }}
                                                                                     color="primary"
-                                                                                    disabled={
-                                                                                        true
-                                                                                    }
+                                                                                    // disabled={
+                                                                                    //     true
+                                                                                    // }
                                                                                 >
                                                                                     <AddBox />
                                                                                 </CheckAllIconButton>
@@ -1767,7 +1787,7 @@ export const DataImportFormModal = observer(
                             >
                                 Add Filter
                             </Button>
-                            <Button
+                            {/* <Button
                                 variant="outlined"
                                 color="primary"
                                 size="medium"
@@ -1778,7 +1798,7 @@ export const DataImportFormModal = observer(
                                 }}
                             >
                                 Summarize
-                            </Button>
+                            </Button> */}
                             <Button
                                 variant="outlined"
                                 color="primary"
@@ -1789,7 +1809,7 @@ export const DataImportFormModal = observer(
                                     // create addCalculationHandler
                                 }}
                             >
-                                Calculate
+                                Add Calculation
                             </Button>
                         </StyledMarginModalActions>
                         <StyledModalActionsUnpadded>
