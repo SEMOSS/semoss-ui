@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { styled, Stack, List } from '@semoss/ui';
 import { useBlocks } from '@/hooks';
 
@@ -12,13 +12,24 @@ const StyledMenu = styled('div')(({ theme }) => ({
 
 export const NotebookVariantsMenu = () => {
     const { state } = useBlocks();
+    const [variants, setVariants] = useState<string[]>([]);
+
+    useEffect(() => {
+        setVariants(Object.keys(state.variants));
+    }, [state.variants]);
 
     return (
         <StyledMenu>
             <Stack spacing={2} padding={2}>
                 <div>Variants</div>
             </Stack>
-            <List disablePadding></List>
+            <List disablePadding>
+                {variants.map((variant, idx) => (
+                    <List.Item key={`variant-${variant}-${idx}`}>
+                        {variant}
+                    </List.Item>
+                ))}
+            </List>
         </StyledMenu>
     );
 };
