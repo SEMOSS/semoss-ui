@@ -16,7 +16,7 @@ export const NotebookVariantsMenu = () => {
 
     useEffect(() => {
         setVariants(Object.keys(state.variants));
-    }, [state.variants]);
+    }, [Object.keys(state.variants)]);
 
     return (
         <StyledMenu>
