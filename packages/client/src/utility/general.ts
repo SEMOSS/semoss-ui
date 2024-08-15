@@ -3,6 +3,7 @@ import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
 import { Env } from '@/env';
 import { useEffect, useMemo, useRef } from 'react';
+import { debounce } from 'lodash';
 
 /**
  * @desc splits a string at the period
@@ -132,9 +133,9 @@ export const copyTextToClipboard = (text: string, notificationService) => {
 };
 
 /**
- * @desc debounce utility function
+ * @desc useDebounce utility function returns a debounced function
  */
-export const debounce = (callback, delay) => {
+export const debounced = (callback, delay) => {
     const ref = useRef(() => {});
 
     useEffect(() => {
@@ -143,12 +144,10 @@ export const debounce = (callback, delay) => {
 
     const debouncedCallback = useMemo(() => {
         const func = () => {
-            if (ref != null && ref != undefined) {
-                ref.current();
-            }
+            ref.current?.();
         };
-        const timeout = setTimeout(func, delay);
-        return () => clearTimeout(timeout);
+
+        return debounce(func, delay);
     }, []);
 
     return debouncedCallback;

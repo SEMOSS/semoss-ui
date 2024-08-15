@@ -2,7 +2,7 @@ import { CSSProperties, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
-import { debounce } from '@/utility';
+import { debounced } from '@/utility';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
 
@@ -31,9 +31,15 @@ export interface InputBlockDef extends BlockDef<'input'> {
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
 
-    const debouncedCallback = debounce(() => {
+    //const [changedValue , setChangedValue] = useState("");
+
+    const debouncedCallback = debounced(() => {
         listeners.onChange();
     }, 200);
+
+    // useDebounce(()=>{
+    //     listeners.onChange();
+    // },[changedValue],200)
 
     return (
         <StyledTextField

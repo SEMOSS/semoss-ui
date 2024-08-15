@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
-import { debounce } from '@/utility';
+import { debounced } from '@/utility';
 
 import {
     Autocomplete,
@@ -37,7 +37,6 @@ export interface SelectBlockDef extends BlockDef<'select'> {
  */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
-    const [changedValue, setChangedValue] = useState('');
 
     const stringifiedOptions: string[] = useMemo(() => {
         let arr = [];
@@ -62,7 +61,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         });
     }, [data.options]);
 
-    const debouncedCallback = debounce(() => {
+    const debouncedCallback = debounced(() => {
         listeners.onChange();
     }, 500);
 
