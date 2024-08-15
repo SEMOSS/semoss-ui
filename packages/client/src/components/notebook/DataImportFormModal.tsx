@@ -174,9 +174,14 @@ const StyledJoinTypography = styled(Typography)(({ theme }) => ({
 
 // region --- Old Data Import useForm Types & Interfaces
 
-type QueryChildElement = {
-    childElementName: string;
-};
+// type QueryChildElement = {
+//     childElementName: string;
+// };
+
+// type QueryStackElement = {
+//     queryType: string;
+//     queryChildren: QueryChildElement[];
+// };
 
 type JoinElement = {
     leftTable: string;
@@ -210,7 +215,8 @@ interface NewFormData {
     tables: Table[];
 }
 
-type NewFormValues = {
+type FormValues = {
+    // queryStackElements: QueryStackElement[];
     databaseSelect: string;
     joins: JoinElement[];
     tables: Table[];
@@ -254,16 +260,17 @@ export const DataImportFormModal = observer(
         } = props;
 
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+        const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
         const { state, notebook } = useBlocks();
 
         //  New useForm for Data Import
         const {
-            control: newControl,
-            setValue: newSetValue,
-            reset: newReset,
-            handleSubmit: newHandleSubmit,
+            control: formControl,
+            setValue: formSetValue,
+            reset: formReset,
+            handleSubmit: formHandleSubmit,
             watch: dataImportwatch,
-        } = useForm<NewFormValues>();
+        } = useForm<FormValues>();
 
         const watchedTables = dataImportwatch('tables');
         const watchedJoins = dataImportwatch('joins');
@@ -309,7 +316,7 @@ export const DataImportFormModal = observer(
         // region --- Import Data New useFieldArray
 
         const { fields: newTableFields } = useFieldArray({
-            control: newControl,
+            control: formControl,
             name: 'tables',
         });
 
@@ -318,9 +325,16 @@ export const DataImportFormModal = observer(
             append: appendJoinElement,
             remove: removeJoinElement,
         } = useFieldArray({
-            control: newControl,
+            control: formControl,
             name: 'joins',
         });
+
+        // const {
+        //     remove: removeStack,
+        // } = useFieldArray({
+        //     control: formControl,
+        //     name: 'queryStackElements',
+        // });
 
         const notification = useNotification();
 
@@ -336,6 +350,7 @@ export const DataImportFormModal = observer(
         useEffect(() => {
             setShowTablePreview(false);
             setShowEditColumns(true);
+            // removeStack();
         }, [selectedDatabaseId]);
 
         useEffect(() => {
@@ -656,7 +671,7 @@ export const DataImportFormModal = observer(
                           )
                         : [];
 
-                    newReset({
+                    formReset({
                         databaseSelect: databaseId,
                         tables: newTableColumnsObject,
                     });
@@ -1032,11 +1047,11 @@ export const DataImportFormModal = observer(
                                 if (checkedColumns.has(columnName)) {
                                     const columnAlias =
                                         columnAliasMap[columnName];
-                                    newSetValue(
+                                    formSetValue(
                                         `tables.${tableIdx}.columns.${columnIdx}.checked`,
                                         true,
                                     );
-                                    newSetValue(
+                                    formSetValue(
                                         `tables.${tableIdx}.columns.${columnIdx}.userAlias`,
                                         columnAlias,
                                     );
@@ -1147,7 +1162,7 @@ export const DataImportFormModal = observer(
         return (
             <Modal open={true} maxWidth="lg">
                 <Modal.Content sx={{ width: importModalPixelWidth }}>
-                    <form onSubmit={newHandleSubmit(onImportDataSubmit)}>
+                    <form onSubmit={formHandleSubmit(onImportDataSubmit)}>
                         <StyledModalTitleWrapper>
                             <div
                                 style={{
@@ -1161,7 +1176,7 @@ export const DataImportFormModal = observer(
                                 </StyledModalTitle>
                                 <Controller
                                     name={'databaseSelect'}
-                                    control={newControl}
+                                    control={formControl}
                                     render={({ field }) => (
                                         <Select
                                             onChange={(e) => {
@@ -1347,7 +1362,7 @@ export const DataImportFormModal = observer(
                                                                                         <Controller
                                                                                             name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
                                                                                             control={
-                                                                                                newControl
+                                                                                                formControl
                                                                                             }
                                                                                             render={({
                                                                                                 field,
@@ -1433,7 +1448,7 @@ export const DataImportFormModal = observer(
                                                                                             <Controller
                                                                                                 name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
                                                                                                 control={
-                                                                                                    newControl
+                                                                                                    formControl
                                                                                                 }
                                                                                                 render={({
                                                                                                     field,
@@ -1502,7 +1517,7 @@ export const DataImportFormModal = observer(
                                                                                         <Controller
                                                                                             name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
                                                                                             control={
-                                                                                                newControl
+                                                                                                formControl
                                                                                             }
                                                                                             render={({
                                                                                                 field,
@@ -1644,7 +1659,9 @@ export const DataImportFormModal = observer(
                                             </StyledJoinDiv>
                                         </Tooltip>
 
-                                        <Tooltip title={`${'Inner Join'}`}>
+                                        <Tooltip
+                                            title={`${'Select Join Type'}`}
+                                        >
                                             <IconButton
                                                 size="small"
                                                 color="secondary"
@@ -1655,6 +1672,9 @@ export const DataImportFormModal = observer(
                                                 onClick={(e) => {
                                                     setAnchorEl(
                                                         e.currentTarget,
+                                                    );
+                                                    setJoinTypeSelectIndex(
+                                                        joinIndex,
                                                     );
                                                     setIsJoinSelectOpen(true);
                                                 }}
@@ -1675,14 +1695,15 @@ export const DataImportFormModal = observer(
                                             onClose={() => {
                                                 setAnchorEl(null);
                                                 setIsJoinSelectOpen(false);
+                                                setJoinTypeSelectIndex(-1);
                                             }}
                                         >
                                             <StyledMenuItem
                                                 value={'Inner Join'}
                                                 onClick={() => {
                                                     setIsJoinSelectOpen(false);
-                                                    newSetValue(
-                                                        `joins.${joinIndex}.joinType`,
+                                                    formSetValue(
+                                                        `joins.${joinTypeSelectIndex}.joinType`,
                                                         'inner',
                                                     );
                                                 }}
@@ -1693,8 +1714,8 @@ export const DataImportFormModal = observer(
                                                 value={'Left Join'}
                                                 onClick={() => {
                                                     setIsJoinSelectOpen(false);
-                                                    newSetValue(
-                                                        `joins.${joinIndex}.joinType`,
+                                                    formSetValue(
+                                                        `joins.${joinTypeSelectIndex}.joinType`,
                                                         'left.outer',
                                                     );
                                                 }}
@@ -1705,8 +1726,8 @@ export const DataImportFormModal = observer(
                                                 value={'Right Join'}
                                                 onClick={() => {
                                                     setIsJoinSelectOpen(false);
-                                                    newSetValue(
-                                                        `joins.${joinIndex}.joinType`,
+                                                    formSetValue(
+                                                        `joins.${joinTypeSelectIndex}.joinType`,
                                                         'right.outer',
                                                     );
                                                 }}
@@ -1717,8 +1738,8 @@ export const DataImportFormModal = observer(
                                                 value={'Outer Join'}
                                                 onClick={() => {
                                                     setIsJoinSelectOpen(false);
-                                                    newSetValue(
-                                                        `joins.${joinIndex}.joinType`,
+                                                    formSetValue(
+                                                        `joins.${joinTypeSelectIndex}.joinType`,
                                                         'outer',
                                                     );
                                                 }}
