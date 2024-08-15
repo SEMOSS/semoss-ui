@@ -8,10 +8,11 @@ import {
     TextField,
     Button,
     useNotification,
+    IconButton,
 } from '@semoss/ui';
 import { modelEngineOutput } from '../block-defaults/llm-comparison-block/LlmComparison.utility';
 import { useRootStore, useBlocks } from '@/hooks';
-import { Add } from '@mui/icons-material';
+import { Add, Close } from '@mui/icons-material';
 import { ActionMessages, Variant, VariantModel } from '@/stores';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -19,6 +20,12 @@ const StyledContainer = styled('div')(({ theme }) => ({
     padding: theme.spacing(2),
     height: '100%',
     width: '100%',
+}));
+
+const StyledHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -92,7 +99,9 @@ export const ConfigureDefaultVariant = () => {
     };
 
     const handleDeleteModel = (idx: number) => {
-        // TODO
+        const newVariant = { ...variant };
+        newVariant.models.splice(idx, 1);
+        setVariant(newVariant);
     };
 
     const handleSaveVariant = () => {
@@ -245,23 +254,34 @@ export const ConfigureDefaultVariant = () => {
                             disabled={!model.id}
                         />
                     </Stack>
+
+                    <div>
+                        <Button
+                            onClick={() => handleDeleteModel(idx)}
+                            variant="text"
+                            startIcon={<Close />}
+                        >
+                            Delete Model
+                        </Button>
+                    </div>
                 </Stack>
             ))}
-
-            <Button
-                onClick={handleAddModel}
-                variant="text"
-                startIcon={<Add />}
-                disabled={variant.models.length > 2}
-            >
-                Add Model
-            </Button>
 
             <div>
                 <Button variant="text" color="secondary">
                     Reset
                 </Button>
-                <Button onClick={handleSaveVariant}>Save Variant</Button>
+                <Button
+                    onClick={handleAddModel}
+                    variant="text"
+                    startIcon={<Add />}
+                    disabled={variant.models.length > 2}
+                >
+                    Add Model
+                </Button>
+                <Button variant="contained" onClick={handleSaveVariant}>
+                    Save Variant
+                </Button>
             </div>
         </StyledContainer>
     );
