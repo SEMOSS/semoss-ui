@@ -44,12 +44,85 @@ import { LoadingScreen } from '@/components/ui';
 
 // region --- Styled Elements
 
-const StyledModalTitle = styled(Typography)(({ theme }) => ({
+const StyledDivSecondaryKeyLabel = styled('div')(() => ({
+    backgroundColor: '#EBEBEB',
+    padding: '3px, 4px, 3px, 4px',
+    width: '37px',
+    height: '24px',
+    borderRadius: '3px',
+    display: 'inline-block',
+    marginLeft: '7px',
+    paddingTop: '3px',
+    textAlign: 'center',
+}));
+
+const StyledDivPrimaryKeyLabel = styled('div')(() => ({
+    backgroundColor: '#F1E9FB',
+    padding: '3px, 4px, 3px, 4px',
+    width: '37px',
+    height: '24px',
+    borderRadius: '3px',
+    display: 'inline-block',
+    marginLeft: '7px',
+    paddingTop: '3px',
+    textAlign: 'center',
+}));
+
+const StyledDivFitContent = styled('div')(() => ({
+    width: 'fit-content',
+    blockSize: 'fit-content',
+    display: 'flex',
+}));
+
+const StyledIconButtonMargins = styled(IconButton)(() => ({
+    marginLeft: '7.5px',
+    marginRight: '7.5px',
+}));
+
+const StyledSelectMinWidth = styled(Select)(() => ({
+    minWidth: '220px',
+}));
+
+const StyledButtonEditColumns = styled(Button)(() => ({
+    marginRight: '15px',
+}));
+
+const StyledDivCenterFlex = styled('div')(() => ({
+    alignItems: 'center',
+    display: 'flex',
+}));
+
+const StyledTypographyMarginRight = styled(Typography)(() => ({
+    marginBottom: '-1.5px',
+    marginRight: '15px',
+}));
+
+const StyledModalActionsUnpadded = styled(Modal.Actions)(() => ({
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: '0px',
+}));
+
+const StyledMarginModalActions = styled(Modal.Actions)(() => ({
+    display: 'flex',
+    justifyContent: 'flex-start',
+    marginBottom: '15px',
+    marginTop: '15px',
+    padding: '0px',
+}));
+
+const StyledPaddedStack = styled(Stack)(() => ({
+    backgroundColor: '#FAFAFA',
+    padding: '16px 16px 16px 16px',
+    marginBottom: '15px',
+}));
+
+const StyledModalTitle = styled(Typography)(() => ({
     alignContent: 'center',
     marginRight: '15px',
 }));
 
-const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
+const StyledModalTitleWrapper = styled(Modal.Title)(() => ({
     justifyContent: 'space-between',
     alignContent: 'center',
     display: 'flex',
@@ -58,36 +131,36 @@ const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
     marginTop: '25px',
 }));
 
-const StyledModalTitleUnpaddedWrapper = styled(Modal.Title)(({ theme }) => ({
+const StyledModalTitleUnpaddedWrapper = styled(Modal.Title)(() => ({
     justifyContent: 'space-between',
     alignContent: 'center',
     display: 'flex',
     padding: '0px',
 }));
 
-const ScrollTableSetContainer = styled(TableContainer)(({ theme }) => ({
+const ScrollTableSetContainer = styled(TableContainer)(() => ({
     maxHeight: '350px',
     overflowY: 'scroll',
 }));
 
-const StyledTableSetWrapper = styled('div')(({ theme }) => ({
+const StyledTableSetWrapper = styled('div')(() => ({
     backgroundColor: '#fff',
     marginBottom: '20px',
 }));
 
-const StyledTableTitle = styled(Typography)(({ theme }) => ({
+const StyledTableTitle = styled(Typography)(() => ({
     marginTop: '15px',
     marginLeft: '15px',
     marginBottom: '20px',
 }));
 
-const FlexWrapper = styled('div')(({ theme }) => ({
+const FlexWrapper = styled('div')(() => ({
     marginTop: '15px',
     display: 'flex',
     padding: '0px',
 }));
 
-const FlexTableCell = styled('div')(({ theme }) => ({
+const FlexTableCell = styled('div')(() => ({
     alignItems: 'center',
     display: 'flex',
 }));
@@ -104,17 +177,17 @@ const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const SingleTableWrapper = styled('div')(({ theme }) => ({
+const SingleTableWrapper = styled('div')(() => ({
     marginRight: '12.5px',
     marginBottom: '60px',
     marginLeft: '12.5px',
 }));
 
-const CheckAllIconButton = styled(IconButton)(({ theme }) => ({
+const CheckAllIconButton = styled(IconButton)(() => ({
     marginLeft: '-10px',
 }));
 
-const AliasWarningIcon = styled(Tooltip)(({ theme }) => ({
+const AliasWarningIcon = styled(Tooltip)(() => ({
     marginLeft: '10px',
     color: 'goldenrod',
 }));
@@ -125,7 +198,7 @@ const TableIconButton = styled(Tooltip)(({ theme }) => ({
     marginRight: '7px',
 }));
 
-const ColumnNameText = styled(Typography)(({ theme }) => ({
+const ColumnNameText = styled(Typography)(() => ({
     fontWeight: 'bold',
 }));
 
@@ -175,15 +248,6 @@ const StyledJoinTypography = styled(Typography)(({ theme }) => ({
 
 // region --- Old Data Import useForm Types & Interfaces
 
-// type QueryChildElement = {
-//     childElementName: string;
-// };
-
-// type QueryStackElement = {
-//     queryType: string;
-//     queryChildren: QueryChildElement[];
-// };
-
 type JoinElement = {
     leftTable: string;
     rightTable: string;
@@ -217,7 +281,6 @@ interface NewFormData {
 }
 
 type FormValues = {
-    // queryStackElements: QueryStackElement[];
     databaseSelect: string;
     joins: JoinElement[];
     tables: Table[];
@@ -330,13 +393,6 @@ export const DataImportFormModal = observer(
             name: 'joins',
         });
 
-        // const {
-        //     remove: removeStack,
-        // } = useFieldArray({
-        //     control: formControl,
-        //     name: 'queryStackElements',
-        // });
-
         const notification = useNotification();
 
         // endregion
@@ -351,7 +407,6 @@ export const DataImportFormModal = observer(
         useEffect(() => {
             setShowTablePreview(false);
             setShowEditColumns(true);
-            // removeStack();
         }, [selectedDatabaseId]);
 
         useEffect(() => {
@@ -1165,13 +1220,7 @@ export const DataImportFormModal = observer(
                 <Modal.Content sx={{ width: importModalPixelWidth }}>
                     <form onSubmit={formHandleSubmit(onImportDataSubmit)}>
                         <StyledModalTitleWrapper>
-                            <div
-                                style={{
-                                    width: 'fit-content',
-                                    blockSize: 'fit-content',
-                                    display: 'flex',
-                                }}
-                            >
+                            <StyledDivFitContent>
                                 <StyledModalTitle variant="h6">
                                     Import Data from
                                 </StyledModalTitle>
@@ -1179,7 +1228,7 @@ export const DataImportFormModal = observer(
                                     name={'databaseSelect'}
                                     control={formControl}
                                     render={({ field }) => (
-                                        <Select
+                                        <StyledSelectMinWidth
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
                                                 setSelectedDatabaseId(
@@ -1197,9 +1246,6 @@ export const DataImportFormModal = observer(
                                             label={'Select Database'}
                                             value={field.value || ''}
                                             size={'small'}
-                                            sx={{
-                                                minWidth: '220px',
-                                            }}
                                         >
                                             {userDatabases?.map(
                                                 (ele, dbIndex) => (
@@ -1211,10 +1257,10 @@ export const DataImportFormModal = observer(
                                                     </Menu.Item>
                                                 ),
                                             )}
-                                        </Select>
+                                        </StyledSelectMinWidth>
                                     )}
                                 />
-                            </div>
+                            </StyledDivFitContent>
                             <IconButton disabled={true}>
                                 <KeyboardArrowDown />
                             </IconButton>
@@ -1224,41 +1270,30 @@ export const DataImportFormModal = observer(
                             <LoadingScreen.Trigger description="Awaiting database response..." />
                         )}
 
+                        {!selectedDatabaseId && (
+                            <StyledPaddedStack spacing={1} direction="column">
+                                <Typography
+                                    variant="subtitle2"
+                                    color="secondary"
+                                >
+                                    Select a Database for Import
+                                </Typography>
+                            </StyledPaddedStack>
+                        )}
+
                         {selectedDatabaseId && !isDatabaseLoading && (
-                            <Stack
-                                spacing={1}
-                                direction="column"
-                                sx={{
-                                    backgroundColor: '#FAFAFA',
-                                    padding: '16px 16px 16px 16px',
-                                    marginBottom: '15px',
-                                }}
-                            >
+                            <StyledPaddedStack spacing={1} direction="column">
                                 <StyledModalTitleUnpaddedWrapper>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                marginRight: '15px',
-                                                marginBottom: '-1.5px',
-                                            }}
-                                            variant="h6"
-                                        >
+                                    <StyledDivCenterFlex>
+                                        <StyledTypographyMarginRight variant="h6">
                                             Data
-                                        </Typography>
-                                    </div>
+                                        </StyledTypographyMarginRight>
+                                    </StyledDivCenterFlex>
                                     <div>
-                                        <Button
+                                        <StyledButtonEditColumns
                                             variant="text"
                                             color="primary"
                                             size="medium"
-                                            sx={{
-                                                marginRight: '15px',
-                                            }}
                                             onClick={() => {
                                                 if (!showEditColumns) {
                                                     setShowEditColumns(true);
@@ -1267,7 +1302,7 @@ export const DataImportFormModal = observer(
                                             }}
                                         >
                                             Edit Columns
-                                        </Button>
+                                        </StyledButtonEditColumns>
                                         <Button
                                             variant="outlined"
                                             color="primary"
@@ -1399,54 +1434,16 @@ export const DataImportFormModal = observer(
                                                                                         }
                                                                                         {column.columnName ==
                                                                                             'ID' && (
-                                                                                            <div
-                                                                                                style={{
-                                                                                                    backgroundColor:
-                                                                                                        '#F1E9FB',
-                                                                                                    padding:
-                                                                                                        '3px, 4px, 3px, 4px',
-                                                                                                    width: '37px',
-                                                                                                    height: '24px',
-                                                                                                    borderRadius:
-                                                                                                        '3px',
-                                                                                                    display:
-                                                                                                        'inline-block',
-                                                                                                    marginLeft:
-                                                                                                        '7px',
-                                                                                                    paddingTop:
-                                                                                                        '3px',
-                                                                                                    textAlign:
-                                                                                                        'center',
-                                                                                                }}
-                                                                                            >
+                                                                                            <StyledDivPrimaryKeyLabel>
                                                                                                 PK
-                                                                                            </div>
+                                                                                            </StyledDivPrimaryKeyLabel>
                                                                                         )}
                                                                                         {column.columnName.includes(
                                                                                             '_ID',
                                                                                         ) && (
-                                                                                            <div
-                                                                                                style={{
-                                                                                                    backgroundColor:
-                                                                                                        '#EBEBEB', //Secondary/Selected
-                                                                                                    padding:
-                                                                                                        '3px, 4px, 3px, 4px',
-                                                                                                    width: '37px',
-                                                                                                    height: '24px',
-                                                                                                    borderRadius:
-                                                                                                        '3px',
-                                                                                                    display:
-                                                                                                        'inline-block',
-                                                                                                    marginLeft:
-                                                                                                        '7px',
-                                                                                                    paddingTop:
-                                                                                                        '3px',
-                                                                                                    textAlign:
-                                                                                                        'center',
-                                                                                                }}
-                                                                                            >
+                                                                                            <StyledDivSecondaryKeyLabel>
                                                                                                 FK
-                                                                                            </div>
+                                                                                            </StyledDivSecondaryKeyLabel>
                                                                                         )}
                                                                                     </Table.Cell>
                                                                                     <Table.Cell>
@@ -1528,7 +1525,7 @@ export const DataImportFormModal = observer(
                                                                                             render={({
                                                                                                 field,
                                                                                             }) => (
-                                                                                                <Select
+                                                                                                <StyledSelectMinWidth
                                                                                                     onChange={(
                                                                                                         e,
                                                                                                     ) => {
@@ -1545,10 +1542,6 @@ export const DataImportFormModal = observer(
                                                                                                     size={
                                                                                                         'small'
                                                                                                     }
-                                                                                                    sx={{
-                                                                                                        minWidth:
-                                                                                                            '220px',
-                                                                                                    }}
                                                                                                 >
                                                                                                     {SQL_COLUMN_TYPES.map(
                                                                                                         (
@@ -1565,7 +1558,7 @@ export const DataImportFormModal = observer(
                                                                                                             </Menu.Item>
                                                                                                         ),
                                                                                                     )}
-                                                                                                </Select>
+                                                                                                </StyledSelectMinWidth>
                                                                                             )}
                                                                                         />
                                                                                     </Table.Cell>
@@ -1629,35 +1622,16 @@ export const DataImportFormModal = observer(
                                         </ScrollTableSetContainer>
                                     </StyledTableSetWrapper>
                                 )}
-                            </Stack>
+                            </StyledPaddedStack>
                         )}
 
                         {joinElements.map((join, joinIndex) => (
-                            <Stack
-                                spacing={1}
-                                direction="column"
-                                sx={{
-                                    backgroundColor: '#FAFAFA',
-                                    padding: '16px 16px 16px 16px',
-                                    marginBottom: '15px',
-                                }}
-                            >
+                            <StyledPaddedStack spacing={1} direction="column">
                                 <StyledModalTitleUnpaddedWrapper>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                marginRight: '15px',
-                                                marginBottom: '-1.5px',
-                                            }}
-                                            variant="h6"
-                                        >
+                                    <StyledDivCenterFlex>
+                                        <StyledTypographyMarginRight variant="h6">
                                             Join
-                                        </Typography>
+                                        </StyledTypographyMarginRight>
 
                                         <Tooltip title="Left Table">
                                             <StyledJoinDiv>
@@ -1668,13 +1642,9 @@ export const DataImportFormModal = observer(
                                         <Tooltip
                                             title={`${'Select Join Type'}`}
                                         >
-                                            <IconButton
+                                            <StyledIconButtonMargins
                                                 size="small"
                                                 color="secondary"
-                                                sx={{
-                                                    marginLeft: '7.5px',
-                                                    marginRight: '7.5px',
-                                                }}
                                                 onClick={(e) => {
                                                     setAnchorEl(
                                                         e.currentTarget,
@@ -1691,7 +1661,7 @@ export const DataImportFormModal = observer(
                                                             .joinType
                                                     ]
                                                 }
-                                            </IconButton>
+                                            </StyledIconButtonMargins>
                                         </Tooltip>
 
                                         {/* Join Select Menu */}
@@ -1779,20 +1749,12 @@ export const DataImportFormModal = observer(
                                                 {join.rightKey}
                                             </StyledJoinDiv>
                                         </Tooltip>
-                                    </div>
+                                    </StyledDivCenterFlex>
                                 </StyledModalTitleUnpaddedWrapper>
-                            </Stack>
+                            </StyledPaddedStack>
                         ))}
 
-                        <Modal.Actions
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-start',
-                                padding: '0px',
-                                marginTop: '15px',
-                                marginBottom: '15px',
-                            }}
-                        >
+                        <StyledMarginModalActions>
                             <Button
                                 variant="outlined"
                                 color="primary"
@@ -1829,14 +1791,8 @@ export const DataImportFormModal = observer(
                             >
                                 Calculate
                             </Button>
-                        </Modal.Actions>
-                        <Modal.Actions
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                padding: '0px',
-                            }}
-                        >
+                        </StyledMarginModalActions>
+                        <StyledModalActionsUnpadded>
                             <Button
                                 variant="text"
                                 color="secondary"
@@ -1860,7 +1816,7 @@ export const DataImportFormModal = observer(
                             >
                                 {editMode ? 'Update Cell' : 'Import'}
                             </Button>
-                        </Modal.Actions>
+                        </StyledModalActionsUnpadded>
                     </form>
                 </Modal.Content>
             </Modal>
