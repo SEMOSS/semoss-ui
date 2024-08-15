@@ -40,6 +40,7 @@ import { DataImportCellConfig } from '../cell-defaults/data-import-cell';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { TableContainer } from '@mui/material';
+import { LoadingScreen } from '@/components/ui';
 
 // region --- Styled Elements
 
@@ -1218,7 +1219,12 @@ export const DataImportFormModal = observer(
                                 <KeyboardArrowDown />
                             </IconButton>
                         </StyledModalTitleWrapper>
-                        {selectedDatabaseId && (
+
+                        {isDatabaseLoading && (
+                            <LoadingScreen.Trigger description="Awaiting database response..." />
+                        )}
+
+                        {selectedDatabaseId && !isDatabaseLoading && (
                             <Stack
                                 spacing={1}
                                 direction="column"
@@ -1254,10 +1260,10 @@ export const DataImportFormModal = observer(
                                                 marginRight: '15px',
                                             }}
                                             onClick={() => {
-                                                setShowEditColumns(
-                                                    !showEditColumns,
-                                                );
-                                                setShowTablePreview(false);
+                                                if (!showEditColumns) {
+                                                    setShowEditColumns(true);
+                                                    setShowTablePreview(false);
+                                                }
                                             }}
                                         >
                                             Edit Columns
@@ -1273,10 +1279,10 @@ export const DataImportFormModal = observer(
                                                 ).some((key: number) => key > 1)
                                             }
                                             onClick={() => {
-                                                setShowTablePreview(
-                                                    !showPreview,
-                                                );
-                                                setShowEditColumns(false);
+                                                if (!showPreview) {
+                                                    setShowTablePreview(true);
+                                                    setShowEditColumns(false);
+                                                }
                                             }}
                                         >
                                             Preview
