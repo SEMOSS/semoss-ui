@@ -247,21 +247,12 @@ const StyledJoinTypography = styled(Typography)(({ theme }) => ({
 
 // endregion
 
-// region --- Old Data Import useForm Types & Interfaces
+// region --- useForm Types & Interfaces
 
-type JoinElement = {
-    leftTable: string;
-    rightTable: string;
-    joinType: string;
-    leftKey: string;
-    rightKey: string;
-};
-
-// endregion
-
-// region --- New Data Import useForm Types & Interfaces
-
-interface Column {
+/**
+ * Represents a column in a db table for useForm.
+ * */
+interface ColumnInterface {
     id: number;
     tableName: string;
     columnName: string;
@@ -270,26 +261,283 @@ interface Column {
     checked: boolean;
 }
 
-interface Table {
+/**
+ * Represents a table containing multiple columns for useForm.
+ */
+interface TableInterface {
     id: number;
-    columns: Column[];
+    columns: ColumnInterface[];
     name: string;
 }
 
-interface NewFormData {
-    databaseSelect: string;
-    tables: Table[];
-}
+/**
+ * Represents a join element between two tables for useForm.
+ */
+type JoinElement = {
+    leftTable: string;
+    rightTable: string;
+    joinType: string;
+    leftKey: string;
+    rightKey: string;
+};
 
+/**
+ * Represents the form values
+ * used in a database join operation.
+ */
 type FormValues = {
     databaseSelect: string;
     joins: JoinElement[];
-    tables: Table[];
+    tables: TableInterface[];
 };
+
+/**
+ * Interface representing a table edge entry
+ * used in setJoinsStackHandler function.
+ */
+interface SetJoinsStackHandlerTableEdgeEntry {
+    sourceColumn: string;
+    targetColumn: string;
+}
+
+/**
+ * Interface representing a join element
+ * used in setJoinsStackHandler function.
+ */
+interface SetJoinsStackHandlerJoinElement {
+    leftTable: string;
+    rightTable: string;
+    joinType: string;
+    leftKey: string;
+    rightKey: string;
+}
+
+/**
+ * Interface representing a column object
+ * used in checkTableForSelectedColumns function.
+ */
+interface CheckForSelectedColumn {
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * used in checkTableForSelectedColumns function.
+ */
+interface CheckForSelectedTable {
+    name: string;
+    columns: CheckForSelectedColumn[];
+}
+
+/**
+ * Interface representing a column object
+ * used in checkBoxHandler function.
+ */
+interface CheckBoxHandlerColumn {
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Type representing the alias count object
+ * specific to updateAliasCountObj function.
+ */
+type AliasCountObject = Record<string, number>;
+
+/**
+ * Interface representing a column object
+ * used in retrievePreviewData function.
+ */
+interface RetrievePreviewDataColumn {
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * used in retrievePreviewData function.
+ */
+interface RetrievePreviewDataTable {
+    columns: RetrievePreviewDataColumn[];
+}
+
+/**
+ * Interface representing a column object
+ * used in updateSelectedTables function.
+ */
+interface UpdateSelectedTablesColumn {
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * used in updateSelectedTables function.
+ */
+interface UpdateSelectedTablesTable {
+    columns: UpdateSelectedTablesColumn[];
+}
+
+/**
+ * Interface representing a column object
+ * used in retrieveSelectedColumnNames function.
+ */
+interface RetrieveSelectedColumnNamesColumn {
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * used in retrieveSelectedColumnNames function.
+ */
+interface RetrieveSelectedColumnNamesTable {
+    columns: RetrieveSelectedColumnNamesColumn[];
+}
+
+/**
+ * Interface representing a column object
+ * used in retrieveColumnAliasNames function.
+ */
+interface RetrieveColumnAliasNamesColumn {
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * used in retrieveColumnAliasNames function.
+ */
+interface RetrieveColumnAliasNamesTable {
+    columns: RetrieveColumnAliasNamesColumn[];
+}
+
+/**
+ * Type representing the structure of a table column
+ * specific to retrieveDatabaseTablesAndEdges function.
+ */
+interface RetrieveDatabaseTableColumn {
+    tableName: string;
+    columnName: string;
+    columnType: string;
+    columnBoolean: boolean;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Type representing a table with columns
+ * specific to retrieveDatabaseTablesAndEdges function.
+ */
+interface RetrieveDatabaseTable {
+    id: number;
+    name: string;
+    columns: RetrieveDatabaseTableColumn[];
+}
+
+/**
+ * Type representing the structure of an edge
+ * specific to retrieveDatabaseTablesAndEdges function.
+ */
+interface RetrieveDatabaseEdge {
+    source: string;
+    target: string;
+    sourceColumn: string;
+    targetColumn: string;
+    relation: string;
+}
+
+/**
+ * Interface representing the payload for an update cell action
+ * specific to updateSubmitDispatches function.
+ */
+interface UpdateCellPayload {
+    queryId: string;
+    cellId: string;
+    path: string;
+    value: any;
+}
+
+/**
+ * Interface representing a column object
+ * used in retrieveSelectedTableNames function.
+ */
+interface RetrieveSelectedTableNamesColumn {
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * used in retrieveSelectedTableNames function.
+ */
+interface RetrieveSelectedTableNamesTable {
+    columns: RetrieveSelectedTableNamesColumn[];
+}
+
+/**
+ * Interface for adding new cell action
+ * for appendCell function.
+ */
+interface AppendNewCellAction {
+    payload: {
+        config: {
+            widget: string;
+            parameters: Record<string, any>;
+        };
+    };
+}
+
+/**
+ * Interface for column object
+ * for getColumnAliases function.
+ */
+interface GetColumnAliasesColumn {
+    tableName: string;
+    columnName: string;
+    userAlias: string;
+    checked: boolean;
+}
+
+/**
+ * Interface for table object
+ * for getColumnAliases function.
+ */
+interface GetColumnAliasesTable {
+    columns: GetColumnAliasesColumn[];
+}
+
+/**
+ * Interface representing a column object
+ * for the getSelectedColumnNames function.
+ */
+interface getSelectedColumnNamesColumn {
+    tableName: string;
+    columnName: string;
+    checked: boolean;
+}
+
+/**
+ * Interface representing a table object
+ * for the getSelectedColumnNames function.
+ */
+interface getSelectedColumnNamesTable {
+    columns: getSelectedColumnNamesColumn[];
+}
 
 // endregion
 
-// region --- Transformations / Options / Constants
+// region --- Constants
 
 const IMPORT_MODAL_WIDTHS = {
     small: '600px',
@@ -324,47 +572,39 @@ export const DataImportFormModal = observer(
             cell,
         } = props;
 
-        const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-        const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
+        // region --- state / useForm / watched elements
+
         const { state, notebook } = useBlocks();
 
-        //  New useForm for Data Import
         const {
             control: formControl,
             setValue: formSetValue,
-            reset: formReset,
             handleSubmit: formHandleSubmit,
             watch: dataImportwatch,
+            reset: formReset,
         } = useForm<FormValues>();
 
         const watchedTables = dataImportwatch('tables');
         const watchedJoins = dataImportwatch('joins');
 
+        // endregion
+
         // region --- useStates / useRefs
 
-        const [userDatabases, setUserDatabases] = useState(null);
-        const [importModalPixelWidth, setImportModalPixelWidth] =
-            useState<string>(IMPORT_MODAL_WIDTHS.small);
-        const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
-        const [selectedDatabaseId, setSelectedDatabaseId] = useState(
-            cell ? cell.parameters.databaseId : null,
-        );
         const getDatabases = usePixel('META | GetDatabaseList ( ) ;'); // making repeat network calls, move to load data modal open
-        const [databaseTableRows, setDatabaseTableRows] = useState([]);
+        const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+        const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
         const [tableNames, setTableNames] = useState<string[]>([]);
-        const [isDatabaseLoading, setIsDatabaseLoading] =
-            useState<boolean>(false);
         const [showPreview, setShowTablePreview] = useState<boolean>(false);
         const [showEditColumns, setShowEditColumns] = useState<boolean>(true);
+        const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
+        const [databaseTableRows, setDatabaseTableRows] = useState([]);
         const [tableEdgesObject, setTableEdgesObject] = useState(null);
         const [aliasesCountObj, setAliasesCountObj] = useState({});
+        const [userDatabases, setUserDatabases] = useState(null);
         const { monolithStore } = useRootStore();
         const aliasesCountObjRef = useRef({});
-        const [tableEdges, setTableEdges] = useState({}); //
-        const [rootTable, setRootTable] = useState(
-            cell ? cell.parameters.rootTable : null,
-        );
-
+        const [tableEdges, setTableEdges] = useState({});
         const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
         const [selectedTableNames, setSelectedTableNames] = useState(new Set());
         const [shownTables, setShownTables] = useState(new Set());
@@ -373,6 +613,16 @@ export const DataImportFormModal = observer(
         const pixelPartialRef = useRef<string>('');
         const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
         const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
+        const [isDatabaseLoading, setIsDatabaseLoading] =
+            useState<boolean>(false);
+        const [rootTable, setRootTable] = useState(
+            cell ? cell.parameters.rootTable : null,
+        );
+        const [importModalPixelWidth, setImportModalPixelWidth] =
+            useState<string>(IMPORT_MODAL_WIDTHS.small);
+        const [selectedDatabaseId, setSelectedDatabaseId] = useState(
+            cell ? cell.parameters.databaseId : null,
+        );
         const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
             useState(editMode ? false : true);
 
@@ -380,7 +630,7 @@ export const DataImportFormModal = observer(
 
         // region --- Import Data New useFieldArray
 
-        const { fields: newTableFields } = useFieldArray({
+        const { fields: formTableFields } = useFieldArray({
             control: formControl,
             name: 'tables',
         });
@@ -415,12 +665,12 @@ export const DataImportFormModal = observer(
                 editMode &&
                 checkedColumnsCount == 0 &&
                 cell.parameters.databaseId == selectedDatabaseId &&
-                newTableFields.length &&
+                formTableFields.length &&
                 !initEditPrepopulateComplete
             ) {
                 prepoulateFormForEdit(cell);
             }
-        }, [newTableFields]);
+        }, [formTableFields]);
 
         useEffect(() => {
             if (getDatabases.status !== 'SUCCESS') {
@@ -449,50 +699,79 @@ export const DataImportFormModal = observer(
 
         // endregion
 
-        const getSelectedColumnNames = () => {
-            const pixelTables = new Set();
-            const pixelColumnNames = [];
+        /**
+         * Retrieves the names of selected columns from watched tables.
+         *
+         * Iterates over a watchedTables checks each column in each table
+         * and collects names of columns that are marked as checked.
+         *
+         * @returns {string[]} Array of strings, each representing selected column names formatted as `tableName__columnName`.
+         */
+        const getSelectedColumnNames = (): string[] => {
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnNames: string[] = [];
 
-            watchedTables.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
+            watchedTables.forEach(
+                (tableObject: getSelectedColumnNamesTable) => {
+                    const currTableColumns = tableObject.columns;
 
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnNames.push(
-                            `${columnObject.tableName}__${columnObject.columnName}`,
-                        );
-                    }
-                });
-            });
+                    currTableColumns.forEach((columnObject) => {
+                        if (columnObject.checked) {
+                            pixelTables.add(columnObject.tableName);
+                            pixelColumnNames.push(
+                                `${columnObject.tableName}__${columnObject.columnName}`,
+                            );
+                        }
+                    });
+                },
+            );
 
             return pixelColumnNames;
         };
 
-        const getColumnAliases = () => {
-            const pixelTables = new Set();
-            const pixelColumnAliases = [];
+        /**
+         * Retrieves the user-defined aliases of selected columns from watchedTables from useForm.
+         *
+         * Function iterates over a global `watchedTables` array, checks each column in each table,
+         * and collects the user-defined aliases of columns that are marked as checked.
+         *
+         * @returns {string[]} An array of strings, each for user-defined alias of a selected column.
+         */
+        const getColumnAliases = (): string[] => {
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnAliases: string[] = [];
 
-            watchedTables.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
+            watchedTables.forEach((tableObject: GetColumnAliasesTable) => {
+                const currTableColumns: GetColumnAliasesColumn[] =
+                    tableObject.columns;
 
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnAliases.push(columnObject.userAlias);
-                    }
-                });
+                currTableColumns.forEach(
+                    (columnObject: GetColumnAliasesColumn) => {
+                        if (columnObject.checked) {
+                            pixelTables.add(columnObject.tableName);
+                            pixelColumnAliases.push(columnObject.userAlias);
+                        }
+                    },
+                );
             });
 
             return pixelColumnAliases;
         };
 
-        /** Create a New Cell and Add to Notebook */
-        const appendCell = (widget: string) => {
+        /**
+         * Appends new cell to notebook with specified widget configuration.
+         *
+         * Function generates new cell ID, configures cell based on provided widget,
+         * and dispatches action to add new cell to state. Also handles specific widget
+         * configurations such as DataImportCellConfig CodeCellConfig etc.
+         *
+         * @param {string} widget - Widget type to used for new cell.
+         */
+        const appendCell = (widget: string): void => {
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
 
-                const config: NewCellAction['payload']['config'] = {
+                const config: AppendNewCellAction['payload']['config'] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
                 };
@@ -542,103 +821,83 @@ export const DataImportFormModal = observer(
             }
         };
 
-        /** Add all the columns from a Table */
-        const addAllTableColumnsHandler = (table, tableIndex) => {
-            table.columns.forEach((column, columnIndex) => {
-                // causing bugg behavior in joins stack
-                // checkBoxHandler(parseInt(tableIndex), parseInt(columnIndex), true)
-            });
+        /**
+         * Retrieves the names of tables with selected columns from watched tables.
+         *
+         * This function iterates over a global `watchedTables` array, checks each column in each table,
+         * and collects the names of tables that have columns marked as checked.
+         *
+         * @returns {Set<string>} A set of strings, each representing the name of a table with selected columns.
+         */
+        const retrieveSelectedTableNames = (): Set<string> => {
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnNames: string[] = [];
+            const pixelColumnAliases: string[] = [];
+
+            watchedTables?.forEach(
+                (tableObject: RetrieveSelectedTableNamesTable) => {
+                    const currTableColumns: RetrieveSelectedTableNamesColumn[] =
+                        tableObject.columns;
+                    currTableColumns.forEach(
+                        (columnObject: RetrieveSelectedTableNamesColumn) => {
+                            if (columnObject.checked) {
+                                pixelTables.add(columnObject.tableName);
+                                pixelColumnNames.push(
+                                    `${columnObject.tableName}__${columnObject.columnName}`,
+                                );
+                                pixelColumnAliases.push(columnObject.userAlias);
+                            }
+                        },
+                    );
+                },
+            );
+
+            return pixelTables;
         };
 
-        const updateSubmitDispatches = () => {
-            const currTableNamesSet = retrieveSelectedTableNames();
-            const currTableNames = Array.from(currTableNamesSet);
-            const currSelectedColumns = retrieveSelectedColumnNames();
-            const currColumnAliases = retrieveColumnAliasNames();
+        /**
+         * Updates the parameters of the current cell with the latest selected table names, columns, and other configurations.
+         *
+         * This function retrieves the current selections and configurations, then dispatches multiple update actions
+         * to update the parameters of the current cell in the state.
+         */
+        const updateSubmitDispatches = (): void => {
+            const currTableNamesSet: Set<string> = retrieveSelectedTableNames();
+            const currTableNames: string[] = Array.from(currTableNamesSet);
+            const currSelectedColumns: string[] = retrieveSelectedColumnNames();
+            const currColumnAliases: string[] = retrieveColumnAliasNames();
 
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.tableNames',
-                    value: currTableNames,
-                },
-            });
+            const dispatchUpdate = (path: string, value: any) => {
+                state.dispatch({
+                    message: ActionMessages.UPDATE_CELL,
+                    payload: {
+                        queryId: cell.query.id,
+                        cellId: cell.id,
+                        path: path,
+                        value: value,
+                    } as UpdateCellPayload,
+                });
+            };
 
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.selectedColumns',
-                    value: currSelectedColumns,
-                },
-            });
-
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.columnAliases',
-                    value: currColumnAliases,
-                },
-            });
-
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.joins',
-                    value: joinElements,
-                },
-            });
-
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.rootTable',
-                    value: rootTable,
-                },
-            });
-
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.selectQuery',
-                    value: pixelPartialRef.current,
-                },
-            });
-
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.databaseId',
-                    value: selectedDatabaseId,
-                },
-            });
-
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: 'parameters.joins',
-                    value: watchedJoins,
-                },
-            });
+            dispatchUpdate('parameters.tableNames', currTableNames);
+            dispatchUpdate('parameters.selectedColumns', currSelectedColumns);
+            dispatchUpdate('parameters.columnAliases', currColumnAliases);
+            dispatchUpdate('parameters.joins', joinElements);
+            dispatchUpdate('parameters.rootTable', rootTable);
+            dispatchUpdate('parameters.selectQuery', pixelPartialRef.current);
+            dispatchUpdate('parameters.databaseId', selectedDatabaseId);
+            dispatchUpdate('parameters.joins', watchedJoins);
         };
 
-        /** New Submit for Import Data --- empty */
-        const onImportDataSubmit = (data: NewFormData) => {
+        /**
+         * Handles the submission of import data.
+         *
+         * This function performs different actions based on whether the application is in edit mode.
+         * It retrieves preview data, updates or appends a cell, closes the import modal, and updates the modal state.
+         *
+         * @param {FormValues} data - The data submitted from the import form.
+         */
+        const onImportDataSubmit = (_data: FormValues): void => {
             if (editMode) {
                 retrievePreviewData();
                 updateSubmitDispatches();
@@ -651,17 +910,32 @@ export const DataImportFormModal = observer(
             setIsDataImportModalOpen(false);
         };
 
-        /** Close and Reset Import Data Form Modal */
-        const closeImportModalHandler = () => {
+        /**
+         * Closes the data import modal.
+         *
+         * This function sets the state to close the data import modal by setting `setIsDataImportModalOpen` to `false`.
+         */
+        const closeImportModalHandler = (): void => {
             setIsDataImportModalOpen(false);
         };
 
-        /** Get Database Information for Data Import Modal */
-        const retrieveDatabaseTablesAndEdges = async (databaseId) => {
+        /**
+         * Retrieves database tables and edges for the data import modal.
+         *
+         * This function retrieves the structure of tables and edges from a specified database,
+         * processes the response, and updates the state accordingly.
+         *
+         * @param {string} databaseId - The ID of the database to retrieve information from.
+         */
+        const retrieveDatabaseTablesAndEdges = async (
+            databaseId: string,
+        ): Promise<void> => {
             setIsDatabaseLoading(true);
             const pixelString = `META|GetDatabaseTableStructure(database=[ \"${databaseId}\" ]);META|GetDatabaseMetamodel( database=[ \"${databaseId}\" ], options=["dataTypes","positions"]);`;
 
-            monolithStore.runQuery(pixelString).then((pixelResponse) => {
+            try {
+                const pixelResponse = await monolithStore.runQuery(pixelString);
+
                 const responseTableStructure =
                     pixelResponse.pixelReturn[0].output;
                 const isResponseTableStructureGood =
@@ -676,18 +950,24 @@ export const DataImportFormModal = observer(
                         'ERROR',
                     ) === -1;
 
-                let newTableNames = [];
+                let newTableNames: string[] = [];
 
                 if (isResponseTableStructureGood) {
                     newTableNames = [
-                        ...responseTableStructure.reduce((set, ele) => {
-                            set.add(ele[0]);
-                            return set;
-                        }, new Set()),
+                        ...responseTableStructure.reduce(
+                            (set: Set<string>, ele: any[]) => {
+                                set.add(ele[0]);
+                                return set;
+                            },
+                            new Set<string>(),
+                        ),
                     ];
 
                     const tableColumnsObject = responseTableStructure.reduce(
-                        (acc, ele) => {
+                        (
+                            acc: Record<string, RetrieveDatabaseTableColumn[]>,
+                            ele: any[],
+                        ) => {
                             const tableName = ele[0];
                             const columnName = ele[1];
                             const columnType = ele[2];
@@ -701,8 +981,6 @@ export const DataImportFormModal = observer(
                                 columnName,
                                 columnType,
                                 columnBoolean,
-                                columnName2,
-                                tableName2,
                                 userAlias: columnName,
                                 checked: true,
                             });
@@ -712,24 +990,25 @@ export const DataImportFormModal = observer(
                         {},
                     );
 
-                    const newTableColumnsObject: Table[] = tableColumnsObject
-                        ? Object.keys(tableColumnsObject).map(
-                              (tableName, tableIdx) => ({
-                                  id: tableIdx,
-                                  name: tableName,
-                                  columns: tableColumnsObject[tableName].map(
-                                      (colObj, colIdx) => ({
+                    const newTableColumnsObject: RetrieveDatabaseTable[] =
+                        tableColumnsObject
+                            ? Object.keys(tableColumnsObject).map(
+                                  (tableName, tableIdx) => ({
+                                      id: tableIdx,
+                                      name: tableName,
+                                      columns: tableColumnsObject[
+                                          tableName
+                                      ].map((colObj, colIdx) => ({
                                           id: colIdx,
                                           tableName: tableName,
                                           columnName: colObj.columnName,
                                           columnType: colObj.columnType,
                                           userAlias: colObj.userAlias,
                                           checked: false,
-                                      }),
-                                  ),
-                              }),
-                          )
-                        : [];
+                                      })),
+                                  }),
+                              )
+                            : [];
 
                     formReset({
                         databaseSelect: databaseId,
@@ -745,54 +1024,72 @@ export const DataImportFormModal = observer(
 
                 if (isResponseTableEdgesStructureGood) {
                     const newEdgesDict =
-                        responseTableEdgesStructure.edges.reduce((acc, ele) => {
-                            const source = ele.source;
-                            const target = ele.target;
-                            const sourceColumn = ele.sourceColumn;
-                            const targetColumn = ele.targetColumn;
+                        responseTableEdgesStructure.edges.reduce(
+                            (
+                                acc: Record<
+                                    string,
+                                    Record<
+                                        string,
+                                        {
+                                            sourceColumn: string;
+                                            targetColumn: string;
+                                        }
+                                    >
+                                >,
+                                ele: RetrieveDatabaseEdge,
+                            ) => {
+                                const source = ele.source;
+                                const target = ele.target;
+                                const sourceColumn = ele.sourceColumn;
+                                const targetColumn = ele.targetColumn;
 
-                            if (!acc[source]) {
-                                acc[source] = {
-                                    [target]: {
+                                if (!acc[source]) {
+                                    acc[source] = {
+                                        [target]: {
+                                            sourceColumn,
+                                            targetColumn,
+                                        },
+                                    };
+                                } else {
+                                    acc[source][target] = {
                                         sourceColumn,
                                         targetColumn,
-                                    },
-                                };
-                            } else {
-                                acc[source][target] = {
-                                    sourceColumn,
-                                    targetColumn,
-                                };
-                            }
+                                    };
+                                }
 
-                            if (!acc[target]) {
-                                acc[target] = {
-                                    [source]: {
+                                if (!acc[target]) {
+                                    acc[target] = {
+                                        [source]: {
+                                            sourceColumn: targetColumn,
+                                            targetColumn: sourceColumn,
+                                        },
+                                    };
+                                } else {
+                                    acc[target][source] = {
                                         sourceColumn: targetColumn,
                                         targetColumn: sourceColumn,
-                                    },
-                                };
-                            } else {
-                                acc[target][source] = {
-                                    sourceColumn: targetColumn,
-                                    targetColumn: sourceColumn,
-                                };
-                            }
-                            return acc;
-                        }, {});
+                                    };
+                                }
+                                return acc;
+                            },
+                            {},
+                        );
 
                     setTableEdgesObject(newEdgesDict);
                 } else {
                     console.error('Error retrieving database edges');
                     notification.add({
                         color: 'error',
-                        message: `Error retrieving database tables`,
+                        message: `Error retrieving database edges`,
                     });
                 }
 
                 const edges = pixelResponse.pixelReturn[1].output.edges;
-                const newTableEdges = {};
-                edges.forEach((edge) => {
+                const newTableEdges: Record<
+                    string,
+                    Record<string, string>
+                > = {};
+                edges.forEach((edge: RetrieveDatabaseEdge) => {
                     if (newTableEdges[edge.source]) {
                         newTableEdges[edge.source][edge.target] = edge.relation;
                     } else {
@@ -833,118 +1130,150 @@ export const DataImportFormModal = observer(
                     removeJoinElement();
                     setJoinsSet(new Set());
                 }
-            });
-
-            setAliasesCountObj({});
-            aliasesCountObjRef.current = {};
-            removeJoinElement();
-            setIsInitLoadComplete(true);
+            } catch (error) {
+                console.error('Error running pixel query', error);
+                notification.add({
+                    color: 'error',
+                    message: `Error running pixel query`,
+                });
+            } finally {
+                if (!editMode) {
+                    setAliasesCountObj({});
+                    aliasesCountObjRef.current = {};
+                    removeJoinElement();
+                }
+                setIsInitLoadComplete(true);
+            }
         };
 
-        const retrieveColumnAliasNames = () => {
-            const pixelTables = new Set();
-            const pixelColumnNames = [];
-            const pixelColumnAliases = [];
+        /**
+         * Retrieves the alias names of columns from watched tables.
+         *
+         * This function iterates over a global `watchedTables` array, checks each column in each table,
+         * and collects the alias names of columns that are marked as checked.
+         *
+         * @returns {string[]} An array of strings, each representing the alias name of a selected column.
+         */
+        const retrieveColumnAliasNames = (): string[] => {
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnNames: string[] = [];
+            const pixelColumnAliases: string[] = [];
 
-            watchedTables?.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnNames.push(
-                            `${columnObject.tableName}__${columnObject.columnName}`,
-                        );
-                        pixelColumnAliases.push(columnObject.userAlias);
-                    }
-                });
-            });
+            watchedTables?.forEach(
+                (tableObject: RetrieveColumnAliasNamesTable) => {
+                    const currTableColumns: RetrieveColumnAliasNamesColumn[] =
+                        tableObject.columns;
+                    currTableColumns.forEach(
+                        (columnObject: RetrieveColumnAliasNamesColumn) => {
+                            if (columnObject.checked) {
+                                pixelTables.add(columnObject.tableName);
+                                pixelColumnNames.push(
+                                    `${columnObject.tableName}__${columnObject.columnName}`,
+                                );
+                                pixelColumnAliases.push(columnObject.userAlias);
+                            }
+                        },
+                    );
+                },
+            );
 
             return pixelColumnAliases;
         };
 
-        const retrieveSelectedColumnNames = () => {
-            const pixelTables = new Set();
-            const pixelColumnNames = [];
-            const pixelColumnAliases = [];
+        /**
+         * Retrieves the selected column names from watched tables.
+         *
+         * This function iterates over a global `watchedTables` array, checks each column in each table,
+         * and collects the names of columns that are marked as checked.
+         *
+         * @returns {string[]} An array of strings, each representing the name of a selected column.
+         */
+        const retrieveSelectedColumnNames = (): string[] => {
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnNames: string[] = [];
+            const pixelColumnAliases: string[] = [];
 
-            watchedTables?.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnNames.push(
-                            `${columnObject.tableName}__${columnObject.columnName}`,
-                        );
-                        pixelColumnAliases.push(columnObject.userAlias);
-                    }
-                });
-            });
+            watchedTables?.forEach(
+                (tableObject: RetrieveSelectedColumnNamesTable) => {
+                    const currTableColumns: RetrieveSelectedColumnNamesColumn[] =
+                        tableObject.columns;
+                    currTableColumns.forEach(
+                        (columnObject: RetrieveSelectedColumnNamesColumn) => {
+                            if (columnObject.checked) {
+                                pixelTables.add(columnObject.tableName);
+                                pixelColumnNames.push(
+                                    `${columnObject.tableName}__${columnObject.columnName}`,
+                                );
+                                pixelColumnAliases.push(columnObject.userAlias);
+                            }
+                        },
+                    );
+                },
+            );
 
             return pixelColumnNames;
         };
 
-        const retrieveSelectedTableNames = () => {
-            const pixelTables = new Set();
-            const pixelColumnNames = [];
-            const pixelColumnAliases = [];
+        /**
+         * Updates the selected table names based on the checked columns in watched tables.
+         *
+         * This function iterates over a global `watchedTables` array, checks each column in each table,
+         * and collects the names of tables that have at least one column marked as checked.
+         * It then updates the state with the set of selected table names.
+         */
+        const updateSelectedTables = (): void => {
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnNames: string[] = [];
+            const pixelColumnAliases: string[] = [];
 
-            watchedTables?.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnNames.push(
-                            `${columnObject.tableName}__${columnObject.columnName}`,
-                        );
-                        pixelColumnAliases.push(columnObject.userAlias);
-                    }
-                });
-            });
-
-            return pixelTables;
-        };
-
-        const updateSelectedTables = () => {
-            const pixelTables = new Set();
-            const pixelColumnNames = [];
-            const pixelColumnAliases = [];
-
-            watchedTables?.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnNames.push(
-                            `${columnObject.tableName}__${columnObject.columnName}`,
-                        );
-                        pixelColumnAliases.push(columnObject.userAlias);
-                    }
-                });
+            watchedTables?.forEach((tableObject: UpdateSelectedTablesTable) => {
+                const currTableColumns: UpdateSelectedTablesColumn[] =
+                    tableObject.columns;
+                currTableColumns.forEach(
+                    (columnObject: UpdateSelectedTablesColumn) => {
+                        if (columnObject.checked) {
+                            pixelTables.add(columnObject.tableName);
+                            pixelColumnNames.push(
+                                `${columnObject.tableName}__${columnObject.columnName}`,
+                            );
+                            pixelColumnAliases.push(columnObject.userAlias);
+                        }
+                    },
+                );
             });
 
             setSelectedTableNames(pixelTables);
         };
 
-        const retrievePreviewData = async () => {
+        /**
+         * Retrieves preview data from the database.
+         *
+         * This function constructs a query string based on selected tables, columns, and joins,
+         * runs the query, and updates the state with the retrieved data.
+         */
+        const retrievePreviewData = async (): Promise<void> => {
             setIsDatabaseLoading(true);
 
             const databaseId = selectedDatabaseId;
-            const pixelTables = new Set();
-            const pixelColumnNames = [];
-            const pixelColumnAliases = [];
-            const pixelJoins = [];
+            const pixelTables: Set<string> = new Set();
+            const pixelColumnNames: string[] = [];
+            const pixelColumnAliases: string[] = [];
+            const pixelJoins: string[] = [];
 
-            watchedTables.forEach((tableObject) => {
-                const currTableColumns = tableObject.columns;
-                currTableColumns.forEach((columnObject) => {
-                    if (columnObject.checked) {
-                        pixelTables.add(columnObject.tableName);
-                        pixelColumnNames.push(
-                            `${columnObject.tableName}__${columnObject.columnName}`,
-                        );
-                        pixelColumnAliases.push(columnObject.userAlias);
-                    }
-                });
+            watchedTables.forEach((tableObject: RetrievePreviewDataTable) => {
+                const currTableColumns: RetrievePreviewDataColumn[] =
+                    tableObject.columns;
+                currTableColumns.forEach(
+                    (columnObject: RetrievePreviewDataColumn) => {
+                        if (columnObject.checked) {
+                            pixelTables.add(columnObject.tableName);
+                            pixelColumnNames.push(
+                                `${columnObject.tableName}__${columnObject.columnName}`,
+                            );
+                            pixelColumnAliases.push(columnObject.userAlias);
+                        }
+                    },
+                );
             });
 
             watchedJoins.forEach((joinEle) => {
@@ -975,14 +1304,15 @@ export const DataImportFormModal = observer(
             pixelStringRef.current = reactorPixel;
             pixelPartialRef.current = pixelStringPart1 + ';';
 
-            await monolithStore.runQuery(reactorPixel).then((response) => {
+            try {
+                const response = await monolithStore.runQuery(reactorPixel);
                 const type = response.pixelReturn[0]?.operationType;
                 const tableHeadersData =
                     response.pixelReturn[1]?.output?.data?.headers;
                 const tableRowsData =
                     response.pixelReturn[1]?.output?.data?.values;
 
-                if (type.indexOf('ERROR') != -1) {
+                if (type.indexOf('ERROR') !== -1) {
                     console.error('Error retrieving database tables');
                     notification.add({
                         color: 'error',
@@ -996,17 +1326,34 @@ export const DataImportFormModal = observer(
 
                 setDatabaseTableHeaders(tableHeadersData);
                 setDatabaseTableRows(tableRowsData);
+            } catch (error) {
+                console.error('Error running pixel query', error);
+                notification.add({
+                    color: 'error',
+                    message: `Error running pixel query`,
+                });
+            } finally {
                 setIsDatabaseLoading(false);
-            });
+            }
         };
 
-        /** Helper Function Update Alias Tracker Object*/
+        /**
+         * Helper function to update the alias tracker object.
+         *
+         * This function updates the alias count object based on whether an alias is being added or removed.
+         * It also handles updating the count for an old alias if provided.
+         *
+         * @param {boolean} isBeingAdded - Indicates whether the alias is being added (true) or removed (false).
+         * @param {string} newAlias - The new alias to be added or removed.
+         * @param {string | null} [oldAlias=null] - The old alias to be decremented, if applicable.
+         */
         const updateAliasCountObj = (
-            isBeingAdded,
-            newAlias,
-            oldAlias = null,
-        ) => {
-            const newAliasesCountObj = { ...aliasesCountObj };
+            isBeingAdded: boolean,
+            newAlias: string,
+            oldAlias: string | null = null,
+        ): void => {
+            const newAliasesCountObj: AliasCountObject = { ...aliasesCountObj };
+
             if (isBeingAdded) {
                 if (newAliasesCountObj[newAlias] > 0) {
                     newAliasesCountObj[newAlias] =
@@ -1026,7 +1373,8 @@ export const DataImportFormModal = observer(
             if (newAliasesCountObj[newAlias] < 1) {
                 delete newAliasesCountObj[newAlias];
             }
-            if (oldAlias != null) {
+
+            if (oldAlias !== null) {
                 if (newAliasesCountObj[oldAlias] > 0) {
                     newAliasesCountObj[oldAlias] =
                         newAliasesCountObj[oldAlias] - 1;
@@ -1038,22 +1386,47 @@ export const DataImportFormModal = observer(
                     delete newAliasesCountObj[oldAlias];
                 }
             }
+
             setAliasesCountObj(newAliasesCountObj);
             aliasesCountObjRef.current = { ...newAliasesCountObj };
         };
 
-        /** Find Joinable Tables */
-        const findAllJoinableTables = (rootTableName) => {
-            const joinableTables = tableEdges[rootTableName]
+        /**
+         * Finds all joinable tables for a given root table.
+         *
+         * This function retrieves all tables that can be joined with the specified root table
+         * and updates the state with the set of joinable tables.
+         *
+         * @param {string} rootTableName - The name of the root table to find joinable tables for.
+         */
+        const findAllJoinableTables = (rootTableName: string): void => {
+            const joinableTables: string[] = tableEdges[rootTableName]
                 ? Object.keys(tableEdges[rootTableName])
                 : [];
-            const newShownTables = new Set([...joinableTables, rootTableName]);
+            const newShownTables: Set<string> = new Set([
+                ...joinableTables,
+                rootTableName,
+            ]);
             setShownTables(newShownTables);
         };
 
-        /** Checkbox Handler */
-        const checkBoxHandler = (tableIndex, columnIndex, checkAll = false) => {
-            const columnObject = watchedTables[tableIndex].columns[columnIndex];
+        /**
+         * Handles the checkbox state change for a given table and column.
+         *
+         * This function updates the alias count object, manages the state of checked columns,
+         * and updates the set of shown tables based on the checkbox state.
+         *
+         * @param {number} tableIndex - The index of the table in the watchedTables array.
+         * @param {number} columnIndex - The index of the column in the table's columns array.
+         * @param {boolean} [checkAll=false] - Indicates whether to check all columns.
+         */
+        const checkBoxHandler = (
+            tableIndex: number,
+            columnIndex: number,
+            checkAll: boolean = false,
+        ): void => {
+            const columnObject: CheckBoxHandlerColumn =
+                watchedTables[tableIndex].columns[columnIndex];
             updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
 
             // if (checkAll) {
@@ -1064,16 +1437,16 @@ export const DataImportFormModal = observer(
             // }
 
             if (columnObject?.checked) {
-                if (checkedColumnsCount == 0) {
-                    // if (!checkAll || columnIndex == 1) {
+                if (checkedColumnsCount === 0) {
+                    // if (!checkAll || columnIndex === 1) {
                     //     findAllJoinableTables(watchedTables[tableIndex].name);
                     // }
                     findAllJoinableTables(watchedTables[tableIndex].name);
                     setRootTable(watchedTables[tableIndex].name);
                 }
                 setCheckedColumnsCount(checkedColumnsCount + 1);
-            } else if (columnObject?.checked == false) {
-                if (checkedColumnsCount == 1) {
+            } else if (columnObject?.checked === false) {
+                if (checkedColumnsCount === 1) {
                     setShownTables(new Set(tableNames));
                     setRootTable(null);
                 }
@@ -1082,8 +1455,15 @@ export const DataImportFormModal = observer(
             setJoinsStackHandler();
         };
 
-        /** Pre-Populate form For Edit  */
-        const prepoulateFormForEdit = (cell) => {
+        /**
+         * Pre-populates the form for editing based on the provided cell data.
+         *
+         * This function sets up the form state by marking the appropriate columns as checked,
+         * setting their aliases, and configuring the joins based on the cell data.
+         *
+         * @param {Cell} cell - The cell object containing parameters for pre-populating the form.
+         */
+        const prepoulateFormForEdit = (cell): void => {
             const tablesWithCheckedBoxes = new Set();
             const checkedColumns = new Set();
             const columnAliasMap = {};
@@ -1107,8 +1487,8 @@ export const DataImportFormModal = observer(
             setAliasesCountObj({ ...newAliasesCountObj });
             aliasesCountObjRef.current = { ...newAliasesCountObj };
 
-            if (newTableFields) {
-                newTableFields.forEach((newTableObj, tableIdx) => {
+            if (formTableFields) {
+                formTableFields.forEach((newTableObj, tableIdx) => {
                     if (tablesWithCheckedBoxes.has(newTableObj.name)) {
                         const watchedTableColumns =
                             watchedTables[tableIdx].columns;
@@ -1146,70 +1526,91 @@ export const DataImportFormModal = observer(
             setCheckedColumnsCount(checkedColumns.size);
         };
 
-        const checkTableForSelectedColumns = (tableName) => {
+        /**
+         * Checks if the specified table has any selected columns.
+         *
+         * This function iterates through the watched tables and their columns to determine
+         * if any column in the specified table is checked.
+         *
+         * @param {string} tableName - The name of the table to check for selected columns.
+         * @returns {boolean} - Returns true if any column in the specified table is checked, otherwise false.
+         */
+        const checkTableForSelectedColumns = (tableName: string): boolean => {
             for (let i = 0; i < watchedTables.length; i++) {
-                const currTable = watchedTables[i];
-                if (currTable.name == tableName) {
-                    const currTableColumns = currTable.columns;
+                const currTable: CheckForSelectedTable = watchedTables[i];
+                if (currTable.name === tableName) {
+                    const currTableColumns: CheckForSelectedColumn[] =
+                        currTable.columns;
                     for (let j = 0; j < currTableColumns.length; j++) {
-                        const currColumn = currTableColumns[j];
-                        if (currColumn.checked == true) return true;
+                        const currColumn: CheckForSelectedColumn =
+                            currTableColumns[j];
+                        if (currColumn.checked === true) return true;
                     }
                 }
             }
             return false;
         };
 
-        const setJoinsStackHandler = () => {
+        /**
+         * Handles the stack of joins based on the count of checked columns.
+         *
+         * This function manages the join elements by adding or removing them based on the
+         * checked columns in the tables. It ensures that the joins are correctly set up
+         * when there are at least two checked columns.
+         */
+        const setJoinsStackHandler = (): void => {
             if (checkedColumnsCount < 2) {
                 removeJoinElement();
                 setJoinsSet(new Set());
             } else {
-                const leftTable = rootTable;
-                const rightTables =
+                const leftTable: string = rootTable;
+                const rightTables:
+                    | [string, SetJoinsStackHandlerTableEdgeEntry][]
+                    | undefined =
                     tableEdgesObject[rootTable] &&
                     tableEdgesObject &&
                     Object.entries(tableEdgesObject[rootTable]);
 
-                rightTables?.forEach((entry, joinIdx) => {
-                    const rightTable = entry[0];
-                    const leftKey = entry[1]['sourceColumn'];
-                    const rightKey = entry[1]['targetColumn'];
+                rightTables?.forEach((entry) => {
+                    const rightTable: string = entry[0];
+                    const leftKey: string = entry[1]['sourceColumn'];
+                    const rightKey: string = entry[1]['targetColumn'];
 
-                    const leftTableContainsCheckedColumns =
+                    const leftTableContainsCheckedColumns: boolean =
                         checkTableForSelectedColumns(leftTable);
-                    const rightTableContainsCheckedColumns =
+                    const rightTableContainsCheckedColumns: boolean =
                         checkTableForSelectedColumns(rightTable);
 
-                    const defaultJoinType = 'inner';
+                    const defaultJoinType: string = 'inner';
 
-                    const joinsSetString = `${leftTable}:${rightTable}`;
+                    const joinsSetString: string = `${leftTable}:${rightTable}`;
                     if (
                         leftTableContainsCheckedColumns &&
                         rightTableContainsCheckedColumns &&
-                        joinsSet.has(joinsSetString) == false
+                        !joinsSet.has(joinsSetString)
                     ) {
-                        appendJoinElement({
+                        const joinElement: SetJoinsStackHandlerJoinElement = {
                             leftTable: leftTable,
                             rightTable: rightTable,
                             joinType: defaultJoinType,
                             leftKey: leftKey,
                             rightKey: rightKey,
-                        });
+                        };
+                        appendJoinElement(joinElement);
                         addToJoinsSetHelper(joinsSetString);
                     } else if (
-                        leftTableContainsCheckedColumns == false ||
-                        (rightTableContainsCheckedColumns == false &&
+                        !leftTableContainsCheckedColumns ||
+                        (!rightTableContainsCheckedColumns &&
                             joinsSet.has(joinsSetString))
                     ) {
                         joinsSet.delete(joinsSetString);
                         joinElements.some((ele, idx) => {
                             if (
-                                leftTable == ele.leftTable &&
-                                rightTable == ele.rightTable &&
-                                defaultJoinType == ele.joinType &&
-                                leftKey == ele.leftKey &&
-                                rightKey == ele.rightKey
+                                leftTable === ele.leftTable &&
+                                rightTable === ele.rightTable &&
+                                defaultJoinType === ele.joinType &&
+                                leftKey === ele.leftKey &&
+                                rightKey === ele.rightKey
                             ) {
                                 removeJoinElement(idx);
                                 return true;
@@ -1224,10 +1625,26 @@ export const DataImportFormModal = observer(
             setInitEditPrepopulateComplete(true);
         };
 
-        const addToJoinsSetHelper = (newJoinSet) => {
+        /**
+         * Adds a new join set string to the joins set.
+         *
+         * This function creates a copy of the current joins set, adds the new join set string to it,
+         * and updates the state with the new set.
+         *
+         * @param {string} newJoinSet - The new join set string to add to the joins set.
+         */
+        const addToJoinsSetHelper = (newJoinSet: string): void => {
             const joinsSetCopy = new Set(joinsSet);
             joinsSetCopy.add(newJoinSet);
             setJoinsSet(joinsSetCopy);
+        };
+
+        /** TODO Finish function to add all the columns from a Table */
+        const addAllTableColumnsHandler = (table, tableIndex) => {
+            table.columns.forEach((column, columnIndex) => {
+                // causing bugg behavior in joins stack
+                // checkBoxHandler(parseInt(tableIndex), parseInt(columnIndex), true)
+            });
         };
 
         return (
@@ -1348,7 +1765,7 @@ export const DataImportFormModal = observer(
                                             Available Tables / Columns
                                         </StyledTableTitle>
                                         <ScrollTableSetContainer>
-                                            {newTableFields.map(
+                                            {formTableFields.map(
                                                 (table, tableIndex) => (
                                                     <div
                                                         key={`${table.name}-${tableIndex}`}
