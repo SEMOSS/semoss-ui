@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { IconButton, Stack, Tabs, Typography, styled } from '@semoss/ui';
@@ -36,45 +36,17 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
     slots: never;
 }
 
-// TODO: Temporary Data to build UI with
-const fakeData = [
-    {
-        name: 'A',
-        models: ['Vicana'],
-        response: (
-            <Typography variant="body1">
-                IDK what this will look like so heres a string in its place for
-                VARIANT A
-            </Typography>
-        ),
-    },
-    {
-        name: 'B',
-        models: ['Dall', 'Vicana'],
-        response: (
-            <Typography variant="body1">
-                IDK what this will look like so heres a string in its place for
-                VARIANT B
-            </Typography>
-        ),
-    },
-    {
-        name: 'C',
-        models: ['Dall', 'wizardLM', 'Vicana'],
-        response: (
-            <Typography variant="body1">
-                IDK what this will look like so heres a string in its place for
-                VARIANT C
-            </Typography>
-        ),
-    },
-];
-
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock(id); // TODO: use data here to set the tabs, and data displayed for each tab.
+    const { data, attrs } = useBlock(id);
     const [selectedTab, setSelectedTab] = useState('0');
+    const [responses, setResponses] = useState([]);
+    const displayedRes = responses[selectedTab];
+
     const [highlightedRating, setHighlightedRating] = useState(0);
-    const displayedRes = fakeData[Number(selectedTab)];
+
+    useEffect(() => {
+        // TODO: update 'responses' in state when the data changes.
+    }, []);
 
     const handleRateResponse = (num: number) => {
         // TODO: set rating for a variant's response using the rating from the 'num' param.
@@ -92,7 +64,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                     }}
                     color="primary"
                 >
-                    {fakeData.map((entry, idx: number) => (
+                    {responses.map((entry, idx: number) => (
                         <Tabs.Item
                             key={`${entry.name}-${idx}`}
                             label={`Variant ${entry.name}`}
@@ -101,93 +73,99 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                     ))}
                 </Tabs>
 
-                <Stack direction="column" gap={2}>
-                    <Typography color="secondary" variant="body2">
-                        {displayedRes.models.length === 1
-                            ? 'Model: '
-                            : 'Models: '}
-                        {displayedRes.models.map((model, idx: number) => {
-                            let returnString = model;
-                            if (idx + 1 !== displayedRes.models.length)
-                                returnString += ', ';
-                            return returnString;
-                        })}
+                {responses.length === 0 ? (
+                    <Typography variant="body2">
+                        No response available.
                     </Typography>
-
-                    <div>{displayedRes.response}</div>
-
-                    <StyledRatingRow>
+                ) : (
+                    <Stack direction="column" gap={2}>
                         <Typography color="secondary" variant="body2">
-                            What would you rate this response?
+                            {displayedRes.models.length === 1
+                                ? 'Model: '
+                                : 'Models: '}
+                            {displayedRes.models.map((model, idx: number) => {
+                                let returnString = model;
+                                if (idx + 1 !== displayedRes.models.length)
+                                    returnString += ', ';
+                                return returnString;
+                            })}
                         </Typography>
 
-                        <Stack
-                            direction="row"
-                            onMouseLeave={() => {
-                                setHighlightedRating(0);
-                            }}
-                            onBlur={() => {
-                                setHighlightedRating(0);
-                            }}
-                        >
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(1)}
-                                onMouseEnter={() => setHighlightedRating(1)}
-                                onFocus={() => setHighlightedRating(1)}
+                        <div>{displayedRes.response}</div>
+
+                        <StyledRatingRow>
+                            <Typography color="secondary" variant="body2">
+                                What would you rate this response?
+                            </Typography>
+
+                            <Stack
+                                direction="row"
+                                onMouseLeave={() => {
+                                    setHighlightedRating(0);
+                                }}
+                                onBlur={() => {
+                                    setHighlightedRating(0);
+                                }}
                             >
-                                {highlightedRating >= 1 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(2)}
-                                onMouseEnter={() => setHighlightedRating(2)}
-                                onFocus={() => setHighlightedRating(2)}
-                            >
-                                {highlightedRating >= 2 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(3)}
-                                onMouseEnter={() => setHighlightedRating(3)}
-                                onFocus={() => setHighlightedRating(3)}
-                            >
-                                {highlightedRating >= 3 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(4)}
-                                onMouseEnter={() => setHighlightedRating(4)}
-                                onFocus={() => setHighlightedRating(4)}
-                            >
-                                {highlightedRating >= 4 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(5)}
-                                onMouseEnter={() => setHighlightedRating(5)}
-                                onFocus={() => setHighlightedRating(5)}
-                            >
-                                {highlightedRating === 5 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                        </Stack>
-                    </StyledRatingRow>
-                </Stack>
+                                <StyledStarButton
+                                    onClick={() => handleRateResponse(1)}
+                                    onMouseEnter={() => setHighlightedRating(1)}
+                                    onFocus={() => setHighlightedRating(1)}
+                                >
+                                    {highlightedRating >= 1 ? (
+                                        <Star />
+                                    ) : (
+                                        <StarBorder />
+                                    )}
+                                </StyledStarButton>
+                                <StyledStarButton
+                                    onClick={() => handleRateResponse(2)}
+                                    onMouseEnter={() => setHighlightedRating(2)}
+                                    onFocus={() => setHighlightedRating(2)}
+                                >
+                                    {highlightedRating >= 2 ? (
+                                        <Star />
+                                    ) : (
+                                        <StarBorder />
+                                    )}
+                                </StyledStarButton>
+                                <StyledStarButton
+                                    onClick={() => handleRateResponse(3)}
+                                    onMouseEnter={() => setHighlightedRating(3)}
+                                    onFocus={() => setHighlightedRating(3)}
+                                >
+                                    {highlightedRating >= 3 ? (
+                                        <Star />
+                                    ) : (
+                                        <StarBorder />
+                                    )}
+                                </StyledStarButton>
+                                <StyledStarButton
+                                    onClick={() => handleRateResponse(4)}
+                                    onMouseEnter={() => setHighlightedRating(4)}
+                                    onFocus={() => setHighlightedRating(4)}
+                                >
+                                    {highlightedRating >= 4 ? (
+                                        <Star />
+                                    ) : (
+                                        <StarBorder />
+                                    )}
+                                </StyledStarButton>
+                                <StyledStarButton
+                                    onClick={() => handleRateResponse(5)}
+                                    onMouseEnter={() => setHighlightedRating(5)}
+                                    onFocus={() => setHighlightedRating(5)}
+                                >
+                                    {highlightedRating === 5 ? (
+                                        <Star />
+                                    ) : (
+                                        <StarBorder />
+                                    )}
+                                </StyledStarButton>
+                            </Stack>
+                        </StyledRatingRow>
+                    </Stack>
+                )}
             </StyledTabBox>
         </StyledLLMComparisonBlock>
     );
