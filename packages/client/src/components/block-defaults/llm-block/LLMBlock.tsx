@@ -319,17 +319,44 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
 
                     const code = c.parameters.code;
 
-                    // return
+                    const updateSyntax = (str) => {
+                        return str.replace(/{{(.*?)}}/g, (match, content) => {
+                            const split = content.split('.');
 
-                    await state.dispatch({
-                        message: ActionMessages.UPDATE_CELL,
-                        payload: {
-                            queryId: id,
-                            cellId: c.id,
-                            path: 'parameters.code',
-                            value: "'HEY THERE BUDDY'",
-                        },
-                    });
+                            if (
+                                // replace old cell syntax
+                                split[0] === 'llm-cell'
+                            ) {
+                                console.log('query', q.id);
+                                console.log('cell', c.id);
+                                // debugger;
+                                // update the variable
+                                return `"{{celly}}"`;
+                            }
+
+                            return `{{${content}}}`;
+                        });
+                    };
+
+                    // Verified: Cleans string of syntax
+                    const cleanedString = await updateSyntax(code);
+                    // debugger;
+                    if (cleanedString !== code) {
+                        state.queries[q.id].cells[c.id].parameters.code =
+                            cleanedString;
+
+                        // ^ This WORKS, But Below Doesnt
+
+                        // await state.dispatch({
+                        //     message: ActionMessages.UPDATE_CELL,
+                        //     payload: {
+                        //         queryId: id,
+                        //         cellId: c.id,
+                        //         path: 'parameters.code',
+                        //         value: cleanedString,
+                        //     },
+                        // });
+                    }
                 }
             });
         });
