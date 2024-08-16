@@ -143,7 +143,7 @@ const variants = [
     ],
 ];
 
-// NOTES ---
+// All of these notes are trash ---
 
 // TODO: Show the selected variable response, a varaiable is:
 // A: query that last cell is an llm-cell
@@ -209,20 +209,11 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
      * Sets up comparison based on the new response that comes in
      */
     const compare = async () => {
-        // VERIFIED: Creates duplicate queries
-        // Duplicate the query that we are attached to on this block - O(n)
+        // VERIFIED: Creates duplicate queries - Duplicate the query that we are attached to on this block - O(n)
         const variantQueries = await createVariantsForQuery();
 
-        // state.queries;
-        // debugger;
-
-        // VERIFIED: It swaps LLM cells, TODO: Handle multi-model swap
-        // replace each queries llm cells - O(n^2)
-
+        // VERIFIED: It swaps LLM cells, TODO: Handle multi-model swap - replace each queries llm cells - O(n^2)
         await replaceVariantQueryLLMCells(variantQueries);
-
-        // state.queries;
-        // debugger
 
         // VERIFIED: It executes the new queries with the variant info
         await variantQueries.forEach(async (id) => {
@@ -319,43 +310,67 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
 
                     const code = c.parameters.code;
 
-                    const updateSyntax = (str) => {
-                        return str.replace(/{{(.*?)}}/g, (match, content) => {
-                            const split = content.split('.');
+                    let variablesToAdd = {};
 
-                            if (
-                                // replace old cell syntax
-                                split[0] === 'llm-cell'
-                            ) {
-                                console.log('query', q.id);
-                                console.log('cell', c.id);
-                                // debugger;
-                                // update the variable
-                                return `"{{celly}}"`;
-                            }
+                    const updateSyntax = async (str): Promise<string> => {
+                        return await str.replace(
+                            /{{(.*?)}}/g,
+                            (match, content) => {
+                                const split = content.split('.');
 
-                            return `{{${content}}}`;
-                        });
+                                // TODO: go check if variable.to = state.variables[split[0]].to
+                                if (
+                                    variable.to === state.variables[split[0]].to
+                                ) {
+                                    const randomId = `temp-${
+                                        split[0]
+                                    }-${Math.floor(
+                                        1000 + Math.random() * 9000,
+                                    )}`;
+
+                                    state.variables[randomId] = {
+                                        to: q.id,
+                                        cellId: state.variables[split[0]]
+                                            .cellId,
+                                        type: 'cell',
+                                    };
+
+                                    // get the remaining path
+                                    const remainder = split.slice(2).join('.');
+
+                                    return `{{${
+                                        remainder.length > 0
+                                            ? `${randomId}.${remainder}`
+                                            : randomId
+                                    }}}`;
+                                    return `"{{celly}}"`;
+                                }
+
+                                return `{{${content}}}`;
+                            },
+                        );
                     };
 
                     // Verified: Cleans string of syntax
                     const cleanedString = await updateSyntax(code);
+
                     // debugger;
                     if (cleanedString !== code) {
+                        debugger;
                         state.queries[q.id].cells[c.id].parameters.code =
                             cleanedString;
 
                         // ^ This WORKS, But Below Doesnt
 
-                        // await state.dispatch({
-                        //     message: ActionMessages.UPDATE_CELL,
-                        //     payload: {
-                        //         queryId: id,
-                        //         cellId: c.id,
-                        //         path: 'parameters.code',
-                        //         value: cleanedString,
-                        //     },
-                        // });
+                        await state.dispatch({
+                            message: ActionMessages.UPDATE_CELL,
+                            payload: {
+                                queryId: id,
+                                cellId: c.id,
+                                path: 'parameters.code',
+                                value: cleanedString,
+                            },
+                        });
                     }
                 }
             });
