@@ -12,6 +12,7 @@ import {
     Stack,
     Tabs,
     Typography,
+    Skeleton,
     styled,
 } from '@semoss/ui';
 import { Star, StarBorder } from '@mui/icons-material';
@@ -40,6 +41,11 @@ const StyledRatingRow = styled('div')(({ theme }) => ({
 
 const StyledStarButton = styled(IconButton)(({ theme }) => ({
     padding: 0,
+}));
+
+const StyledLoading = styled(CircularProgress)(({ theme }) => ({
+    width: '10px',
+    height: '10px',
 }));
 
 // TODO: Temporary Data to build UI with
@@ -188,21 +194,21 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
 
     /**
      * Anytime our response changes go see our other variants
+     * THOUGHT PROCESS 2
+     * 1. DUPLICATE THE QUERY SHEET (GET ID)
+     * 2. REPLACE LLM CELL VALUES THERE FOR THE ITERATION
+     * 3. EXECUTE QUERY BY NEW_ID
      */
     useEffect(() => {
         if (parsedResponse) {
-            // THOUGHT PROCESS 2
-            // 1. DUPLICATE THE QUERY SHEET (GET ID)
-            // 2. REPLACE LLM CELL VALUES THERE FOR THE ITERATION
-            // 3. EXECUTE QUERY BY NEW_ID
-
             compare();
         }
     }, [parsedResponse]);
 
+    /**
+     * Sets up comparison based on the new response that comes in
+     */
     const compare = async () => {
-        // setPolling(true);
-
         // VERIFIED: Creates duplicate queries
         // Duplicate the query that we are attached to on this block - O(n)
         const variantQueries = await createVariantsForQuery();
@@ -228,12 +234,13 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
             });
         });
 
-        // TODO: Go find responses for each variant
-        // I may have to poll the query ids to see if they have been .isExecuted
-
         setVariantQuerySheet(variantQueries);
     };
 
+    /**
+     *
+     * @returns new variant id's for
+     */
     const createVariantsForQuery = async () => {
         let currentVariantIndex = 0;
         const variantIds = [];
@@ -272,6 +279,10 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
         return variantIds;
     };
 
+    /**
+     * Updates all the cells in respective query sheet
+     * @param queryIds
+     */
     const replaceVariantQueryLLMCells = async (queryIds) => {
         await queryIds.forEach(async (id, i) => {
             const q = state.getQuery(id);
@@ -295,21 +306,68 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
                             },
                         },
                     });
+                } else if (c.widget === 'code') {
+                    // TODO: add logic to create a new variable and swap the cell variables that are used in code as cells
+
+                    // 1. Look through the code property and find variables that are cells
+                    // - When found variable {{}}
+                    // - see what type of variable it is
+                    // ---- is it a cell?
+                    // -------- If so did it come from a cell from our original query context (not the temp)
+                    // ------------- Replace the variable {{llm-cell}} to {{llm-cell-temp-101029}}
+                    // ------------- Create a variable for your temp context
+
+                    const code = c.parameters.code;
+
+                    // return
+
+                    await state.dispatch({
+                        message: ActionMessages.UPDATE_CELL,
+                        payload: {
+                            queryId: id,
+                            cellId: c.id,
+                            path: 'parameters.code',
+                            value: "'HEY THERE BUDDY'",
+                        },
+                    });
                 }
             });
         });
     };
 
-    const displayVariant = () => {
+    /**
+     * Shows the Variant Responses as well as what we have in our notebook
+     * @returns JSX.Element
+     */
+    const displayVariant = (): JSX.Element => {
         const queryIdVariant = variantQuerySheet[parseInt(selectedTab)];
+        const masterQuery = state.queries[variable.to];
 
         if (selectedTab === '-1') {
+            const renderResponse = () => {
+                if (parsedResponse) {
+                    if (masterQuery.isLoading) {
+                        return <StyledLoading />;
+                    } else {
+                        return JSON.stringify(
+                            parsedResponse.response
+                                ? parsedResponse.response
+                                : parsedResponse,
+                        );
+                    }
+                } else {
+                    if (masterQuery.isLoading) {
+                        return <StyledLoading />;
+                    } else {
+                        return 'Awaiting execution';
+                    }
+                }
+            };
+
             return (
                 <Stack>
                     <Typography variant="caption">
-                        {parsedResponse
-                            ? JSON.stringify(parsedResponse.response)
-                            : 'n/a'}
+                        {renderResponse()}
                     </Typography>
                     <StyledRatingRow>
                         <Typography color="secondary" variant="body2">
@@ -386,16 +444,31 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
             );
         }
 
+        const renderVariantResponse = () => {
+            if (masterQuery.isLoading) {
+                return <StyledLoading />;
+            }
+            if (!queryIdVariant) {
+                return 'Awaiting execution';
+            }
+
+            if (state.queries[queryIdVariant].isLoading) {
+                return <StyledLoading />;
+            } else if (state.queries[queryIdVariant].output) {
+                return JSON.stringify(
+                    state.queries[queryIdVariant].output.response
+                        ? state.queries[queryIdVariant].output.response
+                        : state.queries[queryIdVariant].output,
+                );
+            } else {
+                return 'Awaiting execution';
+            }
+        };
+
         return (
             <Stack>
                 <Typography variant="caption">
-                    {!queryIdVariant
-                        ? 'Ex:'
-                        : state.queries[queryIdVariant].output
-                        ? JSON.stringify(
-                              state.queries[queryIdVariant].output.response,
-                          )
-                        : 'nulls'}
+                    {renderVariantResponse()}
                 </Typography>
                 <StyledRatingRow>
                     <Typography color="secondary" variant="body2">
@@ -481,6 +554,10 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
         );
     };
 
+    /**
+     * Display Model/Models: Prefix
+     * @returns string
+     */
     const modelOrModels = (): string => {
         if (selectedTab === '-1') {
             const llmCells = [];
