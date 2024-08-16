@@ -56,28 +56,29 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
         <StyledLLMComparisonBlock {...attrs}>
             <Typography variant="h6">Response</Typography>
 
-            <StyledTabBox gap={2}>
-                <Tabs
-                    value={selectedTab}
-                    onChange={(_, value: string) => {
-                        setSelectedTab(value);
-                    }}
-                    color="primary"
-                >
-                    {responses.map((entry, idx: number) => (
-                        <Tabs.Item
-                            key={`${entry.name}-${idx}`}
-                            label={`Variant ${entry.name}`}
-                            value={idx.toString()}
-                        />
-                    ))}
-                </Tabs>
-
-                {responses.length === 0 ? (
+            {responses.length === 0 ? (
+                <StyledTabBox>
                     <Typography variant="body2">
                         No response available.
                     </Typography>
-                ) : (
+                </StyledTabBox>
+            ) : (
+                <StyledTabBox gap={2}>
+                    <Tabs
+                        value={selectedTab}
+                        onChange={(_, value: string) => {
+                            setSelectedTab(value);
+                        }}
+                        color="primary"
+                    >
+                        {responses.map((entry, idx: number) => (
+                            <Tabs.Item
+                                key={`${entry.name}-${idx}`}
+                                label={`Variant ${entry.name}`}
+                                value={idx.toString()}
+                            />
+                        ))}
+                    </Tabs>
                     <Stack direction="column" gap={2}>
                         <Typography color="secondary" variant="body2">
                             {displayedRes.models.length === 1
@@ -165,8 +166,8 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                             </Stack>
                         </StyledRatingRow>
                     </Stack>
-                )}
-            </StyledTabBox>
+                </StyledTabBox>
+            )}
         </StyledLLMComparisonBlock>
     );
 });
