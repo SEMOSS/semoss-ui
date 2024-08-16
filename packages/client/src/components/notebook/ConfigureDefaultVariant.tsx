@@ -8,24 +8,19 @@ import {
     TextField,
     Button,
     useNotification,
-    IconButton,
 } from '@semoss/ui';
 import { modelEngineOutput } from '../block-defaults/llm-comparison-block/LlmComparison.utility';
 import { useRootStore, useBlocks } from '@/hooks';
 import { Add, Close } from '@mui/icons-material';
 import { ActionMessages, Variant, VariantModel } from '@/stores';
+import { CodeCell } from '../cell-defaults/code-cell';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(2),
     height: '100%',
     width: '100%',
-}));
-
-const StyledHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    overflowY: 'scroll',
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
