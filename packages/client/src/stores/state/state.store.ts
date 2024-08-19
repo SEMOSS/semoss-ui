@@ -441,6 +441,10 @@ export class StateStore {
                 const { id, variant } = action.payload;
 
                 return this.addVariant(id, variant);
+            } else if (ActionMessages.EDIT_VARIANT === action.message) {
+                const { id, from, to } = action.payload;
+
+                return this.editVariant(id, from, to);
             }
         } catch (e) {
             console.error(e);
@@ -1325,6 +1329,14 @@ export class StateStore {
         }
 
         this._store.variants[id] = variant;
+        return id;
+    };
+
+    /**
+     * Updates a variant in state
+     */
+    private editVariant = (id: string, oldVar: Variant, newVar: Variant) => {
+        this._store.variants[id] = newVar;
         return id;
     };
 }

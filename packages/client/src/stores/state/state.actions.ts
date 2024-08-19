@@ -35,7 +35,7 @@ export enum ActionMessages {
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
     REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
     ADD_VARIANT = 'ADD_VARIANT',
-    EDIT_VARIANT = 'EDIT_VARIANT', // TODO
+    EDIT_VARIANT = 'EDIT_VARIANT',
     REMOVE_VARIANT = 'REMOVE_VARIANT', // TODO
 }
 
@@ -62,7 +62,8 @@ export type Actions =
     | DeleteVariableAction
     | AddDependencyAction
     | RemoveDependencyAction
-    | AddVariantAction;
+    | AddVariantAction
+    | EditVariantAction;
 
 export interface Action {
     message: string;
@@ -287,5 +288,14 @@ export interface AddVariantAction extends Action {
     payload: {
         id: string;
         variant: Variant;
+    };
+}
+
+export interface EditVariantAction extends Action {
+    message: ActionMessages.EDIT_VARIANT;
+    payload: {
+        id: string;
+        from: Variant;
+        to: Variant;
     };
 }
