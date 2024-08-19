@@ -100,7 +100,7 @@ export const ImportForm = (props) => {
         setValue,
         getValues,
         setFocus,
-    } = useForm({ mode: 'onSubmit' });
+    } = useForm();
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -649,14 +649,16 @@ export const ImportForm = (props) => {
      * @param engineName user has entered
      * @returns boolean
      */
-    const [nameHelperText, setNameHelperText] = useState('');
-    const validateEngineName = async (engineName: string) => {
-        let validName = true;
-        const response = await monolithStore.runQuery(
-            `CheckEngineName('${engineName}');`,
-        );
+    const validateEngineName = async (field, userInput) => {
+        let pixelToExecute = '';
+        let validName = false;
+
+        pixelToExecute = field.rules.custom.value.replace('[VALUE]', userInput);
+
+        const response = await monolithStore.runQuery(pixelToExecute);
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
+
         if (operationType.indexOf('ERROR') > -1) {
             notification.add({
                 color: 'error',
@@ -666,15 +668,10 @@ export const ImportForm = (props) => {
         }
 
         //if the name already exists then the engine name is not valid
-        //set the form field error
-        output.exists
-            ? ((validName = false),
-              setNameHelperText(
-                  'This Catalog name has already been used, please try another.',
-              ),
-              setFocus('NAME'),
-              (validName = false))
-            : (validName = true);
+        output.exists ? (validName = false) : (validName = true);
+
+        //set the form field error focus
+        !validName && setFocus(field.fieldName);
 
         return validName;
     };
@@ -692,9 +689,12 @@ export const ImportForm = (props) => {
                                     rules={{
                                         required: val.rules.required,
                                         validate: {
-                                            ...(val.rules.validateName && {
-                                                checkName: async (v) =>
-                                                    validateEngineName(v),
+                                            ...(val.rules.custom && {
+                                                checkField: async (fieldVal) =>
+                                                    validateEngineName(
+                                                        val,
+                                                        fieldVal,
+                                                    ),
                                             }),
                                         },
                                         pattern: {
@@ -753,8 +753,10 @@ export const ImportForm = (props) => {
                                                     helperText={
                                                         invalid
                                                             ? error?.type ==
-                                                              'checkName'
-                                                                ? nameHelperText
+                                                              'checkField'
+                                                                ? val.rules
+                                                                      .custom
+                                                                      .message
                                                                 : error?.message
                                                             : val.helperText
                                                     }
