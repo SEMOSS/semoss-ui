@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toJS } from 'mobx';
 import {
     styled,
     Typography,
@@ -13,7 +14,6 @@ import { modelEngineOutput } from '../block-defaults/llm-comparison-block/LlmCom
 import { useRootStore, useBlocks } from '@/hooks';
 import { Add, Close } from '@mui/icons-material';
 import { ActionMessages, Variant, VariantModel } from '@/stores';
-import { CodeCell } from '../cell-defaults/code-cell';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -47,8 +47,9 @@ export const ConfigureDefaultVariant = () => {
 
     useEffect(() => {
         fetchAllModels();
+        const variants = toJS(state.variants);
 
-        if (state.variants['default']) {
+        if (variants['default']) {
             setVariant(state.variants['default']);
         }
     }, []);
@@ -100,13 +101,27 @@ export const ConfigureDefaultVariant = () => {
     };
 
     const handleSaveVariant = () => {
-        const success = state.dispatch({
-            message: ActionMessages.ADD_VARIANT,
-            payload: {
-                id: 'default',
-                variant,
-            },
-        });
+        let success = false;
+
+        const currDefault = toJS(state.variants)['default'];
+        if (!currDefault) {
+            success = state.dispatch({
+                message: ActionMessages.ADD_VARIANT,
+                payload: {
+                    id: 'default',
+                    variant,
+                },
+            });
+        } else {
+            success = state.dispatch({
+                message: ActionMessages.EDIT_VARIANT,
+                payload: {
+                    id: 'default',
+                    from: currDefault,
+                    to: variant,
+                },
+            });
+        }
 
         notification.add({
             color: success ? 'success' : 'error',
