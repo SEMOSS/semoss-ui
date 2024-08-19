@@ -698,6 +698,9 @@ export class StateStore {
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
 
+        // store the variants
+        this._store.variants = state.variants ? state.variants : {};
+
         // store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
