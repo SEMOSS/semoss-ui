@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -135,6 +135,10 @@ const StyledActionText = styled('span')(() => ({
     color: '#000',
 }));
 
+const StyledDivider = styled(Divider)({
+    background: 'transparent',
+});
+
 const StyledDividerBox = styled(Box)({
     color: '#000',
     fontFeatureSettings: '"clig" off, "liga" off',
@@ -239,9 +243,10 @@ interface TypeUserRegister {
  */
 export const LoginPage = observer(() => {
     const { configStore } = useRootStore();
+    const location = useLocation();
 
     const [forgotPassword, setForgotPassword] = useState(false);
-    const [loginType, setLoginType] = useState('Native');
+    const [loginType, setLoginType] = useState<string>('');
     const [register, setRegister] = useState(false);
     const [showOTPCodeField, setShowOTPCodeField] = useState(false);
     const [snackbar, setSnackbar] = useState<{
@@ -280,7 +285,16 @@ export const LoginPage = observer(() => {
         },
     });
 
-    const location = useLocation();
+    useEffect(() => {
+        // set initial selected login type from config.
+        if (configStore.store.config.providers.includes('native')) {
+            setLoginType('native');
+        } else if (configStore.store.config.providers.includes('ldap')) {
+            setLoginType('ldap');
+        } else if (configStore.store.config.providers.includes('linOtp')) {
+            setLoginType('LinOTP');
+        }
+    }, []);
 
     /**
      * Allow the user to login
@@ -296,7 +310,7 @@ export const LoginPage = observer(() => {
             }
 
             if (!showOTPCodeField) {
-                if (loginType === 'Native') {
+                if (loginType === 'native') {
                     await configStore
                         .login(data.USERNAME, data.PASSWORD)
                         .then(() => {
@@ -310,7 +324,7 @@ export const LoginPage = observer(() => {
                             setIsLoading(false);
                         });
                 }
-                if (loginType === 'LDAP') {
+                if (loginType === 'ldap') {
                     await configStore
                         .loginLDAP(data.USERNAME, data.PASSWORD)
                         .then(() => {
@@ -463,13 +477,12 @@ export const LoginPage = observer(() => {
     }
 
     // get the proviers
-    const providers = [...configStore.store.config.providers, 'ms'];
+    const providers = [...configStore.store.config.providers];
 
-    // Will need to display the oAuth types here -> Will have to remove native, registration, linotp, ldap
-    // const providersToDisplay = []
-
-    // Different Authorization Types / Endpoints that are Semoss Specific
-    // const semossAuthorization =
+    // show the or
+    const showOrDivider =
+        providers.indexOf('native') > -1 &&
+        (providers.indexOf('ms') || providers.indexOf('google'));
 
     return (
         <>
@@ -509,36 +522,48 @@ export const LoginPage = observer(() => {
                             </div>
                             {!register && (
                                 <StyledButtonGroup variant="outlined">
-                                    <StyledButtonGroupItem
-                                        onClick={() => {
-                                            setLoginType('Native');
-                                            setSuccess('');
-                                            setError('');
-                                        }}
-                                        selected={loginType === 'Native'}
-                                    >
-                                        Native
-                                    </StyledButtonGroupItem>
-                                    <StyledButtonGroupItem
-                                        onClick={() => {
-                                            setLoginType('LDAP');
-                                            setSuccess('');
-                                            setError('');
-                                        }}
-                                        selected={loginType === 'LDAP'}
-                                    >
-                                        LDAP
-                                    </StyledButtonGroupItem>
-                                    <StyledButtonGroupItem
-                                        onClick={() => {
-                                            setLoginType('LinOTP');
-                                            setSuccess('');
-                                            setError('');
-                                        }}
-                                        selected={loginType === 'LinOTP'}
-                                    >
-                                        LinOTP
-                                    </StyledButtonGroupItem>
+                                    {configStore.store.config.providers.includes(
+                                        'native',
+                                    ) && (
+                                        <StyledButtonGroupItem
+                                            onClick={() => {
+                                                setLoginType('Native');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
+                                            selected={loginType === 'native'}
+                                        >
+                                            Native
+                                        </StyledButtonGroupItem>
+                                    )}
+                                    {configStore.store.config.providers.includes(
+                                        'ldap',
+                                    ) && (
+                                        <StyledButtonGroupItem
+                                            onClick={() => {
+                                                setLoginType('LDAP');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
+                                            selected={loginType === 'ldap'}
+                                        >
+                                            LDAP
+                                        </StyledButtonGroupItem>
+                                    )}
+                                    {configStore.store.config.providers.includes(
+                                        'linotp',
+                                    ) && (
+                                        <StyledButtonGroupItem
+                                            onClick={() => {
+                                                setLoginType('LinOTP');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
+                                            selected={loginType === 'linotp'}
+                                        >
+                                            LinOTP
+                                        </StyledButtonGroupItem>
+                                    )}
                                 </StyledButtonGroup>
                             )}
                             {error && <Alert color="error">{error}</Alert>}
@@ -1122,17 +1147,15 @@ export const LoginPage = observer(() => {
                                     )}
                                     {!register && (
                                         <>
-                                            {providers.indexOf('native') > -1 &&
-                                                providers.indexOf('ms') >
-                                                    -1 && (
-                                                    <>
-                                                        <Divider>
-                                                            <StyledDividerBox>
-                                                                or
-                                                            </StyledDividerBox>
-                                                        </Divider>
-                                                    </>
-                                                )}
+                                            {showOrDivider && (
+                                                <>
+                                                    <StyledDivider>
+                                                        <StyledDividerBox>
+                                                            or
+                                                        </StyledDividerBox>
+                                                    </StyledDivider>
+                                                </>
+                                            )}
                                             {providers.indexOf('ms') > -1 && (
                                                 <StyledAction
                                                     variant="outlined"

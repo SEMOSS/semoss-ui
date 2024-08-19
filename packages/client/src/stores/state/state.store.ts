@@ -804,6 +804,18 @@ export class StateStore {
         const block = this._store.blocks[id];
 
         if (block) {
+            // Remove the variable
+            Object.entries(this._store.variables).forEach((keyValue) => {
+                const varId = keyValue[0];
+                const variable = keyValue[1];
+
+                if (variable.type === 'block') {
+                    if (variable.to === id) {
+                        delete this._store.variables[varId];
+                    }
+                }
+            });
+
             // remove the children
             for (const slot in block.slots) {
                 const { children } = block.slots[slot];
@@ -950,6 +962,17 @@ export class StateStore {
      */
     private deleteQuery = (queryId: string): void => {
         delete this._store.queries[queryId];
+
+        // clean up variables
+        Object.entries(this._store.variables).forEach((keyValue) => {
+            const id = keyValue[0];
+            const variable = keyValue[1];
+            if (variable.type === 'query') {
+                if (variable.to === queryId) {
+                    delete this._store.variables[id];
+                }
+            }
+        });
     };
 
     /**
@@ -1033,6 +1056,17 @@ export class StateStore {
 
         // add the cell
         q._processDeleteCell(cellId);
+
+        // clean up variables
+        Object.entries(this._store.variables).forEach((keyValue) => {
+            const id = keyValue[0];
+            const variable = keyValue[1];
+            if (variable.type === 'cell') {
+                if (variable.to === queryId && cellId === variable.cellId) {
+                    delete this._store.variables[id];
+                }
+            }
+        });
 
         // always have at least one cell
         if (q.list.length === 0) {
