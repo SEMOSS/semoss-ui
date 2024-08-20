@@ -75,9 +75,14 @@ export const ModelVariant = (props: ModelVariantProps) => {
     };
 
     const handleDeleteVariant = () => {
-        const variantsCopy = [...getValues('variants')];
-        variantsCopy.splice(index, 1);
+        const variantsCopy: TypeVariant[] = [...getValues('variants')];
+        const deleted = variantsCopy.splice(index, 1);
+        deleteVariantFromAppJson(deleted[0].name);
         setValue('variants', variantsCopy);
+    };
+
+    const deleteVariantFromAppJson = (name: string) => {
+        // TODO
     };
 
     const handleOpenVariantEditor = (duplicate: boolean) => {
