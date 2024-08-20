@@ -2,6 +2,7 @@ import { TypeLlmConfig } from '@/components/workspace';
 import { Controller } from 'react-hook-form';
 import {
     styled,
+    useNotification,
     Typography,
     Stack,
     Select,
@@ -11,10 +12,10 @@ import {
 } from '@semoss/ui';
 import { useLLMComparison } from '@/hooks';
 import { FormHelperText } from '@mui/material';
+import { useEffect } from 'react';
 
 const StyledLLMEditor = styled('div')(({ theme }) => ({
     width: '100%',
-    padding: `0 ${theme.spacing(2)} ${theme.spacing(1)}`,
     borderBottom: `1px solid ${theme.palette.secondary.divider}`,
 
     '&:last-child': {
@@ -50,8 +51,34 @@ interface PropsLLMEditor {
 }
 
 export const LLMEditor = (props: PropsLLMEditor) => {
-    const { allModels, control } = useLLMComparison();
+    const notification = useNotification();
+    const { allModels, control, watch, setValue } = useLLMComparison();
     const { model, index } = props;
+    const namePrefix = `modelsToEdit[${index}]`;
+    const modelValue = watch(`${namePrefix}.value`);
+
+    useEffect(() => {
+        if (modelValue) {
+            setNewModelsValues(modelValue);
+        }
+    }, [modelValue]);
+
+    // Set all relevant data for model when it is changed.
+    const setNewModelsValues = (value: string) => {
+        const match = allModels.find((model) => model.value === value);
+
+        if (!match) {
+            notification.add({
+                color: 'error',
+                message: 'There was an error finding the selected model.',
+            });
+            return;
+        }
+
+        setValue(`${namePrefix}.database_name`, match.database_name);
+        setValue(`${namePrefix}.database_type`, match.database_type);
+        setValue(`${namePrefix}.database_subtype`, match.database_subtype);
+    };
 
     return (
         <StyledLLMEditor>
@@ -67,7 +94,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`modelsToEdit[${index}].value`}
+                    name={`${namePrefix}.value`}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => (
@@ -102,7 +129,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`modelsToEdit[${index}].topP`}
+                    name={`${namePrefix}.topP`}
                     control={control}
                     rules={{ min: 0, max: 1 }}
                     render={({ field, fieldState }) => (
@@ -147,7 +174,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`modelsToEdit[${index}].temperature`}
+                    name={`${namePrefix}.temperature`}
                     control={control}
                     rules={{ min: 0, max: 1 }}
                     render={({ field, fieldState }) => (
@@ -193,7 +220,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
                 </Typography>
 
                 <Controller
-                    name={`modelsToEdit[${index}].length`}
+                    name={`${namePrefix}.length`}
                     control={control}
                     rules={{ min: 0, max: 1024 }}
                     render={({ field, fieldState }) => (
