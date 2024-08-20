@@ -19,23 +19,7 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
         // filters: [],
         // summaries: [],
     },
-    toPixel: ({
-        frameType,
-        frameVariableName,
-        selectQuery,
-        // databaseId,
-        // selectedColumns,
-        // columnAliases,
-        // rootTable,
-        // joins,
-    }) => {
-        // const splitPixelString = selectQuery.split(';');
-        // const pixelAddition = ` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${frameVariableName}\" ] ) ] ) `;
-        // splitPixelString[0] = splitPixelString[0] + pixelAddition;
-        // const pixelImportString = ` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${frameVariableName}\" ] ) ] ) ; `;
-        // const combinedPixelString =
-        //     selectQuery.slice(0, -1) + pixelImportString;
-        // return combinedPixelString;
+    toPixel: ({ frameType, frameVariableName, selectQuery }) => {
         return (
             selectQuery.slice(0, -1) +
             ` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${frameVariableName}\" ] ) ] ) ; `

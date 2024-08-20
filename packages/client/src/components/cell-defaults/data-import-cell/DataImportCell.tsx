@@ -191,7 +191,6 @@ export interface DataImportCellDef extends CellDef<'data-import'> {
     };
 }
 
-// TODO:: Refactor height to account for Layout
 export const DataImportCell: CellComponent<DataImportCellDef> = observer(
     (props) => {
         const editorRef = useRef(null);
@@ -345,7 +344,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
          * @returns
          */
         const handleEditorChange = (newValue: string) => {
-            console.log('handleEditorChange');
             if (cell.isLoading) {
                 return;
             }
@@ -431,9 +429,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             <StyledFlexDiv>
                                 {cell.parameters.tableNames &&
                                     cell.parameters.tableNames.map(
-                                        (tableName) => (
+                                        (tableName, tableIdx) => (
                                             <Tooltip
                                                 title={`${tableName} Table`}
+                                                key={tableIdx}
                                             >
                                                 <StyledTableTitleBubble>
                                                     <StyledCalendarViewMonth fontSize="small" />
@@ -446,10 +445,11 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
                             {isExpanded &&
                                 cell.parameters.joins &&
-                                cell.parameters.joins.map((join) => (
+                                cell.parameters.joins.map((join, joinIdx) => (
                                     <StyledBlockStack
                                         direction="column"
                                         spacing={1}
+                                        key={joinIdx}
                                     >
                                         <StyledModalTitleWrapper>
                                             <StyledPaddedFlexDiv>
@@ -553,7 +553,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
                             <StyledSelect
                                 size={'small'}
-                                // disabled={cell.isLoading || !showStyledView}
                                 disabled={cell.isLoading}
                                 title={'Select Type'}
                                 value={cell.parameters.frameType}
@@ -594,7 +593,6 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                             <StyledTextField
                                 title="Set Frame Variable Name"
                                 value={cell.parameters.frameVariableName}
-                                // disabled={cell.isLoading || !showStyledView}
                                 disabled={cell.isLoading}
                                 InputProps={{
                                     startAdornment: (
