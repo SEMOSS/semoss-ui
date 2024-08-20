@@ -645,11 +645,11 @@ export const ImportForm = (props) => {
     }
 
     /**
-     * Check engine name for uniqueness, store helper text for errors
-     * @param engineName user has entered
+     * Check if custom validation is needed
+     * @params form field and user input
      * @returns boolean
      */
-    const validateEngineName = async (field, userInput) => {
+    const validateFormField = async (field, userInput) => {
         let pixelToExecute = '';
         let validName = false;
 
@@ -691,7 +691,7 @@ export const ImportForm = (props) => {
                                         validate: {
                                             ...(val.rules.custom && {
                                                 checkField: async (fieldVal) =>
-                                                    validateEngineName(
+                                                    validateFormField(
                                                         val,
                                                         fieldVal,
                                                     ),
