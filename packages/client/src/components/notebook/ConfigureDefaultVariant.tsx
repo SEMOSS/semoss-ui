@@ -35,6 +35,14 @@ const emptyModel = {
     length: 0,
 };
 
+/**
+ * TODO / thoughts
+ * 1. Tie the variant's config to a cell for the appropriately populated query.
+ *    May want to tailor the cell's functionality to meet this feature's limitations.
+ * 2. make this work for any variant (not just the default).
+ * 3. Flesh out layout so that the Variant's menu and page layout can work similar to the query sheets and a user can view/edit any of their variants.
+ * 4. more on (3); will the user have to re-run a variant modification similar to re-runnign a query if its changed? Maybe not, will need to figure this out.
+ */
 export const ConfigureDefaultVariant = () => {
     const { monolithStore } = useRootStore();
     const { state } = useBlocks();
