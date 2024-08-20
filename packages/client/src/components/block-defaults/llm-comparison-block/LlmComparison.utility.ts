@@ -37,7 +37,7 @@ export const buildEmptyVariant = (modelCount: number): TypeVariant => {
  */
 
 export const emptyVariant: TypeVariant = {
-    name: 'Empty Variant',
+    name: '',
     selected: false,
     models: [],
 };
@@ -63,7 +63,7 @@ export const LlmComparisonFormDefaultValues: TypeLlmComparisonForm = {
     designerView: 'allVariants',
     editorVariantIndex: null,
     editorModelIndex: null,
-    editorVariant: null,
+    editorVariantName: null,
     editorModel: null,
     modelsToEdit: [],
     showModelsInResponse: true,

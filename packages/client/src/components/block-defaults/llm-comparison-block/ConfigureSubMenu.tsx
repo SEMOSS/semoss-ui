@@ -1,5 +1,4 @@
 import { styled, Stack, Button, useNotification } from '@semoss/ui';
-import { FormHelperText } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { useLLMComparison } from '@/hooks';
 import { ModelVariant } from './ModelVariant';
@@ -7,6 +6,7 @@ import { TypeLlmComparisonForm, TypeLlmConfig } from '@/components/workspace';
 import { LLMEditor } from './LLMEditor';
 import { ArrowBack } from '@mui/icons-material';
 import { VariantEditor } from './VariantEditor';
+import { Variant } from '@/stores';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -87,21 +87,22 @@ export const ConfigureSubMenu = () => {
     };
 
     const addVariantToAppJson = () => {
-        const {
-            modelsToEdit,
-            editorVariant,
-            editorVariantIndex,
-            editorVariantName,
-        } = getValues();
+        const { modelsToEdit, editorVariantName } = getValues();
 
-        console.log('modelsToEdit', modelsToEdit);
-        console.log('editorVariant', editorVariant);
-        console.log('editorVariantIndex', editorVariantIndex);
-        console.log('editorVariantName', editorVariantName);
+        const models = modelsToEdit.map((mod: TypeLlmConfig) => ({
+            id: mod.value,
+            name: mod.database_name,
+            topP: mod.topP,
+            temperature: mod.temperature,
+            length: mod.length,
+        }));
 
-        // const modelled: Variant = {
+        const modelledVariant: Variant = {
+            to: '',
+            models,
+        };
 
-        // };
+        console.log('modelled', modelledVariant);
     };
 
     const updateVariantInAppJson = () => {
@@ -119,6 +120,7 @@ export const ConfigureSubMenu = () => {
         if (type === 'variant') {
             setValue('editorVariantIndex', null);
             setValue('editorVariant', null);
+            setValue('editorVariantName', null);
             setValue('modelsToEdit', []);
         } else {
             setValue('editorVariantIndex', null);
