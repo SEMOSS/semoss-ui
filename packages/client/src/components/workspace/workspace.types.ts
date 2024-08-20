@@ -1,5 +1,6 @@
 export interface TypeVariant {
     name?: string;
+    to?: string;
     selected: boolean;
     models: TypeLlmConfig[];
     sortWeight?: number | null;
@@ -7,7 +8,7 @@ export interface TypeVariant {
 }
 
 export interface TypeLlmConfig {
-    alias: string | null;
+    alias?: string | null;
     value: string | null;
     database_name: string | null;
     database_type: string | null;
