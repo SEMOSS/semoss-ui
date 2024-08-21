@@ -13,7 +13,11 @@ import {
     PushPinOutlined,
     PushPinRounded,
 } from '@mui/icons-material';
-import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
+import {
+    TypeLlmConfig,
+    TypeVariant,
+    TypeVariants,
+} from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useLLMComparison } from '@/hooks';
@@ -84,14 +88,14 @@ export const ModelVariant = (props: ModelVariantProps) => {
     };
 
     const handleDeleteVariant = () => {
-        const variantsCopy: TypeVariant[] = { ...getValues('variants') };
+        const variantsCopy: TypeVariants = { ...getValues('variants') };
         const deleted = variantsCopy[variantName];
         delete variantsCopy[variantName];
-        deleteVariantFromAppJson(deleted[0].variantName);
+        deleteVariantFromAppJson(deleted);
         setValue('variants', variantsCopy);
     };
 
-    const deleteVariantFromAppJson = (variantName: string) => {
+    const deleteVariantFromAppJson = (variant: TypeVariant) => {
         // TODO: need to add action in store for deleting a variant.
     };
 
