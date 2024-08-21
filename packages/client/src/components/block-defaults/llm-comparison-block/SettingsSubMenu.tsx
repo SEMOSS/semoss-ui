@@ -55,11 +55,15 @@ export const SettingsSubMenu = () => {
         const selected = [];
         const unselected = [];
 
-        Object.keys(vars).forEach((variant) => {
-            if (vars[variant].selected) {
-                selected.push(variant);
+        Object.keys(vars).forEach((name) => {
+            const varWithName = {
+                ...vars[name],
+                name,
+            };
+            if (vars[name].selected) {
+                selected.push(varWithName);
             } else {
-                unselected.push(variant);
+                unselected.push(varWithName);
             }
         });
 
