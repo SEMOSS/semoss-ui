@@ -17,7 +17,6 @@ import { TypeLlmConfig, TypeVariant } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useLLMComparison } from '@/hooks';
-import { buildEmptyVariant } from './LlmComparison.utility';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -49,12 +48,11 @@ const StyledActionBar = styled('div')(({ theme }) => ({
 }));
 
 interface ModelVariantProps {
-    index: number;
-
-    click?: (number) => void;
-
     /** is a part of the default variant used in app */
     isDefault?: boolean;
+
+    /** name of variant used as its ID in the 'variants' object in state */
+    variantName: string;
 
     /** variant info, the models associated to variant */
     variant: TypeVariant;
@@ -64,33 +62,41 @@ interface ModelVariantProps {
 }
 
 export const ModelVariant = (props: ModelVariantProps) => {
-    const { index, variant, isDefault = false, orientation = 'column' } = props;
+    const {
+        variantName,
+        variant,
+        isDefault = false,
+        orientation = 'column',
+    } = props;
     const [hovered, setHovered] = useState(false);
     const { setValue, getValues } = useLLMComparison();
 
     const handleToggleSelected = () => {
-        const variantsCopy = [...getValues('variants')];
-        variantsCopy[index].selected = !variant.selected;
-        setValue('variants', variantsCopy);
+        if (isDefault) {
+            const defaultCopy = { ...getValues('defaultVariant') };
+            defaultCopy.selected = !defaultCopy.selected;
+            setValue('defaultVariant', defaultCopy);
+        } else {
+            const variantsCopy = { ...getValues('variants') };
+            variantsCopy[variantName].selected = !variant.selected;
+            setValue('variants', variantsCopy);
+        }
     };
 
     const handleDeleteVariant = () => {
-        const variantsCopy: TypeVariant[] = [...getValues('variants')];
-        const deleted = variantsCopy.splice(index, 1);
-        deleteVariantFromAppJson(deleted[0].name);
+        const variantsCopy: TypeVariant[] = { ...getValues('variants') };
+        const deleted = variantsCopy[variantName];
+        delete variantsCopy[variantName];
+        deleteVariantFromAppJson(deleted[0].variantName);
         setValue('variants', variantsCopy);
     };
 
-    const deleteVariantFromAppJson = (name: string) => {
-        // TODO
+    const deleteVariantFromAppJson = (variantName: string) => {
+        // TODO: need to add action in store for deleting a variant.
     };
 
     const handleOpenVariantEditor = (duplicate: boolean) => {
-        setValue('editorVariantIndex', index);
-        const editorVariant = duplicate
-            ? variant
-            : buildEmptyVariant(variant.models.length);
-        setValue('editorVariant', editorVariant);
+        if (duplicate) setValue('editorVariantName', variantName);
         setValue('designerView', 'variantEdit');
     };
 
@@ -115,11 +121,11 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     <Typography variant="body1" fontWeight="medium">
                         {isDefault
                             ? 'Default Variant'
-                            : `Variant ${variant.name}`}
+                            : `Variant ${variantName}`}
                     </Typography>
                 </Stack>
 
-                {index !== -1 && (
+                {!isDefault && (
                     <IconButton onClick={handleDeleteVariant}>
                         <Close />
                     </IconButton>
@@ -129,9 +135,9 @@ export const ModelVariant = (props: ModelVariantProps) => {
             <StyledVariantBox isVertical={orientation === 'column'}>
                 {variant?.models.map((model: TypeLlmConfig, mIdx: number) => (
                     <LlmCard
-                        key={`llm-card--variant-${index}--model-${mIdx}`}
+                        key={`llm-card--model-${mIdx}`}
                         llm={model}
-                        variantIndex={index}
+                        variantName={variantName}
                         modelIndex={mIdx}
                         isDefault={isDefault}
                         isVariantHovered={hovered}

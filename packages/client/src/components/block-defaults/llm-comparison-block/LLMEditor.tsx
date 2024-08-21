@@ -54,7 +54,7 @@ export const LLMEditor = (props: PropsLLMEditor) => {
     const notification = useNotification();
     const { allModels, control, watch, setValue } = useLLMComparison();
     const { model, index } = props;
-    const namePrefix = `modelsToEdit[${index}]`;
+    const namePrefix = `ModelsInEditor[${index}]`;
     const modelValue = watch(`${namePrefix}.value`);
 
     useEffect(() => {

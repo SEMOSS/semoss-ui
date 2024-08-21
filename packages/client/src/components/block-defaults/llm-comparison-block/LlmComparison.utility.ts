@@ -24,23 +24,9 @@ export const modelEngineOutput = (output: any[]): TypeLlmConfig[] => {
     });
 };
 
-export const buildEmptyVariant = (modelCount: number): TypeVariant => {
-    const emptyVariantCopy = emptyVariant;
-
-    emptyVariantCopy.models = Array(modelCount).fill(emptyModel);
-
-    return emptyVariant;
-};
-
 /**
  * CONSTANTS ================================================================
  */
-
-export const emptyVariant: TypeVariant = {
-    name: '',
-    selected: false,
-    models: [],
-};
 
 export const emptyModel: TypeLlmConfig = {
     alias: null,
@@ -55,17 +41,15 @@ export const emptyModel: TypeLlmConfig = {
 
 export const LlmComparisonFormDefaultValues: TypeLlmComparisonForm = {
     defaultVariant: {
-        name: 'default',
         selected: true,
         models: [],
     },
-    variants: [],
+    variants: {},
     designerView: 'allVariants',
-    editorVariantIndex: null,
-    editorModelIndex: null,
     editorVariantName: null,
-    editorModel: null,
-    modelsToEdit: [],
+    editorModelIndex: null,
+    newVariantName: null,
+    ModelsInEditor: [],
     showModelsInResponse: true,
     orderType: 'default',
     sampleSize: 100,

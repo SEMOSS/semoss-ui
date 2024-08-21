@@ -63,9 +63,9 @@ export interface LlmCardProps {
      */
     llm: TypeLlmConfig;
     /**
-     * Index of the Variant we are Editting/Viewing
+     * Name of the model's parent variant being edited
      */
-    variantIndex: number;
+    variantName: string;
     /**
      * This is the index of the model within its own variant
      */
@@ -82,8 +82,7 @@ export interface LlmCardProps {
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const { llm, variantIndex, modelIndex, isDefault, isVariantHovered } =
-        props;
+    const { llm, variantName, modelIndex, isDefault, isVariantHovered } = props;
     const { setValue } = useLLMComparison();
 
     const {
@@ -98,9 +97,8 @@ export const LlmCard = (props: LlmCardProps) => {
     } = llm;
 
     const handleOpenLlmEditor = () => {
-        setValue('editorVariantIndex', variantIndex);
+        setValue('editorVariantName', variantName);
         setValue('editorModelIndex', modelIndex);
-        setValue('editorModel', llm);
         setValue('designerView', 'modelEdit');
     };
 

@@ -1,5 +1,5 @@
 import { Stack, Typography, styled, IconButton } from '@semoss/ui';
-import { TypeVariant, TypeLlmConfig } from '@/components/workspace';
+import { VariantWithName, TypeLlmConfig } from '@/components/workspace';
 import { useEffect, useState } from 'react';
 import { DragIndicatorOutlined } from '@mui/icons-material';
 import { useDesigner, useLLMComparison } from '@/hooks';
@@ -10,14 +10,21 @@ const StyledVariantOrderBox = styled(Stack)(({ theme }) => ({
 }));
 
 export const VariantDragAndDrop = () => {
-    const [orderedVars, setOrderedVars] = useState<TypeVariant[]>([]);
+    const [orderedVars, setOrderedVars] = useState<VariantWithName[]>([]);
     const { getValues } = useLLMComparison();
     const { designer } = useDesigner();
 
     useEffect(() => {
-        const defaultVar = getValues('defaultVariant');
+        const defaultVar = {
+            ...getValues('defaultVariant'),
+            name: 'default',
+        };
         const currVariants = getValues('variants');
-        setOrderedVars([defaultVar, currVariants]);
+        const modelledVars = Object.keys(currVariants).map((name) => ({
+            ...currVariants[name],
+            name,
+        }));
+        setOrderedVars([defaultVar, modelledVars]);
     }, []);
 
     const handleClick = (e: React.MouseEvent) => {
@@ -31,7 +38,7 @@ export const VariantDragAndDrop = () => {
                 generated).
             </Typography>
 
-            {orderedVars.map((variant: TypeVariant, idx) => (
+            {orderedVars.map((variant: VariantWithName, idx) => (
                 <Stack
                     onClick={handleClick}
                     direction="row"

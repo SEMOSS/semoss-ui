@@ -10,7 +10,11 @@ import {
 } from '@semoss/ui';
 import { useLLMComparison } from '@/hooks';
 import { useEffect, useState } from 'react';
-import { TypeVariant } from '@/components/workspace';
+import {
+    TypeVariants,
+    TypeVariant,
+    VariantWithName,
+} from '@/components/workspace';
 import { Controller } from 'react-hook-form';
 import { VariantDragAndDrop } from './VariantDragAndDrop';
 
@@ -37,22 +41,22 @@ const StyledRadioGroup = styled(RadioGroup)(({ theme }) => ({
 
 export const SettingsSubMenu = () => {
     const { control, getValues, setValue, watch } = useLLMComparison();
-    const [selectedVars, setSelectedVars] = useState<TypeVariant[]>([]);
-    const [unselectedVars, setUnselectedVars] = useState<TypeVariant[]>([]);
+    const [selectedVars, setSelectedVars] = useState<VariantWithName[]>([]);
+    const [unselectedVars, setUnselectedVars] = useState<VariantWithName[]>([]);
     const orderType = watch('orderType');
     const defaultVariant = watch('defaultVariant');
     const variants = watch('variants');
 
     useEffect(() => {
         setVariantsState(variants);
-    }, [variants]);
+    }, [Object.keys(variants).length]);
 
-    const setVariantsState = (vars: TypeVariant[]) => {
+    const setVariantsState = (vars: TypeVariants) => {
         const selected = [];
         const unselected = [];
 
-        vars.forEach((variant) => {
-            if (variant.selected) {
+        Object.keys(vars).forEach((variant) => {
+            if (vars[variant].selected) {
                 selected.push(variant);
             } else {
                 unselected.push(variant);
@@ -64,7 +68,7 @@ export const SettingsSubMenu = () => {
     };
 
     const handleToggleSelected = (
-        variant: TypeVariant,
+        variant: VariantWithName,
         isDefault?: boolean,
     ) => {
         if (isDefault) {
@@ -74,14 +78,11 @@ export const SettingsSubMenu = () => {
             };
             setValue('defaultVariant', newDefault);
         } else {
-            const copy = [...variants];
-            const idx = copy.findIndex((vrnt) => variant.name === vrnt.name);
-            copy[idx].selected = !copy[idx].selected;
+            const copy = { ...variants };
+            copy[variant.name].selected = !variant.selected;
             setValue('variants', copy);
 
-            // TODO
-            // Context change for 'variants' is not triggering a rerender, need to find a better solution.
-            copy[idx].selected = !copy[idx].selected;
+            // TODO: imporove this so we don't map through all the variants to update the selected/unselected state.
             setVariantsState(copy);
         }
     };

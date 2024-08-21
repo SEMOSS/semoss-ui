@@ -9,6 +9,7 @@ import {
     TypeLlmComparisonForm,
     TypeLlmConfig,
     TypeVariant,
+    TypeVariants,
 } from '@/components/workspace';
 import { LLMComparisonContext } from '@/contexts';
 import {
@@ -86,7 +87,7 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
         };
 
         // Variants other than the default variant to be added to the form's state
-        const otherVariants = [];
+        const otherVariants: TypeVariants = {};
 
         Object.keys(stateVariants).forEach((name: string) => {
             if (name === 'default') {
@@ -94,7 +95,6 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
                 const models = modelVariantLlms(defaultVar);
 
                 const modelled: TypeVariant = {
-                    name,
                     models,
                     selected: true,
                 };
@@ -104,11 +104,10 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
                 const models = modelVariantLlms(otherVar);
 
                 const modelled: TypeVariant = {
-                    name,
                     models,
                     selected: false,
                 };
-                otherVariants.push(modelled);
+                otherVariants[name] = modelled;
             }
         });
 

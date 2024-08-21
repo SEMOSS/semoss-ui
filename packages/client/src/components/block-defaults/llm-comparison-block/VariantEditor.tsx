@@ -19,7 +19,7 @@ const StyledError = styled(FormHelperText)(({ theme }) => ({
 
 export const VariantEditor = () => {
     const { control, watch } = useLLMComparison();
-    const modelsToEdit = watch('modelsToEdit');
+    const ModelsInEditor = watch('ModelsInEditor');
 
     return (
         <StyledVariantEditor gap={2} direction="column">
@@ -32,7 +32,7 @@ export const VariantEditor = () => {
                     Variant Name
                 </Typography>
                 <Controller
-                    name="editorVariantName"
+                    name="newVariantName"
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => (
@@ -52,7 +52,7 @@ export const VariantEditor = () => {
                 />
             </StyledField>
 
-            {modelsToEdit.map((model: TypeLlmConfig, idx: number) => (
+            {ModelsInEditor.map((model: TypeLlmConfig, idx: number) => (
                 <LLMEditor
                     key={`LLM-${model.value}-${idx}`}
                     model={model}

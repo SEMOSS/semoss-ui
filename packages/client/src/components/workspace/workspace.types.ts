@@ -1,13 +1,19 @@
-export interface TypeVariant {
-    name?: string;
-    to?: string;
+export type TypeVariants = {
+    [key: string]: TypeVariant;
+};
+
+export type TypeVariant = {
     selected: boolean;
     models: TypeLlmConfig[];
     sortWeight?: number | null;
     trafficAllocation?: number | null;
+};
+
+export interface VariantWithName extends TypeVariant {
+    name: string;
 }
 
-export interface TypeLlmConfig {
+export type TypeLlmConfig = {
     alias?: string | null;
     value: string | null;
     database_name: string | null;
@@ -16,12 +22,7 @@ export interface TypeLlmConfig {
     topP: number | null;
     temperature: number | null;
     length: number | null;
-}
-
-export interface DefaultModelVariant extends TypeLlmConfig {
-    to: string;
-    type: string;
-}
+};
 
 export type TypeLlmConfigureView = 'allVariants' | 'variantEdit' | 'modelEdit';
 
@@ -32,23 +33,20 @@ export interface TypeLlmComparisonForm {
     defaultVariant: TypeVariant;
 
     /** Additional Variants available to be displayed in the response */
-    variants: TypeVariant[];
+    variants: TypeVariants;
 
     /** view for the LLM Comparison Block's Configure Submenu in the designer */
     designerView: TypeLlmConfigureView;
 
-    /** Reference indeces for Variant/Model being edited in the designer */
-    editorVariantIndex: number | null;
+    /** Reference values for Variant/Model being edited in the designer */
+    editorVariantName: string | null;
     editorModelIndex: number | null;
 
-    /** Variant being edited in the designer */
-    editorVariant: TypeVariant | null;
-
-    /** Single model being edited in the designer */
-    editorModel: TypeLlmConfig | null;
+    /** used to set the variant's Unique Id for the variant's object in App state */
+    newVariantName: string | null;
 
     /** Models being edited in the LLM Comparison's variant/model Editor */
-    modelsToEdit: TypeLlmConfig[];
+    ModelsInEditor: TypeLlmConfig[];
 
     /** Determines whether the model's for a variant should be displayed in its response */
     showModelsInResponse: boolean;
