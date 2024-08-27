@@ -6,6 +6,7 @@ import { useBlocks } from '@/hooks';
 import { NotebookCell } from './NotebookCell';
 import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
+import { LoadingScreen } from '@/components/ui';
 
 const StyledSheet = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -13,6 +14,7 @@ const StyledSheet = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     backgroundColor: theme.palette.background.paper,
+    borderTop: `1px solid ${theme.palette.primary.light}`,
 }));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -20,9 +22,10 @@ const StyledContainer = styled(Container)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    paddingTop: theme.spacing(2),
+    paddingTop: theme.spacing(3),
     paddingBottom: theme.spacing(2),
     overflow: 'auto',
+    gap: theme.spacing(1),
 }));
 
 const StyledCell = styled('div')(({ theme }) => ({
@@ -55,8 +58,12 @@ export const NotebookSheet = observer((): JSX.Element => {
 
     // need a query to render the sheet
     if (!notebook.selectedQuery) {
-        return null;
+        // return <LoadingScreen.Trigger description="Updating Project" />
+        return <StyledSheet> Welcome to our data notebook</StyledSheet>;
     }
+
+    console.log('selected qs', notebook.selectedQuery);
+    console.log(state.getQuery(notebook.selectedQuery.id));
 
     return (
         <StyledSheet>

@@ -27,6 +27,7 @@ import {
     Delete,
     MoreVert,
 } from '@mui/icons-material';
+import { red } from '@mui/material/colors';
 
 const StyledSheet = styled('div', {
     shouldForwardProp: (prop) => prop !== 'selected',
@@ -39,7 +40,7 @@ const StyledSheet = styled('div', {
     gap: theme.spacing(1),
     padding: theme.spacing(1),
     backgroundColor: selected
-        ? theme.palette.background.paper
+        ? 'rgba(4, 113, 240, 0.12)'
         : theme.palette.background.default,
     color: '#666',
     '&:hover': {
@@ -103,45 +104,6 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     const [query, setQuery] = useState<QueryWithIndex | null>(null);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
-
-    /**
-     * Selects a sheet on mount
-     */
-    useEffect(() => {
-        if (notebook.selectedQuery) return;
-
-        if (notebook.queriesList.length) {
-            let i = 0,
-                selected = false;
-            while (!selected) {
-                notebook.selectQuery(notebook.queriesList[i].id);
-                selected = true;
-                i++;
-            }
-        } else {
-            // Create a query for user
-            const id = state.dispatch({
-                message: ActionMessages.NEW_QUERY,
-                payload: {
-                    queryId: 'default',
-                    config: {
-                        cells: [
-                            {
-                                id: `${Math.floor(Math.random() * 100000)}`,
-                                widget: 'code',
-                                parameters: {
-                                    code: '',
-                                    type: 'py',
-                                },
-                            },
-                        ],
-                    },
-                },
-            });
-
-            notebook.selectQuery(id);
-        }
-    }, []);
 
     /**
      * Edit or create a query
@@ -270,6 +232,8 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     return (
         <StyledStack direction="row" spacing={0}>
             {notebook.queriesList.map((q, i) => {
+                const variableName = state.getAlias(q.id);
+                // if (!q['temp']) {
                 return (
                     <StyledSheet
                         key={i}
@@ -280,7 +244,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                     >
                         {getSheetStatusIcon(q)}
                         <Typography variant={'body2'} fontWeight="bold">
-                            {q.id}
+                            {variableName ? variableName : q.id}
                         </Typography>
                         <IconButton
                             size={'small'}
@@ -297,6 +261,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                         </IconButton>
                     </StyledSheet>
                 );
+                // }
             })}
 
             <Menu

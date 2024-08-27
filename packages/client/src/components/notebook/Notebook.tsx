@@ -9,7 +9,7 @@ import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
-import { usePixel } from '@/hooks';
+import { useBlocks, usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
 
@@ -42,6 +42,11 @@ export const Notebook = observer(() => {
     const [view, setView] = useState<
         'variables' | 'sources' | 'blocks' | 'transform' | ''
     >('variables');
+    const { notebook } = useBlocks();
+
+    if (!notebook.selectedQuery) {
+        // notebook.selectQuery(notebook.queriesList[0].id);
+    }
 
     /**
      * Set the view. If it is the same, close it

@@ -46,22 +46,26 @@ export type Variable =
           to: string;
           type: Exclude<VariableType, 'cell'>; // Exclude 'cell' from VariableType for this case
           cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
+          temp?: boolean;
       }
     | {
           to: string;
           type: 'cell'; // Specific case when type is 'cell'
           cellId: string;
+          temp?: boolean;
       };
 
 export type VariableWithId =
     | ({
           to: string;
           type: Exclude<VariableType, 'cell'>;
+          temp?: boolean;
       } & { id: string })
     | ({
           to: string;
           type: 'cell';
           cellId: string;
+          temp?: boolean;
       } & { id: string });
 
 /**

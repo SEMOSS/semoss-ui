@@ -20,6 +20,9 @@ export interface QueryStateStoreInterface {
 
     /** Ordered list of the cells in the query */
     list: string[];
+
+    /** Is this a temporary value that shouldn't be saved */
+    temp?: boolean;
 }
 
 export interface QueryStateConfig {
@@ -28,6 +31,11 @@ export interface QueryStateConfig {
 
     /** Cells in the query */
     cells: CellStateConfig[];
+
+    /**
+     * should not be saved to structure
+     */
+    temp?: boolean;
 }
 
 /**
@@ -41,9 +49,10 @@ export class QueryState {
         error: null,
         cells: {},
         list: [],
+        temp: false,
     };
 
-    constructor(config: QueryStateConfig, state: StateStore) {
+    constructor(config: QueryStateConfig, state: StateStore, temp?: boolean) {
         // register the state
         this._state = state;
 
@@ -67,6 +76,10 @@ export class QueryState {
         this._store.cells = cells;
         this._store.list = list;
 
+        if (config.temp) {
+            this._store.temp = config.temp;
+        }
+
         // make it observable
         makeAutoObservable(this);
     }
@@ -79,6 +92,13 @@ export class QueryState {
      */
     get id() {
         return this._store.id;
+    }
+
+    /**
+     * Is this a temp query
+     */
+    get temp() {
+        return this._store.temp;
     }
 
     /**

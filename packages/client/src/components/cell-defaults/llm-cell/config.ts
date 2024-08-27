@@ -7,13 +7,13 @@ export const LLMCellConfig: CellConfig<LLMCellDef> = {
     widget: 'llm',
     view: LLMCell,
     parameters: {
-        model: '',
-
-        command: '',
+        modelId: '',
 
         paramValues: {},
+
+        command: '',
     },
-    toPixel: ({ model, paramValues, command }) => {
-        return `LLM(engine=["${model}"], command=["${command}"], paramValues=[])`;
+    toPixel: ({ modelId, paramValues, command }) => {
+        return `LLM(engine=["${modelId}"], command=["${command}"], paramValues=[])`;
     },
 };

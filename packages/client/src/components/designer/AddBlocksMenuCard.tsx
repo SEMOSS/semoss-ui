@@ -60,7 +60,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     /**
      * Handle the mouseup event on the document
      */
-    const handleDocumentMouseUp = useCallback(() => {
+    const handleDocumentMouseUp = useCallback(async () => {
         if (!designer.drag.active) {
             return;
         }
@@ -78,7 +78,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
-                    id = state.dispatch({
+                    id = await state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: item.json,
@@ -92,7 +92,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                id = state.dispatch({
+                id = await state.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {
                         json: item.json,

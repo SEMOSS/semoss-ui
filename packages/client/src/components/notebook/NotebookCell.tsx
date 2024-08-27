@@ -64,6 +64,19 @@ const StyledName = styled(Typography)(({ theme }) => ({
     overflow: 'hidden',
 }));
 
+const StyledId = styled(Typography)(({ theme }) => ({
+    // position: 'absolute',
+    // top: theme.spacing(-1.5),
+    // left: theme.spacing(2),
+    // paddingLeft: theme.spacing(0.5),
+    // paddingRight: theme.spacing(0.5),
+    color: theme.palette.text.disabled,
+    borderRadius: theme.shape.borderRadius,
+    background: theme.palette.background.paper,
+    overflow: 'hidden',
+    fontStyle: 'italic',
+}));
+
 const StyledCellActions = styled(Collapse)(({ theme }) => ({
     position: 'absolute',
     top: theme.spacing(-2),
@@ -250,6 +263,7 @@ export const NotebookCell = observer(
         const [hoveredAddCellActions, setHoveredAddCellActions] =
             useState(false);
         const [showCellActions, setShowCellActions] = useState(false);
+        const [showId, setShowId] = useState(false);
 
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const open = Boolean(anchorEl);
@@ -467,28 +481,40 @@ export const NotebookCell = observer(
                 gap={1}
                 onMouseEnter={() => {
                     setShowCellActions(true);
+                    setShowId(true);
                 }}
                 onMouseLeave={() => {
                     setShowCellActions(false);
+                    setShowId(false);
                 }}
                 onFocus={() => {
                     console.log('onFocus');
                     // Keyboard Navigation
                     setShowCellActions(true);
+                    setShowId(true);
                 }}
                 onBlur={() => {
                     console.log('onBlur');
                     // Keyboard Navigation
                     setShowCellActions(false);
+                    setShowId(false);
                 }}
             >
                 <StyledRow direction="row" width="100%" spacing={1}>
                     <StyledName variant="subtitle2">
-                        {variableName ? variableName : cell.config.name}
+                        <Stack direction={'row'}>
+                            {variableName ? variableName : cell.config.name}
+                        </Stack>
                     </StyledName>
 
                     <StyledCellActions in={showCellActions}>
                         <Stack gap={1} direction={'row'} alignItems={'center'}>
+                            <Stack padding={1}>
+                                <StyledId variant={'caption'}>
+                                    {cell.id}
+                                </StyledId>
+                            </Stack>
+                            <Divider orientation="vertical" />
                             <StyledButtonGroup variant="outlined">
                                 <StyledButtonGroupButton
                                     title="Run this cell and below"
@@ -800,6 +826,7 @@ export const NotebookCell = observer(
                         )}
                     </StyledCard>
                 </StyledRow>
+
                 <StyledAddCellContainer
                     onMouseEnter={() => {
                         setHoveredAddCellActions(true);

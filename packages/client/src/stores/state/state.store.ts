@@ -302,136 +302,237 @@ export class StateStore {
         Object.entries(this._store.variables).forEach((keyValue) => {
             const variable = keyValue[1];
 
-            if (variable.to === pointer && !cellId) {
+            if (variable.to === pointer && !cellId && !variable.cellId) {
                 alias = keyValue[0];
-            } else if (variable.to === pointer && variable.cellId === cellId) {
-                alias = keyValue[0];
+            } else if (variable.to === pointer && cellId && variable.cellId) {
+                if (variable.cellId === cellId) {
+                    alias = keyValue[0];
+                }
             }
         });
         return alias;
     }
 
-    /**
-     * Actions
-     */
-    /**
-     * Dispatch a message to update the state
-     *
-     * @param action - Action to execute
-     */
-    dispatch = (action: Actions) => {
-        // TODO: Develop History + Invert + UNDO;
-        console.log(
-            'ACTION :::',
-            JSON.parse(JSON.stringify(action.message)),
-            JSON.parse(JSON.stringify(action.payload)),
-        );
-
-        try {
-            // apply the action
-            if (ActionMessages.SET_STATE === action.message) {
-                const { state } = action.payload;
-
-                this.setState(state);
-            } else if (ActionMessages.ADD_BLOCK === action.message) {
-                const { json, position } = action.payload;
-
-                return this.addBlock(json, position);
-            } else if (ActionMessages.MOVE_BLOCK === action.message) {
-                const { id, position } = action.payload;
-
-                this.moveBlock(id, position);
-            } else if (ActionMessages.REMOVE_BLOCK === action.message) {
-                const { id, keep } = action.payload;
-
-                this.removeBlock(id, keep);
-            } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
-                const { id, path, value } = action.payload;
-
-                this.setBlockData(id, path, value);
-            } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
-                const { id, path } = action.payload;
-
-                this.deleteBlockData(id, path);
-            } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions } = action.payload;
-
-                this.setListener(id, listener, actions);
-            } else if (ActionMessages.NEW_QUERY === action.message) {
-                const { queryId, config, temp } = action.payload;
-
-                /**
-                 * TODO: add temp flag for queries that need to be deleted on cleanup
-                 */
-                return this.newQuery(queryId, config);
-            } else if (ActionMessages.DELETE_QUERY === action.message) {
-                const { queryId } = action.payload;
-
-                this.deleteQuery(queryId);
-            } else if (ActionMessages.UPDATE_QUERY === action.message) {
-                const { queryId, path, value } = action.payload;
-
-                this.updateQuery(queryId, path, value);
-            } else if (ActionMessages.RUN_QUERY === action.message) {
-                const { queryId } = action.payload;
-
-                this.runQuery(queryId);
-            } else if (ActionMessages.NEW_CELL === action.message) {
-                const { queryId, cellId, config, previousCellId } =
-                    action.payload;
-
-                this.newCell(queryId, cellId, config, previousCellId);
-            } else if (ActionMessages.DELETE_CELL === action.message) {
-                const { queryId, cellId } = action.payload;
-
-                this.deleteCell(queryId, cellId);
-            } else if (ActionMessages.UPDATE_CELL === action.message) {
-                const { queryId, cellId, path, value } = action.payload;
-
-                this.updateCell(queryId, cellId, path, value);
-            } else if (ActionMessages.RUN_CELL === action.message) {
-                const { queryId, cellId } = action.payload;
-
-                this.runCell(queryId, cellId);
-            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
-                const { name, detail } = action.payload;
-
-                this.dispatchEvent(name, detail);
-            } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { id, to, type, cellId } = action.payload;
-
-                return this.addVariable(id, to, type, cellId);
-            } else if (ActionMessages.RENAME_VARIABLE === action.message) {
-                const { id, alias } = action.payload;
-
-                return this.renameVariable(id, alias);
-            } else if (ActionMessages.EDIT_VARIABLE === action.message) {
-                const { id, from, to } = action.payload;
-
-                this.editVariable(
-                    id,
-                    from,
-                    to.type === 'cell'
-                        ? { to: to.to, cellId: to.cellId, type: 'cell' }
-                        : { to: to.to, type: to.type },
+    dispatch = (action: Actions): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            try {
+                console.log(
+                    'ACTION :::',
+                    JSON.parse(JSON.stringify(action.message)),
+                    JSON.parse(JSON.stringify(action.payload)),
                 );
-            } else if (ActionMessages.DELETE_VARIABLE === action.message) {
-                const { id } = action.payload;
 
-                this.deleteVariable(id);
-            } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
-                const { id, type } = action.payload;
+                let result;
 
-                return this.addDependency(id, type);
-            } else if (ActionMessages.REMOVE_DEPENDENCY === action.message) {
-                const { id } = action.payload;
+                // apply the action
+                if (ActionMessages.SET_STATE === action.message) {
+                    const { state } = action.payload;
+                    this.setState(state);
+                } else if (ActionMessages.ADD_BLOCK === action.message) {
+                    const { json, position } = action.payload;
+                    result = this.addBlock(json, position);
+                } else if (ActionMessages.MOVE_BLOCK === action.message) {
+                    const { id, position } = action.payload;
+                    this.moveBlock(id, position);
+                } else if (ActionMessages.REMOVE_BLOCK === action.message) {
+                    const { id, keep } = action.payload;
+                    this.removeBlock(id, keep);
+                } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
+                    const { id, path, value } = action.payload;
+                    this.setBlockData(id, path, value);
+                } else if (
+                    ActionMessages.DELETE_BLOCK_DATA === action.message
+                ) {
+                    const { id, path } = action.payload;
+                    this.deleteBlockData(id, path);
+                } else if (ActionMessages.SET_LISTENER === action.message) {
+                    const { id, listener, actions } = action.payload;
+                    this.setListener(id, listener, actions);
+                } else if (ActionMessages.NEW_QUERY === action.message) {
+                    const { queryId, config } = action.payload;
+                    result = this.newQuery(queryId, config);
+                } else if (ActionMessages.DELETE_QUERY === action.message) {
+                    const { queryId } = action.payload;
+                    result = this.deleteQuery(queryId);
+                } else if (ActionMessages.UPDATE_QUERY === action.message) {
+                    const { queryId, path, value } = action.payload;
+                    this.updateQuery(queryId, path, value);
+                } else if (ActionMessages.RUN_QUERY === action.message) {
+                    const { queryId } = action.payload;
+                    this.runQuery(queryId);
+                } else if (ActionMessages.NEW_CELL === action.message) {
+                    const { queryId, cellId, config, previousCellId } =
+                        action.payload;
+                    this.newCell(queryId, cellId, config, previousCellId);
+                } else if (ActionMessages.DELETE_CELL === action.message) {
+                    const { queryId, cellId } = action.payload;
+                    this.deleteCell(queryId, cellId);
+                } else if (ActionMessages.UPDATE_CELL === action.message) {
+                    const { queryId, cellId, path, value } = action.payload;
 
-                return this.removeDependency(id);
+                    result = this.updateCell(queryId, cellId, path, value);
+                } else if (ActionMessages.RUN_CELL === action.message) {
+                    const { queryId, cellId } = action.payload;
+                    this.runCell(queryId, cellId);
+                } else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                    const { name, detail } = action.payload;
+                    this.dispatchEvent(name, detail);
+                } else if (ActionMessages.ADD_VARIABLE === action.message) {
+                    const { id, to, type, cellId } = action.payload;
+                    result = this.addVariable(id, to, type, cellId);
+                } else if (ActionMessages.RENAME_VARIABLE === action.message) {
+                    const { id, alias } = action.payload;
+                    result = this.renameVariable(id, alias);
+                } else if (ActionMessages.EDIT_VARIABLE === action.message) {
+                    const { id, from, to } = action.payload;
+                    this.editVariable(
+                        id,
+                        from,
+                        to.type === 'cell'
+                            ? { to: to.to, cellId: to.cellId, type: 'cell' }
+                            : { to: to.to, type: to.type },
+                    );
+                } else if (ActionMessages.DELETE_VARIABLE === action.message) {
+                    const { id } = action.payload;
+                    this.deleteVariable(id);
+                } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
+                    const { id, type } = action.payload;
+                    result = this.addDependency(id, type);
+                } else if (
+                    ActionMessages.REMOVE_DEPENDENCY === action.message
+                ) {
+                    const { id } = action.payload;
+                    this.removeDependency(id);
+                }
+
+                // Resolve the promise after the action is completed
+                resolve(result);
+            } catch (e) {
+                // Reject the promise if an error occurs
+                console.error(e);
+                reject(e);
             }
-        } catch (e) {
-            console.error(e);
-        }
+        });
     };
+
+    // /**
+    //  * Actions
+    //  */
+    // /**
+    //  * Dispatch a message to update the state
+    //  *
+    //  * @param action - Action to execute
+    //  */
+    // dispatch = (action: Actions) => {
+    //     // TODO: Develop History + Invert + UNDO;
+    //     console.log(
+    //         'ACTION :::',
+    //         JSON.parse(JSON.stringify(action.message)),
+    //         JSON.parse(JSON.stringify(action.payload)),
+    //     );
+
+    //     try {
+    //         // apply the action
+    //         if (ActionMessages.SET_STATE === action.message) {
+    //             const { state } = action.payload;
+
+    //             this.setState(state);
+    //         } else if (ActionMessages.ADD_BLOCK === action.message) {
+    //             const { json, position } = action.payload;
+
+    //             return this.addBlock(json, position);
+    //         } else if (ActionMessages.MOVE_BLOCK === action.message) {
+    //             const { id, position } = action.payload;
+
+    //             this.moveBlock(id, position);
+    //         } else if (ActionMessages.REMOVE_BLOCK === action.message) {
+    //             const { id, keep } = action.payload;
+
+    //             this.removeBlock(id, keep);
+    //         } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
+    //             const { id, path, value } = action.payload;
+
+    //             this.setBlockData(id, path, value);
+    //         } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
+    //             const { id, path } = action.payload;
+
+    //             this.deleteBlockData(id, path);
+    //         } else if (ActionMessages.SET_LISTENER === action.message) {
+    //             const { id, listener, actions } = action.payload;
+
+    //             this.setListener(id, listener, actions);
+    //         } else if (ActionMessages.NEW_QUERY === action.message) {
+    //             const { queryId, config } = action.payload;
+
+    //             return this.newQuery(queryId, config);
+    //         } else if (ActionMessages.DELETE_QUERY === action.message) {
+    //             const { queryId } = action.payload;
+
+    //             this.deleteQuery(queryId);
+    //         } else if (ActionMessages.UPDATE_QUERY === action.message) {
+    //             const { queryId, path, value } = action.payload;
+
+    //             this.updateQuery(queryId, path, value);
+    //         } else if (ActionMessages.RUN_QUERY === action.message) {
+    //             const { queryId } = action.payload;
+
+    //             this.runQuery(queryId);
+    //         } else if (ActionMessages.NEW_CELL === action.message) {
+    //             const { queryId, cellId, config, previousCellId } =
+    //                 action.payload;
+
+    //             this.newCell(queryId, cellId, config, previousCellId);
+    //         } else if (ActionMessages.DELETE_CELL === action.message) {
+    //             const { queryId, cellId } = action.payload;
+
+    //             this.deleteCell(queryId, cellId);
+    //         } else if (ActionMessages.UPDATE_CELL === action.message) {
+    //             const { queryId, cellId, path, value } = action.payload;
+
+    //             return this.updateCell(queryId, cellId, path, value);
+    //         } else if (ActionMessages.RUN_CELL === action.message) {
+    //             const { queryId, cellId } = action.payload;
+
+    //             this.runCell(queryId, cellId);
+    //         } else if (ActionMessages.DISPATCH_EVENT === action.message) {
+    //             const { name, detail } = action.payload;
+
+    //             this.dispatchEvent(name, detail);
+    //         } else if (ActionMessages.ADD_VARIABLE === action.message) {
+    //             const { id, to, type, cellId } = action.payload;
+
+    //             return this.addVariable(id, to, type, cellId);
+    //         } else if (ActionMessages.RENAME_VARIABLE === action.message) {
+    //             const { id, alias } = action.payload;
+
+    //             return this.renameVariable(id, alias);
+    //         } else if (ActionMessages.EDIT_VARIABLE === action.message) {
+    //             const { id, from, to } = action.payload;
+
+    //             this.editVariable(
+    //                 id,
+    //                 from,
+    //                 to.type === 'cell'
+    //                     ? { to: to.to, cellId: to.cellId, type: 'cell' }
+    //                     : { to: to.to, type: to.type },
+    //             );
+    //         } else if (ActionMessages.DELETE_VARIABLE === action.message) {
+    //             const { id } = action.payload;
+
+    //             this.deleteVariable(id);
+    //         } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
+    //             const { id, type } = action.payload;
+
+    //             return this.addDependency(id, type);
+    //         } else if (ActionMessages.REMOVE_DEPENDENCY === action.message) {
+    //             const { id } = action.payload;
+
+    //             return this.removeDependency(id);
+    //         }
+    //     } catch (e) {
+    //         console.error(e);
+    //     }
+    // };
 
     /** Variable Methods */
     /**
@@ -971,7 +1072,7 @@ export class StateStore {
      * Delete a query
      * @param queryId - name of the query that we are deleting
      */
-    private deleteQuery = (queryId: string): void => {
+    private deleteQuery = (queryId: string): string => {
         delete this._store.queries[queryId];
 
         // clean up variables
@@ -984,6 +1085,10 @@ export class StateStore {
                 }
             }
         });
+
+        console.log(this._store.queries);
+
+        return queryId;
     };
 
     /**
@@ -1110,12 +1215,14 @@ export class StateStore {
         cellId: string,
         path: string | null,
         value: unknown,
-    ): void => {
+    ): string => {
         const q = this._store.queries[queryId];
         const s = q.getCell(cellId);
 
         // set the value
         s._processUpdate(path, value);
+
+        return cellId;
     };
 
     /**

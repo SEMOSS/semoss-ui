@@ -24,6 +24,11 @@ export interface TabsProps<V> extends MuiTabsProps {
     sx?: SxProps;
 
     /**
+     * orientation
+     */
+    orientation?: "horizontal" | "vertical";
+
+    /**
      * Determines the color of the `Tab`.
      * @default 'primary'
      */
