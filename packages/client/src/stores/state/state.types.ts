@@ -71,6 +71,7 @@ export type VariableWithId =
  * Variants
  */
 export type Variant = {
+    id: string;
     to: string;
     models: VariantModel[];
 };
