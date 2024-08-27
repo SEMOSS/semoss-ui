@@ -10,7 +10,7 @@ import {
     Button,
     useNotification,
 } from '@semoss/ui';
-import { modelEngineOutput } from '../block-defaults/llm-comparison-block/LlmComparison.utility';
+import { modelEngineOutput } from '../../block-defaults/llm-comparison-block/LlmComparison.utility';
 import { useRootStore, useBlocks } from '@/hooks';
 import { Add, Close } from '@mui/icons-material';
 import { ActionMessages, Variant, VariantModel } from '@/stores';
@@ -43,23 +43,15 @@ const emptyModel = {
  * 3. Flesh out layout so that the Variant's menu and page layout can work similar to the query sheets and a user can view/edit any of their variants.
  * 4. more on (3); will the user have to re-run a variant modification similar to re-runnign a query if its changed? Maybe not, will need to figure this out.
  */
-export const ConfigureDefaultVariant = () => {
+export const VariantSheet = () => {
     const { monolithStore } = useRootStore();
-    const { state } = useBlocks();
+    const { state, notebook } = useBlocks();
     const notification = useNotification();
     const [allModels, setAllModels] = useState([]);
-    const [variant, setVariant] = useState<Variant>({
-        to: '',
-        models: [{ ...emptyModel }],
-    });
+    const [variant, setVariant] = useState<Variant>();
 
     useEffect(() => {
         fetchAllModels();
-        const variants = toJS(state.variants);
-
-        if (variants['default']) {
-            setVariant(state.variants['default']);
-        }
     }, []);
 
     const fetchAllModels = async () => {
@@ -69,6 +61,10 @@ export const ConfigureDefaultVariant = () => {
         const modelled = modelEngineOutput(res.pixelReturn[0].output);
         setAllModels(modelled);
     };
+
+    useEffect(() => {
+        setVariant(notebook.selectedVariant);
+    }, [notebook.selectedVariant.id]);
 
     const handleUpdateModel = (val: string, idx: number) => {
         const newVariant = { ...variant };
@@ -96,15 +92,10 @@ export const ConfigureDefaultVariant = () => {
         setVariant(newVariant);
     };
 
-    const handleAddModel = () => {
+    const handleResetVariant = () => {
+        const variants = toJS(state.variants);
         const newVariant = { ...variant };
         newVariant.models.push({ ...emptyModel });
-        setVariant(newVariant);
-    };
-
-    const handleDeleteModel = (idx: number) => {
-        const newVariant = { ...variant };
-        newVariant.models.splice(idx, 1);
         setVariant(newVariant);
     };
 
@@ -272,30 +263,16 @@ export const ConfigureDefaultVariant = () => {
                             disabled={!model.id}
                         />
                     </Stack>
-
-                    <div>
-                        <Button
-                            onClick={() => handleDeleteModel(idx)}
-                            variant="text"
-                            startIcon={<Close />}
-                        >
-                            Delete Model
-                        </Button>
-                    </div>
                 </Stack>
             ))}
 
             <div>
-                <Button variant="text" color="secondary">
-                    Reset
-                </Button>
                 <Button
-                    onClick={handleAddModel}
                     variant="text"
-                    startIcon={<Add />}
-                    disabled={variant.models.length > 2}
+                    color="secondary"
+                    onClick={handleResetVariant}
                 >
-                    Add Model
+                    Reset
                 </Button>
                 <Button variant="contained" onClick={handleSaveVariant}>
                     Save Variant

@@ -12,8 +12,9 @@ import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 import { useBlocks, usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
-import { NotebookVariantsMenu } from './NoteBookVariantsMenu';
-import { ConfigureVariant } from './ConfigureVariant';
+import { NotebookVariantsMenu } from './variants/NoteBookVariantsMenu';
+import { VariantSheet } from './variants/VariantSheet';
+import { VariantSheetsMenu } from './variants/VariantSheetsMenu';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
@@ -125,7 +126,12 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
-                    {view === 'variants' && <ConfigureVariant />}
+                    {view === 'variants' && (
+                        <>
+                            <VariantSheetsMenu />
+                            <VariantSheet />
+                        </>
+                    )}
                     {view === 'variables' && (
                         <>
                             <NotebookSheetsMenu />

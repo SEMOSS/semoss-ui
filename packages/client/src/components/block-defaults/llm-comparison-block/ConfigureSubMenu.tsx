@@ -101,6 +101,7 @@ export const ConfigureSubMenu = () => {
             length: mod.length,
         }));
         const modelledVariant: Variant = {
+            id: newVariantName,
             to: '',
             models,
         };
