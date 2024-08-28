@@ -28,6 +28,10 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     maxWidth: theme.spacing(9),
 }));
 
+const StyledButtonWrapper = styled(Stack)(({ theme }) => ({
+    paddingTop: theme.spacing(2),
+}));
+
 /**
  * TODO / thoughts
  * 1. Tie the variant's config to a cell for the appropriately populated query.
@@ -116,8 +120,8 @@ export const VariantSheet = observer(() => {
         notification.add({
             color: success ? 'success' : 'error',
             message: success
-                ? `Successfully saved your Default Variant`
-                : `Unable to save your Default Variant, due to syntax or a duplicated alias`,
+                ? `Successfully saved your Variant`
+                : `Unable to save your Variant, due to syntax or a duplicated alias`,
         });
     };
 
@@ -259,7 +263,11 @@ export const VariantSheet = observer(() => {
                 </Stack>
             ))}
 
-            <Stack gap={2} direction="row" justifyContent="flex-end">
+            <StyledButtonWrapper
+                gap={2}
+                direction="row"
+                justifyContent="flex-end"
+            >
                 <Button
                     variant="text"
                     color="secondary"
@@ -270,7 +278,7 @@ export const VariantSheet = observer(() => {
                 <Button variant="contained" onClick={handleSaveVariant}>
                     Save Variant
                 </Button>
-            </Stack>
+            </StyledButtonWrapper>
         </StyledContainer>
     );
 });
