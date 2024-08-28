@@ -74,9 +74,9 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     };
 
     useEffect(() => {
-        if (pointer) {
-            fetchDefaultVariant();
-        }
+        // if (pointer) {
+        // fetchDefaultVariant();
+        // }
     }, [pointer]);
 
     /**

@@ -17,6 +17,9 @@ import {
 } from '@semoss/ui';
 import { Star, StarBorder } from '@mui/icons-material';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
     margin: theme.spacing(1),
     borderRadius: '12px',
@@ -222,613 +225,121 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
 
     const { state } = useBlocks();
 
+    // Go look for our variant
+    // Get the response for it's corresponding pointer
+    // Get the temps for corresponding pointer
     const { to } = data;
+
+    const variable = state.variables[to as string];
+    const llmCell = state.queries[variable.to].cells[variable.cellId];
+
+    const variant = state.variants[to];
+
+    if (!llmCell) {
+        throw new Error("Can't locate Prompt to run variants");
+    }
+
+    // Get corresponding query
+    const q = state.queries[llmCell.query.id];
 
     const handleRateResponse = (num: number) => {
         // TODO: set rating for a variant's response using the rating from the 'num' param.
     };
 
-    /**
-     * Used to see if we have an output, use this to know if we have enough data for each variant after
-     */
-    const parsedResponse = state.parseVariable(`{{${to}}}`);
-    const variable = state.variables[to];
-
-    /**
-     * Anytime our response changes go see our other variants
-     */
     useEffect(() => {
-        if (parsedResponse) {
-            debugger;
-            compare();
-        }
-
-        // Remove the temp queries and variables
-        return () => {
-            Object.values(state.queries).forEach((query) => {
-                if (query.temp) {
-                    state.dispatch({
-                        message: ActionMessages.DELETE_QUERY,
-                        payload: {
-                            queryId: query.id,
-                        },
-                    });
-                }
-            });
-            Object.entries(state.variables).forEach(([key, variable]) => {
-                if (variable.temp) {
-                    state.dispatch({
-                        message: ActionMessages.DELETE_VARIABLE,
-                        payload: {
-                            id: key,
-                        },
-                    });
-                }
-            });
-        };
-    }, [parsedResponse]);
+        console.log('here');
+    }, [to]);
 
     /**
-     * Gets the models used in variant
+     * The response for tied cell
+     * @returns JSX
      */
-    useEffect(() => {
-        const getModelNames = async () => {
-            if (selectedTab === '-1') {
-                if (variable) {
-                    const modelNames: string[] = await Promise.all(
-                        state.queries[variable.to].list.map(async (id, idx) => {
-                            const q = state.queries[variable.to];
-                            const c = q.getCell(id);
-                            if (c.widget === 'llm') {
-                                let cleaned = c.parameters['modelId'] as string;
+    const response = () => {
+        const queryCells = Object.values(q.cells);
+        const variantIndex = parseInt(selectedTab);
 
-                                if (
-                                    cleaned.startsWith('{{') &&
-                                    cleaned.endsWith('}}')
-                                ) {
-                                    // remove the brackets
-                                    cleaned = cleaned.slice(2, -2);
-                                }
-
-                                const to = state.variables[cleaned].to;
-                                const mId = state.dependencies[to];
-
-                                const resp = await monolithStore.runQuery(
-                                    `GetEngineMetadata(engine=["${mId}"]);`,
-                                );
-
-                                return resp.pixelReturn[0].output.database_name;
-                            } else {
-                                return null;
-                            }
-                        }),
-                    );
-
-                    // Filter out null values before setting state
-                    setModelsUsed(modelNames.filter((name) => name !== null));
-                } else {
-                    setModelsUsed([]); // If variable is not defined, set an empty array
-                }
-            } else {
-                const variantNames = variants[selectedTab].map((model, idx) => {
-                    return model.database_name;
-                });
-                setModelsUsed(variantNames);
-            }
-        };
-
-        getModelNames();
-    }, [selectedTab, variable, variants.length]);
-
-    /**
-     * @name compare
-     * @description
-     * Sets up comparison based on the new response that comes in
-     * 1. DUPLICATE THE QUERY SHEET (GET ID)
-     * 2. REPLACE LLM CELL VALUES THERE FOR THE SPECIFIC ITERATION
-     * 3. EXECUTE QUERY BY NEW_ID
-     * For Testing: log this in chrome tools --> Should be different,  do comparison
-     * state.queries[key].cells['7347'].parameters.modelId,
-     * state.queries.default.cells['7347'].parameters.modelId
-     */
-    const compare = async () => {
-        // VERIFIED: Creates duplicate queries - Duplicate the query that we are attached to on this block - O(n)
-        const variantQueries = await createVariantsForQuery();
-
-        // VERIFIED: It swaps LLM cells, TODO: Handle multi-model swap - replace each queries llm cells - O(n^2)
-        const qs = await replaceVariantQueryLLMCells(variantQueries);
-
-        variantQueries.forEach(async (key) => {
-            await state.dispatch({
-                message: ActionMessages.RUN_QUERY,
-                payload: {
-                    queryId: key,
-                },
-            });
-        });
-
-        Object.values(qs).forEach((v: { trigger: () => void }[]) => {
-            v.forEach((c) => {
-                c.trigger();
-            });
-        });
-
-        return variantQuerySheet;
-    };
-
-    /**
-     *
-     * @param str
-     * @param q
-     * @returns
-     */
-    const updateSyntax = async (str, q): Promise<string> => {
-        return await str.replace(/{{(.*?)}}/g, (match, content) => {
-            const split = content.split('.');
-
-            const stringVariableRef = state.variables[split[0]];
-
-            if (!stringVariableRef) {
-                return `{{${content}}}`;
-            }
-
-            if (variable.to === stringVariableRef.to) {
-                const randomId = `temp-${split[0]}-${Math.floor(
-                    1000 + Math.random() * 9000,
-                )}`;
-
-                state.variables[randomId] = {
-                    to: q.id,
-                    cellId: stringVariableRef.cellId,
-                    type: 'cell',
-                    temp: true,
-                };
-
-                // get the remaining path
-                const remainder = split.slice(2).join('.');
-
-                return `{{${
-                    remainder.length > 0 ? `${randomId}.${remainder}` : randomId
-                }}}`;
-            }
-
-            return `{{${content}}}`;
-        });
-    };
-
-    /**
-     *
-     * @returns new variant id's for
-     */
-    const createVariantsForQuery = async () => {
-        let currentVariantIndex = 0;
-        const variantIds = [];
-
-        while (currentVariantIndex < variants.length) {
-            const query = await state.getQuery(variable.to);
-
-            if (!query) {
-                return;
-            }
-
-            // get the json
-            const json = query.toJSON();
-
-            // get a new id
-            const newQueryId = `${json.id}-copy-compare-variant-index-${currentVariantIndex}`;
-
-            // dispatch it
-            const id = await state.dispatch({
-                message: ActionMessages.NEW_QUERY,
-                payload: {
-                    queryId: newQueryId,
-                    config: {
-                        cells: json.cells,
-                        temp: true,
-                    },
-                },
-            });
-
-            // debugger
-
-            variantIds.push(id);
-            currentVariantIndex += 1;
-        }
-
-        setVariantQuerySheet(variantIds);
-
-        return variantIds;
-    };
-
-    /**
-     * Updates all the cells in respective query sheet
-     * @param queryIds
-     * @description
-     * Swaps out the llms that are used for the query sheet tied to block.
-     * Do this per variant/sheet
-     */
-    const replaceVariantQueryLLMCells = async (queryIds) => {
-        const queryCellsToUpdate = {};
-
-        queryIds.forEach((q) => {
-            queryCellsToUpdate[q] = [];
-        });
-
-        await Promise.all(
-            queryIds.map(async (id, i) => {
-                const q = state.getQuery(id);
-                let modelIdx = 0;
-
-                await Promise.all(
-                    q.list.map(async (cellId) => {
-                        const c = q.getCell(cellId);
-                        console.log('hello cell');
-
-                        if (c.widget === 'llm') {
-                            const modelToSwap = variants[i][modelIdx];
-                            // iterate the current variant model
-                            modelIdx += 1;
-
-                            (c.parameters.modelId = modelToSwap.database_id),
-                                (c.parameters.paramValues =
-                                    modelToSwap.paramValues);
-
-                            const cleanSyntax = await updateSyntax(
-                                c.parameters.command,
-                                q,
-                            );
-
-                            queryCellsToUpdate[id].push({
-                                query: id,
-                                cell: c.id,
-                                trigger: () =>
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            queryId: id,
-                                            cellId: c.id,
-                                            path: 'parameters',
-                                            value: {
-                                                ...c.parameters,
-                                                modelId:
-                                                    modelToSwap.database_id,
-                                                command: cleanSyntax,
-                                                paramValues:
-                                                    modelToSwap.paramValues,
-                                            },
-                                        },
-                                    }),
-                            });
-                        } else if (c.widget === 'code') {
-                            const code = c.parameters.code;
-
-                            // Verified: Cleans string of syntax
-                            const cleanedString = await updateSyntax(code, q);
-
-                            // if the string is different make the updates, otherwise no need
-                            if (cleanedString !== code) {
-                                state.queries[q.id].cells[
-                                    c.id
-                                ].parameters.code = cleanedString;
-
-                                queryCellsToUpdate[id].push({
-                                    query: id,
-                                    cell: c.id,
-                                    trigger: () =>
-                                        state.dispatch({
-                                            message: ActionMessages.UPDATE_CELL,
-                                            payload: {
-                                                queryId: id,
-                                                cellId: c.id,
-                                                path: 'parameters.code',
-                                                value: cleanedString,
-                                            },
-                                        }),
-                                });
-                            }
-                        }
-                    }),
-                );
-            }),
-        );
-
-        return queryCellsToUpdate;
-    };
-
-    /**
-     * Shows the Variant Responses as well as what we have in our notebook
-     * @returns JSX.Element
-     */
-    const displayVariantResponse = (): JSX.Element => {
-        if (variable) {
-            const queryIdVariant = variantQuerySheet[parseInt(selectedTab)];
-            const masterQuery = state.queries[variable.to];
-
-            if (selectedTab === '-1') {
-                const renderResponse = () => {
-                    if (parsedResponse) {
-                        if (masterQuery.isLoading) {
-                            return <StyledLoading />;
-                        } else {
-                            return JSON.stringify(
-                                parsedResponse.response
-                                    ? parsedResponse.response
-                                    : parsedResponse,
-                            );
-                        }
-                    } else {
-                        if (masterQuery.isLoading) {
-                            return <StyledLoading />;
-                        } else {
-                            return 'Awaiting execution';
-                        }
-                    }
-                };
-
-                return (
-                    <Stack>
-                        <Typography variant="caption">
-                            {renderResponse()}
-                        </Typography>
-                        <StyledRatingRow>
-                            {/* {JSON.stringify(variantQuerySheet)} */}
-                            <Typography color="secondary" variant="body2">
-                                What would you rate this response?
-                            </Typography>
-
-                            <Stack
-                                direction="row"
-                                onMouseLeave={() => {
-                                    setHighlightedRating(0);
-                                }}
-                                onBlur={() => {
-                                    setHighlightedRating(0);
-                                }}
-                            >
-                                <StyledStarButton
-                                    onClick={() => handleRateResponse(1)}
-                                    onMouseEnter={() => setHighlightedRating(1)}
-                                    onFocus={() => setHighlightedRating(1)}
-                                >
-                                    {highlightedRating >= 1 ? (
-                                        <Star />
-                                    ) : (
-                                        <StarBorder />
-                                    )}
-                                </StyledStarButton>
-                                <StyledStarButton
-                                    onClick={() => handleRateResponse(2)}
-                                    onMouseEnter={() => setHighlightedRating(2)}
-                                    onFocus={() => setHighlightedRating(2)}
-                                >
-                                    {highlightedRating >= 2 ? (
-                                        <Star />
-                                    ) : (
-                                        <StarBorder />
-                                    )}
-                                </StyledStarButton>
-                                <StyledStarButton
-                                    onClick={() => handleRateResponse(3)}
-                                    onMouseEnter={() => setHighlightedRating(3)}
-                                    onFocus={() => setHighlightedRating(3)}
-                                >
-                                    {highlightedRating >= 3 ? (
-                                        <Star />
-                                    ) : (
-                                        <StarBorder />
-                                    )}
-                                </StyledStarButton>
-                                <StyledStarButton
-                                    onClick={() => handleRateResponse(4)}
-                                    onMouseEnter={() => setHighlightedRating(4)}
-                                    onFocus={() => setHighlightedRating(4)}
-                                >
-                                    {highlightedRating >= 4 ? (
-                                        <Star />
-                                    ) : (
-                                        <StarBorder />
-                                    )}
-                                </StyledStarButton>
-                                <StyledStarButton
-                                    onClick={() => handleRateResponse(5)}
-                                    onMouseEnter={() => setHighlightedRating(5)}
-                                    onFocus={() => setHighlightedRating(5)}
-                                >
-                                    {highlightedRating === 5 ? (
-                                        <Star />
-                                    ) : (
-                                        <StarBorder />
-                                    )}
-                                </StyledStarButton>
-                            </Stack>
-                        </StyledRatingRow>
-                    </Stack>
-                );
-            }
-
-            const renderVariantResponse = () => {
-                if (masterQuery.isLoading) {
-                    return <StyledLoading />;
-                }
-                if (!queryIdVariant) {
-                    return 'Awaiting execution';
-                }
-
-                if (state.queries[queryIdVariant].isLoading) {
-                    return <StyledLoading />;
-                } else if (state.queries[queryIdVariant].output) {
-                    return JSON.stringify(
-                        state.queries[queryIdVariant].output.response
-                            ? state.queries[queryIdVariant].output.response
-                            : state.queries[queryIdVariant].output,
-                    );
-                } else {
-                    return 'Awaiting execution';
-                }
-            };
-
+        if (variantIndex === -1) {
             return (
-                <Stack>
-                    <Typography variant="caption">
-                        {renderVariantResponse()}
-                    </Typography>
-                    <StyledRatingRow>
-                        <Typography color="secondary" variant="body2">
-                            What would you rate this response?
-                        </Typography>
-
-                        <Stack
-                            direction="row"
-                            onMouseLeave={() => {
-                                setHighlightedRating(0);
-                            }}
-                            onBlur={() => {
-                                setHighlightedRating(0);
-                            }}
-                        >
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(1)}
-                                onMouseEnter={() => setHighlightedRating(1)}
-                                onFocus={() => setHighlightedRating(1)}
-                                disabled={
-                                    !queryIdVariant
-                                        ? true
-                                        : !state.queries[queryIdVariant].output
-                                }
-                            >
-                                {highlightedRating >= 1 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(2)}
-                                onMouseEnter={() => setHighlightedRating(2)}
-                                onFocus={() => setHighlightedRating(2)}
-                                disabled={
-                                    !queryIdVariant
-                                        ? true
-                                        : !state.queries[queryIdVariant].output
-                                }
-                            >
-                                {highlightedRating >= 2 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(3)}
-                                onMouseEnter={() => setHighlightedRating(3)}
-                                onFocus={() => setHighlightedRating(3)}
-                                disabled={
-                                    !queryIdVariant
-                                        ? true
-                                        : !state.queries[queryIdVariant].output
-                                }
-                            >
-                                {highlightedRating >= 3 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(4)}
-                                onMouseEnter={() => setHighlightedRating(4)}
-                                onFocus={() => setHighlightedRating(4)}
-                                disabled={
-                                    !queryIdVariant
-                                        ? true
-                                        : !state.queries[queryIdVariant].output
-                                }
-                            >
-                                {highlightedRating >= 4 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                            <StyledStarButton
-                                onClick={() => handleRateResponse(5)}
-                                onMouseEnter={() => setHighlightedRating(5)}
-                                onFocus={() => setHighlightedRating(5)}
-                                disabled={
-                                    !queryIdVariant
-                                        ? true
-                                        : !state.queries[queryIdVariant].output
-                                }
-                            >
-                                {highlightedRating === 5 ? (
-                                    <Star />
-                                ) : (
-                                    <StarBorder />
-                                )}
-                            </StyledStarButton>
-                        </Stack>
-                    </StyledRatingRow>
-                </Stack>
+                <>
+                    {llmCell.isLoading && !llmCell.output ? (
+                        <CircularProgress />
+                    ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {llmCell.output
+                                ? llmCell.output['response']
+                                    ? JSON.stringify(llmCell.output['response'])
+                                    : JSON.stringify(llmCell.output)
+                                : 'No output but done loading'}
+                        </ReactMarkdown>
+                    )}
+                </>
             );
         } else {
-            return <>Please connect your LLM Compare block to a query sheet</>;
-        }
-    };
+            const variantModel = variant.models[variantIndex];
 
-    /**
-     * Display Model/Models: Prefix
-     * @returns string
-     * @description
-     */
-    const modelOrModels = (): string => {
-        if (variable) {
-            if (selectedTab === '-1') {
-                const llmCells = [];
-                state.queries[variable.to].list.forEach((id) => {
-                    const q = state.queries[variable.to];
-                    const c = q.getCell(id);
-                    if (c.widget === 'llm') {
-                        llmCells.push(id);
-                    }
-                });
-
-                if (llmCells.length === 1) {
-                    return 'Model: ';
-                } else {
-                    return 'Models: ';
-                }
-            } else {
-                if (variants[selectedTab].length === 1) {
-                    return 'Model: ';
-                } else {
-                    return 'Models: ';
-                }
-            }
-        } else {
-            return 'Models: ';
-        }
-    };
-
-    /**
-     *
-     * @returns
-     */
-    const displayUsedModelsInVariant = (): string => {
-        if (!modelsUsed.length) {
-            return 'Models not configured';
-        } else {
-            let returnString = '';
-            modelsUsed.forEach((m, idx) => {
-                if (m) {
-                    returnString += m;
-                    if (idx + 1 !== state.queries[variable.to].list.length) {
-                        returnString += ', ';
+            const foundAssociatedTempCell = queryCells.find((c) => {
+                if (c.temp) {
+                    if (c.parameters.modelId === variantModel.database_id) {
+                        return c;
                     }
                 }
             });
 
-            return returnString;
+            return (
+                <>
+                    {foundAssociatedTempCell.isLoading &&
+                    !foundAssociatedTempCell.output ? (
+                        <CircularProgress />
+                    ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {foundAssociatedTempCell.output
+                                ? foundAssociatedTempCell.output['response']
+                                    ? JSON.stringify(
+                                          foundAssociatedTempCell.output[
+                                              'response'
+                                          ],
+                                      )
+                                    : JSON.stringify(
+                                          foundAssociatedTempCell.output,
+                                      )
+                                : 'No output but done loading'}
+                        </ReactMarkdown>
+                    )}
+                </>
+            );
         }
+
+        // return (
+        //     <Stack>
+        //         <ul>
+        //             {variant
+        //                 ? variant.models.map((m, i) => {
+        //                       const foundCellState = queryCells.find((c) => {
+        //                           if (c.temp) {
+        //                               if (
+        //                                   c.parameters.modelId === m.database_id
+        //                               ) {
+        //                                   return c;
+        //                               }
+        //                           }
+        //                       });
+
+        //                       return (
+        //                           <li key={i}>
+        //                               {' '}
+        //                               Variant {i}:
+        //                               {foundCellState
+        //                                   ? JSON.stringify(
+        //                                         foundCellState.output,
+        //                                     )
+        //                                   : 'cant find'}
+        //                           </li>
+        //                       );
+        //                   })
+        //                 : 'N/A'}
+        //         </ul>
+        //     </Stack>
+        // );
     };
 
     return (
@@ -862,14 +373,89 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
                 <Stack direction="column" gap={2}>
                     <Typography color="secondary" variant="body2">
                         {/* Displays formatted prefix */}
-                        {modelOrModels()}
+                        {/* {modelOrModels()} */}
+                        {/* {JSON.stringify(v)} */}
 
                         {/* Displays LLMs used in sheet */}
-                        {displayUsedModelsInVariant()}
+                        {/* {displayUsedModelsInVariant()} */}
                     </Typography>
 
+                    <Typography variant="caption">{response()}</Typography>
+                    <StyledRatingRow>
+                        {/* {JSON.stringify(variantQuerySheet)} */}
+                        <Typography color="secondary" variant="body2">
+                            What would you rate this response?
+                        </Typography>
+
+                        <Stack
+                            direction="row"
+                            onMouseLeave={() => {
+                                setHighlightedRating(0);
+                            }}
+                            onBlur={() => {
+                                setHighlightedRating(0);
+                            }}
+                        >
+                            <StyledStarButton
+                                onClick={() => handleRateResponse(1)}
+                                onMouseEnter={() => setHighlightedRating(1)}
+                                onFocus={() => setHighlightedRating(1)}
+                            >
+                                {highlightedRating >= 1 ? (
+                                    <Star />
+                                ) : (
+                                    <StarBorder />
+                                )}
+                            </StyledStarButton>
+                            <StyledStarButton
+                                onClick={() => handleRateResponse(2)}
+                                onMouseEnter={() => setHighlightedRating(2)}
+                                onFocus={() => setHighlightedRating(2)}
+                            >
+                                {highlightedRating >= 2 ? (
+                                    <Star />
+                                ) : (
+                                    <StarBorder />
+                                )}
+                            </StyledStarButton>
+                            <StyledStarButton
+                                onClick={() => handleRateResponse(3)}
+                                onMouseEnter={() => setHighlightedRating(3)}
+                                onFocus={() => setHighlightedRating(3)}
+                            >
+                                {highlightedRating >= 3 ? (
+                                    <Star />
+                                ) : (
+                                    <StarBorder />
+                                )}
+                            </StyledStarButton>
+                            <StyledStarButton
+                                onClick={() => handleRateResponse(4)}
+                                onMouseEnter={() => setHighlightedRating(4)}
+                                onFocus={() => setHighlightedRating(4)}
+                            >
+                                {highlightedRating >= 4 ? (
+                                    <Star />
+                                ) : (
+                                    <StarBorder />
+                                )}
+                            </StyledStarButton>
+                            <StyledStarButton
+                                onClick={() => handleRateResponse(5)}
+                                onMouseEnter={() => setHighlightedRating(5)}
+                                onFocus={() => setHighlightedRating(5)}
+                            >
+                                {highlightedRating === 5 ? (
+                                    <Star />
+                                ) : (
+                                    <StarBorder />
+                                )}
+                            </StyledStarButton>
+                        </Stack>
+                    </StyledRatingRow>
+
                     {/* Displays responses */}
-                    {displayVariantResponse()}
+                    {/* {displayVariantResponse()} */}
                 </Stack>
             </StyledTabBox>
         </StyledLLMComparisonBlock>

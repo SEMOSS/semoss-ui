@@ -33,6 +33,7 @@ export enum ActionMessages {
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
     REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
+    ADD_VARIANT = 'ADD_VARIANT',
 }
 
 export type Actions =
@@ -57,7 +58,8 @@ export type Actions =
     | EditVariableAction
     | DeleteVariableAction
     | AddDependencyAction
-    | RemoveDependencyAction;
+    | RemoveDependencyAction
+    | AddVariantAction;
 
 export interface Action {
     message: string;
@@ -274,5 +276,13 @@ export interface DeleteVariableAction extends Action {
     message: ActionMessages.DELETE_VARIABLE;
     payload: {
         id: string;
+    };
+}
+
+export interface AddVariantAction extends Action {
+    message: ActionMessages.ADD_VARIANT;
+    payload: {
+        id: string;
+        json: Record<string, unknown>;
     };
 }

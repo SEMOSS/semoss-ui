@@ -31,6 +31,9 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 
     /** Parameters associated with the cell */
     parameters: D['parameters'];
+
+    /** Temporary cells that are copies of other cells for testing purposes, should be cleaned up and never saved to state */
+    temp?: boolean;
 }
 
 export interface CellStateConfig<D extends CellDef = CellDef> {
@@ -42,6 +45,9 @@ export interface CellStateConfig<D extends CellDef = CellDef> {
 
     /** Parameters associated with the cell */
     parameters: D['parameters'];
+
+    /** Temporary cells that are copies of other cells for testing purposes, should be cleaned up and never saved to state */
+    temp?: boolean;
 }
 
 /**
@@ -70,6 +76,11 @@ export class CellState<D extends CellDef = CellDef> {
         this._store.id = config.id;
         this._store.widget = config.widget;
         this._store.parameters = config.parameters;
+
+        if (config.temp) {
+            debugger;
+            this._store.temp = config.temp;
+        }
 
         // make it observable
         makeAutoObservable(this);
@@ -206,6 +217,13 @@ export class CellState<D extends CellDef = CellDef> {
      */
     get parameters() {
         return this._store.parameters;
+    }
+
+    /**
+     * Tells us if Cell is a temporary and used for comparisons.
+     */
+    get temp() {
+        return this._store.temp;
     }
 
     /**

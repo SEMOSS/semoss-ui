@@ -18,6 +18,9 @@ export type SerializedState = {
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
+
+    /** Variants of our LLM prompts that are represented as an LLM cell */
+    variants?: Record<string, unknown>;
 };
 
 /**

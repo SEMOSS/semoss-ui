@@ -58,8 +58,58 @@ export const NotebookSheet = observer((): JSX.Element => {
 
     // need a query to render the sheet
     if (!notebook.selectedQuery) {
-        // return <LoadingScreen.Trigger description="Updating Project" />
-        return <StyledSheet> Welcome to our data notebook</StyledSheet>;
+        return (
+            <StyledSheet>
+                <div
+                    className="splash-page"
+                    style={{
+                        // display: isSplashPageVisible ? "block" : "none",
+                        backgroundColor: '#f0f4f8',
+                        height: '100vh',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexDirection: 'column',
+                        textAlign: 'center',
+                        fontFamily: "'Arial', sans-serif",
+                    }}
+                >
+                    <div
+                        className="splash-page-content"
+                        style={{
+                            backgroundColor: '#ffffff',
+                            padding: '40px',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            maxWidth: '500px',
+                            width: '100%',
+                        }}
+                    >
+                        <h1 style={{ color: '#333333', marginBottom: '20px' }}>
+                            Welcome to My Notebook
+                        </h1>
+                        <p style={{ color: '#666666', marginBottom: '30px' }}>
+                            This is a simple notebook app that allows you to
+                            create, edit, and delete notes.
+                        </p>
+                        <button
+                            //   onClick={handleSplashPageClick}
+                            style={{
+                                backgroundColor: '#007bff',
+                                color: '#ffffff',
+                                padding: '10px 20px',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '16px',
+                            }}
+                        >
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </StyledSheet>
+        );
     }
 
     console.log('selected qs', notebook.selectedQuery);

@@ -42,6 +42,9 @@ interface StateStoreInterface {
     /** engine dependencies */
     dependencies: Record<string, unknown>;
 
+    /** variants for llm-cell queries (models to swap)  */
+    variants?: Record<string, unknown>;
+
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
 
@@ -75,7 +78,8 @@ export class StateStore {
         blocks: {},
         cellRegistry: {},
         variables: {},
-        dependencies: {}, // Maher said change to constants
+        dependencies: {}, // Maher said change to constants,
+        variants: {},
     };
 
     /**
@@ -159,6 +163,13 @@ export class StateStore {
      */
     get dependencies() {
         return this._store.dependencies;
+    }
+
+    /**
+     * Gets all variants for llm prompts in our app
+     */
+    get variants() {
+        return this._store.variants;
     }
 
     /**
@@ -331,6 +342,9 @@ export class StateStore {
                 } else if (ActionMessages.ADD_BLOCK === action.message) {
                     const { json, position } = action.payload;
                     result = this.addBlock(json, position);
+                } else if (ActionMessages.ADD_VARIANT === action.message) {
+                    const { json, id } = action.payload;
+                    this.addVariant(id, json);
                 } else if (ActionMessages.MOVE_BLOCK === action.message) {
                     const { id, position } = action.payload;
                     this.moveBlock(id, position);
@@ -605,17 +619,10 @@ export class StateStore {
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
             dependencies: toJS(this._store.dependencies),
+            variants: toJS(this._store.variants),
             version: this._store.version,
         };
     }
-
-    /**
-     * Process a query not stored in our state in order to do comparison
-     * @param query
-     */
-    _processCompare = (query) => {
-        console.log(query);
-    };
 
     /**
      * Internal
@@ -1411,5 +1418,72 @@ export class StateStore {
      */
     private removeDependency = (id: string) => {
         delete this._store.dependencies[id];
+    };
+
+    /**
+     *
+     * @param id
+     * @param json
+     */
+    private addVariant = (
+        id: string,
+        json: Record<string, string | Record<string, unknown>>,
+    ) => {
+        console.log('add variant', id, json);
+
+        // debugger;
+        if (!this._store.variants[id]) {
+            this._store.variants[id] = json;
+        }
+
+        const to = json.to;
+
+        // debugger;
+        const variable = this._store.variables[to as string];
+
+        // Find cell
+        const llmCell = this._store.queries[variable.to].cells[variable.cellId];
+
+        // debugger;
+
+        if (!llmCell) {
+            throw new Error("Can't locate Prompt to run variants");
+        }
+
+        // Get corresponding query
+        const q = this._store.queries[llmCell.query.id];
+
+        // add new temp cells for each model in variant
+
+        // debugger;
+        // Go to query and add temp cells based on the selected variants pointer
+        json.models.forEach((model) => {
+            const newCellId = `${Math.floor(Math.random() * 100000)}`;
+
+            // make sure you add it correct index in list
+            this.newCell(
+                q.id,
+                newCellId,
+                {
+                    widget: llmCell.widget,
+                    parameters: {
+                        modelId: model.database_id,
+                        command: llmCell.parameters.command,
+                        paramValues: model.paramValues,
+                    },
+                    temp: true,
+                },
+                llmCell.id,
+            );
+            // debugger;
+        });
+        // debugger;
+
+        // Go add temp cells to execute based on respective cell
+
+        // Make sure you clean up these temp cells
+        // this._store.queries;
+
+        console.log(this._store.queries[llmCell.query.id]);
     };
 }
