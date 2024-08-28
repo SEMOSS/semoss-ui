@@ -250,6 +250,26 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
         console.log('here');
     }, [to]);
 
+    const showModelUsed = () => {
+        const queryCells = Object.values(q.cells);
+        const variantIndex = parseInt(selectedTab);
+
+        if (variantIndex === -1) {
+            return <>{llmCell.parameters.modelId}</>;
+        } else {
+            const variantModel = variant.models[variantIndex];
+
+            const foundAssociatedTempCell = queryCells.find((c) => {
+                if (c.temp) {
+                    if (c.parameters.modelId === variantModel.database_id) {
+                        return c;
+                    }
+                }
+            });
+            return <>{variantModel.database_id}</>;
+        }
+    };
+
     /**
      * The response for tied cell
      * @returns JSX
@@ -372,6 +392,7 @@ export const LLMBlock: BlockComponent = observer(({ id }) => {
 
                 <Stack direction="column" gap={2}>
                     <Typography color="secondary" variant="body2">
+                        {showModelUsed()}
                         {/* Displays formatted prefix */}
                         {/* {modelOrModels()} */}
                         {/* {JSON.stringify(v)} */}
