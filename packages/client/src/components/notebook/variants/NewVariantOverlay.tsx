@@ -77,7 +77,15 @@ export const NewVariantOverlay = observer(
                     variant: {
                         id: data.ID,
                         to: '',
-                        models: [],
+                        models: [
+                            {
+                                id: '',
+                                name: '',
+                                topP: 0,
+                                temperature: 0,
+                                length: 0,
+                            },
+                        ],
                     },
                 },
             });
