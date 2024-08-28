@@ -690,6 +690,7 @@ export class StateStore {
      * @param state - pixel to execute
      */
     private setState = (state: SerializedState) => {
+        console.log('SETTING STATES ', state);
         // store the block information
         this._store.blocks = state.blocks;
 

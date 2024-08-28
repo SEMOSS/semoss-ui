@@ -14,6 +14,7 @@ import { modelEngineOutput } from '../../block-defaults/llm-comparison-block/Llm
 import { useRootStore, useBlocks } from '@/hooks';
 import { Add, Close } from '@mui/icons-material';
 import { ActionMessages, Variant, VariantModel } from '@/stores';
+import { observer } from 'mobx-react-lite';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -27,14 +28,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     maxWidth: theme.spacing(9),
 }));
 
-const emptyModel = {
-    id: '',
-    name: '',
-    topP: 0,
-    temperature: 0,
-    length: 0,
-};
-
 /**
  * TODO / thoughts
  * 1. Tie the variant's config to a cell for the appropriately populated query.
@@ -43,7 +36,7 @@ const emptyModel = {
  * 3. Flesh out layout so that the Variant's menu and page layout can work similar to the query sheets and a user can view/edit any of their variants.
  * 4. more on (3); will the user have to re-run a variant modification similar to re-runnign a query if its changed? Maybe not, will need to figure this out.
  */
-export const VariantSheet = () => {
+export const VariantSheet = observer(() => {
     const { monolithStore } = useRootStore();
     const { state, notebook } = useBlocks();
     const notification = useNotification();
@@ -64,7 +57,7 @@ export const VariantSheet = () => {
 
     useEffect(() => {
         setVariant(notebook.selectedVariant);
-    }, [notebook.selectedVariant.id]);
+    }, [notebook.selectedVariant?.id]);
 
     const handleUpdateModel = (val: string, idx: number) => {
         const newVariant = { ...variant };
@@ -93,17 +86,15 @@ export const VariantSheet = () => {
     };
 
     const handleResetVariant = () => {
-        const variants = toJS(state.variants);
-        const newVariant = { ...variant };
-        newVariant.models.push({ ...emptyModel });
-        setVariant(newVariant);
+        const currVarInState = state.variants[notebook.selectedVariant.id];
+        setVariant(currVarInState);
     };
 
     const handleSaveVariant = () => {
         let success = false;
 
-        const currDefault = toJS(state.variants)['default'];
-        if (!currDefault) {
+        const currVariant = toJS(state.variants)['default'];
+        if (!currVariant) {
             success = state.dispatch({
                 message: ActionMessages.ADD_VARIANT,
                 payload: {
@@ -116,7 +107,7 @@ export const VariantSheet = () => {
                 message: ActionMessages.EDIT_VARIANT,
                 payload: {
                     id: 'default',
-                    from: currDefault,
+                    from: currVariant,
                     to: variant,
                 },
             });
@@ -132,9 +123,11 @@ export const VariantSheet = () => {
 
     return (
         <StyledContainer>
-            <Typography variant="h5">Default Variant</Typography>
+            <Typography variant="h5">
+                Variant {notebook.selectedVariant?.id}
+            </Typography>
 
-            {variant.models.map((model: VariantModel, idx: number) => (
+            {variant?.models.map((model: VariantModel, idx: number) => (
                 <Stack key={`model-${idx}`} spacing={2}>
                     <Typography variant="body2" color="secondary">
                         Select Model
@@ -266,7 +259,7 @@ export const VariantSheet = () => {
                 </Stack>
             ))}
 
-            <div>
+            <Stack gap={2} direction="row" justifyContent="flex-end">
                 <Button
                     variant="text"
                     color="secondary"
@@ -277,7 +270,7 @@ export const VariantSheet = () => {
                 <Button variant="contained" onClick={handleSaveVariant}>
                     Save Variant
                 </Button>
-            </div>
+            </Stack>
         </StyledContainer>
     );
-};
+});
