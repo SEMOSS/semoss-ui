@@ -5067,6 +5067,81 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+					{
+                name: 'AZUREOCR',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZUREOCR',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },   
+                    {
+                        fieldName: 'requiredParameters',
+                        label: 'Function Required Parameters',
+                        defaultValue: 'filePath',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },                 
                 ],
             },
         ],
@@ -5827,6 +5902,17 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+					{
+                        fieldName: 'AZUREOCRENGINEID',
+                        label: 'AZURE OCR Function Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -6213,6 +6299,17 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         secondary: true,
                         rules: {},
+                    },
+					{
+                        fieldName: 'AZUREOCRENGINEID',
+                        label: 'AZUREOCR Function Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
                     },
                 ],
             },
@@ -11965,6 +12062,10 @@ export const ENGINE_IMAGES = {
         {
             name: 'ZIP',
             icon: ZIP,
+        },
+		{
+            name: 'AZUREOCR',
+            icon: RESTAPI,
         },
     ],
     VECTOR: [
