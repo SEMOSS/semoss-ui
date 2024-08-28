@@ -10,7 +10,10 @@ import { LLMComparisonMenu } from './LLMComparisonMenu';
 export const config: BlockConfig<LLMComparisonBlockDef> = {
     widget: 'llmComparison',
     type: BLOCK_TYPE_COMPARE,
-    data: {},
+    data: {
+        to: '',
+        variants: [],
+    },
     listeners: {},
     slots: {},
     render: LLMComparisonBlock,
