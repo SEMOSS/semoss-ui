@@ -5150,10 +5150,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -5162,11 +5162,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5315,26 +5314,24 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
-                        defaultValue: '',
+                        defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
                         label: 'Content Overlap',
-                        defaultValue: '0',
+                        defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5435,10 +5432,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '5432',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -5529,26 +5526,24 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
-                        defaultValue: '',
+                        defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
                         label: 'Content Overlap',
-                        defaultValue: '0',
+                        defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5720,10 +5715,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -5732,11 +5727,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5893,10 +5887,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -5905,11 +5899,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5952,6 +5945,71 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DIMENSION_SIZE',
+                        label: 'Embedding Dimension Size',
+                        defaultValue: '1024',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                    },
+                    {
+                        fieldName: 'METHOD_NAME',
+                        label: 'Method Name',
+                        defaultValue: 'hnsw',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'SPACE_TYPE',
+                        label: 'Space Type',
+                        defaultValue: 'l2',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'INDEX_ENGINE',
+                        label: 'Index Engine',
+                        defaultValue: 'lucene',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'EF_CONSTRUCTION',
+                        label: 'EF Construction',
+                        defaultValue: '128',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'M_VALUE',
+                        label: 'M Value',
+                        defaultValue: '24',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
                     },
                     {
                         fieldName: 'KEEP_INPUT_OUTPUT',
@@ -6044,10 +6102,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -6056,11 +6114,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -6318,10 +6375,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -6665,10 +6722,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'projectId',
@@ -6803,10 +6860,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9042',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -6977,10 +7034,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9042',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -7161,10 +7218,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'httpPAth',
@@ -7355,10 +7412,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'graph',
@@ -7453,10 +7510,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '446',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -7627,10 +7684,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1527',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -7802,10 +7859,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9200',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'httpType',
@@ -7920,10 +7977,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1000',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8095,10 +8152,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1000',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8270,10 +8327,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '21050',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8444,10 +8501,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '3306',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8618,10 +8675,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '3306',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8791,10 +8848,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9200',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'httpPath',
@@ -8909,10 +8966,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'service',
@@ -9083,10 +9140,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '8765',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -9257,10 +9314,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '5432',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -9441,10 +9498,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '5439',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -9625,10 +9682,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '30015',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -9799,10 +9856,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '443',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'project',
@@ -10013,10 +10070,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '443',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'warehouse',
@@ -10041,7 +10098,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'database',
                         label: 'Database',
-                        defaultValue: '443',
+                        defaultValue: '',
                         options: {
                             component: 'text-field',
                         },
@@ -10218,10 +10275,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1433',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -10403,10 +10460,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1000',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'USERNAME',
@@ -10731,10 +10788,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1433',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -10905,10 +10962,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1433',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                     },
                     {
                         fieldName: 'catalog',
@@ -11718,10 +11775,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '22',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                     },
                     {
                         fieldName: 'USERNAME',

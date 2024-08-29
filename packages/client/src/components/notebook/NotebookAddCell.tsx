@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { computed } from 'mobx';
-import { styled, Button, Divider, Menu, MenuProps, Stack } from '@semoss/ui';
+import { styled, Button, Divider, MenuProps, Menu, Stack } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
 import {
@@ -11,33 +10,28 @@ import {
     QueryState,
 } from '@/stores';
 import {
-    AccountTree,
-    Add,
-    Functions,
     ChangeCircleOutlined,
-    Storage,
     Code,
     ImportExport,
-    TextFields,
-    KeyboardArrowUp,
     KeyboardArrowDown,
-    TableRows,
+    KeyboardArrowUp,
+    TextFields,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
     DefaultCells,
     TransformationCells,
-    // ImportDataCells, // need options for Import Data dropdown options
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
+import { DataImportFormModal } from './DataImportFormModal';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
     backgroundColor: 'unset!important',
 }));
 
-const StyledDivider = styled(Divider)(({ theme }) => ({
+const StyledDivider = styled(Divider)(() => ({
     flexGrow: 1,
 }));
 
@@ -92,6 +86,17 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
     },
 );
 
+const DataImportDropdownOptions = [
+    {
+        display: `From Data Catalog`,
+        defaultCellType: null,
+    },
+    {
+        display: `From CSV`,
+        defaultCellType: null,
+    },
+];
+
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
@@ -101,7 +106,6 @@ const AddCellOptions: Record<string, AddCellOption> = {
     'query-import': {
         display: 'Query Import',
         defaultCellType: 'query-import',
-        // no DB MUI icon using the icon path from main menu
         icon: (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -134,12 +138,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
     'import-data': {
         display: 'Import Data',
         icon: <ImportExport />,
-        options: [],
-        disabled: true,
+        options: DataImportDropdownOptions,
+        disabled: false,
     },
     text: {
         display: 'Text',
-        // defaultCellType: 'text', // text type currently doesn't exist
         icon: <TextFields />,
         disabled: true,
     },
@@ -149,38 +152,13 @@ export const NotebookAddCell = observer(
     (props: { query: QueryState; previousCellId?: string }): JSX.Element => {
         const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
         const [selectedAddCell, setSelectedAddCell] = useState<string>('');
+        const [isDataImportModalOpen, setIsDataImportModalOpen] =
+            useState<boolean>(false);
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
 
-        // const cellTypeOptions = computed(() => {
-        //     const options = { ...AddCellOptions };
-        //     // transformation cell types can only be added if there exists a query-import cell before it
-        //     if (!previousCellId) {
-        //         delete options['transformation'];
-        //     } else {
-        //         const previousCellIndex = query.list.indexOf(previousCellId);
-        //         let hasFrameVariable = false;
-        //         for (let index = 0; index <= previousCellIndex; index++) {
-        //             if (
-        //                 query.cells[query.list[index]].config.widget ===
-        //                 'query-import'
-        //             ) {
-        //                 hasFrameVariable = true;
-        //                 break;
-        //             }
-        //         }
-        //         if (!hasFrameVariable) {
-        //             delete options['transformation'];
-        //         }
-        //     }
-
-        //     return Object.values(options);
-        // }).get();
-
-        /**
-         * Create a new cell
-         */
+        /** Create a New Cell and Add to Notebook */
         const appendCell = (widget: string) => {
             try {
                 const newCellId = `${Math.floor(Math.random() * 100000)}`;
@@ -229,71 +207,118 @@ export const NotebookAddCell = observer(
         };
 
         return (
-            <Stack direction={'row'} alignItems={'center'} gap={1}>
-                <StyledDivider />
-                <StyledBorderDiv>
-                    {Object.entries(AddCellOptions).map((add, i) => {
-                        const value = add[1];
-                        return (
-                            <StyledButton
-                                key={i}
-                                title={`${value.display}`}
-                                variant="contained"
-                                size="small"
-                                disabled={query.isLoading || value.disabled}
-                                startIcon={value.icon}
-                                onClick={(e) => {
-                                    if (value.options) {
-                                        setAnchorEl(e.currentTarget);
-                                        setSelectedAddCell(add[0]);
-                                    } else {
-                                        appendCell(value.defaultCellType);
-                                    }
-                                }}
-                                endIcon={
-                                    Array.isArray(value.options) &&
-                                    (selectedAddCell == add[0] && open ? (
-                                        <KeyboardArrowDown />
-                                    ) : (
-                                        <KeyboardArrowUp />
-                                    ))
-                                }
-                            >
-                                {value.display}
-                            </StyledButton>
-                        );
-                    })}
-                </StyledBorderDiv>
-                <StyledDivider />
-                <StyledMenu
-                    anchorEl={anchorEl}
-                    open={
-                        open &&
-                        !!AddCellOptions[selectedAddCell]?.options?.length
-                    }
-                    onClose={() => {
-                        setAnchorEl(null);
-                    }}
-                >
-                    {Array.from(
-                        AddCellOptions[selectedAddCell]?.options || [],
-                        ({ display, defaultCellType }, index) => {
-                            return (
-                                <StyledMenuItem
-                                    key={index}
-                                    value={display}
-                                    onClick={() => {
-                                        appendCell(defaultCellType);
-                                        setAnchorEl(null);
-                                    }}
-                                >
-                                    {display}
-                                </StyledMenuItem>
-                            );
-                        },
-                    )}
-                </StyledMenu>
-            </Stack>
+            <>
+                {/* Dropdown for All Add Cell Option Sets */}
+
+                <Stack direction={'row'} alignItems={'center'} gap={1}>
+                    <StyledDivider />
+                    <StyledBorderDiv>
+                        {AddCellOptions &&
+                            Object.entries(AddCellOptions).map((add, i) => {
+                                const value = add[1];
+                                return (
+                                    <StyledButton
+                                        key={i}
+                                        title={`${value.display}`}
+                                        variant="contained"
+                                        size="small"
+                                        disabled={
+                                            query.isLoading || value.disabled
+                                        }
+                                        startIcon={value.icon}
+                                        onClick={(e) => {
+                                            if (value.options) {
+                                                setAnchorEl(e.currentTarget);
+                                                setSelectedAddCell(add[0]);
+                                            } else {
+                                                appendCell(
+                                                    value.defaultCellType,
+                                                );
+                                            }
+                                        }}
+                                        endIcon={
+                                            Array.isArray(value.options) &&
+                                            (selectedAddCell == add[0] &&
+                                            open ? (
+                                                <KeyboardArrowDown />
+                                            ) : (
+                                                <KeyboardArrowUp />
+                                            ))
+                                        }
+                                    >
+                                        {value.display}
+                                    </StyledButton>
+                                );
+                            })}
+                    </StyledBorderDiv>
+                    <StyledDivider />
+                    <StyledMenu
+                        anchorEl={anchorEl}
+                        open={
+                            open &&
+                            !!AddCellOptions[selectedAddCell]?.options?.length
+                        }
+                        onClose={() => {
+                            setAnchorEl(null);
+                        }}
+                    >
+                        {selectedAddCell === 'transformation' &&
+                            Array.from(
+                                AddCellOptions[selectedAddCell]?.options || [],
+                                ({ display, defaultCellType }, index) => {
+                                    return (
+                                        <StyledMenuItem
+                                            key={index}
+                                            value={display}
+                                            onClick={() => {
+                                                appendCell(defaultCellType);
+                                                setAnchorEl(null);
+                                            }}
+                                        >
+                                            {display}
+                                        </StyledMenuItem>
+                                    );
+                                },
+                            )}
+
+                        {selectedAddCell === 'import-data' && (
+                            <>
+                                {Array.from(
+                                    AddCellOptions[selectedAddCell]?.options ||
+                                        [],
+                                    ({ display }, index) => {
+                                        return (
+                                            <StyledMenuItem
+                                                key={index}
+                                                value={display}
+                                                disabled={display == 'From CSV'} // temporary
+                                                onClick={() => {
+                                                    setIsDataImportModalOpen(
+                                                        true,
+                                                    );
+                                                    setAnchorEl(null);
+                                                }}
+                                            >
+                                                {display}
+                                            </StyledMenuItem>
+                                        );
+                                    },
+                                )}
+                            </>
+                        )}
+                    </StyledMenu>
+                </Stack>
+
+                {isDataImportModalOpen && (
+                    <DataImportFormModal
+                        setIsDataImportModalOpen={setIsDataImportModalOpen}
+                        query={query}
+                        previousCellId={previousCellId}
+                        cell={null}
+                        editMode={false}
+                    />
+                )}
+            </>
         );
     },
 );

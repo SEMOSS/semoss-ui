@@ -102,6 +102,7 @@ export const EngineCatalogPage = observer(
         const { type } = props;
 
         // get the matching route
+        const routeTypeRef = useRef('');
         const route: (typeof ENGINE_ROUTES)[number] | null = useMemo(() => {
             for (const r of ENGINE_ROUTES) {
                 if (r.type === type) {
@@ -373,6 +374,12 @@ export const EngineCatalogPage = observer(
          * @desc anytime we change catalogType clean up engines
          */
         useEffect(() => {
+            // Prevent cleanup on first render.
+            if (routeTypeRef.current === '') {
+                routeTypeRef.current = route.type;
+                return;
+            }
+
             dispatch({
                 type: 'field',
                 field: 'databases',
@@ -381,6 +388,7 @@ export const EngineCatalogPage = observer(
             setCanCollect(true);
             setOffset(0);
             setMetaFilters({});
+            routeTypeRef.current = route.type;
         }, [route.type]);
 
         /**

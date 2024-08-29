@@ -268,7 +268,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                             <li key={option.id} {...optionProps}>
                                 <MembersAddOverlayUser
                                     name={option.name}
-                                    id={option.username}
+                                    id={option.id}
                                     email={option.email}
                                     type={option.type}
                                 />
@@ -292,7 +292,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         <MembersAddOverlayUser
                             key={user.id}
                             name={user.name}
-                            id={user.username}
+                            id={user.id}
                             email={user.email}
                             type={user.type}
                             action={
