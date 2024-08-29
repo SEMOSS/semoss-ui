@@ -52,7 +52,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         value: '',
         label: 'Example Input',
         hint: '',
-        options: [],
+        extensions: [],
         loading: false,
         disabled: false,
         required: false,
@@ -70,7 +70,12 @@ export const config: BlockConfig<UploadBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <UploadSettings id={id} label="Value" path={'value'} />
+                        <UploadSettings
+                            id={id}
+                            label="Value"
+                            path={'value'}
+                            validatePath={'extensions'}
+                        />
                     ),
                 },
                 {
@@ -79,7 +84,7 @@ export const config: BlockConfig<UploadBlockDef> = {
                         <SelectSettings
                             id={id}
                             label="Extensions"
-                            path={'options'}
+                            path={'extensions'}
                             options={FileTypes}
                         />
                     ),

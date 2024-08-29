@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-//import { TextField } from '@semoss/ui';
+import { TextField } from '@semoss/ui';
+import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
-import { Autocomplete, TextField } from '@mui/material';
 
 interface SelectSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -108,6 +108,8 @@ export const SelectSettings = observer(
                         <TextField
                             {...params}
                             placeholder="Select extensions"
+                            size="small"
+                            variant="outlined"
                         />
                     )}
                 />

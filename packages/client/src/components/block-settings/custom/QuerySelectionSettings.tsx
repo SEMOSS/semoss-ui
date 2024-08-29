@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { Autocomplete, TextField } from '@mui/material';
+import { TextField } from '@semoss/ui';
+import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef, Variable } from '@/stores';
@@ -124,7 +125,6 @@ export const QuerySelectionSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <></>
                 <Autocomplete
                     fullWidth
                     disableClearable={value === ''}
@@ -138,7 +138,12 @@ export const QuerySelectionSettings = observer(
                         onChange(value);
                     }}
                     renderInput={(params) => (
-                        <TextField {...params} placeholder="Query" />
+                        <TextField
+                            {...params}
+                            placeholder="Query"
+                            size="small"
+                            variant="outlined"
+                        />
                     )}
                 />
             </BaseSettingSection>

@@ -3,7 +3,5 @@
         "**/*.rollup.cache": true,
         "**/dist": true,
         "**/target": true,
-    },
-    "editor.folding": true,
-    "editor.foldingStrategy": "indentation",
+    }
 }

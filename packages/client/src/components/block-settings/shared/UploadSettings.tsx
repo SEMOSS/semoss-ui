@@ -24,6 +24,12 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Path to validate against
+     * Ex: extensions we want to limit
+     */
+    validatePath: Paths<Block<D>['data'], 4>;
 }
 
 export const UploadSettings = observer(
@@ -31,6 +37,7 @@ export const UploadSettings = observer(
         id,
         label = '',
         path,
+        validatePath,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const { state } = useBlocks();
@@ -124,6 +131,7 @@ export const UploadSettings = observer(
                         onChange(files[0]);
                     }}
                     type={'file'}
+                    inputProps={{ accept: data[validatePath] }}
                     size="small"
                     variant="outlined"
                     autoComplete="off"

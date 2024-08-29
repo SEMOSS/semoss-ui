@@ -20,7 +20,7 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
         loading: boolean;
         disabled: boolean;
         hint?: string;
-        options?: string[];
+        extensions?: string[];
     };
 }
 
@@ -47,17 +47,17 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             // upload the file
             const uploadedFiles = await uploadFile(file);
 
-            // extract te file extension from the file name
-            const fileExtension = `.${file.name
-                .split('.')
-                .pop()
-                .toLowerCase()}`;
+            // // extract te file extension from the file name
+            // const fileExtension = `.${file.name
+            //     .split('.')
+            //     .pop()
+            //     .toLowerCase()}`;
 
-            // clear the value if fileExtension does not exist
-            if (!data.options.includes(fileExtension)) {
-                setData('value', '');
-                alert('file type not supported');
-            }
+            // // clear the value if fileExtension does not exist
+            // if (!data.extensions.includes(fileExtension)) {
+            //     setData('value', '');
+            //     alert('file type not supported');
+            // }
             // ignore if false is returned
             if (!uploadedFiles) {
                 return;
@@ -106,7 +106,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 shrink: true,
             }}
             type={'file'}
-            inputProps={{ accept: data.options }}
+            inputProps={{ accept: data.extensions }}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
 
