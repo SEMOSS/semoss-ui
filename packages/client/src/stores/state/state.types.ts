@@ -39,7 +39,8 @@ export type VariableType =
     | 'function'
     | 'JSON'
     | 'date'
-    | 'array';
+    | 'array'
+    | 'LLM Comparison';
 
 /**
  * Variables

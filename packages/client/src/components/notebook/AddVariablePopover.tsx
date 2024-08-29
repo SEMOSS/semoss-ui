@@ -24,7 +24,10 @@ import {
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 import { DefaultBlocks, getIconForBlock } from '../block-defaults';
-import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
+import {
+    BLOCK_TYPE_COMPARE,
+    BLOCK_TYPE_INPUT,
+} from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
 import {
@@ -183,6 +186,27 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
         return cells;
     }, [state.queries]);
 
+    // Get the LLM Comparison Blocks
+    const comparisonBlocks = computed(() => {
+        return Object.values(state.blocks)
+            .filter(
+                (block) =>
+                    DefaultBlocks[block.widget].type === BLOCK_TYPE_COMPARE,
+            )
+            .sort((a, b) => {
+                const aId = a.id.toLowerCase(),
+                    bId = b.id.toLowerCase();
+
+                if (aId < bId) {
+                    return -1;
+                }
+                if (aId > bId) {
+                    return 1;
+                }
+                return 0;
+            });
+    }).get();
+
     /**
      * Select Box on different constants to tie to
      */
@@ -200,6 +224,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                 return (
                     <Select.Item key={q.id} value={q.id}>
                         <Typography variant="caption">{q.id}</Typography>
+                    </Select.Item>
+                );
+            });
+        } else if (variableType === 'LLM Comparison') {
+            return comparisonBlocks.map((block) => {
+                return (
+                    <Select.Item key={block.id} value={block.id}>
+                        <Typography variant="caption">{block.id}</Typography>
                     </Select.Item>
                 );
             });
@@ -327,7 +359,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     value={
                         (variableType === 'cell' ||
                         variableType === 'query' ||
-                        variableType === 'block'
+                        variableType === 'block' ||
+                        variableType === 'LLM Comparison'
                             ? variablePointer
                             : engine) ?? ''
                     }
@@ -336,7 +369,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         if (
                             variableType === 'cell' ||
                             variableType === 'query' ||
-                            variableType === 'block'
+                            variableType === 'block' ||
+                            variableType === 'LLM Comparison'
                         ) {
                             const p = val as string;
                             setVariablePointer(p);
@@ -363,7 +397,10 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                 variableType &&
                 (variablePointer || engine || variableInputValue)
             ) {
-                if (variableType === 'block') {
+                if (
+                    variableType === 'block' ||
+                    variableType === 'LLM Comparison'
+                ) {
                     const block = state.getBlock(variablePointer);
                     const s: SerializedState = {
                         version: STATE_VERSION,
@@ -421,8 +458,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                             <Alert severity="warning" icon={<WarningRounded />}>
                                 <Alert.Title>
                                     Sheet {variablePointer} has not been
-                                    executed. Click 'Run All' in order to
-                                    preview output.
+                                    executed. Click &apos;Run All&apos; in order
+                                    to preview output.
                                 </Alert.Title>
                             </Alert>
                         );
@@ -455,8 +492,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                 <Alert.Title>
                                     Cell{' '}
                                     {splitAtPeriod(variablePointer, 'right')}{' '}
-                                    has not been executed. Click 'Run All' in
-                                    order to preview output.
+                                    has not been executed. Click &apos;Run
+                                    All&apos; in order to preview output.
                                 </Alert.Title>
                             </Alert>
                         );
@@ -670,7 +707,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                     if (
                                         variableType === 'block' ||
                                         variableType === 'query' ||
-                                        variableType === 'cell'
+                                        variableType === 'cell' ||
+                                        variableType === 'LLM Comparison'
                                     ) {
                                         state.dispatch({
                                             message:
