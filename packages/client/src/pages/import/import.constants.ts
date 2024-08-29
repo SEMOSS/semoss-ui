@@ -4606,6 +4606,99 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
+                name: 'AWS TITAN TEXT EMBEDDINGS',
+                disable: false,
+                icon: AMAZON_S3, //need to change the icon
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL_TYPE',
+                        label: 'Type',
+                        defaultValue: 'AWS_TITAN_TEXT_EMBEDDINGS',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'AWS TITAN TEXT EMBEDDINGS',
+                                    value: 'AWS_TITAN_TEXT_EMBEDDINGS',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MODEL',
+                        label: 'Model',
+                        defaultValue: 'amazon.titan-embed-text-v2:0',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,                           
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VAR_NAME',
+                        label: 'Variable Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },    
+                    {
+                        fieldName: 'INIT_MODEL_ENGINE',
+                        label: 'Init Script',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },                    
+                    {
+                        fieldName: 'AWS_REGION',
+                        label: 'Aws Region',
+                        defaultValue: 'us-east-1',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_ACCESS_KEY',
+                        label: 'Aws Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_SECRET_KEY',
+                        label: 'Aws Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            }, 
+            {
                 name: 'Stablity AI',
                 disable: true,
                 icon: STABILITY_AI,
@@ -5067,6 +5160,104 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                ],
+            },
+            {
+                name: 'AWS TEXTRACT',
+                disable: false,
+                icon: AMAZON_S3, //need to change the icon
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AWS_TEXTRACT',
+
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },                  
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'S3_BUCKETNAME',
+                        label: 'S3 Bucket Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    }, 
+                    {
+                        fieldName: 'requiredParameters',
+                        label: 'Function Required Parameters',
+                        defaultValue: 'filepathInS3 / uploadedfilepath,S3BucketEngineId',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },                    
                 ],
             },
         ],
@@ -11941,6 +12132,10 @@ export const ENGINE_IMAGES = {
             icon: ORCA,
         },
         {
+            name: 'AWS_TITAN_TEXT_EMBEDDINGS',
+            icon: AMAZON_S3, //need to change the icon
+        },
+        {
             name: 'Stablity AI',
             icon: STABILITY_AI,
         },
@@ -11961,6 +12156,10 @@ export const ENGINE_IMAGES = {
         {
             name: 'REST',
             icon: RESTAPI,
+        },
+        {
+            name: 'AWS TEXTRACT',
+            icon: AMAZON_S3, //need to change the icon
         },
         {
             name: 'ZIP',
