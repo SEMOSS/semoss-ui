@@ -5331,6 +5331,17 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+					{
+                        fieldName: 'AZUREOCRENGINEID',
+                        label: 'AZUREOCR Function Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
