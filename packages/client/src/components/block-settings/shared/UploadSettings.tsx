@@ -9,7 +9,7 @@ import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { upload } from '@/api';
 
-interface InputSettingsProps<D extends BlockDef = BlockDef> {
+interface UploadSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -26,10 +26,10 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 
     /**
-     * Path to validate against
+     * Path to use as a restriction on uploads
      * Ex: extensions we want to limit
      */
-    validatePath: Paths<Block<D>['data'], 4>;
+    restrictPath?: Paths<Block<D>['data'], 4>;
 }
 
 export const UploadSettings = observer(
@@ -37,8 +37,8 @@ export const UploadSettings = observer(
         id,
         label = '',
         path,
-        validatePath,
-    }: InputSettingsProps<D>) => {
+        restrictPath,
+    }: UploadSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const { state } = useBlocks();
 
@@ -124,7 +124,6 @@ export const UploadSettings = observer(
             <BaseSettingSection label={label}>
                 <TextField
                     fullWidth
-                    inputProps={{ accept: data.options }}
                     onChange={(e) => {
                         const files = (e.target as HTMLInputElement).files;
 
@@ -132,7 +131,7 @@ export const UploadSettings = observer(
                         onChange(files[0]);
                     }}
                     type={'file'}
-                    inputProps={{ accept: data[validatePath] }}
+                    inputProps={{ accept: data[restrictPath] }}
                     size="small"
                     variant="outlined"
                     autoComplete="off"

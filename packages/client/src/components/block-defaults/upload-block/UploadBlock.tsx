@@ -47,17 +47,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             // upload the file
             const uploadedFiles = await uploadFile(file);
 
-            // // extract te file extension from the file name
-            // const fileExtension = `.${file.name
-            //     .split('.')
-            //     .pop()
-            //     .toLowerCase()}`;
-
-            // // clear the value if fileExtension does not exist
-            // if (!data.extensions.includes(fileExtension)) {
-            //     setData('value', '');
-            //     alert('file type not supported');
-            // }
             // ignore if false is returned
             if (!uploadedFiles) {
                 return;

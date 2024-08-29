@@ -74,7 +74,7 @@ export const config: BlockConfig<UploadBlockDef> = {
                             id={id}
                             label="Value"
                             path={'value'}
-                            validatePath={'extensions'}
+                            restrictPath={'extensions'}
                         />
                     ),
                 },
