@@ -2,6 +2,7 @@ import { CellRegistry } from '@/stores';
 
 import { CodeCellConfig, CodeCellDef } from './code-cell';
 import { QueryImportCellConfig, QueryImportCellDef } from './query-import-cell';
+import { DataImportCellConfig, DataImportCellDef } from './data-import-cell';
 import {
     UppercaseTransformationCellConfig,
     UppercaseTransformationCellDef,
@@ -46,6 +47,7 @@ import {
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
+    | DataImportCellDef
     | UppercaseTransformationCellDef
     | UpdateRowTransformationCellDef
     | ColumnTypeTransformationCellDef
@@ -59,6 +61,7 @@ export type DefaultCellDefinitions =
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
     [QueryImportCellConfig.widget]: QueryImportCellConfig,
+    [DataImportCellConfig.widget]: DataImportCellConfig,
     [UppercaseTransformationCellConfig.widget]:
         UppercaseTransformationCellConfig,
     [UpdateRowTransformationCellConfig.widget]:
