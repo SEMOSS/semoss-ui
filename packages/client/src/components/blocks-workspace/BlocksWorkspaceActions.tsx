@@ -98,7 +98,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
             notification.add({
                 color: 'success',
-                message: 'Success',
+                message: 'Save successful! Make sure to double-check your changes for correctness',
             });
         } catch (e) {
             console.error(e);
