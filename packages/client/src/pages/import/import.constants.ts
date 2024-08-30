@@ -5067,7 +5067,9 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
-					{
+                ],
+            },
+            {
                 name: 'AZUREOCR',
                 disable: false,
                 icon: RESTAPI,
@@ -5330,17 +5332,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
-                    },
-					{
-                        fieldName: 'AZUREOCRENGINEID',
-                        label: 'AZUREOCR Function Engine Id',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                        advanced: true,
                     },
                 ],
             },
@@ -5913,7 +5904,7 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
-					{
+                    {
                         fieldName: 'AZUREOCRENGINEID',
                         label: 'AZURE OCR Function Engine Id',
                         defaultValue: '',
@@ -5923,7 +5914,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                         advanced: true,
-                    },
+                    }
                 ],
             },
             {
@@ -6311,9 +6302,9 @@ export const CONNECTION_OPTIONS = {
                         secondary: true,
                         rules: {},
                     },
-					{
+                    {
                         fieldName: 'AZUREOCRENGINEID',
-                        label: 'AZUREOCR Function Engine Id',
+                        label: 'AZURE OCR Function Engine Id',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -6321,7 +6312,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                         advanced: true,
-                    },
+                    }
                 ],
             },
         ],
@@ -12074,7 +12065,7 @@ export const ENGINE_IMAGES = {
             name: 'ZIP',
             icon: ZIP,
         },
-		{
+        {
             name: 'AZUREOCR',
             icon: RESTAPI,
         },
