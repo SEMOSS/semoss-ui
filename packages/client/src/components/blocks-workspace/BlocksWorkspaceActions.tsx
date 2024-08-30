@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -196,6 +197,26 @@ export const BlocksWorkspaceActions = observer(() => {
             workspace.setLoading(false);
         }
     };
+
+    /**
+     * Trigger save on ctrl+s
+     */
+        const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
+            if (event.key === 's' && event.ctrlKey) {
+                event.preventDefault();
+                saveApp();
+            }
+        }, []);
+    
+        useEffect(() => {
+            // attach the event listener
+            document.addEventListener('keydown', onDocumentKeydown);
+    
+            // remove the event listener
+            return () => {
+                document.removeEventListener('keydown', onDocumentKeydown);
+            };
+        }, [onDocumentKeydown]);
 
     return (
         <Stack direction="row" spacing={1} alignItems={'center'}>
