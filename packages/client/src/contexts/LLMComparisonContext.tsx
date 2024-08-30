@@ -2,6 +2,9 @@ import { createContext } from 'react';
 import { Control } from 'react-hook-form';
 
 export type LLMComparisonContextType = {
+    /** Block's ID from the App's JSON */
+    blockId: string;
+
     /** React Hook Form methods stored for nested components' access */
     control: Control<any, any> | null;
     getValues: null | ((str?: string) => any);
