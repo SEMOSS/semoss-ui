@@ -103,6 +103,9 @@ importers:
 
   packages/client:
     dependencies:
+      '@babel/standalone':
+        specifier: ^7.25.6
+        version: 7.25.6
       '@emotion/react':
         specifier: ^11.11.1
         version: 11.11.1(@types/react@17.0.63)(react@17.0.2)
@@ -3327,6 +3330,11 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.0
+    dev: false
+
+  /@babel/standalone@7.25.6:
+    resolution: {integrity: sha512-Kf2ZcZVqsKbtYhlA7sP0z5A3q5hmCVYMKMWRWNK/5OVwHIve3JY1djVRmIVAx8FMueLIfZGKQDIILK2w8zO4mg==}
+    engines: {node: '>=6.9.0'}
     dev: false
 
   /@babel/template@7.22.5:
@@ -15827,7 +15835,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.88.2(webpack-cli@5.1.4)
+      webpack: 5.88.2(webpack-cli@4.10.0)
     dev: true
 
   /htmlparser2@6.1.0:
@@ -18663,7 +18671,7 @@ packages:
       webpack: ^5.0.0
     dependencies:
       schema-utils: 4.2.0
-      webpack: 5.88.2(webpack-cli@5.1.4)
+      webpack: 5.88.2(webpack-cli@4.10.0)
     dev: true
 
   /minimalistic-assert@1.0.1:

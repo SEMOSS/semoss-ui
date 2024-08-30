@@ -427,6 +427,20 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         },
     },
     {
+        section: SECTION_ELEMENT,
+        // image for html block from design team
+        image: HTML_BLOCK,
+        name: 'Generated Component',
+        json: {
+            widget: 'generated',
+            data: {
+                code: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_TEXT,
         image: BLOCK_H1_STYLED,
         name: 'Text',
