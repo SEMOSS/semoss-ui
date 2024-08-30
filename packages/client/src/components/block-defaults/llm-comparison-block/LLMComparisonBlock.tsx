@@ -45,6 +45,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
 
     const [highlightedRating, setHighlightedRating] = useState(0);
 
+    // Reset selected tab when variant's are changed.
     useEffect(() => {
         if (variantTabs.length !== tabsLengthRef.current) {
             setSelectedTab(variantTabs[0] || null);
