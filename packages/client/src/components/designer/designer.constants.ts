@@ -615,7 +615,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                     textOverflow: 'ellipsis',
                 },
                 text: '',
-                variant: 'p',
+                variants: {},
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

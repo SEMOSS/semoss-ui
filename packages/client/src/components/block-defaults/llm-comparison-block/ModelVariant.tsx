@@ -18,9 +18,12 @@ import {
     TypeVariant,
     TypeVariants,
 } from '../../workspace/workspace.types';
+import { Variant } from '@/stores';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
-import { useLLMComparison } from '@/hooks';
+import { useBlock, useBlocks, useLLMComparison } from '@/hooks';
+import { LLMComparisonBlockDef } from './LLMComparisonBlock';
+import { toJS } from 'mobx';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -73,18 +76,25 @@ export const ModelVariant = (props: ModelVariantProps) => {
         orientation = 'column',
     } = props;
     const [hovered, setHovered] = useState(false);
-    const { setValue, getValues } = useLLMComparison();
+    const { setValue, getValues, blockId } = useLLMComparison();
+    const { setData } = useBlock<LLMComparisonBlockDef>(blockId);
+    const { state } = useBlocks();
 
     const handleToggleSelected = () => {
+        const newSelected = !variant.selected;
+        // update variant in local state
         if (isDefault) {
             const defaultCopy = { ...getValues('defaultVariant') };
-            defaultCopy.selected = !defaultCopy.selected;
+            defaultCopy.selected = newSelected;
             setValue('defaultVariant', defaultCopy);
         } else {
             const variantsCopy = { ...getValues('variants') };
-            variantsCopy[variantName].selected = !variant.selected;
+            variantsCopy[variantName].selected = newSelected;
             setValue('variants', variantsCopy);
         }
+
+        // handle side effects on App state
+        updateVariantInBlock(newSelected);
     };
 
     const handleDeleteVariant = () => {
@@ -97,6 +107,29 @@ export const ModelVariant = (props: ModelVariantProps) => {
 
     const deleteVariantFromAppJson = (variant: TypeVariant) => {
         // TODO: need to add action in store for deleting a variant.
+        // TODO: also ensure the variant is deleted in other Blocks
+    };
+
+    const updateVariantInBlock = (selected: boolean) => {
+        const blockVars = toJS(state.blocks[blockId].data.variants);
+        const readable: Record<string, unknown> = blockVars as Record<
+            string,
+            unknown
+        >;
+        const blockVarsCopy = { ...readable };
+
+        if (selected) {
+            blockVarsCopy[variantName] = {
+                id: variantName,
+                to: '',
+                models: [...variant.models],
+            };
+
+            setData('variants', blockVarsCopy, true);
+        } else {
+            delete blockVarsCopy[variantName];
+            setData('variants', blockVarsCopy, true);
+        }
     };
 
     const handleOpenVariantEditor = (duplicate: boolean) => {

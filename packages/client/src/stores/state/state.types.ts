@@ -85,6 +85,10 @@ export type VariantModel = {
     length: number;
 };
 
+export interface BlockVariant extends Variant {
+    sortWeight: number;
+}
+
 /**
  * Block
  */

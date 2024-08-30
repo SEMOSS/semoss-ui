@@ -46,6 +46,7 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     const [allModels, setAllModels] = useState<TypeLlmConfig[]>([]);
 
     const { state } = useBlocks();
+    console.log('state', toJS(state.blocks));
 
     const { control, setValue, handleSubmit, getValues, watch } =
         useForm<TypeLlmComparisonForm>({
@@ -67,6 +68,7 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
         const allModels = await fetchAllModels();
 
         const stateVariants = toJS(state.variants);
+        const selectedVariants = toJS(state.blocks[id])?.data?.variants || {};
 
         // Accepts a variant from the App's JSON and models it for the Comparison menu's form state.
         const modelVariantLlms = (variant: Variant): TypeLlmConfig[] => {
@@ -89,24 +91,22 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
         // Variants other than the default variant to be added to the form's state
         const otherVariants: TypeVariants = {};
 
-        Object.keys(stateVariants).forEach((name: string) => {
-            if (name === 'default') {
-                const defaultVar = stateVariants[name];
-                const models = modelVariantLlms(defaultVar);
+        Object.keys(stateVariants).forEach((name: string, idx) => {
+            const variant = stateVariants[name];
+            const models = modelVariantLlms(variant);
+            const isSelected = Object.keys(selectedVariants).includes(name);
 
-                const modelled: TypeVariant = {
-                    models,
-                    selected: true,
-                };
+            const modelled: TypeVariant = {
+                models,
+                selected: isSelected,
+                sortWeight: selectedVariants[name]?.sortWeight
+                    ? selectedVariants[name]?.sortWeight
+                    : idx,
+            };
+
+            if (name === 'default') {
                 setValue('defaultVariant', modelled);
             } else {
-                const otherVar = stateVariants[name];
-                const models = modelVariantLlms(otherVar);
-
-                const modelled: TypeVariant = {
-                    models,
-                    selected: false,
-                };
                 otherVariants[name] = modelled;
             }
         });
@@ -126,6 +126,7 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     return (
         <LLMComparisonContext.Provider
             value={{
+                blockId: id,
                 control,
                 setValue,
                 getValues,

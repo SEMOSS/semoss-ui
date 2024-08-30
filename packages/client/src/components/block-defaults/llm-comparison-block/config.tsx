@@ -12,7 +12,7 @@ export const config: BlockConfig<LLMComparisonBlockDef> = {
     type: BLOCK_TYPE_COMPARE,
     data: {
         to: '',
-        variants: [],
+        variants: {},
     },
     listeners: {},
     slots: {},
