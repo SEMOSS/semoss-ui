@@ -5163,21 +5163,31 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'AWS TEXTRACT',
+                name: 'AWS - Image Text Extraction',
                 disable: false,
-                icon: AMAZON_S3, //need to change the icon
+                icon: AMAZON_S3,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
                         label: 'Function Type',
-                        defaultValue: 'AWS_TEXTRACT',
-
+                        defaultValue: 'AWS_TEXTRACT',                        
                         options: {
-                            component: 'text-field',
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'AWS TEXTRACT',
+                                    value: 'AWS_TEXTRACT',
+                                },
+                                {
+                                    display: 'AWS REKOGNITION',
+                                    value: 'AWS_REKOGNITION',
+                                },
+                            ],
                         },
-                        disabled: true,
+                        disabled: false,
+                        hidden: false,
                         rules: { required: true },
-                    },
+                    }, 
                     {
                         fieldName: 'NAME',
                         label: 'Name',
@@ -5219,7 +5229,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'S3_BUCKETNAME',
+                        fieldName: 'BUCKETNAME',
                         label: 'S3 Bucket Name',
                         defaultValue: '',
                         options: {
@@ -5249,9 +5259,9 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     }, 
                     {
-                        fieldName: 'requiredParameters',
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
-                        defaultValue: 'filepathInS3 / uploadedfilepath,S3BucketEngineId',
+                        defaultValue: '["filepathInS3"] / ["uploadedfilepath","S3BucketEngineId"]',
                         options: {
                             component: 'text-field',
                         },
