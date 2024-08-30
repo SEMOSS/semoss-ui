@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { IconButton, Stack, Tabs, Typography, styled } from '@semoss/ui';
@@ -38,11 +38,19 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
-    const [selectedTab, setSelectedTab] = useState('');
+    const tabsLengthRef = useRef(0);
+    const [selectedTab, setSelectedTab] = useState<string | null>(null);
     const variantTabs: string[] = Object.keys(data?.variants || {});
     const displayed = (data?.variants || {})[selectedTab] || {};
 
     const [highlightedRating, setHighlightedRating] = useState(0);
+
+    useEffect(() => {
+        if (variantTabs.length !== tabsLengthRef.current) {
+            setSelectedTab(variantTabs[0] || null);
+            tabsLengthRef.current = variantTabs.length;
+        }
+    }, [variantTabs]);
 
     const handleRateResponse = (num: number) => {
         // TODO: set rating for a variant's response using the rating from the 'num' param.
@@ -61,7 +69,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             ) : (
                 <StyledTabBox gap={2}>
                     <Tabs
-                        value={selectedTab}
+                        value={selectedTab || null}
                         onChange={(_, value: string) => {
                             setSelectedTab(value);
                         }}
