@@ -59,9 +59,11 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
             message:
                 'The LLM Comparison tool is currently in beta, please contact the administrator with any issues with this part of the tool',
         });
-
-        initialFetch();
     }, []);
+
+    useEffect(() => {
+        initialFetch();
+    }, [id]);
 
     // fetch any relevant data and apply the app's variants to the form's state.
     const initialFetch = async () => {
