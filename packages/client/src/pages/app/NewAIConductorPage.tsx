@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     styled,
     Typography,
@@ -12,6 +12,139 @@ import { ArrowUpward, Mic } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { usePixel, useRootStore } from '@/hooks';
 // import { Background } from '@xyflow/react';
+
+import {
+    ReactFlow,
+    MiniMap,
+    Controls,
+    Background,
+    BackgroundVariant,
+    useNodesState,
+    useEdgesState,
+    addEdge,
+} from '@xyflow/react';
+
+// Example valid node structure from react flow docs
+// { id: '1', position: { x: 0, y: 0 }, data: { label: createNodeLabel('1'), text: "" } },
+
+const NodeComponent = (props) => {
+    return (
+        <div style={{ border: '1px solid red', width: '100%' }}>
+            {props.children}
+        </div>
+    );
+};
+
+const TEST_NODES = [
+    {
+        id: '1',
+        width: 1000,
+        position: { x: 0, y: 0 },
+        data: { label: <NodeComponent>1</NodeComponent> },
+        text: '',
+    },
+    {
+        id: '2',
+        width: 1000,
+        position: { x: 0, y: 100 },
+        data: { label: <NodeComponent>2</NodeComponent> },
+        text: '',
+    },
+    {
+        id: '3',
+        width: 1000,
+        position: { x: 0, y: 200 },
+        data: { label: <NodeComponent>3</NodeComponent> },
+        text: '',
+    },
+
+    // {
+    //     "id": "1",
+    //     "data": { "label": <h2>Start Node</h2> },
+    //     "position": { "x": 50, "y": 50 },
+    //     "type": "input",
+    //     "targetPosition": "left",
+    //     "text": "",
+    //     "sourcePosition": "right"
+    // },
+    // {
+    //     "id": "2",
+    //     "data": { "label": <h2>Process A</h2> },
+    //     "position": { "x": 200, "y": 50 },
+    //     "targetPosition": "left",
+    //     "text": "",
+    //     "sourcePosition": "right"
+    // },
+    // {
+    //     "id": "3",
+    //     "data": { "label": <h2>Process B</h2> },
+    //     "position": { "x": 350, "y": 150 },
+    //     "targetPosition": "top",
+    //     "text": "",
+    //     "sourcePosition": "bottom"
+    // },
+    // {
+    //     "id": "4",
+    //     "data": { "label": <h2>Decision</h2> },
+    //     "position": { "x": 500, "y": 50 },
+    //     "targetPosition": "left",
+    //     "text": "",
+    //     "sourcePosition": "right"
+    // },
+    // {
+    //     "id": "5",
+    //     "data": { "label": <h2>Process C</h2> },
+    //     "position": { "x": 650, "y": 50 },
+    //     "targetPosition": "left",
+    //     "text": "",
+    //     "sourcePosition": "right"
+    // },
+    // {
+    //     "id": "6",
+    //     "data": { "label": <h2>End Node</h2> },
+    //     "position": { "x": 800, "y": 150 },
+    //     "type": "output",
+    //     "targetPosition": "left",
+    //     "text": "",
+    // }
+];
+
+const TEST_EDGES = [
+    { id: 'e1-2', source: '1', target: '2' },
+    { id: 'e1-3', source: '1', target: '3' },
+
+    // {
+    // "id": "e1-2",
+    // "source": "1",
+    // "target": "2",
+    // "animated": true,
+    // "label": "Next"
+    // },
+    // {
+    // "id": "e2-3",
+    // "source": "2",
+    // "target": "3",
+    // "label": "Next"
+    // },
+    // {
+    // "id": "e2-4",
+    // "source": "2",
+    // "target": "4",
+    // "label": "Next"
+    // },
+    // {
+    // "id": "e4-5",
+    // "source": "4",
+    // "target": "5",
+    // "label": "Yes"
+    // },
+    // {
+    // "id": "e5-6",
+    // "source": "5",
+    // "target": "6",
+    // "label": "Next"
+    // },
+];
 
 const ComponentContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
@@ -65,6 +198,32 @@ export const NewAIConductorPage = (props) => {
     const uploadFile = watch('uploadFile');
     const taskInput = watch('taskInput');
 
+    // const [reactFlowNodes, setReactFlowNodes] = useState(null);
+    // const [reactFlowEdges, setReactFlowEdges] = useState(null);
+
+    // from test react flow app -----------------------------------------------
+    // const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    // const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [nodes, setNodes, onNodesChange] = useNodesState(TEST_NODES);
+    const [edges, setEdges, onEdgesChange] = useEdgesState(TEST_EDGES);
+
+    const onConnect = useCallback(
+        (params) => setEdges((eds) => addEdge(params, eds)),
+        [setEdges],
+    );
+
+    const nodeChangeHandler = (e) => {
+        onNodesChange(e);
+    };
+
+    const nodeState = () => {
+        console.log({
+            nodes,
+            edges,
+        });
+    };
+    // -----------------------------------------------
+
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [subTaskElements, setSubTaskElements] = useState([
         {
@@ -78,6 +237,11 @@ export const NewAIConductorPage = (props) => {
     const notification = useNotification();
 
     useEffect(() => {
+        // initial API calls load into useState
+        // loadReactFlowStructure();
+    });
+
+    useEffect(() => {
         const childEle = document.querySelector('#conductor-container-div');
         const parentEle = childEle.parentElement;
         parentEle.style.display = 'flex';
@@ -88,6 +252,12 @@ export const NewAIConductorPage = (props) => {
             parentEle.style.flexDirection = '';
         };
     }, []);
+
+    const loadReactFlowStructure = () => {
+        // replace with API call
+        setEdges(TEST_EDGES);
+        setNodes(TEST_NODES);
+    };
 
     const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
         console.log({ data });
@@ -140,6 +310,41 @@ export const NewAIConductorPage = (props) => {
                         <SubTask>{subTask.content}</SubTask>
                     ))}
                 </SubTaskContainer>
+
+                {/* <div style={{ width: '750px', height: '750px', display: "block", margin: "auto", border: "1px solid black", boxShadow: "-10px 10px 0 black" }}> */}
+                <div style={{ width: '100%', height: '500px' }}>
+                    <button onClick={nodeState}>print nodes state</button>
+                    {/* <button onClick={addNode}>add node</button> */}
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={nodeChangeHandler}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        attributionPosition="bottom-right"
+                        preventScrolling={true}
+                        // edgesUpdatable={!true}
+                        edgesFocusable={!true}
+                        nodesDraggable={!true}
+                        nodesConnectable={!true}
+                        nodesFocusable={!true}
+                        draggable={!true}
+                        panOnDrag={!true}
+                        elementsSelectable={!true}
+                        // Optional if you also want to lock zooming
+                        zoomOnDoubleClick={!true}
+                        minZoom={true ? 1 : 0.5}
+                        maxZoom={true ? 1 : 3}
+                    >
+                        {/* <Controls />
+                        <MiniMap /> */}
+                        {/* <Background 
+                            variant={null} 
+                            gap={12} 
+                            size={1} 
+                        /> */}
+                    </ReactFlow>
+                </div>
 
                 <Controller
                     name={'uploadFile'}
