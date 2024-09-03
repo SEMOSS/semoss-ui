@@ -55,5 +55,6 @@ export class ConductorStore {
      */
     setInputValue(key: string, value: unknown) {
         console.log(key, value);
+        this._store.inputPool[key] = value;
     }
 }

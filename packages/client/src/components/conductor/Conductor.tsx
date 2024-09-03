@@ -2,8 +2,9 @@ import React from 'react';
 import { useConductor } from '@/hooks';
 import { Stack, Typography } from '@semoss/ui';
 import { ConductorStep } from './ConductorStep';
+import { observer } from 'mobx-react-lite';
 
-export const Conductor = () => {
+export const Conductor = observer(() => {
     const { conductor } = useConductor();
 
     return (
@@ -14,9 +15,12 @@ export const Conductor = () => {
         >
             <Typography variant={'h6'}> Overall Input Pool</Typography>
             <div>{JSON.stringify(conductor.inputPool)}</div>
-            <Typography variant={'h4'}>Task</Typography>
+            <Typography variant={'h4'} fontWeight="bold">
+                Task
+            </Typography>
             <Typography variant={'h5'}>
-                Hey am i qualified for this job?
+                Hey am i qualified for this job? If so can you approve me or
+                reject me for position.
             </Typography>
             {conductor.steps.map((step, i) => {
                 return (
@@ -30,4 +34,4 @@ export const Conductor = () => {
             })}
         </Stack>
     );
-};
+});
