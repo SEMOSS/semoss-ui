@@ -1,8 +1,14 @@
 import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { Code } from '@mui/icons-material';
+import { Code, Layers } from '@mui/icons-material';
 
-import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
+import {
+    Sidebar,
+    SidebarItem,
+    SidebarText,
+    AppEditor,
+} from '@/components/common';
+import { useWorkspace } from '@/hooks';
 
 import { NotebookVariablesMenu } from './NotebookVariablesMenu';
 import { NotebookSheet } from './NotebookSheet';
@@ -22,14 +28,17 @@ const StyledNotebook = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-const StyledLeftPanel = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: theme.spacing(45),
-    overflow: 'hidden',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
-}));
+const StyledLeftPanel = ({ view, children }) => {
+    const ReturnElement = styled('div')(({ theme }) => ({
+        height: '100%',
+        width: view === 'fileexplorer' ? '100%' : theme.spacing(45),
+        overflow: 'hidden',
+        boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+        backgroundColor: theme.palette.background.paper,
+        borderRight: `1px solid ${theme.palette.divider}`,
+    }));
+    return <ReturnElement>{children}</ReturnElement>;
+};
 
 const StyledRightPanel = styled('div')(() => ({
     height: '100%',
@@ -40,8 +49,11 @@ const StyledRightPanel = styled('div')(() => ({
 export const Notebook = observer(() => {
     // view
     const [view, setView] = useState<
-        'variables' | 'sources' | 'blocks' | 'transform' | ''
+        'variables' | 'sources' | 'blocks' | 'transform' | 'fileexplorer' | ''
     >('variables');
+
+    //getting the workspace
+    const { workspace } = useWorkspace();
 
     /**
      * Set the view. If it is the same, close it
@@ -94,27 +106,49 @@ export const Notebook = observer(() => {
                     </Tooltip>
                     <SidebarText>Variables</SidebarText>
                 </SidebarItem>
+                <SidebarItem
+                    selected={view === 'fileexplorer'}
+                    onClick={() => updateView('fileexplorer')}
+                >
+                    <Tooltip title={'Add'} placement="right">
+                        <Layers color="inherit" />
+                    </Tooltip>
+                    <SidebarText>File Exploer</SidebarText>
+                </SidebarItem>
             </Sidebar>
             {view ? (
-                <StyledLeftPanel>
+                <StyledLeftPanel view={view}>
                     {view === 'variables' ? <NotebookVariablesMenu /> : null}
+                    {view === 'fileexplorer' ? (
+                        <AppEditor
+                            appId={workspace.appId}
+                            width={'100%'}
+                            onSave={(success: boolean) => {
+                                // Succesfully Saved Asset, refresh portal
+                                if (success) {
+                                    console.log('saved successfully !!!');
+                                }
+                            }}
+                        />
+                    ) : null}
                 </StyledLeftPanel>
             ) : null}
-
-            <StyledRightPanel>
-                <LLMContext.Provider
-                    value={{
-                        modelId: modelId,
-                        modelOptions: models,
-                        setModel: (id) => {
-                            setModelId(id);
-                        },
-                    }}
-                >
-                    <NotebookSheetsMenu />
-                    <NotebookSheet />
-                </LLMContext.Provider>
-            </StyledRightPanel>
+            {view !== 'fileexplorer' ? (
+                <StyledRightPanel>
+                    <LLMContext.Provider
+                        value={{
+                            modelId: modelId,
+                            modelOptions: models,
+                            setModel: (id) => {
+                                setModelId(id);
+                            },
+                        }}
+                    >
+                        <NotebookSheetsMenu />
+                        <NotebookSheet />
+                    </LLMContext.Provider>
+                </StyledRightPanel>
+            ) : null}
         </StyledNotebook>
     );
 });

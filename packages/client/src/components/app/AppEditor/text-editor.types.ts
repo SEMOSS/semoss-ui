@@ -3,6 +3,7 @@ export interface File {
     name: string;
     original: string;
     type: string;
+    isEditable: boolean;
 }
 
 export interface ControlledFile extends File {

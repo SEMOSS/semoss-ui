@@ -737,6 +737,7 @@ export const TextEditor = (props: TextEditorProps) => {
                             editFile(newValue);
                         }}
                         onMount={editorOnMountHandler}
+                        options={{ readOnly: !activeFile.isEditable }}
                     ></Editor>
                 </StyledContainer>
             );
