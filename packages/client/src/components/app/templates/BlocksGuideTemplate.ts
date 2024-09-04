@@ -12,7 +12,6 @@ export const BlocksGuideTemplate: Template = {
     tags: [],
     state: {
         version: '1.0.0-alpha.1',
-        variants: {},
         variables: {
             Vector: {
                 to: 'vector--3773',

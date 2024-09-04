@@ -6,24 +6,12 @@ import {
     Collapse,
     IconButton,
 } from '@semoss/ui';
-import {
-    Add,
-    Close,
-    ContentCopy,
-    PushPinOutlined,
-    PushPinRounded,
-} from '@mui/icons-material';
-import {
-    TypeLlmConfig,
-    TypeVariant,
-    TypeVariants,
-} from '../../workspace/workspace.types';
-import { Variant } from '@/stores';
+import { Add, Close, ContentCopy } from '@mui/icons-material';
+import { TypeVariant, TypeVariants } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useBlock, useBlocks, useLLMComparison } from '@/hooks';
 import { LLMComparisonBlockDef } from './LLMComparisonBlock';
-import { toJS } from 'mobx';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -55,9 +43,6 @@ const StyledActionBar = styled('div')(({ theme }) => ({
 }));
 
 interface ModelVariantProps {
-    /** is a part of the default variant used in app */
-    isDefault?: boolean;
-
     /** name of variant used as its ID in the 'variants' object in state */
     variantName: string;
 
@@ -69,33 +54,12 @@ interface ModelVariantProps {
 }
 
 export const ModelVariant = (props: ModelVariantProps) => {
-    const {
-        variantName,
-        variant,
-        isDefault = false,
-        orientation = 'column',
-    } = props;
+    const { variantName, variant, orientation = 'column' } = props;
+    const isDefault = variantName.toLowerCase() === 'default';
     const [hovered, setHovered] = useState(false);
     const { setValue, getValues, blockId } = useLLMComparison();
     const { setData } = useBlock<LLMComparisonBlockDef>(blockId);
     const { state } = useBlocks();
-
-    const handleToggleSelected = () => {
-        const newSelected = !variant.selected;
-        // update variant in local state
-        if (isDefault) {
-            const defaultCopy = { ...getValues('defaultVariant') };
-            defaultCopy.selected = newSelected;
-            setValue('defaultVariant', defaultCopy);
-        } else {
-            const variantsCopy = { ...getValues('variants') };
-            variantsCopy[variantName].selected = newSelected;
-            setValue('variants', variantsCopy);
-        }
-
-        // handle side effects on App state
-        updateVariantInBlock(newSelected);
-    };
 
     const handleDeleteVariant = () => {
         const variantsCopy: TypeVariants = { ...getValues('variants') };
@@ -106,34 +70,18 @@ export const ModelVariant = (props: ModelVariantProps) => {
     };
 
     const deleteVariantFromAppJson = (variant: TypeVariant) => {
-        // TODO: need to add action in store for deleting a variant.
+        // TODO: need to add action in store for deleting a variant in a cell.
         // TODO: also ensure the variant is deleted in other Blocks
     };
 
-    const updateVariantInBlock = (selected: boolean) => {
-        const blockVars = toJS(state.blocks[blockId].data.variants);
-        const readable: Record<string, unknown> = blockVars as Record<
-            string,
-            unknown
-        >;
-        const blockVarsCopy = { ...readable };
-
-        if (selected) {
-            blockVarsCopy[variantName] = {
-                id: variantName,
-                to: '',
-                models: [...variant.models],
-            };
-
-            setData('variants', blockVarsCopy, true);
-        } else {
-            delete blockVarsCopy[variantName];
-            setData('variants', blockVarsCopy, true);
-        }
+    const updateVariantInBlock = () => {
+        // TODO: update variant in cell in app state
     };
 
     const handleOpenVariantEditor = (duplicate: boolean) => {
-        if (duplicate) setValue('editorVariantName', variantName);
+        if (duplicate) {
+            // TODO: figure this out again now that things have changed
+        }
         setValue('designerView', 'variantEdit');
     };
 
@@ -148,13 +96,6 @@ export const ModelVariant = (props: ModelVariantProps) => {
         >
             <StyledVariantHeader>
                 <Stack direction="row" alignItems="center">
-                    <IconButton onClick={handleToggleSelected}>
-                        {variant.selected ? (
-                            <PushPinRounded />
-                        ) : (
-                            <PushPinOutlined />
-                        )}
-                    </IconButton>
                     <Typography variant="body1" fontWeight="medium">
                         {isDefault
                             ? 'Default Variant'
@@ -170,16 +111,11 @@ export const ModelVariant = (props: ModelVariantProps) => {
             </StyledVariantHeader>
 
             <StyledVariantBox isVertical={orientation === 'column'}>
-                {variant?.models.map((model: TypeLlmConfig, mIdx: number) => (
-                    <LlmCard
-                        key={`llm-card--model-${mIdx}`}
-                        llm={model}
-                        variantName={variantName}
-                        modelIndex={mIdx}
-                        isDefault={isDefault}
-                        isVariantHovered={hovered}
-                    />
-                ))}
+                <LlmCard
+                    llm={variant.model}
+                    variantName={variantName}
+                    isVariantHovered={hovered}
+                />
             </StyledVariantBox>
 
             <Collapse in={hovered}>

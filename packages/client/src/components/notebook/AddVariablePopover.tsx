@@ -406,7 +406,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         version: STATE_VERSION,
                         dependencies: {},
                         variables: {},
-                        variants: {},
                         queries: {},
                         blocks: {
                             'page-1': {

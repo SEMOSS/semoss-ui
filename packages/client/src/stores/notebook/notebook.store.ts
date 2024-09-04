@@ -83,21 +83,6 @@ export class NotebookStore {
     }
 
     /**
-     * Get the variants
-     * @returns the variants
-     */
-    get variantsList() {
-        return Object.keys(this._state.variants);
-    }
-
-    /**
-     * Get the selected variant
-     */
-    get selectedVariant() {
-        return this._state.variants[this._store.selectedVariantId];
-    }
-
-    /**
      * Actions
      */
     /**

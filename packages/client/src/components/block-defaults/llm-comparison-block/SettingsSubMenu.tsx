@@ -2,19 +2,12 @@ import {
     Stack,
     Typography,
     styled,
-    Checkbox,
     Switch,
     RadioGroup,
     TextField,
     Slider,
 } from '@semoss/ui';
 import { useLLMComparison } from '@/hooks';
-import { useEffect, useState } from 'react';
-import {
-    TypeVariants,
-    TypeVariant,
-    VariantWithName,
-} from '@/components/workspace';
 import { Controller } from 'react-hook-form';
 import { VariantDragAndDrop } from './VariantDragAndDrop';
 
@@ -40,56 +33,9 @@ const StyledRadioGroup = styled(RadioGroup)(({ theme }) => ({
 }));
 
 export const SettingsSubMenu = () => {
-    const { control, getValues, setValue, watch } = useLLMComparison();
-    const [selectedVars, setSelectedVars] = useState<VariantWithName[]>([]);
-    const [unselectedVars, setUnselectedVars] = useState<VariantWithName[]>([]);
+    const { control, watch } = useLLMComparison();
     const orderType = watch('orderType');
-    const defaultVariant = watch('defaultVariant');
     const variants = watch('variants');
-
-    useEffect(() => {
-        setVariantsState(variants);
-    }, [Object.keys(variants).length]);
-
-    const setVariantsState = (vars: TypeVariants) => {
-        const selected = [];
-        const unselected = [];
-
-        Object.keys(vars).forEach((name) => {
-            const varWithName = {
-                ...vars[name],
-                name,
-            };
-            if (vars[name].selected) {
-                selected.push(varWithName);
-            } else {
-                unselected.push(varWithName);
-            }
-        });
-
-        setSelectedVars(selected);
-        setUnselectedVars(unselected);
-    };
-
-    const handleToggleSelected = (
-        variant: VariantWithName,
-        isDefault?: boolean,
-    ) => {
-        if (isDefault) {
-            const newDefault = {
-                ...defaultVariant,
-                selected: !defaultVariant.selected,
-            };
-            setValue('defaultVariant', newDefault);
-        } else {
-            const copy = { ...variants };
-            copy[variant.name].selected = !variant.selected;
-            setValue('variants', copy);
-
-            // TODO: imporove this so we don't map through all the variants to update the selected/unselected state.
-            setVariantsState(copy);
-        }
-    };
 
     const handleSetOrder = () => {
         // TODO
@@ -105,60 +51,6 @@ export const SettingsSubMenu = () => {
 
     return (
         <StyledSettingsSubMenu>
-            <StyledHeader>
-                <Typography variant="h6" fontWeight="bold">
-                    Variant Response
-                </Typography>
-            </StyledHeader>
-
-            <StyledSection direction="column">
-                <Typography variant="body2" color="secondary">
-                    Select Variant
-                </Typography>
-
-                <Typography variant="caption" color="secondary">
-                    Pinned Variants
-                </Typography>
-                {defaultVariant.selected && (
-                    <Checkbox
-                        label={`Default (Variant ${defaultVariant.name})`}
-                        checked={defaultVariant.selected}
-                        onChange={() =>
-                            handleToggleSelected(defaultVariant, true)
-                        }
-                    />
-                )}
-                {selectedVars.map((variant, idx) => (
-                    <Checkbox
-                        key={`variant-${variant.name}-${idx}`}
-                        label={`Variant ${variant.name}`}
-                        checked={variant.selected}
-                        onChange={() => handleToggleSelected(variant)}
-                    />
-                ))}
-
-                <Typography variant="caption" color="secondary">
-                    All Variants
-                </Typography>
-                {!defaultVariant.selected && (
-                    <Checkbox
-                        label={`Default (Variant ${defaultVariant.name})`}
-                        checked={defaultVariant.selected}
-                        onChange={() =>
-                            handleToggleSelected(defaultVariant, true)
-                        }
-                    />
-                )}
-                {unselectedVars.map((variant, idx) => (
-                    <Checkbox
-                        key={`variant-${variant.name}-${idx}`}
-                        label={`Variant ${variant.name}`}
-                        checked={variant.selected}
-                        onChange={() => handleToggleSelected(variant)}
-                    />
-                ))}
-            </StyledSection>
-
             <StyledSection
                 direction="row"
                 gap={1}

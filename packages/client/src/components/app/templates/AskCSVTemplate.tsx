@@ -38,7 +38,6 @@ export const AskCSVTemplate: Template = {
                 type: 'model',
             },
         },
-        variants: {},
         dependencies: {
             model: '17753d59-4536-4415-a6ac-f673b1a90a87',
         },

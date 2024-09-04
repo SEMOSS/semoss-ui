@@ -16,7 +16,6 @@ import {
     ListenerActions,
     SerializedState,
     Variable,
-    Variant,
     VariableType,
     VariableWithId,
 } from './state.types';
@@ -33,9 +32,6 @@ interface StateStoreInterface {
 
     /** token to reference (blocks, cells, dependencies) */
     variables: Record<string, Variable>;
-
-    /** composition of Models for use with LLM Comparison */
-    variants: Record<string, Variant>;
 
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
@@ -80,7 +76,6 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         dependencies: {}, // Maher said change to constants
-        variants: {},
     };
 
     /**
@@ -156,14 +151,6 @@ export class StateStore {
      */
     get variables() {
         return this._store.variables;
-    }
-
-    /**
-     * Gets all variants
-     * @returns the variants
-     */
-    get variants() {
-        return this._store.variants;
     }
 
     /**
@@ -437,14 +424,6 @@ export class StateStore {
                 const { id } = action.payload;
 
                 return this.removeDependency(id);
-            } else if (ActionMessages.ADD_VARIANT === action.message) {
-                const { id, variant } = action.payload;
-
-                return this.addVariant(id, variant);
-            } else if (ActionMessages.EDIT_VARIANT === action.message) {
-                const { id, from, to } = action.payload;
-
-                return this.editVariant(id, from, to);
             }
         } catch (e) {
             console.error(e);
@@ -521,7 +500,6 @@ export class StateStore {
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
-            variants: toJS(this._store.variants),
             dependencies: toJS(this._store.dependencies),
             version: this._store.version,
         };
@@ -702,9 +680,6 @@ export class StateStore {
 
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
-
-        // store the variants
-        this._store.variants = state.variants ? state.variants : {};
 
         // store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
@@ -1319,25 +1294,5 @@ export class StateStore {
      */
     private removeDependency = (id: string) => {
         delete this._store.dependencies[id];
-    };
-
-    /**
-     * Adds a variant to use for LLM Comparison
-     */
-    private addVariant = (id: string, variant: Variant) => {
-        if (this._store.variants[id]) {
-            return false;
-        }
-
-        this._store.variants[id] = variant;
-        return id;
-    };
-
-    /**
-     * Updates a variant in state
-     */
-    private editVariant = (id: string, oldVar: Variant, newVar: Variant) => {
-        this._store.variants[id] = newVar;
-        return id;
     };
 }

@@ -3,8 +3,7 @@ export type TypeVariants = {
 };
 
 export type TypeVariant = {
-    selected: boolean;
-    models: TypeLlmConfig[];
+    model: TypeLlmConfig;
     sortWeight?: number | null;
     trafficAllocation?: number | null;
 };
@@ -24,29 +23,20 @@ export type TypeLlmConfig = {
     length: number | null;
 };
 
-export type TypeLlmConfigureView = 'allVariants' | 'variantEdit' | 'modelEdit';
+export type TypeLlmConfigureView = 'allVariants' | 'variantEdit';
 
 export type TypeVariantDisplayOrder = 'default' | 'random' | 'custom';
 
 export interface TypeLlmComparisonForm {
-    /** Default Variant configured by user. */
-    defaultVariant: TypeVariant;
-
-    /** Additional Variants available to be displayed in the response */
+    /** Variants stored in the block's connected query/cell */
     variants: TypeVariants;
 
     /** view for the LLM Comparison Block's Configure Submenu in the designer */
     designerView: TypeLlmConfigureView;
 
-    /** Reference values for Variant/Model being edited in the designer */
+    /** Reference values for Variant/model being edited in the designer */
     editorVariantName: string | null;
-    editorModelIndex: number | null;
-
-    /** used to set the variant's Unique Id for the variant's object in App state */
-    newVariantName: string | null;
-
-    /** Models being edited in the LLM Comparison's variant/model Editor */
-    ModelsInEditor: TypeLlmConfig[];
+    editorVariant: TypeVariant | null;
 
     /** Determines whether the model's for a variant should be displayed in its response */
     showModelsInResponse: boolean;

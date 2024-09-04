@@ -403,7 +403,6 @@ export async function setBlocksAndOpenUIBuilder(
     // create the state
     const state: SerializedState = {
         version: '1.0.0-alpha.1',
-        variants: {},
         variables: {
             [PROMPT_QUERY_DEFINITION_ID]: {
                 type: 'query',

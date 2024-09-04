@@ -2,12 +2,9 @@ import { styled, Stack, Button, useNotification } from '@semoss/ui';
 import { useEffect, useRef } from 'react';
 import { useBlocks, useLLMComparison } from '@/hooks';
 import { ModelVariant } from './ModelVariant';
-import { TypeLlmComparisonForm, TypeLlmConfig } from '@/components/workspace';
-import { LLMEditor } from './LLMEditor';
+import { TypeLlmComparisonForm } from '@/components/workspace';
 import { ArrowBack } from '@mui/icons-material';
 import { VariantEditor } from './VariantEditor';
-import { ActionMessages, Variant } from '@/stores';
-import { emptyModel } from './LlmComparison.utility';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -32,94 +29,70 @@ export const ConfigureSubMenu = () => {
     const viewRef = useRef('allVariants');
     const notification = useNotification();
     const { state } = useBlocks();
-    const { allModels, setValue, watch, handleSubmit, getValues } =
-        useLLMComparison();
-    const defaultVariant = watch('defaultVariant');
+    const { setValue, watch, handleSubmit, getValues } = useLLMComparison();
     const variants = watch('variants');
     const designerView = watch('designerView');
-    const ModelsInEditor = watch('ModelsInEditor');
 
     // When the designer view changes, set the relevant values for the editor
     useEffect(() => {
         if (designerView !== viewRef.current) {
             viewRef.current = designerView;
-            const { editorVariantName, editorModelIndex, variants } =
-                getValues();
+            const { editorVariantName, editorVariant, variants } = getValues();
 
             if (designerView === 'variantEdit') {
                 if (editorVariantName) {
-                    setValue(
-                        'ModelsInEditor',
-                        variants[editorVariantName].models,
-                    );
+                    // Handle case for editing saved variant
+                    setValue('editorVariant', variants[editorVariantName]);
                 } else {
-                    const modelCount = defaultVariant.models.length;
-                    const emptyModels = Array(modelCount).fill(emptyModel);
-                    setValue('ModelsInEditor', emptyModels);
+                    // Handle case for creating a new variant
+                    // TODO: create a name for the new variant and save to state
+                    setValue('editorVariant', { model: {} });
                 }
-            } else if (designerView === 'modelEdit') {
-                const selectedModel =
-                    variants[editorVariantName].models[editorModelIndex];
-                setValue('ModelsInEditor', selectedModel);
             }
         }
     }, [designerView]);
 
     const onSubmit = (data: TypeLlmComparisonForm) => {
-        // TODO: error check that "newVariantName" is required and is unique.
-        const { ModelsInEditor, newVariantName } = data;
+        const { editorVariantName, editorVariant } = data;
 
-        if (designerView === 'variantEdit') {
-            addVariantToAppJson();
+        // TODO: fire action to update Variant in APP JSON,
+        //       and update state in Comparison Menu's form state
+        addVariantToAppJson();
 
-            const variantsCopy = { ...getValues('variants') };
-            variantsCopy[newVariantName] = {
-                selected: true,
-                models: ModelsInEditor,
-            };
-            setValue('variants', variantsCopy);
+        // TODO: figure out sort weight
+        const variantsCopy = { ...getValues('variants') };
+        variantsCopy[editorVariantName] = {
+            model: editorVariant.model,
+        };
+        setValue('variants', variantsCopy);
 
-            clearEditor('variant');
-        } else if (designerView === 'modelEdit') {
-            // TODO: fire action to update Variant in APP JSON,
-            //       and update state in Comparison Menu's form state
-            updateVariantInAppJson();
-            clearEditor('model');
-        }
-
+        clearEditor();
         setValue('designerView', 'allVariants');
     };
 
     const addVariantToAppJson = () => {
-        const { ModelsInEditor, newVariantName } = getValues();
+        const { editorVariant, editorVariantName } = getValues();
 
-        const models = ModelsInEditor.map((mod: TypeLlmConfig) => ({
-            id: mod.value,
-            name: mod.database_name,
-            topP: mod.topP,
-            temperature: mod.temperature,
-            length: mod.length,
-        }));
-        const modelledVariant: Variant = {
-            id: newVariantName,
-            to: '',
-            models,
-        };
+        // TODO: fix to update cell in App Json
+        // const models = ModelsInEditor.map((mod: TypeLlmConfig) => ({
+        //     id: mod.value,
+        //     name: mod.database_name,
+        //     topP: mod.topP,
+        //     temperature: mod.temperature,
+        //     length: mod.length,
+        // }));
+        // const modelledVariant: Variant = {
+        //     id: newVariantName,
+        //     to: '',
+        //     models,
+        // };
 
-        const success = state.dispatch({
-            message: ActionMessages.ADD_VARIANT,
-            payload: {
-                id: newVariantName,
-                variant: modelledVariant,
-            },
-        });
-
-        notification.add({
-            color: success ? 'success' : 'error',
-            message: success
-                ? `Successfully saved Variant ${newVariantName}`
-                : `Unable to save your Variant, due to syntax or a duplicated alias`,
-        });
+        // notification.add({
+        //     color: success ? 'success' : 'error',
+        //     message: success
+        //         ? `Successfully saved Variant ${newVariantName}`
+        //         : `Unable to save your Variant, due to syntax or a duplicated alias`,
+        // });
     };
 
     const updateVariantInAppJson = () => {
@@ -133,47 +106,25 @@ export const ConfigureSubMenu = () => {
         });
     };
 
-    const clearEditor = (type: 'model' | 'variant') => {
-        if (type === 'variant') {
-            setValue('editorVariantName', null);
-            setValue('editorVariant', null);
-            setValue('newVariantName', null);
-            setValue('ModelsInEditor', []);
-        } else {
-            setValue('editorVariantName', null);
-            setValue('editorModelIndex', null);
-            setValue('ModelsInEditor', []);
-        }
+    const clearEditor = () => {
+        setValue('editorVariantName', null);
+        setValue('editorVariant', null);
     };
 
     const handleResetParams = () => {
         const variants = getValues('variants');
         const editorVariantName = getValues('editorVariantName');
-        const editorModelIndex = getValues('editorModelIndex');
 
-        if (designerView === 'variantEdit') {
-            if (editorVariantName) {
-                setValue('ModelsInEditor', variants[editorVariantName].models);
-            } else {
-                const modelCount = defaultVariant.models.length;
-                const emptyModels = Array(modelCount).fill(emptyModel);
-                setValue('ModelsInEditor', emptyModels);
-            }
-        } else if (designerView === 'modelEdit') {
-            const model = variants[editorVariantName].models[editorModelIndex];
-            setValue('ModelsInEditor', [model]);
+        if (variants[editorVariantName]) {
+            setValue('editorVariant', variants[editorVariantName]);
+        } else {
+            setValue('editorVariant', { model: {} });
         }
     };
 
     if (designerView === 'allVariants') {
         return (
             <StyledAllView direction="column" gap={2}>
-                <ModelVariant
-                    isDefault={true}
-                    variantName="default"
-                    variant={defaultVariant}
-                />
-
                 {Object.keys(variants).map((name, idx: number) => (
                     <ModelVariant
                         variantName={name}
@@ -193,11 +144,7 @@ export const ConfigureSubMenu = () => {
                             color="secondary"
                             startIcon={<ArrowBack />}
                             onClick={() => {
-                                clearEditor(
-                                    designerView === 'variantEdit'
-                                        ? 'variant'
-                                        : 'model',
-                                );
+                                clearEditor();
                                 setValue('designerView', 'allVariants');
                             }}
                         >
@@ -205,25 +152,9 @@ export const ConfigureSubMenu = () => {
                         </Button>
                     </StyledActionBar>
 
-                    {designerView === 'variantEdit' && (
-                        <StyledEditor>
-                            <VariantEditor />
-                        </StyledEditor>
-                    )}
-
-                    {designerView === 'modelEdit' && (
-                        <StyledEditor>
-                            {ModelsInEditor.map(
-                                (model: TypeLlmConfig, idx: number) => (
-                                    <LLMEditor
-                                        key={`LLM-${model.value}-${idx}`}
-                                        model={model}
-                                        index={idx}
-                                    />
-                                ),
-                            )}
-                        </StyledEditor>
-                    )}
+                    <StyledEditor>
+                        <VariantEditor />
+                    </StyledEditor>
                 </div>
 
                 <StyledActionBar>

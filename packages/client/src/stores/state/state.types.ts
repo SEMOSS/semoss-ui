@@ -16,9 +16,6 @@ export type SerializedState = {
     /** Variables used in notebook */
     variables: Record<string, Variable>;
 
-    /** Variants used for LLM Comparison */
-    variants: Record<string, Variant>;
-
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
 };
@@ -74,7 +71,8 @@ export type VariableWithId =
 export type Variant = {
     id: string;
     to: string;
-    models: VariantModel[];
+    sortWeight: number;
+    model: VariantModel;
 };
 
 export type VariantModel = {
@@ -84,10 +82,6 @@ export type VariantModel = {
     temperature: number;
     length: number;
 };
-
-export interface BlockVariant extends Variant {
-    sortWeight: number;
-}
 
 /**
  * Block

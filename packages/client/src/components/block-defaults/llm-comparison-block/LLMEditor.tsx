@@ -45,16 +45,13 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 interface PropsLLMEditor {
     /** Model currently populated/saved to the variant */
     model: TypeLlmConfig;
-
-    /** Model's index within the form's 'models' */
-    index: number;
 }
 
 export const LLMEditor = (props: PropsLLMEditor) => {
     const notification = useNotification();
     const { allModels, control, watch, setValue } = useLLMComparison();
-    const { model, index } = props;
-    const namePrefix = `ModelsInEditor[${index}]`;
+    const { model } = props;
+    const namePrefix = 'editorVariant.model';
     const modelValue = watch(`${namePrefix}.value`);
 
     useEffect(() => {

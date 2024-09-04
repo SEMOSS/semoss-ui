@@ -58,31 +58,18 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 export interface LlmCardProps {
-    /**
-     * Either specified already or not specified yet - llm that is mapped to variable
-     */
+    // Either specified already or not specified yet - llm that is mapped to variable
     llm: TypeLlmConfig;
-    /**
-     * Name of the model's parent variant being edited
-     */
-    variantName: string;
-    /**
-     * This is the index of the model within its own variant
-     */
-    modelIndex: number;
-    /**
-     * Is this LLM a part of the default variant in our app, if so don't allow edit for now
-     */
-    isDefault: boolean;
 
-    /**
-     * Used to show/hide card's actions by noting if the parent variant is hovered/focused
-     */
+    // Name of the model's parent variant being edited
+    variantName: string;
+
+    // Used to show/hide card's actions by noting if the parent variant is hovered/focused
     isVariantHovered: boolean;
 }
 
 export const LlmCard = (props: LlmCardProps) => {
-    const { llm, variantName, modelIndex, isDefault, isVariantHovered } = props;
+    const { llm, variantName, isVariantHovered } = props;
     const { setValue } = useLLMComparison();
 
     const {
@@ -98,7 +85,6 @@ export const LlmCard = (props: LlmCardProps) => {
 
     const handleOpenLlmEditor = () => {
         setValue('editorVariantName', variantName);
-        setValue('editorModelIndex', modelIndex);
         setValue('designerView', 'modelEdit');
     };
 
@@ -127,7 +113,7 @@ export const LlmCard = (props: LlmCardProps) => {
                             </StyledTypography>
                         </Stack>
                     </Stack>
-                    {!isDefault && isVariantHovered && (
+                    {isVariantHovered && (
                         <Tooltip title={`Swap ${value}`}>
                             <IconButton onClick={handleOpenLlmEditor}>
                                 <Edit />

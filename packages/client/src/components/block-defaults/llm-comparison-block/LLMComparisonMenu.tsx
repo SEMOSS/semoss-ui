@@ -16,7 +16,6 @@ import {
     LlmComparisonFormDefaultValues,
     modelEngineOutput,
 } from './LlmComparison.utility';
-import { toJS } from 'mobx';
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     height: '36px',
@@ -46,7 +45,6 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     const [allModels, setAllModels] = useState<TypeLlmConfig[]>([]);
 
     const { state } = useBlocks();
-    console.log('state', toJS(state.blocks));
 
     const { control, setValue, handleSubmit, getValues, watch } =
         useForm<TypeLlmComparisonForm>({
@@ -69,51 +67,39 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     const initialFetch = async () => {
         const allModels = await fetchAllModels();
 
-        const stateVariants = toJS(state.variants);
-        const selectedVariants = toJS(state.blocks[id])?.data?.variants || {};
-
         // Accepts a variant from the App's JSON and models it for the Comparison menu's form state.
-        const modelVariantLlms = (variant: Variant): TypeLlmConfig[] => {
-            const modelledLlms = variant.models.map((model: VariantModel) => {
-                const modelMatch = allModels.find(
-                    (mod) => mod.value === model.id,
-                );
+        const modelVariantLlm = (variant: Variant): TypeLlmConfig => {
+            const modelMatch = allModels.find(
+                (mod) => mod.value === variant.model.id,
+            );
 
-                // TODO: need to handle error handling for if there is no longer a 'match' for a model stored in a user's variant.
-                return {
-                    ...modelMatch,
-                    topP: model.topP,
-                    temperature: model.temperature,
-                    length: model.length,
-                };
-            });
-            return modelledLlms;
+            // TODO: need to handle error handling for if there is no longer a 'match' for a model stored in a user's variant.
+            return {
+                ...modelMatch,
+                topP: variant.model.topP,
+                temperature: variant.model.temperature,
+                length: variant.model.length,
+            };
         };
 
-        // Variants other than the default variant to be added to the form's state
-        const otherVariants: TypeVariants = {};
+        // Variants modelled for adding to the form's state
+        const modelledVariants: TypeVariants = {};
 
-        Object.keys(stateVariants).forEach((name: string, idx) => {
-            const variant = stateVariants[name];
-            const models = modelVariantLlms(variant);
-            const isSelected = Object.keys(selectedVariants).includes(name);
+        // TODO: get variants from cell
+        const cellVariants = {};
+        Object.keys(cellVariants).forEach((name: string, idx) => {
+            const variant = cellVariants[name];
+            const model = modelVariantLlm(variant);
 
             const modelled: TypeVariant = {
-                models,
-                selected: isSelected,
-                sortWeight: selectedVariants[name]?.sortWeight
-                    ? selectedVariants[name]?.sortWeight
-                    : idx,
+                model,
+                sortWeight: variant?.sortWeight ? variant?.sortWeight : idx,
             };
 
-            if (name === 'default') {
-                setValue('defaultVariant', modelled);
-            } else {
-                otherVariants[name] = modelled;
-            }
+            modelledVariants[name] = modelled;
         });
 
-        setValue('variants', otherVariants);
+        setValue('variants', modelledVariants);
     };
 
     const fetchAllModels = async () => {

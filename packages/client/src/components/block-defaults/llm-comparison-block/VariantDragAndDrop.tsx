@@ -55,9 +55,7 @@ export const VariantDragAndDrop = () => {
                                 {variant.name}
                             </Typography>
                             <Typography variant="caption">
-                                {variant.models.map(
-                                    (mod: TypeLlmConfig) => mod.alias,
-                                )}
+                                {variant.model.alias}
                             </Typography>
                         </div>
                         <IconButton>

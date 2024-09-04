@@ -1,8 +1,4 @@
-import {
-    TypeLlmConfig,
-    TypeLlmComparisonForm,
-    TypeVariant,
-} from '@/components/workspace';
+import { TypeLlmConfig, TypeLlmComparisonForm } from '@/components/workspace';
 
 /**
  * METHODS ==================================================================
@@ -40,16 +36,10 @@ export const emptyModel: TypeLlmConfig = {
 };
 
 export const LlmComparisonFormDefaultValues: TypeLlmComparisonForm = {
-    defaultVariant: {
-        selected: true,
-        models: [],
-    },
     variants: {},
     designerView: 'allVariants',
     editorVariantName: null,
-    editorModelIndex: null,
-    newVariantName: null,
-    ModelsInEditor: [],
+    editorVariant: null,
     showModelsInResponse: true,
     orderType: 'default',
     sampleSize: 100,

@@ -2,10 +2,8 @@ import {
     BlockJSON,
     ListenerActions,
     SerializedState,
-    Variable,
     VariableType,
     VariableWithId,
-    Variant,
 } from './state.types';
 import { CellStateConfig } from './cell.state';
 import { QueryStateConfig } from './query.state';
@@ -34,9 +32,6 @@ export enum ActionMessages {
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
     REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
-    ADD_VARIANT = 'ADD_VARIANT',
-    EDIT_VARIANT = 'EDIT_VARIANT',
-    REMOVE_VARIANT = 'REMOVE_VARIANT', // TODO
 }
 
 export type Actions =
@@ -61,9 +56,7 @@ export type Actions =
     | EditVariableAction
     | DeleteVariableAction
     | AddDependencyAction
-    | RemoveDependencyAction
-    | AddVariantAction
-    | EditVariantAction;
+    | RemoveDependencyAction;
 
 export interface Action {
     message: string;
@@ -280,22 +273,5 @@ export interface DeleteVariableAction extends Action {
     message: ActionMessages.DELETE_VARIABLE;
     payload: {
         id: string;
-    };
-}
-
-export interface AddVariantAction extends Action {
-    message: ActionMessages.ADD_VARIANT;
-    payload: {
-        id: string;
-        variant: Variant;
-    };
-}
-
-export interface EditVariantAction extends Action {
-    message: ActionMessages.EDIT_VARIANT;
-    payload: {
-        id: string;
-        from: Variant;
-        to: Variant;
     };
 }

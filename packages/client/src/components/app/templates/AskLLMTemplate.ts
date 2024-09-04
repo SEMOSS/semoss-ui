@@ -19,7 +19,6 @@ export const AskLLMTemplate: Template = {
     tags: ['LLM'],
     state: {
         version: '1.0.0-alpha.1',
-        variants: {},
         variables: {
             question: {
                 to: 'question',
