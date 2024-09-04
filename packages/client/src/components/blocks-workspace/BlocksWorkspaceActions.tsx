@@ -11,28 +11,17 @@ import {
     GetAppRounded,
     PlayCircleRounded,
     ShareRounded,
+    LaunchRounded,
 } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
 import { ShareOverlay, PreviewOverlay } from '@/components/workspace';
-
-const StyledShareButton = styled(Button)(({ theme }) => ({
-    //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
-}));
-
-const StyledShareButtonText = styled('span')(({ theme }) => ({
-    ...theme.typography.button,
-    color: theme.palette.text.primary,
-}));
+import { useNavigate } from 'react-router-dom';
+import { Env } from '@/env';
+import { env } from 'process';
 
 const StyledShareIcon = styled(ShareRounded)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.54)',
-}));
-
-const StyledSaveButtonGroup = styled(ButtonGroup)(({ theme }) => ({
-    //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
 }));
 
 export const BlocksWorkspaceActions = observer(() => {
@@ -41,6 +30,7 @@ export const BlocksWorkspaceActions = observer(() => {
     const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();
+    const navigate = useNavigate();
 
     /**
      * Preview the current App
@@ -199,17 +189,6 @@ export const BlocksWorkspaceActions = observer(() => {
 
     return (
         <Stack direction="row" spacing={1} alignItems={'center'}>
-            {/* <IconButton
-                color="default"
-                size="small"
-                title="Preview App"
-                onClick={() => {
-                    previewApp();
-                }}
-            >
-                <PlayCircleRounded />
-                Preview
-            </IconButton> */}
             <Button
                 variant="text"
                 startIcon={<PlayCircleRounded />}
@@ -221,18 +200,6 @@ export const BlocksWorkspaceActions = observer(() => {
             >
                 Preview
             </Button>
-
-            {/* <IconButton
-                color="default"
-                size="small"
-                title="Download App"
-                onClick={() => {
-                    exportApp();
-                }}
-            >
-                <GetAppRounded />
-                Download
-            </IconButton> */}
             <Button
                 variant="text"
                 startIcon={<GetAppRounded />}
@@ -244,18 +211,6 @@ export const BlocksWorkspaceActions = observer(() => {
             >
                 Download
             </Button>
-            {/* <StyledShareButton
-                size={'small'}
-                color={'secondary'}
-                variant={'outlined'}
-                title={'Share App'}
-                startIcon={<StyledShareIcon />}
-                onClick={() => {
-                    shareApp();
-                }}
-            >
-                <StyledShareButtonText>Share</StyledShareButtonText>
-            </StyledShareButton> */}
             <Button
                 size="small"
                 variant="text"
@@ -268,27 +223,6 @@ export const BlocksWorkspaceActions = observer(() => {
             >
                 Share
             </Button>
-            {/* <StyledSaveButtonGroup variant={'contained'} color={'primary'}>
-                <ButtonGroup.Item
-                    title={'Save App'}
-                    size={'small'}
-                    onClick={() => {
-                        saveApp();
-                    }}
-                    color={'primary'}
-                >
-                    Save
-                </ButtonGroup.Item>
-            </StyledSaveButtonGroup> */}
-            {/* <StyledSaveButton  
-                title={'Save App'} 
-                variant={'contained'} 
-                color={'primary'}
-                onClick={() => {
-                    saveApp();
-                }}>
-                <StyledShareButtonText>Save</StyledShareButtonText>
-            </StyledSaveButton> */}
             <Button
                 variant="contained"
                 size="small"
@@ -299,6 +233,19 @@ export const BlocksWorkspaceActions = observer(() => {
                 }}
             >
                 Save
+            </Button>
+            <Button
+                endIcon={<LaunchRounded />}
+                onClick={() => {
+                    const encodedState = encodeURIComponent(
+                        JSON.stringify(state.toJSON()),
+                    );
+                    const url = `${window.location.origin}${window.location.pathname}#/s/${workspace.appId}?state=${encodedState}`;
+
+                    window.open(url, '_blank');
+                }}
+            >
+                Launch
             </Button>
         </Stack>
     );
