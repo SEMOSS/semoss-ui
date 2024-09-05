@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, TextField, Grid, Typography } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    TextField,
+    Button,
+    Typography,
+    useNotification,
+} from '@semoss/ui';
 import { ActionMessages, CellComponent, CellDef, Variant } from '@/stores';
 import { useBlocks, useRootStore } from '@/hooks';
 import { LLMCellVariant } from './LLMCellVariant';
+import { toJS } from 'mobx';
+import { Add } from '@mui/icons-material';
+import { generateVariantName } from '@/components/block-defaults/llm-comparison-block/LlmComparison.utility';
 
 export interface LLMCellDef extends CellDef<'llm'> {
     widget: 'llm';
@@ -24,17 +34,21 @@ type ModelEngine = {
     length: number;
 };
 
-const StyledContent = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledStack = styled(Grid)(({ theme }) => ({
+const StyledActionButtons = styled('div')(({ theme }) => ({
     width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: theme.spacing(1),
 }));
 
 export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     const { state } = useBlocks();
     const { monolithStore } = useRootStore();
+    const notification = useNotification();
     const [allModels, setAllModels] = useState<{ name: string; id: string }[]>(
         [],
     );
@@ -69,7 +83,6 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
             });
         }
     }, []);
-    console.log('RENDERRRRRR', variants);
 
     const fetchAllModels = async () => {
         const pixel = `MyEngines(engineTypes=["MODEL"])`;
@@ -100,31 +113,78 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
         });
     };
 
+    const handleAddVariant = () => {
+        const newVariantName = generateVariantName(Object.keys(variants));
+
+        if (newVariantName) {
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: `parameters.variants.${newVariantName}`,
+                    value: {
+                        id: newVariantName,
+                        to: '',
+                        sortWeight: 0,
+                        model: {
+                            id: '',
+                            name: '',
+                            topP: 0,
+                            temperature: 0,
+                            length: 0,
+                        },
+                    },
+                },
+            });
+        } else {
+            notification.add({
+                color: 'error',
+                message: 'The maximum number of variants has been met.',
+            });
+        }
+    };
+
     return (
-        <StyledContent id={`${cell.query.id} - ${cell.id}`}>
-            <StyledStack gap={3}>
-                <TextField
-                    value={command}
-                    label={'Command'}
-                    multiline={true}
-                    rows={4}
-                    fullWidth
-                    onChange={(e) => {
-                        handleChange(e.target.value, 'parameters.command');
-                    }}
-                />
+        <StyledStack gap={3} id={`${cell.query.id} - ${cell.id}`}>
+            <TextField
+                value={command}
+                label={'Command'}
+                multiline={true}
+                rows={4}
+                fullWidth
+                onChange={(e) => {
+                    handleChange(e.target.value, 'parameters.command');
+                }}
+            />
 
-                <Typography variant="subtitle1">Variants</Typography>
+            <StyledStack gap={1} direction="column">
+                <Typography variant="subtitle1" fontWeight="bold">
+                    Variants
+                </Typography>
 
-                {Object.keys(variants || {}).map((name, idx) => (
-                    <LLMCellVariant
-                        key={`variant-${name}-${idx}`}
-                        allModels={allModels}
-                        variantName={name}
-                        variant={variants[name]}
-                    />
-                ))}
+                <div>
+                    {Object.keys(variants || {}).map((name, idx) => (
+                        <LLMCellVariant
+                            key={`variant-${name}-${idx}`}
+                            allModels={allModels}
+                            variantName={name}
+                            variant={variants[name]}
+                        />
+                    ))}
+                </div>
+
+                <StyledActionButtons>
+                    <Button
+                        variant="text"
+                        color="secondary"
+                        onClick={handleAddVariant}
+                        startIcon={<Add />}
+                    >
+                        Add Variant
+                    </Button>
+                </StyledActionButtons>
             </StyledStack>
-        </StyledContent>
+        </StyledStack>
     );
 });
