@@ -16,6 +16,7 @@ import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
 import { ConductorPage } from './ConductorPage';
+import { PipelinePage } from './PipelinePage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -35,6 +36,7 @@ export const Router = observer(() => {
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="conductor" element={<ConductorPage />} />
+                    <Route path="pipeline" element={<PipelinePage />} />
                 </Route>
                 <Route path="s/:appId" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

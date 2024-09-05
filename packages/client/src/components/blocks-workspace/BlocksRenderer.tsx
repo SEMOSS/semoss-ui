@@ -14,6 +14,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 import { Typography } from '@semoss/ui';
+import { useSearchParams } from 'react-router-dom';
 
 const ACTIVE = 'page-1';
 
@@ -34,6 +35,7 @@ interface BlocksRendererProps {
 export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     const { appId, state, preview } = props;
     const notification = useNotification();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
@@ -42,11 +44,19 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
         // start the loading
         setIsLoading(true);
 
+        let stateFilter;
+
+        searchParams.forEach((value, key) => {
+            if (key === 'state') {
+                stateFilter = JSON.parse(value);
+            }
+        });
+
         // initialize a new insight
         let pixel = '';
-        if (appId) {
+        if (appId && !stateFilter) {
             pixel = `GetAppBlocksJson ( project=["${appId}"]);`;
-        } else if (state) {
+        } else if (state || stateFilter) {
             pixel = `true`;
         } else {
             console.error('Missing appId or state');
@@ -66,10 +76,14 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
                 // set the state
                 let s: SerializedState;
-                if (appId) {
+                if (appId && !stateFilter) {
                     s = pixelReturn[0].output;
-                } else if (state) {
-                    s = state;
+                } else if (state || stateFilter) {
+                    if (stateFilter) {
+                        s = stateFilter;
+                    } else {
+                        s = state;
+                    }
                 } else {
                     return;
                 }
@@ -108,6 +122,14 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                             message: errs.join(''),
                         });
                     }
+                }
+
+                if (stateFilter) {
+                    notification.add({
+                        color: 'warning',
+                        message:
+                            'Please be mindful this may not represent the current state of the app, due to the filters present in the URL',
+                    });
                 }
             })
             .catch((e) => {
