@@ -13,11 +13,31 @@ export const modelEngineOutput = (output: any[]): TypeLlmConfig[] => {
             database_name: data.database_name,
             database_type: data.database_type,
             database_subtype: data.database_subtype,
-            topP: data.TODO_FIND_NAME ? data.TODO_FIND_NAME : null,
-            temperature: data.TODO_FIND_NAME ? data.TODO_FIND_NAME : null,
-            length: data.TODO_FIND_NAME ? data.TODO_FIND_NAME : null,
+            topP: 0,
+            temperature: 0,
+            length: 0,
         };
     });
+};
+
+// Generates a Unique ID/Name for a variant when created.
+export const generateVariantName = (currNames: string[]): string | null => {
+    const modelled = currNames
+        .filter((name) => name.toLowerCase() !== 'default')
+        .map((name) => name.toLowerCase())
+        .sort();
+
+    let charCode = 65,
+        newLetter = null;
+    for (charCode; charCode < 91; charCode++) {
+        const codeAsLetter = String.fromCharCode(charCode).toLowerCase();
+        const found = modelled.includes(codeAsLetter);
+        if (!found) {
+            newLetter = codeAsLetter;
+            break;
+        }
+    }
+    return newLetter;
 };
 
 /**
