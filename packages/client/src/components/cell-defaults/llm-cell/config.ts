@@ -1,5 +1,7 @@
-import { CellConfig } from '@/stores';
+import { CellConfig, Variant } from '@/stores';
 import { LLMCellDef, LLMCell } from './LLMCell';
+import { useBlocks } from '@/hooks';
+import { toJS } from 'mobx';
 
 // export the config for the block
 export const LLMCellConfig: CellConfig<LLMCellDef> = {
@@ -7,13 +9,16 @@ export const LLMCellConfig: CellConfig<LLMCellDef> = {
     widget: 'llm',
     view: LLMCell,
     parameters: {
-        modelId: '',
-
-        paramValues: {},
-
         command: '',
+        variants: {},
     },
-    toPixel: ({ modelId, paramValues, command }) => {
-        return `LLM(engine=["${modelId}"], command=["${command}"], paramValues=[])`;
+    toPixels: ({ command }) => {
+        const { state } = useBlocks();
+        // console.log(toJS(state.blocks[blockId]));
+        return [];
+        // const pixels = Object.values(variants).map((variant: Variant) => {
+        //     return `LLM(engine=["${variant.models[0].id}"], command=["${command}"], paramValues=[])`;
+        // });
+        // return pixels;
     },
 };
