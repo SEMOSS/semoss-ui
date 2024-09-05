@@ -6,6 +6,7 @@ import {
     IconButton,
     FileDropzone,
     useNotification,
+    Button,
 } from '@semoss/ui';
 import { LoadingScreen } from '@/components/ui';
 import { ArrowUpward, Mic } from '@mui/icons-material';
@@ -29,121 +30,117 @@ import {
 
 const NodeComponent = (props) => {
     return (
-        <div style={{ border: '1px solid red', width: '100%' }}>
-            {props.children}
-        </div>
+        // <div style={{ border: '1px solid red', width: '100%' }}>
+        <div>{props.children}</div>
     );
 };
 
 const TEST_NODES = [
+    // {
+    //     id: '1',
+    //     position: { x: 0, y: 0 },
+    //     data: { label: <NodeComponent>1</NodeComponent> },
+    //     text: '',
+    // },
+    // {
+    //     id: '2',
+    //     position: { x: 0, y: 100 },
+    //     data: { label: <NodeComponent>2</NodeComponent> },
+    //     text: '',
+    // },
+    // {
+    //     id: '3',
+    //     position: { x: 0, y: 200 },
+    //     data: { label: <NodeComponent>3</NodeComponent> },
+    //     text: '',
+    // },
+
     {
         id: '1',
-        width: 1000,
-        position: { x: 0, y: 0 },
-        data: { label: <NodeComponent>1</NodeComponent> },
+        data: { label: <h2>Start Node</h2> },
+        position: { x: 50, y: 50 },
+        type: 'input',
         text: '',
+        // targetPosition: "left",
+        // sourcePosition: "right"
     },
     {
         id: '2',
-        width: 1000,
-        position: { x: 0, y: 100 },
-        data: { label: <NodeComponent>2</NodeComponent> },
+        data: { label: <h2>Process A</h2> },
+        position: { x: 200, y: 50 },
         text: '',
+        // "targetPosition": "left",
+        // "sourcePosition": "right"
     },
     {
         id: '3',
-        width: 1000,
-        position: { x: 0, y: 200 },
-        data: { label: <NodeComponent>3</NodeComponent> },
+        data: { label: <h2>Process B</h2> },
+        position: { x: 350, y: 150 },
         text: '',
+        // "targetPosition": "top",
+        // "sourcePosition": "bottom"
     },
-
-    // {
-    //     "id": "1",
-    //     "data": { "label": <h2>Start Node</h2> },
-    //     "position": { "x": 50, "y": 50 },
-    //     "type": "input",
-    //     "targetPosition": "left",
-    //     "text": "",
-    //     "sourcePosition": "right"
-    // },
-    // {
-    //     "id": "2",
-    //     "data": { "label": <h2>Process A</h2> },
-    //     "position": { "x": 200, "y": 50 },
-    //     "targetPosition": "left",
-    //     "text": "",
-    //     "sourcePosition": "right"
-    // },
-    // {
-    //     "id": "3",
-    //     "data": { "label": <h2>Process B</h2> },
-    //     "position": { "x": 350, "y": 150 },
-    //     "targetPosition": "top",
-    //     "text": "",
-    //     "sourcePosition": "bottom"
-    // },
-    // {
-    //     "id": "4",
-    //     "data": { "label": <h2>Decision</h2> },
-    //     "position": { "x": 500, "y": 50 },
-    //     "targetPosition": "left",
-    //     "text": "",
-    //     "sourcePosition": "right"
-    // },
-    // {
-    //     "id": "5",
-    //     "data": { "label": <h2>Process C</h2> },
-    //     "position": { "x": 650, "y": 50 },
-    //     "targetPosition": "left",
-    //     "text": "",
-    //     "sourcePosition": "right"
-    // },
-    // {
-    //     "id": "6",
-    //     "data": { "label": <h2>End Node</h2> },
-    //     "position": { "x": 800, "y": 150 },
-    //     "type": "output",
-    //     "targetPosition": "left",
-    //     "text": "",
-    // }
+    {
+        id: '4',
+        data: { label: <h2>Decision</h2> },
+        position: { x: 500, y: 50 },
+        text: '',
+        // "targetPosition": "left",
+        // "sourcePosition": "right"
+    },
+    {
+        id: '5',
+        data: { label: <h2>Process C</h2> },
+        position: { x: 650, y: 50 },
+        text: '',
+        // "targetPosition": "left",
+        // "sourcePosition": "right"
+    },
+    {
+        id: '6',
+        data: { label: <h2>End Node</h2> },
+        position: { x: 800, y: 150 },
+        type: 'output',
+        text: '',
+        // "targetPosition": "left",
+    },
 ];
 
 const TEST_EDGES = [
-    { id: 'e1-2', source: '1', target: '2' },
-    { id: 'e1-3', source: '1', target: '3' },
+    // { id: 'e1-2', source: '1', target: '2' },
+    // { id: 'e1-3', source: '1', target: '3' },
 
-    // {
-    // "id": "e1-2",
-    // "source": "1",
-    // "target": "2",
-    // "animated": true,
-    // "label": "Next"
-    // },
-    // {
-    // "id": "e2-3",
-    // "source": "2",
-    // "target": "3",
-    // "label": "Next"
-    // },
-    // {
-    // "id": "e2-4",
-    // "source": "2",
-    // "target": "4",
-    // "label": "Next"
-    // },
-    // {
-    // "id": "e4-5",
-    // "source": "4",
-    // "target": "5",
-    // "label": "Yes"
-    // },
-    // {
-    // "id": "e5-6",
-    // "source": "5",
-    // "target": "6",
-    // "label": "Next"
-    // },
+    {
+        id: 'e1-2',
+        source: '1',
+        target: '2',
+        animated: true,
+        label: 'Next',
+    },
+    {
+        id: 'e2-3',
+        source: '2',
+        target: '3',
+        label: 'Next',
+    },
+    {
+        id: 'e2-4',
+        source: '2',
+        target: '4',
+        label: 'Next',
+    },
+    {
+        id: 'e4-5',
+        source: '4',
+        target: '5',
+        label: 'Yes',
+    },
+    {
+        id: 'e5-6',
+        source: '5',
+        target: '6',
+        label: 'Next',
+    },
 ];
 
 const ComponentContainer = styled('div')(({ theme }) => ({
@@ -206,6 +203,28 @@ export const NewAIConductorPage = (props) => {
     // const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [nodes, setNodes, onNodesChange] = useNodesState(TEST_NODES);
     const [edges, setEdges, onEdgesChange] = useEdgesState(TEST_EDGES);
+
+    const generateLoremIpsum = () => {
+        const randNum = Math.random() * 1000;
+        let retString = '';
+        for (let i = 0; i < randNum; i++)
+            retString = retString + 'lorem ipsum ';
+        return retString;
+    };
+
+    const setNodeContent = (nodeId = 1, newContent = '') => {
+        if (!newContent) newContent = generateLoremIpsum();
+        // create new node component and use setNode
+        setNodes([
+            {
+                id: '1',
+                // width: 1000,
+                position: { x: 0, y: 0 },
+                data: { label: <NodeComponent>{newContent}</NodeComponent> },
+                text: '',
+            },
+        ]);
+    };
 
     const onConnect = useCallback(
         (params) => setEdges((eds) => addEdge(params, eds)),
@@ -296,6 +315,22 @@ export const NewAIConductorPage = (props) => {
         }
     });
 
+    // Running Notes
+    // * making all of these react flow nodes is possible
+    // * but it will require completely redefiing the flow box and all the nodes to adjust for content height
+    // * seems like a lot of work for something temporary
+    // * maybe make flow nodes in parallel to a regular component stack
+    // * right now click and dragability doesn't seem like the top priority
+    // * so for now...
+    // * load the apps in
+    // * make them all into nodes and edges for the flow space
+    // * make them into stack components also
+    // * maybe make view togglable
+
+    // 1) get apps from api call
+    // 2) load into react flow
+    // 3) load into stack view
+
     return (
         <ComponentContainer id="conductor-container-div">
             <Typography variant="h4">AI Conductor</Typography>
@@ -311,9 +346,16 @@ export const NewAIConductorPage = (props) => {
                     ))}
                 </SubTaskContainer>
 
-                {/* <div style={{ width: '750px', height: '750px', display: "block", margin: "auto", border: "1px solid black", boxShadow: "-10px 10px 0 black" }}> */}
-                <div style={{ width: '100%', height: '500px' }}>
-                    <button onClick={nodeState}>print nodes state</button>
+                <div
+                    style={{
+                        width: '100%',
+                        height: '500px',
+                        backgroundColor: '#fff',
+                        borderRadius: '10px',
+                    }}
+                >
+                    {/* <Button variant="contained" onClick={() => setNodeContent()}>test node add content</Button> */}
+                    {/* <button onClick={nodeState}>print nodes state</button> */}
                     {/* <button onClick={addNode}>add node</button> */}
                     <ReactFlow
                         nodes={nodes}
@@ -323,18 +365,16 @@ export const NewAIConductorPage = (props) => {
                         onConnect={onConnect}
                         attributionPosition="bottom-right"
                         preventScrolling={true}
-                        // edgesUpdatable={!true}
                         edgesFocusable={!true}
-                        nodesDraggable={!true}
+                        nodesDraggable={true}
                         nodesConnectable={!true}
                         nodesFocusable={!true}
-                        draggable={!true}
-                        panOnDrag={!true}
-                        elementsSelectable={!true}
-                        // Optional if you also want to lock zooming
-                        zoomOnDoubleClick={!true}
-                        minZoom={true ? 1 : 0.5}
-                        maxZoom={true ? 1 : 3}
+                        draggable={true}
+                        panOnDrag={true}
+                        elementsSelectable={true}
+                        zoomOnDoubleClick={true}
+                        minZoom={0.5}
+                        maxZoom={3}
                     >
                         {/* <Controls />
                         <MiniMap /> */}
