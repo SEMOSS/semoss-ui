@@ -1,4 +1,4 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, Fragment } from 'react';
 import {
     Avatar,
     Collapse,
@@ -12,6 +12,7 @@ import {
 import { usePixel, useRootStore } from '@/hooks';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { removeUnderscores, toTitleCase } from '@/utility';
+import { useSearchParams } from 'react-router-dom';
 
 const StyledFilter = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -88,6 +89,7 @@ const reducer = (state, action) => {
 export const Filterbox = (props: FilterboxProps) => {
     const { type, onChange } = props;
     const { configStore } = useRootStore();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { filterSearch } = state;
@@ -169,6 +171,16 @@ export const Filterbox = (props: FilterboxProps) => {
             : '',
     );
 
+    // Apply the URL's query params to the filters' state on component mount.
+    useEffect(() => {
+        if (searchParams.size > 0) {
+            searchParams.forEach((value, key) => {
+                setSelectedFilters(key, { value, count: 0 });
+            });
+        }
+        handleFiltersSideEffects();
+    }, []);
+
     /**
      * @desc Catalog filters
      */
@@ -193,7 +205,15 @@ export const Filterbox = (props: FilterboxProps) => {
 
         // add metakeys that don't get options from projects/engines but stored in config call
         const metaKeysWithOpts = list.filter((k) => {
-            return k.display_options === 'select-box';
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'select-box'
+            );
         });
 
         metaKeysWithOpts.forEach((filter) => {
@@ -206,14 +226,13 @@ export const Filterbox = (props: FilterboxProps) => {
                     });
                 });
 
-                //Initialize filter metakey collapsibles to be open
-                setShowCollapsible((set) => ({
-                    ...set,
-                    [filter.metakey]: true,
-                }));
-
                 updated[filter.metakey] = formatted;
             }
+            //Initialize filter metakey collapsibles to be open
+            setShowCollapsible((set) => ({
+                ...set,
+                [filter.metakey]: true,
+            }));
         });
 
         setFilterOptions(updated);
@@ -253,7 +272,13 @@ export const Filterbox = (props: FilterboxProps) => {
 
         // Now update filter object to have new selected values
         setFilterVisibility({ ...filterVisibility });
+    };
 
+    /**
+     * @name handleFiltersSideEffects
+     * @desc handles what actions/effects are needed when the filters are changed
+     */
+    const handleFiltersSideEffects = () => {
         const constructedFilters = {};
 
         Object.entries(filterVisibility).forEach((obj) => {
@@ -263,6 +288,8 @@ export const Filterbox = (props: FilterboxProps) => {
         });
         // Pass filters to parent
         onChange(constructedFilters);
+        // Update query params in the URL
+        setSearchParams(constructedFilters);
     };
 
     return (
@@ -292,6 +319,7 @@ export const Filterbox = (props: FilterboxProps) => {
                 </List.Item>
 
                 <Collapse in={filterByVisibility}>
+                    {/* Is there any filters */}
                     {Object.entries(filterOptions).length ? (
                         <StyledFilterSearchContainer>
                             <Search
@@ -349,30 +377,26 @@ export const Filterbox = (props: FilterboxProps) => {
                                         }
                                     />
                                 </List.Item>
-                                {/* <StyledNestedFilterList dense={true}> */}
-                                {list.map((filterOption, i) => {
-                                    if (
-                                        shownListItems > 4 &&
-                                        !filterVisibility[entries[0]].open
-                                    ) {
-                                        return;
-                                    } else {
+                                <Collapse
+                                    key={i}
+                                    in={showCollapsible[entries[0]]}
+                                >
+                                    {list.map((filterOption, i) => {
                                         if (
-                                            filterOption.value
-                                                .toLowerCase()
-                                                .includes(
-                                                    filterSearch.toLowerCase(),
-                                                )
+                                            shownListItems > 4 &&
+                                            !filterVisibility[entries[0]].open
                                         ) {
-                                            shownListItems += 1;
-                                            return (
-                                                <Collapse
-                                                    in={
-                                                        showCollapsible[
-                                                            entries[0]
-                                                        ]
-                                                    }
-                                                >
+                                            return;
+                                        } else {
+                                            if (
+                                                filterOption.value
+                                                    .toLowerCase()
+                                                    .includes(
+                                                        filterSearch.toLowerCase(),
+                                                    )
+                                            ) {
+                                                shownListItems += 1;
+                                                return (
                                                     <List.Item
                                                         disableGutters
                                                         key={i}
@@ -393,7 +417,6 @@ export const Filterbox = (props: FilterboxProps) => {
                                                                 ) > -1
                                                             }
                                                             onClick={() => {
-                                                                // Reset databases and reset offset
                                                                 dispatch({
                                                                     type: 'field',
                                                                     field: 'databases',
@@ -404,6 +427,7 @@ export const Filterbox = (props: FilterboxProps) => {
                                                                     entries[0],
                                                                     filterOption,
                                                                 );
+                                                                handleFiltersSideEffects();
                                                             }}
                                                             aria-label={
                                                                 filterVisibility[
@@ -448,45 +472,48 @@ export const Filterbox = (props: FilterboxProps) => {
                                                             </div>
                                                         </List.ItemButton>
                                                     </List.Item>
-                                                </Collapse>
-                                            );
-                                        }
-                                    }
-                                })}
-                                {shownListItems > 4 && (
-                                    <List.Item>
-                                        <div
-                                            onClick={() => {
-                                                const visibleFilters = {
-                                                    ...filterVisibility,
-                                                };
-                                                visibleFilters[entries[0]] = {
-                                                    open: !visibleFilters[
-                                                        entries[0]
-                                                    ].open,
-                                                    value: visibleFilters[
-                                                        entries[0]
-                                                    ].value,
-                                                    search: visibleFilters[
-                                                        entries[0]
-                                                    ].search,
-                                                };
-                                                setFilterVisibility(
-                                                    visibleFilters,
                                                 );
-                                            }}
-                                        >
-                                            <StyledShowMore variant={'body1'}>
-                                                Show{' '}
-                                                {filterVisibility[entries[0]]
-                                                    .open
-                                                    ? 'Less'
-                                                    : 'More'}
-                                            </StyledShowMore>
-                                        </div>
-                                    </List.Item>
-                                )}
-                                {/* </StyledNestedFilterList> */}
+                                            }
+                                        }
+                                    })}
+                                    {shownListItems > 4 && (
+                                        <List.Item>
+                                            <div
+                                                onClick={() => {
+                                                    const visibleFilters = {
+                                                        ...filterVisibility,
+                                                    };
+                                                    visibleFilters[entries[0]] =
+                                                        {
+                                                            open: !visibleFilters[
+                                                                entries[0]
+                                                            ].open,
+                                                            value: visibleFilters[
+                                                                entries[0]
+                                                            ].value,
+                                                            search: visibleFilters[
+                                                                entries[0]
+                                                            ].search,
+                                                        };
+                                                    setFilterVisibility(
+                                                        visibleFilters,
+                                                    );
+                                                }}
+                                            >
+                                                <StyledShowMore
+                                                    variant={'body1'}
+                                                >
+                                                    Show{' '}
+                                                    {filterVisibility[
+                                                        entries[0]
+                                                    ].open
+                                                        ? 'Less'
+                                                        : 'More'}
+                                                </StyledShowMore>
+                                            </div>
+                                        </List.Item>
+                                    )}
+                                </Collapse>
                                 {i + 1 !== totalFilters && (
                                     <div
                                         style={{

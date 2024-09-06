@@ -4,25 +4,47 @@ import { Migration } from './migration.types';
  * @name config
  * @description - This addresses a change in how we store our variables.
  *
- * 1. The unique identifier will change to what it is aliased by.
- * From: 'variable-7829': { alias: "LLM", to: 'model-8282', type: 'model'}
- * To: 'LLM': { to: 'model-8282', type: 'model'}
- *
- * 2. For cell variables fix
- * From: {to: "query-1.1234"}
- * To: {to: "query-1", cellId: "1234"}
- *
- * 3. Old syntax to new syntax (does not create dup references for variables)
- * {{query.py_code.cell.2189.output}} --> {{py_cell.output}}
- * {{query.py_code.output}} --> {{py_code.output}}
+ * 1. Look at our variables and see if we have the reference value in our state.
+ * If not delete that variable. If so skip...
  */
 const config: Migration = {
     versionFrom: '1.0.0-alpha.1',
     versionTo: '1.0.0-alpha.2',
     run: (state) => {
-        return {
-            ...state,
-        };
+        const newState = { ...state };
+
+        Object.entries(newState.variables).forEach((keyValue) => {
+            const id = keyValue[0];
+            const variable = keyValue[1];
+            if (variable.type === 'block') {
+                if (!state.blocks[variable.to]) {
+                    delete newState.variables[id];
+                }
+            } else if (variable.type === 'cell') {
+                if (!state.queries[variable.to]) {
+                    delete newState.variables[id];
+                } else {
+                    const cellId = variable.cellId;
+
+                    let present = false;
+                    state.queries[variable.to].cells.forEach((c) => {
+                        if (c.id === cellId) {
+                            present = true;
+                        }
+                    });
+
+                    if (!present) {
+                        delete newState.variables[id];
+                    }
+                }
+            } else if (variable.type === 'query') {
+                if (!state.queries[variable.to]) {
+                    delete newState.variables[id];
+                }
+            }
+        });
+
+        return newState;
     },
 };
 

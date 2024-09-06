@@ -3,7 +3,7 @@ import { Migration, MigrationState } from './migration.types';
 import migrate__1_0_0_alpha_to_1_0_0_alpha_1 from './migrate__1_0_0_alpha__to__1_0_0_alpha_1';
 import migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 from './migrate__1_0_0_alpha_1__to__1_0_0_alpha_2';
 
-export const STATE_VERSION = '1.0.0-alpha.1';
+export const STATE_VERSION = '1.0.0-alpha.2';
 
 export class MigrationManager {
     /**

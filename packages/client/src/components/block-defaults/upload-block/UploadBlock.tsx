@@ -20,6 +20,7 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
         loading: boolean;
         disabled: boolean;
         hint?: string;
+        extensions?: string[];
     };
 }
 
@@ -94,6 +95,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 shrink: true,
             }}
             type={'file'}
+            inputProps={{ accept: data.extensions }}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
 
