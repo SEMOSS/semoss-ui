@@ -24,23 +24,12 @@ export const Conductor = observer(() => {
             </Typography>
             {conductor.steps.map((step, i) => {
                 return (
-                    <>
-                        <div
-                            style={{
-                                background: 'cornflowerblue',
-                                borderRadius: '15px',
-                                padding: '5px 7px',
-                            }}
-                        >
-                            Conductor Step {i}
-                        </div>
-                        <ConductorStep
-                            key={i}
-                            taskIndex={i}
-                            type={'app'}
-                            step={step}
-                        />
-                    </>
+                    <ConductorStep
+                        key={i}
+                        taskIndex={i}
+                        type={'app'}
+                        step={step}
+                    />
                 );
             })}
         </Stack>

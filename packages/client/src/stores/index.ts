@@ -1,4 +1,5 @@
 export * from './config';
+export * from './conductor';
 export * from './designer';
 export * from './monolith';
 export * from './notebook';

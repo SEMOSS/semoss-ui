@@ -2,6 +2,7 @@ import { useAPI } from './useAPI';
 import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
 import { useBlockSettings } from './useBlockSettings';
+import { useConductor } from './useConductor';
 import { useEngine } from './useEngine';
 import { useLLM } from './useLLM';
 import { useMetamodel } from './useMetamodel';
@@ -21,6 +22,7 @@ export {
     useBlock,
     useBlocks,
     useBlockSettings,
+    useConductor,
     useEngine,
     useLLM,
     useMetamodel,

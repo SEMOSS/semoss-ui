@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BlocksRenderer } from '../blocks-workspace';
 import { SerializedState } from '@/stores';
-import { Stack, Typography, Button } from '@semoss/ui';
+import { Stack, Typography } from '@semoss/ui';
 import { useConductor } from '@/hooks';
 
 interface ConductorStepProps {
@@ -25,20 +25,18 @@ export const ConductorStep = observer(
         console.log('step', step);
         const { conductor } = useConductor();
 
-        const stepDup = JSON.parse(JSON.stringify(step));
-
         /**
          * Set input pool values on mount
          */
         useEffect(() => {
-            Object.entries(stepDup.variables).forEach((variable) => {
+            Object.entries(step.variables).forEach((variable) => {
                 const name = variable[0];
                 const value = variable[1];
 
                 if (value.isInput || value.isOutput) {
                     let v = '';
                     if (value.type === 'block') {
-                        v = stepDup.blocks[value.to].data.value;
+                        v = step.blocks[value.to].data.value;
                     } else {
                         v = 'get the value from blocks';
                     }
@@ -64,7 +62,7 @@ export const ConductorStep = observer(
                 <Typography variant="body2" fontWeight="bold">
                     Inputs for app:
                 </Typography>
-                {Object.entries(stepDup.variables).map((variable) => {
+                {Object.entries(step.variables).map((variable) => {
                     const name = variable[0];
                     const value = variable[1];
                     if (value.isInput) {
@@ -80,7 +78,7 @@ export const ConductorStep = observer(
                 <Typography variant="body2" fontWeight="bold">
                     Outputs for app:{' '}
                 </Typography>
-                {Object.entries(stepDup.variables).map((variable) => {
+                {Object.entries(step.variables).map((variable) => {
                     const name = variable[0];
                     const value = variable[1];
                     if (value.isOutput) {
@@ -99,29 +97,7 @@ export const ConductorStep = observer(
                 {/* TODO: How will we communicate changes to inputs and outputs of Apps to our conductor state */}
                 {type === 'app' ? (
                     <Stack sx={{ border: 'solid 3px blue' }}>
-                        <Button
-                            variant="contained"
-                            onClick={() => (stepDup['version'] = 'foo')}
-                        >
-                            change version
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={() =>
-                                console.log({
-                                    step,
-                                    keys: Object.keys(step),
-                                    queries: stepDup['queries'],
-                                    blocks: stepDup['blocks'],
-                                    variables: stepDup['variables'],
-                                    dependencies: stepDup['dependencies'],
-                                    version: stepDup['version'],
-                                })
-                            }
-                        >
-                            print step
-                        </Button>
-                        <BlocksRenderer state={stepDup} />
+                        <BlocksRenderer state={step} />
                     </Stack>
                 ) : (
                     <>test</>

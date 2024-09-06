@@ -1,4 +1,5 @@
 import { BlocksContext } from './Blocks.context';
+import { ConductorContextType, ConductorContext } from './ConductorContext';
 import { DesignerContextType, DesignerContext } from './DesignerContext';
 import { EngineContextType, EngineContext } from './EngineContext';
 import { LLMContext, LLMContextType } from './LLMContext';
@@ -14,6 +15,7 @@ import {
 } from './LLMComparisonContext';
 
 export type {
+    ConductorContextType,
     DesignerContextType,
     EngineContextType,
     LLMContextType,
@@ -28,6 +30,7 @@ export type {
 
 export {
     BlocksContext,
+    ConductorContext,
     DesignerContext,
     EngineContext,
     LLMContext,
