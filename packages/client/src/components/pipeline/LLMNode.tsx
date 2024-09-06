@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Stack, Typography } from '@semoss/ui';
+import { Divider, Stack, Typography, TextField } from '@semoss/ui';
 
 const handleStyle = { left: 10 };
 
@@ -25,43 +25,42 @@ export function LLMNode({ data, id }) {
                 <Typography variant={'caption'}>
                     LLM Configuration info to be used in an LLM Runner Node
                 </Typography>
-                <div>
-                    <label htmlFor="text">Model:</label>
-                    <input
-                        id="Model"
-                        name="text"
-                        onChange={onChange}
-                        className="nodrag"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="text">Temperature:</label>
-                    <input
-                        id="Temperature"
-                        name="text"
-                        onChange={onChange}
-                        className="nodrag"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="text">Top P:</label>
-
-                    <input
-                        id="Top P"
-                        name="text"
-                        onChange={onChange}
-                        className="nodrag"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="text">Token Length:</label>
-                    <input
-                        id="Token Length"
-                        name="text"
-                        onChange={onChange}
-                        className="nodrag"
-                    />
-                </div>
+                <TextField
+                    label={'Model Id'}
+                    value={data.engine_id}
+                    onChange={(e) => {
+                        console.log('change value on node');
+                    }}
+                />
+                <TextField
+                    label={'Temperature'}
+                    value={data.temperature}
+                    onChange={(e) => {
+                        console.log('change value on node');
+                    }}
+                />
+                <TextField
+                    label={'Token Length'}
+                    value={data.token_length}
+                    onChange={(e) => {
+                        console.log('change value on node');
+                    }}
+                />
+                <TextField
+                    label={'Top P'}
+                    value={data.top_p}
+                    onChange={(e) => {
+                        console.log('change value on node');
+                    }}
+                />
+                <Divider />
+                Output:{' '}
+                {JSON.stringify({
+                    id: data.id,
+                    temperature: data.temperature,
+                    top_p: data.top_p,
+                    token_length: data.token_length,
+                })}
             </Stack>
             <Handle
                 type="source"

@@ -1,30 +1,12 @@
-import { Button, Stack, Typography } from '@semoss/ui';
-import React, { useCallback } from 'react';
-import {
-    ReactFlow,
-    MiniMap,
-    Controls,
-    Background,
-    useNodesState,
-    useEdgesState,
-    addEdge,
-    Node,
-} from '@xyflow/react';
+import { Button, Stack, Tooltip, Typography } from '@semoss/ui';
+import React, { useState } from 'react';
 
-import {
-    AppNode,
-    CustomEdge,
-    LLMNode,
-    LLMRunnerNode,
-    PromptNode,
-    RunPyNode,
-    StartEndEdge,
-    VectorSearchNode,
-} from '@/components/pipeline';
+import { Pipeline, Playground } from '@/components/pipeline';
 
 import '@xyflow/react/dist/style.css';
 import { TEST_LIST_OF_STEPS } from '@/components/conductor';
-import { SerializedState } from '@/stores';
+import { ConductorContext } from '@/contexts';
+import { ConductorStore } from '@/stores';
 
 const apps = [
     {
@@ -246,6 +228,17 @@ const apps = [
                 },
                 type: 'start-end',
             },
+            // {
+            //     id: 'edge-6-4',
+            //     source: '6',
+            //     target: '4',
+            //     sourceHandle: `app-${'6'}-source-${'is-qualified'}`,
+            //     targetHandle: `prompt-${'4'}-target-${'context'}`,
+            //     data: {
+            //         label: 'context',
+            //     },
+            //     type: 'start-end',
+            // },
         ],
     },
     {
@@ -256,20 +249,25 @@ const apps = [
                 id: '1',
                 position: { x: 0, y: 0 },
                 data: {
-                    prompt: 'What time are you open and do i need a reservation?',
+                    engine: '2df38ed6-ace0-4fd6-9abb-e095fb49940e',
+                    command: '{{chat_input}}',
+
+                    output: '',
                 },
                 type: 'VECTOR_SEARCH',
             },
             {
                 id: '2',
                 type: 'LLM',
-                position: { x: 1000, y: 400 },
+                position: { x: 1000, y: 700 },
                 data: {
-                    id: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
+                    engine_id: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
                     name: 'GPT-40',
                     temperature: 0.2,
                     token_length: 256,
                     top_p: 0.2,
+
+                    output: '',
                 },
             },
             {
@@ -277,14 +275,13 @@ const apps = [
                 type: 'PROMPT',
                 position: { x: 1000, y: 0 },
                 data: {
-                    context: '',
-                    prompt: `
-                    Answer the user with context from our vector store:
-        
-                    User: {user_input}
-        
-                    Answer: 
+                    context:
+                        'Answer the user with context from our vector store {{vector_search_node}}:',
+                    prompt: `User: {{chat_input}}
+Answer: 
                     `,
+
+                    output: '',
                 },
             },
             {
@@ -292,7 +289,15 @@ const apps = [
                 type: 'LLM_RUNNER',
                 position: { x: 2000, y: 0 },
                 data: {
-                    modelId: '',
+                    engine_id: '',
+                    param_values: {
+                        temperature: 0.2,
+                        token_length: 256,
+                        top_p: 0.2,
+                    },
+                    prompt: '',
+
+                    output: '',
                 },
             },
         ],
@@ -334,119 +339,56 @@ const apps = [
     },
 ];
 
-const defaultViewport = { x: 50, y: 50, zoom: 0 };
-
-const nodeTypes = {
-    APP: AppNode,
-    LLM: LLMNode,
-    LLM_RUNNER: LLMRunnerNode,
-    PROMPT: PromptNode,
-    RUN_PY: RunPyNode,
-    RUN_PIXEL: RunPyNode,
-    VECTOR_SEARCH: VectorSearchNode,
-};
-
-const edgeTypes = {
-    'start-end': StartEndEdge,
-    custom: CustomEdge,
-};
-
-type NodeTypes =
-    | Node
-    | {
-          id: string;
-          type: 'APP';
-          position: { x: number; y: number };
-          data: {
-              appId: string;
-              description: string;
-              inputs: string[];
-              outputs: string[];
-              state: SerializedState;
-          };
-      }
-    | {
-          id: string;
-          type: 'LLM';
-          position: { x: number; y: number };
-          data: {
-              id: string;
-              name: string;
-              temperature: number;
-              token_length: number;
-              top_p: number;
-          };
-      };
-
 export const PipelinePage = () => {
+    const [view, setView] = useState<'pipeline' | 'playground'>('playground');
     const app = apps[1];
-    const [nodes, setNodes, onNodesChange] = useNodesState<NodeTypes>(
-        app.initialNodes,
-    );
-    const [edges, setEdges, onEdgesChange] = useEdgesState(app.initialEdges);
 
-    const onConnect = useCallback(
-        (params) => setEdges((eds) => addEdge(params, eds)),
-        [setEdges],
-    );
-
-    const changeEdge = () => {
-        console.log(
-            'Should i allow changing of edges on UI, or should i automatically connect when they determine a relationship on the node with the input pool',
-        );
-    };
-
-    const test = () => {
-        const newNodes = nodes.map((node) => {
-            if (node.id === '1') {
-                // it's important that you create a new node object
-                // in order to notify react flow about the change
-                return {
-                    ...node,
-                    data: {
-                        ...node.data,
-                        label: 'new label',
-                    },
-                };
-            }
-
-            return node;
-        });
-        setNodes(newNodes);
-    };
+    const conductor = new ConductorStore({
+        nodes: app.initialNodes,
+        edges: app.initialEdges,
+    });
 
     return (
-        <Stack sx={{ height: '100%', overflow: 'scroll' }}>
-            <Typography variant={'h6'}>Pipeline Page</Typography>
-            <Typography variant={'caption'}>
-                {
-                    "Should i allow changing of edges on UI, or should i automatically connect when they determine a relationship on the node with the input pool. If i do i'll have to pop open modal saying what input are you trying to connect to"
-                }
-            </Typography>
-            <Button onClick={test}>Update Node</Button>
-            <Typography variant={'body1'} fontWeight={'bold'}>
-                {app.name}
-            </Typography>
-            <Typography variant={'body2'} fontWeight={'bold'}>
-                {app.question}
-            </Typography>
-            <Typography variant={'body2'} fontWeight={'bold'}>
-                User Inputs in playground: {JSON.stringify(app.requiredInputs)}
-            </Typography>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                defaultViewport={defaultViewport}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-            >
-                {/* <MiniMap /> */}
-                <Controls />
-                <Background />
-            </ReactFlow>
-        </Stack>
+        <ConductorContext.Provider value={{ conductor: conductor }}>
+            <Stack direction="row" gap={1}>
+                <Typography variant={'h6'}>
+                    {view === 'pipeline' ? 'Pipeline' : 'Playground'}
+                </Typography>
+                <Button
+                    onClick={() => {
+                        if (view === 'pipeline') {
+                            setView('playground');
+                        } else {
+                            setView('pipeline');
+                        }
+                    }}
+                >
+                    Show {view === 'pipeline' ? 'Playground' : 'Pipeline'}
+                </Button>
+            </Stack>
+            <Stack direction={'row'} gap={2}>
+                <Typography variant={'body1'} fontWeight={'bold'}>
+                    {app.name}{' '}
+                    <Tooltip
+                        title={
+                            <Stack>
+                                <Typography variant={'body2'}>
+                                    {
+                                        "Should i allow changing of edges on UI, or should i automatically connect when they determine a relationship on the node with the input pool. If i do i'll have to pop open modal saying what input are you trying to connect to"
+                                    }
+                                </Typography>
+                                <Typography variant={'caption'}>
+                                    User Inputs in playground:{' '}
+                                    {JSON.stringify(app.requiredInputs)}
+                                </Typography>
+                            </Stack>
+                        }
+                    >
+                        <Button>Notes</Button>
+                    </Tooltip>
+                </Typography>
+            </Stack>
+            {view === 'pipeline' ? <Pipeline /> : <Playground />}
+        </ConductorContext.Provider>
     );
 };

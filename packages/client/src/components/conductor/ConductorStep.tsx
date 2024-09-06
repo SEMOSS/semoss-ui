@@ -29,20 +29,19 @@ export const ConductorStep = observer(
          * Set input pool values on mount
          */
         useEffect(() => {
-            Object.entries(step.variables).forEach((variable) => {
-                const name = variable[0];
-                const value = variable[1];
-
-                if (value.isInput || value.isOutput) {
-                    let v = '';
-                    if (value.type === 'block') {
-                        v = step.blocks[value.to].data.value;
-                    } else {
-                        v = 'get the value from blocks';
-                    }
-                    conductor.setInputValue(name, v);
-                }
-            });
+            // Object.entries(step.variables).forEach((variable) => {
+            //     const name = variable[0];
+            //     const value = variable[1];
+            //     if (value.isInput || value.isOutput) {
+            //         let v = '';
+            //         if (value.type === 'block') {
+            //             v = step.blocks[value.to].data.value;
+            //         } else {
+            //             v = 'get the value from blocks';
+            //         }
+            //         conductor.setInputValue(name, v);
+            //     }
+            // });
         }, [Object.keys(step).length, type]);
 
         return (
@@ -62,7 +61,7 @@ export const ConductorStep = observer(
                 <Typography variant="body2" fontWeight="bold">
                     Inputs for app:
                 </Typography>
-                {Object.entries(step.variables).map((variable) => {
+                {/* {Object.entries(step.variables).map((variable) => {
                     const name = variable[0];
                     const value = variable[1];
                     if (value.isInput) {
@@ -70,7 +69,7 @@ export const ConductorStep = observer(
                             <Typography variant={'caption'}>{name}</Typography>
                         );
                     }
-                })}
+                })} */}
                 <Typography variant={'h6'}>
                     ----------------------------------------------------------
                 </Typography>
@@ -78,7 +77,7 @@ export const ConductorStep = observer(
                 <Typography variant="body2" fontWeight="bold">
                     Outputs for app:{' '}
                 </Typography>
-                {Object.entries(step.variables).map((variable) => {
+                {/* {Object.entries(step.variables).map((variable) => {
                     const name = variable[0];
                     const value = variable[1];
                     if (value.isOutput) {
@@ -86,7 +85,7 @@ export const ConductorStep = observer(
                             <Typography variant={'caption'}>{name}</Typography>
                         );
                     }
-                })}
+                })} */}
                 <Typography variant={'h6'}>
                     ----------------------------------------------------------
                 </Typography>
@@ -97,7 +96,7 @@ export const ConductorStep = observer(
                 {/* TODO: How will we communicate changes to inputs and outputs of Apps to our conductor state */}
                 {type === 'app' ? (
                     <Stack sx={{ border: 'solid 3px blue' }}>
-                        <BlocksRenderer state={step} />
+                        <BlocksRenderer state={step as SerializedState} />
                     </Stack>
                 ) : (
                     <>test</>

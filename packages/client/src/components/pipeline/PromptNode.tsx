@@ -1,10 +1,17 @@
 import { useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Stack, Typography } from '@semoss/ui';
+import { Divider, Stack, TextField, Typography } from '@semoss/ui';
 
 const handleStyle = { left: 10 };
 
 export function PromptNode({ data, id }) {
+    const output =
+        `Context: ${data.context}` +
+        `\n` +
+        `---------------------` +
+        `\n` +
+        `${data.prompt}` +
+        `\n`;
     const onChange = useCallback((evt) => {
         console.log(evt.target.value);
     }, []);
@@ -36,27 +43,29 @@ export function PromptNode({ data, id }) {
                     Configuration on the prompt we want to pass to the LLM
                     Runner
                 </Typography>
-
-                <div>
-                    <label htmlFor="text">Context:</label>
-                    <input
-                        id="context"
-                        name="text"
-                        onChange={onChange}
-                        className="nodrag"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="text">Prompt:</label>
-                    <input
-                        id="prompt"
-                        name="text"
-                        onChange={onChange}
-                        value={data.prompt}
-                        className="nodrag"
-                    />
-                </div>
-                <Typography variant={'caption'}>{data.prompt}</Typography>
+                <TextField
+                    multiline
+                    rows={2}
+                    label={'Context'}
+                    value={data.context}
+                    onChange={(e) => {
+                        console.log('change value on node');
+                    }}
+                />
+                <TextField
+                    multiline
+                    rows={5}
+                    label={'Prompt'}
+                    value={data.prompt}
+                    onChange={(e) => {
+                        console.log('change value on node');
+                    }}
+                />
+                <Divider />
+                <Stack direction={'column'} gap={1}>
+                    <Typography variant={'body2'}>Output</Typography>
+                    {output}
+                </Stack>
             </Stack>
             <Handle
                 type="source"

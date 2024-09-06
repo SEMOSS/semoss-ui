@@ -8,6 +8,9 @@ import { VectorSearchNode } from './VectorSearchNode';
 import { CustomEdge } from './CustomEdge';
 import { StartEndEdge } from './StartEndEdge';
 
+import { Pipeline } from './Pipeline';
+import { Playground } from './Playground';
+
 export {
     AppNode,
     LLMNode,
@@ -17,4 +20,6 @@ export {
     VectorSearchNode,
     CustomEdge,
     StartEndEdge,
+    Pipeline,
+    Playground,
 };
