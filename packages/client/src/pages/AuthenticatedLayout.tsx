@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 
-import { useRootStore } from '@/hooks/';
+import { useRootStore } from '@/hooks';
 
 /**
  * Wrap the database routes and add additional funcitonality
