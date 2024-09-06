@@ -5,3 +5,4 @@ export * from './notebook';
 export * from './root';
 export * from './state';
 export * from './workspace';
+export * from './conductor';
