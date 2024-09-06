@@ -14,7 +14,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 import { Typography } from '@semoss/ui';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 
 const ACTIVE = 'page-1';
 
@@ -39,6 +39,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
+    const queryStringParams = new URLSearchParams(useLocation().search);
 
     useEffect(() => {
         // start the loading
@@ -98,6 +99,31 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     const migration = new MigrationManager();
                     s = await migration.run(s);
                 }
+
+                //Replace variable values with query params
+                queryStringParams.forEach((value, key) => {
+                    let variable = s.variables[key];
+                    if (variable) {
+                        //retrieve the "to" value
+                        let toValue = variable.to;
+                        if (variable.type == 'block') {
+                            //Look into blocks section
+                            if (s.blocks[toValue]) {
+                                s.blocks[toValue].data.value = value;
+                            }
+                        } else if (
+                            variable.type == 'cell' ||
+                            variable.type == 'query'
+                        ) {
+                            //TO DO: Handle query and cell types
+                        } else {
+                            //look into dependencies
+                            if (s.dependencies[toValue]) {
+                                s.dependencies[toValue] = value;
+                            }
+                        }
+                    }
+                });
 
                 // create a new state store
                 const store = new StateStore({
