@@ -14,6 +14,10 @@ import { Controller, useForm } from 'react-hook-form';
 import { usePixel, useRootStore } from '@/hooks';
 // import { Background } from '@xyflow/react';
 
+import { useConductor } from '@/hooks';
+import { ConductorStep } from './ConductorStep';
+import { observer } from 'mobx-react-lite';
+
 import {
     ReactFlow,
     MiniMap,
@@ -179,12 +183,22 @@ const SubTask = styled('div')(({ theme }) => ({
     maxWidth: 'fit-content',
 }));
 
+const TestDiv = styled('span')(({ theme }) => ({
+    backgroundColor: 'cornflowerblue',
+    color: 'white',
+    padding: '12px 22px',
+    borderRadius: '15px',
+    marginBottom: '20px',
+    display: 'block',
+    width: 'fit-content',
+}));
+
 type AIConductorForm = {
     uploadFile: File;
     taskInput: string;
 };
 
-export const NewAIConductorPage = (props) => {
+export const NewConductorPage = (props) => {
     const { handleSubmit, control, reset, watch } = useForm<AIConductorForm>({
         defaultValues: {
             uploadFile: null,
@@ -357,7 +371,21 @@ export const NewAIConductorPage = (props) => {
                     {/* <Button variant="contained" onClick={() => setNodeContent()}>test node add content</Button> */}
                     {/* <button onClick={nodeState}>print nodes state</button> */}
                     {/* <button onClick={addNode}>add node</button> */}
+
+                    <TestDiv>Key Listener Toggle to Pipeline</TestDiv>
+
+                    <TestDiv>Hidden Pipeline View</TestDiv>
+
+                    <TestDiv>Initial Image</TestDiv>
+
+                    <TestDiv>Load in Tasks</TestDiv>
+
+                    <TestDiv>Chat Input</TestDiv>
+
                     <ReactFlow
+                        style={{
+                            display: 'none',
+                        }}
                         nodes={nodes}
                         edges={edges}
                         onNodesChange={nodeChangeHandler}
