@@ -1,6 +1,6 @@
 import { Tooltip, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { Code, CompareArrows } from '@mui/icons-material';
+import { Code } from '@mui/icons-material';
 
 import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 
@@ -95,15 +95,6 @@ export const Notebook = observer(() => {
                         <Code color="inherit" />
                     </Tooltip>
                     <SidebarText>Variables</SidebarText>
-                </SidebarItem>
-                <SidebarItem
-                    selected={view === 'variants'}
-                    onClick={() => updateView('variants')}
-                >
-                    <Tooltip title={'Add'} placement="right">
-                        <CompareArrows color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Variants</SidebarText>
                 </SidebarItem>
             </Sidebar>
             {view ? (
