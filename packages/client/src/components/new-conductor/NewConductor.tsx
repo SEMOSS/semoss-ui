@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useConductor, useRootStore } from '@/hooks';
 import {
     Stack,
@@ -19,8 +19,10 @@ import {
     ArrowUpward,
     Mic,
     KeyboardArrowDown,
+    Close,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
+import { None } from 'vega';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: '#fff',
@@ -32,17 +34,16 @@ const ComponentContainer = styled('div')(({ theme }) => ({
     margin: '50px',
     display: 'flex',
     flexGrow: '1',
-    border: '3px dotted black',
+    border: '1px solid black',
 }));
 
 const EditComponentContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
-    margin: '50px',
+    // margin: '50px',
     // display: 'flex',
     // flexGrow: '1',
-    border: '3px dotted black',
-    // border: '1px solid cornflowerblue',
-    width: '25%',
+    border: '1px solid black',
+    width: '15%',
     display: 'inline-block',
 }));
 
@@ -57,7 +58,7 @@ const EditTaskContainer = styled('div')(({ theme }) => ({
     // flexDirection: 'column',
     // justifyContent: 'space-between',
     // alignItems: 'left',
-    border: '3px dotted green',
+    border: '1px solid black',
 }));
 
 const TaskContainer = styled('div')(({ theme }) => ({
@@ -71,12 +72,12 @@ const TaskContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    border: '3px dotted red',
+    border: '1px solid black',
 }));
 
 const SubTaskContainer = styled('div')(({ theme }) => ({
     width: '100%',
-    border: '3px dotted blue',
+    border: '1px solid black',
 }));
 
 type AIConductorForm = {
@@ -91,6 +92,16 @@ export const Conductor = observer(() => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [historyExpanded, setHistoryExpanded] = useState(false);
     const { monolithStore, configStore } = useRootStore();
+    const [selectedSubtask, setSelectedSubtask] = useState(-1);
+    const [taskContainerWidthPercent, setTaskContainerWidthPercent] =
+        useState('100%');
+    const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
+    const [taskEditorHistory, setTaskEditorHistory] = useState([]);
+    const [openAccordionIndexesSet, setOpenAccordionIndexesSet] = useState(
+        new Set(),
+    );
+
+    const [promptText, setPromptText] = useState(null);
 
     const { handleSubmit, control, reset, watch } = useForm<AIConductorForm>({
         defaultValues: {
@@ -99,9 +110,25 @@ export const Conductor = observer(() => {
         },
     });
 
+    useEffect(() => {
+        if (selectedSubtask == -1) {
+            setTaskContainerWidthPercent('100%');
+            setTaskEditWidthPercent('0%');
+        } else {
+            setTaskContainerWidthPercent('75%');
+            setTaskEditWidthPercent('25%');
+        }
+    }, [selectedSubtask]);
+
     const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
         console.log({ data });
         setIsLoading(true);
+
+        // update prompt question
+        setPromptText(data.taskInput);
+        // if no tasks
+        // add prompt
+        // add tasks
 
         try {
             // const path = 'version/assets/';
@@ -144,15 +171,17 @@ export const Conductor = observer(() => {
         >
             <div
                 style={{
-                    border: '1px solid green',
+                    border: '1px solid black',
                     width: '100%',
+                    display: 'flex',
                 }}
             >
                 <span
                     style={{
-                        border: '1px solid goldenrod',
-                        width: '75%',
+                        border: '1px solid black',
+                        width: taskContainerWidthPercent,
                         display: 'inline-block',
+                        transition: 'width .2s',
                     }}
                 >
                     <Typography variant={'h4'} fontWeight="bold">
@@ -164,22 +193,40 @@ export const Conductor = observer(() => {
                             backgroundColor: '#fafafa',
                             padding: '16px',
                             borderRadius: '12px',
+                            display: promptText ? 'auto' : 'none',
                         }}
                     >
-                        <Person /> Hey am i qualified for this job? If so can
-                        you approve me or reject me for position.
+                        <Person /> {promptText}
                     </Typography>
 
                     <ComponentContainer>
-                        <TaskContainer>
+                        <TaskContainer
+                            sx={{ display: promptText ? 'flex' : 'none' }}
+                        >
                             {conductor.steps.map((step, i) => {
                                 return (
-                                    <SubTaskContainer>
+                                    <SubTaskContainer onClick={() => {}}>
                                         <NewConductorStep
                                             key={i}
                                             taskIndex={i}
                                             type={'app'}
                                             step={step}
+                                            selectedSubtask={selectedSubtask}
+                                            setSelectedSubtask={
+                                                setSelectedSubtask
+                                            }
+                                            taskEditorHistory={
+                                                taskEditorHistory
+                                            }
+                                            setTaskEditorHistory={
+                                                setTaskEditorHistory
+                                            }
+                                            openAccordionIndexesSet={
+                                                openAccordionIndexesSet
+                                            }
+                                            setOpenAccordionIndexesSet={
+                                                setOpenAccordionIndexesSet
+                                            }
                                         />
                                     </SubTaskContainer>
                                 );
@@ -228,25 +275,36 @@ export const Conductor = observer(() => {
                     />
                 </span>
 
-                {/* <span
+                <span
                     style={{
-                        border: '1px solid cornflowerblue',
-                        width: '25%',
-                        display: 'inline-block',
+                        border: '1px solid black',
+                        width: taskEditWidthPercent,
+                        display:
+                            taskEditWidthPercent == '0%'
+                                ? 'none'
+                                : 'inline-block',
+                        transition: 'width .2s',
                     }}
-                > */}
-                <EditComponentContainer>
-                    <EditTaskContainer>
-                        <SubTaskContainer>
-                            <Typography variant={'h6'}>
-                                {' '}
-                                Overall Input Pool
-                            </Typography>
-                            <div>{JSON.stringify(conductor.inputPool)}</div>
-                        </SubTaskContainer>
-                    </EditTaskContainer>
-                </EditComponentContainer>
-                {/* </span> */}
+                >
+                    {/* <EditComponentContainer> */}
+                    {/* <EditTaskContainer> */}
+                    {/* <SubTaskContainer> */}
+                    <Typography variant={'h6'}>
+                        Selected Task: {selectedSubtask}
+                    </Typography>
+                    <IconButton
+                        onClick={() => {
+                            setSelectedSubtask(-1);
+                        }}
+                    >
+                        <Close />
+                    </IconButton>
+                    <Typography variant={'h6'}> Overall Input Pool</Typography>
+                    <div>{JSON.stringify(conductor.inputPool)}</div>
+                    {/* </SubTaskContainer> */}
+                    {/* </EditTaskContainer> */}
+                    {/* </EditComponentContainer> */}
+                </span>
             </div>
         </Stack>
     );
