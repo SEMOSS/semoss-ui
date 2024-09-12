@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BlocksRenderer } from '../blocks-workspace';
 import { SerializedState } from '@/stores';
-import { Stack, Typography } from '@semoss/ui';
+import { Stack, Typography, Accordion } from '@semoss/ui';
 import { useConductor } from '@/hooks';
-import { Visibility, Person } from '@mui/icons-material';
+import { Visibility, Person, KeyboardArrowDown } from '@mui/icons-material';
 
 interface ConductorStepProps {
     /**
@@ -46,99 +46,118 @@ export const NewConductorStep = observer(
             });
         }, [Object.keys(step).length, type]);
 
+        const [historyExpanded, setHistoryExpanded] = useState(false);
+
         return (
-            <Stack
-                direction="column"
-                sx={{
-                    backgroundColor: '#fafafa',
-                    // border: '1px solid blue',
-                    padding: '16px',
-                    borderRadius: '12px',
+            <Accordion
+                expanded={historyExpanded}
+                onChange={(e) => {
+                    setHistoryExpanded(!historyExpanded);
                 }}
+                sx={{ marginBottom: '30px', border: '5px solid pink' }}
             >
-                <Typography variant="h6">Subtask {taskIndex + 1} </Typography>
-
-                <div
-                    style={{
-                        width: '100%',
-                        border: '1px solid red',
-                        display: 'flex',
-                    }}
-                >
-                    <span
-                        style={{
-                            // left span for inputs? just render app for now?
-                            border: '1px solid blue',
-                            display: 'inline-block',
-                            width: '50%',
+                <Accordion.Trigger expandIcon={<KeyboardArrowDown />}>
+                    Subtask {taskIndex + 1}
+                </Accordion.Trigger>
+                <Accordion.Content sx={{ border: '5px solid pink' }}>
+                    <Stack
+                        direction="column"
+                        sx={{
+                            backgroundColor: '#fafafa',
+                            // border: '1px solid blue',
+                            padding: '16px',
+                            borderRadius: '12px',
                         }}
                     >
-                        <h2>
-                            Inputs <Visibility />
-                        </h2>
-                        <BlocksRenderer state={step} />
-                    </span>
-                    <span
-                        style={{
-                            // right span for outputs? just gray box for now
-                            border: '1px solid pink',
-                            display: 'inline-block',
-                            width: '50%',
-                        }}
-                    >
-                        <h2>
-                            Outputs <Visibility />
-                        </h2>
-                        <Typography variant="body2" fontWeight="bold">
-                            Outputs for app:{' '}
+                        <Typography variant="h6">
+                            Subtask {taskIndex + 1}{' '}
                         </Typography>
-                        {Object.entries(step.variables).map((variable) => {
-                            const name = variable[0];
-                            const value = variable[1];
-                            if (value.isOutput) {
-                                return (
-                                    <Typography variant={'caption'}>
-                                        {name}
-                                    </Typography>
-                                );
-                            }
-                        })}
-                    </span>
-                </div>
 
-                <div>
-                    <Typography variant="body2" fontWeight="bold">
-                        Inputs for app:
-                    </Typography>
-                    {Object.entries(step.variables).map((variable) => {
-                        const name = variable[0];
-                        const value = variable[1];
-                        if (value.isInput) {
-                            return (
-                                <Typography variant={'caption'}>
-                                    {name}
+                        <div
+                            style={{
+                                width: '100%',
+                                border: '1px solid red',
+                                display: 'flex',
+                            }}
+                        >
+                            <span
+                                style={{
+                                    // left span for inputs? just render app for now?
+                                    border: '1px solid blue',
+                                    display: 'inline-block',
+                                    width: '50%',
+                                }}
+                            >
+                                <h2>
+                                    Inputs <Visibility />
+                                </h2>
+                                <BlocksRenderer state={step} />
+                            </span>
+                            <span
+                                style={{
+                                    // right span for outputs? just gray box for now
+                                    border: '1px solid pink',
+                                    display: 'inline-block',
+                                    width: '50%',
+                                }}
+                            >
+                                <h2>
+                                    Outputs <Visibility />
+                                </h2>
+                                <Typography variant="body2" fontWeight="bold">
+                                    Outputs for app:{' '}
                                 </Typography>
-                            );
-                        }
-                    })}
-                </div>
+                                {Object.entries(step.variables).map(
+                                    (variable) => {
+                                        const name = variable[0];
+                                        const value = variable[1];
+                                        if (value.isOutput) {
+                                            return (
+                                                <Typography variant={'caption'}>
+                                                    {name}
+                                                </Typography>
+                                            );
+                                        }
+                                    },
+                                )}
+                            </span>
+                        </div>
 
-                {/* <Typography variant={'h6'}>
-                    ----------------------------------------------------------
-                </Typography> */}
-                {/* <Typography variant="body2" fontWeight="bold">
-                    Actual App Implementation
-                </Typography> */}
+                        <div>
+                            <Typography variant="body2" fontWeight="bold">
+                                Inputs for app:
+                            </Typography>
+                            {Object.entries(step.variables).map((variable) => {
+                                const name = variable[0];
+                                const value = variable[1];
+                                if (value.isInput) {
+                                    return (
+                                        <Typography variant={'caption'}>
+                                            {name}
+                                        </Typography>
+                                    );
+                                }
+                            })}
+                        </div>
 
-                {/* TODO: How will we communicate changes to inputs and outputs of Apps to our conductor state */}
-                {/* {type === 'app' ? (
-                    <Stack sx={{ border: 'solid 3px red' }}>
-                        <BlocksRenderer state={step} />
+                        {/* <Typography variant={'h6'}>
+                            ----------------------------------------------------------
+                        </Typography> */}
+                        {/* <Typography variant="body2" fontWeight="bold">
+                            Actual App Implementation
+                        </Typography> */}
+
+                        {/* TODO: How will we communicate changes to inputs and outputs of Apps to our conductor state */}
+                        {/* {type === 'app' ? (
+                            <Stack sx={{ border: 'solid 3px red' }}>
+                                <BlocksRenderer state={step} />
+                            </Stack>
+                        ) : (
+                            <>test</>
+                        )} */}
                     </Stack>
-                ) : (
-                    <>test</>
-                )} */}
-            </Stack>
+                </Accordion.Content>
+            </Accordion>
         );
     },
 );
