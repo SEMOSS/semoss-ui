@@ -1,5 +1,6 @@
-import { Variant } from '@/stores';
+import { ActionMessages, Variant } from '@/stores';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import { observer } from 'mobx-react-lite';
 import {
     styled,
     Typography,
@@ -11,6 +12,7 @@ import {
     IconButton,
 } from '@semoss/ui';
 import { useState } from 'react';
+import { useBlocks } from '@/hooks';
 
 const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -40,19 +42,42 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 export interface LLMCellVariantProps {
     allModels: { name: string; id: string }[];
     variantName: string;
-    variant: Variant;
+    cell: any;
 }
 
-export const LLMCellVariant = (props: LLMCellVariantProps) => {
-    const { allModels, variantName, variant } = props;
+export const LLMCellVariant = observer((props: LLMCellVariantProps) => {
+    const { allModels, variantName, cell } = props;
+    const variant = cell.parameters.variants[variantName];
+    const { state } = useBlocks();
     const [open, toggleOpen] = useState(true);
 
-    const handleModelChange = (value) => {
-        // TODO
+    const handleModelChange = (id) => {
+        const match = allModels.find((model) => model.id === id);
+        state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+                queryId: cell.query.id,
+                cellId: cell.id,
+                path: `parameters.variants.${variantName}.model`,
+                value: {
+                    ...variant.model,
+                    id: id,
+                    name: match.name,
+                },
+            },
+        });
     };
 
     const handleModelParamsChange = (value, name) => {
-        // TODO
+        state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+                queryId: cell.query.id,
+                cellId: cell.id,
+                path: `parameters.variants.${variantName}.model.${name}`,
+                value: value,
+            },
+        });
     };
 
     return (
@@ -177,7 +202,7 @@ export const LLMCellVariant = (props: LLMCellVariantProps) => {
                                 }
                                 value={variant.model.length}
                                 min={0}
-                                max={1}
+                                max={1024}
                                 step={1}
                                 size="small"
                                 marks={[
@@ -203,4 +228,4 @@ export const LLMCellVariant = (props: LLMCellVariantProps) => {
             </Collapse>
         </div>
     );
-};
+});
