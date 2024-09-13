@@ -169,7 +169,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
                             key={`variant-${name}-${idx}`}
                             allModels={allModels}
                             variantName={name}
-                            variant={variants[name]}
+                            cell={cell}
                         />
                     ))}
                 </div>
