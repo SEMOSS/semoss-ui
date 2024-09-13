@@ -25,7 +25,9 @@ import {
 
 import {
     AppNode,
+    ButtonNode,
     CustomEdge,
+    InputNode,
     LLMNode,
     LLMRunnerNode,
     PromptNode,
@@ -43,6 +45,8 @@ import { observer } from 'mobx-react-lite';
 
 const nodeTypes = {
     APP: AppNode,
+    BUTTON: ButtonNode,
+    INPUT: InputNode,
     LLM: LLMNode,
     LLM_RUNNER: LLMRunnerNode,
     PROMPT: PromptNode,
@@ -123,7 +127,6 @@ export const Pipeline = observer(() => {
 
     return (
         <Stack sx={{ height: '100%', overflow: 'scroll' }}>
-            <Button onClick={(e) => test(e)}>Update Node</Button>
             <Stack direction={'column'} sx={{ height: '100%' }}>
                 <Typography variant={'body2'} fontWeight={'bold'}>
                     {conductor.chat_input}

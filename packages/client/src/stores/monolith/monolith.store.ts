@@ -472,6 +472,34 @@ export class MonolithStore {
         return response.data;
     }
 
+    /**
+     * @name createAdminTheme
+     * @param data the data that will be sent to the BE to define a theme
+     * @desc this call will create a new theme defined by the admin
+     * @return $http promise
+     */
+    async createAdminTheme(data: {
+        name: string;
+        json: any;
+        isActive: boolean;
+    }) {
+        const url = `${Env.MODULE}/api/themes/createAdminTheme`;
+
+        let postData = '';
+
+        postData += 'name=' + encodeURIComponent(data.name);
+        postData += '&json=' + encodeURIComponent(JSON.stringify(data.json));
+        postData += '&isActive=' + encodeURIComponent(data.isActive);
+
+        const response = await axios.post<boolean>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response.data;
+    }
+
     // ----------------------------------------------------------------------
     // Engine
     // ----------------------------------------------------------------------

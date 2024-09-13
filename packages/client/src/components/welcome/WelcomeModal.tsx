@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { styled, Card, Modal, Stack, Typography, List } from '@semoss/ui';
 import { WelcomeStepToolbar } from './WelcomeStepToolbar';
 import { WelcomeStepActions } from './WelcomeStepActions';
@@ -7,6 +7,7 @@ import WelcomeApps from '@/assets/img/welcome-apps.png';
 import WelcomeDocumentation from '@/assets/img/welcome-documentation.png';
 import { THEME } from '@/constants';
 import { Tour, TourStep } from '../tour';
+import { useRootStore } from '@/hooks';
 
 const StyledCard = styled(Card)(() => ({
     flexDirection: 'row',
@@ -72,16 +73,16 @@ const StyledListItemButton = styled(List.ItemButton)(() => ({
 }));
 
 interface WelcomeModalStep {
-    sidebarTitle: string;
-    mainTitle: string;
-    mainListItems: Array<string>;
+    sidebarTitle: (name: string) => string;
+    mainTitle: (name: string) => string;
+    mainListItems: (name: string) => Array<string>;
     img: string;
 }
 const WelcomeModalSteps: Array<WelcomeModalStep> = [
     {
-        sidebarTitle: 'Welcome',
-        mainTitle: `What you can do with ${THEME.name}:`,
-        mainListItems: [
+        sidebarTitle: (name) => 'Welcome',
+        mainTitle: (name) => `What you can do with ${name}:`,
+        mainListItems: (name) => [
             'Build a custom app with no front end coding',
             'Automate tasks with large language models',
             "Run an app that connects your client's database with a large language model for efficient data reporting",
@@ -89,20 +90,20 @@ const WelcomeModalSteps: Array<WelcomeModalStep> = [
         img: WelcomeSplash,
     },
     {
-        sidebarTitle: `${THEME.name} Network`,
-        mainTitle: `${THEME.name} Network`,
-        mainListItems: [
-            `Public and discoverable apps: Try out awesome apps created by our community users and view each app's source code on the ${THEME.name} GitHub`,
-            `Blog: Read blogs created by our users for inspiration on how ${THEME.name} can help you work faster and better`,
+        sidebarTitle: (name) => `${name} Network`,
+        mainTitle: (name) => `${name} Network`,
+        mainListItems: (name) => [
+            `Public and discoverable apps: Try out awesome apps created by our community users and view each app's source code on the ${name} GitHub`,
+            `Blog: Read blogs created by our users for inspiration on how ${name} can help you work faster and better`,
         ],
         img: WelcomeApps,
     },
     {
-        sidebarTitle: 'Documentation',
-        mainTitle: 'Documentation',
-        mainListItems: [
-            `New to ${THEME.name}? Learn about ${THEME.name} key concepts, watch tutorials, use the starter kit, and more.`,
-            `Already have a pre-built app that needs hosting on ${THEME.name}? Read the How-To guide.`,
+        sidebarTitle: (name) => 'Documentation',
+        mainTitle: (name) => 'Documentation',
+        mainListItems: (name) => [
+            `New to ${name}? Learn about ${name} key concepts, watch tutorials, use the starter kit, and more.`,
+            `Already have a pre-built app that needs hosting on ${name}? Read the How-To guide.`,
         ],
         img: WelcomeDocumentation,
     },
@@ -161,6 +162,7 @@ export const WelcomeModal = () => {
     const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
     const [open, setOpen] = useState<boolean>(false);
     const [showTour, setShowTour] = useState<boolean>(false);
+    const { configStore } = useRootStore();
 
     const nextStepAction = () => {
         if (currentStepIndex === WelcomeModalSteps.length - 1) {
@@ -187,6 +189,16 @@ export const WelcomeModal = () => {
         }
     }, []);
 
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
+
+        if (theme && theme['THEME_MAP']) {
+            return JSON.parse(theme['THEME_MAP'] as string);
+        }
+
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
+
     return (
         <>
             {showTour ? (
@@ -201,7 +213,8 @@ export const WelcomeModal = () => {
                 <StyledCard id="welcome-dialog-card">
                     <StyledSidebar>
                         <StyledTitle variant="h4">
-                            Welcome to {THEME.name}
+                            Welcome to{' '}
+                            {themeMap.name ? themeMap.name : THEME.name}
                         </StyledTitle>
                         <StyledList disablePadding dense>
                             {Array.from(
@@ -222,7 +235,11 @@ export const WelcomeModal = () => {
                                                 }
                                             >
                                                 <List.ItemText
-                                                    primary={step.sidebarTitle}
+                                                    primary={step.sidebarTitle(
+                                                        themeMap.name
+                                                            ? themeMap.name
+                                                            : THEME.name,
+                                                    )}
                                                 />
                                             </StyledListItemButton>
                                         </StyledListItem>
@@ -248,18 +265,26 @@ export const WelcomeModal = () => {
                             </StyledTopStack>
                             <StyledBottomStack>
                                 <Typography variant="h6">
-                                    {
-                                        WelcomeModalSteps[currentStepIndex]
-                                            .mainTitle
-                                    }
+                                    {WelcomeModalSteps[
+                                        currentStepIndex
+                                    ].mainTitle(
+                                        themeMap.name
+                                            ? themeMap.name
+                                            : THEME.name,
+                                    )}
                                 </Typography>
                                 <List
                                     disablePadding
                                     sx={{ overflowY: 'scroll' }}
                                 >
                                     {Array.from(
-                                        WelcomeModalSteps[currentStepIndex]
-                                            .mainListItems,
+                                        WelcomeModalSteps[
+                                            currentStepIndex
+                                        ].mainListItems(
+                                            themeMap.name
+                                                ? themeMap.name
+                                                : THEME.name,
+                                        ),
                                         (text, index) => {
                                             return (
                                                 <List.Item

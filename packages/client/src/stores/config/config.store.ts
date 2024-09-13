@@ -1,8 +1,8 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { runPixel } from '@/api';
 import { AppMetadata } from '@/components/app';
+import { darkTheme, lightTheme, CustomThemeOptions } from '@semoss/ui';
 
 interface ConfigStoreInterface {
     /** Status of the application */
@@ -173,6 +173,20 @@ export class ConfigStore {
                 for (const key in data) {
                     this._store.config[key] = data[key];
                 }
+
+                // I need to set a theme with material
+                const map = JSON.parse(data['theme']['THEME_MAP']);
+                const material_map = {
+                    ...map,
+                    materialTheme: lightTheme,
+                };
+
+                console.log(JSON.stringify(material_map));
+                // monolithStore.createAdminTheme({
+                //     name: 'SEMOSS-TEST-DARK',
+                //     isActive: true,
+                //     json: material_map,
+                // });
 
                 // sort the keys
                 if (this._store.config.databaseMetaKeys) {

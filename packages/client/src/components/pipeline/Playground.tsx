@@ -51,7 +51,7 @@ export const Playground = observer(() => {
                     <Stack
                         direction={'column'}
                         gap={1}
-                        sx={{ width: '100%', height: '80%' }}
+                        sx={{ width: '100%', height: '90%' }}
                     >
                         <UserMessage>{conductor.chat_input}</UserMessage>
                         {conductor.chat_input && (
@@ -62,7 +62,12 @@ export const Playground = observer(() => {
                             </AgentMessage>
                         )}
                     </Stack>
-                    <Stack direction={'row'}>
+                    <Stack
+                        direction={'row'}
+                        sx={{ width: '100%', height: '10%' }}
+                        justifyContent={'center'}
+                        alignItems={'center'}
+                    >
                         <TextField
                             label={'Question'}
                             sx={{ width: '95%' }}

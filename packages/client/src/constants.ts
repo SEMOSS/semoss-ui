@@ -6,7 +6,7 @@ export const THEME_TITLE = process.env.THEME_TITLE;
 export const DOCUMENTATION_URL = process.env.DOCUMENTATION_URL;
 
 export const THEME = {
-    name: THEME_TITLE || 'SEMOSS',
+    name: THEME_TITLE || 'SEMOS',
     logo: Logo,
 };
 

@@ -27,9 +27,9 @@ const customTheme: ThemeOptions = {
 const Example = () => {
     return (
         <>
-            <Button>Hello</Button>
+            <Button variant="contained">Hello</Button>
             <ThemeProvider theme={customTheme}>
-                <Button>Themed Hello</Button>
+                <Button variant={"contained"}>Themed Hello</Button>
             </ThemeProvider>
             <div>
                 In order to change the theme, you have to leverage createTheme

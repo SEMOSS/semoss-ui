@@ -1,8 +1,10 @@
 import { AppNode } from './AppNode';
-import { RunPyNode } from './RunPyNode';
+import { ButtonNode } from './ButtonNode';
+import { InputNode } from './InputNode';
 import { LLMNode } from './LLMNode';
 import { LLMRunnerNode } from './LLMRunnerNode';
 import { PromptNode } from './PromptNode';
+import { RunPyNode } from './RunPyNode';
 import { VectorSearchNode } from './VectorSearchNode';
 
 import { CustomEdge } from './CustomEdge';
@@ -13,6 +15,8 @@ import { Playground } from './Playground';
 
 export {
     AppNode,
+    ButtonNode,
+    InputNode,
     LLMNode,
     LLMRunnerNode,
     PromptNode,

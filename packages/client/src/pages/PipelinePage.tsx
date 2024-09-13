@@ -11,8 +11,7 @@ import { ConductorStore } from '@/stores';
 const apps = [
     {
         name: 'Job Req approval',
-        question:
-            'Hey am i qualified for this job? If so can you approve me or reject me for position',
+        question: 'Hey am i qualified for this job?',
         requiredInputs: ['name'],
         initialNodes: [
             { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
@@ -94,7 +93,7 @@ const apps = [
             {
                 id: '4',
                 type: 'PROMPT',
-                position: { x: 0, y: 700 },
+                position: { x: 0, y: 250 },
                 data: {
                     context: '',
                     prompt: `
@@ -243,16 +242,37 @@ const apps = [
     },
     {
         name: 'Doc QA',
-        question: 'What time are you open and do i need a reservation',
+        // question: 'What time are you open and do i need a reservation?',
+        question: 'I would like to set up a reservation for 9:45',
         initialNodes: [
             {
-                id: '1',
+                id: '9',
                 position: { x: 0, y: 0 },
+                data: {
+                    command: '{{chat_input}}',
+
+                    output: 'vector-search-records',
+                },
+                type: 'BUTTON',
+            },
+            {
+                id: '10',
+                position: { x: 0, y: 200 },
+                data: {
+                    value: 'chat input',
+
+                    output: 'vector-search-records',
+                },
+                type: 'INPUT',
+            },
+            {
+                id: '1',
+                position: { x: 300, y: 0 },
                 data: {
                     engine: '2df38ed6-ace0-4fd6-9abb-e095fb49940e',
                     command: '{{chat_input}}',
 
-                    output: '',
+                    output: 'vector-search-records',
                 },
                 type: 'VECTOR_SEARCH',
             },
@@ -341,54 +361,68 @@ Answer:
 
 export const PipelinePage = () => {
     const [view, setView] = useState<'pipeline' | 'playground'>('playground');
-    const app = apps[1];
+    const [selectedApp, setSelectedApp] = useState(1);
+    const app = apps[selectedApp];
 
     const conductor = new ConductorStore({
+        chat_input: app.question,
         nodes: app.initialNodes,
         edges: app.initialEdges,
     });
 
     return (
         <ConductorContext.Provider value={{ conductor: conductor }}>
-            <Stack direction="row" gap={1}>
-                <Typography variant={'h6'}>
-                    {view === 'pipeline' ? 'Pipeline' : 'Playground'}
-                </Typography>
-                <Button
-                    onClick={() => {
-                        if (view === 'pipeline') {
-                            setView('playground');
-                        } else {
-                            setView('pipeline');
-                        }
-                    }}
-                >
-                    Show {view === 'pipeline' ? 'Playground' : 'Pipeline'}
-                </Button>
-            </Stack>
-            <Stack direction={'row'} gap={2}>
-                <Typography variant={'body1'} fontWeight={'bold'}>
-                    {app.name}{' '}
-                    <Tooltip
-                        title={
-                            <Stack>
-                                <Typography variant={'body2'}>
-                                    {
-                                        "Should i allow changing of edges on UI, or should i automatically connect when they determine a relationship on the node with the input pool. If i do i'll have to pop open modal saying what input are you trying to connect to"
-                                    }
-                                </Typography>
-                                <Typography variant={'caption'}>
-                                    User Inputs in playground:{' '}
-                                    {JSON.stringify(app.requiredInputs)}
-                                </Typography>
-                            </Stack>
-                        }
+            <Stack sx={{ height: '10%' }} direction={'column'}>
+                <Stack direction="row" gap={1}>
+                    <Typography variant={'h6'}>
+                        {view === 'pipeline' ? 'Pipeline' : 'Playground'}
+                    </Typography>
+                    <Button
+                        onClick={() => {
+                            if (view === 'pipeline') {
+                                setView('playground');
+                            } else {
+                                setView('pipeline');
+                            }
+                        }}
                     >
-                        <Button>Notes</Button>
-                    </Tooltip>
-                </Typography>
+                        Show {view === 'pipeline' ? 'Playground' : 'Pipeline'}
+                    </Button>
+                </Stack>
+
+                <Stack direction={'row'} gap={2}>
+                    <Typography variant={'body1'} fontWeight={'bold'}>
+                        {app.name}{' '}
+                        <Tooltip
+                            title={
+                                <Stack>
+                                    <Typography variant={'body2'}>
+                                        {
+                                            "Should i allow changing of edges on UI, or should i automatically connect when they determine a relationship on the node with the input pool. If i do i'll have to pop open modal saying what input are you trying to connect to"
+                                        }
+                                    </Typography>
+                                    <Typography variant={'caption'}>
+                                        User Inputs in playground:{' '}
+                                        {JSON.stringify(app.requiredInputs)}
+                                    </Typography>
+                                </Stack>
+                            }
+                        >
+                            <Button>Notes</Button>
+                        </Tooltip>
+                    </Typography>
+                    <Button
+                        onClick={() => {
+                            setSelectedApp(selectedApp === 1 ? 0 : 1);
+                        }}
+                    >
+                        switch
+                    </Button>
+                </Stack>
             </Stack>
-            {view === 'pipeline' ? <Pipeline /> : <Playground />}
+            <Stack sx={{ height: '90%' }}>
+                {view === 'pipeline' ? <Pipeline /> : <Playground />}
+            </Stack>
         </ConductorContext.Provider>
     );
 };
