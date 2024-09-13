@@ -296,5 +296,5 @@ export type CellConfig<D extends CellDef = CellDef> = {
     toPixel: (
         /** Parameters associated with the cell */
         parameters: D['parameters'],
-    ) => string;
+    ) => string | string[];
 };

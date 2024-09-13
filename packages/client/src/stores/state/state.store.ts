@@ -668,7 +668,6 @@ export class StateStore {
      * @param state - pixel to execute
      */
     private setState = (state: SerializedState) => {
-        console.log('SETTING STATES ', state);
         // store the block information
         this._store.blocks = state.blocks;
 
@@ -1116,6 +1115,7 @@ export class StateStore {
     private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
         const s = q.getCell(cellId);
+        console.log('LOL', s);
 
         const key = `cell--${cellId} (query--${queryId});`;
 
