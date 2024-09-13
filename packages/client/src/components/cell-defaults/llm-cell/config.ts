@@ -1,7 +1,5 @@
-import { CellConfig, Variant } from '@/stores';
+import { CellConfig } from '@/stores';
 import { LLMCellDef, LLMCell } from './LLMCell';
-import { useBlocks } from '@/hooks';
-import { toJS } from 'mobx';
 
 // export the config for the block
 export const LLMCellConfig: CellConfig<LLMCellDef> = {
@@ -12,13 +10,12 @@ export const LLMCellConfig: CellConfig<LLMCellDef> = {
         command: '',
         variants: {},
     },
-    toPixels: ({ command }) => {
-        const { state } = useBlocks();
-        // console.log(toJS(state.blocks[blockId]));
-        return [];
-        // const pixels = Object.values(variants).map((variant: Variant) => {
-        //     return `LLM(engine=["${variant.models[0].id}"], command=["${command}"], paramValues=[])`;
-        // });
-        // return pixels;
+    toPixel: ({ command, variants }) => {
+        const pixels = Object.keys(variants).map((key) => {
+            const { id, length, temperature, topP } = variants[key].model;
+            // TODO: need to figure out the names for the 'length' & 'topP' value in the params for the pixel string.
+            return `LLM(engine=["${id}"], command=["${command}"], paramValues=[{"temperature":${temperature}}])`;
+        });
+        return pixels;
     },
 };
