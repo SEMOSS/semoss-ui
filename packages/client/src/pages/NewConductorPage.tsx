@@ -19,7 +19,7 @@ export const NewConductorPage = () => {
     });
 
     return (
-        <Stack sx={{ height: '100%', overflow: 'scroll', padding: '72px' }}>
+        <Stack sx={{ height: '100%', overflow: 'scroll', padding: '25px' }}>
             <ConductorContext.Provider
                 value={{
                     conductor: conductor,

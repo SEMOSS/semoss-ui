@@ -9,6 +9,7 @@ import {
     Person,
     KeyboardArrowDown,
     Create,
+    DataObject,
 } from '@mui/icons-material';
 
 interface NewConductorStepProps {
@@ -48,29 +49,35 @@ export const NewConductorStep = observer(
         const { conductor } = useConductor();
 
         console.log({
-            selectedSubtask,
-            setSelectedSubtask,
+            // step,
+            // "Object.keys(step)": Object.keys(step),
+            queries: step['queries'],
+            blocks: step['blocks'],
+            variables: step['variables'],
+            dependencies: step['dependencies'],
+            version: step['version'],
+            'JSON.stringify(step)': JSON.stringify(step),
         });
 
         /**
          * Set input pool values on mount
          */
-        useEffect(() => {
-            Object.entries(step.variables).forEach((variable) => {
-                const name = variable[0];
-                const value = variable[1];
+        // useEffect(() => {
+        //     Object.entries(step.variables).forEach((variable) => {
+        //         const name = variable[0];
+        //         const value = variable[1];
 
-                if (value.isInput || value.isOutput) {
-                    let v = '';
-                    if (value.type === 'block') {
-                        v = step.blocks[value.to].data.value;
-                    } else {
-                        v = 'get the value from blocks';
-                    }
-                    conductor.setInputValue(name, v);
-                }
-            });
-        }, [Object.keys(step).length, type]);
+        //         if (value.isInput || value.isOutput) {
+        //             let v = '';
+        //             if (value.type === 'block') {
+        //                 v = step.blocks[value.to].data.value;
+        //             } else {
+        //                 v = 'get the value from blocks';
+        //             }
+        //             conductor.setInputValue(name, v);
+        //         }
+        //     });
+        // }, [Object.keys(step).length, type]);
 
         const [isExpanded, setHistoryExpanded] = useState(false);
 
@@ -78,112 +85,135 @@ export const NewConductorStep = observer(
             <Accordion
                 expanded={isExpanded}
                 onChange={(e) => {
-                    // taskEditorHistory;
-                    // openAccordionIndexesSet
-                    // // debugger;
                     setHistoryExpanded(!isExpanded);
-                    // if (!isExpanded) { // opening accordion
-                    //     setSelectedSubtask(taskIndex);
-                    //     // setTaskEditorHistory([...taskEditorHistory, taskIndex]);
-                    //     const openAccordionIndexesSetDup = new Set(openAccordionIndexesSet);
-                    //     openAccordionIndexesSetDup.add(taskIndex);
-                    //     setOpenAccordionIndexesSet(openAccordionIndexesSetDup);
-                    // } else { if (selectedSubtask == taskIndex) { // closing accordion
-                    //     const openAccordionIndexesSetDup = new Set(openAccordionIndexesSet);
-                    //     openAccordionIndexesSetDup.delete(taskIndex);
-                    //     setOpenAccordionIndexesSet(openAccordionIndexesSetDup);
-                    //     if (openAccordionIndexesSet.size > 0) { // closing but other accordions are open
-                    //         // debugger;
-                    //         // const duppedTaskHistory = [...taskEditorHistory];
-                    //         // const poppedSelectedElement = duppedTaskHistory.pop();
-                    //         // setTaskEditorHistory(duppedTaskHistory);
-                    //         // setSelectedSubtask(duppedTaskHistory[duppedTaskHistory.length - 1]);
-                    //         const openAccordionAsArray = Array.from(openAccordionIndexesSet);
-                    //         const newSelectedTaskIndex = openAccordionAsArray[0];
-
-                    //         const openAccordionIndexesSetDup = new Set(openAccordionIndexesSet);
-                    //         openAccordionIndexesSetDup.delete(newSelectedTaskIndex);
-                    //         setOpenAccordionIndexesSet(openAccordionIndexesSetDup);
-                    //     } else { // closing and no other accordions are open
-                    //         setSelectedSubtask(-1);
-                    //         // setTaskEditorHistory([]);
-                    //     }
-                    // }}
                 }}
-                sx={{ marginBottom: '30px', border: '1px solid black' }}
+                sx={{
+                    marginBottom: '17.5px',
+                    // border: '3px dotted red',
+                    paddingTop: '0px',
+                    borderRadius: '12px',
+                }}
             >
                 <Accordion.Trigger expandIcon={<KeyboardArrowDown />}>
-                    Subtask {taskIndex + 1}
-                </Accordion.Trigger>
-                <Accordion.Content sx={{ border: '1px solid black' }}>
-                    <Stack
-                        direction="column"
-                        sx={{
-                            backgroundColor: '#fafafa',
-                            // border: '1px solid black',
-                            padding: '16px',
-                            borderRadius: '12px',
+                    <div
+                        style={{
+                            // border: '1px solid red',
+                            width: '100%',
+                            display: 'flex',
+                            alignContent: 'center',
+                            justifyContent: 'space-between',
                         }}
                     >
-                        <Typography variant="h6">
+                        {/* <b style={{
+                            border: '1px solid blue'
+                        }}>Subtask {taskIndex + 1}</b> */}
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                // border: '1px solid violet',
+                                height: '42px',
+                                lineHeight: '42px',
+                                fontWeight: '800',
+                                // verticalAlign: 'middle',
+                                // display: 'inline-block'
+                            }}
+                        >
                             Subtask {taskIndex + 1}
                         </Typography>
-
                         <IconButton
                             onClick={() => {
                                 setSelectedSubtask(taskIndex);
                             }}
                         >
-                            <Create />
+                            <DataObject />
                         </IconButton>
+                    </div>
+                </Accordion.Trigger>
+                <Accordion.Content
+                // sx={{ border: '1px solid black' }}
+                >
+                    <Stack
+                        direction="column"
+                        sx={{
+                            // backgroundColor: '#fafafa',
+                            backgroundColor: '#fff',
+                            // border: '1px solid black',
+                            padding: '16px',
+                            borderRadius: '12px',
+                        }}
+                    >
+                        {/* <Typography variant="h6">
+                            Subtask {taskIndex + 1}
+                        </Typography> */}
 
                         <div
                             style={{
                                 width: '100%',
-                                border: '1px solid black',
+                                // border: '1px solid black',
                                 display: 'flex',
+                                justifyContent: 'space-between',
                             }}
                         >
                             <span
                                 style={{
                                     // left span for inputs? just render app for now?
-                                    border: '1px solid black',
+                                    // border: '1px solid black',
                                     display: 'inline-block',
-                                    width: '50%',
+                                    width: '47.5%',
                                 }}
                             >
-                                <h2>
+                                <Typography variant="body1">
                                     Inputs <Visibility />
-                                </h2>
-                                <BlocksRenderer state={step} />
+                                </Typography>
+                                {/* <h2>
+                                </h2> */}
+                                <div
+                                    style={{
+                                        border: '3px solid gray',
+                                        borderRadius: '12px',
+                                    }}
+                                >
+                                    <BlocksRenderer state={step} />
+                                </div>
                             </span>
                             <span
                                 style={{
                                     // right span for outputs? just gray box for now
-                                    border: '1px solid black',
+                                    // border: '1px solid black',
                                     display: 'inline-block',
-                                    width: '50%',
+                                    width: '47.5%',
                                 }}
                             >
                                 <h2>
                                     Outputs <Visibility />
                                 </h2>
-                                <Typography variant="body2" fontWeight="bold">
+                                {/* <Typography variant="body2" fontWeight="bold">
                                     Outputs for app:{' '}
-                                </Typography>
-                                {Object.entries(step.variables).map(
-                                    (variable) => {
-                                        const name = variable[0];
-                                        const value = variable[1];
-                                        if (value.isOutput) {
-                                            return (
-                                                <Typography variant={'caption'}>
-                                                    {name}
-                                                </Typography>
-                                            );
-                                        }
-                                    },
-                                )}
+                                </Typography> */}
+                                <div
+                                    style={{
+                                        padding: '16px',
+                                        marginBottom: '20px',
+                                        backgroundColor: '#fafafa',
+                                        borderRadius: '12px',
+                                    }}
+                                >
+                                    {Object.entries(step.variables).map(
+                                        (variable) => {
+                                            const name = variable[0];
+                                            const value = variable[1];
+                                            if (value.isOutput) {
+                                                return (
+                                                    <Typography
+                                                        variant={'caption'}
+                                                    >
+                                                        {name}
+                                                    </Typography>
+                                                );
+                                            }
+                                        },
+                                    )}
+                                </div>
                             </span>
                         </div>
 
