@@ -88,7 +88,7 @@ export const NewConductorStep = observer(
                     setHistoryExpanded(!isExpanded);
                 }}
                 sx={{
-                    marginBottom: '17.5px',
+                    // marginBottom: '17.5px',
                     // border: '3px dotted red',
                     paddingTop: '0px',
                     borderRadius: '12px',
@@ -121,8 +121,9 @@ export const NewConductorStep = observer(
                             Subtask {taskIndex + 1}
                         </Typography>
                         <IconButton
-                            onClick={() => {
+                            onClick={(e) => {
                                 setSelectedSubtask(taskIndex);
+                                e.stopPropagation();
                             }}
                         >
                             <DataObject />
@@ -162,14 +163,21 @@ export const NewConductorStep = observer(
                                     width: '47.5%',
                                 }}
                             >
-                                <Typography variant="body1">
-                                    Inputs <Visibility />
+                                <Typography
+                                    variant="body1"
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    Inputs{' '}
+                                    <Visibility height="25px" width="25px" />
                                 </Typography>
                                 {/* <h2>
                                 </h2> */}
                                 <div
                                     style={{
-                                        border: '3px solid gray',
+                                        border: '1px solid lightgray',
                                         borderRadius: '12px',
                                     }}
                                 >
@@ -184,9 +192,16 @@ export const NewConductorStep = observer(
                                     width: '47.5%',
                                 }}
                             >
-                                <h2>
-                                    Outputs <Visibility />
-                                </h2>
+                                <Typography
+                                    variant="body1"
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    Outputs{' '}
+                                    <Visibility height="25px" width="25px" />
+                                </Typography>
                                 {/* <Typography variant="body2" fontWeight="bold">
                                     Outputs for app:{' '}
                                 </Typography> */}

@@ -14,74 +14,21 @@ import {
 import { NewConductorStep } from './NewConductorStep';
 import { observer } from 'mobx-react-lite';
 import {
-    Visibility,
-    Person,
-    ArrowUpward,
     KeyboardArrowDown,
-    Mic,
-    Close,
+    ArrowUpward,
     AutoFixHigh,
+    PlayArrow,
+    Person,
+    Close,
+    Mic,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
+import { Editor } from '@monaco-editor/react';
 import { None } from 'vega';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: '#fff',
     borderRadius: '20px',
-}));
-
-const ComponentContainer = styled('div')(({ theme }) => ({
-    flexDirection: 'column',
-    display: 'flex',
-    flexGrow: '1',
-    margin: '0px',
-    width: '100%',
-}));
-
-const EditComponentContainer = styled('div')(({ theme }) => ({
-    flexDirection: 'column',
-    width: '15%',
-    display: 'inline-block',
-}));
-
-const EditTaskContainer = styled('div')(({ theme }) => ({
-    // backgroundColor: '#f3f3f3',
-    // borderRadius: '20px',
-    // marginTop: '25px',
-    // padding: '30px',
-    // width: '100%',
-    // flexGrow: '1',
-    // display: 'flex',
-    // flexDirection: 'column',
-    // justifyContent: 'space-between',
-    // alignItems: 'left',
-    // border: '1px solid black',
-}));
-
-const TaskContainerSpan = styled('div')(({ theme }) => ({}));
-
-const TaskContainer = styled('div')(({ theme }) => ({
-    backgroundColor: '#f3f3f3',
-    borderRadius: '20px',
-    marginTop: '25px',
-    padding: '20px',
-    width: '100%',
-    flexGrow: '1',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-}));
-
-const SubTaskParentContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-}));
-
-const SubTask = styled('div')(({ theme }) => ({
-    backgroundColor: '#fff',
-    borderRadius: '20px',
-    padding: '10px 30px 10px 20px',
-    maxWidth: 'fit-content',
 }));
 
 type AIConductorForm = {
@@ -93,20 +40,19 @@ export const Conductor = observer(() => {
     const { conductor } = useConductor();
     const notification = useNotification();
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [historyExpanded, setHistoryExpanded] = useState(false);
-    const { monolithStore, configStore } = useRootStore();
-    const [selectedSubtask, setSelectedSubtask] = useState(-1);
-    const [taskContainerWidthPercent, setTaskContainerWidthPercent] =
-        useState('100%');
     const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
     const [taskEditorHistory, setTaskEditorHistory] = useState([]);
+    const [modelResponseText, setModelResponseText] = useState(null);
+    const [historyExpanded, setHistoryExpanded] = useState(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [selectedSubtask, setSelectedSubtask] = useState(-1);
+    const { monolithStore, configStore } = useRootStore();
+    const [promptText, setPromptText] = useState(null);
     const [openAccordionIndexesSet, setOpenAccordionIndexesSet] = useState(
         new Set(),
     );
-
-    const [promptText, setPromptText] = useState(null);
-    const [modelResponseText, setModelResponseText] = useState(null);
+    const [taskContainerWidthPercent, setTaskContainerWidthPercent] =
+        useState('100%');
 
     const { handleSubmit, control, reset, watch } = useForm<AIConductorForm>({
         defaultValues: {
@@ -120,26 +66,19 @@ export const Conductor = observer(() => {
             setTaskContainerWidthPercent('100%');
             setTaskEditWidthPercent('0%');
         } else {
-            setTaskContainerWidthPercent('calc(70% - 300px)');
-            setTaskEditWidthPercent('300px');
+            setTaskContainerWidthPercent('calc(70% - 500px)');
+            setTaskEditWidthPercent('500px');
         }
     }, [selectedSubtask]);
 
     const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
         console.log({ data });
         setIsLoading(true);
-
-        // update prompt question
-
         setTimeout(() => {
             setPromptText(data.taskInput);
             const placeholderModelResponse =
                 'Let’s find out...let me generate a roadmap to figure out if you can afford this house!';
             setModelResponseText(placeholderModelResponse);
-            // if no tasks
-            // add prompt
-            // add tasks
-
             try {
                 // const path = 'version/assets/';
                 // await monolithStore.runQuery(
@@ -170,236 +109,339 @@ export const Conductor = observer(() => {
         }, 500);
     });
 
-    const _horizontalFlexWidthContainers = (
-        <>
-            <span
-                style={{
-                    width: taskContainerWidthPercent,
-                    display: 'inline-block',
-                    transition: 'width .2s',
-                    border: '1px solid red',
-                }}
-            ></span>
-            {`...`}
-            <span
-                style={{
-                    width: taskEditWidthPercent,
-                    display:
-                        taskEditWidthPercent == '0%' ? 'none' : 'inline-block',
-                    transition: 'width .2s',
-                    border: '1px solid blue',
-                }}
-            >
-                <Typography variant={'h6'}>
-                    Selected Task: {selectedSubtask}
-                </Typography>
-                <IconButton
-                    onClick={() => {
-                        setSelectedSubtask(-1);
-                    }}
-                >
-                    <Close />
-                </IconButton>
-                <Typography variant={'h6'}> Overall Input Pool</Typography>
-                <div>{JSON.stringify(conductor.inputPool)}</div>
-            </span>
-        </>
-    );
+    const isBorders = false; // for testing
 
     const ParentContainer = styled('div')(({ theme }) => ({
-        border: '1px solid black',
+        border: isBorders ? '1px solid black' : 'none',
         minWidth: '650px',
     }));
 
     const TitleContainer = styled('div')(({ theme }) => ({
-        width: '100%',
-        border: '1px solid green',
+        border: isBorders ? '1px solid green' : 'none',
         boxSizing: 'border-box',
-        // display: 'flex',
+        marginBottom: '10px',
         height: '50px',
+        width: '100%',
     }));
 
     const LowerParentContainer = styled('div')(({ theme }) => ({
-        border: '1px solid black',
-        display: 'flex',
-        // minHeight: 'calc(100vh - 175px)', // expands vertically
         height: 'calc(100vh - 175px)', // contained vertically
+        border: isBorders ? '1px solid black' : 'none',
+        padding: '20px 0 0 0',
+        display: 'flex',
         width: '100%',
-        backgroundColor: '#f3f3f3',
-        borderRadius: '20px',
-        padding: '20px',
     }));
 
     const LeftParentContainer = styled('div')(({ theme }) => ({
-        border: '1px solid blue',
-        // flexBasis: '70%',
-        // flexBasis: 'calc(70% - 500px)',
-        flexBasis: 'calc(70% - 300px)',
-        display: 'flex',
+        border: isBorders ? '4px solid blue' : 'none',
+        flexBasis: 'calc(70% - 500px)',
+        padding: '20px 20px 30px 20px',
+        transition: 'width .2s',
+        backgroundColor: '#eee',
         flexDirection: 'column',
+        borderRadius: '20px',
+        display: 'flex',
         flex: '1',
     }));
 
     const RightParentContainer = styled('div')(({ theme }) => ({
-        border: '1px solid red',
-        // flexBasis: '30%',
-        flexBasis: '300px',
+        transition: 'width .2s, margin-left .2s, display 0s',
+        border: isBorders ? '1px solid red' : 'none',
+        backgroundColor: '#eee',
+        borderRadius: '20px',
+        flexBasis: '500px',
+        marginLeft: '0px',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
     }));
 
     const LeftInnerTopDiv = styled('div')(({ theme }) => ({
-        border: '1px solid orange',
+        border: isBorders ? '1px solid orange' : 'none',
+        overflow: promptText ? 'scroll' : 'hidden',
         width: '100%',
-        overflow: 'scroll',
+        padding: '0px',
+        boxSizing: 'border-box',
     }));
 
     const LeftInnerBottomDiv = styled('div')(({ theme }) => ({
-        border: '1px solid green',
+        border: isBorders ? '1px solid green' : 'none',
+        marginTop: 'auto',
         height: '50px',
         width: '100%',
-        marginTop: 'auto',
     }));
 
     const SubTaskParentContainerNew = styled('div')(({ theme }) => ({
-        border: '1px solid violet',
-        display: 'flex',
+        border: isBorders ? '1px solid violet' : 'none',
         justifyContent: 'flex-end',
+        marginBottom: '20px',
+        display: 'flex',
         width: '100%',
     }));
 
     const SubTaskInnerContainer = styled('div')(({ theme }) => ({
-        border: '1px solid red',
+        border: isBorders ? '1px solid red' : 'none',
         flexGrow: '1',
     }));
 
     const SubTaskPlayButton = styled('div')(({ theme }) => ({
-        border: '1px solid green',
-        height: '50px',
+        border: isBorders ? '1px solid green' : 'none',
+        alignItems: 'center',
+        display: 'flex',
+        height: '75px',
         width: '50px',
     }));
 
-    const workingEmptySampleLayout = (
-        // const ParentContainer = styled('div')(({ theme }) => ({
-        //     border: '1px solid black',
-        //     minWidth: '650px',
-        // }));
+    const handleMount = (editor, monaco) => {
+        editor.getAction('editor.action.formatDocument').run();
+        // const exposedQueryParameterDescription = (
+        //     exposedParameter: string,
+        //     queryId: string,
+        // ): string => {
+        //     switch (exposedParameter) {
+        //         case 'id':
+        //         case 'mode':
+        //             return `Returns the ${exposedParameter} of query ${queryId}`;
+        //         case 'isExecuted':
+        //             return `Returns whether query ${queryId} has executed`;
+        //         case 'isLoading':
+        //             return `Returns the loading state for query ${queryId}`;
+        //         case 'isError':
+        //             return `Returns whether query ${queryId} has an error`;
+        //         case 'error':
+        //             return `Returns the error for query ${queryId} if it exists`;
+        //         case 'list':
+        //             return `Returns an ordered list of cell IDs for query ${queryId}`;
+        //         default:
+        //             return `Reference the ${exposedParameter} parameter of query ${queryId}`;
+        //     }
+        // };
 
-        // const TitleContainer = styled('div')(({ theme }) => ({
-        //     width: '100%',
-        //     border: '1px solid green',
-        //     boxSizing: 'border-box',
-        //     // display: 'flex',
-        //     height: '50px',
-        // }));
+        // add editor completion suggestions based on block values and query outputs
+        // const generateSuggestions = (range) => {
+        //     const suggestions = [];
+        //     Object.values(state.blocks).forEach((block: Block) => {
+        //         // only input block types will have values
+        //         const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
+        //             (block) =>
+        //                 DefaultBlocks[block].type === BLOCK_TYPE_INPUT,
+        //         );
+        //         if (inputBlockWidgets.includes(block.widget)) {
+        //             suggestions.push({
+        //                 label: {
+        //                     label: `{{block.${block.id}.value}}`,
+        //                     description: block.data?.value
+        //                         ? JSON.stringify(block.data?.value)
+        //                         : '',
+        //                 },
+        //                 kind: monaco.languages.CompletionItemKind.Variable,
+        //                 documentation: `Returns the value of block ${block.id}`,
+        //                 insertText: `{{block.${block.id}.value}}`,
+        //                 range: range,
+        //             });
+        //         }
+        //     });
 
-        // const LowerParentContainer = styled('div')(({ theme }) => ({
-        //     border: '1px solid black',
-        //     display: 'flex',
-        //     // minHeight: 'calc(100vh - 175px)', // expands vertically
-        //     height: 'calc(100vh - 175px)', // contained vertically
-        //     width: '100%',
-        //     backgroundColor: '#f3f3f3',
-        //     borderRadius: '20px',
-        //     padding: '20px',
-        // }));
+        // notebook.queriesList.forEach((query: QueryState) => {
+        //     // push all exposed values
+        //     Object.keys(query._exposed).forEach(
+        //         (exposedParameter: string) => {
+        //             suggestions.push({
+        //                 label: {
+        //                     label: `{{query.${query.id}.${exposedParameter}}}`,
+        //                     description: query._exposed[
+        //                         exposedParameter
+        //                     ]
+        //                         ? JSON.stringify(
+        //                               query._exposed[exposedParameter],
+        //                           )
+        //                         : '',
+        //                 },
+        //                 kind: monaco.languages.CompletionItemKind
+        //                     .Variable,
+        //                 documentation: exposedQueryParameterDescription(
+        //                     exposedParameter,
+        //                     query.id,
+        //                 ),
+        //                 insertText: `{{query.${query.id}.${exposedParameter}}}`,
+        //                 range: range,
+        //                 detail: query.id,
+        //             });
+        //         },
+        //     );
+        // });
 
-        // const LeftParentContainer = styled('div')(({ theme }) => ({
-        //     border: '1px solid blue',
-        //     // flexBasis: '70%',
-        //     // flexBasis: 'calc(70% - 500px)',
-        //     flexBasis: 'calc(70% - 300px)',
-        //     display: 'flex',
-        //     flexDirection: 'column',
-        //     flex: '1',
-        // }));
+        // return suggestions;
+        // };
 
-        // const RightParentContainer = styled('div')(({ theme }) => ({
-        //     border: '1px solid red',
-        //     // flexBasis: '30%',
-        //     flexBasis: '300px',
-        // }));
+        // monaco.languages.registerCompletionItemProvider('json', {
+        //     provideCompletionItems: (model, position) => {
+        //         const word = model.getWordUntilPosition(position);
+        //         // getWordUntilPosition doesn't track when words are led by special characters
+        //         // we need to chack for wrapping curly brackets manually to know what to replace
 
-        // const LeftInnerTopDiv = styled('div')(({ theme }) => ({
-        //     border: '1px solid orange',
-        //     width: '100%',
-        //     overflow: 'scroll',
-        // }));
+        //         // word is not empty, completion was triggered by a non-special character
+        //         if (word.word !== '') {
+        //             // return empty suggestions to trigger built in typeahead
+        //             return {
+        //                 suggestions: [],
+        //             };
+        //         }
 
-        // const LeftInnerBottomDiv = styled('div')(({ theme }) => ({
-        //     border: '1px solid green',
-        //     height: '50px',
-        //     width: '100%',
-        //     marginTop: 'auto',
-        // }));
+        //         // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+        //         const specialCharacterStartRange = {
+        //             startLineNumber: position.lineNumber,
+        //             endLineNumber: position.lineNumber,
+        //             startColumn: word.startColumn - 2,
+        //             endColumn: word.startColumn,
+        //         };
+        //         const preceedingTwoCharacters = model.getValueInRange(
+        //             specialCharacterStartRange,
+        //         );
+        //         const replaceRangeStartBuffer =
+        //             preceedingTwoCharacters === '{{' ? 2 : 1;
+        //         // python editor will automatically add closed bracket when you type a start one
+        //         // need to replace the closed brackets appropriately
+        //         const specialCharacterEndRange = {
+        //             startLineNumber: position.lineNumber,
+        //             endLineNumber: position.lineNumber,
+        //             startColumn: word.endColumn,
+        //             endColumn: word.endColumn + 2,
+        //         };
+        //         const followingTwoCharacters = model.getValueInRange(
+        //             specialCharacterEndRange,
+        //         );
+        //         const replaceRangeEndBuffer =
+        //             followingTwoCharacters === '}}'
+        //                 ? 2
+        //                 : followingTwoCharacters == '} ' ||
+        //                   followingTwoCharacters == '}'
+        //                 ? 1
+        //                 : 0;
 
-        // const SubTaskParentContainerNew = styled('div')(({ theme }) => ({
-        //     border: '1px solid violet',
-        //     display: 'flex',
-        //     justifyContent: 'flex-end',
-        //     width: '100%',
-        // }));
+        //         // compose range that we want to replace with the suggestion
+        //         const replaceRange = {
+        //             startLineNumber: position.lineNumber,
+        //             endLineNumber: position.lineNumber,
+        //             startColumn: word.startColumn - replaceRangeStartBuffer,
+        //             endColumn: word.endColumn + replaceRangeEndBuffer,
+        //         };
+        //         return {
+        //             suggestions: generateSuggestions(replaceRange),
+        //         };
+        //     },
+        //     triggerCharacters: ['{'],
+        // });
 
-        // const SubTaskInnerContainer = styled('div')(({ theme }) => ({
-        //     border: '1px solid red',
-        //     flexGrow: '1',
-        // }));
+        // add LLM prompting and word-wrap actions to editor
+        // editor.addAction({
+        //     contextMenuGroupId: '1_modification',
+        //     contextMenuOrder: 2,
+        //     id: 'toggle-word-wrap',
+        //     label: 'Toggle Word Wrap',
+        //     keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
 
-        // const SubTaskPlayButton = styled('div')(({ theme }) => ({
-        //     border: '1px solid green',
-        //     height: '50px',
-        //     width: '50px',
-        // }));
-        <ParentContainer>
-            <TitleContainer>title</TitleContainer>
-            <LowerParentContainer>
-                <LeftParentContainer>
-                    <LeftInnerTopDiv>
-                        <SubTaskParentContainerNew>
-                            <SubTaskInnerContainer>
-                                <p>top left 1</p>
-                            </SubTaskInnerContainer>
-                            <SubTaskPlayButton>{`>`}</SubTaskPlayButton>
-                        </SubTaskParentContainerNew>
-                        <SubTaskParentContainerNew>
-                            <SubTaskInnerContainer>
-                                <p>top left 2</p>
-                            </SubTaskInnerContainer>
-                            <SubTaskPlayButton>{`>`}</SubTaskPlayButton>
-                        </SubTaskParentContainerNew>
-                        <SubTaskParentContainerNew>
-                            <SubTaskInnerContainer>
-                                <p>top left 3</p>
-                            </SubTaskInnerContainer>
-                            <SubTaskPlayButton>{`>`}</SubTaskPlayButton>
-                        </SubTaskParentContainerNew>
-                    </LeftInnerTopDiv>
-                    <LeftInnerBottomDiv>left bottom</LeftInnerBottomDiv>
-                </LeftParentContainer>
-                <RightParentContainer>
-                    <div
-                        style={{
-                            border: '1px solid violet',
-                        }}
-                    >
-                        top right 1
-                    </div>
-                    <div
-                        style={{
-                            border: '1px solid gray',
-                        }}
-                    >
-                        top right 2
-                    </div>
-                    <div
-                        style={{
-                            border: '1px solid lightgreen',
-                        }}
-                    >
-                        top right 3
-                    </div>
-                </RightParentContainer>
-            </LowerParentContainer>
-        </ParentContainer>
-    );
+        //     run: async (editor) => {
+        //         wordWrapRef.current = !wordWrapRef.current;
+        //         editor.updateOptions({
+        //             wordWrap: wordWrapRef.current ? 'on' : 'off',
+        //         });
+        //     },
+        // });
+
+        // editor.addAction({
+        //     contextMenuGroupId: '1_modification',
+        //     contextMenuOrder: 1,
+        //     id: 'prompt-LLM',
+        //     label: 'Generate Code',
+        //     keybindings: [
+        //         monaco.KeyMod.CtrlCmd |
+        //             monaco.KeyMod.Shift |
+        //             monaco.KeyCode.KeyG,
+        //     ],
+
+        //     run: async (editor) => {
+        //         const selection = editor.getSelection();
+        //         const selectedText = editor
+        //             .getModel()
+        //             .getValueInRange(selection);
+
+        //         let LLMReturnText = '';
+        //         switch (language) {
+        //             case 'html':
+        //                 LLMReturnText = await promptLLM(
+        //                     `Create code for an HTML file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+        //                 );
+        //                 break;
+        //             case 'json':
+        //                 LLMReturnText = await promptLLM(
+        //                     `Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure 'data' is a top-level key in the JSON object. Use the following user prompt: ${selectedText}`,
+        //                 );
+        //                 break;
+        //         }
+
+        //         // adds LLM return text after response
+        //         editor.executeEdits('custom-action', [
+        //             {
+        //                 range: new monaco.Range(
+        //                     selection.endLineNumber + 2,
+        //                     1,
+        //                     selection.endLineNumber + 2,
+        //                     1,
+        //                 ),
+        //                 text: `\n\n${LLMReturnText}\n`,
+        //                 forceMoveMarkers: true,
+        //             },
+        //         ]);
+
+        //         // highligts LLM return text after response
+        //         editor.setSelection(
+        //             new monaco.Range(
+        //                 selection.endLineNumber + 3,
+        //                 1,
+        //                 selection.endLineNumber +
+        //                     3 +
+        //                     LLMReturnText.split('\n').length,
+        //                 1,
+        //             ),
+        //         );
+        //     },
+        // });
+    };
+
+    const onChange = (value: string) => {
+        console.log({ newValue: value });
+        // // set the value
+        // setValue(value);
+
+        // // clear out he old timeout
+        // if (timeoutRef.current) {
+        //     clearTimeout(timeoutRef.current);
+        //     timeoutRef.current = null;
+        // }
+
+        // timeoutRef.current = setTimeout(() => {
+        //     try {
+        //         // set the value
+        //         setData(path, value as PathValue<D['data'], typeof path>);
+        //     } catch (e) {
+        //         console.log(e);
+        //     }
+        // }, 300);
+    };
+
+    const DUMMY_JSON = `
+
+        {
+            "imageurl": "/barbie_dream_house.png",
+            "is_house": true,
+            "color": "pink",
+            "bedrooms": "3+",
+            "has_pool": true,
+            "has_slide": true,
+            "cost": ""
+        }
+    `;
 
     return (
         <ParentContainer>
@@ -413,45 +455,124 @@ export const Conductor = observer(() => {
                 <LeftParentContainer
                     style={{
                         flexBasis: taskContainerWidthPercent,
-                        // display: 'inline-block',
                         transition: 'width .2s',
-                        // border: '3px dashed purple',
                     }}
                 >
                     <LeftInnerTopDiv>
-                        <SubTaskParentContainerNew>
+                        <SubTaskParentContainerNew
+                            sx={{
+                                marginBottom: '0',
+                            }}
+                        >
                             <SubTaskInnerContainer>
                                 <Typography
                                     variant={'body1'}
                                     sx={{
                                         padding: '16px',
-                                        display: promptText ? 'auto' : 'none',
+                                        display: promptText ? 'none' : 'flex',
                                         marginBottom: '20px',
                                         backgroundColor: '#fff',
                                         borderRadius: '12px',
+                                        justifyContent: 'start',
+                                        alignItems: 'center',
                                     }}
                                 >
-                                    <Person /> {promptText}
+                                    <AutoFixHigh
+                                        sx={{
+                                            marginRight: '10px',
+                                        }}
+                                    />{' '}
+                                    Define a task and AI Conductor will generate
+                                    a roadmap to help you solve it!
                                 </Typography>
                             </SubTaskInnerContainer>
-                            <SubTaskPlayButton>{`>`}</SubTaskPlayButton>
                         </SubTaskParentContainerNew>
-                        <SubTaskParentContainerNew>
+                        <SubTaskParentContainerNew
+                            sx={{
+                                marginBottom: '0',
+                                display: promptText ? 'auto' : 'none',
+                            }}
+                        >
                             <SubTaskInnerContainer>
                                 <Typography
                                     variant={'body1'}
                                     sx={{
-                                        padding: '16px',
-                                        display: promptText ? 'auto' : 'none',
-                                        marginBottom: '20px',
+                                        // display: promptText ? 'auto' : 'none',
+                                        display: promptText ? 'flex' : 'none',
                                         backgroundColor: '#fff',
+                                        marginBottom: '20px',
                                         borderRadius: '12px',
+                                        padding: '16px',
+                                        // flexDirection: 'column',
+                                        justifyContent: 'start',
+                                        alignItems: 'center',
+                                        border: isBorders
+                                            ? '1px solid goldenrod'
+                                            : 'none',
                                     }}
                                 >
-                                    <AutoFixHigh /> {modelResponseText}
+                                    <Person
+                                        sx={{
+                                            marginRight: '10px',
+                                        }}
+                                    />{' '}
+                                    {promptText}
                                 </Typography>
                             </SubTaskInnerContainer>
-                            <SubTaskPlayButton>{`>`}</SubTaskPlayButton>
+                            <SubTaskPlayButton>
+                                <div
+                                    style={{
+                                        border: isBorders
+                                            ? '2px dashed green'
+                                            : 'none',
+                                        justifyContent: 'center',
+                                        display: 'flex',
+                                        width: '100%',
+                                    }}
+                                >
+                                    <IconButton
+                                        sx={{
+                                            border: isBorders
+                                                ? '1px solid red'
+                                                : 'none',
+                                            display: promptText
+                                                ? 'auto'
+                                                : 'none',
+                                        }}
+                                    >
+                                        <PlayArrow />
+                                    </IconButton>
+                                </div>
+                            </SubTaskPlayButton>
+                        </SubTaskParentContainerNew>
+                        <SubTaskParentContainerNew
+                            sx={{
+                                marginBottom: '0',
+                                display: promptText ? 'auto' : 'none',
+                            }}
+                        >
+                            <SubTaskInnerContainer>
+                                <Typography
+                                    variant={'body1'}
+                                    sx={{
+                                        display: promptText ? 'flex' : 'none',
+                                        justifyContent: 'start',
+                                        alignItems: 'center',
+                                        backgroundColor: '#fff',
+                                        marginBottom: '20px',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                    }}
+                                >
+                                    <AutoFixHigh
+                                        sx={{
+                                            marginRight: '10px',
+                                        }}
+                                    />{' '}
+                                    {modelResponseText}
+                                </Typography>
+                            </SubTaskInnerContainer>
+                            <SubTaskPlayButton></SubTaskPlayButton>
                         </SubTaskParentContainerNew>
 
                         {promptText &&
@@ -485,12 +606,81 @@ export const Conductor = observer(() => {
                                             />
                                         </SubTaskInnerContainer>
                                         <SubTaskPlayButton>
-                                            {`>`}
+                                            <div
+                                                style={{
+                                                    border: isBorders
+                                                        ? '2px dashed green'
+                                                        : 'none',
+                                                    justifyContent: 'center',
+                                                    display: 'flex',
+                                                    width: '100%',
+                                                }}
+                                            >
+                                                <IconButton
+                                                    sx={{
+                                                        border: isBorders
+                                                            ? '1px solid red'
+                                                            : 'none',
+                                                    }}
+                                                >
+                                                    <PlayArrow />
+                                                </IconButton>
+                                            </div>
                                         </SubTaskPlayButton>
                                     </SubTaskParentContainerNew>
                                 );
                             })}
+
+                        <Controller
+                            name={'uploadFile'}
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => {
+                                return (
+                                    <FileDropzone
+                                        style={{
+                                            flex: '1',
+                                            margin: '0 0 20px 0',
+                                            borderRadius: '20px',
+                                            // display: promptText ? 'auto' : 'none',
+                                            display: 'none',
+                                        }}
+                                        multiple={false}
+                                        value={field.value}
+                                        // disabled={isLoading}
+                                        onChange={(newValues) => {
+                                            field.onChange(newValues);
+                                            console.log({ newValues });
+                                        }}
+                                    />
+                                );
+                            }}
+                        />
                     </LeftInnerTopDiv>
+                    <Controller
+                        name={'uploadFile'}
+                        control={control}
+                        rules={{}}
+                        render={({ field }) => {
+                            return (
+                                <FileDropzone
+                                    style={{
+                                        flex: '1',
+                                        margin: '0 5px 20px 0',
+                                        borderRadius: '20px',
+                                        display: promptText ? 'none' : 'auto',
+                                    }}
+                                    multiple={false}
+                                    value={field.value}
+                                    // disabled={isLoading}
+                                    onChange={(newValues) => {
+                                        field.onChange(newValues);
+                                        console.log({ newValues });
+                                    }}
+                                />
+                            );
+                        }}
+                    />
                     <LeftInnerBottomDiv>
                         <Controller
                             name={'taskInput'}
@@ -500,10 +690,9 @@ export const Conductor = observer(() => {
                                 return (
                                     <StyledTextField
                                         label="Name"
-                                        value={field.value ? field.value : ''}
                                         variant="outlined"
+                                        value={field.value ? field.value : ''}
                                         placeholder="Type, Drag, or Speak to get started. Reminder! Use as explicit language as possible and include your audience...*"
-                                        // disabled={isLoading}
                                         onChange={(value) =>
                                             field.onChange(value)
                                         }
@@ -513,9 +702,8 @@ export const Conductor = observer(() => {
                                                 <span
                                                     style={{
                                                         marginRight: '15px',
-                                                        width: '100px',
-                                                        // backgroundColor: 'pink',
                                                         display: 'inline-block',
+                                                        width: '100px',
                                                     }}
                                                 >
                                                     <b>Chat</b>
@@ -551,323 +739,115 @@ export const Conductor = observer(() => {
                 </LeftParentContainer>
                 <RightParentContainer
                     style={{
-                        // border: '1px solid black',
-                        width: taskEditWidthPercent,
+                        marginLeft:
+                            taskContainerWidthPercent == '0%' ? '0px' : '20px',
                         display: taskEditWidthPercent == '0%' ? 'none' : 'flex',
-                        transition: 'width .2s',
+                        width: taskEditWidthPercent,
                     }}
                 >
-                    <div>
-                        <Typography variant={'h6'}>
-                            Selected Task: {selectedSubtask}
-                        </Typography>
-                        <IconButton
-                            onClick={() => {
-                                setSelectedSubtask(-1);
+                    {/* RightInnerContainer */}
+                    <div
+                        style={{
+                            height: '300px',
+                            width: '100%',
+                            border: isBorders ? '1px solid pink' : 'none',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                border: isBorders
+                                    ? '1px solid lightgreen'
+                                    : 'none',
                             }}
                         >
-                            <Close />
-                        </IconButton>
-                        <Typography variant={'h6'}>
-                            {' '}
-                            Overall Input Pool
-                        </Typography>
-                        <div>{JSON.stringify(conductor.inputPool)}</div>
-                    </div>
-                </RightParentContainer>
+                            <Typography
+                                variant={'body1'}
+                                sx={
+                                    {
+                                        // display: 'inline-block'
+                                    }
+                                }
+                            >
+                                <b>
+                                    Selected Task {selectedSubtask + 1} JSON
+                                    Editor
+                                </b>
+                            </Typography>
+                            <IconButton
+                                onClick={() => {
+                                    setTaskContainerWidthPercent('100%');
+                                    setTaskEditWidthPercent('0%');
+                                    setSelectedSubtask(-1);
+                                }}
+                                // sx={{ display: 'inline-block' }}
+                            >
+                                <Close />
+                            </IconButton>
+                        </div>
 
-                {/* <div style={{
-                        border: '1px solid violet',
-                    }}>
-                        top right 1
+                        {/* <div
+                            style={{
+                                border: '1px solid violet'
+                            }}
+                        >
+                            <Typography variant={'h6'}>
+                                {' '}
+                                Overall Input Pool
+                            </Typography>
+                            <div>{JSON.stringify(conductor.inputPool)}</div>
+                        </div> */}
+
+                        <div
+                            style={{
+                                borderRadius: '10px',
+                                width: '100%',
+                                overflow: 'auto',
+                                flex: '1',
+                                // border: isBorders ? '1px solid olive' : 'none',
+                                marginTop: '20px',
+                                marginBottom: '20px',
+                                height: `220px`, // make dynamic based on editor value line count
+                                // marginTop: '20px',
+                            }}
+                        >
+                            <Editor
+                                width="100%"
+                                height="100%"
+                                value={DUMMY_JSON}
+                                // value={JSON.stringify(conductor.inputPool)}
+                                language={'json'}
+                                options={{
+                                    lineNumbers: 'off',
+                                    readOnly: false,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: 19,
+                                    overviewRulerBorder: false,
+                                }}
+                                onChange={(e) => {
+                                    onChange(e);
+                                }}
+                                onMount={handleMount}
+                            />
+                        </div>
                     </div>
-                    <div style={{
-                        border: '1px solid gray',
-                    }}>
-                        top right 2
-                    </div>
-                    <div style={{
-                        border: '1px solid lightgreen',
-                    }}>
-                        top right 3
-                    </div> */}
-                {/* </RightParentContainer> */}
+
+                    <Button
+                        color="secondary"
+                        variant="outlined"
+                        sx={{
+                            width: '200px',
+                        }}
+                    >
+                        Update and run task
+                    </Button>
+                </RightParentContainer>
             </LowerParentContainer>
         </ParentContainer>
-    );
-
-    return (
-        <ComponentContainer
-            sx={{
-                border: '1px solid green',
-                width: '70%',
-            }}
-        >
-            <Typography variant="h4">AI Conductor</Typography>
-            <Typography variant="body1">Description / Instructions</Typography>
-
-            <TaskContainer
-            // sx={{
-            //     width: taskContainerWidthPercent,
-            // }}
-            >
-                <SubTaskParentContainer>
-                    <Typography
-                        variant={'body1'}
-                        sx={{
-                            padding: '16px',
-                            display: promptText ? 'auto' : 'none',
-                            marginBottom: '20px',
-                            backgroundColor: '#fff',
-                            borderRadius: '12px',
-                        }}
-                    >
-                        <Person /> {promptText}
-                    </Typography>
-                    <Typography
-                        variant={'body1'}
-                        sx={{
-                            padding: '16px',
-                            display: promptText ? 'auto' : 'none',
-                            marginBottom: '20px',
-                            backgroundColor: '#fff',
-                            borderRadius: '12px',
-                        }}
-                    >
-                        <AutoFixHigh /> {modelResponseText}
-                    </Typography>
-                    {conductor.steps.map((step, i) => (
-                        <NewConductorStep
-                            key={i}
-                            taskIndex={i}
-                            type={'app'}
-                            step={step}
-                            selectedSubtask={selectedSubtask}
-                            setSelectedSubtask={setSelectedSubtask}
-                            taskEditorHistory={taskEditorHistory}
-                            setTaskEditorHistory={setTaskEditorHistory}
-                            openAccordionIndexesSet={openAccordionIndexesSet}
-                            setOpenAccordionIndexesSet={
-                                setOpenAccordionIndexesSet
-                            }
-                        />
-                    ))}
-                </SubTaskParentContainer>
-
-                <Controller
-                    name={'taskInput'}
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field }) => {
-                        return (
-                            <StyledTextField
-                                label="Name"
-                                value={field.value ? field.value : ''}
-                                variant="outlined"
-                                placeholder="Type, Drag, or Speak to get started. Reminder! Use as explicit language as possible and include your audience...*"
-                                // disabled={isLoading}
-                                onChange={(value) => field.onChange(value)}
-                                fullWidth={true}
-                                InputProps={{
-                                    startAdornment: (
-                                        <span
-                                            style={{
-                                                marginRight: '15px',
-                                                width: '100px',
-                                                // backgroundColor: 'pink',
-                                                display: 'inline-block',
-                                            }}
-                                        >
-                                            <b>Chat</b>
-                                            <IconButton
-                                                onClick={taskSubmitHandler}
-                                            >
-                                                <KeyboardArrowDown />
-                                            </IconButton>
-                                        </span>
-                                    ),
-                                    endAdornment: (
-                                        <>
-                                            <IconButton disabled>
-                                                <Mic />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={taskSubmitHandler}
-                                            >
-                                                <ArrowUpward />
-                                            </IconButton>
-                                        </>
-                                    ),
-                                }}
-                            />
-                        );
-                    }}
-                />
-            </TaskContainer>
-        </ComponentContainer>
-    );
-
-    return (
-        <Stack
-            direction={'column'}
-            gap={1}
-            sx={{
-                padding: '24px',
-                borderRadius: '20px',
-                backgroundColor: '#f3f3f3',
-                border: '3px dashed goldenrod',
-            }}
-        >
-            <div
-                style={{
-                    width: '100%',
-                    display: 'flex',
-                    border: '3px dashed olive',
-                }}
-            >
-                <span
-                    style={{
-                        width: taskContainerWidthPercent,
-                        display: 'inline-block',
-                        transition: 'width .2s',
-                        border: '3px dashed purple',
-                    }}
-                >
-                    {/* <Typography variant={'h4'} fontWeight="bold">
-                        Task
-                    </Typography> */}
-                    <Typography
-                        variant={'body1'}
-                        sx={{
-                            backgroundColor: '#fafafa',
-                            padding: '16px',
-                            borderRadius: '20px',
-                            display: promptText ? 'auto' : 'none',
-                        }}
-                    >
-                        <Person /> {promptText}
-                    </Typography>
-
-                    <ComponentContainer>
-                        <TaskContainer
-                            sx={{ display: promptText ? 'flex' : 'none' }}
-                        >
-                            {conductor.steps.map((step, i) => {
-                                return (
-                                    <SubTaskParentContainer
-                                        onClick={() => {}}
-                                        sx={{ border: '3px solid blue' }}
-                                    >
-                                        <NewConductorStep
-                                            key={i}
-                                            taskIndex={i}
-                                            type={'app'}
-                                            step={step}
-                                            selectedSubtask={selectedSubtask}
-                                            setSelectedSubtask={
-                                                setSelectedSubtask
-                                            }
-                                            taskEditorHistory={
-                                                taskEditorHistory
-                                            }
-                                            setTaskEditorHistory={
-                                                setTaskEditorHistory
-                                            }
-                                            openAccordionIndexesSet={
-                                                openAccordionIndexesSet
-                                            }
-                                            setOpenAccordionIndexesSet={
-                                                setOpenAccordionIndexesSet
-                                            }
-                                        />
-                                    </SubTaskParentContainer>
-                                );
-                            })}
-                        </TaskContainer>
-                    </ComponentContainer>
-
-                    <Controller
-                        name={'taskInput'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => {
-                            return (
-                                <StyledTextField
-                                    label="Name"
-                                    value={field.value ? field.value : ''}
-                                    variant="outlined"
-                                    placeholder="Type, Drag, or Speak to get started. Reminder! Use as explicit language as possible and include your audience...*"
-                                    // disabled={isLoading}
-                                    onChange={(value) => field.onChange(value)}
-                                    fullWidth={true}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <span
-                                                style={{
-                                                    marginRight: '15px',
-                                                    width: '100px',
-                                                    // backgroundColor: 'pink',
-                                                    display: 'inline-block',
-                                                }}
-                                            >
-                                                <b>Chat</b>
-                                                <IconButton
-                                                    onClick={taskSubmitHandler}
-                                                >
-                                                    <KeyboardArrowDown />
-                                                </IconButton>
-                                            </span>
-                                        ),
-                                        endAdornment: (
-                                            <>
-                                                <IconButton disabled>
-                                                    <Mic />
-                                                </IconButton>
-                                                <IconButton
-                                                    onClick={taskSubmitHandler}
-                                                >
-                                                    <ArrowUpward />
-                                                </IconButton>
-                                            </>
-                                        ),
-                                    }}
-                                />
-                            );
-                        }}
-                    />
-                </span>
-
-                <span
-                    style={{
-                        border: '1px solid black',
-                        width: taskEditWidthPercent,
-                        display:
-                            taskEditWidthPercent == '0%'
-                                ? 'none'
-                                : 'inline-block',
-                        transition: 'width .2s',
-                    }}
-                >
-                    {/* <EditComponentContainer> */}
-                    {/* <EditTaskContainer> */}
-                    {/* <SubTaskParentContainer> */}
-                    <Typography variant={'h6'}>
-                        Selected Task: {selectedSubtask}
-                    </Typography>
-                    <IconButton
-                        onClick={() => {
-                            setSelectedSubtask(-1);
-                        }}
-                    >
-                        <Close />
-                    </IconButton>
-                    <Typography variant={'h6'}> Overall Input Pool</Typography>
-                    <div>{JSON.stringify(conductor.inputPool)}</div>
-                    {/* </SubTaskParentContainer> */}
-                    {/* </EditTaskContainer> */}
-                    {/* </EditComponentContainer> */}
-                </span>
-            </div>
-        </Stack>
     );
 });
