@@ -20,9 +20,11 @@ import {
     LibraryAdd,
     Search,
     SearchOff,
+    Add,
 } from '@mui/icons-material/';
 import { INPUT_BLOCK_TYPES } from '@/stores';
 import { AddVariableModal } from '../notebook/AddVariableModal';
+import { ActionMessages } from '../../stores/state/state.actions';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -109,12 +111,38 @@ const StyledTreeItemMessage = styled('div')(() => ({
     justifyContent: 'center',
 }));
 
+const PAGE_BLOCK = {
+    widget: 'page',
+    data: {
+        style: {
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px',
+            gap: '8px',
+            fontFamily: 'roboto',
+        },
+    },
+    listeners: {
+        onPageLoad: [],
+    },
+    slots: {
+        content: [],
+    },
+};
+
+export interface LayersMenuProps {
+    /**callback function to set the active page */
+    renderedPageCallback: Function;
+}
+
 /**
  * Render the LayersMenu
  */
-export const LayersMenu = observer((): JSX.Element => {
+export const LayersMenu = observer((props: LayersMenuProps) => {
     // get the store
+    const { renderedPageCallback } = props;
     const { registry, state } = useBlocks();
+
     const { designer } = useDesigner();
     const notification = useNotification();
 
@@ -125,8 +153,14 @@ export const LayersMenu = observer((): JSX.Element => {
 
     const [variableModal, setVariableModal] = useState('');
 
-    // get the active page
-    const activePage = state.blocks[designer.rendered];
+    const allBlockKeys = Object.keys(state.blocks);
+    const allPages = [];
+    allBlockKeys.forEach((key) => {
+        console.log(state.blocks[key].widget);
+        if (state.blocks[key].widget == 'page') {
+            allPages.push(state.blocks[key]);
+        }
+    });
 
     /**
      * Render the block and it's children
@@ -136,7 +170,6 @@ export const LayersMenu = observer((): JSX.Element => {
     const renderBlock = (id: string) => {
         // get the block
         const block = state.blocks[id];
-
         const variableName = state.getAlias(id);
         const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
 
@@ -172,8 +205,10 @@ export const LayersMenu = observer((): JSX.Element => {
                             }
                         >
                             <StyledLabelTitle>
-                                {block.widget.charAt(0).toUpperCase() +
-                                    block.widget.slice(1)}
+                                {block.data.pageName
+                                    ? block.data.pageName
+                                    : block.widget.charAt(0).toUpperCase() +
+                                      block.widget.slice(1)}
                             </StyledLabelTitle>
                             <StyledLabelSubtitleText>
                                 {variableName ? variableName : block.id}
@@ -213,6 +248,9 @@ export const LayersMenu = observer((): JSX.Element => {
                 onClick={(e: React.SyntheticEvent) => {
                     e.stopPropagation();
                     designer.setSelected(block.id);
+                    if (block.widget == 'page') {
+                        renderedPageCallback(block.id);
+                    }
                 }}
                 onMouseOver={(e: React.SyntheticEvent) => {
                     e.stopPropagation();
@@ -251,6 +289,15 @@ export const LayersMenu = observer((): JSX.Element => {
                 message: 'Unable to copy ID',
             });
         }
+    };
+
+    const handlePageAdd = () => {
+        state.dispatch({
+            message: ActionMessages.ADD_BLOCK,
+            payload: {
+                json: PAGE_BLOCK,
+            },
+        });
     };
 
     return (
@@ -324,8 +371,8 @@ export const LayersMenu = observer((): JSX.Element => {
                         </StyledTreeItemIcon>
                     }
                 >
-                    {activePage ? (
-                        renderBlock(activePage.id)
+                    {!!allPages?.length ? (
+                        allPages.map((page) => renderBlock(page.id))
                     ) : (
                         <StyledTreeItemMessage>
                             <Typography variant="caption">No Layers</Typography>
@@ -341,6 +388,16 @@ export const LayersMenu = observer((): JSX.Element => {
                     onClose={() => setVariableModal('')}
                 />
             ) : null}
+            <IconButton
+                color="default"
+                size="small"
+                onClick={() => {
+                    handlePageAdd();
+                }}
+            >
+                <Add fontSize="medium" />
+                Add Page
+            </IconButton>
         </StyledMenu>
     );
 });

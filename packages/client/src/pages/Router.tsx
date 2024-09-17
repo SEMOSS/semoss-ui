@@ -34,7 +34,7 @@ export const Router = observer(() => {
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
                 </Route>
-                <Route path="s/:appId" element={<SharePage />} />
+                <Route path="s/:appId/*" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>

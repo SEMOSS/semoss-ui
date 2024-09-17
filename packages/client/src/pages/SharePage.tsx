@@ -18,7 +18,7 @@ const StyledViewport = styled('div')(() => ({
 
 export const SharePage = observer(() => {
     // App ID Needed for pixel calls
-    const { appId } = useParams();
+    const { appId, ...route } = useParams();
     const { monolithStore } = useRootStore();
 
     const notification = useNotification();
@@ -90,7 +90,9 @@ export const SharePage = observer(() => {
     return (
         <StyledViewport>
             {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
-            {type === 'BLOCKS' ? <BlocksRenderer appId={appId} /> : null}
+            {type === 'BLOCKS' ? (
+                <BlocksRenderer appId={appId} route={route['*']} />
+            ) : null}
         </StyledViewport>
     );
 });

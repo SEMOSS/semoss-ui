@@ -1,6 +1,7 @@
 import { Registry } from '@/stores';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
+import { config as RouteBlockConfig, RouteBlockDef } from './route-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
 import { config as LogsBlockConfig, LogsBlockDef } from './logs-block';
 import {
@@ -72,9 +73,11 @@ export type DefaultBlockDefinitions =
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | MermaidBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | RouteBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [RouteBlockConfig.widget]: RouteBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
@@ -106,6 +109,7 @@ export function getTypeForBlock(widget: string) {
 }
 
 export {
+    RouteBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,

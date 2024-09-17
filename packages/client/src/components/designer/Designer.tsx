@@ -151,6 +151,10 @@ export const Designer = observer((): JSX.Element => {
         designer.setSelected('');
     };
 
+    const handleRenderedPage = (pageId) => {
+        designer.setRendered(pageId);
+    };
+
     const handleLeftMenuResize = (e) => {
         const containerWidth = window.innerWidth;
         const menuWidth = (e.clientX / containerWidth) * 100;
@@ -245,7 +249,13 @@ export const Designer = observer((): JSX.Element => {
                     {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
-                                {view === 'layers' ? <LayersMenu /> : null}
+                                {view === 'layers' ? (
+                                    <LayersMenu
+                                        renderedPageCallback={
+                                            handleRenderedPage
+                                        }
+                                    />
+                                ) : null}
                                 {view === 'blocks' ? (
                                     <AddBlocksMenu
                                         title={'Add Blocks'}
