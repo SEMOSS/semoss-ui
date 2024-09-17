@@ -1,9 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useBlock, useBlocks } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
-import { IconButton, Stack, Tabs, Typography, styled } from '@semoss/ui';
+import {
+    IconButton,
+    Stack,
+    Tabs,
+    Typography,
+    styled,
+    Icon,
+    Checkbox,
+} from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { Star, StarBorder } from '@mui/icons-material';
+import {
+    CheckBoxRounded,
+    CheckCircle,
+    Star,
+    StarBorder,
+} from '@mui/icons-material';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
     margin: theme.spacing(1),
@@ -31,6 +44,13 @@ const StyledStarButton = styled(IconButton)(({ theme }) => ({
     padding: 0,
 }));
 
+const StyledContentHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing(2),
+}));
+
 export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
     widget: 'llmComparison';
     slots: never;
@@ -39,38 +59,32 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
     const { state } = useBlocks();
-    const tabsLengthRef = useRef(0);
-    const [selectedTab, setSelectedTab] = useState<string | null>(null);
+    const [selectedTab, setSelectedTab] = useState<string>('');
     const [variants, setVariants] = useState({});
-    const variantTabs: string[] = Object.keys(variants || {});
     const displayed = (variants || {})[selectedTab] || {};
-
     const [highlightedRating, setHighlightedRating] = useState(0);
 
-    // Reset selected tab when variants are changed.
-    useEffect(() => {
-        if (variantTabs.length !== tabsLengthRef.current) {
-            setSelectedTab(variantTabs[0] || null);
-            tabsLengthRef.current = variantTabs.length;
-        }
-    }, [variantTabs]);
-
-    // Fetch and save variants stored in query to state.
     useEffect(() => {
         if (!data.queryId) {
             setVariants({});
             return;
+        } else {
+            getVariantsFromQuery();
         }
+    }, [data.queryId]);
 
+    // Fetch and save variants stored in query to state.
+    const getVariantsFromQuery = () => {
         const query = state.getQuery(data.queryId);
 
         let modelledVars = {};
-        Object.values(query.cells).forEach((cell) => {
+        Object.values(query.cells).forEach((cell, idx) => {
             const cellVars = {};
             Object.values(cell.parameters.variants).forEach((variant, idx) => {
                 cellVars[variant.id] = {
                     ...variant,
                     response: (cell.output || [])[idx]?.response,
+                    selected: idx === 0,
                 };
             });
 
@@ -80,18 +94,24 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             };
         });
 
+        const variantKeys = Object.keys(modelledVars);
+        setSelectedTab(variantKeys[0] || '');
         setVariants(modelledVars);
-    }, [data.queryId]);
+    };
 
     const handleRateResponse = (num: number) => {
         // TODO: set rating for a variant's response using the rating from the 'num' param.
+    };
+
+    const handleChangeSelected = () => {
+        // TODO
     };
 
     return (
         <StyledLLMComparisonBlock {...attrs}>
             <Typography variant="h6">Response</Typography>
 
-            {variantTabs.length === 0 ? (
+            {Object.keys(variants).length === 0 ? (
                 <StyledTabBox>
                     <Typography variant="body2">
                         Add a query with variants to generate responses.
@@ -100,34 +120,55 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             ) : (
                 <StyledTabBox gap={2}>
                     <Tabs
-                        value={selectedTab || null}
+                        value={selectedTab}
                         onChange={(_, value: string) => {
                             setSelectedTab(value);
                         }}
                         color="primary"
                     >
-                        {variantTabs.map((tab, idx: number) => (
-                            <Tabs.Item
-                                key={`${tab}-${idx}`}
-                                label={`Variant ${tab}`}
-                                value={tab}
-                            />
-                        ))}
+                        {Object.keys(variants).map((key, idx: number) => {
+                            const selected = variants[key].selected;
+                            const name =
+                                key.toLowerCase() === 'default'
+                                    ? 'Default Variant'
+                                    : `Variant ${key.toUpperCase()}`;
+                            const label = selected ? (
+                                <Stack
+                                    direction="row"
+                                    gap={0}
+                                    alignItems="flex-end"
+                                >
+                                    <Icon color="primary">
+                                        <CheckCircle />
+                                    </Icon>
+                                    <span>{name}</span>
+                                </Stack>
+                            ) : (
+                                name
+                            );
+                            return (
+                                <Tabs.Item
+                                    key={`${key}-${idx}`}
+                                    label={label}
+                                    value={key}
+                                />
+                            );
+                        })}
                     </Tabs>
 
                     {displayed.response ? (
-                        <Stack direction="column" gap={2}>
-                            <Typography color="secondary" variant="body2">
-                                {displayed.models?.length === 1
-                                    ? 'Model: '
-                                    : 'Models: '}
-                                {displayed.models?.map((model, idx: number) => {
-                                    let returnString = model;
-                                    if (idx + 1 !== displayed.models?.length)
-                                        returnString += ', ';
-                                    return returnString;
-                                })}
-                            </Typography>
+                        <Stack direction="column" gap={1}>
+                            <StyledContentHeader>
+                                <Typography color="secondary" variant="body2">
+                                    Model: {displayed.model.name}
+                                </Typography>
+
+                                <Checkbox
+                                    checked={displayed.selected}
+                                    onChange={handleChangeSelected}
+                                    label="Use Model"
+                                />
+                            </StyledContentHeader>
 
                             <div>{displayed.response}</div>
 
