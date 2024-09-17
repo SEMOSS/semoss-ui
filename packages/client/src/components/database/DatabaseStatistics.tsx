@@ -24,7 +24,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
 
 const StyledCardImageContainer = styled('div')(({ theme }) => {
     // TODO: Fix typing
-    const palette = theme.palette as CustomPaletteOptions;
+    const palette = theme.palette as unknown as CustomPaletteOptions;
 
     return {
         display: 'flex',

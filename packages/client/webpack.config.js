@@ -22,8 +22,8 @@ const config = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            title: process.env.THEME_TITLE,
-            favicon: process.env.THEME_FAVICON,
+            title: '',
+            favicon: '',
             scriptLoading: 'module',
             template: './src/template.html',
             filename: 'index.html',
