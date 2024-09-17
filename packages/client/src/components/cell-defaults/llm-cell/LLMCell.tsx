@@ -59,7 +59,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     useEffect(() => {
         fetchAllModels();
 
-        if (!variants) {
+        if (Object.keys(variants).length === 0) {
             // Create a 'default variant' for the user to configure
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,

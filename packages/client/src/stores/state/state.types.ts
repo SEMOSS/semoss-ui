@@ -70,7 +70,6 @@ export type VariableWithId =
  */
 export type Variant = {
     id: string;
-    to: string;
     sortWeight: number;
     model: VariantModel;
 };

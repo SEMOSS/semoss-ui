@@ -1,5 +1,5 @@
-import { BlockComponent, Variant, VariantModel } from '@/stores';
-import { useBlocks, useRootStore } from '@/hooks';
+import { BlockComponent, Variant } from '@/stores';
+import { useBlock, useBlocks, useRootStore } from '@/hooks';
 import { styled, ToggleTabsGroup, useNotification } from '@semoss/ui';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -8,7 +8,6 @@ import { ConfigureSubMenu } from './ConfigureSubMenu';
 import {
     TypeLlmComparisonForm,
     TypeLlmConfig,
-    TypeVariant,
     TypeVariants,
 } from '@/components/workspace';
 import { LLMComparisonContext } from '@/contexts';
@@ -16,6 +15,8 @@ import {
     LlmComparisonFormDefaultValues,
     modelEngineOutput,
 } from './LlmComparison.utility';
+import { observer } from 'mobx-react-lite';
+import { toJS } from 'mobx';
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     height: '36px',
@@ -38,13 +39,15 @@ const StyledMenu = styled('div')(({ theme }) => ({
 
 type Mode = 'configure' | 'settings';
 
-export const LLMComparisonMenu: BlockComponent = ({ id }) => {
+export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
+    const { data } = useBlock(id);
+    const { state } = useBlocks();
     const notification = useNotification();
     const { monolithStore } = useRootStore();
     const [mode, setMode] = useState<Mode>('configure');
     const [allModels, setAllModels] = useState<TypeLlmConfig[]>([]);
 
-    const { state } = useBlocks();
+    console.log('DATA', data);
 
     const { control, setValue, handleSubmit, getValues, watch } =
         useForm<TypeLlmComparisonForm>({
@@ -66,6 +69,22 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
     // fetch any relevant data and apply the app's variants to the form's state.
     const initialFetch = async () => {
         const allModels = await fetchAllModels();
+        setAllModels(allModels);
+
+        getVariantsFromQuery();
+    };
+
+    useEffect(() => {
+        if (data.queryId) {
+            getVariantsFromQuery();
+        } else {
+            setValue('variants', {});
+        }
+    }, [data.queryId]);
+
+    // Retrieve, model, and set Variants in state from selected query.
+    const getVariantsFromQuery = () => {
+        const query = state.getQuery(data.queryId);
 
         // Accepts a variant from the App's JSON and models it for the Comparison menu's form state.
         const modelVariantLlm = (variant: Variant): TypeLlmConfig => {
@@ -73,33 +92,31 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
                 (mod) => mod.value === variant.model.id,
             );
 
-            // TODO: need to handle error handling for if there is no longer a 'match' for a model stored in a user's variant.
             return {
-                ...modelMatch,
+                value: variant.model.id,
+                database_name: modelMatch?.database_name || '',
+                database_type: modelMatch?.database_type || '',
+                database_subtype: modelMatch?.database_subtype || '',
                 topP: variant.model.topP,
                 temperature: variant.model.temperature,
                 length: variant.model.length,
             };
         };
 
-        // Variants modelled for adding to the form's state
-        const modelledVariants: TypeVariants = {};
-
-        // TODO: get variants from cell
-        const cellVariants = {};
-        Object.keys(cellVariants).forEach((name: string, idx) => {
-            const variant = cellVariants[name];
-            const model = modelVariantLlm(variant);
-
-            const modelled: TypeVariant = {
-                model,
-                sortWeight: variant?.sortWeight ? variant?.sortWeight : idx,
-            };
-
-            modelledVariants[name] = modelled;
+        let variants: TypeVariants = {};
+        Object.values(query.cells).forEach((cell) => {
+            console.log('cell', toJS(cell));
+            const modelled = {};
+            Object.values(cell.parameters.variants).map((variant) => {
+                const model = modelVariantLlm(variant);
+                modelled[variant.id] = {
+                    model,
+                    sortWeight: 0, // TODO
+                };
+            });
+            variants = { ...variants, ...modelled };
         });
-
-        setValue('variants', modelledVariants);
+        setValue('variants', variants);
     };
 
     const fetchAllModels = async () => {
@@ -138,10 +155,10 @@ export const LLMComparisonMenu: BlockComponent = ({ id }) => {
                     />
                 </StyledToggleTabsGroup>
 
-                {mode === 'configure' && <ConfigureSubMenu />}
+                {mode === 'configure' && <ConfigureSubMenu blockId={id} />}
 
                 {mode === 'settings' && <SettingsSubMenu />}
             </StyledMenu>
         </LLMComparisonContext.Provider>
     );
-};
+});

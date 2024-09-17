@@ -1,10 +1,11 @@
-import { styled, Stack, Button, useNotification } from '@semoss/ui';
+import { styled, Stack, Button, useNotification, Typography } from '@semoss/ui';
 import { useEffect, useRef } from 'react';
 import { useBlocks, useLLMComparison } from '@/hooks';
 import { ModelVariant } from './ModelVariant';
 import { TypeLlmComparisonForm } from '@/components/workspace';
 import { ArrowBack } from '@mui/icons-material';
 import { VariantEditor } from './VariantEditor';
+import { QueryNameDropdownSettings } from '@/components/block-settings/custom/QueryNameDropdownSettings';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -25,10 +26,9 @@ const StyledActionBar = styled('div')(({ theme }) => ({
     padding: `0 ${theme.spacing(2)}`,
 }));
 
-export const ConfigureSubMenu = () => {
+export const ConfigureSubMenu = ({ blockId }) => {
     const viewRef = useRef('allVariants');
     const notification = useNotification();
-    const { state } = useBlocks();
     const { setValue, watch, handleSubmit, getValues } = useLLMComparison();
     const variants = watch('variants');
     const designerView = watch('designerView');
@@ -125,6 +125,24 @@ export const ConfigureSubMenu = () => {
     if (designerView === 'allVariants') {
         return (
             <StyledAllView direction="column" gap={2}>
+                <Typography variant="h6" fontWeight="bold">
+                    LLM Query
+                </Typography>
+                <QueryNameDropdownSettings
+                    id={blockId}
+                    label="Query"
+                    path="queryId"
+                />
+
+                <Typography variant="h6" fontWeight="bold">
+                    Variants
+                </Typography>
+                {Object.keys(variants).length === 0 && (
+                    <Typography variant="body2">
+                        Connect an LLM Query with variants to view them here.
+                    </Typography>
+                )}
+
                 {Object.keys(variants).map((name, idx: number) => (
                     <ModelVariant
                         variantName={name}
