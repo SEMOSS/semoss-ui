@@ -70,10 +70,9 @@ export interface LlmCardProps {
 
 export const LlmCard = (props: LlmCardProps) => {
     const { llm, variantName, isVariantHovered } = props;
-    const { setValue } = useLLMComparison();
+    const { setValue, getValues } = useLLMComparison();
 
     const {
-        alias,
         database_name,
         database_subtype,
         database_type,
@@ -84,8 +83,10 @@ export const LlmCard = (props: LlmCardProps) => {
     } = llm;
 
     const handleOpenLlmEditor = () => {
+        const variants = getValues('variants');
         setValue('editorVariantName', variantName);
-        setValue('designerView', 'modelEdit');
+        setValue('editorVariant', variants[variantName]);
+        setValue('designerView', 'variantEdit');
     };
 
     return (
@@ -104,14 +105,9 @@ export const LlmCard = (props: LlmCardProps) => {
                                     : ImageSkeleton
                             }
                         />
-                        <Stack direction="column">
-                            <Typography variant="caption">
-                                {alias || 'Undefined Variable'}
-                            </Typography>
-                            <StyledTypography variant="body1">
-                                {database_name || 'Model'}
-                            </StyledTypography>
-                        </Stack>
+                        <StyledTypography variant="body1">
+                            {database_name || 'Model'}
+                        </StyledTypography>
                     </Stack>
                     {isVariantHovered && (
                         <Tooltip title={`Swap ${value}`}>

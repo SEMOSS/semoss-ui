@@ -13,7 +13,6 @@ export interface VariantWithName extends TypeVariant {
 }
 
 export type TypeLlmConfig = {
-    alias?: string | null;
     value: string | null;
     database_name: string | null;
     database_type: string | null;

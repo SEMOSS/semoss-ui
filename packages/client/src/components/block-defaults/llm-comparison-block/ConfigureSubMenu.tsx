@@ -1,11 +1,11 @@
 import { styled, Stack, Button, useNotification, Typography } from '@semoss/ui';
-import { useEffect, useRef } from 'react';
 import { useBlocks, useLLMComparison } from '@/hooks';
-import { ModelVariant } from './ModelVariant';
+import { LLMVariant } from './LLMVariant';
 import { TypeLlmComparisonForm } from '@/components/workspace';
-import { ArrowBack } from '@mui/icons-material';
+import { Add, ArrowBack } from '@mui/icons-material';
 import { VariantEditor } from './VariantEditor';
 import { QueryNameDropdownSettings } from '@/components/block-settings/custom/QueryNameDropdownSettings';
+import { generateVariantName } from './LlmComparison.utility';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -22,56 +22,32 @@ const StyledEditor = styled(Stack)(({ theme }) => ({
 
 const StyledActionBar = styled('div')(({ theme }) => ({
     display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: theme.spacing(2),
     padding: `0 ${theme.spacing(2)}`,
 }));
 
 export const ConfigureSubMenu = ({ blockId }) => {
-    const viewRef = useRef('allVariants');
     const notification = useNotification();
     const { setValue, watch, handleSubmit, getValues } = useLLMComparison();
     const variants = watch('variants');
     const designerView = watch('designerView');
-
-    // When the designer view changes, set the relevant values for the editor
-    useEffect(() => {
-        if (designerView !== viewRef.current) {
-            viewRef.current = designerView;
-            const { editorVariantName, editorVariant, variants } = getValues();
-
-            if (designerView === 'variantEdit') {
-                if (editorVariantName) {
-                    // Handle case for editing saved variant
-                    setValue('editorVariant', variants[editorVariantName]);
-                } else {
-                    // Handle case for creating a new variant
-                    // TODO: create a name for the new variant and save to state
-                    setValue('editorVariant', { model: {} });
-                }
-            }
-        }
-    }, [designerView]);
 
     const onSubmit = (data: TypeLlmComparisonForm) => {
         const { editorVariantName, editorVariant } = data;
 
         // TODO: fire action to update Variant in APP JSON,
         //       and update state in Comparison Menu's form state
+        //       and clear any outputs in the cell
         addVariantToAppJson();
-
-        // TODO: figure out sort weight
-        const variantsCopy = { ...getValues('variants') };
-        variantsCopy[editorVariantName] = {
-            model: editorVariant.model,
-        };
-        setValue('variants', variantsCopy);
 
         clearEditor();
         setValue('designerView', 'allVariants');
     };
 
     const addVariantToAppJson = () => {
-        const { editorVariant, editorVariantName } = getValues();
+        const { editorVariantName } = getValues();
 
         // TODO: fix to update cell in App Json
         // const models = ModelsInEditor.map((mod: TypeLlmConfig) => ({
@@ -122,6 +98,12 @@ export const ConfigureSubMenu = ({ blockId }) => {
         }
     };
 
+    const handleAddNewVariant = () => {
+        const name = generateVariantName(Object.keys(variants));
+        setValue('editorVariantName', name);
+        setValue('designerView', 'variantEdit');
+    };
+
     if (designerView === 'allVariants') {
         return (
             <StyledAllView direction="column" gap={2}>
@@ -144,12 +126,25 @@ export const ConfigureSubMenu = ({ blockId }) => {
                 )}
 
                 {Object.keys(variants).map((name, idx: number) => (
-                    <ModelVariant
+                    <LLMVariant
                         variantName={name}
                         variant={variants[name]}
                         key={`variant-${idx}`}
                     />
                 ))}
+
+                {Object.keys(variants).length > 0 && (
+                    <StyledActionBar>
+                        <Button
+                            variant="text"
+                            color="secondary"
+                            startIcon={<Add />}
+                            onClick={handleAddNewVariant}
+                        >
+                            Add Variant
+                        </Button>
+                    </StyledActionBar>
+                )}
             </StyledAllView>
         );
     } else {

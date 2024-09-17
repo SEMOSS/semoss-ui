@@ -42,15 +42,9 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     maxWidth: theme.spacing(9),
 }));
 
-interface PropsLLMEditor {
-    /** Model currently populated/saved to the variant */
-    model: TypeLlmConfig;
-}
-
-export const LLMEditor = (props: PropsLLMEditor) => {
+export const LLMEditor = () => {
     const notification = useNotification();
     const { allModels, control, watch, setValue } = useLLMComparison();
-    const { model } = props;
     const namePrefix = 'editorVariant.model';
     const modelValue = watch(`${namePrefix}.value`);
 
@@ -79,11 +73,9 @@ export const LLMEditor = (props: PropsLLMEditor) => {
 
     return (
         <StyledLLMEditor>
-            <StyledHeader>
-                <Typography variant="subtitle1" fontWeight="medium">
-                    Swap Model for {model.alias}
-                </Typography>
-            </StyledHeader>
+            {/* <StyledHeader>
+
+            </StyledHeader> */}
 
             <StyledField gap={1} direction="column">
                 <Typography variant="body2" color="secondary">

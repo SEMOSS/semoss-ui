@@ -54,9 +54,6 @@ export const VariantDragAndDrop = () => {
                             <Typography variant="body2">
                                 {variant.name}
                             </Typography>
-                            <Typography variant="caption">
-                                {variant.model.alias}
-                            </Typography>
                         </div>
                         <IconButton>
                             <DragIndicatorOutlined />

@@ -16,7 +16,6 @@ import {
     modelEngineOutput,
 } from './LlmComparison.utility';
 import { observer } from 'mobx-react-lite';
-import { toJS } from 'mobx';
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     height: '36px',
@@ -46,8 +45,6 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
     const { monolithStore } = useRootStore();
     const [mode, setMode] = useState<Mode>('configure');
     const [allModels, setAllModels] = useState<TypeLlmConfig[]>([]);
-
-    console.log('DATA', data);
 
     const { control, setValue, handleSubmit, getValues, watch } =
         useForm<TypeLlmComparisonForm>({
@@ -140,7 +137,7 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
             }}
         >
             <StyledMenu>
-                <StyledToggleTabsGroup
+                {/* <StyledToggleTabsGroup
                     value={mode}
                     onChange={(e, val) => setMode(val as Mode)}
                 >
@@ -156,7 +153,9 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
                 {mode === 'configure' && <ConfigureSubMenu blockId={id} />}
 
-                {mode === 'settings' && <SettingsSubMenu />}
+                {mode === 'settings' && <SettingsSubMenu />} */}
+
+                <ConfigureSubMenu blockId={id} />
             </StyledMenu>
         </LLMComparisonContext.Provider>
     );

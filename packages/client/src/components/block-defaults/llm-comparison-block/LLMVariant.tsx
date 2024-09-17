@@ -1,12 +1,5 @@
-import {
-    styled,
-    Typography,
-    Button,
-    Stack,
-    Collapse,
-    IconButton,
-} from '@semoss/ui';
-import { Add, Close, ContentCopy } from '@mui/icons-material';
+import { styled, Typography, Stack, IconButton } from '@semoss/ui';
+import { Close } from '@mui/icons-material';
 import { TypeVariant, TypeVariants } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
@@ -36,24 +29,18 @@ const StyledVariantBox = styled('div', {
     }),
 }));
 
-const StyledActionBar = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-}));
-
 interface ModelVariantProps {
     /** name of variant used as its ID in the 'variants' object in state */
     variantName: string;
 
-    /** variant info, the models associated to variant */
+    /** variant and LLM data */
     variant: TypeVariant;
 
     /** sets the orientation for how the models are displayed */
     orientation?: 'column' | 'row';
 }
 
-export const ModelVariant = (props: ModelVariantProps) => {
+export const LLMVariant = (props: ModelVariantProps) => {
     const { variantName, variant, orientation = 'column' } = props;
     const isDefault = variantName.toLowerCase() === 'default';
     const [hovered, setHovered] = useState(false);
@@ -71,18 +58,6 @@ export const ModelVariant = (props: ModelVariantProps) => {
 
     const deleteVariantFromAppJson = (variant: TypeVariant) => {
         // TODO: need to add action in store for deleting a variant in a cell.
-        // TODO: also ensure the variant is deleted in other Blocks
-    };
-
-    const updateVariantInBlock = () => {
-        // TODO: update variant in cell in app state
-    };
-
-    const handleOpenVariantEditor = (duplicate: boolean) => {
-        if (duplicate) {
-            // TODO: figure this out again now that things have changed
-        }
-        setValue('designerView', 'variantEdit');
     };
 
     return (
@@ -117,27 +92,6 @@ export const ModelVariant = (props: ModelVariantProps) => {
                     isVariantHovered={hovered}
                 />
             </StyledVariantBox>
-
-            <Collapse in={hovered}>
-                <StyledActionBar>
-                    <Button
-                        variant="text"
-                        color="secondary"
-                        onClick={() => handleOpenVariantEditor(false)}
-                        startIcon={<Add />}
-                    >
-                        Add Variant
-                    </Button>
-                    <Button
-                        variant="text"
-                        color="secondary"
-                        onClick={() => handleOpenVariantEditor(true)}
-                        startIcon={<ContentCopy />}
-                    >
-                        Duplicate
-                    </Button>
-                </StyledActionBar>
-            </Collapse>
         </Stack>
     );
 };

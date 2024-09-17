@@ -45,7 +45,6 @@ export const generateVariantName = (currNames: string[]): string | null => {
  */
 
 export const emptyModel: TypeLlmConfig = {
-    alias: null,
     value: null,
     database_name: null,
     database_type: null,
