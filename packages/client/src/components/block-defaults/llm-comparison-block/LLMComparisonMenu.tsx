@@ -105,7 +105,6 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
         let variants: TypeVariants = {};
         Object.values(query.cells).forEach((cell) => {
-            console.log('cell', toJS(cell));
             const modelled = {};
             Object.values(cell.parameters.variants).map((variant) => {
                 const model = modelVariantLlm(variant);

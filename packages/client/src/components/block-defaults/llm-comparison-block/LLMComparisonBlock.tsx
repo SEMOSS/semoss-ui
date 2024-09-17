@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useBlock } from '@/hooks';
+import { useBlock, useBlocks } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { IconButton, Stack, Tabs, Typography, styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
@@ -38,10 +38,12 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
+    const { state } = useBlocks();
     const tabsLengthRef = useRef(0);
     const [selectedTab, setSelectedTab] = useState<string | null>(null);
-    const variantTabs: string[] = Object.keys(data?.variants || {});
-    const displayed = (data?.variants || {})[selectedTab] || {};
+    const [variants, setVariants] = useState({});
+    const variantTabs: string[] = Object.keys(variants || {});
+    const displayed = (variants || {})[selectedTab] || {};
 
     const [highlightedRating, setHighlightedRating] = useState(0);
 
@@ -52,6 +54,34 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             tabsLengthRef.current = variantTabs.length;
         }
     }, [variantTabs]);
+
+    // Fetch and save variants stored in query to state.
+    useEffect(() => {
+        if (!data.queryId) {
+            setVariants({});
+            return;
+        }
+
+        const query = state.getQuery(data.queryId);
+
+        let modelledVars = {};
+        Object.values(query.cells).forEach((cell) => {
+            const cellVars = {};
+            Object.values(cell.parameters.variants).forEach((variant, idx) => {
+                cellVars[variant.id] = {
+                    ...variant,
+                    response: (cell.output || [])[idx]?.response,
+                };
+            });
+
+            modelledVars = {
+                ...modelledVars,
+                ...cellVars,
+            };
+        });
+
+        setVariants(modelledVars);
+    }, [data.queryId]);
 
     const handleRateResponse = (num: number) => {
         // TODO: set rating for a variant's response using the rating from the 'num' param.
@@ -64,7 +94,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             {variantTabs.length === 0 ? (
                 <StyledTabBox>
                     <Typography variant="body2">
-                        Select variants to compare against.
+                        Add a query with variants to generate responses.
                     </Typography>
                 </StyledTabBox>
             ) : (
@@ -184,9 +214,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                             </StyledRatingRow>
                         </Stack>
                     ) : (
-                        <div>
-                            Connect a query to view the variant&apos;s response
-                        </div>
+                        <div />
                     )}
                 </StyledTabBox>
             )}
