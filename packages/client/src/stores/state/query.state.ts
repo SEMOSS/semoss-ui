@@ -4,6 +4,7 @@ import { setValueByPath } from '@/utility';
 
 import { CellState, CellStateConfig } from './cell.state';
 import { StateStore } from './state.store';
+import { Node } from '@xyflow/react';
 
 export interface QueryStateStoreInterface {
     /** Id of the query */
@@ -20,7 +21,28 @@ export interface QueryStateStoreInterface {
 
     /** Ordered list of the cells in the query */
     list: string[];
+
+    /** Ordered list of items that represent nodes in our structure -> cells and their params*/
+    nodes?: NodeTypes[];
+
+    /** Connections between nodes  */
+    edges?: Record<string, unknown>[];
 }
+
+type NodeTypes =
+    | Node
+    | {
+          id: string;
+          type: 'CELL';
+          position: { x: number; y: number };
+          data: { to: string };
+      }
+    | {
+          id: string;
+          type: 'DEPENDENCY_NODE';
+          position: { x: number; y: number };
+          data: { to: string };
+      };
 
 export interface QueryStateConfig {
     /** Id of the query */
@@ -28,6 +50,9 @@ export interface QueryStateConfig {
 
     /** Cells in the query */
     cells: CellStateConfig[];
+
+    nodes?: NodeTypes[];
+    edges?: Record<string, unknown>[];
 }
 
 /**
@@ -41,6 +66,156 @@ export class QueryState {
         error: null,
         cells: {},
         list: [],
+        nodes: [
+            {
+                id: '44024', // Does it need to be actually uniq could be overlap with other node ids that arent cells
+                type: 'CELL_NODE',
+                position: { x: 0, y: 300 },
+                data: {
+                    queryId: 'default',
+                    to: '44024',
+                },
+            },
+            {
+                id: 'model',
+                type: 'DEPENDENCY_NODE',
+                position: { x: 0, y: 0 },
+                data: {
+                    to: 'model',
+                },
+            },
+            {
+                id: '28124', // Does it need to be actually uniq could be overlap with other node ids that arent cells
+                type: 'CELL_NODE',
+                position: { x: 800, y: 300 },
+                data: {
+                    queryId: 'default',
+                    to: '28124',
+                },
+            },
+            {
+                id: 'input--7944',
+                type: 'BLOCK_NODE',
+                position: { x: 800, y: 0 },
+                data: {
+                    to: 'input--7944',
+                },
+            },
+            {
+                id: '85801', // Does it need to be actually uniq could be overlap with other node ids that arent cells
+                type: 'CELL_NODE',
+                position: { x: 1600, y: 300 },
+                data: {
+                    queryId: 'default',
+                    to: '85801',
+                },
+            },
+            {
+                id: 'input--9802',
+                type: 'BLOCK_NODE',
+                position: { x: 1600, y: 0 },
+                data: {
+                    to: 'input--9802',
+                },
+            },
+            {
+                id: '47294', // Does it need to be actually uniq could be overlap with other node ids that arent cells
+                type: 'CELL_NODE',
+                position: { x: 2400, y: 300 },
+                data: {
+                    queryId: 'default',
+                    to: '47294',
+                },
+            },
+            {
+                id: 'input--3443',
+                type: 'BLOCK_NODE',
+                position: { x: 2400, y: 0 },
+                data: {
+                    to: 'input--3443',
+                },
+            },
+        ],
+
+        edges: [
+            {
+                id: 'target-44024',
+                source: 'model',
+                target: '44024',
+                sourceHandle: 'model',
+                targetHandle: 'model--44024',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+            {
+                id: '44024-28124',
+                source: '44024',
+                target: '28124',
+                sourceHandle: '44024',
+                targetHandle: '44024--28124',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+            {
+                id: 'target-input--7944',
+                source: 'input--7944',
+                target: '28124',
+                sourceHandle: 'input--7944',
+                targetHandle: 'input--7944--28124',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+            {
+                id: '28124-85801',
+                source: '28124',
+                target: '85801',
+                sourceHandle: '28124',
+                targetHandle: '28124--85801',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+            {
+                id: 'target-input--9802',
+                source: 'input--9802',
+                target: '85801',
+                sourceHandle: 'input--9802',
+                targetHandle: 'input--9802--85801',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+            {
+                id: '85801-47294',
+                source: '85801',
+                target: '47294',
+                sourceHandle: '85801',
+                targetHandle: '85801--47294',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+            {
+                id: 'target-input--47294',
+                source: 'input--3443',
+                target: '47294',
+                sourceHandle: 'input--3443',
+                targetHandle: 'input--3443--47294',
+                data: {
+                    label: 'context',
+                },
+                type: 'start-end',
+            },
+        ],
     };
 
     constructor(config: QueryStateConfig, state: StateStore) {
@@ -196,6 +371,20 @@ export class QueryState {
      */
     get cells() {
         return this._store.cells;
+    }
+
+    /**
+     * Get list of the cells of the query
+     */
+    get nodes() {
+        return this._store.nodes;
+    }
+
+    /**
+     * Get the cells of the query
+     */
+    get edges() {
+        return this._store.edges;
     }
 
     /**

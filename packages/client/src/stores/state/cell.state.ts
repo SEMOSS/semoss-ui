@@ -31,6 +31,9 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 
     /** Parameters associated with the cell */
     parameters: D['parameters'];
+
+    /** What is this cell tied to through parameters */
+    relations?: { type: string; id: string }[];
 }
 
 export interface CellStateConfig<D extends CellDef = CellDef> {
@@ -42,6 +45,9 @@ export interface CellStateConfig<D extends CellDef = CellDef> {
 
     /** Parameters associated with the cell */
     parameters: D['parameters'];
+
+    /** What is this cell tied to through parameters */
+    relations?: { type: string; id: string }[];
 }
 
 /**
@@ -59,6 +65,16 @@ export class CellState<D extends CellDef = CellDef> {
         messages: [],
         widget: '',
         parameters: {},
+        relations: [
+            {
+                type: 'BLOCK',
+                id: 'input--9122',
+            },
+            {
+                type: 'BLOCK',
+                id: 'input--1422',
+            },
+        ],
     };
 
     constructor(config: CellStateConfig, query: QueryState, state: StateStore) {

@@ -27,6 +27,7 @@ export const BlocksWorkspaceTabs = observer(() => {
         >
             <StyledTabItem label="Data" value={'data'} />
             <StyledTabItem label="Design" value={'design'} />
+            <StyledTabItem label="Pipeline" value={'pipeline'} />
             <StyledTabItem label="Settings" value={'settings'} />
         </Tabs>
     );
