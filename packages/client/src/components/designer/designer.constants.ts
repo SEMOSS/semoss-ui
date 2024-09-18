@@ -82,7 +82,6 @@ const SECTION_GENERAL_VISUALIZATION = 'General';
 const SECTION_LINE_CHART = 'Line Chart';
 const SECTION_PIE_CHART = 'Pie Chart';
 const SECTION_SCATTER_PLOTS = 'Scatter Plot';
-const SECTION_NAVIGATION = 'Navigation';
 
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
@@ -99,8 +98,7 @@ export interface AddBlocksMenuItem {
         | 'General'
         | 'Line Chart'
         | 'Pie Chart'
-        | 'Scatter Plot'
-        | 'Navigation';
+        | 'Scatter Plot';
 
     /** Name of the item to show in the tooltip */
     name: string;
@@ -116,26 +114,6 @@ export interface AddBlocksMenuItem {
  * Show the default blocks menu
  */
 export const DEFAULT_MENU: AddBlocksMenuItem[] = [
-    {
-        section: SECTION_NAVIGATION,
-        image: BLOCK_LINK,
-        name: 'Route',
-        json: {
-            widget: 'route',
-            data: {
-                style: {},
-                label: 'Link',
-                loading: false,
-                disabled: false,
-                variant: 'contained',
-                color: 'primary',
-            },
-            listeners: {
-                onClick: [],
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
     {
         section: SECTION_INPUT,
         image: BLOCK_BUTTON,
