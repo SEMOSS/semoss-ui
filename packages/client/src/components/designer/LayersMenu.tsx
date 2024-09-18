@@ -156,7 +156,6 @@ export const LayersMenu = observer((props: LayersMenuProps) => {
     const allBlockKeys = Object.keys(state.blocks);
     const allPages = [];
     allBlockKeys.forEach((key) => {
-        console.log(state.blocks[key].widget);
         if (state.blocks[key].widget == 'page') {
             allPages.push(state.blocks[key]);
         }

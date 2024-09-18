@@ -43,13 +43,16 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const [activePage, setActivePage] = useState(ACTIVE);
 
+    /** To find the page block to render as per the route */
     const findBlockFromRoute = (blocks) => {
         const routeQuery = route ? route : '';
         const allKeys = Object.keys(blocks);
         allKeys.forEach((key) => {
-            if (blocks[key].widget == 'page') {
-                if (blocks[key].data.route == routeQuery)
-                    setActivePage(blocks[key].id);
+            if (
+                blocks[key].widget == 'page' &&
+                blocks[key].data.route == routeQuery
+            ) {
+                setActivePage(blocks[key].id);
             }
         });
     };
