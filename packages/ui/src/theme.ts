@@ -4,6 +4,7 @@ import {
     PaletteOptions,
     useTheme,
     keyframes,
+    SimplePaletteColorOptions,
 } from "@mui/material";
 
 // export specifics from the library
@@ -37,7 +38,27 @@ export interface CustomPaletteColor {
     shadow?: string;
 }
 
+export interface CustomSimplePaletteColorOptions
+    extends SimplePaletteColorOptions,
+        CustomPaletteColor {
+    secondary?: string;
+    primary?: string;
+    hover?: string;
+    selected?: string;
+    border?: string;
+    disabled?: string;
+    divider?: string;
+    white?: string;
+    backdropOverlay?: string;
+}
+
 export interface CustomPaletteOptions extends PaletteOptions {
+    primary: CustomSimplePaletteColorOptions;
+    secondary: CustomSimplePaletteColorOptions;
+    error: CustomSimplePaletteColorOptions;
+    warning: CustomSimplePaletteColorOptions;
+    success: CustomSimplePaletteColorOptions;
+    text?: CustomSimplePaletteColorOptions;
     primaryContrast?: CustomPaletteColor;
     green?: CustomPaletteColor;
     darkBlue?: CustomPaletteColor;
@@ -85,41 +106,6 @@ export interface CustomPaletteTheme {
     };
 }
 
-export const customLightPaletteTokens: CustomPaletteTheme = {
-    palette: {
-        primary: {
-            hover: "#F5F9FE",
-            selected: "#EBF4FE",
-            border: "#9FCFFF",
-        },
-        secondary: {
-            hover: "#F5F5F5",
-            selected: "#EBEBEB",
-            disabled: "#BDBDBD",
-            border: "#C4C4C4",
-            divider: "#E6E6E6",
-        },
-        text: {
-            white: "#FFFFFF",
-        },
-        error: {
-            text: "#57100B",
-        },
-        warning: {
-            text: "#5F2B01",
-        },
-        success: {
-            text: "#123214",
-            // Only use selected for custom stepper in agent/prompt builder
-            selected: "#E6EFE6",
-        },
-        background: {
-            // Backdrop Overlay must be a shade/percentage
-            backdropOverlay: "#000000",
-        },
-    },
-};
-
 export const lightTheme: CustomThemeOptions = {
     palette: {
         mode: "light",
@@ -132,6 +118,9 @@ export const lightTheme: CustomThemeOptions = {
             // main: "#26890D",
             // light: "#86BC25",
             // dark: "#046A38",
+            hover: "#F5F9FE",
+            selected: "#EBF4FE",
+            border: "#9FCFFF",
         },
         secondary: {
             main: "#D9D9D9",
@@ -140,6 +129,7 @@ export const lightTheme: CustomThemeOptions = {
         },
         text: {
             primary: "#000000",
+            main: "#000000",
             secondary: "#666666",
             disabled: "#9E9E9E",
         },
@@ -429,7 +419,8 @@ export const lightTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => {
                     const shape = theme.shape as CustomShapeOptions;
-                    const palette = theme.palette as CustomPaletteOptions;
+                    const palette =
+                        theme.palette as unknown as CustomPaletteOptions;
                     return {
                         display: "flex",
                         flexDirection: "column",
@@ -493,7 +484,6 @@ export const lightTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => {
                     const shape = theme.shape as CustomShapeOptions;
-                    const palette = theme.palette as CustomPaletteOptions;
                     return {
                         boxShadow:
                             "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
@@ -799,7 +789,8 @@ export const darkTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => {
                     const shape = theme.shape as CustomShapeOptions;
-                    const palette = theme.palette as CustomPaletteOptions;
+                    const palette =
+                        theme.palette as unknown as CustomPaletteOptions;
                     return {
                         display: "flex",
                         flexDirection: "column",
@@ -863,7 +854,8 @@ export const darkTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => {
                     const shape = theme.shape as CustomShapeOptions;
-                    const palette = theme.palette as CustomPaletteOptions;
+                    const palette =
+                        theme.palette as unknown as CustomPaletteOptions;
                     return {
                         boxShadow:
                             "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
