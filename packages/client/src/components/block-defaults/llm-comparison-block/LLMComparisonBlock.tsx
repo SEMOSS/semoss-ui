@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useBlock, useBlocks } from '@/hooks';
-import { BlockComponent, BlockDef } from '@/stores';
+import { BlockComponent, BlockDef, CellState } from '@/stores';
 import {
     IconButton,
     Stack,
@@ -75,10 +75,16 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
 
     // Fetch and save variants stored in query to state.
     const getVariantsFromQuery = () => {
-        const query = state.getQuery(data.queryId);
+        let query;
+        if (typeof data.queryId === 'string') {
+            query = state.getQuery(data.queryId);
+        } else {
+            console.log("Type of 'data.queryId' is NOT a string");
+            return;
+        }
 
         let modelledVars = {};
-        Object.values(query.cells).forEach((cell, idx) => {
+        Object.values(query.cells).forEach((cell: CellState, idx) => {
             const cellVars = {};
             Object.values(cell.parameters.variants).forEach((variant, idx) => {
                 cellVars[variant.id] = {

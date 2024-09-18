@@ -229,12 +229,13 @@ export class CellState<D extends CellDef = CellDef> {
      */
     toPixel(
         parameters: Record<string, unknown> = this._store.parameters,
-    ): string {
+    ): string | string[] {
         const cellConfig = this.config;
 
         // use the toPixel from the cell
         if (cellConfig) {
-            return cellConfig.toPixel(parameters);
+            const pixelReturn = cellConfig.toPixel(parameters);
+            return pixelReturn;
         }
 
         return Object.keys(parameters)

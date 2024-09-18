@@ -1,4 +1,4 @@
-import { BlockComponent, Variant } from '@/stores';
+import { BlockComponent, CellState, Variant } from '@/stores';
 import { useBlock, useBlocks, useRootStore } from '@/hooks';
 import { styled, ToggleTabsGroup, useNotification } from '@semoss/ui';
 import { useState, useEffect } from 'react';
@@ -81,7 +81,13 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
     // Retrieve, model, and set Variants in state from selected query.
     const getVariantsFromQuery = () => {
-        const query = state.getQuery(data.queryId);
+        let query;
+        if (typeof data.queryId === 'string') {
+            query = state.getQuery(data.queryId);
+        } else {
+            console.log("Type of 'data.queryId' is NOT a string");
+            return;
+        }
 
         // Accepts a variant from the App's JSON and models it for the Comparison menu's form state.
         const modelVariantLlm = (variant: Variant): TypeLlmConfig => {
@@ -101,13 +107,14 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
         };
 
         let variants: TypeVariants = {};
-        Object.values(query.cells).forEach((cell) => {
+        Object.values(query.cells).forEach((cell: CellState) => {
             const modelled = {};
             Object.values(cell.parameters.variants).map((variant) => {
                 const model = modelVariantLlm(variant);
                 modelled[variant.id] = {
                     model,
                     sortWeight: 0, // TODO
+                    trafficAllocation: 0,
                 };
             });
             variants = { ...variants, ...modelled };
