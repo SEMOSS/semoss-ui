@@ -19,7 +19,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
         isMulti: boolean;
         style: CSSProperties;
         label: string;
-        value: any;
+        value: string | string[];
         required: boolean;
         disabled: boolean;
         options: string[];
@@ -130,9 +130,15 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                 }
             }}
             onChange={(_, value) => {
-                const parsedVal = value;
-
-                setData('value', value);
+                let parsedVal: string | string[];
+                if (Array.isArray(value)) {
+                    parsedVal = value.flatMap((item) =>
+                        typeof item === 'string' ? item : item,
+                    );
+                } else {
+                    parsedVal = value;
+                }
+                setData('value', parsedVal);
             }}
             sx={{
                 ...data.style,
