@@ -746,7 +746,11 @@ export const NotebookCell = observer(
                                     </StyledPlayWrapper>
                                 )}
                             </StyledRunIconButton>
+                            {/* { cell.widget == 'data-import' ?
+                                <div>data import bubbles</div>
+                                : */}
                             <StyledCardInput>{rendered}</StyledCardInput>
+                            {/* } */}
                         </StyledCardContent>
                         {cell.isExecuted && (
                             <>
