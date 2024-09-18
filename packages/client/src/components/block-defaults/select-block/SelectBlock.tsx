@@ -132,7 +132,6 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             onChange={(_, value) => {
                 const parsedVal = value;
 
-                // debugger;
                 setData('value', value);
             }}
             sx={{
