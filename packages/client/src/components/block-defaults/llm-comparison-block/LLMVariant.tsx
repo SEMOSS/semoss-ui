@@ -1,10 +1,11 @@
 import { styled, Typography, Stack, IconButton } from '@semoss/ui';
 import { Close } from '@mui/icons-material';
-import { TypeVariant, TypeVariants } from '../../workspace/workspace.types';
+import { TypeVariant } from '../../workspace/workspace.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useBlock, useBlocks, useLLMComparison } from '@/hooks';
 import { LLMComparisonBlockDef } from './LLMComparisonBlock';
+import { ActionMessages, CellState } from '@/stores';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -45,19 +46,49 @@ export const LLMVariant = (props: ModelVariantProps) => {
     const isDefault = variantName.toLowerCase() === 'default';
     const [hovered, setHovered] = useState(false);
     const { setValue, getValues, blockId } = useLLMComparison();
-    const { setData } = useBlock<LLMComparisonBlockDef>(blockId);
+    const { data } = useBlock<LLMComparisonBlockDef>(blockId);
     const { state } = useBlocks();
 
+    // Delete the Variant in the app json and update the Comparison Block menu's state.
     const handleDeleteVariant = () => {
-        const variantsCopy: TypeVariants = { ...getValues('variants') };
-        const deleted = variantsCopy[variantName];
-        delete variantsCopy[variantName];
-        deleteVariantFromAppJson(deleted);
-        setValue('variants', variantsCopy);
-    };
+        let query;
+        if (typeof data.queryId === 'string') {
+            query = state.getQuery(data.queryId);
+        } else {
+            console.log("Type of 'data.queryId' is NOT a string");
+            return;
+        }
 
-    const deleteVariantFromAppJson = (variant: TypeVariant) => {
-        // TODO: need to add action in store for deleting a variant in a cell.
+        // Find the Cell in the query that contains the variant matching variantName
+        let cellMatch;
+        const cells: CellState[] = Object.values(query.cells);
+        for (let i = 0; i < cells.length; i++) {
+            const cellVariants = cells[i]?.parameters.variants || {};
+            const found = Object.keys(cellVariants).find(
+                (key) => key === variantName,
+            );
+            if (found) {
+                cellMatch = cells[i];
+                break;
+            }
+        }
+
+        // Remove variant from the Cell and save to cell's state
+        delete cellMatch.parameters.variants[variantName];
+        state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+                queryId: cellMatch.query.id,
+                cellId: cellMatch.id,
+                path: `parameters.variants`,
+                value: cellMatch.parameters.variants,
+            },
+        });
+
+        // Remove variant from LLMComparisonMenu's State
+        const variantsCopy = { ...getValues('variants') };
+        delete variantsCopy[variantName];
+        setValue('variants', variantsCopy);
     };
 
     return (
@@ -74,7 +105,7 @@ export const LLMVariant = (props: ModelVariantProps) => {
                     <Typography variant="body1" fontWeight="medium">
                         {isDefault
                             ? 'Default Variant'
-                            : `Variant ${variantName}`}
+                            : `Variant ${variantName.toUpperCase()}`}
                     </Typography>
                 </Stack>
 
