@@ -11,6 +11,7 @@ import { ViewList } from '@mui/icons-material';
 import { buildListener } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 
 // export the config for the block
 export const config: BlockConfig<SelectBlockDef> = {
@@ -30,6 +31,7 @@ export const config: BlockConfig<SelectBlockDef> = {
         optionLabel: '',
         optionSublabel: '',
         optionValue: '',
+        isMulti: false,
     },
     listeners: {
         onChange: [],
@@ -47,6 +49,16 @@ export const config: BlockConfig<SelectBlockDef> = {
                     description: 'Value',
                     render: ({ id }) => (
                         <SelectInputValueSettings id={id} path="value" />
+                    ),
+                },
+                {
+                    description: 'Multi Select',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Enable Multi Select"
+                            path="isMulti"
+                        />
                     ),
                 },
                 {

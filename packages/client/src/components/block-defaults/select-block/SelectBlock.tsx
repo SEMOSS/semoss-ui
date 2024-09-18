@@ -16,9 +16,10 @@ import { optimize } from 'webpack';
 export interface SelectBlockDef extends BlockDef<'select'> {
     widget: 'select';
     data: {
+        isMulti: boolean;
         style: CSSProperties;
         label: string;
-        value: string;
+        value: any;
         required: boolean;
         disabled: boolean;
         options: string[];
@@ -41,6 +42,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         let arr = [];
         if (!data.options) {
             // NOOP
+            return [];
         } else if (!Array.isArray(data?.options)) {
             if (typeof data.options === 'string') {
                 const opts: string = data.options;
@@ -68,12 +70,21 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         200,
     );
 
+    // Ensure that value is always an array when isMulti is true
+    const value = useMemo(() => {
+        if (data.isMulti) {
+            return Array.isArray(data.value) ? data.value : [];
+        }
+        return data.value || null;
+    }, [data.isMulti, data.value]);
+
     return (
         <Autocomplete
             fullWidth
+            multiple={data.isMulti}
             disableClearable
             options={stringifiedOptions}
-            value={data.value || null}
+            value={value}
             disabled={data?.disabled || data?.loading}
             renderOption={(props, option: string) => {
                 try {
@@ -121,7 +132,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             onChange={(_, value) => {
                 const parsedVal = value;
 
-                debugger;
+                // debugger;
                 setData('value', value);
             }}
             sx={{
