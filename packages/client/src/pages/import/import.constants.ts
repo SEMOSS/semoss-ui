@@ -5158,7 +5158,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
-                        defaultValue: '["extractedText","NameOfTheAudio"]',
+                        defaultValue: '["extractedText","audioFilePath"]',
                         options: {
                             component: 'text-field',
                         },
