@@ -15,6 +15,7 @@ import { EngineRouter } from './engine';
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
+import { PromptRouter } from './prompt';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -33,8 +34,10 @@ export const Router = observer(() => {
                     <Route path="import" element={<ImportRouter />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
+                    <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
                 <Route path="s/:appId" element={<SharePage />} />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>
