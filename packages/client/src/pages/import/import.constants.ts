@@ -4643,7 +4643,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: false,                           
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
@@ -4655,7 +4655,7 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                    },    
+                    },
                     {
                         fieldName: 'INIT_MODEL_ENGINE',
                         label: 'Init Script',
@@ -4665,7 +4665,7 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                    },                    
+                    },
                     {
                         fieldName: 'AWS_REGION',
                         label: 'Aws Region',
@@ -4697,7 +4697,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                 ],
-            }, 
+            },
             {
                 name: 'Stablity AI',
                 disable: true,
@@ -5170,7 +5170,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_TYPE',
                         label: 'Function Type',
-                        defaultValue: 'AWS_TEXTRACT',                        
+                        defaultValue: 'AWS_TEXTRACT',
                         options: {
                             component: 'select',
                             options: [
@@ -5187,7 +5187,7 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         hidden: false,
                         rules: { required: true },
-                    }, 
+                    },
                     {
                         fieldName: 'NAME',
                         label: 'Name',
@@ -5207,7 +5207,7 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                    },                  
+                    },
                     {
                         fieldName: 'SECRET_KEY',
                         label: 'Secret Key',
@@ -5257,17 +5257,18 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                    }, 
+                    },
                     {
                         fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
-                        defaultValue: '["filepathInS3"] / ["uploadedfilepath","S3BucketEngineId"]',
+                        defaultValue:
+                            '["filepathInS3"] / ["pathInS3","uploadedfilepath","S3BucketEngineId"]',
                         options: {
                             component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: true },
-                    },                    
+                    },
                 ],
             },
         ],
