@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -19,6 +19,7 @@ import {
     Box,
     ButtonGroup,
     Modal,
+    CustomThemeOptions,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -468,6 +469,16 @@ export const LoginPage = observer(() => {
             });
     };
 
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
+
+        if (theme && theme['THEME_MAP']) {
+            return JSON.parse(theme['THEME_MAP'] as string);
+        }
+
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
+
     // get the path the user is coming from
     const path = (location.state as { from: Location })?.from?.pathname || '/';
 
@@ -508,9 +519,15 @@ export const LoginPage = observer(() => {
                         <StyledContent>
                             <div>
                                 <StyledLogoBox>
-                                    <StyledLogo src={THEME.logo} />
+                                    {themeMap.isLogoUrl ? (
+                                        <StyledLogo src={themeMap.logo} />
+                                    ) : THEME.logo ? (
+                                        <StyledLogo src={THEME.logo} />
+                                    ) : null}
                                     <StyledLogoText>
-                                        {THEME.name}
+                                        {themeMap.name
+                                            ? themeMap.name
+                                            : THEME.name}
                                     </StyledLogoText>
                                 </StyledLogoBox>
                                 <Typography variant="h4">Welcome!</Typography>
