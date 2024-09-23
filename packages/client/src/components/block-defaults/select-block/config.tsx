@@ -46,12 +46,6 @@ export const config: BlockConfig<SelectBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'Value',
-                    render: ({ id }) => (
-                        <SelectInputValueSettings id={id} path="value" />
-                    ),
-                },
-                {
                     description: 'Multi Select',
                     render: ({ id }) => (
                         <SwitchSettings
@@ -59,6 +53,12 @@ export const config: BlockConfig<SelectBlockDef> = {
                             label="Enable Multi Select"
                             path="isMulti"
                         />
+                    ),
+                },
+                {
+                    description: 'Value',
+                    render: ({ id }) => (
+                        <SelectInputValueSettings id={id} path="value" />
                     ),
                 },
                 {
