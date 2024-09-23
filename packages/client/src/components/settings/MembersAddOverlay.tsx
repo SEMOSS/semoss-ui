@@ -142,7 +142,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                   adminMode,
                   id,
                   AUTOCOMPLETE_LIMIT, // limit
-                  AUTOCOMPLETE_OFFSET, // offset
+                  offset, // offset
                   debouncedSearch ? debouncedSearch : undefined,
               ]
             : type === 'APP'
@@ -285,7 +285,15 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                     limitTags={2}
                     ListboxProps={{
                         onScroll: ({ target }) =>
-                            setIsScrollBottom(nearBottom(target)),
+                            setIsScrollBottom(
+                                nearBottom(
+                                    target as {
+                                        scrollHeight?: number;
+                                        scrollTop?: number;
+                                        clientHeight?: number;
+                                    },
+                                ),
+                            ),
                     }}
                     getLimitTagsText={() => ` +${selectedMembers.length - 2}`}
                     value={selectedMembers}
