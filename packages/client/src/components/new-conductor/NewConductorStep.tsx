@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BlocksRenderer } from '../blocks-workspace';
 import { SerializedState } from '@/stores';
-import { Stack, Typography, Accordion, IconButton } from '@semoss/ui';
+import { Stack, Typography, Accordion, IconButton, Switch } from '@semoss/ui';
 import { useConductor } from '@/hooks';
 import {
     Visibility,
@@ -10,6 +10,7 @@ import {
     KeyboardArrowDown,
     Create,
     DataObject,
+    DisplaySettings,
 } from '@mui/icons-material';
 
 interface NewConductorStepProps {
@@ -45,7 +46,7 @@ export const NewConductorStep = observer(
         openAccordionIndexesSet,
         setOpenAccordionIndexesSet,
     }: NewConductorStepProps) => {
-        console.log('step', step);
+        console.log({ taskIndex, step });
         const { conductor } = useConductor();
 
         console.log({
@@ -62,24 +63,26 @@ export const NewConductorStep = observer(
         /**
          * Set input pool values on mount
          */
-        // useEffect(() => {
-        //     Object.entries(step.variables).forEach((variable) => {
-        //         const name = variable[0];
-        //         const value = variable[1];
-
-        //         if (value.isInput || value.isOutput) {
-        //             let v = '';
-        //             if (value.type === 'block') {
-        //                 v = step.blocks[value.to].data.value;
-        //             } else {
-        //                 v = 'get the value from blocks';
-        //             }
-        //             conductor.setInputValue(name, v);
-        //         }
-        //     });
-        // }, [Object.keys(step).length, type]);
+        useEffect(() => {
+            // debugger;
+            Object.entries(step.variables).forEach((variable) => {
+                const name = variable[0];
+                const value = variable[1];
+                // debugger;
+                if (value.isInput || value.isOutput) {
+                    let v = '';
+                    if (value.type === 'block') {
+                        v = step.blocks[value.to].data.value;
+                    } else {
+                        v = 'get the value from blocks';
+                    }
+                    conductor.setInputValue(name, v);
+                }
+            });
+        }, [Object.keys(step).length, type]);
 
         const [isExpanded, setHistoryExpanded] = useState(false);
+        const [isRawInputsShown, setIsRawInputsShown] = useState(false);
 
         return (
             <Accordion
@@ -92,6 +95,7 @@ export const NewConductorStep = observer(
                     // border: '3px dotted red',
                     paddingTop: '0px',
                     borderRadius: '12px',
+                    marginBottom: '10px',
                 }}
             >
                 <Accordion.Trigger expandIcon={<KeyboardArrowDown />}>
@@ -102,6 +106,7 @@ export const NewConductorStep = observer(
                             display: 'flex',
                             alignContent: 'center',
                             justifyContent: 'space-between',
+                            paddingTop: '0px',
                         }}
                     >
                         {/* <b style={{
@@ -141,6 +146,7 @@ export const NewConductorStep = observer(
                             // border: '1px solid black',
                             padding: '16px',
                             borderRadius: '12px',
+                            paddingTop: '0px',
                         }}
                     >
                         {/* <Typography variant="h6">
@@ -153,6 +159,7 @@ export const NewConductorStep = observer(
                                 // border: '1px solid black',
                                 display: 'flex',
                                 justifyContent: 'space-between',
+                                paddingTop: '0px',
                             }}
                         >
                             <span
@@ -165,13 +172,22 @@ export const NewConductorStep = observer(
                             >
                                 <Typography
                                     variant="body1"
+                                    margin-bottom="12px"
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
+                                        marginBottom: '20px',
                                     }}
                                 >
-                                    Inputs{' '}
-                                    <Visibility height="25px" width="25px" />
+                                    App Inputs
+                                    <Visibility
+                                        height="25px"
+                                        width="25px"
+                                        sx={{
+                                            marginLeft: '7.5px',
+                                            display: 'inline-block',
+                                        }}
+                                    />
                                 </Typography>
                                 {/* <h2>
                                 </h2> */}
@@ -179,6 +195,7 @@ export const NewConductorStep = observer(
                                     style={{
                                         border: '1px solid lightgray',
                                         borderRadius: '12px',
+                                        overflow: 'hidden',
                                     }}
                                 >
                                     <BlocksRenderer state={step} />
@@ -188,8 +205,10 @@ export const NewConductorStep = observer(
                                 style={{
                                     // right span for outputs? just gray box for now
                                     // border: '1px solid black',
-                                    display: 'inline-block',
+                                    // display: 'inline-block',
                                     width: '47.5%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
                                 }}
                             >
                                 <Typography
@@ -197,10 +216,18 @@ export const NewConductorStep = observer(
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
+                                        marginBottom: '20px',
                                     }}
                                 >
                                     Outputs{' '}
-                                    <Visibility height="25px" width="25px" />
+                                    <Visibility
+                                        height="25px"
+                                        width="25px"
+                                        sx={{
+                                            marginLeft: '7.5px',
+                                            display: 'inline-block',
+                                        }}
+                                    />
                                 </Typography>
                                 {/* <Typography variant="body2" fontWeight="bold">
                                     Outputs for app:{' '}
@@ -208,9 +235,10 @@ export const NewConductorStep = observer(
                                 <div
                                     style={{
                                         padding: '16px',
-                                        marginBottom: '20px',
+                                        // marginBottom: '20px',
                                         backgroundColor: '#fafafa',
                                         borderRadius: '12px',
+                                        flex: '1',
                                     }}
                                 >
                                     {Object.entries(step.variables).map(
@@ -219,11 +247,28 @@ export const NewConductorStep = observer(
                                             const value = variable[1];
                                             if (value.isOutput) {
                                                 return (
-                                                    <Typography
-                                                        variant={'caption'}
+                                                    <div
+                                                        style={{
+                                                            marginTop: '10px',
+                                                            // display: 'inline-block',
+                                                            marginRight:
+                                                                '12.5px',
+                                                        }}
                                                     >
-                                                        {name}
-                                                    </Typography>
+                                                        <Typography
+                                                            variant={'caption'}
+                                                            sx={{
+                                                                borderRadius:
+                                                                    '12px',
+                                                                background:
+                                                                    '#eee',
+                                                                padding:
+                                                                    '5px 15px',
+                                                            }}
+                                                        >
+                                                            {name}
+                                                        </Typography>
+                                                    </div>
                                                 );
                                             }
                                         },
@@ -232,21 +277,71 @@ export const NewConductorStep = observer(
                             </span>
                         </div>
 
-                        <div>
-                            <Typography variant="body2" fontWeight="bold">
-                                Inputs for app:
-                            </Typography>
-                            {Object.entries(step.variables).map((variable) => {
-                                const name = variable[0];
-                                const value = variable[1];
-                                if (value.isInput) {
-                                    return (
-                                        <Typography variant={'caption'}>
-                                            {name}
-                                        </Typography>
-                                    );
-                                }
-                            })}
+                        <div style={{ marginTop: '20px' }}>
+                            <Switch
+                                title={'Show App Inputs'}
+                                size="small"
+                                checked={isRawInputsShown}
+                                onChange={() => {
+                                    setIsRawInputsShown(!isRawInputsShown);
+                                }}
+                            ></Switch>
+                            <span
+                                style={{
+                                    marginLeft: '7.5px',
+                                }}
+                            >
+                                {/* <b> */}
+                                Show App Inputs
+                                {/* </b> */}
+                            </span>
+
+                            <div
+                                style={{
+                                    display: isRawInputsShown
+                                        ? 'block'
+                                        : 'none',
+                                    borderRadius: '12px',
+                                    background: '#fafafa',
+                                    padding: '12.5px 20px 30px',
+                                    marginTop: '20px',
+                                    marginBottom: '20px',
+                                    width: '40%',
+                                }}
+                            >
+                                <Typography variant="h6" fontWeight="bold">
+                                    App Inputs:
+                                </Typography>
+                                {Object.entries(step.variables).map(
+                                    (variable) => {
+                                        const name = variable[0];
+                                        const value = variable[1];
+                                        if (value.isInput) {
+                                            return (
+                                                <div
+                                                    style={{
+                                                        marginTop: '10px',
+                                                        // display: 'inline-block',
+                                                        marginRight: '12.5px',
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant={'caption'}
+                                                        sx={{
+                                                            borderRadius:
+                                                                '12px',
+                                                            background: '#eee',
+                                                            padding: '5px 15px',
+                                                        }}
+                                                    >
+                                                        {name}
+                                                    </Typography>
+                                                </div>
+                                            );
+                                        }
+                                    },
+                                )}
+                            </div>
                         </div>
 
                         {/* <Typography variant={'h6'}>

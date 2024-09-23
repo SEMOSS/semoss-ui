@@ -21,6 +21,8 @@ import {
     Person,
     Close,
     Mic,
+    Visibility,
+    AccountTree,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { Editor } from '@monaco-editor/react';
@@ -40,10 +42,13 @@ export const Conductor = observer(() => {
     const { conductor } = useConductor();
     const notification = useNotification();
 
+    const [currentEditorJSON, setCurrentEditorJSON] = useState('');
+    const [currentOutputEditorJSON, setCurrentOutputEditorJSON] = useState('');
+    const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({}); // { sebTaskIndex: JSONString }
+
     const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
     const [taskEditorHistory, setTaskEditorHistory] = useState([]);
     const [modelResponseText, setModelResponseText] = useState(null);
-    const [historyExpanded, setHistoryExpanded] = useState(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selectedSubtask, setSelectedSubtask] = useState(-1);
     const { monolithStore, configStore } = useRootStore();
@@ -68,72 +73,83 @@ export const Conductor = observer(() => {
         } else {
             setTaskContainerWidthPercent('calc(70% - 500px)');
             setTaskEditWidthPercent('500px');
+            const selectedTaskVariables =
+                conductor.steps[selectedSubtask]['variables'];
+
+            const inputsObj = Object.entries(selectedTaskVariables).reduce(
+                (acc, variable) => {
+                    const name = variable[0];
+                    const value = variable[1];
+                    const newAcc = { ...acc };
+                    if (value['isInput']) {
+                        // newAcc[name] = value;
+                        // How do we get / edit value from context?
+                        newAcc[name] = null;
+                    }
+                    return newAcc;
+                },
+                {},
+            );
+
+            const outputsObj = Object.entries(selectedTaskVariables).reduce(
+                (acc, variable) => {
+                    const name = variable[0];
+                    const value = variable[1];
+                    const newAcc = { ...acc };
+                    if (value['isOutput']) {
+                        // newAcc[name] = value;
+                        // How do we get / edit value from context?
+                        newAcc[name] = null;
+                    }
+                    return newAcc;
+                },
+                {},
+            );
+
+            if (currEditorJSONValsDict[selectedSubtask]) {
+                setCurrentEditorJSON(currEditorJSONValsDict[selectedSubtask]);
+            } else {
+                setCurrentEditorJSON(JSON.stringify(inputsObj));
+                setCurrentOutputEditorJSON(JSON.stringify(outputsObj));
+            }
         }
     }, [selectedSubtask]);
 
     const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
+        console.log('taskSubmitHandler() / LLM API');
         console.log({ data });
+
         setIsLoading(true);
         setTimeout(() => {
             setPromptText(data.taskInput);
             const placeholderModelResponse =
-                'Let’s find out...let me generate a roadmap to figure out if you can afford this house!';
+                "Let’s find out...let me generate a roadmap to figure out if you're qualified for this job!";
             setModelResponseText(placeholderModelResponse);
-            try {
-                // const path = 'version/assets/';
-                // await monolithStore.runQuery(
-                //     `DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
-                // );
-                // const upload = await monolithStore.uploadFile(
-                //     [data.uploadFile],
-                //     configStore.store.insightID,
-                //     id,
-                //     path,
-                // );
-                // notification.add({
-                //     color: 'success',
-                //     message: 'Succesfully Uploaded File',
-                // });
-                // console.log({ upload });
-                // reset();
-            } catch (e) {
-                console.error(e);
-
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
-            } finally {
-                setIsLoading(false);
-            }
+            setIsLoading(false);
         }, 500);
+
+        return; // early return until LLM API endpoint available
     });
 
-    const isBorders = false; // for testing
-
     const ParentContainer = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid black' : 'none',
         minWidth: '650px',
     }));
 
     const TitleContainer = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid green' : 'none',
         boxSizing: 'border-box',
         marginBottom: '10px',
         height: '50px',
-        width: '100%',
+        display: 'flex',
     }));
 
     const LowerParentContainer = styled('div')(({ theme }) => ({
         height: 'calc(100vh - 175px)', // contained vertically
-        border: isBorders ? '1px solid black' : 'none',
         padding: '20px 0 0 0',
         display: 'flex',
         width: '100%',
     }));
 
     const LeftParentContainer = styled('div')(({ theme }) => ({
-        border: isBorders ? '4px solid blue' : 'none',
         flexBasis: 'calc(70% - 500px)',
         padding: '20px 20px 30px 20px',
         transition: 'width .2s',
@@ -146,7 +162,6 @@ export const Conductor = observer(() => {
 
     const RightParentContainer = styled('div')(({ theme }) => ({
         transition: 'width .2s, margin-left .2s, display 0s',
-        border: isBorders ? '1px solid red' : 'none',
         backgroundColor: '#eee',
         borderRadius: '20px',
         flexBasis: '500px',
@@ -157,7 +172,6 @@ export const Conductor = observer(() => {
     }));
 
     const LeftInnerTopDiv = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid orange' : 'none',
         overflow: promptText ? 'scroll' : 'hidden',
         width: '100%',
         padding: '0px',
@@ -165,27 +179,23 @@ export const Conductor = observer(() => {
     }));
 
     const LeftInnerBottomDiv = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid green' : 'none',
         marginTop: 'auto',
         height: '50px',
         width: '100%',
     }));
 
     const SubTaskParentContainerNew = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid violet' : 'none',
         justifyContent: 'flex-end',
-        marginBottom: '20px',
+        marginBottom: '10px',
         display: 'flex',
         width: '100%',
     }));
 
     const SubTaskInnerContainer = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid red' : 'none',
         flexGrow: '1',
     }));
 
     const SubTaskPlayButton = styled('div')(({ theme }) => ({
-        border: isBorders ? '1px solid green' : 'none',
         alignItems: 'center',
         display: 'flex',
         height: '75px',
@@ -194,244 +204,25 @@ export const Conductor = observer(() => {
 
     const handleMount = (editor, monaco) => {
         editor.getAction('editor.action.formatDocument').run();
-        // const exposedQueryParameterDescription = (
-        //     exposedParameter: string,
-        //     queryId: string,
-        // ): string => {
-        //     switch (exposedParameter) {
-        //         case 'id':
-        //         case 'mode':
-        //             return `Returns the ${exposedParameter} of query ${queryId}`;
-        //         case 'isExecuted':
-        //             return `Returns whether query ${queryId} has executed`;
-        //         case 'isLoading':
-        //             return `Returns the loading state for query ${queryId}`;
-        //         case 'isError':
-        //             return `Returns whether query ${queryId} has an error`;
-        //         case 'error':
-        //             return `Returns the error for query ${queryId} if it exists`;
-        //         case 'list':
-        //             return `Returns an ordered list of cell IDs for query ${queryId}`;
-        //         default:
-        //             return `Reference the ${exposedParameter} parameter of query ${queryId}`;
-        //     }
-        // };
-
-        // add editor completion suggestions based on block values and query outputs
-        // const generateSuggestions = (range) => {
-        //     const suggestions = [];
-        //     Object.values(state.blocks).forEach((block: Block) => {
-        //         // only input block types will have values
-        //         const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
-        //             (block) =>
-        //                 DefaultBlocks[block].type === BLOCK_TYPE_INPUT,
-        //         );
-        //         if (inputBlockWidgets.includes(block.widget)) {
-        //             suggestions.push({
-        //                 label: {
-        //                     label: `{{block.${block.id}.value}}`,
-        //                     description: block.data?.value
-        //                         ? JSON.stringify(block.data?.value)
-        //                         : '',
-        //                 },
-        //                 kind: monaco.languages.CompletionItemKind.Variable,
-        //                 documentation: `Returns the value of block ${block.id}`,
-        //                 insertText: `{{block.${block.id}.value}}`,
-        //                 range: range,
-        //             });
-        //         }
-        //     });
-
-        // notebook.queriesList.forEach((query: QueryState) => {
-        //     // push all exposed values
-        //     Object.keys(query._exposed).forEach(
-        //         (exposedParameter: string) => {
-        //             suggestions.push({
-        //                 label: {
-        //                     label: `{{query.${query.id}.${exposedParameter}}}`,
-        //                     description: query._exposed[
-        //                         exposedParameter
-        //                     ]
-        //                         ? JSON.stringify(
-        //                               query._exposed[exposedParameter],
-        //                           )
-        //                         : '',
-        //                 },
-        //                 kind: monaco.languages.CompletionItemKind
-        //                     .Variable,
-        //                 documentation: exposedQueryParameterDescription(
-        //                     exposedParameter,
-        //                     query.id,
-        //                 ),
-        //                 insertText: `{{query.${query.id}.${exposedParameter}}}`,
-        //                 range: range,
-        //                 detail: query.id,
-        //             });
-        //         },
-        //     );
-        // });
-
-        // return suggestions;
-        // };
-
-        // monaco.languages.registerCompletionItemProvider('json', {
-        //     provideCompletionItems: (model, position) => {
-        //         const word = model.getWordUntilPosition(position);
-        //         // getWordUntilPosition doesn't track when words are led by special characters
-        //         // we need to chack for wrapping curly brackets manually to know what to replace
-
-        //         // word is not empty, completion was triggered by a non-special character
-        //         if (word.word !== '') {
-        //             // return empty suggestions to trigger built in typeahead
-        //             return {
-        //                 suggestions: [],
-        //             };
-        //         }
-
-        //         // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-        //         const specialCharacterStartRange = {
-        //             startLineNumber: position.lineNumber,
-        //             endLineNumber: position.lineNumber,
-        //             startColumn: word.startColumn - 2,
-        //             endColumn: word.startColumn,
-        //         };
-        //         const preceedingTwoCharacters = model.getValueInRange(
-        //             specialCharacterStartRange,
-        //         );
-        //         const replaceRangeStartBuffer =
-        //             preceedingTwoCharacters === '{{' ? 2 : 1;
-        //         // python editor will automatically add closed bracket when you type a start one
-        //         // need to replace the closed brackets appropriately
-        //         const specialCharacterEndRange = {
-        //             startLineNumber: position.lineNumber,
-        //             endLineNumber: position.lineNumber,
-        //             startColumn: word.endColumn,
-        //             endColumn: word.endColumn + 2,
-        //         };
-        //         const followingTwoCharacters = model.getValueInRange(
-        //             specialCharacterEndRange,
-        //         );
-        //         const replaceRangeEndBuffer =
-        //             followingTwoCharacters === '}}'
-        //                 ? 2
-        //                 : followingTwoCharacters == '} ' ||
-        //                   followingTwoCharacters == '}'
-        //                 ? 1
-        //                 : 0;
-
-        //         // compose range that we want to replace with the suggestion
-        //         const replaceRange = {
-        //             startLineNumber: position.lineNumber,
-        //             endLineNumber: position.lineNumber,
-        //             startColumn: word.startColumn - replaceRangeStartBuffer,
-        //             endColumn: word.endColumn + replaceRangeEndBuffer,
-        //         };
-        //         return {
-        //             suggestions: generateSuggestions(replaceRange),
-        //         };
-        //     },
-        //     triggerCharacters: ['{'],
-        // });
-
-        // add LLM prompting and word-wrap actions to editor
-        // editor.addAction({
-        //     contextMenuGroupId: '1_modification',
-        //     contextMenuOrder: 2,
-        //     id: 'toggle-word-wrap',
-        //     label: 'Toggle Word Wrap',
-        //     keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-
-        //     run: async (editor) => {
-        //         wordWrapRef.current = !wordWrapRef.current;
-        //         editor.updateOptions({
-        //             wordWrap: wordWrapRef.current ? 'on' : 'off',
-        //         });
-        //     },
-        // });
-
-        // editor.addAction({
-        //     contextMenuGroupId: '1_modification',
-        //     contextMenuOrder: 1,
-        //     id: 'prompt-LLM',
-        //     label: 'Generate Code',
-        //     keybindings: [
-        //         monaco.KeyMod.CtrlCmd |
-        //             monaco.KeyMod.Shift |
-        //             monaco.KeyCode.KeyG,
-        //     ],
-
-        //     run: async (editor) => {
-        //         const selection = editor.getSelection();
-        //         const selectedText = editor
-        //             .getModel()
-        //             .getValueInRange(selection);
-
-        //         let LLMReturnText = '';
-        //         switch (language) {
-        //             case 'html':
-        //                 LLMReturnText = await promptLLM(
-        //                     `Create code for an HTML file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-        //                 );
-        //                 break;
-        //             case 'json':
-        //                 LLMReturnText = await promptLLM(
-        //                     `Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure 'data' is a top-level key in the JSON object. Use the following user prompt: ${selectedText}`,
-        //                 );
-        //                 break;
-        //         }
-
-        //         // adds LLM return text after response
-        //         editor.executeEdits('custom-action', [
-        //             {
-        //                 range: new monaco.Range(
-        //                     selection.endLineNumber + 2,
-        //                     1,
-        //                     selection.endLineNumber + 2,
-        //                     1,
-        //                 ),
-        //                 text: `\n\n${LLMReturnText}\n`,
-        //                 forceMoveMarkers: true,
-        //             },
-        //         ]);
-
-        //         // highligts LLM return text after response
-        //         editor.setSelection(
-        //             new monaco.Range(
-        //                 selection.endLineNumber + 3,
-        //                 1,
-        //                 selection.endLineNumber +
-        //                     3 +
-        //                     LLMReturnText.split('\n').length,
-        //                 1,
-        //             ),
-        //         );
-        //     },
-        // });
     };
 
     const onChange = (value: string) => {
         console.log({ newValue: value });
-        // // set the value
-        // setValue(value);
+    };
 
-        // // clear out he old timeout
-        // if (timeoutRef.current) {
-        //     clearTimeout(timeoutRef.current);
-        //     timeoutRef.current = null;
-        // }
+    const updateButtonHandler = () => {
+        const newCurrEditorJSONValsDict = { ...currEditorJSONValsDict };
+        newCurrEditorJSONValsDict[selectedSubtask] = currentEditorJSON;
+        setCurrEditorJSONValsDict(newCurrEditorJSONValsDict);
 
-        // timeoutRef.current = setTimeout(() => {
-        //     try {
-        //         // set the value
-        //         setData(path, value as PathValue<D['data'], typeof path>);
-        //     } catch (e) {
-        //         console.log(e);
-        //     }
-        // }, 300);
+        setIsLoading(true);
+        setTimeout(() => {
+            setPromptText(promptText + ' ');
+            setIsLoading(false);
+        }, 500);
     };
 
     const DUMMY_JSON = `
-
         {
             "imageurl": "/barbie_dream_house.png",
             "is_house": true,
@@ -443,13 +234,29 @@ export const Conductor = observer(() => {
         }
     `;
 
+    const editorChangeHandler = (newString) => {
+        console.log({ event });
+    };
+
+    const playClickHandler = () => {
+        console.log('playClickHandler() / API');
+
+        setIsLoading(true);
+        setTimeout(() => {
+            setPromptText(promptText + ' ');
+            setIsLoading(false);
+        }, 500);
+    };
+
     return (
         <ParentContainer>
             <TitleContainer>
-                <Typography variant="h4">AI Conductor</Typography>
-                <Typography variant="body1">
-                    Description / Instructions
-                </Typography>
+                <div>
+                    <Typography variant="h4">AI Conductor</Typography>
+                    <Typography variant="body1" sx={{ width: '100%' }}>
+                        Description / Instructions
+                    </Typography>
+                </div>
             </TitleContainer>
             <LowerParentContainer>
                 <LeftParentContainer
@@ -497,18 +304,13 @@ export const Conductor = observer(() => {
                                 <Typography
                                     variant={'body1'}
                                     sx={{
-                                        // display: promptText ? 'auto' : 'none',
                                         display: promptText ? 'flex' : 'none',
                                         backgroundColor: '#fff',
                                         marginBottom: '20px',
                                         borderRadius: '12px',
                                         padding: '16px',
-                                        // flexDirection: 'column',
                                         justifyContent: 'start',
                                         alignItems: 'center',
-                                        border: isBorders
-                                            ? '1px solid goldenrod'
-                                            : 'none',
                                     }}
                                 >
                                     <Person
@@ -522,9 +324,6 @@ export const Conductor = observer(() => {
                             <SubTaskPlayButton>
                                 <div
                                     style={{
-                                        border: isBorders
-                                            ? '2px dashed green'
-                                            : 'none',
                                         justifyContent: 'center',
                                         display: 'flex',
                                         width: '100%',
@@ -532,9 +331,6 @@ export const Conductor = observer(() => {
                                 >
                                     <IconButton
                                         sx={{
-                                            border: isBorders
-                                                ? '1px solid red'
-                                                : 'none',
                                             display: promptText
                                                 ? 'auto'
                                                 : 'none',
@@ -603,25 +399,24 @@ export const Conductor = observer(() => {
                                                 setOpenAccordionIndexesSet={
                                                     setOpenAccordionIndexesSet
                                                 }
+                                                currentEditorJSON={
+                                                    currentEditorJSON
+                                                }
+                                                setCurrentEditorJSON={
+                                                    setCurrentEditorJSON
+                                                }
                                             />
                                         </SubTaskInnerContainer>
                                         <SubTaskPlayButton>
                                             <div
                                                 style={{
-                                                    border: isBorders
-                                                        ? '2px dashed green'
-                                                        : 'none',
                                                     justifyContent: 'center',
                                                     display: 'flex',
                                                     width: '100%',
                                                 }}
                                             >
                                                 <IconButton
-                                                    sx={{
-                                                        border: isBorders
-                                                            ? '1px solid red'
-                                                            : 'none',
-                                                    }}
+                                                    onClick={playClickHandler}
                                                 >
                                                     <PlayArrow />
                                                 </IconButton>
@@ -642,12 +437,10 @@ export const Conductor = observer(() => {
                                             flex: '1',
                                             margin: '0 0 20px 0',
                                             borderRadius: '20px',
-                                            // display: promptText ? 'auto' : 'none',
                                             display: 'none',
                                         }}
                                         multiple={false}
                                         value={field.value}
-                                        // disabled={isLoading}
                                         onChange={(newValues) => {
                                             field.onChange(newValues);
                                             console.log({ newValues });
@@ -672,7 +465,6 @@ export const Conductor = observer(() => {
                                     }}
                                     multiple={false}
                                     value={field.value}
-                                    // disabled={isLoading}
                                     onChange={(newValues) => {
                                         field.onChange(newValues);
                                         console.log({ newValues });
@@ -745,12 +537,10 @@ export const Conductor = observer(() => {
                         width: taskEditWidthPercent,
                     }}
                 >
-                    {/* RightInnerContainer */}
                     <div
                         style={{
                             height: '300px',
                             width: '100%',
-                            border: isBorders ? '1px solid pink' : 'none',
                         }}
                     >
                         <div
@@ -759,19 +549,9 @@ export const Conductor = observer(() => {
                                 flexDirection: 'row',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                border: isBorders
-                                    ? '1px solid lightgreen'
-                                    : 'none',
                             }}
                         >
-                            <Typography
-                                variant={'body1'}
-                                sx={
-                                    {
-                                        // display: 'inline-block'
-                                    }
-                                }
-                            >
+                            <Typography variant={'body1'}>
                                 <b>
                                     Selected Task {selectedSubtask + 1} JSON
                                     Editor
@@ -783,23 +563,22 @@ export const Conductor = observer(() => {
                                     setTaskEditWidthPercent('0%');
                                     setSelectedSubtask(-1);
                                 }}
-                                // sx={{ display: 'inline-block' }}
                             >
                                 <Close />
                             </IconButton>
                         </div>
 
-                        {/* <div
-                            style={{
-                                border: '1px solid violet'
-                            }}
-                        >
-                            <Typography variant={'h6'}>
-                                {' '}
-                                Overall Input Pool
+                        <div>
+                            <Typography
+                                variant={'body1'}
+                                sx={{
+                                    fontSize: '16px',
+                                    marginTop: '12.5px',
+                                }}
+                            >
+                                <b>Input</b>
                             </Typography>
-                            <div>{JSON.stringify(conductor.inputPool)}</div>
-                        </div> */}
+                        </div>
 
                         <div
                             style={{
@@ -807,18 +586,15 @@ export const Conductor = observer(() => {
                                 width: '100%',
                                 overflow: 'auto',
                                 flex: '1',
-                                // border: isBorders ? '1px solid olive' : 'none',
                                 marginTop: '20px',
                                 marginBottom: '20px',
-                                height: `220px`, // make dynamic based on editor value line count
-                                // marginTop: '20px',
+                                height: `220px`, // TODO make dynamic based on editor value line count
                             }}
                         >
                             <Editor
                                 width="100%"
                                 height="100%"
-                                value={DUMMY_JSON}
-                                // value={JSON.stringify(conductor.inputPool)}
+                                value={currentEditorJSON}
                                 language={'json'}
                                 options={{
                                     lineNumbers: 'off',
@@ -831,21 +607,98 @@ export const Conductor = observer(() => {
                                 }}
                                 onChange={(e) => {
                                     onChange(e);
+                                    console.log('Update JSON to state');
+                                    editorChangeHandler(e);
+                                }}
+                                onMount={handleMount}
+                            />
+                        </div>
+                        <Button
+                            color="secondary"
+                            variant="outlined"
+                            sx={{
+                                width: '200px',
+                            }}
+                            onClick={updateButtonHandler}
+                        >
+                            Update and run task
+                        </Button>
+                    </div>
+
+                    {/* Lower RightInnerContainer */}
+                    <div
+                        style={{
+                            height: '300px',
+                            width: '100%',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginTop: '95px',
+                            }}
+                        >
+                            <Typography
+                                variant={'h6'}
+                                sx={{
+                                    fontSize: '16px',
+                                    marginBottom: '15px',
+                                }}
+                            >
+                                <b>Output</b>
+                            </Typography>
+                        </div>
+
+                        <div>
+                            <Typography
+                                variant={'body1'}
+                                sx={{
+                                    fontSize: '14px',
+                                }}
+                            >
+                                You are manually modifying the output. If you
+                                rerun the subtask, this update will be
+                                overridden.
+                            </Typography>
+                        </div>
+
+                        <div
+                            style={{
+                                borderRadius: '10px',
+                                width: '100%',
+                                overflow: 'auto',
+                                flex: '1',
+                                marginTop: '20px',
+                                marginBottom: '20px',
+                                height: `120px`, // TODO make dynamic based on editor value line count
+                            }}
+                        >
+                            <Editor
+                                width="100%"
+                                height="100%"
+                                value={currentOutputEditorJSON}
+                                language={'json'}
+                                options={{
+                                    readOnly: false,
+                                    lineNumbers: 'off',
+                                    minimap: { enabled: false },
+                                    scrollBeyondLastLine: false,
+                                    overviewRulerBorder: false,
+                                    automaticLayout: true,
+                                    lineHeight: 19,
+                                }}
+                                onChange={(e) => {
+                                    onChange(e);
+                                    console.log('Update JSON to state');
+                                    editorChangeHandler(e);
                                 }}
                                 onMount={handleMount}
                             />
                         </div>
                     </div>
-
-                    <Button
-                        color="secondary"
-                        variant="outlined"
-                        sx={{
-                            width: '200px',
-                        }}
-                    >
-                        Update and run task
-                    </Button>
                 </RightParentContainer>
             </LowerParentContainer>
         </ParentContainer>
