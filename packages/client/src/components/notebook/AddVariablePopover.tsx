@@ -5,6 +5,7 @@ import React, {
     useMemo,
     Suspense,
     lazy,
+    useCallback,
 } from 'react';
 import {
     Alert,
@@ -42,6 +43,7 @@ import {
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
 
 import { ENGINE_ROUTES } from '@/pages/engine';
+import { applyValue, deleteValue, JsonViewer } from '@textea/json-viewer';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -149,6 +151,41 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
     const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
 
     let alreadyAliased = false;
+
+    // TODO: Potentially Look into adding json viewer library for removing Editor.
+    // Delete this if no longer necessary.
+    // // handles change for adding / removing content for json / array
+    // const handleChange = useCallback(
+    //     (path: any[], oldVal: any, newValue: any) => {
+    //         setVariableInputValue((prev) =>
+    //             // if (prev === null) return applyValue({}, path, newValue);
+
+    //             applyValue(prev, path, newValue),
+    //         );
+    //     },
+    //     [],
+    // );
+
+    // // How to add key / value pairs for editable json viewer
+    // const handleAdd = useCallback((path: any[]) => {
+    //     const key = prompt('Key:');
+    //     if (key === null) return;
+    //     const value = prompt('Value:');
+    //     if (value === null) return;
+    //     setVariableInputValue((prev) => {
+    //         if (prev === null) return applyValue({}, [...path, key], value);
+
+    //         return applyValue(prev, [...path, key], value);
+    //     });
+    // }, []);
+
+    // // How to delete key / value pairs for editable json viewer
+    // const handleDelete = useCallback((path: any[], value: any) => {
+    //     setVariableInputValue((prev) => {
+    //         if (prev === null) return prev;
+    //         return deleteValue(prev, path, value);
+    //     });
+    // }, []);
 
     if (variable) {
         if (variable.id !== variableName) {
@@ -307,6 +344,22 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
             );
         } else if (variableType === 'JSON' || variableType === 'array') {
             return (
+                // TODO: Potentially Look into adding json viewer library for removing Editor.
+                // Delete this if no longer necessary.
+
+                // <JsonViewer
+                //     value={variableInputValue}
+                //     editable={true}
+                //     enableAdd={true}
+                //     enableDelete={true}
+                //     displayDataTypes={true}
+                //     displaySize={true}
+                //     displayComma={true}
+                //     onChange={handleChange}
+                //     onAdd={handleAdd}
+                //     onDelete={handleDelete}
+                //     sx={{ width: '100%', height: '10vh' }}
+                // />
                 <Suspense fallback={<>...</>}>
                     <Editor
                         width={'100%'}
@@ -475,8 +528,19 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                             </Alert>
                         );
                     }
-                } else if (inputVariableTypeList.indexOf(variableType) > -1) {
-                    return JSON.stringify(variableInputValue);
+                } else if (
+                    variableType === 'JSON' ||
+                    variableType === 'array'
+                ) {
+                    return (
+                        <JsonViewer
+                            value={JSON.parse(variableInputValue)}
+                            displayDataTypes={true}
+                            displaySize={true}
+                            displayComma={true}
+                            rootName={false}
+                        />
+                    );
                 } else {
                     const image = getEngineImage(
                         engine.app_type,
