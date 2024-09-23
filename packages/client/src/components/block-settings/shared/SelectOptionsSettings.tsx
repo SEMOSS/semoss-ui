@@ -183,7 +183,7 @@ export const SelectOptionsSettings = observer(
                         __onChange={() => {
                             setData(
                                 'value' as Paths<Block<D>['data'], 4>,
-                                parsedData.isMulti
+                                parsedData.multiple
                                     ? ([] as PathValue<D['data'], typeof path>)
                                     : ('' as PathValue<D['data'], typeof path>),
                             );
@@ -213,7 +213,7 @@ export const SelectOptionsSettings = observer(
                         );
                         setData(
                             'value' as Paths<Block<D>['data'], 4>,
-                            parsedData.isMulti
+                            parsedData.multiple
                                 ? ([] as PathValue<D['data'], typeof path>)
                                 : ('' as PathValue<D['data'], typeof path>),
                         );

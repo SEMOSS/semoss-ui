@@ -31,7 +31,7 @@ export const config: BlockConfig<SelectBlockDef> = {
         optionLabel: '',
         optionSublabel: '',
         optionValue: '',
-        isMulti: false,
+        multiple: false,
     },
     listeners: {
         onChange: [],
@@ -51,7 +51,7 @@ export const config: BlockConfig<SelectBlockDef> = {
                         <SwitchSettings
                             id={id}
                             label="Enable Multi Select"
-                            path="isMulti"
+                            path="multiple"
                         />
                     ),
                 },

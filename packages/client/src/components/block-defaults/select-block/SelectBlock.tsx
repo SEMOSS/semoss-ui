@@ -16,7 +16,7 @@ import { optimize } from 'webpack';
 export interface SelectBlockDef extends BlockDef<'select'> {
     widget: 'select';
     data: {
-        isMulti: boolean;
+        multiple: boolean;
         style: CSSProperties;
         label: string;
         value: string | string[];
@@ -70,18 +70,18 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         200,
     );
 
-    // Ensure that value is always an array when isMulti is true
+    // Ensure that value is always an array when multiple is true
     const value = useMemo(() => {
-        if (data.isMulti) {
+        if (data.multiple) {
             return Array.isArray(data.value) ? data.value : [];
         }
         return data.value || null;
-    }, [data.isMulti, data.value]);
+    }, [data.multiple, data.value]);
 
     return (
         <Autocomplete
             fullWidth
-            multiple={data.isMulti}
+            multiple={data.multiple}
             disableClearable
             options={stringifiedOptions}
             value={value}
