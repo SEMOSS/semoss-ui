@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Box, Divider, styled, Typography, Stack } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
+import { JsonViewer } from '@textea/json-viewer';
 
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
@@ -116,12 +117,21 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             }
         } else {
             const found = state.parseVariable(`{{${id}}}`);
-
-            return (
-                <Typography variant="body2" fontWeight="bold">
-                    {typeof found !== 'string' ? JSON.stringify(found) : found}{' '}
-                </Typography>
-            );
+            if (typeof found === 'string') {
+                return (
+                    <Typography variant="body2" fontWeight="bold">
+                        {found}
+                    </Typography>
+                );
+            } else {
+                return (
+                    <JsonViewer
+                        value={found}
+                        displayComma={true}
+                        rootName={false}
+                    />
+                );
+            }
         }
     }, [variable, id]);
 
@@ -138,7 +148,7 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             const found = state.parseVariable(`{{${id}}}`);
 
             if (typeof found !== 'string') {
-                val = JSON.stringify(found);
+                val = null;
             } else {
                 val = found;
             }
@@ -151,12 +161,16 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                     </Typography>
                     <Typography variant="body2">{variable.type}</Typography>
                 </Stack>
-                <Stack direction="row">
-                    <Typography variant="body2" fontWeight="bold">
-                        Value:{' '}
-                    </Typography>
-                    <Typography variant="body2">{val}</Typography>
-                </Stack>
+                {val !== null ? (
+                    <Stack direction="row">
+                        <Typography variant="body2" fontWeight="bold">
+                            Value:{' '}
+                        </Typography>
+                        <Typography variant="body2">{val}</Typography>
+                    </Stack>
+                ) : (
+                    <></>
+                )}
             </>
         );
     }, [variable, id]);

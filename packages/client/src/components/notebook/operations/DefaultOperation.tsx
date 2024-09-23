@@ -1,4 +1,5 @@
 import { styled } from '@semoss/ui';
+import { JsonViewer } from '@textea/json-viewer';
 import { observer } from 'mobx-react-lite';
 
 const StyledJson = styled('pre')(({ theme }) => ({
@@ -24,6 +25,15 @@ export const DefaultOperation = observer(
             return <StyledJson>{output}</StyledJson>;
         }
 
+        if (typeof output === 'object') {
+            return (
+                <JsonViewer
+                    value={output}
+                    displayComma={true}
+                    rootName={false}
+                />
+            );
+        }
         return <StyledJson>{JSON.stringify(output, null, 4)}</StyledJson>;
     },
 );
