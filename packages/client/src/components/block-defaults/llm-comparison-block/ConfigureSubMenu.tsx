@@ -7,7 +7,6 @@ import { VariantEditor } from './VariantEditor';
 import { QueryNameDropdownSettings } from '@/components/block-settings/custom/QueryNameDropdownSettings';
 import { generateVariantName } from './LlmComparison.utility';
 import { ActionMessages, CellState } from '@/stores';
-import { toJS } from 'mobx';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',

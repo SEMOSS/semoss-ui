@@ -63,8 +63,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
     const [highlightedRating, setHighlightedRating] = useState(0);
-    console.log('DATA', data);
-    console.log('DISPLAYEDDDD', displayed);
 
     useEffect(() => {
         if (!data.queryId) {
@@ -74,6 +72,10 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             getVariantsFromQuery();
         }
     }, [data.queryId]);
+
+    useEffect(() => {
+        console.log('DATA USE EFFECT', data);
+    }, [data]);
 
     // Fetch and save variants stored in query to state.
     const getVariantsFromQuery = () => {
@@ -140,24 +142,24 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 key.toLowerCase() === 'default'
                                     ? 'Default Variant'
                                     : `Variant ${key.toUpperCase()}`;
-                            const label = selected ? (
-                                <Stack
-                                    direction="row"
-                                    gap={0}
-                                    alignItems="flex-end"
-                                >
-                                    <Icon color="primary">
-                                        <CheckCircle />
-                                    </Icon>
-                                    <span>{name}</span>
-                                </Stack>
-                            ) : (
-                                name
-                            );
+                            // const label = selected ? (
+                            //     <Stack
+                            //         direction="row"
+                            //         gap={0}
+                            //         alignItems="flex-end"
+                            //     >
+                            //         <Icon color="primary">
+                            //             <CheckCircle />
+                            //         </Icon>
+                            //         <span>{name}</span>
+                            //     </Stack>
+                            // ) : (
+                            //     name
+                            // );
                             return (
                                 <Tabs.Item
                                     key={`${key}-${idx}`}
-                                    label={label}
+                                    label={name}
                                     value={key}
                                 />
                             );
@@ -171,16 +173,16 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                     Model: {displayed.model.name}
                                 </Typography>
 
-                                <Checkbox
+                                {/* <Checkbox
                                     checked={displayed.selected}
                                     onChange={handleChangeSelected}
                                     label="Use Model"
-                                />
+                                /> */}
                             </StyledContentHeader>
 
                             <div>{displayed.response}</div>
 
-                            <StyledRatingRow>
+                            {/* <StyledRatingRow>
                                 <Typography color="secondary" variant="body2">
                                     What would you rate this response?
                                 </Typography>
@@ -260,7 +262,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                         )}
                                     </StyledStarButton>
                                 </Stack>
-                            </StyledRatingRow>
+                            </StyledRatingRow> */}
                         </Stack>
                     ) : (
                         <div />
