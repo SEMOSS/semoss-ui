@@ -3,6 +3,10 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const BundleAnalyzerPlugin =
+    require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
+
 const dotenv = require('dotenv');
 // const importMetaEnv = require('@import-meta-env/unplugin');
 
@@ -20,6 +24,23 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
         clean: true,
     },
+    optimization: {
+        chunkIds: 'deterministic',
+        minimize: true,
+        minimizer: [
+            new TerserPlugin({
+                parallel: true,
+                terserOptions: {
+                    // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+                },
+            }),
+        ],
+        splitChunks: {
+            chunks: 'all',
+            minSize: 10000,
+            maxSize: 250000,
+        },
+    },
     plugins: [
         new HtmlWebpackPlugin({
             title: '',
@@ -28,6 +49,8 @@ const config = {
             template: './src/template.html',
             filename: 'index.html',
         }),
+
+        new BundleAnalyzerPlugin(),
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
             React: 'react',
@@ -98,6 +121,7 @@ const config = {
 };
 
 module.exports = () => {
+    console.log('isProduction', isProduction);
     if (isProduction) {
         config.mode = 'production';
     } else {
