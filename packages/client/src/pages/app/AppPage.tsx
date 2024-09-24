@@ -14,7 +14,7 @@ import { Workspace } from '@/components/workspace';
 
 export const AppPage = observer(() => {
     // App ID Needed for pixel calls
-    const { appId } = useParams();
+    const { appId, ...route } = useParams();
     const { configStore } = useRootStore();
 
     const notification = useNotification();
@@ -72,7 +72,7 @@ export const AppPage = observer(() => {
                 <CodeRenderer appId={workspace.appId} />
             ) : null}
             {workspace.type === 'BLOCKS' ? (
-                <BlocksRenderer appId={workspace.appId} />
+                <BlocksRenderer appId={workspace.appId} route={route['*']} />
             ) : null}
         </Workspace>
     );

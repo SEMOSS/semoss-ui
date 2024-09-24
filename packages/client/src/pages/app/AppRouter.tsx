@@ -23,6 +23,7 @@ export const AppRouter = observer(() => {
                 <Route index element={<AppPage />} />
                 <Route path="edit" element={<EditAppPage />} />
                 <Route path="detail" element={<AppDetailPage />} />
+                <Route path="*" element={<AppPage />} />
             </Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />
         </Routes>
