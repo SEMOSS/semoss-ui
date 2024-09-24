@@ -162,7 +162,7 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
                 {mode === 'settings' && <SettingsSubMenu />} */}
 
-                <ConfigureSubMenu blockId={id} />
+                <ConfigureSubMenu />
             </StyledMenu>
         </LLMComparisonContext.Provider>
     );

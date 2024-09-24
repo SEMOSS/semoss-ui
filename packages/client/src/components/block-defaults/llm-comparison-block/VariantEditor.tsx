@@ -35,7 +35,7 @@ export const VariantEditor = () => {
     return (
         <StyledVariantEditor gap={2} direction="column">
             <Typography variant="subtitle1" color="secondary" fontWeight="bold">
-                {editorVariantName.toLowerCase() === 'default'
+                {(editorVariantName || '').toLowerCase() === 'default'
                     ? 'Default Variant'
                     : `Variant ${editorVariantName}`}
             </Typography>

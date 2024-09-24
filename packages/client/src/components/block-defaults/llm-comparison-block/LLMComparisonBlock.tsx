@@ -63,6 +63,8 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
     const [highlightedRating, setHighlightedRating] = useState(0);
+    console.log('DATA', data);
+    console.log('DISPLAYEDDDD', displayed);
 
     useEffect(() => {
         if (!data.queryId) {
