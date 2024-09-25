@@ -11,6 +11,7 @@ import { Edit } from '@mui/icons-material';
 import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';
 import ImageSkeleton from '@/assets/img/ImageSkeleton.png';
+import { observer } from 'mobx-react-lite';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     padding: theme.spacing(2),
@@ -68,7 +69,7 @@ export interface LlmCardProps {
     isVariantHovered: boolean;
 }
 
-export const LlmCard = (props: LlmCardProps) => {
+export const LlmCard = observer((props: LlmCardProps) => {
     const { llm, variantName, isVariantHovered } = props;
     const { setValue, getValues } = useLLMComparison();
 
@@ -140,4 +141,4 @@ export const LlmCard = (props: LlmCardProps) => {
             </StyledCard>
         </>
     );
-};
+});

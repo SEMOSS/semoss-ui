@@ -7,6 +7,7 @@ import { VariantEditor } from './VariantEditor';
 import { QueryNameDropdownSettings } from '@/components/block-settings/custom/QueryNameDropdownSettings';
 import { generateVariantName } from './LlmComparison.utility';
 import { ActionMessages, CellState } from '@/stores';
+import { observer } from 'mobx-react-lite';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -29,7 +30,7 @@ const StyledActionBar = styled('div')(({ theme }) => ({
     padding: `0 ${theme.spacing(2)}`,
 }));
 
-export const ConfigureSubMenu = () => {
+export const ConfigureSubMenu = observer(() => {
     const notification = useNotification();
     const { setValue, watch, handleSubmit, getValues, blockId } =
         useLLMComparison();
@@ -263,4 +264,4 @@ export const ConfigureSubMenu = () => {
             </StyledEditorView>
         );
     }
-};
+});

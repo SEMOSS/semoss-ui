@@ -1,7 +1,7 @@
 import { BlockComponent, CellState, Variant } from '@/stores';
 import { useBlock, useBlocks, useRootStore } from '@/hooks';
 import { styled, ToggleTabsGroup, useNotification } from '@semoss/ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { SettingsSubMenu } from './SettingsSubMenu';
 import { ConfigureSubMenu } from './ConfigureSubMenu';
@@ -39,6 +39,7 @@ const StyledMenu = styled('div')(({ theme }) => ({
 type Mode = 'configure' | 'settings';
 
 export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
+    const fetchedModelsRef = useRef(false);
     const { data } = useBlock(id);
     const { state } = useBlocks();
     const notification = useNotification();
@@ -68,19 +69,20 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
         const allModels = await fetchAllModels();
         setAllModels(allModels);
 
-        getVariantsFromQuery();
+        getVariantsFromQuery(allModels);
     };
 
+    // update variants when the user changes the block's query.
     useEffect(() => {
-        if (data.queryId) {
-            getVariantsFromQuery();
+        if (data.queryId && fetchedModelsRef.current) {
+            getVariantsFromQuery(allModels);
         } else {
             setValue('variants', {});
         }
-    }, [data.queryId]);
+    }, [data.queryId, allModels]);
 
     // Retrieve, model, and set Variants in state from selected query.
-    const getVariantsFromQuery = () => {
+    const getVariantsFromQuery = (models) => {
         let query;
         if (typeof data.queryId === 'string') {
             query = state.getQuery(data.queryId);
@@ -91,7 +93,7 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
         // Accepts a variant from the App's JSON and models it for the Comparison menu's form state.
         const modelVariantLlm = (variant: Variant): TypeLlmConfig => {
-            const modelMatch = allModels.find(
+            const modelMatch = models.find(
                 (mod) => mod.value === variant.model.id,
             );
 
@@ -128,6 +130,7 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
         const modelled = modelEngineOutput(res.pixelReturn[0].output);
         setAllModels(modelled);
+        fetchedModelsRef.current = true;
         return modelled;
     };
 

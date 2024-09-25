@@ -73,10 +73,6 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
         }
     }, [data.queryId]);
 
-    useEffect(() => {
-        console.log('DATA USE EFFECT', data);
-    }, [data]);
-
     // Fetch and save variants stored in query to state.
     const getVariantsFromQuery = () => {
         let query;
