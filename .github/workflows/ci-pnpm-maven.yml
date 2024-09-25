@@ -29,15 +29,15 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Cache node modules and Maven repository
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      node_modules
-                      .m2/repository
-                      dist
-                      index.html
-                  key: ${{ github.ref_name }}
+            # - name: Cache node modules and Maven repository
+            #   uses: actions/cache@v4
+            #   with:
+            #       path: |
+            #           node_modules
+            #           .m2/repository
+            #           dist
+            #           index.html
+            #       key: ${{ github.ref_name }}
 
             - name: Install dependencies
               run: |
@@ -82,15 +82,15 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Cache node modules and Maven repository
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      node_modules
-                      .m2/repository
-                      dist
-                      index.html
-                  key: ${{ github.ref_name }}
+            # - name: Cache node modules and Maven repository
+            #   uses: actions/cache@v4
+            #   with:
+            #       path: |
+            #           node_modules
+            #           .m2/repository
+            #           dist
+            #           index.html
+            #       key: ${{ github.ref_name }}
 
             - name: Install dependencies
               run: |
