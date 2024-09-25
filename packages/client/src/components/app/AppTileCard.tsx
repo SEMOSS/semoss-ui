@@ -478,7 +478,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </Menu.Item>
                 {app?.user_permission && app.user_permission <= 3 && (
                     <Link
-                        href={`${href}/detail`}
+                        href={`${href}/app-detail`}
                         rel="noopener noreferrer"
                         color="inherit"
                         underline="none"

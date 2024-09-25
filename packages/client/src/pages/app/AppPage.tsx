@@ -61,7 +61,7 @@ export const AppPage = observer(() => {
                         )
                     }
                     onClick={() => {
-                        navigate('edit');
+                        navigate('app-edit');
                     }}
                 >
                     Edit App

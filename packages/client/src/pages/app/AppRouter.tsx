@@ -21,8 +21,8 @@ export const AppRouter = observer(() => {
             {/* Already Built App */}
             <Route path=":appId" element={<HeaderLayout />}>
                 <Route index element={<AppPage />} />
-                <Route path="edit" element={<EditAppPage />} />
-                <Route path="detail" element={<AppDetailPage />} />
+                <Route path="app-edit" element={<EditAppPage />} />
+                <Route path="app-detail" element={<AppDetailPage />} />
                 <Route path="*" element={<AppPage />} />
             </Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />

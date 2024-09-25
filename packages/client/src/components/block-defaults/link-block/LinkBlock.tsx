@@ -20,9 +20,10 @@ TODO: If this is a link to somewhere internally on app switch to a Link (react-r
 */
 export const LinkBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<LinkBlockDef>(id);
+    const navLink = data.isExternal ? data.href : `./${data.href}`;
     return data.isExternal ? (
         <a
-            href={data.href}
+            href={navLink}
             style={{
                 ...data.style,
             }}
@@ -32,7 +33,7 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
         </a>
     ) : (
         <NavLink
-            to={data.href}
+            to={navLink}
             style={{
                 ...data.style,
             }}
