@@ -5229,8 +5229,8 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'BUCKETNAME',
-                        label: 'S3 Bucket Name',
+                        fieldName: 'S3BUCKETENGINEID',
+                        label: 'S3 Bucket Engine Id',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -5261,8 +5261,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
-                        defaultValue:
-                            '["filepathInS3"] / ["pathInS3","uploadedfilepath","S3BucketEngineId"]',
+                        defaultValue: '["isFilePresentInS3","filePath"]',
                         options: {
                             component: 'text-field',
                         },
@@ -12169,7 +12168,7 @@ export const ENGINE_IMAGES = {
             icon: RESTAPI,
         },
         {
-            name: 'AWS TEXTRACT',
+            name: 'AWS - Image Text Extraction',
             icon: AMAZON_S3, //need to change the icon
         },
         {
