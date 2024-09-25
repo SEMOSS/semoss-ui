@@ -5256,6 +5256,17 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+					{
+                        fieldName: 'AWSTEXTRACTENGINEID',
+                        label: 'AWS Textract Function Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5827,6 +5838,17 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+					{
+                        fieldName: 'AWSTEXTRACTENGINEID',
+                        label: 'AWS Textract Function Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -6213,6 +6235,17 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         secondary: true,
                         rules: {},
+                    },
+					{
+                        fieldName: 'AWSTEXTRACTENGINEID',
+                        label: 'AWS Textract Function Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
                     },
                 ],
             },
