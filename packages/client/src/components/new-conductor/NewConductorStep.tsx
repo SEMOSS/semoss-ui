@@ -13,6 +13,12 @@ import {
     DisplaySettings,
 } from '@mui/icons-material';
 
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+
+import Carousel from './Carousel';
+
 interface NewConductorStepProps {
     /**
      * Can be represented as an app or another widget
@@ -152,6 +158,73 @@ export const NewConductorStep = observer(
                         {/* <Typography variant="h6">
                             Subtask {taskIndex + 1}
                         </Typography> */}
+
+                        <Stepper
+                            sx={{
+                                maxWidth: '350px',
+                                border: '2px solid black',
+                            }}
+                            activeStep={0}
+                            alternativeLabel
+                        >
+                            {['one', 'two', 'three'].map((label) => (
+                                <Step key={label}>
+                                    <StepLabel>{label}</StepLabel>
+                                </Step>
+                            ))}
+                        </Stepper>
+
+                        <div
+                            style={{
+                                border: '2px solid red',
+                                maxWidth: '100%',
+                            }}
+                        >
+                            <Carousel
+                                items={[
+                                    {
+                                        title: 'test 1',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 2',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 3',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 4',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 5',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 11',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 12',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 13',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 14',
+                                        content: 'placeholder content',
+                                    },
+                                    {
+                                        title: 'test 15',
+                                        content: 'placeholder content',
+                                    },
+                                ]}
+                            />
+                        </div>
 
                         <div
                             style={{
