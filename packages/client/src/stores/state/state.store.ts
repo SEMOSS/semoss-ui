@@ -1115,7 +1115,6 @@ export class StateStore {
     private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
         const s = q.getCell(cellId);
-        console.log('LOL', s);
 
         const key = `cell--${cellId} (query--${queryId});`;
 
