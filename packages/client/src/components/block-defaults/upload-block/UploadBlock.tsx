@@ -33,7 +33,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
      * @param file - file to upload to the server
      * @returns
      */
-    const upload = async (file: File) => {
+    const upload = async (file: File | File[]) => {
         if (!file) {
             // clear the value
             setData('value', '');
@@ -95,12 +95,10 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 shrink: true,
             }}
             type={'file'}
-            inputProps={{ accept: data.extensions }}
+            inputProps={{ accept: data.extensions, multiple: true }}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
-
-                // upload the new file on change
-                upload(files[0]);
+                upload(Array.from(files));
             }}
             {...attrs}
         />
