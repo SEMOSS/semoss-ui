@@ -17,6 +17,7 @@ const isProduction = process.env.NODE_ENV == 'production';
 
 const config = {
     entry: './src/main.tsx',
+    devtool: 'source-map', // Reduces build time by 50%
     performance: {
         hints: false,
     },
@@ -25,7 +26,6 @@ const config = {
         clean: true,
     },
     optimization: {
-        chunkIds: 'deterministic',
         minimize: true,
         minimizer: [
             new TerserPlugin({
@@ -35,10 +35,15 @@ const config = {
                 },
             }),
         ],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
         splitChunks: {
-            chunks: 'all',
-            minSize: 10000,
-            maxSize: 250000,
+            chunks: 'async',
+            cacheGroups: {
+                defaultVendors: {
+                    idHint: 'vendors',
+                },
+            },
         },
     },
     plugins: [
