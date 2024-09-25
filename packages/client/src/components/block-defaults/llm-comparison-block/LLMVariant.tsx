@@ -6,11 +6,12 @@ import { LlmCard } from './LlmCard';
 import { useBlock, useBlocks, useLLMComparison } from '@/hooks';
 import { LLMComparisonBlockDef } from './LLMComparisonBlock';
 import { ActionMessages, CellState } from '@/stores';
+import { observer } from 'mobx-react-lite';
 
 const StyledVariantHeader = styled('div')(({ theme }) => ({
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
 }));
 
 const StyledVariantBox = styled('div', {
@@ -41,7 +42,7 @@ interface ModelVariantProps {
     orientation?: 'column' | 'row';
 }
 
-export const LLMVariant = (props: ModelVariantProps) => {
+export const LLMVariant = observer((props: ModelVariantProps) => {
     const { variantName, variant, orientation = 'column' } = props;
     const isDefault = variantName.toLowerCase() === 'default';
     const [hovered, setHovered] = useState(false);
@@ -101,13 +102,11 @@ export const LLMVariant = (props: ModelVariantProps) => {
             onBlur={() => setHovered(false)}
         >
             <StyledVariantHeader>
-                <Stack direction="row" alignItems="center">
-                    <Typography variant="body1" fontWeight="medium">
-                        {isDefault
-                            ? 'Default Variant'
-                            : `Variant ${variantName.toUpperCase()}`}
-                    </Typography>
-                </Stack>
+                <Typography variant="body1" fontWeight="medium">
+                    {isDefault
+                        ? 'Default Variant'
+                        : `Variant ${variantName.toUpperCase()}`}
+                </Typography>
 
                 {!isDefault && (
                     <IconButton onClick={handleDeleteVariant}>
@@ -125,4 +124,4 @@ export const LLMVariant = (props: ModelVariantProps) => {
             </StyledVariantBox>
         </Stack>
     );
-};
+});
