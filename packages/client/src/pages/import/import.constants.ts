@@ -5126,16 +5126,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'BUCKETNAME',
-                        label: 'S3 Bucket Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'FUNCTION_NAME',
                         label: 'Function Name (metadata)',
                         defaultValue: '',
@@ -5158,7 +5148,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
                         label: 'Function Required Parameters',
-                        defaultValue: '["extractedText","audioFilePath"]',
+                        defaultValue: '["extractedText","nameOfTheAudioFile"]',
                         options: {
                             component: 'text-field',
                         },
