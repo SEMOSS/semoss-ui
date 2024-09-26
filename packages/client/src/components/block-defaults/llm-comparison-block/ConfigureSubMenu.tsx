@@ -40,8 +40,8 @@ export const ConfigureSubMenu = observer(() => {
     const designerView = watch('designerView');
 
     // Create/Update the variant being edited.
-    const onSubmit = (data: TypeLlmComparisonForm) => {
-        const { editorVariantName, editorVariant } = data;
+    const onSubmit = (formData: TypeLlmComparisonForm) => {
+        const { editorVariantName, editorVariant } = formData;
 
         addVariantToAppJson();
 
