@@ -13,7 +13,7 @@
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix"
     },
     "author": "",
-    "license": "GPL-2.0",
+    "license": "Apache-2.0",
     "devDependencies": {
         "@commitlint/cli": "^17.7.0",
         "@commitlint/config-conventional": "^17.7.0",

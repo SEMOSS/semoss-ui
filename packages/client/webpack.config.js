@@ -3,6 +3,10 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const BundleAnalyzerPlugin =
+    require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
+
 const dotenv = require('dotenv');
 // const importMetaEnv = require('@import-meta-env/unplugin');
 
@@ -13,6 +17,7 @@ const isProduction = process.env.NODE_ENV == 'production';
 
 const config = {
     entry: './src/main.tsx',
+    devtool: 'source-map', // Reduces build time by 50%
     performance: {
         hints: false,
     },
@@ -20,14 +25,37 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
         clean: true,
     },
+    optimization: {
+        minimize: true,
+        minimizer: [
+            new TerserPlugin({
+                parallel: true,
+                terserOptions: {
+                    // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+                },
+            }),
+        ],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: {
+            chunks: 'async',
+            cacheGroups: {
+                defaultVendors: {
+                    idHint: 'vendors',
+                },
+            },
+        },
+    },
     plugins: [
         new HtmlWebpackPlugin({
-            title: process.env.THEME_TITLE,
-            favicon: process.env.THEME_FAVICON,
+            title: '',
+            favicon: '',
             scriptLoading: 'module',
             template: './src/template.html',
             filename: 'index.html',
         }),
+
+        new BundleAnalyzerPlugin(),
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
             React: 'react',
@@ -98,6 +126,7 @@ const config = {
 };
 
 module.exports = () => {
+    console.log('isProduction', isProduction);
     if (isProduction) {
         config.mode = 'production';
     } else {

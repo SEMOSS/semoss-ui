@@ -384,51 +384,6 @@ export const HomePage = observer((): JSX.Element => {
                                 value={'System'}
                             />
                         </StyledToggleTabsGroup>
-
-                        {/* <StyledToggleButtonGroup value={mode}>
-                            <ToggleButton
-                                color="secondary"
-                                value="Mine"
-                                onClick={(e, v) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                {'My Apps'}
-                            </ToggleButton>
-                            <ToggleButton
-                                color="secondary"
-                                value="Discoverable"
-                                onClick={(e, v) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                {'Discoverable Apps'}
-                            </ToggleButton>
-                            <ToggleButton
-                                color="secondary"
-                                value="System"
-                                onClick={(e, v) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                {'System Apps'}
-                            </ToggleButton>
-                        </StyledToggleButtonGroup> */}
                     </Stack>
 
                     {mode != 'System' && favoritedApps.length > 0 ? (

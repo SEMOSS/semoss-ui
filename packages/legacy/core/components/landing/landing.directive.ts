@@ -4,6 +4,7 @@ import angular from 'angular';
 import './landing.scss';
 import './landing-card/landing-card.directive';
 import './landing-nav/landing-nav.directive';
+import { CUSTOMIZATION } from '@/custom/theme';
 
 export default angular
     .module('app.landing.directive', [
@@ -1095,6 +1096,7 @@ function landingDirective(
          * @desc initialize the module
          */
         function initialize(): void {
+            // console.log('here', CONFIG)
             if (
                 scope.landing.adminOnlyProjectSetPublic ||
                 scope.landing.adminOnlyProjectAdd ||
@@ -1183,6 +1185,22 @@ function landingDirective(
                 resetInsightsListener();
                 insightScrollEle.removeEventListener('scroll', getMoreInsights);
             });
+
+            // dynamically set favicon and title
+            const themeMap = CONFIG.theme['THEME_MAP'] ? JSON.parse(CONFIG.theme['THEME_MAP']) : {}
+            document.title = themeMap.name ? themeMap.name : CUSTOMIZATION.page.title;
+
+            // Set the favicon
+            const faviconLink = themeMap.isLogoUrl
+                ? themeMap.logo
+                : CUSTOMIZATION.page.favicon
+                ? CUSTOMIZATION.page.favicon
+                : null;
+
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = faviconLink;
+            document.head.appendChild(link);
         }
 
         initialize();

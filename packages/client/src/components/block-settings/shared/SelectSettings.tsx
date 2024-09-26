@@ -5,15 +5,20 @@ import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
-import { Block, BlockDef, Variable } from '@/stores';
+import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
-interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
+interface SelectSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
+
+    /**
+     * Label to pass into the input
+     */
+    label: string;
 
     /**
      * Path to update
@@ -21,37 +26,22 @@ interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 
     /**
-     * Settings label
+     * Options
      */
-    label: string;
-
-    /**
-     * Query path to bind to
-     */
-    queryPath: 'isLoading' | 'output';
-
-    /**
-     * Callback
-     */
-    __onChange?: () => void;
+    options: string[];
 }
 
-/**
- * Specifically for selecting a query for to associate with loading/disabled/etc
- */
-export const QuerySelectionSettings = observer(
+export const SelectSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
+        label = '',
         path,
-        label,
-        queryPath,
-        __onChange,
-    }: QuerySelectionSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+        options,
+    }: SelectSettingsProps<D>) => {
+        const { data, setData } = useBlockSettings<D>(id);
         const { state } = useBlocks();
-
-        // track the value
-        const [value, setValue] = useState('');
+        //  track the value
+        const [value, setValue] = useState([]);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -60,54 +50,33 @@ export const QuerySelectionSettings = observer(
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
-                    return '';
+                    return [];
                 }
 
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
-                    return '';
+                    return [];
                 } else if (typeof v === 'string') {
-                    return v;
+                    return (v as string).split(',');
                 }
 
-                return JSON.stringify(v);
+                return v;
             });
         }, [data, path]).get();
 
         // update the value whenever the computed one changes
         useEffect(() => {
-            setValue(computedValue);
+            setValue(computedValue as string[]);
         }, [computedValue]);
-
-        // available queries for autocomplete
-        const queries = useMemo(() => {
-            return Object.keys(state.variables).reduce((acc, queryKey) => {
-                if (
-                    state.variables[queryKey].type === 'query' ||
-                    state.variables[queryKey].type === 'cell'
-                ) {
-                    return {
-                        ...acc,
-                        [`{{${queryKey}.${queryPath}}}`]: queryKey,
-                    };
-                } else {
-                    return {
-                        ...acc,
-                    };
-                }
-            }, {});
-
-            // return queryVariables
-        }, [Object.keys(state.variables).length]);
 
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
+        const onChange = (value: string[]) => {
             // set the value
             setValue(value);
 
-            // clear out the old timeout
+            // clear out he old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -115,8 +84,8 @@ export const QuerySelectionSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
+                    // set the value
                     setData(path, value as PathValue<D['data'], typeof path>);
-                    __onChange();
                 } catch (e) {
                     console.log(e);
                 }
@@ -127,20 +96,18 @@ export const QuerySelectionSettings = observer(
             <BaseSettingSection label={label}>
                 <Autocomplete
                     fullWidth
-                    disableClearable={value === ''}
-                    size="small"
+                    multiple
                     value={value}
-                    options={Object.keys(queries)}
-                    getOptionLabel={(id: string) => {
-                        return queries[id] ?? '';
-                    }}
+                    options={options}
+                    getOptionLabel={(option) => option}
                     onChange={(_, value) => {
                         onChange(value);
                     }}
+                    freeSolo={false}
                     renderInput={(params) => (
                         <TextField
                             {...params}
-                            placeholder="Query"
+                            placeholder="Select extensions"
                             size="small"
                             variant="outlined"
                         />
