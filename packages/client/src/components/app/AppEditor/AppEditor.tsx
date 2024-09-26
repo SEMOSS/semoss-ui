@@ -554,6 +554,7 @@ export const AppEditor = (props: AppEditorProps) => {
                 original: folderContents,
                 type: foundNode.type,
                 active: true,
+                isEditable: foundNode.type == 'json' ? false : true,
             };
             const newFiles = filesToView;
             let activeIndex = 0;
