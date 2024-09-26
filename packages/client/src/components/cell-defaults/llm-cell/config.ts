@@ -13,8 +13,7 @@ export const LLMCellConfig: CellConfig<LLMCellDef> = {
     toPixel: ({ command, variants }) => {
         const pixels = Object.keys(variants).map((key) => {
             const { id, length, temperature, topP } = variants[key].model;
-            // TODO: need to figure out the names for the 'length' & 'topP' value in the params for the pixel string.
-            return `LLM(engine=["${id}"], command=["${command}"], paramValues=[{"temperature":${temperature}}])`;
+            return `LLM(engine=["${id}"], command=["${command}"], paramValues=[{"temperature":${temperature}, "top_p": ${topP}, "max_new_tokens": ${length}}])`;
         });
         return pixels;
     },
