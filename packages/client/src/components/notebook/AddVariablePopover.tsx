@@ -1,11 +1,16 @@
-import React, { createElement, useEffect, useState, useMemo } from 'react';
+import React, {
+    createElement,
+    useEffect,
+    useState,
+    useMemo,
+    Suspense,
+    lazy,
+} from 'react';
 import {
     Alert,
     styled,
     Button,
-    Divider,
     Icon,
-    Modal,
     Stack,
     TextField,
     Select,
@@ -13,7 +18,7 @@ import {
     Popover,
     useNotification,
 } from '@semoss/ui';
-import { useBlocks, usePixel } from '@/hooks';
+import { useBlocks } from '@/hooks';
 import {
     ActionMessages,
     SerializedState,
@@ -23,7 +28,7 @@ import {
 } from '@/stores';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { DefaultBlocks, getIconForBlock } from '../block-defaults';
+import { DefaultBlocks } from '../block-defaults';
 import { BLOCK_TYPE_INPUT } from '../block-defaults/block-defaults.constants';
 import { BlocksRenderer } from '../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
@@ -33,9 +38,10 @@ import {
     splitAtPeriod,
 } from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
-import Editor, { OnMount } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
+
 import { ENGINE_ROUTES } from '@/pages/engine';
+
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
     height: '10vh',
@@ -133,6 +139,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
         app_subtype;
     } | null>(null);
 
+    const [monaco, setMonaco] = useState(null);
     const [variableInputValue, setVariableInputValue] = useState(null);
     const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
 
@@ -295,19 +302,21 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
             );
         } else if (variableType === 'JSON' || variableType === 'array') {
             return (
-                <Editor
-                    width={'100%'}
-                    height={'10vh'}
-                    language={'json'}
-                    onChange={(newValue, e) => {
-                        setVariableInputValue(newValue);
-                    }}
-                    value={
-                        typeof variableInputValue === 'object'
-                            ? JSON.stringify(variableInputValue)
-                            : variableInputValue
-                    }
-                ></Editor>
+                <Suspense fallback={<>...</>}>
+                    <Editor
+                        width={'100%'}
+                        height={'10vh'}
+                        language={'json'}
+                        onChange={(newValue, e) => {
+                            setVariableInputValue(newValue);
+                        }}
+                        value={
+                            typeof variableInputValue === 'object'
+                                ? JSON.stringify(variableInputValue)
+                                : variableInputValue
+                        }
+                    ></Editor>
+                </Suspense>
             );
         } else if (variableType === 'date') {
             return (
@@ -541,6 +550,12 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
         variableInputValue,
         alreadyAliased,
     ]);
+
+    useEffect(() => {
+        import('monaco-editor').then((mon) => {
+            setMonaco(mon);
+        });
+    }, []);
 
     useEffect(() => {
         if (variable?.id) {

@@ -4,6 +4,8 @@ import React, {
     useReducer,
     useRef,
     SyntheticEvent,
+    Suspense,
+    lazy,
 } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -21,7 +23,6 @@ import {
     useNotification,
     Box,
 } from '@semoss/ui';
-import Editor from '@monaco-editor/react';
 import google from '../../assets/img/google.png';
 import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
@@ -30,6 +31,8 @@ import other from '../../assets/img/other.png';
 
 import { useNavigate } from 'react-router-dom';
 import { KeyboardArrowDown, SearchOutlined } from '@mui/icons-material';
+
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const SOCIAL = {
     google: {
@@ -326,11 +329,13 @@ export const ConfigurationsPage = () => {
                     </StyledActionButtonsDiv>
                 </StyledTitle>
                 <StyledDivider />
-                <Editor
-                    height="60vh"
-                    defaultLanguage="javascript"
-                    defaultValue={defaultTyping}
-                />
+                <Suspense fallback={<>...</>}>
+                    <Editor
+                        height="60vh"
+                        defaultLanguage="javascript"
+                        defaultValue={defaultTyping}
+                    />
+                </Suspense>
             </StyledPropContainer>
         );
     };
