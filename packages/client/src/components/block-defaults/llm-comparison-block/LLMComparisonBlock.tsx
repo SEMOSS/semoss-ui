@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBlock, useBlocks } from '@/hooks';
 import { BlockComponent, BlockDef, CellState } from '@/stores';
 import {
@@ -59,6 +59,10 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
     const { state } = useBlocks();
+    const query = state.getQuery(
+        typeof data.queryId === 'string' ? data.queryId : '',
+    );
+    const queryIsLoadingRef = useRef(false);
     const [selectedTab, setSelectedTab] = useState<string>('');
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
@@ -72,6 +76,16 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             getVariantsFromQuery();
         }
     }, [data.queryId]);
+
+    // Refresh the variant's responses when the query has finished loading.
+    // May want to refactor this to have a more direct solution for triggering the refresh.3
+    useEffect(() => {
+        if (!query.isLoading && queryIsLoadingRef.current === true) {
+            queryIsLoadingRef.current = false;
+            getVariantsFromQuery();
+        }
+        queryIsLoadingRef.current = query.isLoading;
+    }, [query.isLoading]);
 
     // Fetch and save variants stored in query to state.
     const getVariantsFromQuery = () => {
