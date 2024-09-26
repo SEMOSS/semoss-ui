@@ -17,6 +17,7 @@ import {
     Star,
     StarBorder,
 } from '@mui/icons-material';
+import { CircularProgress } from '@semoss/ui';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
     margin: theme.spacing(1),
@@ -32,6 +33,12 @@ const StyledTabBox = styled(Stack)(({ theme }) => ({
     borderRadius: '12px',
     backgroundColor: theme.palette.background.paper,
     padding: `${theme.spacing(1)} ${theme.spacing(2)} ${theme.spacing(2)}`,
+}));
+
+const StyledLoadingBar = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'center',
+    padding: theme.spacing(2),
 }));
 
 const StyledRatingRow = styled('div')(({ theme }) => ({
@@ -134,7 +141,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             {Object.keys(variants).length === 0 ? (
                 <StyledTabBox>
                     <Typography variant="body2">
-                        Add a query with variants to generate responses.
+                        Add a query with variants to generate responses with.
                     </Typography>
                 </StyledTabBox>
             ) : (
@@ -190,7 +197,13 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 /> */}
                             </StyledContentHeader>
 
-                            <div>{displayed.response}</div>
+                            {query.isLoading ? (
+                                <StyledLoadingBar>
+                                    <CircularProgress />
+                                </StyledLoadingBar>
+                            ) : (
+                                <div>{displayed.response}</div>
+                            )}
 
                             {/* <StyledRatingRow>
                                 <Typography color="secondary" variant="body2">
@@ -275,7 +288,18 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                             </StyledRatingRow> */}
                         </Stack>
                     ) : (
-                        <div />
+                        <>
+                            {query.isLoading ? (
+                                <StyledLoadingBar>
+                                    <CircularProgress />
+                                </StyledLoadingBar>
+                            ) : (
+                                <Typography variant="body1">
+                                    Generate responses from the query and view
+                                    them here.
+                                </Typography>
+                            )}
+                        </>
                     )}
                 </StyledTabBox>
             )}
