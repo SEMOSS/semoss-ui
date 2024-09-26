@@ -7,7 +7,7 @@ interface CarouselProps {
     itemsToShow?: number;
 }
 
-const Carousel: React.FC<CarouselProps> = ({ items, itemsToShow = 1 }) => {
+const Carousel: React.FC<CarouselProps> = ({ items, itemsToShow = 4 }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [isOverflowing, setIsOverflowing] = useState(false);
     const carouselRef = useRef<HTMLDivElement>(null);
@@ -48,10 +48,11 @@ const Carousel: React.FC<CarouselProps> = ({ items, itemsToShow = 1 }) => {
         <Box
             sx={{
                 width: '100%',
-                maxWidth: 600,
+                // maxWidth: 600,
                 margin: '0 auto',
                 textAlign: 'center',
                 border: '3px solid blue',
+                overflow: 'hidden',
             }}
         >
             <Box
@@ -78,12 +79,29 @@ const Carousel: React.FC<CarouselProps> = ({ items, itemsToShow = 1 }) => {
                             (activeIndex * 100) / itemsToShow
                         }%)`,
                         transition: 'transform 0.5s ease',
+                        // width: '100%',
+                        border: '3px dashed red',
                     }}
                 >
                     {items.map((item, index) => (
-                        <Box key={index} sx={{ flexShrink: 0, width: '100%' }}>
-                            <Typography variant="h4">{item.title}</Typography>
+                        <Box
+                            key={index}
+                            sx={{
+                                flexShrink: 0,
+                                width: '25%',
+                                border: '3px dotted blue',
+                                marginLeft: '10px',
+                                marginRight: '10px',
+                            }}
+                        >
+                            <Typography variant="h4">{item.title} A</Typography>
                             <Typography>{item.content}</Typography>
+                            <Button
+                                variant="contained"
+                                onClick={() => alert(`${item.title} selected`)}
+                            >
+                                Select
+                            </Button>
                         </Box>
                     ))}
                 </Box>
