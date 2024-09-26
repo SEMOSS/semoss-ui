@@ -5,6 +5,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const dotenv = require('dotenv');
 // const importMetaEnv = require('@import-meta-env/unplugin');
+const BundleAnalyzerPlugin =
+    require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
 
 dotenv.config({ path: '../../.env.local' });
 dotenv.config({ path: '../../.env' });
@@ -19,6 +22,20 @@ const config = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         clean: true,
+    },
+    optimization: {
+        minimize: true,
+        minimizer: [new TerserPlugin({})],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: {
+            chunks: 'async',
+            cacheGroups: {
+                defaultVendors: {
+                    idHint: 'vendors',
+                },
+            },
+        },
     },
     plugins: [
         new HtmlWebpackPlugin({
