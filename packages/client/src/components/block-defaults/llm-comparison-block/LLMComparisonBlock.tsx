@@ -131,7 +131,21 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     };
 
     const handleChangeSelected = () => {
-        // TODO
+        const variantsCopy = { ...variants };
+
+        // Prevent user from de-selecting variant. (one must always be selected).
+        if (displayed.selected) return;
+
+        // update the newly selected variant, and de-select all others.
+        let currentSelected;
+        Object.keys(variantsCopy).forEach((key: string) => {
+            if (variantsCopy[key].selected) currentSelected = key;
+            variantsCopy[key].selected = selectedTab === key ? true : false;
+        });
+
+        setVariants(variantsCopy);
+
+        // TODO: update variants in the appropriate cell.
     };
 
     return (
@@ -159,24 +173,24 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 key.toLowerCase() === 'default'
                                     ? 'Default Variant'
                                     : `Variant ${key.toUpperCase()}`;
-                            // const label = selected ? (
-                            //     <Stack
-                            //         direction="row"
-                            //         gap={0}
-                            //         alignItems="flex-end"
-                            //     >
-                            //         <Icon color="primary">
-                            //             <CheckCircle />
-                            //         </Icon>
-                            //         <span>{name}</span>
-                            //     </Stack>
-                            // ) : (
-                            //     name
-                            // );
+                            const label = selected ? (
+                                <Stack
+                                    direction="row"
+                                    gap={0}
+                                    alignItems="flex-end"
+                                >
+                                    <Icon color="primary">
+                                        <CheckCircle />
+                                    </Icon>
+                                    <span>{name}</span>
+                                </Stack>
+                            ) : (
+                                name
+                            );
                             return (
                                 <Tabs.Item
                                     key={`${key}-${idx}`}
-                                    label={name}
+                                    label={label}
                                     value={key}
                                 />
                             );
@@ -190,11 +204,11 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                     Model: {displayed.model.name}
                                 </Typography>
 
-                                {/* <Checkbox
+                                <Checkbox
                                     checked={displayed.selected}
                                     onChange={handleChangeSelected}
                                     label="Use Model"
-                                /> */}
+                                />
                             </StyledContentHeader>
 
                             {query.isLoading ? (
