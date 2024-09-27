@@ -20,9 +20,7 @@ export const AuthenticatedLayout = observer(() => {
 
         try {
             if (theme && theme['THEME_MAP']) {
-                // debugger;
                 const themeMap = JSON.parse(theme['THEME_MAP'] as string);
-                // debugger;
                 return themeMap['termsReact'] ? themeMap['termsReact'] : '';
             }
             return '';

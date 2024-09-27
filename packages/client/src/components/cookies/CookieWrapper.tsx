@@ -80,13 +80,22 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                         ? themeMap['cookiePolicyMessageReact']
                         : '';
 
-                    setPolicies(themePolicies);
-                    setMessage(themeMessages);
-                    setSelectedPolicy(themePolicyOrder[0]);
-                    setOrder(themePolicyOrder);
+                    if (
+                        themePolicyOrder.length &&
+                        Object.keys(themePolicies).length
+                    ) {
+                        setPolicies(themePolicies);
+                        setMessage(themeMessages);
+                        setSelectedPolicy(themePolicyOrder[0]);
+                        setOrder(themePolicyOrder);
+                    } else {
+                        setVisible(false);
+                    }
                 } catch {
                     console.error('Unable to parse theme for cookie wrapper');
                 }
+            } else {
+                setVisible(false);
             }
         } else {
             setVisible(false);
