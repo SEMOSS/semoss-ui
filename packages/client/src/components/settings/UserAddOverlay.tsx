@@ -20,6 +20,10 @@ import { useForm, useFormState, Controller } from 'react-hook-form';
 import { useRootStore, useSettings } from '@/hooks';
 import { AxiosResponse } from 'axios';
 
+const StyledTypography = styled(Typography)({
+    color: 'red',
+});
+
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     maxWidth: '50rem',
 }));
@@ -69,7 +73,7 @@ interface EditUserForm {
     username: string;
     name: string;
     password: string;
-    email: string;
+    newEmail: string;
     phone: string;
     phoneextension: string;
     countrycode: string;
@@ -110,11 +114,11 @@ const numberValidate = (number: string) => {
     if (!number) {
         return false;
     }
-    if (!number.match(/^[()-.\s0-9]{8,}$/)) {
-        return false;
-    }
 
-    return true;
+    const formatOne = /^\(\d{3}\) \d{3}-\d{4}$/;
+    const formatTwo = /^\d{3}-\d{3}-\d{4}$/;
+
+    return formatOne.test(number) || formatTwo.test(number);
 };
 
 interface UserAddOverlayProps {
@@ -156,7 +160,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             id: user?.id,
             username: user?.username,
             name: user?.name,
-            email: user?.email,
+            newEmail: user?.email,
             phone: user?.phone,
             phoneextension: user?.phoneextension,
             countrycode: user?.countrycode,
@@ -270,7 +274,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                             }}
                         />
                         <Controller
-                            name={'email'}
+                            name={'newEmail'}
                             control={control}
                             rules={{
                                 required: true,
@@ -314,8 +318,17 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 name="phone"
                                 control={control}
                                 rules={{
-                                    validate: (value) => numberValidate(value),
-                                    pattern: /^[()-.\s0-9]{8,}$/,
+                                    validate: (value) => {
+                                        if (value == '') {
+                                            return true;
+                                        }
+                                        numberValidate(value);
+                                    },
+                                    pattern: {
+                                        value: /^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$/,
+                                        message:
+                                            'Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX',
+                                    },
                                 }}
                                 render={({ field }) => {
                                     return (
@@ -335,14 +348,13 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                                 }
                                             ></StyledPhoneNumber>
                                             {errors.phone && (
-                                                <Typography
+                                                <StyledTypography
                                                     variant={'caption'}
-                                                    color="error"
                                                 >
-                                                    Note: Number should be
-                                                    written in XXX-XXX-XXXX
-                                                    format
-                                                </Typography>
+                                                    Note: Phone number must be
+                                                    in the format (XXX) XXX-XXXX
+                                                    or XXX-XXX-XXXX
+                                                </StyledTypography>
                                             )}
                                         </Stack>
                                     );
@@ -462,12 +474,12 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 />
 
                                 {errors.password && (
-                                    <Typography variant={'caption'}>
+                                    <StyledTypography variant={'caption'}>
                                         Note: Password must have one letter, one
                                         capital, one number, one special
                                         character, and be a minimum of 8
                                         characters.
-                                    </Typography>
+                                    </StyledTypography>
                                 )}
                             </>
                         )}
