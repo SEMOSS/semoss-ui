@@ -497,7 +497,7 @@ export const HomePage = observer((): JSX.Element => {
                     ) : null}
                 </StyledContentContainer>
             </StyledContainer>
-            <WelcomeModal />
+            {/* <WelcomeModal /> */}
             <Help />
         </Page>
     );

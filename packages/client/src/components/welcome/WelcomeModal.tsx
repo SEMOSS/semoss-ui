@@ -193,7 +193,11 @@ export const WelcomeModal = () => {
         const theme = configStore.store.config['theme'];
 
         if (theme && theme['THEME_MAP']) {
-            return JSON.parse(theme['THEME_MAP'] as string);
+            try {
+                return JSON.parse(theme['THEME_MAP'] as string);
+            } catch {
+                return {};
+            }
         }
 
         return {};
