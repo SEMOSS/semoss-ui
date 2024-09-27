@@ -5,6 +5,11 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const dotenv = require('dotenv');
 // const importMetaEnv = require('@import-meta-env/unplugin');
+const BundleAnalyzerPlugin =
+    require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
+
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 dotenv.config({ path: '../../.env.local' });
 dotenv.config({ path: '../../.env' });
@@ -20,6 +25,20 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
         clean: true,
     },
+    optimization: {
+        minimize: true,
+        minimizer: [new TerserPlugin({})],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: {
+            chunks: 'async',
+            cacheGroups: {
+                defaultVendors: {
+                    idHint: 'vendors',
+                },
+            },
+        },
+    },
     plugins: [
         new HtmlWebpackPlugin({
             title: '',
@@ -28,6 +47,7 @@ const config = {
             template: './src/template.html',
             filename: 'index.html',
         }),
+
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
             React: 'react',
@@ -43,6 +63,10 @@ const config = {
             chunkFilename: '[id].css',
         }),
 
+        // new MonacoWebpackPlugin({
+        //     languages: ['javascript', 'typescript'],
+        // }),
+        // new BundleAnalyzerPlugin()
         // Add your plugins here
         // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     ],
@@ -83,7 +107,6 @@ const config = {
                     },
                 ],
             },
-
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],
@@ -98,6 +121,7 @@ const config = {
 };
 
 module.exports = () => {
+    console.log('isProduction', isProduction);
     if (isProduction) {
         config.mode = 'production';
     } else {
