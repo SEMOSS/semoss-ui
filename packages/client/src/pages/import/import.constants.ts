@@ -5069,6 +5069,104 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
+            {
+                name: 'AWS Transcribe',
+                disable: false,
+                icon: AMAZON_S3,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AWS_Transcribe',
+
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'REGION',
+                        label: 'Region',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'S3BUCKETENGINEID',
+                        label: 'S3 Bucket Engine Id',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '["isFilePresentInS3","filePath"]',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
         ],
         'File Uploads': [
             {
@@ -11961,6 +12059,10 @@ export const ENGINE_IMAGES = {
         {
             name: 'REST',
             icon: RESTAPI,
+        },
+        {
+            name: 'AWS Transcribe',
+            icon: AMAZON_S3, //need to change the icon
         },
         {
             name: 'ZIP',
