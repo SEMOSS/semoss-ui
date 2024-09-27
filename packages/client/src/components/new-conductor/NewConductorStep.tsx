@@ -18,6 +18,7 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 
 import Carousel from './Carousel';
+import TaskStepper from './TaskStepper';
 
 interface NewConductorStepProps {
     /**
@@ -89,6 +90,7 @@ export const NewConductorStep = observer(
 
         const [isExpanded, setHistoryExpanded] = useState(false);
         const [isRawInputsShown, setIsRawInputsShown] = useState(false);
+        const [selectedSubTaskApp, setSelectedSubTaskApp] = useState(null);
 
         return (
             <Accordion
@@ -149,20 +151,35 @@ export const NewConductorStep = observer(
                         sx={{
                             // backgroundColor: '#fafafa',
                             backgroundColor: '#fff',
-                            // border: '1px solid black',
+                            border: '3px solid green',
                             padding: '16px',
                             borderRadius: '12px',
                             paddingTop: '0px',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'left',
+                            // justifyContent: 'flex-start',
+                            // width container working at this level
                         }}
                     >
-                        {/* <Typography variant="h6">
+                        <Typography
+                            variant="h6"
+                            sx={{ border: '1px solid goldenrod' }}
+                        >
                             Subtask {taskIndex + 1}
-                        </Typography> */}
+                        </Typography>
 
-                        <Stepper
+                        {selectedSubTaskApp == null && (
+                            <TaskStepper
+                                setSelectedSubTaskApp={setSelectedSubTaskApp}
+                            />
+                        )}
+
+                        {/* <Stepper
                             sx={{
-                                maxWidth: '350px',
-                                border: '2px solid black',
+                                // maxWidth: '350px',
+                                width: '100%',
+                                border: '2px solid goldenrod',
                             }}
                             activeStep={0}
                             alternativeLabel
@@ -172,12 +189,12 @@ export const NewConductorStep = observer(
                                     <StepLabel>{label}</StepLabel>
                                 </Step>
                             ))}
-                        </Stepper>
+                        </Stepper> */}
 
-                        <div
+                        {/* <div
                             style={{
                                 border: '2px solid red',
-                                maxWidth: '100%',
+                                width: '100%',
                             }}
                         >
                             <Carousel
@@ -224,7 +241,7 @@ export const NewConductorStep = observer(
                                     },
                                 ]}
                             />
-                        </div>
+                        </div> */}
 
                         <div
                             style={{
