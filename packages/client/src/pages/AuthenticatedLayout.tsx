@@ -24,7 +24,7 @@ export const AuthenticatedLayout = observer(() => {
                 return {
                     header: themeMap['termsHeaderReact']
                         ? themeMap['termsHeaderReact']
-                        : '',
+                        : 'Attention',
                     text: themeMap['termsReact'] ? themeMap['termsReact'] : '',
                 };
             }
