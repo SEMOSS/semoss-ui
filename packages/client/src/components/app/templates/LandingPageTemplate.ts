@@ -11,6 +11,7 @@ export const LandingPageTemplate: Template = {
     tags: [],
     state: {
         version: '1.0.0-alpha.1',
+        executionOrder: [],
         dependencies: {},
         variables: {},
         queries: {},

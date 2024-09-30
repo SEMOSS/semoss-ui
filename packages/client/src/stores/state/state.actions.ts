@@ -33,6 +33,7 @@ export enum ActionMessages {
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
     REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
+    SET_SHEET_EXECUTION_ORDER = 'SET_SHEET_EXECUTION_ORDER',
 }
 
 export type Actions =
@@ -57,7 +58,8 @@ export type Actions =
     | EditVariableAction
     | DeleteVariableAction
     | AddDependencyAction
-    | RemoveDependencyAction;
+    | RemoveDependencyAction
+    | SetSheetExecutionOrderAction;
 
 export interface Action {
     message: string;
@@ -243,9 +245,12 @@ export interface AddVariableAction extends Action {
     message: ActionMessages.ADD_VARIABLE;
     payload: {
         id: string;
-        to: string;
         type: VariableType;
+        to?: string;
         cellId?: string;
+        value?: string;
+        isInput?: boolean;
+        isOutput?: boolean;
     };
 }
 
@@ -255,9 +260,12 @@ export interface EditVariableAction extends Action {
         id: string;
         from: VariableWithId;
         to: {
-            to: string;
             type: VariableType;
+            to?: string;
             cellId?: string;
+            value?: string;
+            isInput?: boolean;
+            isOutput?: boolean;
         };
     };
 }
@@ -274,5 +282,12 @@ export interface DeleteVariableAction extends Action {
     message: ActionMessages.DELETE_VARIABLE;
     payload: {
         id: string;
+    };
+}
+
+export interface SetSheetExecutionOrderAction extends Action {
+    message: ActionMessages.SET_SHEET_EXECUTION_ORDER;
+    payload: {
+        list: string[];
     };
 }

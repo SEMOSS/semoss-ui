@@ -17,6 +17,8 @@ import {
     Typography,
     Popover,
     useNotification,
+    Grid,
+    Checkbox,
 } from '@semoss/ui';
 import { useBlocks } from '@/hooks';
 import {
@@ -140,6 +142,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
     } | null>(null);
 
     const [monaco, setMonaco] = useState(null);
+    const [isInput, setIsInput] = useState(false);
+    const [isOutput, setIsOutput] = useState(false);
+
     const [variableInputValue, setVariableInputValue] = useState(null);
     const inputVariableTypeList = ['string', 'number', 'JSON', 'date', 'array'];
 
@@ -376,6 +381,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     const block = state.getBlock(variablePointer);
                     const s: SerializedState = {
                         version: STATE_VERSION,
+                        executionOrder: [],
                         dependencies: {},
                         variables: {},
                         queries: {},
@@ -518,6 +524,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
     }, [variableType, variablePointer, engine, variableInputValue]);
 
     const addVariableDisabled = useMemo(() => {
+        debugger;
         const hasRequiredFields = Boolean(
             variableType.length > 0 && variableName.length > 0,
         );
@@ -561,18 +568,22 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
         if (variable?.id) {
             setVariableName(variable.id);
             setVariableType(variable.type);
-            setVariablePointer(
-                variable.type === 'cell'
-                    ? `${variable.to}.${variable.cellId}`
-                    : variable.to,
-            );
+            setIsInput(variable.isInput);
+            setIsOutput(variable.isOutput);
 
             if (
                 variable.type !== 'query' &&
                 variable.type !== 'block' &&
                 variable.type !== 'cell'
             ) {
-                const val = state.getVariable(variable.to, variable.type);
+                const val = state.getVariable(
+                    variable.to,
+                    variable.type,
+                    null,
+                    null,
+                    variable.value ? variable.value : null,
+                );
+
                 if (inputVariableTypeList.includes(variable.type)) {
                     setVariableInputValue(val);
                 } else {
@@ -662,6 +673,24 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     {input}
                     <Typography variant={'h6'}>Preview</Typography>
                     {preview}
+                    {variablePointer || variableInputValue || engine ? (
+                        <Grid container>
+                            <Grid item>
+                                <Checkbox
+                                    label="Is Input"
+                                    checked={isInput}
+                                    onChange={() => setIsInput(!isInput)}
+                                />
+                            </Grid>
+                            <Grid item>
+                                <Checkbox
+                                    label="Is Output"
+                                    checked={isOutput}
+                                    onChange={() => setIsOutput(!isOutput)}
+                                />
+                            </Grid>
+                        </Grid>
+                    ) : null}
                 </Stack>
                 <Stack direction={'row'} justifyContent={'flex-end'}>
                     <Button
@@ -681,67 +710,77 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                             // Refactor this
                             if (variableType) {
                                 if (variable) {
-                                    if (
-                                        variableType === 'block' ||
-                                        variableType === 'query' ||
-                                        variableType === 'cell'
-                                    ) {
-                                        state.dispatch({
-                                            message:
-                                                ActionMessages.EDIT_VARIABLE,
-                                            payload: {
-                                                id: variableName,
-                                                from: variable,
-                                                to:
-                                                    variableType === 'cell'
-                                                        ? {
-                                                              to: splitAtPeriod(
-                                                                  variablePointer,
-                                                                  'left',
-                                                              ),
-                                                              type: variableType,
-                                                              cellId: splitAtPeriod(
-                                                                  variablePointer,
-                                                                  'right',
-                                                              ),
-                                                          }
-                                                        : {
-                                                              to: variablePointer,
-                                                              type: variableType,
-                                                          },
-                                            },
-                                        });
-                                    } else {
-                                        const id = await state.dispatch({
-                                            message:
-                                                ActionMessages.ADD_DEPENDENCY,
-                                            payload: {
-                                                id: engine
-                                                    ? engine.app_id
-                                                    : variableType ===
-                                                          'array' ||
-                                                      variableType === 'JSON'
-                                                    ? JSON.parse(
-                                                          variableInputValue,
-                                                      )
-                                                    : variableInputValue,
-                                                type: variableType,
-                                            },
-                                        });
+                                    debugger;
+                                    state.dispatch({
+                                        message: ActionMessages.EDIT_VARIABLE,
+                                        payload: {
+                                            id: variableName,
+                                            from: variable,
+                                            to:
+                                                variableType === 'cell'
+                                                    ? {
+                                                          to: splitAtPeriod(
+                                                              variablePointer,
+                                                              'left',
+                                                          ),
+                                                          type: variableType,
+                                                          cellId: splitAtPeriod(
+                                                              variablePointer,
+                                                              'right',
+                                                          ),
+                                                          isInput: isInput,
+                                                          isOutput: isOutput,
+                                                      }
+                                                    : {
+                                                          to: variablePointer,
+                                                          type: variableType,
+                                                          value: engine
+                                                              ? engine.app_id
+                                                              : variableType ===
+                                                                    'array' ||
+                                                                variableType ===
+                                                                    'JSON'
+                                                              ? JSON.parse(
+                                                                    variableInputValue,
+                                                                )
+                                                              : variableInputValue,
+                                                          isInput: isInput,
+                                                          isOutput: isOutput,
+                                                      },
+                                        },
+                                    });
 
-                                        state.dispatch({
-                                            message:
-                                                ActionMessages.EDIT_VARIABLE,
-                                            payload: {
-                                                id: variableName,
-                                                from: variable,
-                                                to: {
-                                                    to: id,
-                                                    type: variableType,
-                                                },
-                                            },
-                                        });
-                                    }
+                                    // else {
+                                    //     const id = await state.dispatch({
+                                    //         message:
+                                    //             ActionMessages.ADD_DEPENDENCY,
+                                    //         payload: {
+                                    //             id: engine
+                                    //                 ? engine.app_id
+                                    //                 : variableType ===
+                                    //                       'array' ||
+                                    //                   variableType === 'JSON'
+                                    //                 ? JSON.parse(
+                                    //                       variableInputValue,
+                                    //                   )
+                                    //                 : variableInputValue,
+                                    //             type: variableType,
+                                    //         },
+                                    //     });
+
+                                    //     state.dispatch({
+                                    //         message:
+                                    //             ActionMessages.EDIT_VARIABLE,
+                                    //         payload: {
+                                    //             id: variableName,
+                                    //             from: variable,
+                                    //             to: {
+                                    //                 to: id,
+                                    //                 type: variableType,
+                                    //             },
+                                    //         },
+                                    //     });
+                                    // }
 
                                     notification.add({
                                         color: 'success',
@@ -753,74 +792,81 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                         `Adding variable ${variableName}`,
                                     );
 
-                                    let success;
-                                    if (
-                                        variableType === 'block' ||
-                                        variableType === 'query' ||
-                                        variableType === 'cell'
-                                    ) {
-                                        success = state.dispatch({
-                                            message:
-                                                ActionMessages.ADD_VARIABLE,
-                                            payload:
-                                                variableType === 'cell'
-                                                    ? {
-                                                          id: variableName,
-                                                          to: splitAtPeriod(
-                                                              variablePointer,
-                                                              'left',
-                                                          ),
-                                                          type: variableType,
-                                                          cellId: splitAtPeriod(
-                                                              variablePointer,
-                                                              'right',
-                                                          ),
-                                                      }
-                                                    : {
-                                                          id: variableName,
-                                                          to: variablePointer,
-                                                          type: variableType,
-                                                      },
-                                        });
-                                    } else {
-                                        // Add dependency to reference
-                                        const id = await state.dispatch({
-                                            message:
-                                                ActionMessages.ADD_DEPENDENCY,
-                                            payload: {
-                                                id: engine
-                                                    ? engine.app_id
-                                                    : variableType ===
-                                                          'array' ||
-                                                      variableType === 'JSON'
-                                                    ? JSON.parse(
-                                                          variableInputValue,
-                                                      )
-                                                    : variableInputValue,
-                                                type: variableType,
-                                            },
-                                        });
+                                    const success = state.dispatch({
+                                        message: ActionMessages.ADD_VARIABLE,
+                                        payload:
+                                            variableType === 'cell'
+                                                ? {
+                                                      id: variableName,
+                                                      to: splitAtPeriod(
+                                                          variablePointer,
+                                                          'left',
+                                                      ),
+                                                      type: variableType,
+                                                      cellId: splitAtPeriod(
+                                                          variablePointer,
+                                                          'right',
+                                                      ),
+                                                      isInput: isInput,
+                                                      isOutput: isOutput,
+                                                  }
+                                                : {
+                                                      id: variableName,
+                                                      to: variablePointer,
+                                                      type: variableType,
+                                                      value: engine
+                                                          ? engine.app_id
+                                                          : variableType ===
+                                                                'array' ||
+                                                            variableType ===
+                                                                'JSON'
+                                                          ? JSON.parse(
+                                                                variableInputValue,
+                                                            )
+                                                          : variableInputValue,
+                                                      isInput: isInput,
+                                                      isOutput: isOutput,
+                                                  },
+                                    });
+                                    // else {
+                                    //     // Add dependency to reference
+                                    //     const id = await state.dispatch({
+                                    //         message:
+                                    //             ActionMessages.ADD_DEPENDENCY,
+                                    //         payload: {
+                                    //             id: engine
+                                    //                 ? engine.app_id
+                                    //                 : variableType ===
+                                    //                       'array' ||
+                                    //                   variableType === 'JSON'
+                                    //                 ? JSON.parse(
+                                    //                       variableInputValue,
+                                    //                   )
+                                    //                 : variableInputValue,
+                                    //             type: variableType,
+                                    //         },
+                                    //     });
 
-                                        success = state.dispatch({
-                                            message:
-                                                ActionMessages.ADD_VARIABLE,
-                                            payload: {
-                                                id: variableName,
-                                                to: id,
-                                                type: variableType,
-                                            },
-                                        });
+                                    //     success = state.dispatch({
+                                    //         message:
+                                    //             ActionMessages.ADD_VARIABLE,
+                                    //         payload: {
+                                    //             id: variableName,
+                                    //             to: id,
+                                    //             type: variableType,
+                                    //         },
+                                    //     });
 
-                                        if (!success) {
-                                            state.dispatch({
-                                                message:
-                                                    ActionMessages.REMOVE_DEPENDENCY,
-                                                payload: {
-                                                    id: id,
-                                                },
-                                            });
-                                        }
-                                    }
+                                    //     if (!success) {
+                                    //         state.dispatch({
+                                    //             message:
+                                    //                 ActionMessages.REMOVE_DEPENDENCY,
+                                    //             payload: {
+                                    //                 id: id,
+                                    //             },
+                                    //         });
+                                    //     }
+                                    // }
 
                                     notification.add({
                                         color: success ? 'success' : 'error',

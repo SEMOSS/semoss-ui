@@ -47,7 +47,7 @@ interface CookieWrapperProps {
     children: React.ReactNode;
 }
 
-export const cookieName = `smss-cookies-react-app`;
+export const cookieName = `smss-optional-cookie`;
 
 export const CookieWrapper = observer((props: CookieWrapperProps) => {
     const { children } = props;
