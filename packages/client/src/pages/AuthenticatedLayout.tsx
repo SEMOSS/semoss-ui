@@ -21,11 +21,22 @@ export const AuthenticatedLayout = observer(() => {
         try {
             if (theme && theme['THEME_MAP']) {
                 const themeMap = JSON.parse(theme['THEME_MAP'] as string);
-                return themeMap['termsReact'] ? themeMap['termsReact'] : '';
+                return {
+                    header: themeMap['termsHeaderReact']
+                        ? themeMap['termsHeaderReact']
+                        : '',
+                    text: themeMap['termsReact'] ? themeMap['termsReact'] : '',
+                };
             }
-            return '';
+            return {
+                header: '',
+                text: '',
+            };
         } catch {
-            return '';
+            return {
+                header: '',
+                text: '',
+            };
         }
     }, []);
 
@@ -38,7 +49,7 @@ export const AuthenticatedLayout = observer(() => {
 
     return (
         <>
-            {TERMS && (
+            {TERMS.header && TERMS.text && (
                 <Modal open={!acceptedTerms}>
                     <Modal.Title>
                         <Typography
@@ -46,10 +57,10 @@ export const AuthenticatedLayout = observer(() => {
                             color={'primary'}
                             fontWeight="bold"
                         >
-                            Warning
+                            {TERMS.header}
                         </Typography>
                     </Modal.Title>
-                    <Modal.Content>{TERMS}</Modal.Content>
+                    <Modal.Content>{TERMS.text}</Modal.Content>
                     <Modal.Actions>
                         <Button
                             variant="contained"
