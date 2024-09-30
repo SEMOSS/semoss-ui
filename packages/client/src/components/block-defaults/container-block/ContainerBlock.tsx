@@ -9,6 +9,7 @@ export interface ContainerBlockDef extends BlockDef<'container'> {
     widget: 'container';
     data: {
         style: CSSProperties;
+        customStyle: CSSProperties;
     };
     slots: {
         children: true;
@@ -22,6 +23,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
         <div
             style={{
                 ...data.style,
+                ...data.customStyle,
                 overflowWrap: 'anywhere', // text that overflows container
             }}
             {...attrs}

@@ -6,6 +6,7 @@ import {
     buildLayoutSection,
     buildColorSection,
     buildTypographySection,
+    buildCustomStyleSheetSection,
     buildListener,
 } from '../block-defaults.shared';
 
@@ -32,6 +33,7 @@ export const config: BlockConfig<PageBlockDef> = {
     data: {
         style: DefaultStyles,
         loading: false,
+        customStyle: {},
     },
     listeners: {
         onPageLoad: [],
@@ -94,5 +96,6 @@ export const config: BlockConfig<PageBlockDef> = {
             ],
         },
         buildTypographySection(),
+        buildCustomStyleSheetSection(),
     ],
 };
