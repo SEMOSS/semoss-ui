@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Paths, PathValue } from '@/types';
@@ -7,7 +7,9 @@ import { Block, BlockDef, QueryState } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
-import { Editor } from '@monaco-editor/react';
+
+// Reduce Initial Bundle
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -230,26 +232,28 @@ export const JsonSettings = observer(
         };
 
         return (
-            <Editor
-                width="100%"
-                height="100%"
-                value={value}
-                language="json"
-                options={{
-                    lineNumbers: 'on',
-                    readOnly: false,
-                    minimap: { enabled: false },
-                    automaticLayout: true,
-                    scrollBeyondLastLine: false,
-                    lineHeight: 19,
-                    overviewRulerBorder: false,
-                }}
-                onChange={(e) => {
-                    // sync the data on change
-                    onChange(e);
-                }}
-                onMount={handleMount}
-            />
+            <Suspense fallback={<>...</>}>
+                <Editor
+                    width="100%"
+                    height="100%"
+                    value={value}
+                    language="json"
+                    options={{
+                        lineNumbers: 'on',
+                        readOnly: false,
+                        minimap: { enabled: false },
+                        automaticLayout: true,
+                        scrollBeyondLastLine: false,
+                        lineHeight: 19,
+                        overviewRulerBorder: false,
+                    }}
+                    onChange={(e) => {
+                        // sync the data on change
+                        onChange(e);
+                    }}
+                    onMount={handleMount}
+                />
+            </Suspense>
         );
     },
 );
