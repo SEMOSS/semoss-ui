@@ -234,6 +234,7 @@ export const NewAppPage = () => {
                                                     variables: {},
                                                     queries: {},
                                                     blocks: BASE_PAGE_BLOCKS,
+                                                    executionOrder: [],
                                                 },
                                             })
                                         }
