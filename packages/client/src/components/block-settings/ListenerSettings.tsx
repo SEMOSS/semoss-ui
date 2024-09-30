@@ -90,9 +90,9 @@ export const ListenerSettings = observer(
         const getQueryStatusIcon = (a) => {
             if (a.message === 'RUN_QUERY') {
                 const query = state.getQuery(a.payload.queryId);
-                if (query.isSuccessful) {
+                if (query && query.isSuccessful) {
                     return <StyledGreenDot />;
-                } else if (query.isError) {
+                } else if (query && query.isError) {
                     return <StyledRedDot />;
                 } else {
                     return;
