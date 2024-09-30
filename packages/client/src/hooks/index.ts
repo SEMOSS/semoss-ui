@@ -14,6 +14,7 @@ import { useWorkspace } from './useWorkspace';
 import { useLLMComparison } from './useLLMCompare';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
+import { useTypeWriter } from './useTypeWriter';
 
 export {
     useAPI,
@@ -32,4 +33,5 @@ export {
     useLLMComparison,
     useDebounce,
     useDebounceValue,
+    useTypeWriter,
 };
