@@ -1,7 +1,6 @@
 import { observer } from 'mobx-react-lite';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { StyledSelect, StyledSelectItem } from '../shared';
-import Editor, { Monaco } from '@monaco-editor/react';
 import {
     styled,
     Button,
@@ -28,7 +27,9 @@ import {
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { DataImportFormModal } from '../../notebook/DataImportFormModal';
 import { useBlocks, usePixel } from '@/hooks';
-import { editor } from 'monaco-editor';
+
+// Reduce Initial Bundle
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -248,10 +249,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
          * @param editor - editor that mounted
          * @param monaco - monaco instance
          */
-        const handleEditorMount = (
-            editor: editor.IStandaloneCodeEditor,
-            monaco: Monaco,
-        ) => {
+        const handleEditorMount = (editor, monaco) => {
             editorRef.current = editor;
 
             // add on change
@@ -506,31 +504,36 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                         </>
                     ) : (
                         <div>
-                            <Editor
-                                // value is appended to make pixel valid for copy / paste to other pixel cell
-                                defaultValue={
-                                    cell.parameters.selectQuery.slice(0, -1) +
-                                    ` | Import ( frame = [ CreateFrame ( frameType = [ \"${cell.parameters.frameType}\" ] , override = [ true ] ) .as ( [ \"${cell.parameters.frameVariableName}\" ] ) ] ) ; Frame ( frame = [ \"${cell.parameters.frameVariableName}\" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
-                                }
-                                language="pixel"
-                                options={{
-                                    scrollbar: {
-                                        alwaysConsumeMouseWheel: false,
-                                    },
-                                    lineHeight: EDITOR_LINE_HEIGHT,
-                                    scrollBeyondLastLine: false,
-                                    overviewRulerBorder: false,
-                                    minimap: { enabled: false },
-                                    lineNumbersMinChars: 2,
-                                    automaticLayout: true,
-                                    glyphMargin: false,
-                                    lineNumbers: 'on',
-                                    readOnly: true,
-                                    folding: false,
-                                }}
-                                onChange={handleEditorChange}
-                                onMount={handleEditorMount}
-                            />
+                            <Suspense fallback={<>...</>}>
+                                <Editor
+                                    // value is appended to make pixel valid for copy / paste to other pixel cell
+                                    defaultValue={
+                                        cell.parameters.selectQuery.slice(
+                                            0,
+                                            -1,
+                                        ) +
+                                        ` | Import ( frame = [ CreateFrame ( frameType = [ \"${cell.parameters.frameType}\" ] , override = [ true ] ) .as ( [ \"${cell.parameters.frameVariableName}\" ] ) ] ) ; Frame ( frame = [ \"${cell.parameters.frameVariableName}\" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+                                    }
+                                    language="pixel"
+                                    options={{
+                                        scrollbar: {
+                                            alwaysConsumeMouseWheel: false,
+                                        },
+                                        lineHeight: EDITOR_LINE_HEIGHT,
+                                        scrollBeyondLastLine: false,
+                                        overviewRulerBorder: false,
+                                        minimap: { enabled: false },
+                                        lineNumbersMinChars: 2,
+                                        automaticLayout: true,
+                                        glyphMargin: false,
+                                        lineNumbers: 'on',
+                                        readOnly: true,
+                                        folding: false,
+                                    }}
+                                    onChange={handleEditorChange}
+                                    onMount={handleEditorMount}
+                                />
+                            </Suspense>
                         </div>
                     )}
                     {isExpanded && (
