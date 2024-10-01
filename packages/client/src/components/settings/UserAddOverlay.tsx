@@ -73,6 +73,7 @@ interface EditUserForm {
     username: string;
     name: string;
     password: string;
+    email: string;
     newEmail: string;
     phone: string;
     phoneextension: string;
@@ -117,8 +118,13 @@ const numberValidate = (number: string) => {
 
     const formatOne = /^\(\d{3}\) \d{3}-\d{4}$/;
     const formatTwo = /^\d{3}-\d{3}-\d{4}$/;
+    const formatThree = /^\d{10}$/;
 
-    return formatOne.test(number) || formatTwo.test(number);
+    return (
+        formatOne.test(number) ||
+        formatTwo.test(number) ||
+        formatThree.test(number)
+    );
 };
 
 interface UserAddOverlayProps {
@@ -160,7 +166,8 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             id: user?.id,
             username: user?.username,
             name: user?.name,
-            newEmail: user?.email,
+            email: user?.email,
+            //newEmail: null,
             phone: user?.phone,
             phoneextension: user?.phoneextension,
             countrycode: user?.countrycode,
@@ -179,6 +186,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
     }, [user, open]);
 
     const type = watch('type', '');
+    const email = watch('email');
 
     // TODO: Standardize
     const providers = configStore.store.config.providers.map((val) => ({
@@ -191,6 +199,12 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
      */
     const editUser = handleSubmit(
         async (data: EditUserForm) => {
+            if (email !== user?.email) {
+                console.log('DING DING DING');
+                data.newEmail = email;
+            }
+            console.log('Data: ', data);
+
             let success = false;
 
             try {
@@ -203,8 +217,6 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                         data,
                     );
                 }
-
-                console.log(response);
 
                 if (!response) {
                     return;
@@ -274,7 +286,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                             }}
                         />
                         <Controller
-                            name={'newEmail'}
+                            name={'email'}
                             control={control}
                             rules={{
                                 required: true,
@@ -292,7 +304,6 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 );
                             }}
                         />
-
                         <Stack direction={'row'} gap={1}>
                             <Controller
                                 name={'countrycode'}
@@ -325,7 +336,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                         numberValidate(value);
                                     },
                                     pattern: {
-                                        value: /^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$/,
+                                        value: /^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$|^\d{10}$/,
                                         message:
                                             'Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX',
                                     },
