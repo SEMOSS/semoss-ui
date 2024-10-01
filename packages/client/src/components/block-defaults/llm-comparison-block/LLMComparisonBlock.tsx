@@ -118,7 +118,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             (variant, idx) => {
                 modelledVars[variant.id] = {
                     ...variant,
-                    response: (cell?.output || [])[idx]?.response,
+                    response: (selectedCell?.output || [])[idx]?.response,
                     selected: idx === 0,
                 };
             },
