@@ -30,7 +30,7 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
     const [value, setValue] = useState('');
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-    // Get the value of the input (wrapped in useMemo because of path prop)
+    // Get the value of the input
     const computedValue = useMemo(() => {
         return computed(() => {
             if (!data) {
@@ -46,7 +46,7 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
 
             return JSON.stringify(v);
         });
-    }, [data]).get();
+    }, [data.cellId]).get();
 
     // Update the value whenever the computed one changes
     useEffect(() => {
@@ -95,11 +95,14 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
         <BaseSettingSection label="LLM Cell">
             <Autocomplete
                 fullWidth
-                disableClearable={value === ''}
+                disableClearable
                 size="small"
                 value={value}
                 options={llmCells}
-                getOptionLabel={(cell) => cell.cellId || ''}
+                getOptionLabel={(cell) => cell || ''}
+                isOptionEqualToValue={(option, val) => {
+                    return option.cellId === val;
+                }}
                 groupBy={(cell) => cell.queryId}
                 onChange={(_, newValue) => onChange(newValue)}
                 renderInput={(params) => (
