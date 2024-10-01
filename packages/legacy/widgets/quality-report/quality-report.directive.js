@@ -351,7 +351,6 @@ function qualityReportDirective(semossCoreService) {
         function getResults() {
             var callback;
 
-            debugger
             if (scope.qualityReport.rules.selected.ruleID == 'Regex Input') {
                 scope.qualityReport.rules.selected.selectedOptions[0] =
                     scope.qualityReport.rules.selected.selectedOptions[0].replace(
@@ -364,7 +363,6 @@ function qualityReportDirective(semossCoreService) {
                 var output = response.pixelReturn[0].output,
                     type = response.pixelReturn[0].operationType;
 
-                    debugger
                 if (type.indexOf('ERROR') > -1) {
                     return;
                 }
@@ -458,14 +456,14 @@ function qualityReportDirective(semossCoreService) {
         function getDataFromFrame(results, updateOrnaments, showAllResults) {
             var callback;
 
-            debugger
             callback = function (response) {
                 var output = response.pixelReturn[0].output,
-                    type = response.pixelReturn[0].operationType;
-
+                type = response.pixelReturn[0].operationType;
+                
                 if (type.indexOf('ERROR') > -1) {
                     return;
                 }
+                debugger
 
                 if (output.data.values.length > 0) {
                     if (showAllResults) {
@@ -578,6 +576,7 @@ function qualityReportDirective(semossCoreService) {
                     },
                 });
                 if (numOfErrors > 0) {
+
                     addColorByValue(
                         scope.qualityReport.results[
                             scope.qualityReport.results.length - 1
@@ -753,13 +752,23 @@ function qualityReportDirective(semossCoreService) {
             havingorFilterPixel += '(';
             havingorFilterPixel += rule.column;
             havingorFilterPixel += ' == [';
-            havingorFilterPixel += rule.failedInstances;
+            havingorFilterPixel += rule.failedInstances.map(fI => {
+                // Check if the element is a string
+                if (typeof fI === 'string') {
+                    return JSON.stringify(fI); // Convert string to its JSON string representation
+                } else {
+                    return fI; // Keep other data types the same
+                }
+            }).join(',');
+
             havingorFilterPixel += '])';
 
             pixel += havingorFilterTag;
             pixel += '(';
             pixel += havingorFilterPixel;
             pixel += ');';
+
+        
 
             scope.widgetCtrl.execute([
                 {
