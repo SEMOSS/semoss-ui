@@ -9,7 +9,7 @@ import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
-import { usePixel } from '@/hooks';
+import { useBlocks, usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
 
@@ -38,9 +38,11 @@ const StyledRightPanel = styled('div')(() => ({
 }));
 
 export const Notebook = observer(() => {
+    const { state } = useBlocks();
+
     // view
     const [view, setView] = useState<
-        'variables' | 'sources' | 'blocks' | 'transform' | ''
+        'variables' | 'sources' | 'blocks' | 'transform' | 'variants' | ''
     >('variables');
 
     /**
@@ -97,7 +99,7 @@ export const Notebook = observer(() => {
             </Sidebar>
             {view ? (
                 <StyledLeftPanel>
-                    {view === 'variables' ? <NotebookVariablesMenu /> : null}
+                    {view === 'variables' && <NotebookVariablesMenu />}
                 </StyledLeftPanel>
             ) : null}
 
@@ -111,8 +113,12 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
-                    <NotebookSheetsMenu />
-                    <NotebookSheet />
+                    {view === 'variables' && (
+                        <>
+                            <NotebookSheetsMenu />
+                            <NotebookSheet />
+                        </>
+                    )}
                 </LLMContext.Provider>
             </StyledRightPanel>
         </StyledNotebook>

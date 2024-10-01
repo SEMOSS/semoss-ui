@@ -39,7 +39,8 @@ export type VariableType =
     | 'function'
     | 'JSON'
     | 'date'
-    | 'array';
+    | 'array'
+    | 'LLM Comparison';
 
 /**
  * Variables
@@ -76,6 +77,23 @@ export type VariableWithId =
           isInput?: boolean;
           isOutput?: boolean;
       } & { id: string });
+
+/**
+ * Variants
+ */
+export type Variant = {
+    id: string;
+    sortWeight: number;
+    model: VariantModel;
+};
+
+export type VariantModel = {
+    id: string;
+    name: string;
+    topP: number;
+    temperature: number;
+    length: number;
+};
 
 /**
  * Block
@@ -290,5 +308,5 @@ export type CellConfig<D extends CellDef = CellDef> = {
     toPixel: (
         /** Parameters associated with the cell */
         parameters: D['parameters'],
-    ) => string;
+    ) => string | string[];
 };

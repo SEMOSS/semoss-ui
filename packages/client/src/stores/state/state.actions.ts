@@ -2,7 +2,6 @@ import {
     BlockJSON,
     ListenerActions,
     SerializedState,
-    Variable,
     VariableType,
     VariableWithId,
 } from './state.types';
