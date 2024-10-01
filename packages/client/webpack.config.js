@@ -3,12 +3,13 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const dotenv = require('dotenv');
+// const importMetaEnv = require('@import-meta-env/unplugin');
 const BundleAnalyzerPlugin =
     require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const TerserPlugin = require('terser-webpack-plugin');
 
-const dotenv = require('dotenv');
-// const importMetaEnv = require('@import-meta-env/unplugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 dotenv.config({ path: '../../.env.local' });
 dotenv.config({ path: '../../.env' });
@@ -17,7 +18,6 @@ const isProduction = process.env.NODE_ENV == 'production';
 
 const config = {
     entry: './src/main.tsx',
-    devtool: 'source-map', // Reduces build time by 50%
     performance: {
         hints: false,
     },
@@ -27,14 +27,7 @@ const config = {
     },
     optimization: {
         minimize: true,
-        minimizer: [
-            new TerserPlugin({
-                parallel: true,
-                terserOptions: {
-                    // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
-                },
-            }),
-        ],
+        minimizer: [new TerserPlugin({})],
         removeAvailableModules: false,
         removeEmptyChunks: false,
         splitChunks: {
@@ -55,7 +48,6 @@ const config = {
             filename: 'index.html',
         }),
 
-        new BundleAnalyzerPlugin(),
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
             React: 'react',
@@ -71,6 +63,10 @@ const config = {
             chunkFilename: '[id].css',
         }),
 
+        // new MonacoWebpackPlugin({
+        //     languages: ['javascript', 'typescript'],
+        // }),
+        // new BundleAnalyzerPlugin()
         // Add your plugins here
         // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     ],
@@ -111,7 +107,6 @@ const config = {
                     },
                 ],
             },
-
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],

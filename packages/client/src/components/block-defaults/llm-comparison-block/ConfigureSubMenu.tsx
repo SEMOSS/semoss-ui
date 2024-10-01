@@ -4,10 +4,10 @@ import { LLMVariant } from './LLMVariant';
 import { TypeLlmComparisonForm } from '@/components/workspace';
 import { Add, ArrowBack } from '@mui/icons-material';
 import { VariantEditor } from './VariantEditor';
-import { QueryNameDropdownSettings } from '@/components/block-settings/custom/QueryNameDropdownSettings';
 import { generateVariantName } from './LlmComparison.utility';
 import { ActionMessages, CellState } from '@/stores';
 import { observer } from 'mobx-react-lite';
+import { LLMCellSelect } from './LLMCellSelect';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({
     width: '100%',
@@ -74,10 +74,12 @@ export const ConfigureSubMenu = observer(() => {
         };
 
         let query;
-        if (typeof data.queryId === 'string') {
+        if (
+            typeof data.queryId === 'string' &&
+            typeof data.cellId === 'string'
+        ) {
             query = state.getQuery(data.queryId);
         } else {
-            // TODO: this will be an issue for users that have a non-llm cell applied. We should have UI/UX to prevent this.
             console.log("Type of 'data.queryId' is NOT a string");
             return;
         }
@@ -100,45 +102,16 @@ export const ConfigureSubMenu = observer(() => {
             }
         });
 
-        // TODO: cellMatch will be overwritten if there are multiple cells with variants of the same name
-        //       once functionality is finalized, this should be addressed in one of two options:
-        //       1. Multiple Cells allowed per query: check should be added to prevent repeating variant names.
-        //       2. one llmCell per query: hopefully this can be resolved in the notebook.
-        let cellMatch: CellState | null = null;
-        Object.values(query.cells).forEach((cell: CellState) => {
-            const variantMatch = Object.values(cell.parameters.variants).find(
-                (v) => v.id === editorVariantName,
-            );
-            if (variantMatch) cellMatch = cell;
+        // Update Variant in the cell
+        state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+                queryId: data.queryId,
+                cellId: data.cellId,
+                path: `parameters.variants.${editorVariantName}`,
+                value: modelledVariant,
+            },
         });
-
-        // Update Variant within the matching cell
-        if (cellMatch) {
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: data.queryId,
-                    cellId: cellMatch.id,
-                    path: `parameters.variants.${editorVariantName}`,
-                    value: modelledVariant,
-                },
-            });
-        } else {
-            // Create the variant and add it to the new cell by arbitrarily using the first cell.
-            // TODO: error checking needed depending upon outcome if the todo above.
-            const cells: CellState[] = Object.values(query.cells);
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: data.queryId,
-                    cellId: cells[0].id,
-                    path: `parameters.variants.${editorVariantName}`,
-                    value: modelledVariant,
-                },
-            });
-        }
-
-        // Clear variant outputs until
 
         notification.add({
             color: 'success',
@@ -183,20 +156,17 @@ export const ConfigureSubMenu = observer(() => {
         return (
             <StyledAllView direction="column" gap={2}>
                 <Typography variant="h6" fontWeight="bold">
-                    LLM Query
+                    LLM Cell
                 </Typography>
-                <QueryNameDropdownSettings
-                    id={blockId}
-                    label="Query"
-                    path="queryId"
-                />
+
+                <LLMCellSelect id={blockId} />
 
                 <Typography variant="h6" fontWeight="bold">
                     Variants
                 </Typography>
                 {Object.keys(variants).length === 0 && (
                     <Typography variant="body2">
-                        Connect an LLM Query with variants to view them here.
+                        Connect an LLM Cell with variants to view them here.
                     </Typography>
                 )}
 

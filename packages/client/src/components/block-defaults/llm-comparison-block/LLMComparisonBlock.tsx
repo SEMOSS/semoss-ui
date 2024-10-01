@@ -18,6 +18,7 @@ import {
     StarBorder,
 } from '@mui/icons-material';
 import { CircularProgress } from '@semoss/ui';
+import { toJS } from 'mobx';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
     margin: theme.spacing(1),
@@ -66,60 +67,62 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
     const { state } = useBlocks();
-    const query = state.getQuery(
-        typeof data.queryId === 'string' ? data.queryId : '',
-    );
-    const queryIsLoadingRef = useRef(false);
+    const cellIsLoadingRef = useRef(false);
     const [selectedTab, setSelectedTab] = useState<string>('');
+    const [cell, setCell] = useState<CellState | null>(null);
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
     const [highlightedRating, setHighlightedRating] = useState(0);
 
+    // get the blocks' cell
     useEffect(() => {
-        if (!data.queryId) {
+        if (!data.queryId || !data.cellId) {
             setVariants({});
+            setCell(null);
             return;
         } else {
-            getVariantsFromQuery();
+            let selectedCell: CellState | null = null;
+            if (
+                typeof data.queryId === 'string' &&
+                typeof data.cellId === 'string'
+            ) {
+                selectedCell = state.getQuery(data.queryId).cells[data.cellId];
+            }
+
+            if (!selectedCell) {
+                setVariants({});
+                setCell(null);
+            } else {
+                setCell(selectedCell);
+                getVariantsFromCell(selectedCell);
+            }
         }
-    }, [data.queryId]);
+    }, [data.queryId, data.cellId]);
 
     // Refresh the variant's responses when the query has finished loading.
     // May want to refactor this to have a more direct solution for triggering the refresh.3
     useEffect(() => {
-        if (!query.isLoading && queryIsLoadingRef.current === true) {
-            queryIsLoadingRef.current = false;
-            getVariantsFromQuery();
-        }
-        queryIsLoadingRef.current = query.isLoading;
-    }, [query.isLoading]);
+        if (!cell) return;
 
-    // Fetch and save variants stored in query to state.
-    const getVariantsFromQuery = () => {
-        let query;
-        if (typeof data.queryId === 'string') {
-            query = state.getQuery(data.queryId);
-        } else {
-            console.log("Type of 'data.queryId' is NOT a string");
-            return;
+        if (!cell.isLoading && cellIsLoadingRef.current === true) {
+            cellIsLoadingRef.current = false;
+            getVariantsFromCell(cell);
         }
+        cellIsLoadingRef.current = cell.isLoading;
+    }, [cell, cell?.isLoading]);
 
-        let modelledVars = {};
-        Object.values(query.cells).forEach((cell: CellState, idx) => {
-            const cellVars = {};
-            Object.values(cell.parameters.variants).forEach((variant, idx) => {
-                cellVars[variant.id] = {
+    // Fetch and save variants stored in cell to state.
+    const getVariantsFromCell = (selectedCell: CellState) => {
+        const modelledVars = {};
+        Object.values(selectedCell.parameters.variants).forEach(
+            (variant, idx) => {
+                modelledVars[variant.id] = {
                     ...variant,
-                    response: (cell.output || [])[idx]?.response,
+                    response: (selectedCell?.output || [])[idx]?.response,
                     selected: idx === 0,
                 };
-            });
-
-            modelledVars = {
-                ...modelledVars,
-                ...cellVars,
-            };
-        });
+            },
+        );
 
         const variantKeys = Object.keys(modelledVars);
         setSelectedTab(variantKeys[0] || '');
@@ -155,7 +158,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             {Object.keys(variants).length === 0 ? (
                 <StyledTabBox>
                     <Typography variant="body2">
-                        Add a query with variants to generate responses with.
+                        Add a LLM Cell with variants to generate responses with.
                     </Typography>
                 </StyledTabBox>
             ) : (
@@ -211,7 +214,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 />
                             </StyledContentHeader>
 
-                            {query.isLoading ? (
+                            {cell?.isLoading ? (
                                 <StyledLoadingBar>
                                     <CircularProgress />
                                 </StyledLoadingBar>
@@ -303,13 +306,13 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                         </Stack>
                     ) : (
                         <>
-                            {query.isLoading ? (
+                            {cell?.isLoading ? (
                                 <StyledLoadingBar>
                                     <CircularProgress />
                                 </StyledLoadingBar>
                             ) : (
                                 <Typography variant="body1">
-                                    Generate responses from the query and view
+                                    Generate responses from the cell and view
                                     them here.
                                 </Typography>
                             )}
