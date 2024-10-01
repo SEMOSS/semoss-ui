@@ -12,6 +12,7 @@ export const config: BlockConfig<LLMComparisonBlockDef> = {
     type: BLOCK_TYPE_COMPARE,
     data: {
         queryId: '',
+        cellId: '',
     },
     listeners: {},
     slots: {},

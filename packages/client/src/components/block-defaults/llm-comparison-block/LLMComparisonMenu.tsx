@@ -1,4 +1,4 @@
-import { BlockComponent, CellState, Variant } from '@/stores';
+import { BlockComponent, Variant } from '@/stores';
 import { useBlock, useBlocks, useRootStore } from '@/hooks';
 import { styled, ToggleTabsGroup, useNotification } from '@semoss/ui';
 import { useState, useEffect, useRef } from 'react';
@@ -69,27 +69,34 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
         const allModels = await fetchAllModels();
         setAllModels(allModels);
 
-        getVariantsFromQuery(allModels);
+        getVariantsFromCell(allModels);
     };
 
     // update variants when the user changes the block's query.
     useEffect(() => {
-        if (data.queryId && fetchedModelsRef.current) {
-            getVariantsFromQuery(allModels);
+        console.log('helloooooooo', data.queryId, data.cellId);
+        if (data.queryId && data.cellId && fetchedModelsRef.current) {
+            getVariantsFromCell(allModels);
         } else {
             setValue('variants', {});
         }
-    }, [data.queryId, allModels]);
+    }, [data.queryId, data.cellId, allModels]);
 
-    // Retrieve, model, and set Variants in state from selected query.
-    const getVariantsFromQuery = (models) => {
-        let query;
-        if (typeof data.queryId === 'string') {
-            query = state.getQuery(data.queryId);
+    // Retrieve model, and set Variants in state from selected query.
+    const getVariantsFromCell = (models) => {
+        if (!data.queryId || !data.cellId) return;
+
+        let cell;
+        if (
+            typeof data.queryId === 'string' &&
+            typeof data.cellId === 'string'
+        ) {
+            cell = state.getQuery(data.queryId).cells[data.cellId];
         } else {
             console.log("Type of 'data.queryId' is NOT a string");
             return;
         }
+        if (!cell) return;
 
         // Accepts a variant from the App's JSON and models it for the Comparison menu's form state.
         const modelVariantLlm = (variant: Variant): TypeLlmConfig => {
@@ -108,19 +115,17 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
             };
         };
 
-        let variants: TypeVariants = {};
-        Object.values(query.cells).forEach((cell: CellState) => {
-            const modelled = {};
-            Object.values(cell.parameters.variants).map((variant) => {
+        const variants: TypeVariants = {};
+        Object.values(cell.parameters.variants || {}).forEach(
+            (variant: Variant) => {
                 const model = modelVariantLlm(variant);
-                modelled[variant.id] = {
+                variants[variant.id] = {
                     model,
                     sortWeight: 0, // TODO
                     trafficAllocation: 0,
                 };
-            });
-            variants = { ...variants, ...modelled };
-        });
+            },
+        );
         setValue('variants', variants);
     };
 
