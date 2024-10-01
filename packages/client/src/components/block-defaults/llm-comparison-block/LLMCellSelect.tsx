@@ -27,26 +27,28 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
     const { data, setData } = useBlockSettings(id);
     const { state } = useBlocks();
     const [llmCells, setLlmCells] = useState([]);
-    const [value, setValue] = useState('');
+    const [value, setValue] = useState({ queryId: '', cellId: '' });
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
     // Get the value of the input
     const computedValue = useMemo(() => {
         return computed(() => {
             if (!data) {
-                return '';
+                return { queryId: '', cellId: '' };
             }
 
-            const v = getValueByPath(data, 'cellId');
-            if (typeof v === 'undefined') {
-                return '';
-            } else if (typeof v === 'string') {
-                return v;
+            const modelledValue = { queryId: '', cellId: '' };
+            const queryId = getValueByPath(data, 'queryId');
+            if (typeof queryId === 'string') {
+                modelledValue.queryId = queryId;
             }
-
-            return JSON.stringify(v);
+            const cellId = getValueByPath(data, 'cellId');
+            if (typeof cellId === 'string') {
+                modelledValue.cellId = cellId;
+            }
+            return modelledValue;
         });
-    }, [data.cellId]).get();
+    }, [data.cellId, data.queryId]).get();
 
     // Update the value whenever the computed one changes
     useEffect(() => {
@@ -99,9 +101,9 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
                 size="small"
                 value={value}
                 options={llmCells}
-                getOptionLabel={(cell) => cell || ''}
+                getOptionLabel={(cell) => cell.cellId || ''}
                 isOptionEqualToValue={(option, val) => {
-                    return option.cellId === val;
+                    return option.cellId === val.cellId;
                 }}
                 groupBy={(cell) => cell.queryId}
                 onChange={(_, newValue) => onChange(newValue)}
