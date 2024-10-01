@@ -351,6 +351,7 @@ function qualityReportDirective(semossCoreService) {
         function getResults() {
             var callback;
 
+            debugger
             if (scope.qualityReport.rules.selected.ruleID == 'Regex Input') {
                 scope.qualityReport.rules.selected.selectedOptions[0] =
                     scope.qualityReport.rules.selected.selectedOptions[0].replace(
@@ -363,6 +364,7 @@ function qualityReportDirective(semossCoreService) {
                 var output = response.pixelReturn[0].output,
                     type = response.pixelReturn[0].operationType;
 
+                    debugger
                 if (type.indexOf('ERROR') > -1) {
                     return;
                 }
@@ -456,6 +458,7 @@ function qualityReportDirective(semossCoreService) {
         function getDataFromFrame(results, updateOrnaments, showAllResults) {
             var callback;
 
+            debugger
             callback = function (response) {
                 var output = response.pixelReturn[0].output,
                     type = response.pixelReturn[0].operationType;

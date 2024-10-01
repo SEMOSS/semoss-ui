@@ -70,7 +70,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                 try {
                     const themeMap = JSON.parse(theme['THEME_MAP'] as string);
 
-                    const themePolicyOrder = themeMap['cookiePoliciesReact']
+                    const themePolicyOrder = themeMap['cookiePolicyOrderReact']
                         ? themeMap['cookiePolicyOrderReact']
                         : [];
                     const themePolicies = themeMap['cookiePoliciesReact']
