@@ -282,7 +282,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
             <StyledModal>
                 <Autocomplete
                     label="Search"
-                    loading={isLoading || renderedMembers.length === 0}
+                    loading={isLoading}
                     multiple={true}
                     freeSolo={false}
                     filterOptions={(x) => x}
