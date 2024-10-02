@@ -119,6 +119,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
     const [renderedMembers, setRenderedMembers] = useState([]);
     const [infiniteOn, setInfiniteOn] = useState(true);
+    const [searchLoading, setSearchLoading] = useState(false);
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -171,8 +172,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 setRenderedMembers((prev) => {
                     return [...prev, ...getMembers.data.data];
                 });
+                setSearchLoading(false);
             } else {
                 setRenderedMembers(getMembers.data.data);
+                setSearchLoading(false);
             }
         }
     }, [getMembers.status]);
@@ -282,7 +285,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
             <StyledModal>
                 <Autocomplete
                     label="Search"
-                    loading={isLoading}
+                    loading={isLoading || searchLoading}
                     multiple={true}
                     freeSolo={false}
                     filterOptions={(x) => x}
@@ -315,6 +318,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         setOffset(0);
                         setInfiniteOn(true);
                         setRenderedMembers([]);
+                        setSearchLoading(true);
                     }}
                     onChange={(event, newValue) => {
                         setSelectedMembers(newValue || []);
