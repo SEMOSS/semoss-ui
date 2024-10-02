@@ -276,15 +276,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         }
     }, [isScrollBottom]);
 
-    console.log(renderedMembers);
-
     return (
         <Modal open={open} maxWidth="lg">
             <Modal.Title>Add Members</Modal.Title>
             <StyledModal>
                 <Autocomplete
                     label="Search"
-                    loading={isLoading}
+                    loading={isLoading || renderedMembers.length === 0}
                     multiple={true}
                     freeSolo={false}
                     filterOptions={(x) => x}
@@ -313,10 +311,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         return option.id === value.id;
                     }}
                     onInputChange={(event, newValue) => {
-                        setOffset(0);
                         setSearch(newValue);
+                        setOffset(0);
                         setInfiniteOn(true);
-                        setRenderedMembers(renderedMembers);
+                        setRenderedMembers([]);
                     }}
                     onChange={(event, newValue) => {
                         setSelectedMembers(newValue || []);
