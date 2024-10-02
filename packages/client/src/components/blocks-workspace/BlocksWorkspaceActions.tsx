@@ -88,7 +88,8 @@ export const BlocksWorkspaceActions = observer(() => {
 
             notification.add({
                 color: 'success',
-                message: 'Save successful! Make sure to double-check your changes for correctness',
+                message:
+                    'Save successful! Make sure to double-check your changes for correctness',
             });
         } catch (e) {
             console.error(e);
@@ -191,22 +192,22 @@ export const BlocksWorkspaceActions = observer(() => {
     /**
      * Trigger save on ctrl+s
      */
-        const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
-            if (event.key === 's' && event.ctrlKey) {
-                event.preventDefault();
-                saveApp();
-            }
-        }, []);
-    
-        useEffect(() => {
-            // attach the event listener
-            document.addEventListener('keydown', onDocumentKeydown);
-    
-            // remove the event listener
-            return () => {
-                document.removeEventListener('keydown', onDocumentKeydown);
-            };
-        }, [onDocumentKeydown]);
+    const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
+        if (event.key === 's' && event.ctrlKey) {
+            event.preventDefault();
+            saveApp();
+        }
+    }, []);
+
+    useEffect(() => {
+        // attach the event listener
+        document.addEventListener('keydown', onDocumentKeydown);
+
+        // remove the event listener
+        return () => {
+            document.removeEventListener('keydown', onDocumentKeydown);
+        };
+    }, [onDocumentKeydown]);
 
     return (
         <Stack direction="row" spacing={1} alignItems={'center'}>
