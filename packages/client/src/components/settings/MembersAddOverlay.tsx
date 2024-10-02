@@ -118,6 +118,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const [isScrollBottom, setIsScrollBottom] = useState(false);
     const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
     const [renderedMembers, setRenderedMembers] = useState([]);
+    const [infiniteOn, setInfiniteOn] = useState(true);
+    const [searchLoading, setSearchLoading] = useState(false);
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -163,18 +165,23 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     useEffect(() => {
         if (getMembers.status === 'SUCCESS') {
-            if (renderedMembers.length >= 1) {
+            if (getMembers.data.data.length < 10) {
+                setInfiniteOn(false);
+            }
+            if (renderedMembers.length >= 10 && offset > 0) {
                 setRenderedMembers((prev) => {
                     return [...prev, ...getMembers.data.data];
                 });
+                setSearchLoading(false);
             } else {
                 setRenderedMembers(getMembers.data.data);
+                setSearchLoading(false);
             }
         }
     }, [getMembers.status]);
 
     const getAdditionalMembers = () => {
-        setOffset(offset + 5);
+        setOffset(offset + 10);
     };
 
     /**
@@ -266,7 +273,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     useEffect(() => {
         if (isScrollBottom) {
-            getAdditionalMembers();
+            if (infiniteOn) {
+                getAdditionalMembers();
+            }
         }
     }, [isScrollBottom]);
 
@@ -276,7 +285,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
             <StyledModal>
                 <Autocomplete
                     label="Search"
-                    loading={isLoading}
+                    loading={isLoading || searchLoading}
                     multiple={true}
                     freeSolo={false}
                     filterOptions={(x) => x}
@@ -306,6 +315,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                     }}
                     onInputChange={(event, newValue) => {
                         setSearch(newValue);
+                        setOffset(0);
+                        setInfiniteOn(true);
+                        setRenderedMembers([]);
+                        setSearchLoading(true);
                     }}
                     onChange={(event, newValue) => {
                         setSelectedMembers(newValue || []);
