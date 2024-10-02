@@ -198,6 +198,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 return {
                     userid: m.id,
                     permission: permissionMapper[selectedRole],
+                    email: m.email,
+                    name: m.name,
+                    type: m.type,
+                    username: m.username,
                 };
             });
 
