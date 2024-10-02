@@ -51,16 +51,22 @@ export const AuthenticatedLayout = observer(() => {
         <>
             {TERMS.header && TERMS.text && (
                 <Modal open={!acceptedTerms}>
-                    <Modal.Title>
-                        <Typography
-                            variant={'h5'}
-                            color={'primary'}
-                            fontWeight="bold"
-                        >
-                            {TERMS.header}
-                        </Typography>
+                    <Modal.Title sx={{ paddingBottom: '0' }}>
+                        <div
+                            id="attention-modal-header"
+                            dangerouslySetInnerHTML={{
+                                __html: TERMS.header,
+                            }}
+                        ></div>
                     </Modal.Title>
-                    <Modal.Content>{TERMS.text}</Modal.Content>
+                    <Modal.Content>
+                        <div
+                            id="attention-modal-body"
+                            dangerouslySetInnerHTML={{
+                                __html: TERMS.text,
+                            }}
+                        ></div>
+                    </Modal.Content>
                     <Modal.Actions>
                         <Button
                             variant="contained"

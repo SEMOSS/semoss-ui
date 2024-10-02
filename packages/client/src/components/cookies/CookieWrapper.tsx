@@ -1,14 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-    Box,
-    Button,
-    List,
-    Modal,
-    Stack,
-    styled,
-    Typography,
-} from '@semoss/ui';
-import { Collapse, Fade } from '@mui/material';
+import { Box, Button, Modal, Stack, styled, Typography } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 
@@ -32,16 +23,6 @@ const AcceptCookieContainer = styled(Box)(({ theme }) => ({
     padding: theme.spacing(3),
 }));
 
-const StyledPolicyItem = styled(List.ItemButton, {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{ selected: boolean }>(({ selected, theme }) => ({
-    paddingTop: 0,
-    borderTop: selected ? `2px solid ${theme.palette.primary.main}` : ``,
-    borderBottom: selected
-        ? `2px solid ${theme.palette.primary.main}`
-        : `2px solid ${theme.palette.secondary.main}`,
-}));
-
 interface CookieWrapperProps {
     /** Content to overlay the Loading Screen on */
     children: React.ReactNode;
@@ -56,10 +37,9 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
     const [visible, setVisible] = useState(true);
     const [viewCookiePolicy, setViewCookiePolicy] = useState(false);
 
-    const [order, setOrder] = useState([]);
-    const [policies, setPolicies] = useState({});
-    const [message, setMessage] = useState('');
-    const [selectedPolicy, setSelectedPolicy] = useState('');
+    const [cookieBanner, setCookieBanner] = useState('');
+    const [cookieModalBody, setCookieModalBody] = useState('');
+    const [cookieModalHeader, setCookieModalHeader] = useState('');
 
     useEffect(() => {
         const permissionGranted = localStorage.getItem(cookieName);
@@ -70,24 +50,30 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                 try {
                     const themeMap = JSON.parse(theme['THEME_MAP'] as string);
 
-                    const themePolicyOrder = themeMap['cookiePoliciesReact']
-                        ? themeMap['cookiePolicyOrderReact']
-                        : [];
-                    const themePolicies = themeMap['cookiePoliciesReact']
-                        ? themeMap['cookiePoliciesReact']
-                        : {};
-                    const themeMessages = themeMap['cookiePolicyMessageReact']
-                        ? themeMap['cookiePolicyMessageReact']
+                    const themeCookieBanner = themeMap[
+                        'cookiePolicyBannerReact'
+                    ]
+                        ? themeMap['cookiePolicyBannerReact']
+                        : '';
+                    const themeCookieModalHeader = themeMap[
+                        'cookiePolicyModalHeaderReact'
+                    ]
+                        ? themeMap['cookiePolicyModalHeaederReact']
+                        : '';
+                    const themeCookieModalBody = themeMap[
+                        'cookiePolicyModalBodyReact'
+                    ]
+                        ? themeMap['cookiePolicyModalBodyReact']
                         : '';
 
-                    if (
-                        themePolicyOrder.length &&
-                        Object.keys(themePolicies).length
-                    ) {
-                        setPolicies(themePolicies);
-                        setMessage(themeMessages);
-                        setSelectedPolicy(themePolicyOrder[0]);
-                        setOrder(themePolicyOrder);
+                    if (themeCookieBanner && themeCookieModalBody) {
+                        setCookieBanner(themeCookieBanner);
+                        setCookieModalHeader(
+                            themeCookieModalHeader
+                                ? themeCookieModalHeader
+                                : 'Privacy Preference Center',
+                        );
+                        setCookieModalBody(themeCookieModalBody);
                     } else {
                         setVisible(false);
                     }
@@ -103,11 +89,6 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 
         return () => {
             setVisible(true);
-
-            setPolicies({});
-            setMessage('');
-            setSelectedPolicy('');
-            setOrder([]);
         };
     }, [Object.keys(configStore.store.config).length]);
 
@@ -127,26 +108,21 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                     <AcceptCookieContainer>
                         <Stack direction="row" justifyContent={'space-between'}>
                             <Stack direction="column" gap={1}>
-                                <Typography variant="body1" fontWeight="bold">
-                                    This site uses strictly necessary cookies
-                                    and similar technologies to operate this
-                                    website and to provide you with a more
-                                    personalized user experience
-                                </Typography>
-                                <Typography variant="body2">
-                                    For more information, please review the
-                                    Cookie Policy
-                                </Typography>
+                                <div
+                                    id="cookie-policy-banner"
+                                    dangerouslySetInnerHTML={{
+                                        __html: cookieBanner,
+                                    }}
+                                ></div>
                             </Stack>
                             <Stack direction="row" gap={1}>
                                 <Button
                                     variant={'outlined'}
                                     onClick={() => {
-                                        // setVisible(false);
                                         setViewCookiePolicy(true);
                                     }}
                                 >
-                                    View cookie policy
+                                    View cookies
                                 </Button>
 
                                 <Button
@@ -169,38 +145,21 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
             <Modal open={viewCookiePolicy} maxWidth="md">
                 <Modal.Title>
                     <Stack direction={'column'} gap={1}>
-                        <Typography variant="h5">
-                            Privacy Preference Center
-                        </Typography>
-                        <Typography variant="caption">{message}</Typography>
+                        <div
+                            id="cookie-modal-header"
+                            dangerouslySetInnerHTML={{
+                                __html: cookieModalHeader,
+                            }}
+                        ></div>
                     </Stack>
                 </Modal.Title>
                 <Modal.Content>
-                    <Stack direction="row" gap={1}>
-                        <List sx={{ width: '500px' }}>
-                            {order.map((key, i) => {
-                                const hasPolicyMessage = key === selectedPolicy;
-
-                                return (
-                                    <StyledPolicyItem
-                                        key={i}
-                                        selected={hasPolicyMessage}
-                                        onClick={() => {
-                                            setSelectedPolicy(key);
-                                        }}
-                                    >
-                                        <List.ItemText>{key}</List.ItemText>
-                                    </StyledPolicyItem>
-                                );
-                            })}
-                        </List>
-
-                        <Stack direction="column" sx={{ width: '100%' }}>
-                            <Typography variant="body1">
-                                {policies[selectedPolicy]}
-                            </Typography>
-                        </Stack>
-                    </Stack>
+                    <div
+                        id="cookie-modal-body"
+                        dangerouslySetInnerHTML={{
+                            __html: cookieModalBody,
+                        }}
+                    ></div>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
