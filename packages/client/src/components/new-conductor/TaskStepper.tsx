@@ -154,6 +154,8 @@ export default function TaskStepper({ setSelectedSubTaskApp }) {
                 })}
             </Stepper>
 
+            {}
+
             {activeStep === steps.length ? (
                 <React.Fragment>
                     <Typography sx={{ mt: 2, mb: 1 }}>
@@ -174,12 +176,12 @@ export default function TaskStepper({ setSelectedSubTaskApp }) {
                         Step {activeStep + 1}
                     </Typography>
 
-                    {activeStep == 0 && (
+                    {/* {activeStep == 0 && (
                         <Carousel
                             items={DUMMY_APPS}
                             setSelectedSubTaskApp={setSelectedSubTaskApp}
                         />
-                    )}
+                    )} */}
 
                     <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
                         <Button

@@ -67,7 +67,8 @@ const Carousel: React.FC<CarouselProps> = ({
         <Box
             sx={{
                 // width: '50%', // width is problematic at this level
-                // maxWidth: "500px",
+                maxWidth: '500px',
+                // maxWidth: "auto",
                 // maxWidth: "100%",
                 // margin: '0 auto',
                 textAlign: 'center',
@@ -111,7 +112,7 @@ const Carousel: React.FC<CarouselProps> = ({
                             key={index}
                             sx={{
                                 flexShrink: 0,
-                                width: `25%`, // play with this width
+                                // width: `25%`, // play with this width
                                 // width: `${CARD_WIDTH}px`,
                                 border: '3px dotted blue',
                                 marginLeft: `${Math.floor(CARD_MARGIN / 2)}`,

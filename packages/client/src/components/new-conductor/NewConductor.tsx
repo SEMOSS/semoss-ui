@@ -535,6 +535,7 @@ export const Conductor = observer(() => {
                             taskContainerWidthPercent == '0%' ? '0px' : '20px',
                         display: taskEditWidthPercent == '0%' ? 'none' : 'flex',
                         width: taskEditWidthPercent,
+                        overflow: 'hidden',
                     }}
                 >
                     <div
