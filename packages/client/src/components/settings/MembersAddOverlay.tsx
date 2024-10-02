@@ -118,6 +118,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const [isScrollBottom, setIsScrollBottom] = useState(false);
     const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
     const [renderedMembers, setRenderedMembers] = useState([]);
+    const [infiniteOn, setInfiniteOn] = useState(true);
 
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
@@ -163,7 +164,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     useEffect(() => {
         if (getMembers.status === 'SUCCESS') {
-            if (renderedMembers.length >= 1) {
+            if (getMembers.data.data.length < 10) {
+                setInfiniteOn(false);
+            }
+            if (renderedMembers.length >= 10 && offset > 0) {
                 setRenderedMembers((prev) => {
                     return [...prev, ...getMembers.data.data];
                 });
@@ -174,7 +178,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     }, [getMembers.status]);
 
     const getAdditionalMembers = () => {
-        setOffset(offset + 5);
+        setOffset(offset + 10);
     };
 
     /**
@@ -266,9 +270,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     useEffect(() => {
         if (isScrollBottom) {
-            getAdditionalMembers();
+            if (infiniteOn) {
+                getAdditionalMembers();
+            }
         }
     }, [isScrollBottom]);
+
+    console.log(renderedMembers);
 
     return (
         <Modal open={open} maxWidth="lg">
@@ -305,7 +313,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         return option.id === value.id;
                     }}
                     onInputChange={(event, newValue) => {
+                        setOffset(0);
                         setSearch(newValue);
+                        setInfiniteOn(true);
+                        setRenderedMembers(renderedMembers);
                     }}
                     onChange={(event, newValue) => {
                         setSelectedMembers(newValue || []);

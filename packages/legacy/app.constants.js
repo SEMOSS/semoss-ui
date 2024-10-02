@@ -19,7 +19,7 @@ angular
                 pathSplit = [],
                 returnObj;
 
-            mod = 'vha-supply';
+            mod = 'monolith';
             protocol = window.location.protocol;
             host = window.location.hostname;
             port = window.location.port;
