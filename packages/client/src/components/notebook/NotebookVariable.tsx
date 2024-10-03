@@ -361,8 +361,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                             },
                                                         });
 
-                                                    debugger;
-
                                                     notification.add({
                                                         color: success
                                                             ? 'success'

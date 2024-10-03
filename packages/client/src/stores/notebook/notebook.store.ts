@@ -8,6 +8,9 @@ export interface NotebookStoreInterface {
 
     /** Store the previously selected query -> cell */
     selectedCells: Record<string, string>;
+
+    /** Current selected Variant */
+    selectedVariantId: string;
 }
 
 /**
@@ -18,6 +21,7 @@ export class NotebookStore {
     private _store: NotebookStoreInterface = {
         selectedQueryId: '',
         selectedCells: {},
+        selectedVariantId: '',
     };
 
     constructor(state: StateStore) {
@@ -102,5 +106,13 @@ export class NotebookStore {
     selectCell(queryId: string, cellId: string) {
         // select the cell
         this._store.selectedCells[queryId] = cellId;
+    }
+
+    /**
+     * Set the selected Variant
+     * @param variantId - id of selected variant
+     */
+    selectVariant(variantId: string) {
+        this._store.selectedVariantId = variantId;
     }
 }
