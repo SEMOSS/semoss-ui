@@ -35,6 +35,8 @@ const StyledRightPanel = styled('div')(() => ({
     height: '100%',
     flex: 1,
     overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
 export const Notebook = observer(() => {

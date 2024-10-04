@@ -99,7 +99,7 @@ export const Help = observer((): JSX.Element => {
             >
                 {HELP.order.map((key, i) => {
                     const v = HELP.values[key];
-                    debugger;
+
                     if (v) {
                         return (
                             <MenuItem
