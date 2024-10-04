@@ -44,7 +44,7 @@ export const Conductor = observer(() => {
 
     const [currentEditorJSON, setCurrentEditorJSON] = useState('');
     const [currentOutputEditorJSON, setCurrentOutputEditorJSON] = useState('');
-    const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({}); // { sebTaskIndex: JSONString }
+    const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({});
 
     const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
     const [taskEditorHistory, setTaskEditorHistory] = useState([]);
@@ -116,9 +116,6 @@ export const Conductor = observer(() => {
     }, [selectedSubtask]);
 
     const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
-        console.log('taskSubmitHandler() / LLM API');
-        console.log({ data });
-
         setIsLoading(true);
         setTimeout(() => {
             setPromptText(data.taskInput);
@@ -207,7 +204,7 @@ export const Conductor = observer(() => {
     };
 
     const onChange = (value: string) => {
-        console.log({ newValue: value });
+        // console.log({ newValue: value });
     };
 
     const updateButtonHandler = () => {
@@ -235,12 +232,10 @@ export const Conductor = observer(() => {
     `;
 
     const editorChangeHandler = (newString) => {
-        console.log({ event });
+        // console.log({ newString });
     };
 
     const playClickHandler = () => {
-        console.log('playClickHandler() / API');
-
         setIsLoading(true);
         setTimeout(() => {
             setPromptText(promptText + ' ');
@@ -443,7 +438,6 @@ export const Conductor = observer(() => {
                                         value={field.value}
                                         onChange={(newValues) => {
                                             field.onChange(newValues);
-                                            console.log({ newValues });
                                         }}
                                     />
                                 );
@@ -467,7 +461,6 @@ export const Conductor = observer(() => {
                                     value={field.value}
                                     onChange={(newValues) => {
                                         field.onChange(newValues);
-                                        console.log({ newValues });
                                     }}
                                 />
                             );
@@ -608,7 +601,6 @@ export const Conductor = observer(() => {
                                 }}
                                 onChange={(e) => {
                                     onChange(e);
-                                    console.log('Update JSON to state');
                                     editorChangeHandler(e);
                                 }}
                                 onMount={handleMount}
@@ -693,7 +685,6 @@ export const Conductor = observer(() => {
                                 }}
                                 onChange={(e) => {
                                     onChange(e);
-                                    console.log('Update JSON to state');
                                     editorChangeHandler(e);
                                 }}
                                 onMount={handleMount}

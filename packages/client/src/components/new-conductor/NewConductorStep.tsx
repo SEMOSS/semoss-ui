@@ -42,7 +42,6 @@ const GridBreak = styled('div')(({ theme }) => ({
 }));
 
 const AppSelectionCard = styled(Box)(({ theme }) => ({
-    // border: '1px solid lightgray',
     borderRadius: '10px',
     boxShadow: '-2px 2px 12px #00000010',
     width: '421px',
@@ -54,17 +53,8 @@ const AppSelectionCard = styled(Box)(({ theme }) => ({
 }));
 
 interface NewConductorStepProps {
-    /**
-     * Can be represented as an app or another widget
-     */
     step: unknown | SerializedState;
-    /**
-     * Will it be an app or some python script or other widget
-     */
     type: 'app' | 'widget';
-    /**
-     * What Task index does this refer to that we get from BE
-     */
     taskIndex: number;
     selectedSubtask: number;
     setSelectedSubtask: Function;
@@ -107,20 +97,7 @@ export const NewConductorStep = observer(
         openAccordionIndexesSet,
         setOpenAccordionIndexesSet,
     }: NewConductorStepProps) => {
-        console.log({ taskIndex, step });
         const { conductor } = useConductor();
-
-        console.log({
-            // step,
-            // "Object.keys(step)": Object.keys(step),
-            queries: step['queries'],
-            blocks: step['blocks'],
-            variables: step['variables'],
-            dependencies: step['dependencies'],
-            version: step['version'],
-            'JSON.stringify(step)': JSON.stringify(step),
-        });
-
         /**
          * Set input pool values on mount
          */
@@ -191,38 +168,43 @@ export const NewConductorStep = observer(
                 appId: Math.floor(Math.random() * 1000000000),
             },
             {
-                title: 'App D',
-                description: 'Placeholder for app description.',
+                title: 'Job Qualifications',
+                description:
+                    'Analyzes a job description and extracts required qualifications.',
                 imgUrl: '',
                 appId: Math.floor(Math.random() * 1000000000),
             },
             {
-                title: 'App E',
-                description: 'Placeholder for app description.',
+                title: 'Job Skill Matcher',
+                description:
+                    'Takes a list of skills and matches them to relevant job titles.',
                 imgUrl: '',
                 appId: Math.floor(Math.random() * 1000000000),
             },
             {
-                title: 'App F',
-                description: 'Placeholder for app description.',
+                title: 'Job Salary Data',
+                description:
+                    'Receives a job title and provides average salary data.',
                 imgUrl: '',
                 appId: Math.floor(Math.random() * 1000000000),
             },
             {
-                title: 'App G',
-                description: 'Placeholder for app description.',
+                title: 'Resume Key Skills',
+                description: 'Analyzes a resume and extracts key skills.',
                 imgUrl: '',
                 appId: Math.floor(Math.random() * 1000000000),
             },
             {
-                title: 'App H',
-                description: 'Placeholder for app description.',
+                title: 'Job Responsibilities',
+                description:
+                    'Receives a job title and lists common job responsibilities.',
                 imgUrl: '',
                 appId: Math.floor(Math.random() * 1000000000),
             },
             {
-                title: 'App I',
-                description: 'Placeholder for app description.',
+                title: 'Performance Indicators',
+                description:
+                    'Takes a job description and identifies key performance indicators.',
                 imgUrl: '',
                 appId: Math.floor(Math.random() * 1000000000),
             },
@@ -240,7 +222,6 @@ export const NewConductorStep = observer(
             }
 
             if (activeStep === taskSteps.length - 1) {
-                // alert("steps complete!")
                 setStepsComplete(true);
             }
 
@@ -262,8 +243,6 @@ export const NewConductorStep = observer(
                 setSelectedSubTaskApp(null);
             }
         }, [activeStep]);
-
-        // alert("chickaty check")
 
         return (
             <Accordion
@@ -313,7 +292,6 @@ export const NewConductorStep = observer(
                         direction="column"
                         sx={{
                             backgroundColor: '#fff',
-                            // border: '3px solid green',
                             padding: '16px',
                             borderRadius: '12px',
                             paddingTop: '0px',
@@ -322,18 +300,9 @@ export const NewConductorStep = observer(
                             justifyContent: 'left',
                         }}
                     >
-                        {/* <Typography
-                            variant="h6"
-                            sx={{ border: '1px solid goldenrod' }}
-                        >
-                            Subtask {taskIndex + 1}
-                        </Typography> */}
-
                         <Box
                             sx={{
-                                width: '100%', // width containing correctly at this level
-                                // border: '5px dotted Pink',
-                                // display: 'flex',
+                                width: '100%',
                             }}
                         >
                             {!stepsComplete && (
@@ -355,30 +324,11 @@ export const NewConductorStep = observer(
                                     <Step>
                                         <StepLabel>Complete subtask</StepLabel>
                                     </Step>
-
-                                    {/* {taskSteps.map((label, index) => {
-                                    const stepProps: { completed?: boolean } = {};
-                                    const labelProps: {
-                                        optional?: React.ReactNode;
-                                    } = {};
-                                    if (isStepSkipped(index)) {
-                                        stepProps.completed = false;
-                                    }
-                                    return (
-                                        <Step key={label} {...stepProps}>
-                                            <StepLabel {...labelProps}>{label}</StepLabel>
-                                        </Step>
-                                    );
-                                })} */}
                                 </Stepper>
                             )}
 
                             {activeStep === taskSteps.length ? (
                                 <React.Fragment>
-                                    {/* <Typography variant={'h6'} sx={{ mt: 2, mb: 1 }}>
-                                        All steps completed - you&apos;re finished
-                                    </Typography> */}
-
                                     <div
                                         style={{
                                             width: '100%',
@@ -450,7 +400,6 @@ export const NewConductorStep = observer(
                                             <div
                                                 style={{
                                                     padding: '16px',
-                                                    // marginBottom: '20px',
                                                     backgroundColor: '#fafafa',
                                                     borderRadius: '12px',
                                                     flex: '1',
@@ -467,7 +416,6 @@ export const NewConductorStep = observer(
                                                                 style={{
                                                                     marginTop:
                                                                         '10px',
-                                                                    // display: 'inline-block',
                                                                     marginRight:
                                                                         '12.5px',
                                                                 }}
@@ -557,7 +505,6 @@ export const NewConductorStep = observer(
                                                             style={{
                                                                 marginTop:
                                                                     '10px',
-                                                                // display: 'inline-block',
                                                                 marginRight:
                                                                     '12.5px',
                                                             }}
@@ -585,17 +532,7 @@ export const NewConductorStep = observer(
                                     </div>
                                 </React.Fragment>
                             ) : (
-                                <div
-                                    style={
-                                        {
-                                            // border: '2px dashed blue', // width containing correctly at this level
-                                        }
-                                    }
-                                >
-                                    {/* <Typography variant={'h6'} sx={{ mt: 2, mb: 1 }}>
-                                        Step {activeStep + 1}
-                                    </Typography> */}
-
+                                <div>
                                     {(activeStep == 0 || activeStep == 1) && (
                                         <Box>
                                             <Typography
@@ -706,7 +643,6 @@ export const NewConductorStep = observer(
                                                                         marginRight:
                                                                             '16px',
                                                                     }}
-                                                                    // src={appObj.imgUrl || DUMMY_IMG_URLS[appObj.title.length % DUMMY_IMG_URLS.length]}
                                                                 />
                                                                 <Typography variant="body2">
                                                                     <b>
@@ -981,8 +917,6 @@ export const NewConductorStep = observer(
                                                 </Grid>
                                             </Grid>
 
-                                            {/* <GridBreak/> */}
-
                                             {[1, 2, 3, 4, 5, 6, 7, 8].map(
                                                 (ele, eleIdx) => (
                                                     <Grid
@@ -1002,9 +936,9 @@ export const NewConductorStep = observer(
                                                             <Select
                                                                 labelId="demo-simple-select-label"
                                                                 id="demo-simple-select"
-                                                                // value={DUMMY_SUBTASK_INPUTS[0]}
-                                                                // label="Age"
                                                                 // onChange={handleChange}
+                                                                // value={currentValue}
+                                                                // label=""
                                                                 size="small"
                                                                 sx={{
                                                                     width: '100%',
@@ -1041,9 +975,9 @@ export const NewConductorStep = observer(
                                                             <Select
                                                                 labelId="demo-simple-select-label"
                                                                 id="demo-simple-select"
-                                                                // value={DUMMY_INPUT_TYPES[0]}
-                                                                // label="Age"
                                                                 // onChange={handleChange}
+                                                                // value={currentValue}
+                                                                // label=""
                                                                 size="small"
                                                                 sx={{
                                                                     width: '100%',
@@ -1095,10 +1029,10 @@ export const NewConductorStep = observer(
                                                             <Select
                                                                 labelId="demo-simple-select-label"
                                                                 id="demo-simple-select"
-                                                                // value={age}
-                                                                // label="Age"
-                                                                // onChange={handleChange}
                                                                 size="small"
+                                                                // onChange={handleChange}
+                                                                // value={currentValue}
+                                                                // label=""
                                                                 sx={{
                                                                     width: '100%',
                                                                     height: '32px',
@@ -1140,7 +1074,8 @@ export const NewConductorStep = observer(
                                                                     '15px',
                                                             }}
                                                         >
-                                                            integer
+                                                            integer{' '}
+                                                            {/* TODO This needs to be dynamic  */}
                                                         </Grid>
                                                         {eleIdx == 7 && (
                                                             <Grid item xs={3}>
@@ -1295,13 +1230,12 @@ export const NewConductorStep = observer(
                                                             marginTop: '5px',
                                                         }}
                                                     >
-                                                        {/* 1.85 */}
                                                         <Select
                                                             labelId="demo-simple-select-label"
                                                             id="demo-simple-select"
-                                                            // value={DUMMY_SUBTASK_INPUTS[0]}
-                                                            // label="Age"
                                                             // onChange={handleChange}
+                                                            // value={currentValue}
+                                                            // label=""
                                                             size="small"
                                                             sx={{
                                                                 width: '100%',
@@ -1368,9 +1302,6 @@ export const NewConductorStep = observer(
                                                         <Select
                                                             labelId="demo-simple-select-label"
                                                             id="demo-simple-select"
-                                                            // value={age}
-                                                            // label="Age"
-                                                            // onChange={handleChange}
                                                             size="small"
                                                             sx={{
                                                                 width: '100%',
@@ -1414,9 +1345,9 @@ export const NewConductorStep = observer(
                                                         <Select
                                                             labelId="demo-simple-select-label"
                                                             id="demo-simple-select"
-                                                            // value={DUMMY_INPUT_TYPES[0]}
-                                                            // label="Age"
                                                             // onChange={handleChange}
+                                                            // value={currentValue}
+                                                            // label=""
                                                             size="small"
                                                             sx={{
                                                                 width: '100%',
@@ -1444,12 +1375,6 @@ export const NewConductorStep = observer(
                                                             )}
                                                         </Select>
                                                     </Grid>
-                                                    {/* <Grid item xs={3}>
-                                                    <div style={{ backgroundColor: '#FDF0E5', borderRadius: '7.5px', fontSize: '13px', padding: '2.5px', width: 'auto', display: 'flex', alignItems: 'center' }}>
-                                                        <ReportProblem sx={{ color: 'orange', fontSize: '16px', marginLeft: '5px', marginRight: '5px' }}/>
-                                                        File types do not match. <a href="#">Convert app input?</a>
-                                                    </div>
-                                                </Grid> */}
                                                 </Grid>
                                             ))}
 
@@ -1482,8 +1407,8 @@ export const NewConductorStep = observer(
                                             <Typography
                                                 variant="body2"
                                                 sx={{
-                                                    marginTop: '15px',
                                                     marginBottom: '5px',
+                                                    marginTop: '15px',
                                                 }}
                                             >
                                                 <b>
@@ -1493,8 +1418,8 @@ export const NewConductorStep = observer(
                                             <Typography
                                                 variant="body2"
                                                 sx={{
-                                                    marginTop: '5px',
                                                     marginBottom: '20px',
+                                                    marginTop: '5px',
                                                 }}
                                             >
                                                 {selectedSubTaskApp.description}
@@ -1502,10 +1427,10 @@ export const NewConductorStep = observer(
                                             <Box
                                                 sx={{
                                                     marginTop: '16px',
-                                                    width: '503px',
                                                     border: '1px solid #e6e6e6',
                                                     borderRadius: '12px',
                                                     padding: '12px',
+                                                    width: '503px',
                                                 }}
                                             >
                                                 <BlocksRenderer state={step} />
@@ -1532,7 +1457,6 @@ export const NewConductorStep = observer(
                                                                 flex: '1 1 auto',
                                                             }}
                                                         />
-                                                        {/* <Button onClick={handleReset}>  */}
                                                         <Button
                                                             onClick={handleNext}
                                                         >
