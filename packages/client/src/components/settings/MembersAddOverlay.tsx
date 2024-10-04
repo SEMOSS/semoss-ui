@@ -48,7 +48,7 @@ const StyledCard = styled(Card)({
 
 const StyledCardHeader = styled(Card.Header)({
     color: '#000',
-    width: 'AUTOCOMPLETE_LIMIT0%',
+    width: '100%',
 });
 
 const StyledOuterBox = styled('div')(({ theme }) => ({
@@ -74,7 +74,7 @@ const permissionMapper = {
 };
 
 const AUTOCOMPLETE_OFFSET = 0;
-const AUTOCOMPLETE_LIMIT = 5;
+const AUTOCOMPLETE_LIMIT = 10;
 
 interface MembersAddOverlayProps {
     /**
