@@ -29,7 +29,27 @@ const StyledStack = styled(Stack)(() => ({
 }));
 
 const StyledTypographyLabel = styled(Typography)(() => ({
-    width: '100px',
+    color: 'var(--Text-Primary, #212121)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    /* Typography/Body 1 */
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '150%' /* 24px */,
+    letterSpacing: '0.15px',
+}));
+
+const StyledTypographyTitle = styled(Typography)(() => ({
+    color: 'var(--Text-Primary, #212121)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    /* Typography/Body 1 */
+    fontFamily: 'Inter',
+    fontSize: '20px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '160%' /* 24px */,
+    letterSpacing: '0.15px',
 }));
 
 export const PromptModal = (props: PromptModalProps) => {
@@ -82,42 +102,20 @@ export const PromptModal = (props: PromptModalProps) => {
     }, [mode, prompt]);
     return (
         <Modal open={isOpen} maxWidth={'md'} fullWidth={true}>
-            <Modal.Title>{mode} Prompt</Modal.Title>
+            <Modal.Title>{mode} Template</Modal.Title>
             <Modal.Content>
                 <StyledStack
                     spacing={2}
-                    direction={'row'}
-                    alignItems={'center'}
+                    direction={'column'}
+                    alignItems={'flex-start'}
                     justifyContent={'space-between'}
                 >
                     <StyledTypographyLabel variant="body1">
-                        Context
+                        Template Name
                     </StyledTypographyLabel>
                     <FormControl fullWidth>
                         <TextField
-                            label={'Context'}
-                            variant={'outlined'}
-                            value={context}
-                            fullWidth
-                            sx={{ width: '100%' }}
-                            onChange={(e) => {
-                                setContext(e.target.value);
-                            }}
-                        ></TextField>
-                    </FormControl>
-                </StyledStack>
-                <StyledStack
-                    spacing={2}
-                    direction={'row'}
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                >
-                    <StyledTypographyLabel variant="body1">
-                        Title
-                    </StyledTypographyLabel>
-                    <FormControl fullWidth>
-                        <TextField
-                            label={'Title'}
+                            label={'Policy Summarizer'}
                             variant={'outlined'}
                             value={title}
                             fullWidth
@@ -129,6 +127,33 @@ export const PromptModal = (props: PromptModalProps) => {
                     </FormControl>
                 </StyledStack>
                 <StyledStack
+                    spacing={2}
+                    direction={'column'}
+                    alignItems={'flex-start'}
+                    justifyContent={'space-between'}
+                >
+                    <StyledTypographyLabel variant="body1">
+                        Template Description
+                    </StyledTypographyLabel>
+                    <FormControl fullWidth>
+                        <TextField
+                            label={
+                                'Summarize documents given a specific role, state of origin and report layout.'
+                            }
+                            variant={'outlined'}
+                            value={context}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            sx={{ width: '100%' }}
+                            onChange={(e) => {
+                                setContext(e.target.value);
+                            }}
+                        ></TextField>
+                    </FormControl>
+                </StyledStack>
+
+                {/* <StyledStack
                     spacing={2}
                     direction={'row'}
                     alignItems={'center'}
@@ -149,11 +174,11 @@ export const PromptModal = (props: PromptModalProps) => {
                             }}
                         ></TextField>
                     </FormControl>
-                </StyledStack>
+                </StyledStack> */}
                 <StyledStack
                     spacing={2}
-                    direction={'row'}
-                    alignItems={'center'}
+                    direction={'column'}
+                    alignItems={'flex-start'}
                     justifyContent={'space-between'}
                 >
                     <StyledTypographyLabel variant="body1">
@@ -165,7 +190,6 @@ export const PromptModal = (props: PromptModalProps) => {
                             fullWidth
                             multiple
                             onChange={(_, newValue) => {
-                                console.log(newValue);
                                 setTags(newValue);
                             }}
                             options={[]}
@@ -194,7 +218,7 @@ export const PromptModal = (props: PromptModalProps) => {
                         }
                     }}
                 >
-                    Save
+                    Create Template
                 </Button>
             </Modal.Actions>
         </Modal>

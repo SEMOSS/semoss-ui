@@ -31,6 +31,7 @@ export const PromptLibraryCards = (props: {
                             cardKey={`${i}`}
                             title={prompt.title}
                             tags={prompt.tags}
+                            context={prompt.context}
                             tokens={prompt.inputs}
                             inputTypes={prompt.inputTypes}
                             openUIBuilderForTemplate={() => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Grid, IconButton, Modal, useNotification } from '@semoss/ui';
 import { PromptLibraryCards } from './PromptLibraryCards';
 import { PromptLibraryList } from './PromptLibraryList';
@@ -18,25 +18,32 @@ export const PromptLibraryDialog = (props: {
     const navigate = useNavigate();
     const notification = useNotification();
     const [filter, setFilter] = useState('all');
+    const [allPrompts, setAllPrompts] = useState([]);
 
     const filteredPrompts = () => {
-        return PromptExamples.filter((prompt) => {
-            if (filter == 'all') {
-                return true;
-            } else {
-                return prompt.tags.includes(filter);
-            }
-        }).sort(function (a, b) {
-            const firstTitle = a.title.toLowerCase();
-            const secondTitle = b.title.toLowerCase();
-            if (firstTitle < secondTitle) {
-                return -1;
-            }
-            if (firstTitle > secondTitle) {
-                return 1;
-            }
-            return 0;
-        });
+        return allPrompts.length > 0
+            ? allPrompts
+                  .filter((prompt) => {
+                      if (filter == 'all') {
+                          return true;
+                      } else {
+                          return prompt.tags
+                              ? prompt.tags.includes(filter)
+                              : false;
+                      }
+                  })
+                  .sort(function (a, b) {
+                      const firstTitle = a.title.toLowerCase();
+                      const secondTitle = b.title.toLowerCase();
+                      if (firstTitle < secondTitle) {
+                          return -1;
+                      }
+                      if (firstTitle > secondTitle) {
+                          return 1;
+                      }
+                      return 0;
+                  })
+            : [];
     };
 
     async function openUIBuilderForTemplate(
@@ -50,8 +57,8 @@ export const PromptLibraryDialog = (props: {
         );
         templateBuilder.title.value = templateBuilder.title.value ?? title;
         templateBuilder.tags.value = tags;
-        templateBuilder.inputs.value = inputs;
-        templateBuilder.inputTypes.value = inputTypes;
+        templateBuilder.inputs.value = inputs ? inputs : [];
+        templateBuilder.inputTypes.value = inputTypes ? inputTypes : {};
         try {
             await setBlocksAndOpenUIBuilder(
                 templateBuilder,
@@ -65,6 +72,32 @@ export const PromptLibraryDialog = (props: {
             });
         }
     }
+
+    //Load all the prompts
+    useEffect(() => {
+        init();
+    }, []);
+
+    const init = () => {
+        monolithStore.runQuery('ListPrompt()').then((response) => {
+            let { output } = response.pixelReturn[0];
+            if (output.length > 0) {
+                let prompts = [];
+                output.map((prompt) => {
+                    console.log(prompt);
+                    prompts.push({
+                        title: prompt.TITLE,
+                        context: prompt.CONTEXT,
+                        intent: prompt.INTENT,
+                        tags: prompt.tags ? prompt.tags : [],
+                        token: prompt.tokens ? prompt.tokens : [],
+                        inputTypes: prompt.inputTypes ? prompt.inputTypes : {},
+                    });
+                });
+                setAllPrompts(prompts);
+            }
+        });
+    };
 
     return (
         <Modal

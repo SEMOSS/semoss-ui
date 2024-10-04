@@ -4,6 +4,8 @@ import {
     LIBRARY_PROMPT_TAG_COMMUNICATIONS,
     LIBRARY_PROMPT_TAG_TRAVEL,
 } from '../prompt.constants';
+import { useRootStore } from '@/hooks';
+import { useState, useEffect } from 'react';
 
 const LIBRARY_CATEGORIES = [
     'all',
@@ -30,10 +32,33 @@ export const PromptLibraryList = (props: {
     filter: string;
     setFilter: (filter: string) => void;
 }) => {
+    const { monolithStore } = useRootStore();
+    const [promptTags, setPromptTags] = useState([]);
+
+    useEffect(() => {
+        init();
+    }, []);
+
+    const init = () => {
+        monolithStore
+            .runQuery('GetPromptMetaValues( metaKeys = ["tag","domain"])')
+            .then((response) => {
+                let { output } = response.pixelReturn[0];
+                if (output.length > 0) {
+                    let tagArr = ['all'];
+                    output.map((tag) => {
+                        tagArr.push(tag.METAVALUE);
+                    });
+                    console.log(tagArr);
+                    setPromptTags(tagArr);
+                }
+            });
+    };
+
     return (
         <Paper>
             <List disablePadding>
-                {Array.from(LIBRARY_CATEGORIES, (category) => (
+                {Array.from(promptTags, (category) => (
                     <StyledListItem
                         key={category}
                         disableGutters
