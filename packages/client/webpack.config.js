@@ -16,6 +16,7 @@ dotenv.config({ path: '../../.env' });
 
 const isProduction = process.env.NODE_ENV == 'production';
 
+console.log('isProduction', isProduction);
 const config = {
     entry: './src/main.tsx',
     performance: {
@@ -23,10 +24,11 @@ const config = {
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
+        filename: isProduction ? '[name].[contenthash].js' : '[name].js',
         clean: true,
     },
     optimization: {
-        minimize: true,
+        minimize: !isProduction,
         minimizer: [new TerserPlugin({})],
         removeAvailableModules: false,
         removeEmptyChunks: false,
@@ -59,8 +61,8 @@ const config = {
             }),
         }),
         new MiniCssExtractPlugin({
-            filename: '[name].css',
-            chunkFilename: '[id].css',
+            filename: isProduction ? '[name].[contenthash].css' : '[name].css',
+            chunkFilename: isProduction ? '[id].[contenthash].css' : '[id].css',
         }),
 
         // new MonacoWebpackPlugin({
@@ -121,7 +123,6 @@ const config = {
 };
 
 module.exports = () => {
-    console.log('isProduction', isProduction);
     if (isProduction) {
         config.mode = 'production';
     } else {

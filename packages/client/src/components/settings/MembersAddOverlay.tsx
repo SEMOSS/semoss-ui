@@ -165,10 +165,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     useEffect(() => {
         if (getMembers.status === 'SUCCESS') {
-            if (getMembers.data.data.length < 10) {
+            if (getMembers.data.data.length < AUTOCOMPLETE_LIMIT) {
                 setInfiniteOn(false);
             }
-            if (renderedMembers.length >= 10 && offset > 0) {
+            if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
                 setRenderedMembers((prev) => {
                     return [...prev, ...getMembers.data.data];
                 });
@@ -181,7 +181,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     }, [getMembers.status]);
 
     const getAdditionalMembers = () => {
-        setOffset(offset + 10);
+        setOffset(offset + AUTOCOMPLETE_LIMIT);
     };
 
     /**
