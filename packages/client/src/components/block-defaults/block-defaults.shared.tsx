@@ -25,7 +25,7 @@ import {
 import {
     DistinctPathButtonGroupSettings,
     SelectInputSettings,
-    CssEditorSettings,
+    CssRootSettings,
 } from '../block-settings/shared';
 
 /**
@@ -376,9 +376,9 @@ export const buildCustomStyleSheetSection = () => ({
     name: 'Custom Style Sheet',
     children: [
         {
-            description: 'Style',
+            description: 'RootStyle',
             render: ({ id }) => (
-                <CssEditorSettings id={id} path="customStyle" />
+                <CssRootSettings id={id} path="class" label="Class name" />
             ),
         },
     ],

@@ -33,7 +33,7 @@ export const config: BlockConfig<PageBlockDef> = {
     data: {
         style: DefaultStyles,
         loading: false,
-        customStyle: {},
+        class: '',
     },
     listeners: {
         onPageLoad: [],

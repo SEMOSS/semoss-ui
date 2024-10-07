@@ -18,6 +18,9 @@ export type SerializedState = {
 
     /** Dependencies in app */
     dependencies: Record<string, unknown>;
+
+    /** Styles in app */
+    rootStyle?: string;
 };
 
 /**

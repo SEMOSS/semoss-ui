@@ -33,6 +33,7 @@ export enum ActionMessages {
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
     REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
+    ADD_ROOT_STYLE = 'ADD_ROOT_STYLE',
 }
 
 export type Actions =
@@ -57,7 +58,8 @@ export type Actions =
     | EditVariableAction
     | DeleteVariableAction
     | AddDependencyAction
-    | RemoveDependencyAction;
+    | RemoveDependencyAction
+    | AddRootStyle;
 
 export interface Action {
     message: string;
@@ -68,6 +70,13 @@ export interface SetStateAction extends Action {
     message: ActionMessages.SET_STATE;
     payload: {
         state?: SerializedState;
+    };
+}
+
+export interface AddRootStyle extends Action {
+    message: ActionMessages.ADD_ROOT_STYLE;
+    payload: {
+        style: string;
     };
 }
 

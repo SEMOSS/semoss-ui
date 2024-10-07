@@ -26,7 +26,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
             gap: '8px',
             flexWrap: 'wrap',
         },
-        customStyle: {},
+        class: '',
     },
     listeners: {},
     slots: {
