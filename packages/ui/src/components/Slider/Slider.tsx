@@ -50,7 +50,7 @@ export interface SliderProps {
      * If an array, it should contain objects with `value` and an optional `label` keys.
      * @default false
      */
-    marks?: boolean;
+    marks?: boolean | Array<{ label?: string; value: number }>;
     onChange?: (event, newValue) => void;
     /**
      * The size of the slider.

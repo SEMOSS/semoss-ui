@@ -472,6 +472,47 @@ export class MonolithStore {
         return response.data;
     }
 
+    /**
+     * @name createAdminTheme
+     * @param data the data that will be sent to the BE to define a theme
+     * @desc this call will create a new theme defined by the admin
+     */
+    async createAdminTheme(data: {
+        name: string;
+        json: any;
+        isActive: boolean;
+    }) {
+        const url = `${Env.MODULE}/api/themes/createAdminTheme`;
+
+        let postData = '';
+
+        postData += 'name=' + encodeURIComponent(data.name);
+        postData += '&json=' + encodeURIComponent(JSON.stringify(data.json));
+        postData += '&isActive=' + encodeURIComponent(data.isActive);
+
+        const response = await axios.post<boolean>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response.data;
+
+        // Sets an Active theme with material ui properties
+        // const map = JSON.parse(data['theme']['THEME_MAP']);
+        // const material_map = {
+        //     ...map,
+        //     materialTheme: lightTheme,
+        // };
+
+        // console.log(JSON.stringify(material_map));
+        // monolithStore.createAdminTheme({
+        //     name: 'SEMOSS-TEST-DARK',
+        //     isActive: true,
+        //     json: material_map,
+        // });
+    }
+
     // ----------------------------------------------------------------------
     // Engine
     // ----------------------------------------------------------------------

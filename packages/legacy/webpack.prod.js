@@ -31,8 +31,8 @@ module.exports = () => {
                 filename: '../../../index.html',
                 hash: true,
                 inject: false,
-                title: CUSTOMIZATION.page.title,
-                favicon:CUSTOMIZATION.page.favicon
+                title: '',
+                favicon: ''
             }),
         ],
     });
