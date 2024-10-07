@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Button, styled } from '@semoss/ui';
 
@@ -8,6 +8,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 
 import { HelpRounded } from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'fixed',
@@ -31,12 +32,41 @@ export const Help = observer((): JSX.Element => {
     //Help Modal
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const { configStore } = useRootStore();
+
     const handleHelpClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     };
     const handleHelpClose = () => {
         setAnchorEl(null);
     };
+
+    const HELP = useMemo(() => {
+        const theme = configStore.store.config['theme'];
+
+        try {
+            if (theme && theme['THEME_MAP']) {
+                const themeMap = JSON.parse(theme['THEME_MAP'] as string);
+                return {
+                    order: themeMap['helpBannerOrder']
+                        ? themeMap['helpBannerOrder']
+                        : [],
+                    values: themeMap['helpBannerValues']
+                        ? themeMap['helpBannerValues']
+                        : {},
+                };
+            }
+            return {
+                order: [],
+                values: {},
+            };
+        } catch {
+            return {
+                order: [],
+                values: {},
+            };
+        }
+    }, []);
     return (
         <StyledContainer>
             <StyledButton
@@ -67,18 +97,29 @@ export const Help = observer((): JSX.Element => {
                     horizontal: 'right',
                 }}
             >
-                <MenuItem>
-                    <span>
-                        <StyledLink
-                            href="https://workshop.cfg.deloitte.com/docs/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Documentation
-                        </StyledLink>
-                    </span>
-                </MenuItem>
-                <MenuItem>
+                {HELP.order.map((key, i) => {
+                    const v = HELP.values[key];
+
+                    if (v) {
+                        return (
+                            <MenuItem
+                                key={`${key}-${i}`}
+                                disabled={v.disabled ? v.disabled : false}
+                            >
+                                <span>
+                                    <StyledLink
+                                        href={v.src}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {v.label}
+                                    </StyledLink>
+                                </span>
+                            </MenuItem>
+                        );
+                    }
+                })}
+                {/* <MenuItem>
                     <span>
                         <StyledLink
                             href="https://workshop.cfg.deloitte.com/docs/category/app-creation-guides"
@@ -97,7 +138,7 @@ export const Help = observer((): JSX.Element => {
                 </MenuItem>
                 <MenuItem onClick={handleHelpClose} disabled>
                     Feedback
-                </MenuItem>
+                </MenuItem> */}
             </Menu>
         </StyledContainer>
     );

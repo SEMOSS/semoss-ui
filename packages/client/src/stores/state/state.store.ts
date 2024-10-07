@@ -39,9 +39,6 @@ interface StateStoreInterface {
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 
-    /** engine dependencies */
-    dependencies: Record<string, unknown>;
-
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
 
@@ -50,6 +47,13 @@ interface StateStoreInterface {
 
     /** Style to be applied at root level for drag and drop app element */
     rootStyle: string;
+
+    /** Order of how we consume app as API */
+    executionOrder: string[];
+
+    /** TODO: Get rid of this, engine dependencies */
+    dependencies: Record<string, unknown>;
+
 }
 
 export class StateStoreConfig {
@@ -80,6 +84,7 @@ export class StateStore {
         variables: {},
         dependencies: {}, // Maher said change to constants
         rootStyle: '',
+        executionOrder: [],
     };
 
     /**
@@ -158,6 +163,14 @@ export class StateStore {
     }
 
     /**
+     * Gets ordered list of sheet ids
+     * @returns the order sheets should be executed
+     */
+    get executionOrder() {
+        return this._store.executionOrder;
+    }
+
+    /**
      * Gets all tokens
      * @returns the tokens
      */
@@ -218,6 +231,7 @@ export class StateStore {
         type: VariableType,
         path?: string[],
         cellId?: string,
+        value?: string,
     ): Variable | unknown {
         try {
             if (pointer) {
@@ -268,7 +282,10 @@ export class StateStore {
                             }
                         }
                     }
-                } else if (
+                }
+                return undefined;
+            } else {
+                if (
                     type === 'database' ||
                     type === 'model' ||
                     type === 'vector' ||
@@ -278,21 +295,15 @@ export class StateStore {
                     type === 'date' ||
                     type === 'number'
                 ) {
-                    const value = this._store.dependencies[pointer];
-
                     return value;
                 } else if (type === 'array' || type === 'JSON') {
-                    let value;
-                    if (typeof this._store.dependencies[pointer] === 'string') {
-                        value = JSON.parse(
-                            this._store.dependencies[pointer] as string,
-                        );
-                    } else value = this._store.dependencies[pointer];
+                    let v;
+                    if (value === 'string') {
+                        v = JSON.parse(value as string);
+                    } else v = value;
 
-                    return value;
+                    return v;
                 }
-                return undefined;
-            } else {
                 return undefined;
             }
         } catch (e) {
@@ -405,24 +416,38 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { id, to, type, cellId } = action.payload;
-
-                return this.addVariable(id, to, type, cellId);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
                 return this.renameVariable(id, alias);
+            } else if (ActionMessages.ADD_VARIABLE === action.message) {
+                const { id, to, type, cellId, value, isInput, isOutput } =
+                    action.payload;
+
+                return this.addVariable(
+                    id,
+                    to,
+                    type,
+                    cellId,
+                    value,
+                    isInput,
+                    isOutput,
+                );
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
                 const { id, from, to } = action.payload;
 
-                this.editVariable(
-                    id,
-                    from,
-                    to.type === 'cell'
-                        ? { to: to.to, cellId: to.cellId, type: 'cell' }
-                        : { to: to.to, type: to.type },
-                );
+                const newVariable = {
+                    type: to.type,
+                };
+
+                if (to.to) newVariable['to'] = to.to;
+                if (to.cellId) newVariable['cellId'] = to.cellId;
+                if (to.value) newVariable['value'] = to.value;
+
+                newVariable['isInput'] = to.isInput ? to.isInput : false;
+                newVariable['isOutput'] = to.isOutput ? to.isOutput : false;
+
+                this.editVariable(id, from, newVariable);
             } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
 
@@ -439,6 +464,12 @@ export class StateStore {
                 const { style } = action.payload;
 
                 return this.setRootStyle(style);
+            } else if (
+                ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
+            ) {
+                const { list } = action.payload;
+
+                return this.setExecutionOrder(list);
             }
         } catch (e) {
             console.error(e);
@@ -469,6 +500,9 @@ export class StateStore {
                 variable.type,
                 path,
                 variable.cellId,
+                variable.type !== 'cell' && variable.value
+                    ? variable.value
+                    : null,
             );
 
             // TODO: Check this, protects for false values
@@ -516,6 +550,7 @@ export class StateStore {
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
             dependencies: toJS(this._store.dependencies),
+            executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
             rootStyle: this._store.rootStyle,
         };
@@ -696,11 +731,13 @@ export class StateStore {
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
 
-        // store the dependencies
+        // TODO: Remove, store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
+        this._store.executionOrder = state.executionOrder
+            ? state.executionOrder
+            : [];
         // store the version or the one we currently are on
-        // TODO: Look at this
         this._store.version = state.version ? state.version : STATE_VERSION;
 
         // add root style to the head
@@ -1214,6 +1251,9 @@ export class StateStore {
         to: string,
         type: VariableType,
         cellId?: string,
+        value?,
+        isInput?,
+        isOutput?,
     ) => {
         if (id.includes('.')) {
             return false;
@@ -1223,16 +1263,16 @@ export class StateStore {
             return false;
         }
 
-        const token: Variable =
-            type === 'cell'
-                ? {
-                      to,
-                      type,
-                      cellId,
-                  }
-                : { to, type };
+        const token = { type };
 
-        this._store.variables[id] = token;
+        if (to) token['to'] = to;
+        if (cellId) token['cellId'] = cellId;
+        if (isInput) token['isInput'] = isInput;
+        if (isOutput) token['isOutput'] = isOutput;
+        if (value) token['value'] = value;
+
+        debugger;
+        this._store.variables[id] = token as Variable;
 
         return token;
     };
@@ -1263,17 +1303,7 @@ export class StateStore {
      * @param from
      * @param to
      */
-    private editVariable = (
-        id: string,
-        oldVar: VariableWithId,
-        newVar: Variable,
-    ) => {
-        if (this._store.dependencies[oldVar.to]) {
-            console.log('----------------------------');
-            console.log('remove old engine dependency');
-            console.log('----------------------------');
-            delete this._store.dependencies[oldVar.to];
-        }
+    private editVariable = (id: string, oldVar: VariableWithId, newVar) => {
         if (oldVar.id !== id) {
             console.log('----------------------------');
             console.log('remove old variable due to name change');
@@ -1334,5 +1364,14 @@ export class StateStore {
      */
     private removeDependency = (id: string) => {
         delete this._store.dependencies[id];
+    };
+
+    /**
+     *
+     */
+    private setExecutionOrder = (orderedList: string[]) => {
+        debugger;
+        this._store.executionOrder = orderedList;
+        return;
     };
 }

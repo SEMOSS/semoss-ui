@@ -46,6 +46,7 @@ export const config: BlockConfig<TextBlockDef> = {
                             id={id}
                             label="Enable Typewriting Effect"
                             path="isStreaming"
+                            description="This setting will enable the typewriting effect on the text"
                         />
                     ),
                 },

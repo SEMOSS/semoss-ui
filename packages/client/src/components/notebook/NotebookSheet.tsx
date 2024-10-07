@@ -13,6 +13,8 @@ const StyledSheet = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     backgroundColor: theme.palette.background.paper,
+    flex: 1,
+    overflow: 'hidden',
 }));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
