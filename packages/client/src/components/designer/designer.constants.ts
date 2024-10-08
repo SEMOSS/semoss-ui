@@ -35,6 +35,7 @@ import BLOCK_P_ITALICS from '@/assets/img/BLOCK_P_ITALICS.png';
 import BLOCK_INPUT from '@/assets/img/BLOCK_INPUT.png';
 import BLOCK_IFRAME from '@/assets/img/BLOCK_IFRAME.png';
 import BLOCK_IMAGE from '@/assets/img/BLOCK_IMAGE.png';
+import BLOCK_AUDIO from '@/assets/img/BLOCK_AUDIO.png';
 import BLOCK_LINK from '@/assets/img/BLOCK_LINK.png';
 import BLOCK_MARKDOWN from '@/assets/img/BLOCK_MARKDOWN.png';
 import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
@@ -315,6 +316,30 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
         name: 'Image',
         json: {
             widget: 'image',
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        image: BLOCK_AUDIO,
+        name: 'Audio',
+        json: {
+            widget: 'audio',
             data: {
                 style: {
                     display: 'flex',

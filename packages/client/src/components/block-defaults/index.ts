@@ -29,6 +29,7 @@ import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
+import { config as AudioBlockConfig, AudioBlockDef } from './audio-block';
 import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
 import {
     config as VegaVisualizationBlockConfig,
@@ -60,6 +61,7 @@ export type DefaultBlockDefinitions =
     | HeaderBlockDef
     | IframeBlockDef
     | ImageBlockDef
+    | AudioBlockDef
     | LinkBlockDef
     | MarkdownBlockDef
     | HTMLBlockDef
@@ -85,6 +87,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
+    [AudioBlockConfig.widget]: AudioBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
@@ -117,6 +120,7 @@ export {
     CheckboxBlockConfig,
     IframeBlockConfig,
     ImageBlockConfig,
+    AudioBlockConfig,
     InputBlockConfig,
     MarkdownBlockConfig,
     HTMLBlockConfig,

@@ -34,9 +34,9 @@ export const config: BlockConfig<TextBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'Text1',
+                    description: 'Text',
                     render: ({ id }) => (
-                        <QueryInputSettings id={id} label="Text1" path="text" />
+                        <QueryInputSettings id={id} label="Text6" path="text" />
                     ),
                 },
                 {
