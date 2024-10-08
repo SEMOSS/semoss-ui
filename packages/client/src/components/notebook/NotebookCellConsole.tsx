@@ -1,6 +1,7 @@
 import React from 'react';
 import { JsonViewer } from '@textea/json-viewer';
 import { Typography, styled } from '@semoss/ui';
+import { isOutputJSON } from '@/utility/general';
 
 const StyledConsole = styled('div')({
     display: 'flex',
@@ -16,14 +17,7 @@ interface ConsoleProps {
 
 export const NotebookCellConsole = (props: ConsoleProps) => {
     const { messages } = props;
-    const isOutputJSON = (str: string) => {
-        try {
-            JSON.parse(str);
-            return true;
-        } catch (e) {
-            return false;
-        }
-    };
+
     return (
         <StyledConsole>
             {messages.map((m, i) => {

@@ -161,15 +161,13 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                     </Typography>
                     <Typography variant="body2">{variable.type}</Typography>
                 </Stack>
-                {val !== null ? (
+                {val !== null && (
                     <Stack direction="row">
                         <Typography variant="body2" fontWeight="bold">
                             Value:{' '}
                         </Typography>
                         <Typography variant="body2">{val}</Typography>
                     </Stack>
-                ) : (
-                    <></>
                 )}
             </>
         );
