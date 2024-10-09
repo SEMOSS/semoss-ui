@@ -148,7 +148,6 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                             'Please be mindful this may not represent the current state of the app, due to the filters present in the URL',
                     });
                 }
-                findBlockFromRoute(s.blocks);
             })
             .catch((e) => {
                 notification.add({

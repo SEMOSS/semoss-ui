@@ -22,9 +22,8 @@ import {
     SearchOff,
     Add,
 } from '@mui/icons-material/';
-import { INPUT_BLOCK_TYPES } from '@/stores';
+import { INPUT_BLOCK_TYPES, ActionMessages } from '@/stores';
 import { AddVariableModal } from '../notebook/AddVariableModal';
-import { ActionMessages } from '../../stores/state/state.actions';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -153,13 +152,8 @@ export const LayersMenu = observer((props: LayersMenuProps) => {
 
     const [variableModal, setVariableModal] = useState('');
 
-    const allBlockKeys = Object.keys(state.blocks);
-    const allPages = [];
-    allBlockKeys.forEach((key) => {
-        if (state.blocks[key].widget == 'page') {
-            allPages.push(state.blocks[key]);
-        }
-    });
+    const allBlocks = Object.values(state.blocks);
+    const allPages = [...allBlocks.filter((b) => b.widget == 'page')];
 
     /**
      * Render the block and it's children
@@ -370,7 +364,7 @@ export const LayersMenu = observer((props: LayersMenuProps) => {
                         </StyledTreeItemIcon>
                     }
                 >
-                    {!!allPages?.length ? (
+                    {allPages?.length ? (
                         allPages.map((page) => renderBlock(page.id))
                     ) : (
                         <StyledTreeItemMessage>
