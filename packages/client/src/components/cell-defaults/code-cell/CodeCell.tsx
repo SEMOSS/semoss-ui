@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import Editor, { DiffEditor, Monaco } from '@monaco-editor/react';
+import { useRef, useState, Suspense, lazy } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Button, Stack } from '@semoss/ui';
 import { Code, KeyboardArrowDown } from '@mui/icons-material';
@@ -11,7 +10,14 @@ import { LoadingScreen } from '@/components/ui';
 import { StyledSelect, StyledSelectItem } from '../shared';
 
 import { PythonIcon, RIcon } from './icons';
-import { editor } from 'monaco-editor';
+
+// Reduce Initial Bundle
+const Editor = lazy(() => import('@monaco-editor/react'));
+const DiffEditor = lazy(() =>
+    import('@monaco-editor/react').then((module) => ({
+        default: module.DiffEditor,
+    })),
+);
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -70,12 +76,12 @@ const EditorLanguages = {
 const EditorLineHeight = 19;
 // TODO:: Refactor height to account for Layout
 export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
-    const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
+    const editorRef = useRef(null);
     const monacoRef = useRef(null);
     const selectionRef = useRef(null);
     const LLMReturnRef = useRef('');
 
-    const diffEditorRef = useRef<editor.IStandaloneDiffEditor>(null);
+    const diffEditorRef = useRef(null);
 
     const { cell, isExpanded } = props;
     const { state } = useBlocks();
@@ -129,10 +135,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
      * @param editor - editor that mounted
      * @param monaco - monaco instance
      */
-    const handleDiffEditorMount = (
-        editor: editor.IStandaloneDiffEditor,
-        monaco: Monaco,
-    ) => {
+    const handleDiffEditorMount = (editor, monaco) => {
         // save the editor
         diffEditorRef.current = editor;
 
@@ -576,54 +579,60 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             <Stack direction="row" spacing={1}>
                 <StyledContainer>
                     {!isExpanded ? (
-                        <Editor
-                            width="100%"
-                            height={getHeight()}
-                            language={
-                                EDITOR_TYPE[cell.parameters.type].language
-                            }
-                            value={
-                                typeof cell.parameters.code === 'string'
-                                    ? cell.parameters.code
-                                    : cell.parameters.code.join('\n')
-                            }
-                            options={{
-                                scrollbar: { alwaysConsumeMouseWheel: false },
-                                lineNumbers: 'on',
-                                readOnly: false,
-                                minimap: { enabled: false },
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                lineHeight: EDITOR_LINE_HEIGHT,
-                                overviewRulerBorder: false,
-                                wordWrap: 'on',
-                                glyphMargin: false,
-                                folding: false,
-                                lineNumbersMinChars: 2,
-                            }}
-                            onChange={handleChange}
-                            onMount={handleMount}
-                        />
-                    ) : diffEditMode ? (
-                        <>
-                            <DiffEditor
-                                original={oldContentDiffEdit}
-                                modified={newContentDiffEdit}
+                        <Suspense fallback={<>...</>}>
+                            <Editor
+                                width="100%"
+                                height={getHeight()}
                                 language={
-                                    EDITOR_TYPE[cell.parameters.type].value
+                                    EDITOR_TYPE[cell.parameters.type].language
+                                }
+                                value={
+                                    typeof cell.parameters.code === 'string'
+                                        ? cell.parameters.code
+                                        : cell.parameters.code.join('\n')
                                 }
                                 options={{
-                                    // lineNumbers: 'on',
-                                    readOnly: true,
+                                    scrollbar: {
+                                        alwaysConsumeMouseWheel: false,
+                                    },
+                                    lineNumbers: 'on',
+                                    readOnly: false,
                                     minimap: { enabled: false },
                                     automaticLayout: true,
                                     scrollBeyondLastLine: false,
                                     lineHeight: EDITOR_LINE_HEIGHT,
                                     overviewRulerBorder: false,
                                     wordWrap: 'on',
+                                    glyphMargin: false,
+                                    folding: false,
+                                    lineNumbersMinChars: 2,
                                 }}
-                                onMount={handleDiffEditorMount}
+                                onChange={handleChange}
+                                onMount={handleMount}
                             />
+                        </Suspense>
+                    ) : diffEditMode ? (
+                        <>
+                            <Suspense fallback={<>...</>}>
+                                <DiffEditor
+                                    original={oldContentDiffEdit}
+                                    modified={newContentDiffEdit}
+                                    language={
+                                        EDITOR_TYPE[cell.parameters.type].value
+                                    }
+                                    options={{
+                                        // lineNumbers: 'on',
+                                        readOnly: true,
+                                        minimap: { enabled: false },
+                                        automaticLayout: true,
+                                        scrollBeyondLastLine: false,
+                                        lineHeight: EDITOR_LINE_HEIGHT,
+                                        overviewRulerBorder: false,
+                                        wordWrap: 'on',
+                                    }}
+                                    onMount={handleDiffEditorMount}
+                                />
+                            </Suspense>
                             <Stack
                                 direction="row"
                                 alignItems={'center'}
@@ -650,34 +659,38 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             </Stack>
                         </>
                     ) : (
-                        <Editor
-                            width="100%"
-                            height={getHeight()}
-                            language={
-                                EDITOR_TYPE[cell.parameters.type].language
-                            }
-                            value={
-                                typeof cell.parameters.code === 'string'
-                                    ? cell.parameters.code
-                                    : cell.parameters.code.join('\n')
-                            }
-                            options={{
-                                scrollbar: { alwaysConsumeMouseWheel: false },
-                                lineNumbers: 'on',
-                                readOnly: false,
-                                minimap: { enabled: false },
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                lineHeight: EDITOR_LINE_HEIGHT,
-                                overviewRulerBorder: false,
-                                wordWrap: 'on',
-                                glyphMargin: false,
-                                folding: false,
-                                lineNumbersMinChars: 2,
-                            }}
-                            onChange={handleChange}
-                            onMount={handleMount}
-                        />
+                        <Suspense fallback={<>...</>}>
+                            <Editor
+                                width="100%"
+                                height={getHeight()}
+                                language={
+                                    EDITOR_TYPE[cell.parameters.type].language
+                                }
+                                value={
+                                    typeof cell.parameters.code === 'string'
+                                        ? cell.parameters.code
+                                        : cell.parameters.code.join('\n')
+                                }
+                                options={{
+                                    scrollbar: {
+                                        alwaysConsumeMouseWheel: false,
+                                    },
+                                    lineNumbers: 'on',
+                                    readOnly: false,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: EDITOR_LINE_HEIGHT,
+                                    overviewRulerBorder: false,
+                                    wordWrap: 'on',
+                                    glyphMargin: false,
+                                    folding: false,
+                                    lineNumbersMinChars: 2,
+                                }}
+                                onChange={handleChange}
+                                onMount={handleMount}
+                            />
+                        </Suspense>
                     )}
                 </StyledContainer>
                 {/* {isExpanded && ( */}

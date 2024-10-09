@@ -22,6 +22,7 @@ export const VARIABLE_TYPES = [
     'date',
     'array',
     'JSON',
+    // 'LLM Comparison',
 ];
 
 export const ACTIONS_DISPLAY = {

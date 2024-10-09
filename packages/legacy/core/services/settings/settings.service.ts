@@ -75,6 +75,15 @@ function settingsService(
                         preLeftMenuBtnOptions: [],
                         postLeftMenuBtnOptions: [],
                     },
+                    cookiePolicyMessageReact: "",
+                    cookiePolicyOrderReact: [],
+                    cookiePoliciesReact: {},
+                    helpBannerOrder: [],
+                    helpBannerValues: {},
+                    termsHeaderReact: '',
+                    termsReact: '',
+                    cookiePolicyModalBodyReact: '',
+                    cookiePolicyBannerReact: '',
                     materialTheme: {
                         palette: {
                             mode: "light",

@@ -43,6 +43,10 @@ import {
     ToggleButtonBlockDef,
 } from './toggle-button-block';
 import { config as MermaidBlockConfig, MermaidBlockDef } from './mermaid-block';
+import {
+    config as CompareLLMBlockConfig,
+    LLMComparisonBlockDef,
+} from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 
 export type DefaultBlockDefinitions =
@@ -72,6 +76,7 @@ export type DefaultBlockDefinitions =
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | MermaidBlockDef
+    | LLMComparisonBlockDef
     | ModalBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
@@ -94,6 +99,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
     [ModalBlockConfig.widget]: ModalBlockConfig,
 };
 
@@ -123,5 +129,6 @@ export {
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
     MermaidBlockConfig,
+    CompareLLMBlockConfig,
     ModalBlockConfig,
 };

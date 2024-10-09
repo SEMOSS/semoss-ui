@@ -2,7 +2,7 @@ import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useBlock } from '@/hooks';
+import { useBlock, useTypeWriter } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 export interface MarkdownBlockDef extends BlockDef<'markdown'> {
@@ -10,12 +10,19 @@ export interface MarkdownBlockDef extends BlockDef<'markdown'> {
     data: {
         style: CSSProperties;
         markdown: string;
+        isStreaming: boolean;
     };
     slots: never;
 }
 
 export const MarkdownBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<MarkdownBlockDef>(id);
+    let markdownTxt =
+        typeof data.markdown == 'string'
+            ? data.markdown
+            : JSON.stringify(data.markdown);
+    let displayTxt = useTypeWriter(data.isStreaming ? markdownTxt : '');
+    if (!data.isStreaming) displayTxt = markdownTxt;
 
     return (
         <div
@@ -25,7 +32,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
             {...attrs}
         >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {data.markdown}
+                {displayTxt}
             </ReactMarkdown>
         </div>
     );
