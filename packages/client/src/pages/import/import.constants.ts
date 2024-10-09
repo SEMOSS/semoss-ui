@@ -37,6 +37,7 @@ import TRINO from '@/assets/img/TRINO.jpg';
 //Add Storage
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
+import AZURE_SPEECH_TO_TEXT from '@/assets/img/AZURE_SPEECH_TO_TEXT.png';
 import CEPH from '@/assets/img/CEPH.png';
 import DREAMHOST from '@/assets/img/DREAMHOST.png';
 import DROPBOX from '@/assets/img/dropbox.png';
@@ -5030,6 +5031,83 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'FUNCTION_PARAMETERS',
                         label: 'Function Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Azure speech to text',
+                disable: false,
+                icon: AZURE_SPEECH_TO_TEXT,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZURE SPEECH TO TEXT',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_KEY',
+                        label: 'Speech Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'SPEECH_REGION',
+                        label: 'Speech region',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
