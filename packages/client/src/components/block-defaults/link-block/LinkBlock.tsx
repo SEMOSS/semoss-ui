@@ -1,10 +1,9 @@
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
 
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
-import { Slot } from '@/components/blocks';
+import { NavLink } from 'react-router-dom';
 
 export interface LinkBlockDef extends BlockDef<'link'> {
     widget: 'link';
@@ -12,6 +11,7 @@ export interface LinkBlockDef extends BlockDef<'link'> {
         style: CSSProperties;
         href: string;
         text: string;
+        isExternal: boolean;
     };
 }
 
@@ -20,9 +20,10 @@ TODO: If this is a link to somewhere internally on app switch to a Link (react-r
 */
 export const LinkBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<LinkBlockDef>(id);
-    return (
+    const navLink = data.isExternal ? data.href : `./${data.href}`;
+    return data.isExternal ? (
         <a
-            href={data.href}
+            href={navLink}
             style={{
                 ...data.style,
             }}
@@ -30,5 +31,15 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
         >
             {data.text}
         </a>
+    ) : (
+        <NavLink
+            to={navLink}
+            style={{
+                ...data.style,
+            }}
+            {...attrs}
+        >
+            {data.text}
+        </NavLink>
     );
 });

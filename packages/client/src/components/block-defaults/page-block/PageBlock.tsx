@@ -11,6 +11,8 @@ export interface PageBlockDef extends BlockDef<'page'> {
     data: {
         style: CSSProperties;
         loading: boolean | string;
+        pageName: string;
+        route: string;
     };
     slots: {
         content: true;

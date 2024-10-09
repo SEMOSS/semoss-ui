@@ -1,5 +1,5 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import { InputSettings, SwitchSettings } from '@/components/block-settings';
 
 import {
     buildTextAlignSection,
@@ -22,6 +22,7 @@ export const config: BlockConfig<LinkBlockDef> = {
         },
         href: '',
         text: 'Insert text',
+        isExternal: false,
     },
     listeners: {},
     slots: {},
@@ -45,6 +46,16 @@ export const config: BlockConfig<LinkBlockDef> = {
                     description: 'Text',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Text" path="text" />
+                    ),
+                },
+                {
+                    description: 'External link',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Enable External Link"
+                            path="isExternal"
+                        />
                     ),
                 },
             ],

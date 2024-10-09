@@ -27,18 +27,35 @@ interface BlocksRendererProps {
 
     /** Do we want to see load screen. Ex: preview on tooltip */
     preview?: boolean;
+
+    route?: string;
 }
 
 /**
  * Render a block app
  */
 export const BlocksRenderer = observer((props: BlocksRendererProps) => {
-    const { appId, state, preview } = props;
+    const { appId, state, preview, route } = props;
     const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
+    const [activePage, setActivePage] = useState(ACTIVE);
+
+    /** To find the page block to render as per the route */
+    const findBlockFromRoute = (blocks) => {
+        const routeQuery = route ? route : '';
+        const allKeys = Object.keys(blocks);
+        allKeys.forEach((key) => {
+            if (
+                blocks[key].widget == 'page' &&
+                blocks[key].data.route == routeQuery
+            ) {
+                setActivePage(blocks[key].id);
+            }
+        });
+    };
 
     useEffect(() => {
         // start the loading
@@ -146,6 +163,10 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
             });
     }, [state, appId]);
 
+    useEffect(() => {
+        stateStore?.blocks && findBlockFromRoute(stateStore?.blocks);
+    }, [route]);
+
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
             return <LoadingScreen.Trigger />;
@@ -156,7 +177,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     return (
         <Blocks state={stateStore} registry={DefaultBlocks}>
-            <Renderer id={ACTIVE} />
+            <Renderer id={activePage} />
         </Blocks>
     );
 });
