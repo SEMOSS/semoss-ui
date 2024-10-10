@@ -148,14 +148,14 @@ server_connection=ai_server.RESTServer(
     secret_key="${
         secretKey ? secretKey : '<your access key>'
     }",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
-    base="${Env.ORIGIN}${Env.PATH}${Env.MODULE}/api"
+    base="${Env.ORIGIN}${Env.PATH}${process.env.MODULE}/api"
 )
 `;
     } else {
         return `
 # .env
 ENDPOINT="${Env.ORIGIN}${Env.PATH}"
-MODULE="${Env.MODULE}"
+MODULE="${process.env.MODULE}"
 
 #.env.local
 ACCESS_KEY="${accessKey ? accessKey : '<your access key>'}"
