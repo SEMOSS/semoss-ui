@@ -288,7 +288,7 @@ export const SelectOptionsSettings = observer(
                     <BaseSettingSection label="Option Source">
                         <Autocomplete
                             value={optionSource}
-                            options={['Query', 'Engine']}
+                            options={['query', 'engine']}
                             onChange={(_, newValue) =>
                                 handleOptionSourceChange(
                                     newValue as 'query' | 'engine',
@@ -301,6 +301,10 @@ export const SelectOptionsSettings = observer(
                                     variant="outlined"
                                 />
                             )}
+                            renderOption={(props, option) => (
+                                <li {...props}>{toCapitalCase(option)}</li>
+                            )}
+                            getOptionLabel={(option) => toCapitalCase(option)}
                             fullWidth
                         />
                     </BaseSettingSection>
@@ -366,7 +370,7 @@ export const SelectOptionsSettings = observer(
                 <BaseSettingSection label="Option Source">
                     <Autocomplete
                         value={optionSource}
-                        options={['Query', 'Engine']}
+                        options={['query', 'engine']}
                         onChange={(_, newValue) =>
                             handleOptionSourceChange(
                                 newValue as 'query' | 'engine',
@@ -379,6 +383,10 @@ export const SelectOptionsSettings = observer(
                                 variant="outlined"
                             />
                         )}
+                        renderOption={(props, option) => (
+                            <li {...props}>{toCapitalCase(option)}</li>
+                        )}
+                        getOptionLabel={(option) => toCapitalCase(option)}
                         fullWidth
                     />
                 </BaseSettingSection>
