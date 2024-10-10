@@ -27,7 +27,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
             flexWrap: 'wrap',
         },
         subcontainer: 2,
-        id: '',
     },
     listeners: {},
     slots: {
