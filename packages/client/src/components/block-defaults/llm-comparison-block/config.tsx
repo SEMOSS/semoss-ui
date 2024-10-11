@@ -11,8 +11,7 @@ export const config: BlockConfig<LLMComparisonBlockDef> = {
     widget: 'llmComparison',
     type: BLOCK_TYPE_COMPARE,
     data: {
-        queryId: '',
-        cellId: '',
+        variableId: '',
     },
     listeners: {},
     slots: {},

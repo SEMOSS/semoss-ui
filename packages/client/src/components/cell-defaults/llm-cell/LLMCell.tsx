@@ -11,7 +11,6 @@ import {
 import { ActionMessages, CellComponent, CellDef, Variant } from '@/stores';
 import { useBlocks, useRootStore } from '@/hooks';
 import { LLMCellVariant } from './LLMCellVariant';
-import { toJS } from 'mobx';
 import { Add } from '@mui/icons-material';
 import { generateVariantName } from '@/components/block-defaults/llm-comparison-block/LlmComparison.utility';
 

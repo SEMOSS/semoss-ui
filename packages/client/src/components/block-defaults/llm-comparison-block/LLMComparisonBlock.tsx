@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBlock, useBlocks } from '@/hooks';
-import { BlockComponent, BlockDef, CellState } from '@/stores';
+import { BlockComponent, BlockDef, CellState, Variant } from '@/stores';
 import {
     IconButton,
     Stack,
@@ -69,38 +69,40 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { state } = useBlocks();
     const cellIsLoadingRef = useRef(false);
     const [selectedTab, setSelectedTab] = useState<string>('');
-    const [cell, setCell] = useState<CellState | null>(null);
+    const [cell, setCell] = useState(null);
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
     const [highlightedRating, setHighlightedRating] = useState(0);
 
     // get the blocks' cell
     useEffect(() => {
-        if (!data.queryId || !data.cellId) {
+        if (!data.variableId) {
             setVariants({});
             setCell(null);
             return;
         } else {
-            let selectedCell: CellState | null = null;
-            if (
-                typeof data.queryId === 'string' &&
-                typeof data.cellId === 'string'
-            ) {
-                selectedCell = state.getQuery(data.queryId).cells[data.cellId];
-            }
-
-            if (!selectedCell) {
-                setVariants({});
-                setCell(null);
-            } else {
-                setCell(selectedCell);
-                getVariantsFromCell(selectedCell);
+            if (typeof data.variableId === 'string') {
+                // todod
+                const variable = state.variables[data.variableId];
+                if (!variable || variable.type !== 'cell') {
+                    console.log(
+                        `Error retrieving variable with ID: ${data.variableId}`,
+                    );
+                } else {
+                    const query = state.getQuery(variable.to);
+                    const c = query.getCell(variable.cellId);
+                    if (c) {
+                        setCell(c);
+                        getVariantsFromCell(c);
+                    } else {
+                        console.log('Error retrieving Cell from the variable.');
+                    }
+                }
             }
         }
-    }, [data.queryId, data.cellId]);
+    }, [data.variableId]);
 
     // Refresh the variant's responses when the query has finished loading.
-    // May want to refactor this to have a more direct solution for triggering the refresh.3
     useEffect(() => {
         if (!cell) return;
 
@@ -115,7 +117,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const getVariantsFromCell = (selectedCell: CellState) => {
         const modelledVars = {};
         Object.values(selectedCell.parameters.variants).forEach(
-            (variant, idx) => {
+            (variant: Variant, idx) => {
                 modelledVars[variant.id] = {
                     ...variant,
                     response: (selectedCell?.output || [])[idx]?.response,
