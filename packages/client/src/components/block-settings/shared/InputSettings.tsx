@@ -36,6 +36,11 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
      * Parse input as object to set value
      */
     valueAsObject?: boolean;
+
+    /**
+     * What to be displayed on the tooltip to explain setting
+     */
+    description?: string;
 }
 
 export const InputSettings = observer(
@@ -46,6 +51,7 @@ export const InputSettings = observer(
         secondaryPath = undefined,
         type = 'text',
         valueAsObject = false,
+        description,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
@@ -124,7 +130,7 @@ export const InputSettings = observer(
         };
 
         return (
-            <BaseSettingSection label={label}>
+            <BaseSettingSection label={label} description={description}>
                 <TextField
                     fullWidth
                     value={value}

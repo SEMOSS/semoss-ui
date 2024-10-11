@@ -24,6 +24,7 @@ import {
 } from '@/components/cell-defaults';
 import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
+import { ModelBrain } from '@/assets/img/ModelBrain';
 import { DataImportFormModal } from './DataImportFormModal';
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -145,6 +146,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
         display: 'Text',
         icon: <TextFields />,
         disabled: true,
+    },
+    llm: {
+        display: 'LLM',
+        defaultCellType: 'llm',
+        icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
     },
 };
 

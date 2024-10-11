@@ -1,14 +1,14 @@
 name: CI
 on:
-  push:
-    branches:
-      - dev
-      - main
-  pull_request:
-    branches:
-      - dev
-      - main
-  workflow_dispatch:
+    push:
+        branches:
+            - dev
+            - main
+    pull_request:
+        branches:
+            - dev
+            - main
+    workflow_dispatch:
 
 env:
     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
@@ -63,7 +63,7 @@ jobs:
             #   with:
             #       name: semossweb-artifact
             #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
-                  
+
             # - name: Delete old artifacts
             #   run: |
             #     echo "Deleting old artifacts..."
@@ -85,15 +85,15 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Cache node modules and Maven repository
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      node_modules
-                      .m2/repository
-                      dist
-                      index.html
-                  key: ${{ github.ref_name }}
+            # - name: Cache node modules and Maven repository
+            #   uses: actions/cache@v4
+            #   with:
+            #       path: |
+            #           node_modules
+            #           .m2/repository
+            #           dist
+            #           index.html
+            #       key: ${{ github.ref_name }}
 
             - name: Install dependencies
               run: |
@@ -116,14 +116,14 @@ jobs:
             - name: Deploy with Maven
               shell: bash
               run: |
-                REF_NAME=$( echo $GITHUB_REF | sed 's|refs/heads/||')
-                if [[ "$REF_NAME" != 'dev' && "$REF_NAME" != 'main' ]]; then
-                  mvn clean install -DfailIfNoTests=false -Dci.version=${{ vars.VERSION }}-SNAPSHOT
-                elif [[ "$REF_NAME" == 'dev' || "$REF_NAME" == 'main' ]]; then
-                  mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}-SNAPSHOT
-                fi
+                  REF_NAME=$( echo $GITHUB_REF | sed 's|refs/heads/||')
+                  if [[ "$REF_NAME" != 'dev' && "$REF_NAME" != 'main' ]]; then
+                    mvn clean install -DfailIfNoTests=false -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  elif [[ "$REF_NAME" == 'dev' || "$REF_NAME" == 'main' ]]; then
+                    mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  fi
               env:
-                GITHUB_REF: ${{ github.ref }}
+                  GITHUB_REF: ${{ github.ref }}
 
             - name: Remove cache to save space
               run: rm -rf .m2/repository/org/semoss
@@ -131,20 +131,20 @@ jobs:
             - name: Upload WAR to Nexus
               if: github.ref_name != 'dev' && github.ref_name != 'main'
               env:
-                NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-                NEUXS_PASSWORD: ${{secrets.NEUXS_PASSWORD }}
-                GITHUB_REF: ${{ github.ref }}
+                  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+                  NEUXS_PASSWORD: ${{secrets.NEUXS_PASSWORD }}
+                  GITHUB_REF: ${{ github.ref }}
               run: |
-                REF_NAME=$( echo $GITHUB_REF | sed 's|refs/heads/||')
-                WAR_FILE=$(ls target/*.war | head -n 1)
-                if [ -f "$WAR_FILE" ]; then
-                  echo "Uploading WAR file: (basename $WAR_FILE)"
-                  curl -v -u "$NEXUS_USERNAME:$NEUXS_PASSWORD" \
-                  --upload-file "$WAR_FILE" \
-                  "https://artifact.semoss.org/repository/semoss-ui-hosted-repo/$REF_NAME/$(basename $WAR_FILE)"
-                else
-                  echo "No WAR file found in the target directory."
-                fi
+                  REF_NAME=$( echo $GITHUB_REF | sed 's|refs/heads/||')
+                  WAR_FILE=$(ls target/*.war | head -n 1)
+                  if [ -f "$WAR_FILE" ]; then
+                    echo "Uploading WAR file: (basename $WAR_FILE)"
+                    curl -v -u "$NEXUS_USERNAME:$NEUXS_PASSWORD" \
+                    --upload-file "$WAR_FILE" \
+                    "https://artifact.semoss.org/repository/semoss-ui-hosted-repo/$REF_NAME/$(basename $WAR_FILE)"
+                  else
+                    echo "No WAR file found in the target directory."
+                  fi
 
             # - name: Save artifacts
             #   if: success()

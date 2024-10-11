@@ -1,4 +1,12 @@
-import { useMemo, useEffect, useState, SyntheticEvent, useRef } from 'react';
+import {
+    useMemo,
+    useEffect,
+    useState,
+    SyntheticEvent,
+    useRef,
+    Suspense,
+    lazy,
+} from 'react';
 
 import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
@@ -15,9 +23,6 @@ import {
     Tabs,
 } from '@semoss/ui';
 
-import Editor, { OnMount } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
-
 import parserBabel from 'prettier/parser-babel';
 import parserCss from 'prettier/parser-postcss';
 import parserHtml from 'prettier/parser-html';
@@ -26,6 +31,9 @@ import prettier from 'prettier';
 import { LoadingScreen } from '@/components/ui';
 import { useLLM } from '@/hooks';
 import { runPixel } from '@/api';
+
+// Reduce Initial Bundle
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const StyledSVG = styled('svg')(({ theme }) => ({
     viewBox: '0 0 16 16',
@@ -213,6 +221,7 @@ export const TextEditor = (props: TextEditorProps) => {
     const notification = useNotification();
     const { modelId } = useLLM();
 
+    const [monaco, setMonaco] = useState(null);
     const [LLMLoading, setLLMLoading] = useState(false);
     const [LLMActionAdded, setLLMActionAdded] = useState(false);
     // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
@@ -220,6 +229,11 @@ export const TextEditor = (props: TextEditorProps) => {
     const modelIdRef = useRef('');
     const wordWrapRef = useRef(false);
 
+    useEffect(() => {
+        import('monaco-editor').then((mon) => {
+            setMonaco(mon);
+        });
+    }, []);
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
      */
@@ -505,80 +519,78 @@ export const TextEditor = (props: TextEditorProps) => {
     }, [activeIndex, files.length, counter]);
 
     /**
-     * Callback for new LLM dropdown action in Monaco editor
-     * @param newContent
-     */
-    const executeAction: monaco.editor.IActionDescriptor = {
-        contextMenuGroupId: '1_modification',
-        contextMenuOrder: 1,
-        id: 'prompt-LLM',
-        label: 'Generate Code',
-        keybindings: [
-            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
-        ],
-
-        run: async (editor) => {
-            const selection = editor.getSelection();
-            const selectedText = editor.getModel().getValueInRange(selection);
-
-            const LLMReturnText = await promptLLM(
-                `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-            );
-
-            editor.executeEdits('custom-action', [
-                {
-                    range: new monaco.Range(
-                        selection.endLineNumber + 2,
-                        1,
-                        selection.endLineNumber + 2,
-                        1,
-                    ),
-                    text: `\n\n${LLMReturnText}\n`,
-                    forceMoveMarkers: true,
-                },
-            ]);
-
-            editor.setSelection(
-                new monaco.Range(
-                    selection.endLineNumber + 3,
-                    1,
-                    selection.endLineNumber +
-                        2 +
-                        LLMReturnText.split('\n').length,
-                    1,
-                ),
-            );
-        },
-    };
-
-    /**
-     * Callback for adding word wrap toggle action in dropdown menu and as keyboard shortcut
-     */
-    const toggleWordWrapAction: monaco.editor.IActionDescriptor = {
-        contextMenuGroupId: '1_modification',
-        contextMenuOrder: 2,
-        id: 'toggle-word-wrap',
-        label: 'Toggle Word Wrap',
-        keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-
-        run: async (editor) => {
-            wordWrapRef.current = !wordWrapRef.current;
-            editor.updateOptions({
-                wordWrap: wordWrapRef.current ? 'on' : 'off',
-            });
-        },
-    };
-
-    /**
      * Handler that adds new LLM dropdown actions to editor when the editor mounts
      * @param monacoInstance
      */
-    const editorOnMountHandler: OnMount = (_editor, monacoInstance) => {
+    const editorOnMountHandler = (_editor, monacoInstance) => {
+        const toggleWordWrapAction = {
+            contextMenuGroupId: '1_modification',
+            contextMenuOrder: 2,
+            id: 'toggle-word-wrap',
+            label: 'Toggle Word Wrap',
+            keybindings: [
+                monacoInstance.KeyMod.Alt | monacoInstance.KeyCode.KeyZ,
+            ],
+            run: async (editor) => {
+                wordWrapRef.current = !wordWrapRef.current;
+                editor.updateOptions({
+                    wordWrap: wordWrapRef.current ? 'on' : 'off',
+                });
+            },
+        };
+
+        const executeAction = {
+            contextMenuGroupId: '1_modification',
+            contextMenuOrder: 1,
+            id: 'prompt-LLM',
+            label: 'Generate Code',
+            keybindings: [
+                monacoInstance.KeyMod.CtrlCmd |
+                    monacoInstance.KeyMod.Shift |
+                    monacoInstance.KeyCode.KeyG,
+            ],
+
+            run: async (editor) => {
+                const selection = editor.getSelection();
+                const selectedText = editor
+                    .getModel()
+                    .getValueInRange(selection);
+
+                const LLMReturnText = await promptLLM(
+                    `Create code for a .${fileTypeRef.current} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+                );
+
+                editor.executeEdits('custom-action', [
+                    {
+                        range: new monaco.Range(
+                            selection.endLineNumber + 2,
+                            1,
+                            selection.endLineNumber + 2,
+                            1,
+                        ),
+                        text: `\n\n${LLMReturnText}\n`,
+                        forceMoveMarkers: true,
+                    },
+                ]);
+
+                editor.setSelection(
+                    new monaco.Range(
+                        selection.endLineNumber + 3,
+                        1,
+                        selection.endLineNumber +
+                            2 +
+                            LLMReturnText.split('\n').length,
+                        1,
+                    ),
+                );
+            },
+        };
+
         // prevents redundant additions of new dropdown action
         if (LLMActionAdded == false && process.env.NODE_ENV == 'development') {
             setLLMActionAdded(true);
-            monacoInstance.editor.addEditorAction(executeAction);
-            monacoInstance.editor.addEditorAction(toggleWordWrapAction);
+            _editor.addAction(executeAction);
+            _editor.addAction(toggleWordWrapAction);
         }
     };
 
@@ -727,17 +739,19 @@ export const TextEditor = (props: TextEditorProps) => {
                     {LLMLoading && (
                         <LoadingScreen.Trigger description="Generating..." />
                     )}
-                    <Editor
-                        key={modelIdRef.current}
-                        width={'100%'}
-                        height={'100%'}
-                        value={activeFile.content}
-                        language={fileLanguage}
-                        onChange={(newValue, e) => {
-                            editFile(newValue);
-                        }}
-                        onMount={editorOnMountHandler}
-                    ></Editor>
+                    <Suspense fallback={<>...</>}>
+                        <Editor
+                            key={modelIdRef.current}
+                            width={'100%'}
+                            height={'100%'}
+                            value={activeFile.content}
+                            language={fileLanguage}
+                            onChange={(newValue, e) => {
+                                editFile(newValue);
+                            }}
+                            onMount={editorOnMountHandler}
+                        ></Editor>
+                    </Suspense>
                 </StyledContainer>
             );
         } else {
@@ -746,33 +760,7 @@ export const TextEditor = (props: TextEditorProps) => {
     }
 };
 
-// For Formatting Python Code
-// seems like this may need it's own pixel
+// TODO: Format Python Code
 const runBlack = (code) => {
-    // return new Promise((resolve, reject) => {
-    //     const blackProcess = spawn('black', ['-', '--quiet', '-']);
-
-    //     let formattedCode = '';
-    //     let errorOutput = '';
-
-    //     blackProcess.stdout.on('data', (data) => {
-    //         formattedCode += data;
-    //     });
-
-    //     blackProcess.stderr.on('data', (data) => {
-    //         errorOutput += data;
-    //     });
-
-    //     blackProcess.on('close', (code) => {
-    //         if (code === 0) {
-    //             resolve(formattedCode);
-    //         } else {
-    //             reject(new Error(`Black formatting failed: ${errorOutput}`));
-    //         }
-    //     });
-
-    //     blackProcess.stdin.write(code);
-    //     blackProcess.stdin.end();
-    // });
     return code;
 };

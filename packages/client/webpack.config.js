@@ -10,12 +10,18 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const dotenv = require('dotenv');
 // const importMetaEnv = require('@import-meta-env/unplugin');
+const BundleAnalyzerPlugin =
+    require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
+
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 dotenv.config({ path: '../../.env.local' });
 dotenv.config({ path: '../../.env' });
 
 const isProduction = process.env.NODE_ENV == 'production';
 
+console.log('isProduction', isProduction);
 const config = {
     entry: './src/main.tsx',
     performance: {
@@ -23,7 +29,22 @@ const config = {
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
+        filename: isProduction ? '[name].[contenthash].js' : '[name].js',
         clean: true,
+    },
+    optimization: {
+        minimize: !isProduction,
+        minimizer: [new TerserPlugin({})],
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: {
+            chunks: 'async',
+            cacheGroups: {
+                defaultVendors: {
+                    idHint: 'vendors',
+                },
+            },
+        },
     },
     plugins: [
         new NxAppWebpackPlugin({
@@ -54,6 +75,7 @@ const config = {
             template: path.resolve(__dirname, './src/template.html'),
             filename: 'index.html',
         }),
+
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
             React: 'react',
@@ -65,13 +87,17 @@ const config = {
             }),
         }),
         new MiniCssExtractPlugin({
-            filename: '[name].css',
-            chunkFilename: '[id].css',
+            filename: isProduction ? '[name].[contenthash].css' : '[name].css',
+            chunkFilename: isProduction ? '[id].[contenthash].css' : '[id].css',
         }),
         // new webpack.DefinePlugin({
         //     'process.env.NODE_OPTIONS': '--max-old-space-size=8192',
         // }),
 
+        // new MonacoWebpackPlugin({
+        //     languages: ['javascript', 'typescript'],
+        // }),
+        // new BundleAnalyzerPlugin()
         // Add your plugins here
         // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     ],
@@ -103,7 +129,6 @@ const config = {
                     },
                 ],
             },
-
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],
