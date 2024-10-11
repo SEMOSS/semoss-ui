@@ -80,23 +80,20 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
             setVariants({});
             setCell(null);
             return;
-        } else {
-            if (typeof data.variableId === 'string') {
-                // todod
-                const variable = state.variables[data.variableId];
-                if (!variable || variable.type !== 'cell') {
-                    console.log(
-                        `Error retrieving variable with ID: ${data.variableId}`,
-                    );
+        } else if (typeof data.variableId === 'string') {
+            const variable = state.variables[data.variableId];
+            if (!variable || variable.type !== 'cell') {
+                console.log(
+                    `Error retrieving variable with ID: ${data.variableId}`,
+                );
+            } else {
+                const query = state.getQuery(variable.to);
+                const c = query.getCell(variable.cellId);
+                if (c) {
+                    setCell(c);
+                    getVariantsFromCell(c);
                 } else {
-                    const query = state.getQuery(variable.to);
-                    const c = query.getCell(variable.cellId);
-                    if (c) {
-                        setCell(c);
-                        getVariantsFromCell(c);
-                    } else {
-                        console.log('Error retrieving Cell from the variable.');
-                    }
+                    console.log('Error retrieving Cell from the variable.');
                 }
             }
         }

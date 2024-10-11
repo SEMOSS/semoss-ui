@@ -1,4 +1,4 @@
-import { BlockComponent, Variant } from '@/stores';
+import { BlockComponent, CellState, Variant } from '@/stores';
 import { useBlock, useBlocks, useRootStore } from '@/hooks';
 import { styled, ToggleTabsGroup, useNotification } from '@semoss/ui';
 import { useState, useEffect, useRef } from 'react';
@@ -16,6 +16,7 @@ import {
     modelEngineOutput,
 } from './LlmComparison.utility';
 import { observer } from 'mobx-react-lite';
+import { toJS } from 'mobx';
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     height: '36px',
@@ -79,21 +80,23 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
         } else {
             setValue('variants', {});
         }
-    }, [data.queryId, data.cellId, allModels]);
+    }, [data.variableId, allModels]);
 
-    // Retrieve model, and set Variants in state from selected query.
     const getVariantsFromCell = (models) => {
-        if (!data.queryId || !data.cellId) return;
-
-        let cell;
-        if (
-            typeof data.queryId === 'string' &&
-            typeof data.cellId === 'string'
-        ) {
-            cell = state.getQuery(data.queryId).cells[data.cellId];
-        } else {
-            console.log("Type of 'data.queryId' is NOT a string");
+        // Find the Block's assigned cell and set its variants in state.
+        let cell: CellState | null = null;
+        if (!data.variableId) {
             return;
+        } else if (typeof data.variableId === 'string') {
+            const variable = state.variables[data.variableId];
+            if (!variable || variable.type !== 'cell') {
+                console.log(
+                    `Error retrieving variable with ID: ${data.variableId}`,
+                );
+            } else {
+                const query = state.getQuery(variable.to);
+                cell = query.getCell(variable.cellId) || null;
+            }
         }
         if (!cell) return;
 
