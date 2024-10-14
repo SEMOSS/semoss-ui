@@ -100,29 +100,10 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     s = await migration.run(s);
                 }
 
-                //Replace variable values with query params
+                // Replace variable values with query params
+                const params = {};
                 queryStringParams.forEach((value, key) => {
-                    let variable = s.variables[key];
-                    if (variable) {
-                        //retrieve the "to" value
-                        let toValue = variable.to;
-                        if (variable.type == 'block') {
-                            //Look into blocks section
-                            if (s.blocks[toValue]) {
-                                s.blocks[toValue].data.value = value;
-                            }
-                        } else if (
-                            variable.type == 'cell' ||
-                            variable.type == 'query'
-                        ) {
-                            //TO DO: Handle query and cell types
-                        } else {
-                            //look into dependencies
-                            if (s.dependencies[toValue]) {
-                                s.dependencies[toValue] = value;
-                            }
-                        }
-                    }
+                    params[key] = value;
                 });
 
                 // create a new state store
@@ -131,6 +112,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     insightId: insightId,
                     state: s,
                     cellRegistry: DefaultCells,
+                    initialParams: params,
                 });
 
                 // set it
