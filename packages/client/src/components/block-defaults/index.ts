@@ -48,6 +48,10 @@ import {
     LLMComparisonBlockDef,
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
+import {
+    config as SelectEngineBlockConfig,
+    SelectEngineBlockDef,
+} from './select-engine-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -77,7 +81,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | SelectEngineBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -101,6 +106,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
     [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
     [ModalBlockConfig.widget]: ModalBlockConfig,
+    [SelectEngineBlockConfig.widget]: SelectEngineBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -131,4 +137,5 @@ export {
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
+    SelectEngineBlockConfig,
 };

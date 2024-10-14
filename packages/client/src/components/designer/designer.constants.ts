@@ -232,6 +232,32 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: SECTION_INPUT,
+        image: BLOCK_SELECT,
+        name: 'Select Engine',
+        json: {
+            widget: 'select-engine',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: '',
+                label: 'Example Select Engine Input',
+                hint: '',
+                options: [],
+                required: false,
+                disabled: false,
+                loading: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
+    {
+        section: SECTION_INPUT,
         image: BLOCK_FILE_UPLOAD,
         name: 'Upload',
         json: {
