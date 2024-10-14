@@ -11,14 +11,8 @@ import {
     Checkbox,
 } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import {
-    CheckBoxRounded,
-    CheckCircle,
-    Star,
-    StarBorder,
-} from '@mui/icons-material';
+import { CheckCircle, Star, StarBorder } from '@mui/icons-material';
 import { CircularProgress } from '@semoss/ui';
-import { toJS } from 'mobx';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
     margin: theme.spacing(1),
@@ -221,7 +215,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 <div>{displayed.response}</div>
                             )}
 
-                            {/* <StyledRatingRow>
+                            <StyledRatingRow>
                                 <Typography color="secondary" variant="body2">
                                     What would you rate this response?
                                 </Typography>
@@ -301,7 +295,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                         )}
                                     </StyledStarButton>
                                 </Stack>
-                            </StyledRatingRow> */}
+                            </StyledRatingRow>
                         </Stack>
                     ) : (
                         <>
