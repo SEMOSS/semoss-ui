@@ -11,14 +11,14 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { optimize } from 'webpack';
 
 export interface SelectBlockDef extends BlockDef<'select'> {
     widget: 'select';
     data: {
+        multiple: boolean;
         style: CSSProperties;
         label: string;
-        value: string;
+        value: string | string[];
         required: boolean;
         disabled: boolean;
         options: string[];
@@ -41,6 +41,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         let arr = [];
         if (!data.options) {
             // NOOP
+            return [];
         } else if (!Array.isArray(data?.options)) {
             if (typeof data.options === 'string') {
                 const opts: string = data.options;
@@ -68,12 +69,21 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         200,
     );
 
+    // Ensure that value is always an array when multiple is true
+    const value = useMemo(() => {
+        if (data.multiple) {
+            return Array.isArray(data.value) ? data.value : [];
+        }
+        return data.value || null;
+    }, [data.multiple, data.value]);
+
     return (
         <Autocomplete
             fullWidth
+            multiple={data.multiple}
             disableClearable
             options={stringifiedOptions}
-            value={data.value || null}
+            value={value}
             disabled={data?.disabled || data?.loading}
             renderOption={(props, option: string) => {
                 try {
@@ -119,10 +129,15 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                 }
             }}
             onChange={(_, value) => {
-                const parsedVal = value;
-
-                debugger;
-                setData('value', value);
+                let parsedVal: string | string[];
+                if (Array.isArray(value)) {
+                    parsedVal = value.flatMap((item) =>
+                        typeof item === 'string' ? item : item,
+                    );
+                } else {
+                    parsedVal = value;
+                }
+                setData('value', parsedVal);
             }}
             sx={{
                 ...data.style,

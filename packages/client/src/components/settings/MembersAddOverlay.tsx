@@ -74,7 +74,7 @@ const permissionMapper = {
 };
 
 const AUTOCOMPLETE_OFFSET = 0;
-const AUTOCOMPLETE_LIMIT = 20;
+const AUTOCOMPLETE_LIMIT = 10;
 
 interface MembersAddOverlayProps {
     /**
@@ -114,6 +114,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         useState<SETTINGS_ROLE>('Read-Only');
     const [search, setSearch] = useState<string>('');
 
+    //modal member logic
+    const [isScrollBottom, setIsScrollBottom] = useState(false);
+    const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
+    const [renderedMembers, setRenderedMembers] = useState([]);
+    const [infiniteOn, setInfiniteOn] = useState(true);
+    const [searchLoading, setSearchLoading] = useState(false);
+
     // debounce the input
     const debouncedSearch = useDebounceValue(search);
 
@@ -137,7 +144,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                   adminMode,
                   id,
                   AUTOCOMPLETE_LIMIT, // limit
-                  AUTOCOMPLETE_OFFSET, // offset
+                  offset, // offset
                   debouncedSearch ? debouncedSearch : undefined,
               ]
             : type === 'APP'
@@ -146,7 +153,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                   adminMode,
                   id,
                   AUTOCOMPLETE_LIMIT, // limit
-                  AUTOCOMPLETE_OFFSET, // offset
+                  offset, // offset
                   debouncedSearch ? debouncedSearch : undefined,
               ]
             : null;
@@ -155,8 +162,27 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     const isLoading =
         getMembers.status === 'INITIAL' || getMembers.status === 'LOADING';
-    const renderedMembers =
-        getMembers.status === 'SUCCESS' ? getMembers.data.data : [];
+
+    useEffect(() => {
+        if (getMembers.status === 'SUCCESS') {
+            if (getMembers.data.data.length < AUTOCOMPLETE_LIMIT) {
+                setInfiniteOn(false);
+            }
+            if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
+                setRenderedMembers((prev) => {
+                    return [...prev, ...getMembers.data.data];
+                });
+                setSearchLoading(false);
+            } else {
+                setRenderedMembers(getMembers.data.data);
+                setSearchLoading(false);
+            }
+        }
+    }, [getMembers.status]);
+
+    const getAdditionalMembers = () => {
+        setOffset(offset + AUTOCOMPLETE_LIMIT);
+    };
 
     /**
      * @name addMembers
@@ -172,6 +198,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 return {
                     userid: m.id,
                     permission: permissionMapper[selectedRole],
+                    email: m.email,
+                    name: m.name,
+                    type: m.type,
+                    username: m.username,
                 };
             });
 
@@ -234,19 +264,50 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         }
     };
 
+    const nearBottom = (
+        target: {
+            scrollHeight?: number;
+            scrollTop?: number;
+            clientHeight?: number;
+        } = {},
+    ) => {
+        const diff = Math.round(target.scrollHeight - target.scrollTop);
+        return diff - 25 <= target.clientHeight;
+    };
+
+    useEffect(() => {
+        if (isScrollBottom) {
+            if (infiniteOn) {
+                getAdditionalMembers();
+            }
+        }
+    }, [isScrollBottom]);
+
     return (
         <Modal open={open} maxWidth="lg">
             <Modal.Title>Add Members</Modal.Title>
             <StyledModal>
                 <Autocomplete
                     label="Search"
-                    loading={isLoading}
+                    loading={isLoading || searchLoading}
                     multiple={true}
                     freeSolo={false}
                     filterOptions={(x) => x}
-                    options={renderedMembers}
+                    options={renderedMembers ? renderedMembers : []}
                     includeInputInList={true}
                     limitTags={2}
+                    ListboxProps={{
+                        onScroll: ({ target }) =>
+                            setIsScrollBottom(
+                                nearBottom(
+                                    target as {
+                                        scrollHeight?: number;
+                                        scrollTop?: number;
+                                        clientHeight?: number;
+                                    },
+                                ),
+                            ),
+                    }}
                     getLimitTagsText={() => ` +${selectedMembers.length - 2}`}
                     value={selectedMembers}
                     inputValue={search}
@@ -258,6 +319,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                     }}
                     onInputChange={(event, newValue) => {
                         setSearch(newValue);
+                        setOffset(0);
+                        setInfiniteOn(true);
+                        setRenderedMembers([]);
+                        setSearchLoading(true);
                     }}
                     onChange={(event, newValue) => {
                         setSelectedMembers(newValue || []);

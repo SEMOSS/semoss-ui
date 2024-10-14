@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { AccountCircle, Logout } from '@mui/icons-material';
 import {
@@ -74,11 +74,29 @@ export const Navbar = (props: NavbarProps) => {
     // track if the popover is open
     const isPopoverOpen = Boolean(popoverAnchorEle);
 
+    const themeMap = useMemo(() => {
+        const theme = configStore.store.config['theme'];
+
+        if (theme && theme['THEME_MAP']) {
+            try {
+                return JSON.parse(theme['THEME_MAP'] as string);
+            } catch {
+                return {};
+            }
+        }
+
+        return {};
+    }, [Object.keys(configStore.store.config).length]);
+
     return (
         <StyledHeader>
             <StyledHeaderLogo to={'/'}>
-                {THEME.logo ? <StyledHeaderLogoImg src={THEME.logo} /> : null}
-                {THEME.name}
+                {themeMap.isLogoUrl ? (
+                    <StyledHeaderLogoImg src={themeMap.logo} />
+                ) : THEME.logo ? (
+                    <StyledHeaderLogoImg src={THEME.logo} />
+                ) : null}
+                {themeMap.name ? themeMap.name : THEME.name}
             </StyledHeaderLogo>
             <Stack flex={1}>{children}</Stack>
             <IconButton

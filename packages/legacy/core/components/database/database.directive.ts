@@ -7,6 +7,7 @@ import './database.scss';
 // import './database-collab/database-collab.directive';
 import './database-meta/database-meta.directive';
 import './database-physical/database-physical.directive';
+import { CUSTOMIZATION } from '@/custom/theme';
 
 export default angular
     .module('app.database.directive', [
@@ -518,6 +519,21 @@ function databaseDirective(
 
             checkLoggedInUserPermission();
             updateNavigation();
+
+            const themeMap = CONFIG.theme['THEME_MAP'] ? JSON.parse(CONFIG.theme['THEME_MAP']) : {}
+            document.title = themeMap.name ? themeMap.name : CUSTOMIZATION.page.title;
+
+            // Set the favicon
+            const faviconLink = themeMap.isLogoUrl
+                ? themeMap.logo
+                : CUSTOMIZATION.page.favicon
+                ? CUSTOMIZATION.page.favicon
+                : null;
+
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = faviconLink;
+            document.head.appendChild(link);
         }
 
         initialize();
