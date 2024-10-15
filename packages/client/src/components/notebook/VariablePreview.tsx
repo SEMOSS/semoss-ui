@@ -3,9 +3,11 @@ import { observer } from 'mobx-react-lite';
 import { Box, Divider, styled, Typography, Stack } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { BlocksRenderer } from '../blocks-workspace';
+import { JsonViewer } from '@textea/json-viewer';
 
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
+import { isOutputJSON } from '@/utility';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
@@ -116,17 +118,27 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             }
         } else {
             const found = state.parseVariable(`{{${id}}}`);
-
-            return (
-                <Typography variant="body2" fontWeight="bold">
-                    {typeof found !== 'string' ? JSON.stringify(found) : found}{' '}
-                </Typography>
-            );
+            const value = isOutputJSON(found);
+            if (value != null) {
+                return (
+                    <JsonViewer
+                        value={value}
+                        displayComma={true}
+                        rootName={false}
+                    />
+                );
+            } else {
+                return (
+                    <Typography variant="body2" fontWeight="bold">
+                        {found}
+                    </Typography>
+                );
+            }
         }
     }, [variable, id]);
 
     const previewValue = useMemo(() => {
-        let val;
+        let val = null;
 
         if (variable.type === 'block') {
             try {
@@ -136,10 +148,8 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             }
         } else {
             const found = state.parseVariable(`{{${id}}}`);
-
-            if (typeof found !== 'string') {
-                val = JSON.stringify(found);
-            } else {
+            // Dont render value if JSON
+            if (isOutputJSON(found) === null) {
                 val = found;
             }
         }
@@ -151,12 +161,14 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                     </Typography>
                     <Typography variant="body2">{variable.type}</Typography>
                 </Stack>
-                <Stack direction="row">
-                    <Typography variant="body2" fontWeight="bold">
-                        Value:{' '}
-                    </Typography>
-                    <Typography variant="body2">{val}</Typography>
-                </Stack>
+                {val !== null && (
+                    <Stack direction="row">
+                        <Typography variant="body2" fontWeight="bold">
+                            Value:{' '}
+                        </Typography>
+                        <Typography variant="body2">{val}</Typography>
+                    </Stack>
+                )}
             </>
         );
     }, [variable, id]);

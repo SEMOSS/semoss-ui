@@ -163,3 +163,25 @@ SECRET_KEY="${secretKey ? secretKey : '<your secret key>'}"
 `;
     }
 };
+
+/**
+ * @desc Checks if output and verify if its a JSON object
+ */
+export const isOutputJSON = (output: unknown) => {
+    if (typeof output === 'object' && output !== null) {
+        return output;
+    }
+    if (typeof output === 'string') {
+        try {
+            return JSON.parse(output);
+        } catch (e) {
+            const validateJsonString = output.replace(/'/g, '"');
+            try {
+                return JSON.parse(validateJsonString);
+            } catch (InnerError) {
+                return null;
+            }
+        }
+    }
+    return null;
+};
