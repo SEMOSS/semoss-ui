@@ -1,4 +1,3 @@
-import React from 'react';
 import { JsonViewer } from '@textea/json-viewer';
 import { Typography, styled } from '@semoss/ui';
 import { isOutputJSON } from '@/utility/general';
@@ -32,13 +31,27 @@ export const NotebookCellConsole = (props: ConsoleProps) => {
                             rootName={false}
                         />
                     );
-                } else {
+                }
+                // Check used to convert "{'test': 'sample'}" string into valid JSONs
+                const stringCheck = m.replace(/'/g, '"');
+                if (isOutputJSON(stringCheck)) {
                     return (
-                        <Typography key={`${i}-${m}`} variant="caption">
-                            {m}
-                        </Typography>
+                        <JsonViewer
+                            key={`${i}-${stringCheck}`}
+                            value={JSON.parse(stringCheck)}
+                            displayDataTypes={true}
+                            displaySize={true}
+                            displayComma={true}
+                            rootName={false}
+                        />
                     );
                 }
+
+                return (
+                    <Typography key={`${i}-${m}`} variant="caption">
+                        {m}
+                    </Typography>
+                );
             })}
         </StyledConsole>
     );
