@@ -23,7 +23,7 @@ import {
     Publish,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
-import { usePixel, useRootStore } from '@/hooks';
+import { usePixel, useRootStore, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { Java } from '@/assets/img/Java';
@@ -223,6 +223,7 @@ export const AppSettings = (props: AppSettingsProps) => {
     const { id, condensed = false } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+    const { adminMode } = useSettings();
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
@@ -271,9 +272,15 @@ export const AppSettings = (props: AppSettingsProps) => {
         project_portal_url?: string;
         lastCompiled?: string;
         compiledBy?: string;
-    }>(`
+    }>(
+        adminMode
+            ? `
+        AdminGetProjectPortalDetails('${id}');
+    `
+            : `
         GetProjectPortalDetails('${id}');
-    `);
+    `,
+    );
 
     useEffect(() => {
         if (getPortalDetails.status !== 'SUCCESS') {
@@ -302,7 +309,9 @@ export const AppSettings = (props: AppSettingsProps) => {
      * @name getPortalReactors
      */
     const getPortalReactors = () => {
-        const pixelString = `GetProjectAvailableReactors(project=['${id}']);`;
+        const pixelString = adminMode
+            ? `AdminGetProjectAvailableReactors(project=['${id}']);`
+            : `GetProjectAvailableReactors(project=['${id}']);`;
 
         monolithStore
             .runQuery(pixelString)
