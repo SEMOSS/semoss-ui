@@ -21,13 +21,10 @@ interface DefaultOperationProps {
 export const DefaultOperation = observer(
     (props: DefaultOperationProps): JSX.Element => {
         const { output } = props;
-        if (typeof output === 'string') {
-            let value = null;
-            if (!isOutputJSON(output)) {
-                value = output;
-                return <StyledJson>{value}</StyledJson>;
-            } else {
-                value = JSON.parse(output);
+
+        if (typeof output === 'string' || typeof output === 'object') {
+            const value = isOutputJSON(output);
+            if (value != null) {
                 return (
                     <JsonViewer
                         value={value}
@@ -35,17 +32,9 @@ export const DefaultOperation = observer(
                         rootName={false}
                     />
                 );
+            } else {
+                return <StyledJson>{output}</StyledJson>;
             }
-        }
-
-        if (typeof output === 'object') {
-            return (
-                <JsonViewer
-                    value={output}
-                    displayComma={true}
-                    rootName={false}
-                />
-            );
         }
         return <StyledJson>{JSON.stringify(output, null, 4)}</StyledJson>;
     },

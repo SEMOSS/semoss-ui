@@ -7,6 +7,7 @@ import { JsonViewer } from '@textea/json-viewer';
 
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
+import { isOutputJSON } from '@/utility';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
@@ -117,26 +118,27 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             }
         } else {
             const found = state.parseVariable(`{{${id}}}`);
-            if (typeof found === 'string') {
+            const value = isOutputJSON(found);
+            if (value != null) {
+                return (
+                    <JsonViewer
+                        value={value}
+                        displayComma={true}
+                        rootName={false}
+                    />
+                );
+            } else {
                 return (
                     <Typography variant="body2" fontWeight="bold">
                         {found}
                     </Typography>
-                );
-            } else {
-                return (
-                    <JsonViewer
-                        value={found}
-                        displayComma={true}
-                        rootName={false}
-                    />
                 );
             }
         }
     }, [variable, id]);
 
     const previewValue = useMemo(() => {
-        let val;
+        let val = null;
 
         if (variable.type === 'block') {
             try {
@@ -146,10 +148,8 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             }
         } else {
             const found = state.parseVariable(`{{${id}}}`);
-
-            if (typeof found !== 'string') {
-                val = null;
-            } else {
+            // Dont render value if JSON
+            if (isOutputJSON(found) === null) {
                 val = found;
             }
         }

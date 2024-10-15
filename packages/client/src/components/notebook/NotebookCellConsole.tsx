@@ -20,38 +20,25 @@ export const NotebookCellConsole = (props: ConsoleProps) => {
     return (
         <StyledConsole>
             {messages.map((m, i) => {
-                if (isOutputJSON(m)) {
+                const value = isOutputJSON(m);
+                if (value != null) {
                     return (
                         <JsonViewer
                             key={`${i}-${m}`}
-                            value={JSON.parse(m)}
+                            value={value}
                             displayDataTypes={true}
                             displaySize={true}
                             displayComma={true}
                             rootName={false}
                         />
                     );
-                }
-                // Check used to convert "{'test': 'sample'}" string into valid JSONs
-                const stringCheck = m.replace(/'/g, '"');
-                if (isOutputJSON(stringCheck)) {
+                } else {
                     return (
-                        <JsonViewer
-                            key={`${i}-${stringCheck}`}
-                            value={JSON.parse(stringCheck)}
-                            displayDataTypes={true}
-                            displaySize={true}
-                            displayComma={true}
-                            rootName={false}
-                        />
+                        <Typography key={`${i}-${m}`} variant="caption">
+                            {m}
+                        </Typography>
                     );
                 }
-
-                return (
-                    <Typography key={`${i}-${m}`} variant="caption">
-                        {m}
-                    </Typography>
-                );
             })}
         </StyledConsole>
     );

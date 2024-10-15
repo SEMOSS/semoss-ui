@@ -14,20 +14,21 @@ interface SuccessOperationProps {
 export const SuccessOperation = observer(
     (props: SuccessOperationProps): JSX.Element => {
         const { output } = props;
-
-        if (isOutputJSON(output)) {
+        const value = isOutputJSON(output);
+        if (value != null) {
             return (
                 <JsonViewer
-                    value={output}
+                    value={value}
                     displayComma={true}
                     rootName={false}
                 />
             );
+        } else {
+            return (
+                <Typography variant="caption" color="success">
+                    {output}
+                </Typography>
+            );
         }
-        return (
-            <Typography variant="caption" color="success">
-                {output}
-            </Typography>
-        );
     },
 );
