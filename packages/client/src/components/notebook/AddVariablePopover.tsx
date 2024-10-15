@@ -480,19 +480,12 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                             </Alert>
                         );
                     }
-                } else if (
-                    variableType === 'JSON' ||
-                    variableType === 'array'
-                ) {
+                } else if (inputVariableTypeList.indexOf(variableType) > -1) {
                     let value = null;
-                    if (!isOutputJSON(variableInputValue)) {
-                        value = variableInputValue;
-                    } else {
-                        value = JSON.parse(variableInputValue);
-                    }
+                    value = isOutputJSON(variableInputValue);
                     return (
                         <JsonViewer
-                            value={value}
+                            value={value === null ? variableInputValue : value}
                             displayDataTypes={true}
                             displaySize={true}
                             displayComma={true}
@@ -555,8 +548,17 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
             engine || variablePointer.length > 0 || variableInputValue,
         );
 
-        const isValid = hasRequiredFields && hasRequiredDependency;
-
+        let isValid = null;
+        // Disable the add button when adding in JSON / array incorrectly
+        if (variableType === 'JSON' || variableType === 'array') {
+            const checkValidJSON = Boolean(
+                isOutputJSON(variableInputValue) != null,
+            );
+            isValid =
+                hasRequiredFields && hasRequiredDependency && checkValidJSON;
+        } else {
+            isValid = hasRequiredFields && hasRequiredDependency;
+        }
         let v;
 
         if (variable) {
