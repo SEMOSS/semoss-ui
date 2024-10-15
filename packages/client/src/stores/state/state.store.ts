@@ -45,11 +45,15 @@ interface StateStoreInterface {
     /** What version the state store we currently are on link: https://semver.org/ */
     version: string;
 
+    /** Style to be applied at root level for drag and drop app element */
+    rootStyle: string;
+
     /** Order of how we consume app as API */
     executionOrder: string[];
 
     /** TODO: Get rid of this, engine dependencies */
     dependencies: Record<string, unknown>;
+
 }
 
 export class StateStoreConfig {
@@ -82,6 +86,7 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         dependencies: {}, // Maher said change to constants
+        rootStyle: '',
         executionOrder: [],
     };
 
@@ -208,6 +213,13 @@ export class StateStore {
         }
 
         return null;
+    }
+
+    /**
+     * Get the root css
+     */
+    getRootStyle() {
+        return this._store.rootStyle;
     }
 
     /**
@@ -451,6 +463,10 @@ export class StateStore {
                 const { id } = action.payload;
 
                 return this.removeDependency(id);
+            } else if (ActionMessages.ADD_ROOT_STYLE === action.message) {
+                const { style } = action.payload;
+
+                return this.setRootStyle(style);
             } else if (
                 ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
             ) {
@@ -539,6 +555,7 @@ export class StateStore {
             dependencies: toJS(this._store.dependencies),
             executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
+            rootStyle: this._store.rootStyle,
         };
     }
 
@@ -758,6 +775,31 @@ export class StateStore {
 
         // store the version or the one we currently are on
         this._store.version = state.version ? state.version : STATE_VERSION;
+
+        // add root style to the head
+        state.rootStyle?.length && this.setRootStyle(state.rootStyle);
+    };
+
+    private setRootStyle = (style: string) => {
+        this._store.rootStyle = style || '';
+        style?.length && this.addRootStyle(this._store.rootStyle);
+    };
+
+    private addRootStyle = (style: string) => {
+        document.head.appendChild(this.getStyleForRule(style));
+    };
+
+    private getStyleForRule = (rule: string): HTMLStyleElement => {
+        let styleTag = document.getElementsByClassName(
+            'custom-style-sheet',
+        )[0] as HTMLStyleElement;
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.type = 'text/css';
+            styleTag.className = 'custom-style-sheet';
+        }
+        styleTag.innerHTML = `.dnd-pg{${rule}}`;
+        return styleTag;
     };
 
     /**

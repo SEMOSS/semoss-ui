@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
+import { styled, useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import {
@@ -17,6 +17,12 @@ import { Typography } from '@semoss/ui';
 import { useSearchParams, useLocation } from 'react-router-dom';
 
 const ACTIVE = 'page-1';
+
+// Adding a styled container to set the scope for the root css
+const StyledContainer = styled('div')(() => ({
+    height: '100%',
+    width: '100%',
+}));
 
 interface BlocksRendererProps {
     /** App to render */
@@ -164,7 +170,9 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     return (
         <Blocks state={stateStore} registry={DefaultBlocks}>
-            <Renderer id={ACTIVE} />
+            <StyledContainer className="dnd-pg">
+                <Renderer id={ACTIVE} />
+            </StyledContainer>
         </Blocks>
     );
 });

@@ -7,6 +7,7 @@ import {
     buildDimensionsSection,
     buildBorderSection,
     buildColorSection,
+    buildCustomStyleSheetSection,
 } from '../block-defaults.shared';
 
 import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
@@ -25,6 +26,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
             gap: '8px',
             flexWrap: 'wrap',
         },
+        class: '',
     },
     listeners: {},
     slots: {
@@ -39,5 +41,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
         buildDimensionsSection(),
         buildColorSection(),
         buildBorderSection(),
+        buildCustomStyleSheetSection(),
     ],
 };

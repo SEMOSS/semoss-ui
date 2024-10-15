@@ -11,6 +11,7 @@ export interface PageBlockDef extends BlockDef<'page'> {
     data: {
         style: CSSProperties;
         loading: boolean | string;
+        class: string;
     };
     slots: {
         content: true;
@@ -47,6 +48,7 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 overflow: 'scroll',
                 ...data.style,
             }}
+            className={data.class}
             {...attrs}
             data-page
         >

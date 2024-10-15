@@ -32,7 +32,9 @@ export enum ActionMessages {
     DELETE_VARIABLE = 'DELETE_VARIABLE',
     ADD_DEPENDENCY = 'ADD_DEPENDENCY',
     REMOVE_DEPENDENCY = 'REMOVE_DEPENDENCY',
+    ADD_ROOT_STYLE = 'ADD_ROOT_STYLE',
     SET_SHEET_EXECUTION_ORDER = 'SET_SHEET_EXECUTION_ORDER',
+
 }
 
 export type Actions =
@@ -58,6 +60,7 @@ export type Actions =
     | DeleteVariableAction
     | AddDependencyAction
     | RemoveDependencyAction
+    | AddRootStyle
     | SetSheetExecutionOrderAction;
 
 export interface Action {
@@ -69,6 +72,13 @@ export interface SetStateAction extends Action {
     message: ActionMessages.SET_STATE;
     payload: {
         state?: SerializedState;
+    };
+}
+
+export interface AddRootStyle extends Action {
+    message: ActionMessages.ADD_ROOT_STYLE;
+    payload: {
+        style: string;
     };
 }
 
