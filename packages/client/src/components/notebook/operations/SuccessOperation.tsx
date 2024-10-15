@@ -1,6 +1,7 @@
 import { Typography } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { JsonViewer } from '@textea/json-viewer';
+import { isOutputJSON } from '@/utility';
 
 interface SuccessOperationProps {
     /** Message returned when there is an error */
@@ -14,7 +15,7 @@ export const SuccessOperation = observer(
     (props: SuccessOperationProps): JSX.Element => {
         const { output } = props;
 
-        if (typeof output === 'object') {
+        if (isOutputJSON(output)) {
             return (
                 <JsonViewer
                     value={output}

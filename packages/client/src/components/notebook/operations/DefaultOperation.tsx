@@ -1,3 +1,4 @@
+import { isOutputJSON } from '@/utility';
 import { styled } from '@semoss/ui';
 import { JsonViewer } from '@textea/json-viewer';
 import { observer } from 'mobx-react-lite';
@@ -20,9 +21,21 @@ interface DefaultOperationProps {
 export const DefaultOperation = observer(
     (props: DefaultOperationProps): JSX.Element => {
         const { output } = props;
-
         if (typeof output === 'string') {
-            return <StyledJson>{output}</StyledJson>;
+            let value = null;
+            if (!isOutputJSON(output)) {
+                value = output;
+                return <StyledJson>{value}</StyledJson>;
+            } else {
+                value = JSON.parse(output);
+                return (
+                    <JsonViewer
+                        value={value}
+                        displayComma={true}
+                        rootName={false}
+                    />
+                );
+            }
         }
 
         if (typeof output === 'object') {

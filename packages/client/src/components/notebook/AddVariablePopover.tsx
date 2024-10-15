@@ -38,12 +38,13 @@ import { VARIABLE_TYPES } from '@/stores';
 import {
     capitalizeFirstLetter,
     getEngineImage,
+    isOutputJSON,
     splitAtPeriod,
 } from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
 
 import { ENGINE_ROUTES } from '@/pages/engine';
-import { applyValue, deleteValue, JsonViewer } from '@textea/json-viewer';
+import { JsonViewer } from '@textea/json-viewer';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -483,9 +484,15 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     variableType === 'JSON' ||
                     variableType === 'array'
                 ) {
+                    let value = null;
+                    if (!isOutputJSON(variableInputValue)) {
+                        value = variableInputValue;
+                    } else {
+                        value = JSON.parse(variableInputValue);
+                    }
                     return (
                         <JsonViewer
-                            value={JSON.parse(variableInputValue)}
+                            value={value}
                             displayDataTypes={true}
                             displaySize={true}
                             displayComma={true}
