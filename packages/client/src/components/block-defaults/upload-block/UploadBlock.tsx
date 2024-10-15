@@ -21,6 +21,7 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
         disabled: boolean;
         hint?: string;
         extensions?: string[];
+        multifile: boolean;
     };
 }
 
@@ -53,13 +54,21 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             }
 
             // get the location.
-            const { fileLocation } = uploadedFiles[0];
-            if (!fileLocation) {
-                throw new Error('Missing File Location');
+            const fileLocations = [];
+            uploadedFiles.forEach((file) => {
+                const { fileLocation } = file;
+                if (!fileLocation) {
+                    throw new Error('Missing File Location');
+                }
+                fileLocations.push(fileLocation);
+            });
+
+            if (fileLocations.length === 0) {
+                throw new Error('Missing File Locations');
             }
 
             // save it as the value
-            setData('value', fileLocation);
+            setData('value', fileLocations.toString());
         } catch (e) {
             console.error(e);
         } finally {
@@ -95,7 +104,7 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 shrink: true,
             }}
             type={'file'}
-            inputProps={{ accept: data.extensions, multiple: true }}
+            inputProps={{ accept: data.extensions, multiple: data.multifile }}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
                 upload(Array.from(files));
