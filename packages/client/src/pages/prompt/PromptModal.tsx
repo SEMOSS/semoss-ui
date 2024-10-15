@@ -92,8 +92,12 @@ export const PromptModal = (props: PromptModalProps) => {
         });
     };
 
+    const disableCreate = () => {
+        return title == '' || title == null || context == '' || context == null;
+    };
+
     useEffect(() => {
-        if (mode == 'Edit') {
+        if (mode == 'Edit' || prompt != null) {
             setContext(prompt['CONTEXT']);
             setTitle(prompt['TITLE']);
             setIntent(prompt['INTENT']);
@@ -115,7 +119,6 @@ export const PromptModal = (props: PromptModalProps) => {
                     </StyledTypographyLabel>
                     <FormControl fullWidth>
                         <TextField
-                            label={'Policy Summarizer'}
                             variant={'outlined'}
                             value={title}
                             fullWidth
@@ -137,9 +140,6 @@ export const PromptModal = (props: PromptModalProps) => {
                     </StyledTypographyLabel>
                     <FormControl fullWidth>
                         <TextField
-                            label={
-                                'Summarize documents given a specific role, state of origin and report layout.'
-                            }
                             variant={'outlined'}
                             value={context}
                             fullWidth
@@ -152,11 +152,10 @@ export const PromptModal = (props: PromptModalProps) => {
                         ></TextField>
                     </FormControl>
                 </StyledStack>
-
-                {/* <StyledStack
+                <StyledStack
                     spacing={2}
-                    direction={'row'}
-                    alignItems={'center'}
+                    direction={'column'}
+                    alignItems={'flex-start'}
                     justifyContent={'space-between'}
                 >
                     <StyledTypographyLabel variant="body1">
@@ -174,7 +173,7 @@ export const PromptModal = (props: PromptModalProps) => {
                             }}
                         ></TextField>
                     </FormControl>
-                </StyledStack> */}
+                </StyledStack>
                 <StyledStack
                     spacing={2}
                     direction={'column'}
@@ -217,6 +216,7 @@ export const PromptModal = (props: PromptModalProps) => {
                             addPrompt();
                         }
                     }}
+                    disabled={disableCreate()}
                 >
                     Create Template
                 </Button>

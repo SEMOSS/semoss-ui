@@ -45,12 +45,11 @@ export const PromptLibraryList = (props: {
             .then((response) => {
                 let { output } = response.pixelReturn[0];
                 if (output.length > 0) {
-                    let tagArr = ['all'];
+                    let tagMap = { all: '' };
                     output.map((tag) => {
-                        tagArr.push(tag.METAVALUE);
+                        tagMap[tag.METAVALUE] = '';
                     });
-                    console.log(tagArr);
-                    setPromptTags(tagArr);
+                    setPromptTags(Object.keys(tagMap));
                 }
             });
     };

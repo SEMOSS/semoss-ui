@@ -51,11 +51,13 @@ export const PromptLibraryDialogButton = (props: {
                     Browse Prompt Templates
                 </Button>
             )}
-            <PromptLibraryDialog
-                builder={props.builder}
-                promptLibraryOpen={promptLibraryOpen}
-                closePromptLibrary={closePromptLibrary}
-            />
+            {promptLibraryOpen == true && (
+                <PromptLibraryDialog
+                    builder={props.builder}
+                    promptLibraryOpen={promptLibraryOpen}
+                    closePromptLibrary={closePromptLibrary}
+                />
+            )}
         </>
     );
 };

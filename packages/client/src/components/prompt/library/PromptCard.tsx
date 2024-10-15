@@ -92,11 +92,8 @@ export const PromptCard = (props: {
                         justifyContent="space-between"
                         alignItems={'center'}
                     >
-                        {/* <Typography variant="subtitle2">
-                            {props.title}
-                        </Typography> */}
                         <StyledTitle variant="h6">{props.title}</StyledTitle>
-                        <IconButton
+                        {/* <IconButton
                             onClick={(event) => {
                                 event.stopPropagation();
                                 setIsBookmarked(!isBookmarked);
@@ -107,7 +104,7 @@ export const PromptCard = (props: {
                             ) : (
                                 <BookmarkBorderOutlined />
                             )}
-                        </IconButton>
+                        </IconButton> */}
                     </Stack>
                 }
             />
@@ -117,11 +114,6 @@ export const PromptCard = (props: {
                         tokens={props.tokens}
                         inputTypes={props.inputTypes}
                     /> */}
-                    {/* <Grid item xs={12}>
-                        <StyledTitle variant="h6">
-                            {props.title}
-                        </StyledTitle>
-                    </Grid> */}
                     <Grid item xs={12}>
                         <StyledContext variant="body1" color="secondary">
                             {props.context}

@@ -3,7 +3,6 @@ import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
 import { Box, Typography, Stack, Button, Popover } from '@semoss/ui';
 import { PromptPreview } from '../../shared';
 import { useState } from 'react';
-import { PromptPopover } from './PromptPopover';
 import { PromptModal } from '../../../../pages/prompt/PromptModal';
 
 export const PromptBuilderPreviewStep = (props: {
@@ -27,7 +26,11 @@ export const PromptBuilderPreviewStep = (props: {
 
     const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
     const [promptMode, setPromptMode] = useState('');
-    const [promptToEdit, setPromptToEdit] = useState({});
+    const [promptToEdit, setPromptToEdit] = useState({
+        TITLE: props?.builder?.title?.value,
+        CONTEXT: props?.builder?.context?.value,
+        tags: props?.builder?.tags?.value,
+    });
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -42,9 +45,6 @@ export const PromptBuilderPreviewStep = (props: {
                         Preview your prompt before exporting to an app.
                     </Typography>
                 </Box>
-                {/* <Button variant="outlined" color={"inherit"} onClick={handleClick}>
-                    Create Template
-                </Button> */}
                 <Button
                     variant={'outlined'}
                     onClick={() => {
@@ -56,24 +56,11 @@ export const PromptBuilderPreviewStep = (props: {
                 >
                     Create Template
                 </Button>
-                {/* <PromptPopover
-                    id={"createTemplate"}
-                    open={open}
-                    anchorEl={anchorEl}
-                    onClose={handleClose}
-                    anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                    }}
-                ></PromptPopover> */}
                 <PromptModal
                     isOpen={isPromptModalOpen}
                     prompt={promptToEdit}
                     onClose={(reload) => {
                         setIsPromptModalOpen(false);
-                        // if (reload) {
-                        //     init();
-                        // }
                     }}
                     mode={promptMode}
                 ></PromptModal>

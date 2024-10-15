@@ -84,7 +84,6 @@ export const PromptLibraryDialog = (props: {
             if (output.length > 0) {
                 let prompts = [];
                 output.map((prompt) => {
-                    console.log(prompt);
                     prompts.push({
                         title: prompt.TITLE,
                         context: prompt.CONTEXT,
