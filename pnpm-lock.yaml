@@ -178,6 +178,9 @@ importers:
       react-router-dom:
         specifier: ^6.3.0
         version: 6.14.2(react-dom@17.0.2)(react@17.0.2)
+      react-split-pane:
+        specifier: 0.1.92
+        version: 0.1.92(react-dom@17.0.2)(react@17.0.2)
       react-vega:
         specifier: ^7.6.0
         version: 7.6.0(react@17.0.2)(vega-lite@5.16.3)(vega@5.27.0)
@@ -21418,6 +21421,10 @@ packages:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
     dev: false
 
+  /react-lifecycles-compat@3.0.4:
+    resolution: {integrity: sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==}
+    dev: false
+
   /react-markdown@9.0.1(@types/react@17.0.63)(react@17.0.2):
     resolution: {integrity: sha512-186Gw/vF1uRkydbsOIkcGXw7aHq0sZOCRFFjGrr7b9+nVZg4UfA4enXCaxm4fUzecU38sWfrNDitGhshuU7rdg==}
     peerDependencies:
@@ -21610,6 +21617,25 @@ packages:
     dependencies:
       '@remix-run/router': 1.7.2
       react: 17.0.2
+    dev: false
+
+  /react-split-pane@0.1.92(react-dom@17.0.2)(react@17.0.2):
+    resolution: {integrity: sha512-GfXP1xSzLMcLJI5BM36Vh7GgZBpy+U/X0no+VM3fxayv+p1Jly5HpMofZJraeaMl73b3hvlr+N9zJKvLB/uz9w==}
+    peerDependencies:
+      react: ^16.0.0-0
+      react-dom: ^16.0.0-0
+    dependencies:
+      prop-types: 15.8.1
+      react: 17.0.2
+      react-dom: 17.0.2(react@17.0.2)
+      react-lifecycles-compat: 3.0.4
+      react-style-proptype: 3.2.2
+    dev: false
+
+  /react-style-proptype@3.2.2:
+    resolution: {integrity: sha512-ywYLSjNkxKHiZOqNlso9PZByNEY+FTyh3C+7uuziK0xFXu9xzdyfHwg4S9iyiRRoPCR4k2LqaBBsWVmSBwCWYQ==}
+    dependencies:
+      prop-types: 15.8.1
     dev: false
 
   /react-style-singleton@2.2.1(@types/react@17.0.62)(react@17.0.2):

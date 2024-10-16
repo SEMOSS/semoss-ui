@@ -88,7 +88,7 @@ export const Notebook = observer(() => {
 
     return (
         <StyledNotebook>
-            <Sidebar>
+            {/* <Sidebar>
                 <SidebarItem
                     selected={view === 'variables'}
                     onClick={() => updateView('variables')}
@@ -98,12 +98,12 @@ export const Notebook = observer(() => {
                     </Tooltip>
                     <SidebarText>Variables</SidebarText>
                 </SidebarItem>
-            </Sidebar>
-            {view ? (
+            </Sidebar> */}
+            {/* {view ? (
                 <StyledLeftPanel>
                     {view === 'variables' && <NotebookVariablesMenu />}
                 </StyledLeftPanel>
-            ) : null}
+            ) : null} */}
 
             <StyledRightPanel>
                 <LLMContext.Provider
@@ -115,12 +115,12 @@ export const Notebook = observer(() => {
                         },
                     }}
                 >
-                    {view === 'variables' && (
-                        <>
-                            <NotebookSheetsMenu />
-                            <NotebookSheet />
-                        </>
-                    )}
+                    {/* {view === 'variables' && ( */}
+                    <>
+                        <NotebookSheetsMenu />
+                        <NotebookSheet />
+                    </>
+                    {/* )} */}
                 </LLMContext.Provider>
             </StyledRightPanel>
         </StyledNotebook>
