@@ -5256,6 +5256,27 @@ export const CONNECTION_OPTIONS = {
                         advanced: true,
                         helperText: '',
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5367,6 +5388,27 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
                     },
                 ],
             },
@@ -5655,6 +5697,27 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         advanced: true,
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5826,6 +5889,27 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
                     },
                 ],
             },
@@ -6042,6 +6126,27 @@ export const CONNECTION_OPTIONS = {
                         secondary: true,
                         rules: {},
                     },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -6213,6 +6318,27 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         secondary: true,
                         rules: {},
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
                     },
                 ],
             },
