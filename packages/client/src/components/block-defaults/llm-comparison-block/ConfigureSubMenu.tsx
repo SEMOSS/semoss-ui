@@ -63,6 +63,7 @@ export const ConfigureSubMenu = observer(() => {
 
         const modelledVariant = {
             id: editorVariantName,
+            selected: editorVariant.selected,
             sortWeight: 0, // TODO: order variants in future LLM COmparison version
             model: {
                 id: editorVariant.model.value || '',

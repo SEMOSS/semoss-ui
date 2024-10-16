@@ -68,7 +68,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
                     path: 'parameters.variants.default',
                     value: {
                         id: 'default',
-                        to: '',
+                        selected: true,
                         sortWeight: 0,
                         model: {
                             id: '',
@@ -124,6 +124,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
                     path: `parameters.variants.${newVariantName}`,
                     value: {
                         id: newVariantName,
+                        selected: false,
                         sortWeight: 0,
                         model: {
                             id: '',

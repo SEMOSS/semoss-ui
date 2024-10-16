@@ -18,6 +18,7 @@ import {
     Variable,
     VariableType,
     VariableWithId,
+    Variant,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -270,6 +271,36 @@ export class StateStore {
                             }
                         }
                     }
+                } else if (type === 'LLM Comparison') {
+                    const block = this._store.blocks[pointer];
+                    if (block && typeof block.data.variableId === 'string') {
+                        const cellVar =
+                            this._store.variables[block.data.variableId];
+                        const output = this.getVariable(
+                            cellVar.to,
+                            cellVar.type,
+                            ['output'],
+                            cellVar.cellId,
+                        );
+                        if (output && Array.isArray(output)) {
+                            const query = this._store.queries[cellVar.to];
+                            const cell = query.getCell(cellVar.cellId);
+
+                            if (cell) {
+                                // find the output's associated variant and add its data to the output.
+                                const modelled = Object.values(
+                                    cell.parameters.variants,
+                                ).map((variant: Variant, idx: number) => {
+                                    return {
+                                        variant,
+                                        ...output[idx],
+                                    };
+                                });
+                                return modelled;
+                            }
+                            return output;
+                        }
+                    }
                 }
                 return undefined;
             } else {
@@ -492,7 +523,25 @@ export class StateStore {
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
-                return value;
+                if (
+                    variable.type === 'LLM Comparison' &&
+                    Array.isArray(value)
+                ) {
+                    const block = this._store.blocks[variable.to];
+                    const selectedValue = value.find(
+                        (val) => val.variant?.selected,
+                    );
+                    if (!selectedValue) {
+                        console.log(
+                            'ERROR: could not find a selected value for the cell',
+                        );
+                        return undefined;
+                    } else {
+                        return selectedValue.response;
+                    }
+                } else {
+                    return value;
+                }
             }
 
             if (value === undefined) {
@@ -1229,7 +1278,6 @@ export class StateStore {
         if (isOutput) token['isOutput'] = isOutput;
         if (value) token['value'] = value;
 
-        debugger;
         this._store.variables[id] = token as Variable;
 
         return token;
@@ -1328,7 +1376,6 @@ export class StateStore {
      *
      */
     private setExecutionOrder = (orderedList: string[]) => {
-        debugger;
         this._store.executionOrder = orderedList;
         return;
     };

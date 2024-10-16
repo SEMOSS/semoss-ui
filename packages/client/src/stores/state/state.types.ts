@@ -83,6 +83,7 @@ export type VariableWithId =
  */
 export type Variant = {
     id: string;
+    selected: boolean;
     sortWeight: number;
     model: VariantModel;
 };
