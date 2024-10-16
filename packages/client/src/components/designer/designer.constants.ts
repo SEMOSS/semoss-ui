@@ -1,5 +1,6 @@
 import { BlockJSON } from '@/stores';
 
+import BLOCK_AUDIO_PLAYER from '@/assets/img/BLOCK_AUDIO_PLAYER.png';
 import BLOCK_BUTTON from '@/assets/img/BLOCK_BUTTON.png';
 import BLOCK_CHECKBOX from '@/assets/img/BLOCK_CHECKBOX.png';
 import BLOCK_CONTAINER from '@/assets/img/BLOCK_CONTAINER.png';
@@ -116,6 +117,23 @@ export interface AddBlocksMenuItem {
  * Show the default blocks menu
  */
 export const DEFAULT_MENU: AddBlocksMenuItem[] = [
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_AUDIO_PLAYER,
+        name: 'Audio Player',
+        json: {
+            widget: 'audio-player',
+            data: {
+                label: 'Audio Player',
+                autoplay: false,
+                controls: true,
+                loop: false,
+                source: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
     {
         section: SECTION_INPUT,
         image: BLOCK_BUTTON,
