@@ -13,13 +13,15 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
     const { data, setData } = useBlockSettings(id);
     const { state } = useBlocks();
     const [llmCells, setLlmCells] = useState([]);
-    const [value, setValue] = useState('');
+    const [value, setValue] = useState(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
     // update the input value when the variableId is changed
     useEffect(() => {
         if (typeof data.variableId === 'string') {
             setValue(data.variableId);
+        } else {
+            setValue(null);
         }
     }, [data.variableId]);
 
@@ -63,6 +65,7 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
                 value={value}
                 options={llmCells}
                 getOptionLabel={(cell) => cell || ''}
+                isOptionEqualToValue={(option, value) => option === value}
                 onChange={(_, newValue) => onChange(newValue)}
                 renderInput={(params) => (
                     <TextField {...params} placeholder="Variable" />
