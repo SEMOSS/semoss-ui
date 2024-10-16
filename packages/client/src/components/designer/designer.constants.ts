@@ -375,6 +375,19 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // {
+    //     section: SECTION_INPUT,
+    //     image: BLOCK_TOGGLE_BUTTON,
+    //     name: 'Stepper',
+    //     json: {
+    //         widget: 'stepper',
+    //         data: {
+    //             steps: [],
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
     {
         section: SECTION_TEXT,
         image: BLOCK_LINK,
