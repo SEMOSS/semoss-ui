@@ -23,6 +23,11 @@ import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 import { STATE_VERSION } from './migration/MigrationManager';
 
+import antlr4 from 'antlr4';
+import { BlockGrammarLexer } from '../../../../../generated/BlockGrammarLexer';
+import { BlockGrammarParser } from '../../../../../generated/BlockGrammarParser';
+
+const { CommonTokenStream, InputStream } = antlr4;
 interface StateStoreInterface {
     /** Mode */
     mode: 'interactive' | 'static';
@@ -465,6 +470,12 @@ export class StateStore {
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
     parseVariable = (expression: string): unknown => {
+        console.log('Parse Variable :::', expression);
+
+        //set characters
+        const chars = new InputStream(expression, true);
+        console.log('CHARS :::', chars);
+
         // trim the whitespace
         let cleaned = expression.trim();
         if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
@@ -1229,7 +1240,7 @@ export class StateStore {
         if (isOutput) token['isOutput'] = isOutput;
         if (value) token['value'] = value;
 
-        debugger;
+        // debugger;
         this._store.variables[id] = token as Variable;
 
         return token;
@@ -1328,7 +1339,7 @@ export class StateStore {
      *
      */
     private setExecutionOrder = (orderedList: string[]) => {
-        debugger;
+        // debugger;
         this._store.executionOrder = orderedList;
         return;
     };
