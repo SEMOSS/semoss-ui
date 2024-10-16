@@ -781,6 +781,15 @@ export const NotebookCell = observer(
                                                 {cell.isExecuted
                                                     ? cell.operation.map(
                                                           (o, oIdx) => {
+                                                              const output =
+                                                                  Array.isArray(
+                                                                      cell.output,
+                                                                  )
+                                                                      ? cell
+                                                                            .output[
+                                                                            oIdx
+                                                                        ]
+                                                                      : cell.output;
                                                               return (
                                                                   <Operation
                                                                       key={oIdx}
@@ -788,7 +797,7 @@ export const NotebookCell = observer(
                                                                           o
                                                                       }
                                                                       output={
-                                                                          cell.output
+                                                                          output
                                                                       }
                                                                   />
                                                               );

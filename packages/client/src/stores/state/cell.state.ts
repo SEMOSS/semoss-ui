@@ -287,7 +287,7 @@ export class CellState<D extends CellDef = CellDef> {
 
                 for (const str of raw) {
                     const { opType, output } = await this.runPixel(str);
-                    opTypes = [...opTypes, ...opType];
+                    opTypes = [...opTypes, ...opType[0]];
                     outputs.push(output);
                 }
 

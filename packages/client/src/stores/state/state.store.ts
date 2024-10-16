@@ -527,7 +527,7 @@ export class StateStore {
                     variable.type === 'LLM Comparison' &&
                     Array.isArray(value)
                 ) {
-                    const block = this._store.blocks[variable.to];
+                    // From the list of responses in the variable, find and return the one that is 'selected'
                     const selectedValue = value.find(
                         (val) => val.variant?.selected,
                     );
