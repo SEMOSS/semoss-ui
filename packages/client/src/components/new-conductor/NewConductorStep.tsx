@@ -62,6 +62,7 @@ interface NewConductorStepProps {
     setTaskEditorHistory: Function;
     openAccordionIndexesSet: Set<number | unknown>;
     setOpenAccordionIndexesSet: Function;
+    subtask: string;
 }
 
 const DUMMY_SUBTASK_INPUTS = [
@@ -96,6 +97,7 @@ export const NewConductorStep = observer(
         setTaskEditorHistory,
         openAccordionIndexesSet,
         setOpenAccordionIndexesSet,
+        subtask,
     }: NewConductorStepProps) => {
         const { conductor } = useConductor();
         /**
@@ -271,10 +273,10 @@ export const NewConductorStep = observer(
                             sx={{
                                 height: '42px',
                                 lineHeight: '42px',
-                                fontWeight: '800',
+                                // fontWeight: '800',
                             }}
                         >
-                            Subtask {taskIndex + 1}
+                            <b>Subtask {taskIndex + 1}</b> {subtask}
                         </Typography>
                         <IconButton
                             onClick={(e) => {

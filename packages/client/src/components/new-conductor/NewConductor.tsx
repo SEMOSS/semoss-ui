@@ -28,6 +28,9 @@ import { Controller, useForm } from 'react-hook-form';
 import { Editor } from '@monaco-editor/react';
 import { None } from 'vega';
 
+import { runPixel } from '@/api';
+import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
+
 const StyledTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: '#fff',
     borderRadius: '20px',
@@ -45,6 +48,8 @@ export const Conductor = observer(() => {
     const [currentEditorJSON, setCurrentEditorJSON] = useState('');
     const [currentOutputEditorJSON, setCurrentOutputEditorJSON] = useState('');
     const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({});
+
+    const [subtaskSteps, setSubtaskSteps] = useState([]);
 
     const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
     const [taskEditorHistory, setTaskEditorHistory] = useState([]);
@@ -243,8 +248,35 @@ export const Conductor = observer(() => {
         }, 500);
     };
 
+    const fetchSteps = async (prompt) => {
+        const modelId = '17753d59-4536-4415-a6ac-f673b1a90a87'; // Mixtral-8x7B
+        const testPrompt =
+            'My shop has in stock refried burritos. I sell some refried burritos daily. I can reorder refried burritos to refill my stock if needed. How can I determine when to reorder and how much to reorder extra refried burritos.';
+        const pixel = `LLMInstruct("4acbe913-df40-4ac0-b28a-daa5ad91b172", "${prompt}")`;
+
+        setIsLoading(true);
+        const res = await runPixel(pixel);
+        setIsLoading(false);
+
+        const outputSteps = res.pixelReturn[0].output['response'];
+
+        setSubtaskSteps(outputSteps);
+
+        console.log({ res });
+        console.log({ outputSteps });
+    };
+
     return (
         <ParentContainer>
+            <button
+                onClick={() =>
+                    fetchSteps(
+                        'How can I determine if I can buy a house in San Francisco?',
+                    )
+                }
+            >
+                runPixel
+            </button>
             <TitleContainer>
                 <div>
                     <Typography variant="h4">AI Conductor</Typography>
@@ -366,8 +398,10 @@ export const Conductor = observer(() => {
                             <SubTaskPlayButton></SubTaskPlayButton>
                         </SubTaskParentContainerNew>
 
-                        {promptText &&
-                            conductor.steps.map((step, i) => {
+                        {
+                            // {promptText &&
+                            // conductor.steps.map((step, i) => {
+                            subtaskSteps.map((subtask, i) => {
                                 return (
                                     <SubTaskParentContainerNew>
                                         <SubTaskInnerContainer>
@@ -375,7 +409,8 @@ export const Conductor = observer(() => {
                                                 key={i}
                                                 taskIndex={i}
                                                 type={'app'}
-                                                step={step}
+                                                step={conductor.steps[0]}
+                                                subtask={subtask}
                                                 selectedSubtask={
                                                     selectedSubtask
                                                 }
@@ -419,7 +454,8 @@ export const Conductor = observer(() => {
                                         </SubTaskPlayButton>
                                     </SubTaskParentContainerNew>
                                 );
-                            })}
+                            })
+                        }
 
                         <Controller
                             name={'uploadFile'}
