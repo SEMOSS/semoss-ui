@@ -1,19 +1,9 @@
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
-import { Collapse, Tooltip, styled, List, Stack, Typography } from '@semoss/ui';
-import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
-import { ModelTraining, SupervisorAccount } from '@mui/icons-material';
+import { Tooltip, styled } from '@semoss/ui';
+// import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
 import { SettingsView } from './SettingsView';
-import {
-    AutoGraphRounded,
-    CompareArrowsRounded,
-    HistoryRounded,
-    TuneRounded,
-} from '@mui/icons-material';
-import { LlmConfigureView } from '../llm-compare/LlmConfigureView';
-import { BlocksRenderer } from '@/components/blocks-workspace';
-import { useBlocks } from '@/hooks';
-import { ABTesting, LLMCompareWrapper } from '../llm-compare';
+// import { SupervisorAccount } from '@mui/icons-material';
 
 const StyledSettings = styled('div')(() => ({
     display: 'flex',
@@ -24,75 +14,29 @@ const StyledSettings = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-const StyledLeftPanel = styled('div')(({ theme }) => ({
+const StyledCenterPanel = styled('div')(({ theme }) => ({
     height: '100%',
-    width: theme.spacing(45),
-    overflow: 'hidden',
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledRightPanel = styled('div')(({ theme }) => ({
-    height: '100%',
+    width: '100%',
     flex: 1,
     overflow: 'hidden',
     backgroundColor: theme.palette.background.paper,
 }));
 
-const StyledMenu = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    width: '100%',
-    padding: `${theme.spacing(1)} 0`,
-    backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledMenuTitle = styled(Typography)(() => ({
-    fontWeight: 'bold',
-}));
-
-const StyledListItem = styled(List.Item)<{ selected?: boolean }>(
-    ({ theme, selected }) => ({
-        padding: theme.spacing(2),
-        '&:hover': {
-            backgroundColor: theme.palette.primary.selected,
-        },
-
-        ...(selected && {
-            backgroundColor: theme.palette.primary.selected,
-        }),
-    }),
-);
-
 export const Settings = observer(() => {
-    const { state } = useBlocks();
     const [view, setView] = useState<'access' | 'testing' | ''>('access');
-    const [subView, setSubView] = useState<
-        'configure' | 'testing' | 'analyze' | 'history' | ''
-    >('configure');
 
-    const updateView = (v: typeof view) => {
-        if (!v || v === view) {
-            setView('');
-            return;
-        }
+    // const updateView = (v: typeof view) => {
+    //     if (!v || v === view) {
+    //         setView('');
+    //         return;
+    //     }
 
-        setView(v);
-    };
-
-    const updateSubView = (v: typeof subView) => {
-        if (!v || v === subView) {
-            setSubView('');
-            return;
-        }
-
-        setSubView(v);
-    };
+    //     setView(v);
+    // };
 
     return (
         <StyledSettings>
-            <Sidebar>
+            {/* <Sidebar>
                 <SidebarItem
                     selected={view === 'access'}
                     onClick={() => updateView('access')}
@@ -102,84 +46,11 @@ export const Settings = observer(() => {
                     </Tooltip>
                     <SidebarText>Access</SidebarText>
                 </SidebarItem>
-                <SidebarItem
-                    selected={view === 'testing'}
-                    onClick={() => updateView('testing')}
-                    disabled={false}
-                >
-                    <Tooltip title="Testing" placement="right">
-                        <ModelTraining color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Testing</SidebarText>
-                </SidebarItem>
-            </Sidebar>
+            </Sidebar> */}
 
-            {view === 'testing' && (
-                <StyledLeftPanel>
-                    <StyledMenu>
-                        <Stack spacing={2} padding={2}>
-                            <StyledMenuTitle variant="h6">
-                                Model Comparison Testing
-                            </StyledMenuTitle>
-                        </Stack>
-
-                        <List>
-                            <StyledListItem
-                                alignItems="flex-start"
-                                selected={subView === 'configure'}
-                                onClick={() => updateSubView('configure')}
-                            >
-                                <List.Icon>
-                                    <TuneRounded color="inherit" />
-                                </List.Icon>
-                                <List.ItemText>Configure</List.ItemText>
-                            </StyledListItem>
-                            <StyledListItem
-                                alignItems="flex-start"
-                                selected={subView === 'testing'}
-                                onClick={() => updateSubView('testing')}
-                            >
-                                <List.Icon>
-                                    <CompareArrowsRounded color="inherit" />
-                                </List.Icon>
-                                <List.ItemText>A/B Testing</List.ItemText>
-                            </StyledListItem>
-                            {/* <StyledListItem
-                                alignItems="flex-start"
-                                selected={subView === 'analyze'}
-                                onClick={() => updateSubView('analyze')}
-                            >
-                                <List.Icon>
-                                    <AutoGraphRounded color="inherit" />
-                                </List.Icon>
-                                <List.ItemText>Analyze</List.ItemText>
-                            </StyledListItem>
-                            <StyledListItem
-                                alignItems="flex-start"
-                                selected={subView === 'history'}
-                                onClick={() => updateSubView('history')}
-                            >
-                                <List.Icon>
-                                    <HistoryRounded color="inherit" />
-                                </List.Icon>
-                                <List.ItemText>History</List.ItemText>
-                            </StyledListItem> */}
-                        </List>
-                    </StyledMenu>
-                </StyledLeftPanel>
-            )}
-
-            <StyledRightPanel>
+            <StyledCenterPanel>
                 {view === 'access' && <SettingsView />}
-                {view === 'testing' && (
-                    <LLMCompareWrapper>
-                        <Stack direction="column" sx={{ height: '100%' }}>
-                            {subView === 'configure' && <LlmConfigureView />}
-                            {subView === 'testing' && <ABTesting />}
-                        </Stack>
-                    </LLMCompareWrapper>
-                )}
-            </StyledRightPanel>
+            </StyledCenterPanel>
         </StyledSettings>
     );
 });

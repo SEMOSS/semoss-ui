@@ -21,11 +21,22 @@ export const AuthenticatedLayout = observer(() => {
         try {
             if (theme && theme['THEME_MAP']) {
                 const themeMap = JSON.parse(theme['THEME_MAP'] as string);
-                return themeMap['termsReact'] ? themeMap['termsReact'] : '';
+                return {
+                    header: themeMap['termsHeaderReact']
+                        ? themeMap['termsHeaderReact']
+                        : 'Attention',
+                    text: themeMap['termsReact'] ? themeMap['termsReact'] : '',
+                };
             }
-            return '';
+            return {
+                header: '',
+                text: '',
+            };
         } catch {
-            return '';
+            return {
+                header: '',
+                text: '',
+            };
         }
     }, []);
 
@@ -38,18 +49,24 @@ export const AuthenticatedLayout = observer(() => {
 
     return (
         <>
-            {TERMS && (
+            {TERMS.header && TERMS.text && (
                 <Modal open={!acceptedTerms}>
-                    <Modal.Title>
-                        <Typography
-                            variant={'h5'}
-                            color={'primary'}
-                            fontWeight="bold"
-                        >
-                            Warning
-                        </Typography>
+                    <Modal.Title sx={{ paddingBottom: '0' }}>
+                        <div
+                            id="attention-modal-header"
+                            dangerouslySetInnerHTML={{
+                                __html: TERMS.header,
+                            }}
+                        ></div>
                     </Modal.Title>
-                    <Modal.Content>{TERMS}</Modal.Content>
+                    <Modal.Content>
+                        <div
+                            id="attention-modal-body"
+                            dangerouslySetInnerHTML={{
+                                __html: TERMS.text,
+                            }}
+                        ></div>
+                    </Modal.Content>
                     <Modal.Actions>
                         <Button
                             variant="contained"

@@ -52,6 +52,7 @@ export const config: BlockConfig<SelectBlockDef> = {
                             id={id}
                             label="Enable Multi Select"
                             path="multiple"
+                            description="This setting will enable the multi-select feature on the select input"
                         />
                     ),
                 },
