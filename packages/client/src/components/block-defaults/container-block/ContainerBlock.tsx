@@ -17,7 +17,7 @@ export interface ContainerBlockDef extends BlockDef<'container'> {
 }
 
 export const ContainerBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<ContainerBlockDef>(id);
+    const { attrs, data, slots, setData } = useBlock<ContainerBlockDef>(id);
     const { state } = useBlocks();
 
     useEffect(() => {
@@ -74,6 +74,10 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             }
         }
     }, [data.subcontainer]);
+
+    useEffect(() => {
+        setData('subcontainer', slots?.children?.children?.length, true);
+    }, [slots?.children?.children?.length]);
 
     return (
         <div
