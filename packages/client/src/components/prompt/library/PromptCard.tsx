@@ -37,12 +37,41 @@ const Spacer = styled('div')(() => ({
     flex: 1,
 }));
 
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    overflow: 'hidden',
+    color: 'var(--Text-Secondary, #666)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '150%',
+    letterSpacing: '0.15px',
+}));
+
+const StyledContext = styled(Typography)(({ theme }) => ({
+    overflow: 'hidden',
+    color: 'var(--Text-Secondary, #666)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '143%',
+    letterSpacing: '0.17px',
+}));
+
 export const PromptCard = (props: {
     cardKey: string;
     title: string;
     tags: string[];
     tokens: Token[];
     inputTypes: object;
+    context: string;
     openUIBuilderForTemplate: () => void;
 }) => {
     // todo: hook this up to a real bookmark system
@@ -58,11 +87,13 @@ export const PromptCard = (props: {
         <StyledCard onClick={isLoading ? null : chooseTemplate}>
             <Card.Header
                 title={
-                    <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="subtitle2">
-                            {props.title}
-                        </Typography>
-                        <IconButton
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems={'center'}
+                    >
+                        <StyledTitle variant="h6">{props.title}</StyledTitle>
+                        {/* <IconButton
                             onClick={(event) => {
                                 event.stopPropagation();
                                 setIsBookmarked(!isBookmarked);
@@ -73,16 +104,21 @@ export const PromptCard = (props: {
                             ) : (
                                 <BookmarkBorderOutlined />
                             )}
-                        </IconButton>
+                        </IconButton> */}
                     </Stack>
                 }
             />
             <Card.Content>
-                <Grid container>
-                    <PromptPreview
+                <Grid container spacing={2}>
+                    {/* <PromptPreview
                         tokens={props.tokens}
                         inputTypes={props.inputTypes}
-                    />
+                    /> */}
+                    <Grid item xs={12}>
+                        <StyledContext variant="body1" color="secondary">
+                            {props.context}
+                        </StyledContext>
+                    </Grid>
                 </Grid>
             </Card.Content>
             <Spacer />

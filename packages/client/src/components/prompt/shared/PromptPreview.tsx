@@ -18,13 +18,14 @@ export const PromptPreview = (props: {
 
     return (
         <>
-            {Array.from(props.tokens, (token: Token) => (
-                <PromptHoverToken
-                    key={token.index}
-                    token={token}
-                    tokenInputType={getTokenInputType(token)}
-                />
-            ))}
+            {props.tokens.length > 0 &&
+                Array.from(props.tokens, (token: Token) => (
+                    <PromptHoverToken
+                        key={token.index}
+                        token={token}
+                        tokenInputType={getTokenInputType(token)}
+                    />
+                ))}
         </>
     );
 };
