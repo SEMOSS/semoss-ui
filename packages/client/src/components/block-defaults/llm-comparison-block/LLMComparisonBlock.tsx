@@ -9,7 +9,9 @@ import {
     styled,
     Icon,
     Checkbox,
+    useNotification,
 } from '@semoss/ui';
+import { runPixel } from '@/api';
 import { observer } from 'mobx-react-lite';
 import { CheckCircle, Star, StarBorder } from '@mui/icons-material';
 import { CircularProgress } from '@semoss/ui';
@@ -61,7 +63,9 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
     const { state } = useBlocks();
+    const notification = useNotification();
     const cellIsLoadingRef = useRef(false);
+    const [loadingRating, toggleLodaingRating] = useState(false);
     const [selectedTab, setSelectedTab] = useState<string>('');
     const [cell, setCell] = useState(null);
     const [variants, setVariants] = useState({});
@@ -112,6 +116,8 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                 modelledVars[variant.id] = {
                     ...variant,
                     response: (selectedCell?.output || [])[idx]?.response,
+                    messageId: (selectedCell?.output || [])[idx]?.messageId,
+                    rating: null,
                     selected: variant.selected,
                 };
             },
@@ -122,8 +128,26 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
         setVariants(modelledVars);
     };
 
-    const handleRateResponse = (num: number) => {
-        // TODO: set rating for a variant's response using the rating from the 'num' param.
+    const handleRateResponse = async (num: number) => {
+        toggleLodaingRating(true);
+        const pixel = `SubmitLlmFeedback(messageId="${displayed.messageId}", feedbackText="", rating=${num});`;
+        console.log('setting rating....');
+
+        try {
+            const res = await runPixel(pixel);
+            console.log('RESPIONSE', res);
+
+            const variantsCopy = { ...variants };
+            variantsCopy[displayed.id].rating = num;
+            setVariants(variantsCopy);
+        } catch {
+            notification.add({
+                color: 'error',
+                message: `There was an error setting a rating for the response.`,
+            });
+        } finally {
+            toggleLodaingRating(false);
+        }
     };
 
     const handleChangeSelected = () => {
@@ -165,7 +189,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                     >
                         {Object.keys(variants).map((key, idx: number) => {
                             const selected = variants[key].selected;
-                            const name =
+                            const variantName =
                                 key.toLowerCase() === 'default'
                                     ? 'Default Variant'
                                     : `Variant ${key.toUpperCase()}`;
@@ -178,10 +202,10 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                     <Icon color="primary">
                                         <CheckCircle />
                                     </Icon>
-                                    <span>{name}</span>
+                                    <span>{variantName}</span>
                                 </Stack>
                             ) : (
-                                name
+                                variantName
                             );
                             return (
                                 <Tabs.Item
@@ -220,81 +244,105 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                     What would you rate this response?
                                 </Typography>
 
-                                <Stack
-                                    direction="row"
-                                    onMouseLeave={() => {
-                                        setHighlightedRating(0);
-                                    }}
-                                    onBlur={() => {
-                                        setHighlightedRating(0);
-                                    }}
-                                >
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(1)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(1)
-                                        }
-                                        onFocus={() => setHighlightedRating(1)}
+                                {loadingRating ? (
+                                    <CircularProgress />
+                                ) : (
+                                    <Stack
+                                        direction="row"
+                                        onMouseLeave={() => {
+                                            setHighlightedRating(0);
+                                        }}
+                                        onBlur={() => {
+                                            setHighlightedRating(0);
+                                        }}
                                     >
-                                        {highlightedRating >= 1 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(2)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(2)
-                                        }
-                                        onFocus={() => setHighlightedRating(2)}
-                                    >
-                                        {highlightedRating >= 2 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(3)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(3)
-                                        }
-                                        onFocus={() => setHighlightedRating(3)}
-                                    >
-                                        {highlightedRating >= 3 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(4)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(4)
-                                        }
-                                        onFocus={() => setHighlightedRating(4)}
-                                    >
-                                        {highlightedRating >= 4 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(5)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(5)
-                                        }
-                                        onFocus={() => setHighlightedRating(5)}
-                                    >
-                                        {highlightedRating === 5 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                </Stack>
+                                        <StyledStarButton
+                                            onClick={() =>
+                                                handleRateResponse(1)
+                                            }
+                                            onMouseEnter={() =>
+                                                setHighlightedRating(1)
+                                            }
+                                            onFocus={() =>
+                                                setHighlightedRating(1)
+                                            }
+                                        >
+                                            {highlightedRating >= 1 ? (
+                                                <Star />
+                                            ) : (
+                                                <StarBorder />
+                                            )}
+                                        </StyledStarButton>
+                                        <StyledStarButton
+                                            onClick={() =>
+                                                handleRateResponse(2)
+                                            }
+                                            onMouseEnter={() =>
+                                                setHighlightedRating(2)
+                                            }
+                                            onFocus={() =>
+                                                setHighlightedRating(2)
+                                            }
+                                        >
+                                            {highlightedRating >= 2 ? (
+                                                <Star />
+                                            ) : (
+                                                <StarBorder />
+                                            )}
+                                        </StyledStarButton>
+                                        <StyledStarButton
+                                            onClick={() =>
+                                                handleRateResponse(3)
+                                            }
+                                            onMouseEnter={() =>
+                                                setHighlightedRating(3)
+                                            }
+                                            onFocus={() =>
+                                                setHighlightedRating(3)
+                                            }
+                                        >
+                                            {highlightedRating >= 3 ? (
+                                                <Star />
+                                            ) : (
+                                                <StarBorder />
+                                            )}
+                                        </StyledStarButton>
+                                        <StyledStarButton
+                                            onClick={() =>
+                                                handleRateResponse(4)
+                                            }
+                                            onMouseEnter={() =>
+                                                setHighlightedRating(4)
+                                            }
+                                            onFocus={() =>
+                                                setHighlightedRating(4)
+                                            }
+                                        >
+                                            {highlightedRating >= 4 ? (
+                                                <Star />
+                                            ) : (
+                                                <StarBorder />
+                                            )}
+                                        </StyledStarButton>
+                                        <StyledStarButton
+                                            onClick={() =>
+                                                handleRateResponse(5)
+                                            }
+                                            onMouseEnter={() =>
+                                                setHighlightedRating(5)
+                                            }
+                                            onFocus={() =>
+                                                setHighlightedRating(5)
+                                            }
+                                        >
+                                            {highlightedRating === 5 ? (
+                                                <Star />
+                                            ) : (
+                                                <StarBorder />
+                                            )}
+                                        </StyledStarButton>
+                                    </Stack>
+                                )}
                             </StyledRatingRow>
                         </Stack>
                     ) : (
