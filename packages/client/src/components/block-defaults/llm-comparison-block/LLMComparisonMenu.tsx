@@ -75,7 +75,7 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
     // update variants when the user changes the block's query.
     useEffect(() => {
-        if (data.queryId && data.cellId && fetchedModelsRef.current) {
+        if (data.variableId && fetchedModelsRef.current) {
             getVariantsFromCell(allModels);
         } else {
             setValue('variants', {});
