@@ -31,6 +31,8 @@ import { None } from 'vega';
 import { runPixel } from '@/api';
 import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
 
+import { LoadingScreen } from '@/components/ui';
+
 const StyledTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: '#fff',
     borderRadius: '20px',
@@ -119,19 +121,6 @@ export const Conductor = observer(() => {
             }
         }
     }, [selectedSubtask]);
-
-    const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
-        setIsLoading(true);
-        setTimeout(() => {
-            setPromptText(data.taskInput);
-            const placeholderModelResponse =
-                "Let’s find out...let me generate a roadmap to figure out if you're qualified for this job!";
-            setModelResponseText(placeholderModelResponse);
-            setIsLoading(false);
-        }, 500);
-
-        return; // early return until LLM API endpoint available
-    });
 
     const ParentContainer = styled('div')(({ theme }) => ({
         minWidth: '650px',
@@ -248,27 +237,53 @@ export const Conductor = observer(() => {
         }, 500);
     };
 
-    const fetchSteps = async (prompt) => {
+    const fetchSteps = handleSubmit(async (data: AIConductorForm) => {
+        setIsLoading(true);
+
+        setPromptText(data.taskInput);
+        setSubtaskSteps([]);
+
+        const placeholderModelResponse =
+            // "Let’s find out...let me generate a roadmap to figure out if you're qualified for this job!";
+            'Let’s find out...let me generate a roadmap!';
+        setModelResponseText(placeholderModelResponse);
+
         const modelId = '17753d59-4536-4415-a6ac-f673b1a90a87'; // Mixtral-8x7B
         const testPrompt =
             'My shop has in stock refried burritos. I sell some refried burritos daily. I can reorder refried burritos to refill my stock if needed. How can I determine when to reorder and how much to reorder extra refried burritos.';
-        const pixel = `LLMInstruct("4acbe913-df40-4ac0-b28a-daa5ad91b172", "${prompt}")`;
+        const promptAddition =
+            'Please limit your response to 3-10 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
+        const combinePrompt = [data.taskInput, promptAddition].join(' ');
+        const pixel = `LLMInstruct("4acbe913-df40-4ac0-b28a-daa5ad91b172", "${combinePrompt}")`;
 
-        setIsLoading(true);
         const res = await runPixel(pixel);
-        setIsLoading(false);
 
         const outputSteps = res.pixelReturn[0].output['response'];
-
         setSubtaskSteps(outputSteps);
 
         console.log({ res });
         console.log({ outputSteps });
-    };
+
+        setIsLoading(false);
+    });
+
+    const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
+        setIsLoading(true);
+        setTimeout(() => {
+            setPromptText(data.taskInput);
+            const placeholderModelResponse =
+                // "Let’s find out...let me generate a roadmap to figure out if you're qualified for this job!";
+                'Let’s find out...let me generate a roadmap!';
+            setModelResponseText(placeholderModelResponse);
+            setIsLoading(false);
+        }, 500);
+
+        return; // early return until LLM API endpoint available
+    });
 
     return (
         <ParentContainer>
-            <button
+            {/* <button
                 onClick={() =>
                     fetchSteps(
                         'How can I determine if I can buy a house in San Francisco?',
@@ -276,7 +291,7 @@ export const Conductor = observer(() => {
                 }
             >
                 runPixel
-            </button>
+            </button> */}
             <TitleContainer>
                 <div>
                     <Typography variant="h4">AI Conductor</Typography>
@@ -286,6 +301,9 @@ export const Conductor = observer(() => {
                 </div>
             </TitleContainer>
             <LowerParentContainer>
+                {isLoading && (
+                    <LoadingScreen.Trigger description="Awaiting AI Conductor Response" />
+                )}
                 <LeftParentContainer
                     style={{
                         flexBasis: taskContainerWidthPercent,
@@ -529,9 +547,7 @@ export const Conductor = observer(() => {
                                                 >
                                                     <b>Chat</b>
                                                     <IconButton
-                                                        onClick={
-                                                            taskSubmitHandler
-                                                        }
+                                                        onClick={fetchSteps}
                                                     >
                                                         <KeyboardArrowDown />
                                                     </IconButton>
@@ -543,9 +559,7 @@ export const Conductor = observer(() => {
                                                         <Mic />
                                                     </IconButton>
                                                     <IconButton
-                                                        onClick={
-                                                            taskSubmitHandler
-                                                        }
+                                                        onClick={fetchSteps}
                                                     >
                                                         <ArrowUpward />
                                                     </IconButton>

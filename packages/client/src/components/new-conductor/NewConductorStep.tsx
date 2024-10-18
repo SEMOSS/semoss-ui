@@ -273,10 +273,17 @@ export const NewConductorStep = observer(
                             sx={{
                                 height: '42px',
                                 lineHeight: '42px',
+                                // whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                // textOverflow: 'ellipsis',
+                                // maxWidth: '100%',
                                 // fontWeight: '800',
                             }}
                         >
-                            <b>Subtask {taskIndex + 1}</b> {subtask}
+                            <b style={{ marginRight: '10px' }}>
+                                Subtask {taskIndex + 1}
+                            </b>{' '}
+                            {subtask}
                         </Typography>
                         <IconButton
                             onClick={(e) => {
