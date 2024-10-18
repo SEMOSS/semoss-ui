@@ -130,13 +130,10 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
 
     const handleRateResponse = async (num: number) => {
         toggleLodaingRating(true);
-        const pixel = `SubmitLlmFeedback(messageId="${displayed.messageId}", feedbackText="", rating=${num});`;
-        console.log('setting rating....');
+        const pixel = `SubmitLlmFeedback(messageId="${displayed.messageId}", feedbackText="${num}", rating=true);`;
 
         try {
-            const res = await runPixel(pixel);
-            console.log('RESPIONSE', res);
-
+            await runPixel(pixel);
             const variantsCopy = { ...variants };
             variantsCopy[displayed.id].rating = num;
             setVariants(variantsCopy);
