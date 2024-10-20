@@ -208,7 +208,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
                 // try to extract the variable
-                // console.log('test 5');
                 return state.parseVariable(instance);
             }
 
