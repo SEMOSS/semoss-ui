@@ -23,11 +23,26 @@ import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 import { STATE_VERSION } from './migration/MigrationManager';
 
-import antlr4 from 'antlr4';
-import { BlockGrammarLexer } from '../../../../../generated/BlockGrammarLexer';
-import { BlockGrammarParser } from '../../../../../generated/BlockGrammarParser';
+import antlr4, {
+    CharStream,
+    CharStreams,
+    CommonTokenStream,
+    ANTLRErrorListener,
+    IntStream,
+} from 'antlr4ts';
+import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker';
+import { BlocksGrammarLexer } from '../../../../../generated/BlocksGrammarLexer';
+import {
+    BlocksGrammarParser,
+    InterpolatedStringContext,
+    LogicalExprContext,
+    NullExpressionContext,
+    ProgramContext,
+} from '../../../../../generated/BlocksGrammarParser';
+import { BlocksGrammarListener } from '../../../../../generated/BlocksGrammarListener';
+import { BlocksGrammarVisitor } from '../../../../../generated/BlocksGrammarVisitor';
+import { ParseTreeListener } from 'antlr4ts/tree/ParseTreeListener';
 
-const { CommonTokenStream, InputStream } = antlr4;
 interface StateStoreInterface {
     /** Mode */
     mode: 'interactive' | 'static';
@@ -72,6 +87,21 @@ export class StateStoreConfig {
 
     /** initial params for our variables can come from query params */
     initialParams?: Record<string, unknown>;
+}
+
+//** listener class to evaluation block values *//
+class BlocksListener implements BlocksGrammarListener {
+    stack: any[] = [];
+
+    enterEveryRule?: (ctx: antlr4.ParserRuleContext) => void;
+
+    exitLogicalExpr?: (ctx: LogicalExprContext) => void;
+
+    exitNullExpression?: (ctx: NullExpressionContext) => void;
+
+    getResults(): any {
+        return this.stack.pop();
+    }
 }
 
 /**
@@ -475,46 +505,67 @@ export class StateStore {
     parseVariable = (expression: string): unknown => {
         console.log('Parse Variable :::', expression);
 
-        //set characters
-        const chars = new InputStream(expression, true);
-        console.log('CHARS :::', chars);
+        //Set stream of characters from user input to feed into lexer
+        const chars = CharStreams.fromString(expression);
+        console.log('CHARS ::::', chars);
+
+        const lexer = new BlocksGrammarLexer(chars);
+        console.log('Lexer :::', lexer);
+
+        //Create a stream of tokens to feed into parser
+        const tokenStream = new CommonTokenStream(lexer);
+        console.log('Token stream :::', lexer);
+
+        const parser = new BlocksGrammarParser(tokenStream);
+        console.log('Parser :::', parser);
+
+        //create tree
+        const tree = parser.program();
+        console.log('Tree:::', tree);
+
+        const listener = new BlocksListener();
+
+        const walker = new ParseTreeWalker();
+        walker.walk(listener, tree);
+
+        return listener.getResults();
 
         // trim the whitespace
-        let cleaned = expression.trim();
-        if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
-            return expression;
-        }
+        // let cleaned = expression.trim();
+        // if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
+        //     return expression;
+        // }
 
-        // remove the brackets
-        cleaned = cleaned.slice(2, -2);
+        // // remove the brackets
+        // cleaned = cleaned.slice(2, -2);
 
-        // get the keys in the path
-        const path = cleaned.split('.');
+        // // get the keys in the path
+        // const path = cleaned.split('.');
 
-        if (this._store.variables[path[0]]) {
-            const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
-                variable.to,
-                variable.type,
-                path,
-                variable.cellId,
-                variable.type !== 'cell' && variable.value
-                    ? variable.value
-                    : null,
-            );
+        // if (this._store.variables[path[0]]) {
+        //     const variable = this._store.variables[path[0]];
+        //     const value = this.getVariable(
+        //         variable.to,
+        //         variable.type,
+        //         path,
+        //         variable.cellId,
+        //         variable.type !== 'cell' && variable.value
+        //             ? variable.value
+        //             : null,
+        //     );
 
-            // TODO: Check this, protects for false values
-            // (query.isLoading tied to a block.label **bad use-case)
-            if (value !== undefined && value !== null) {
-                return value;
-            }
+        //     // TODO: Check this, protects for false values
+        //     // (query.isLoading tied to a block.label **bad use-case)
+        //     if (value !== undefined && value !== null) {
+        //         return value;
+        //     }
 
-            if (value === undefined) {
-                return value;
-            }
-        }
+        //     if (value === undefined) {
+        //         return value;
+        //     }
+        // }
 
-        return expression;
+        // return expression;
     };
 
     /**
