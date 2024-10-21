@@ -1,0 +1,24 @@
+{
+    "sourceType": "unambiguous",
+    "presets": [
+        [
+            "@nx/react/babel",
+            {
+                "runtime": "automatic",
+                "useBuiltIns": "usage"
+            }
+        ],
+        [
+            "@babel/preset-env",
+            {
+                "targets": {
+                    "chrome": 100
+                }
+            }
+        ],
+        ["@babel/preset-react", { "runtime": "automatic" }],
+        "@babel/preset-typescript"
+    ],
+
+    "plugins": []
+}
