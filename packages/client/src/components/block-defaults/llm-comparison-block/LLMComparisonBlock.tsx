@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBlock, useBlocks } from '@/hooks';
-import { BlockComponent, BlockDef, CellState, Variant } from '@/stores';
+import {
+    ActionMessages,
+    BlockComponent,
+    BlockDef,
+    CellState,
+    Variant,
+} from '@/stores';
 import {
     IconButton,
     Stack,
@@ -64,6 +70,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const cellIsLoadingRef = useRef(false);
     const [loadingRating, toggleLodaingRating] = useState(false);
     const [selectedTab, setSelectedTab] = useState<string>('');
+    const [variable, setVariable] = useState(null);
     const [cell, setCell] = useState(null);
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
@@ -73,10 +80,12 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     useEffect(() => {
         if (!data.variableId) {
             setVariants({});
+            setVariable(null);
             setCell(null);
             return;
         } else if (typeof data.variableId === 'string') {
             const variable = state.variables[data.variableId];
+            setVariable(variable || null);
             if (!variable || variable.type !== 'cell') {
                 console.log(
                     `Error retrieving variable with ID: ${data.variableId}`,
@@ -160,7 +169,19 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
 
         setVariants(variantsCopy);
 
-        // TODO: update variants in the appropriate cell.
+        // update variants in the cell's state.
+        const cellVariants = { ...cell.parameters.variants };
+        if (currentSelected) cellVariants[currentSelected].selected = false;
+        cellVariants[displayed.id].selected = true;
+        state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+                queryId: variable.to,
+                cellId: cell.id,
+                path: `parameters.variants`,
+                value: cellVariants,
+            },
+        });
     };
 
     return (
@@ -222,7 +243,7 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 <Checkbox
                                     checked={displayed.selected}
                                     onChange={handleChangeSelected}
-                                    label="Use Model"
+                                    label="Use Response"
                                 />
                             </StyledContentHeader>
 
