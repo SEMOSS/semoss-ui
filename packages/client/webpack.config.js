@@ -58,8 +58,6 @@ const config = {
                 process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
             watch: process.env['NODE_ENV'] == 'production' ? false : true,
             nodeOptions: {
-                // Specify NODE_OPTIONS here
-                // For example, to increase the maximum heap size, you can use:
                 NODE_OPTIONS: '--max-old-space-size=8192',
             },
         }),

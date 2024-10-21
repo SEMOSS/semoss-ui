@@ -56,10 +56,11 @@
                 "configurations": {},
                 "parallelism": true
             },
-            "devnx": {
+            "dev": {
                 "options": {
                     "cwd": "packages/client",
                     "args": [
+                        "--max-old-space-size=8192",
                         "--mode=development",
                         "--node-env=development",
                         "--watch"

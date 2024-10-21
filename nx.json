@@ -73,6 +73,13 @@
                 "componentTestingTargetName": "component-test",
                 "ciTargetName": "e2e-ci"
             }
+        },
+        {
+            "plugin": "@nx/jest/plugin",
+            "exclude": ["e2e/**/*"],
+            "options": {
+                "targetName": "test"
+            }
         }
     ]
 }

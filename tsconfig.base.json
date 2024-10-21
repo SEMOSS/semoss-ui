@@ -16,7 +16,8 @@
         "baseUrl": ".",
         "paths": {
             "@semoss/ui": ["libs/ui/src/index.ts"]
-        }
+        },
+        "jsx": "react-jsx"
     },
-    "exclude": ["node_modules", "tmp"]
+    "exclude": ["node_modules", "tmp", "dist"]
 }
