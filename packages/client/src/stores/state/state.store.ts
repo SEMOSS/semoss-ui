@@ -24,7 +24,6 @@ import { CellStateConfig } from './cell.state';
 import { STATE_VERSION } from './migration/MigrationManager';
 
 import antlr4, {
-    CharStream,
     CharStreams,
     CommonTokenStream,
     ANTLRErrorListener,
@@ -35,6 +34,8 @@ import { BlocksGrammarLexer } from '../../../../../generated/BlocksGrammarLexer'
 import {
     BlocksGrammarParser,
     InterpolatedStringContext,
+    LiteralExprContext,
+    LiteralExpressionContext,
     LogicalExprContext,
     NullExpressionContext,
     ProgramContext,
@@ -89,17 +90,54 @@ export class StateStoreConfig {
     initialParams?: Record<string, unknown>;
 }
 
-//** listener class to evaluation block values *//
+//** listener class for evaluating block values *//
 class BlocksListener implements BlocksGrammarListener {
-    stack: any[] = [];
+    //hold the values of walking tree
+    private stack = [];
 
+    //entering every node
     enterEveryRule?: (ctx: antlr4.ParserRuleContext) => void;
 
+    //capture specific single points on tree first
+    exitNullAtom(): void {
+        this.stack.push(null);
+    }
+
+    exitNumberAtom(ctx): void {
+        this.stack.push(parseInt(ctx.getText()));
+    }
+
+    //remove quotes surrounding string
+    exitStringAtom(ctx): void {
+        this.stack.push(ctx.getText().slice(1, -1));
+    }
+
+    //used to caputure {{var}}
+    exitInterpolationAtom(ctx): void {
+        const varName = ctx.getText().slice(2, -2).trim();
+        const path = varName.split('.');
+        let value;
+
+        // if (key of path){
+        //     value = value[key];
+        //     if(value === undefined) break;
+        // }
+        // this.stack.push(varName);
+    }
+
+    //capture results from after exiting expressions
     exitLogicalExpr?: (ctx: LogicalExprContext) => void;
 
-    exitNullExpression?: (ctx: NullExpressionContext) => void;
+    exitLiteralExpression(ctx: LiteralExpressionContext): void {
+        const stringList = [];
+        stringList.push(ctx.text);
 
-    getResults(): any {
+        this.stack.push(ctx.text);
+    }
+
+    //return result from stack array
+    getResults() {
+        console.log('get results', this.stack);
         return this.stack.pop();
     }
 }
@@ -500,72 +538,29 @@ export class StateStore {
 
     /** Variable Methods */
     /**
-     * Parse a variables and return the value if it exists (otherwise return the expression)
+     * Parse a variable (using antlr4ts) and return the value if it exists (otherwise return the expression)
      */
     parseVariable = (expression: string): unknown => {
         console.log('Parse Variable :::', expression);
 
         //Set stream of characters from user input to feed into lexer
         const chars = CharStreams.fromString(expression);
-        console.log('CHARS ::::', chars);
-
         const lexer = new BlocksGrammarLexer(chars);
-        console.log('Lexer :::', lexer);
 
         //Create a stream of tokens to feed into parser
         const tokenStream = new CommonTokenStream(lexer);
-        console.log('Token stream :::', lexer);
-
         const parser = new BlocksGrammarParser(tokenStream);
-        console.log('Parser :::', parser);
 
-        //create tree
+        //Create the tree
         const tree = parser.program();
         console.log('Tree:::', tree);
 
+        //Walk the AST tree
         const listener = new BlocksListener();
-
         const walker = new ParseTreeWalker();
         walker.walk(listener, tree);
 
         return listener.getResults();
-
-        // trim the whitespace
-        // let cleaned = expression.trim();
-        // if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
-        //     return expression;
-        // }
-
-        // // remove the brackets
-        // cleaned = cleaned.slice(2, -2);
-
-        // // get the keys in the path
-        // const path = cleaned.split('.');
-
-        // if (this._store.variables[path[0]]) {
-        //     const variable = this._store.variables[path[0]];
-        //     const value = this.getVariable(
-        //         variable.to,
-        //         variable.type,
-        //         path,
-        //         variable.cellId,
-        //         variable.type !== 'cell' && variable.value
-        //             ? variable.value
-        //             : null,
-        //     );
-
-        //     // TODO: Check this, protects for false values
-        //     // (query.isLoading tied to a block.label **bad use-case)
-        //     if (value !== undefined && value !== null) {
-        //         return value;
-        //     }
-
-        //     if (value === undefined) {
-        //         return value;
-        //     }
-        // }
-
-        // return expression;
     };
 
     /**
