@@ -9,14 +9,13 @@ import {
     buildColorSection,
 } from '../block-defaults.shared';
 
-import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
+import { SubContainerBlockDef, SubContainerBlock } from './SubContainerBlock';
 import { HighlightAlt } from '@mui/icons-material';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import { InputSettings } from '@/components/block-settings';
 
 // export the config for the block
-export const config: BlockConfig<ContainerBlockDef> = {
-    widget: 'container',
+export const config: BlockConfig<SubContainerBlockDef> = {
+    widget: 'sub-container',
     type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
@@ -27,31 +26,15 @@ export const config: BlockConfig<ContainerBlockDef> = {
             flexWrap: 'wrap',
         },
         subcontainer: 2,
+        id: '',
     },
     listeners: {},
     slots: {
         children: [],
     },
-    render: ContainerBlock,
+    render: SubContainerBlock,
     icon: HighlightAlt,
-    contentMenu: [
-        {
-            name: 'General',
-            children: [
-                {
-                    description: 'Subcontainer',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="No of subcontainer"
-                            path="subcontainer"
-                            type="number"
-                        />
-                    ),
-                },
-            ],
-        },
-    ],
+    contentMenu: [],
     styleMenu: [
         buildLayoutSection(),
         buildSpacingSection(),
