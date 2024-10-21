@@ -55,6 +55,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
                                     padding: '4px',
                                     gap: '8px',
                                     flexWrap: 'wrap',
+                                    flexGrow: 1,
                                 },
                                 subcontainer: 2,
                             },

@@ -265,7 +265,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             data: {
                 style: {
                     display: 'flex',
-                    flexDirection: 'column',
+                    flexDirection: 'row',
                     padding: '4px',
                     gap: '8px',
                     flexWrap: 'wrap',
