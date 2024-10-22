@@ -12,6 +12,7 @@ import {
     Chip,
     Modal,
     Stack,
+    CircularProgress,
 } from '@semoss/ui';
 import {
     MembersTable,
@@ -40,12 +41,14 @@ import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
 import { formatPermission, toTitleCase } from '@/utility';
 import {
+    Add,
     Edit,
     HdrAuto,
     MoreVert,
     Share,
     EditLocation,
     RemoveRedEyeRounded,
+    SimCardDownload,
 } from '@mui/icons-material';
 
 import { Link } from 'react-router-dom';
@@ -230,7 +233,7 @@ export const AppDetailPage = () => {
 
         if (permission === 'author') setValue('requestedPermission', 'OWNER');
         if (permission === 'editor') setValue('requestedPermission', 'EDIT');
-        if (permission === 'readOnly')
+        if (permission === 'readOnly' || permission === 'discoverable')
             setValue('requestedPermission', 'READ_ONLY');
     }
 
@@ -392,6 +395,25 @@ export const AppDetailPage = () => {
         setIsEditDependenciesModalOpen(false);
     };
 
+    // export loading state
+    const [exportLoading, setExportLoading] = useState(false);
+    /**
+     * @name exportAPP
+     * @desc export APP pixel
+     */
+    const exportApp = () => {
+        setExportLoading(true);
+        const pixel = `ExportProjectApp(project=["${appId}"]);`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightId = response.insightId;
+
+            monolithStore.download(insightId, output);
+        });
+        setExportLoading(false);
+    };
+
     // filter metakeys to the variable ones
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {
@@ -502,13 +524,37 @@ export const AppDetailPage = () => {
                     <Sidebar permission={permission} refs={detailRefs} />
                     <PageBody>
                         <ActionBar>
-                            <Button
-                                variant="text"
-                                onClick={() => setIsChangeAccessModalOpen(true)}
-                                sx={{ fontWeight: 'bold' }}
-                            >
-                                Change Access
-                            </Button>
+                            {permission === 'author' ? (
+                                <Button
+                                    disabled={exportLoading}
+                                    startIcon={
+                                        exportLoading ? (
+                                            <CircularProgress size="1em" />
+                                        ) : (
+                                            <SimCardDownload />
+                                        )
+                                    }
+                                    variant="outlined"
+                                    onClick={() => exportApp()}
+                                >
+                                    Export
+                                </Button>
+                            ) : (
+                                <Button
+                                    startIcon={<Add />}
+                                    variant="outlined"
+                                    onClick={() =>
+                                        setIsChangeAccessModalOpen(true)
+                                    }
+                                    sx={{ fontWeight: 'bold' }}
+                                >
+                                    {permission === 'discoverable' ? (
+                                        <>Request Access</>
+                                    ) : (
+                                        <>Change Access</>
+                                    )}
+                                </Button>
+                            )}
 
                             <Button
                                 variant="contained"
@@ -539,8 +585,7 @@ export const AppDetailPage = () => {
                                 }}
                                 sx={{ borderRadius: '4px' }}
                             >
-                                {(permission === 'author' ||
-                                    permission === 'editor') && (
+                                {permission === 'author' && (
                                     <StyledMenuItem
                                         onClick={() => {
                                             setIsEditDetailsModalOpen(true);
@@ -674,8 +719,7 @@ export const AppDetailPage = () => {
                                     <SectionHeading variant="h2">
                                         Dependencies
                                     </SectionHeading>
-                                    {(permission === 'author' ||
-                                        permission === 'editor') && (
+                                    {permission === 'author' && (
                                         <IconButton
                                             onClick={() =>
                                                 setIsEditDependenciesModalOpen(
