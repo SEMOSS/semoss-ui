@@ -271,36 +271,6 @@ export class StateStore {
                             }
                         }
                     }
-                } else if (type === 'LLM Comparison') {
-                    const block = this._store.blocks[pointer];
-                    if (block && typeof block.data.variableId === 'string') {
-                        const cellVar =
-                            this._store.variables[block.data.variableId];
-                        const output = this.getVariable(
-                            cellVar.to,
-                            cellVar.type,
-                            ['output'],
-                            cellVar.cellId,
-                        );
-                        if (output && Array.isArray(output)) {
-                            const query = this._store.queries[cellVar.to];
-                            const cell = query.getCell(cellVar.cellId);
-
-                            if (cell) {
-                                // find the output's associated variant and add its data to the output.
-                                const modelled = Object.values(
-                                    cell.parameters.variants,
-                                ).map((variant: Variant, idx: number) => {
-                                    return {
-                                        variant,
-                                        ...output[idx],
-                                    };
-                                });
-                                return modelled;
-                            }
-                            return output;
-                        }
-                    }
                 }
                 return undefined;
             } else {
@@ -523,13 +493,10 @@ export class StateStore {
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
-                if (
-                    variable.type === 'LLM Comparison' &&
-                    Array.isArray(value)
-                ) {
+                if (Array.isArray(value)) {
                     // From the list of responses in the variable, find and return the one that is 'selected'
                     const selectedValue = value.find(
-                        (val) => val.variant?.selected,
+                        (val) => val.parameters?.selected,
                     );
                     if (!selectedValue) {
                         console.log(
@@ -1166,6 +1133,7 @@ export class StateStore {
                         type: 'pixel',
                     },
                     widget: 'code',
+                    type: 'code',
                 } as Omit<CellStateConfig, 'id'>,
                 '',
             );
