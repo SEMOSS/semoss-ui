@@ -24,7 +24,7 @@ import {
 import { INPUT_BLOCK_TYPES } from '@/stores';
 import { AddVariableModal } from '../notebook/AddVariableModal';
 
-const StyledMenu = styled('div')(({ theme }) => ({
+const StyledMenu = styled(Stack)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
@@ -137,13 +137,12 @@ export const LayersMenu = observer((): JSX.Element => {
         // get the block
         const block = state.blocks[id];
 
-        const variableName = state.getAlias(id);
-        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-
         // render each of hte c
         if (!block) {
             return null;
         }
+        const variableName = state.getAlias(id);
+        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
 
         const WidgetIcon = registry[block.widget].icon;
 
@@ -212,7 +211,6 @@ export const LayersMenu = observer((): JSX.Element => {
                 }
                 onClick={(e: React.SyntheticEvent) => {
                     e.stopPropagation();
-                    designer.setSelected(block.id);
                 }}
                 onMouseOver={(e: React.SyntheticEvent) => {
                     e.stopPropagation();

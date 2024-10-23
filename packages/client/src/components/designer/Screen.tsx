@@ -22,7 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
+    // padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -250,7 +250,7 @@ export const Screen = observer((props: ScreenProps) => {
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef} className="helllo man">
+        <StyledContainer data-block="root" ref={rootRef}>
             {designer.selected && <SelectedMask />}
             {designer.hovered && <HoveredMask />}
             {designer.selected && !designer.drag.active && (

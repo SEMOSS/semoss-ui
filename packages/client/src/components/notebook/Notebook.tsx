@@ -18,17 +18,9 @@ const StyledNotebook = styled('div')(() => ({
     flexDirection: 'row',
     position: 'relative',
     height: '100%',
-    width: '100%',
+    // width: '50%',
     overflow: 'hidden',
-}));
-
-const StyledLeftPanel = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: theme.spacing(45),
-    overflow: 'hidden',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
+    // border: 'solid red',
 }));
 
 const StyledRightPanel = styled('div')(() => ({
@@ -39,90 +31,74 @@ const StyledRightPanel = styled('div')(() => ({
     flexDirection: 'column',
 }));
 
-export const Notebook = observer(() => {
-    const { state } = useBlocks();
+export const Notebook = observer(
+    (props: { collapseComponent?: JSX.Element }) => {
+        const { state } = useBlocks();
 
-    // view
-    const [view, setView] = useState<
-        'variables' | 'sources' | 'blocks' | 'transform' | 'variants' | ''
-    >('variables');
+        // view
+        const [view, setView] = useState<
+            'variables' | 'sources' | 'blocks' | 'transform' | 'variants' | ''
+        >('variables');
 
-    /**
-     * Set the view. If it is the same, close it
-     * @param v
-     */
-    const updateView = (v: typeof view) => {
-        // close if not passed in or the same
-        if (!v || v === view) {
-            setView('');
-            return;
-        }
+        /**
+         * Set the view. If it is the same, close it
+         * @param v
+         */
+        const updateView = (v: typeof view) => {
+            // close if not passed in or the same
+            if (!v || v === view) {
+                setView('');
+                return;
+            }
 
-        // set the view
-        setView(v);
-    };
+            // set the view
+            setView(v);
+        };
 
-    const [modelId, setModelId] = useState<string>('');
-    const [models, setModels] = useState<
-        { app_id: string; app_name: string }[]
-    >([]);
+        const [modelId, setModelId] = useState<string>('');
+        const [models, setModels] = useState<
+            { app_id: string; app_name: string }[]
+        >([]);
 
-    const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
+        const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
     MyEngines(engineTypes=['MODEL']);
     `);
 
-    useEffect(() => {
-        if (myModels.status !== 'SUCCESS') {
-            return;
-        }
+        useEffect(() => {
+            if (myModels.status !== 'SUCCESS') {
+                return;
+            }
 
-        setModels(
-            myModels.data.map((d) => ({
-                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-                app_id: d.app_id,
-            })),
+            setModels(
+                myModels.data.map((d) => ({
+                    app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
+                    app_id: d.app_id,
+                })),
+            );
+
+            setModelId(myModels.data.length ? myModels.data[0].app_id : '');
+        }, [myModels.status, myModels.data]);
+
+        return (
+            <StyledNotebook>
+                <StyledRightPanel>
+                    <LLMContext.Provider
+                        value={{
+                            modelId: modelId,
+                            modelOptions: models,
+                            setModel: (id) => {
+                                setModelId(id);
+                            },
+                        }}
+                    >
+                        <>
+                            {props.collapseComponent}
+                            <NotebookSheetsMenu />
+                            <NotebookSheet />
+                        </>
+                    </LLMContext.Provider>
+                </StyledRightPanel>
+            </StyledNotebook>
         );
-
-        setModelId(myModels.data.length ? myModels.data[0].app_id : '');
-    }, [myModels.status, myModels.data]);
-
-    return (
-        <StyledNotebook>
-            {/* <Sidebar>
-                <SidebarItem
-                    selected={view === 'variables'}
-                    onClick={() => updateView('variables')}
-                >
-                    <Tooltip title={'Add'} placement="right">
-                        <Code color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Variables</SidebarText>
-                </SidebarItem>
-            </Sidebar> */}
-            {/* {view ? (
-                <StyledLeftPanel>
-                    {view === 'variables' && <NotebookVariablesMenu />}
-                </StyledLeftPanel>
-            ) : null} */}
-
-            <StyledRightPanel>
-                <LLMContext.Provider
-                    value={{
-                        modelId: modelId,
-                        modelOptions: models,
-                        setModel: (id) => {
-                            setModelId(id);
-                        },
-                    }}
-                >
-                    {/* {view === 'variables' && ( */}
-                    <>
-                        <NotebookSheetsMenu />
-                        <NotebookSheet />
-                    </>
-                    {/* )} */}
-                </LLMContext.Provider>
-            </StyledRightPanel>
-        </StyledNotebook>
-    );
-});
+    },
+);

@@ -54,6 +54,8 @@ const StyledContent = styled('div')(() => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+    // padding: '16px',
+    // border: '2px solid black'
 }));
 
 interface WorkspaceProps {

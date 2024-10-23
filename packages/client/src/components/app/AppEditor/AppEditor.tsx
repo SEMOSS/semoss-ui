@@ -62,18 +62,6 @@ const StyledTextEditorDiv = styled('div')(({ theme }) => ({
     backgroundColor: '#fff',
 }));
 
-// const _StyledTextEditorDiv = ({openAppAssetsPanel, children}) => {
-//     // possible work-around to only remaining legacy inline style
-//     // causing error in children / not rendering open files
-//     // working on other component with children
-
-//     const ReturnElement = styled('div')(({ theme }) => ({
-//         width: openAppAssetsPanel ? 'calc(100% - 50px - 250px)' : 'calc(100% - 50px)',
-//         backgroundColor: '#fff',
-//     }));
-//     return (<ReturnElement>{children}</ReturnElement>);
-// }
-
 const StyledDeleteOutlineIcon = styled(DeleteOutline)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.3)',
 }));
@@ -94,7 +82,6 @@ const FilenameFlexWrapper = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-// file icon in explorer
 const FiletypeIconWrapper = styled(Icon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.6)',
     marginRight: '6px',
@@ -598,7 +585,6 @@ export const AppEditor = (props: AppEditorProps) => {
     const saveApplicationAsset = async (
         file: ControlledFile,
     ): Promise<boolean> => {
-        console.warn('Saving App Asset with Pixel');
         const pixel = `
             SaveAsset(fileName=["${file.id}"], content=["<encode>${file.content}</encode>"], space=["${appId}"]); 
             CommitAsset(filePath=["${file.id}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])

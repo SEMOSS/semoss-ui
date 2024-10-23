@@ -746,6 +746,11 @@ export const TextEditor = (props: TextEditorProps) => {
                             height={'100%'}
                             value={activeFile.content}
                             language={fileLanguage}
+                            options={{
+                                readOnly:
+                                    activeFile.id ===
+                                    'version/assets/portals/blocks.json',
+                            }}
                             onChange={(newValue, e) => {
                                 editFile(newValue);
                             }}

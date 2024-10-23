@@ -304,6 +304,7 @@ export function getQueryForPrompt(
     response = model.ask(question = prompt)
     return json.dumps(response[0]['response'])
 `;
+
     // Triple quotes allow for multiline prompts
     const query = `promptQuery("""${prompt}"""${
         Object.keys(customInputTypes).length ? ', ' : ''

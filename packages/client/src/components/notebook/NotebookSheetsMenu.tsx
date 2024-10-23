@@ -286,205 +286,206 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     }, [JSON.stringify(state.executionOrder)]);
 
     return (
-        <Stack
-            direction={'row'}
-            justifyContent={'space-between'}
-            sx={{ maxWidth: '100%' }}
-        >
-            <Stack direction={'row'} sx={{ maxWidth: '95%' }}>
-                <StyledStack direction="row" spacing={0}>
-                    {notebook.queriesList.map((q, i) => {
-                        return (
-                            <StyledSheet
-                                key={i}
-                                selected={q.id === notebook.selectedQuery?.id}
-                                onClick={(e) => {
-                                    notebook.selectQuery(q.id);
-                                }}
-                            >
-                                {getSheetStatusIcon(q)}
-                                <Typography
-                                    variant={'body2'}
-                                    fontWeight="bold"
-                                    sx={{
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    {q.id}
-                                </Typography>
-                                <IconButton
-                                    size={'small'}
-                                    onClick={(
-                                        event: React.MouseEvent<HTMLElement>,
-                                    ) => {
-                                        setQuery({
-                                            q: q,
-                                            index: i,
-                                        });
-                                        setAnchorEl(event.currentTarget);
-                                        event.stopPropagation();
-                                    }}
-                                >
-                                    <MoreVert />
-                                </IconButton>
-                            </StyledSheet>
-                        );
-                    })}
+        <>h</>
+        // <Stack
+        //     direction={'row'}
+        //     justifyContent={'space-between'}
+        //     sx={{ maxWidth: '100%' }}
+        // >
+        //     <Stack direction={'row'} sx={{ maxWidth: '95%' }}>
+        //         <StyledStack direction="row" spacing={0}>
+        //             {notebook.queriesList.map((q, i) => {
+        //                 return (
+        //                     <StyledSheet
+        //                         key={i}
+        //                         selected={q.id === notebook.selectedQuery?.id}
+        //                         onClick={(e) => {
+        //                             notebook.selectQuery(q.id);
+        //                         }}
+        //                     >
+        //                         {getSheetStatusIcon(q)}
+        //                         <Typography
+        //                             variant={'body2'}
+        //                             fontWeight="bold"
+        //                             sx={{
+        //                                 textOverflow: 'ellipsis',
+        //                                 whiteSpace: 'nowrap',
+        //                                 overflow: 'hidden',
+        //                             }}
+        //                         >
+        //                             {q.id}
+        //                         </Typography>
+        //                         <IconButton
+        //                             size={'small'}
+        //                             onClick={(
+        //                                 event: React.MouseEvent<HTMLElement>,
+        //                             ) => {
+        //                                 setQuery({
+        //                                     q: q,
+        //                                     index: i,
+        //                                 });
+        //                                 setAnchorEl(event.currentTarget);
+        //                                 event.stopPropagation();
+        //                             }}
+        //                         >
+        //                             <MoreVert />
+        //                         </IconButton>
+        //                     </StyledSheet>
+        //                 );
+        //             })}
 
-                    <Menu
-                        anchorEl={anchorEl}
-                        open={open}
-                        onClose={handleQueryOptionsMenuClose}
-                    >
-                        <List disablePadding dense>
-                            <List.Item disablePadding>
-                                <List.ItemButton
-                                    onClick={() => {
-                                        duplicateQuery(query.q.id);
-                                    }}
-                                >
-                                    <StyledListIcon>
-                                        <ContentCopy
-                                            color="inherit"
-                                            fontSize="small"
-                                        />
-                                    </StyledListIcon>
-                                    <List.ItemText primary="Duplicate" />
-                                </List.ItemButton>
-                            </List.Item>
-                            <List.Item disablePadding>
-                                <List.ItemButton onClick={exportHandler}>
-                                    <StyledListIcon>
-                                        <Download
-                                            color="inherit"
-                                            fontSize="small"
-                                        />
-                                    </StyledListIcon>
-                                    <List.ItemText primary="Export" />
-                                </List.ItemButton>
-                            </List.Item>
-                            <Divider />
-                            <List.Item disablePadding>
-                                <List.ItemButton
-                                    onClick={() => {
-                                        state.dispatch({
-                                            message:
-                                                ActionMessages.DELETE_QUERY,
-                                            payload: {
-                                                queryId: query.q.id,
-                                            },
-                                        });
-                                        if (notebook.queriesList.length) {
-                                            const nextQueryIndex =
-                                                query.index >=
-                                                notebook.queriesList.length
-                                                    ? notebook.queriesList
-                                                          .length - 1
-                                                    : query.index;
-                                            notebook.selectQuery(
-                                                notebook.queriesList[
-                                                    nextQueryIndex
-                                                ].id,
-                                            );
-                                        }
-                                        handleQueryOptionsMenuClose();
-                                    }}
-                                >
-                                    <StyledListIcon>
-                                        <Delete
-                                            color="error"
-                                            fontSize="small"
-                                        />
-                                    </StyledListIcon>
-                                    <List.ItemText
-                                        primary="Delete"
-                                        primaryTypographyProps={{
-                                            color: 'error',
-                                        }}
-                                    ></List.ItemText>
-                                </List.ItemButton>
-                            </List.Item>
-                        </List>
-                    </Menu>
-                </StyledStack>
-                <StyledButtonContainer>
-                    <StyledIconButton
-                        size="small"
-                        onClick={() => {
-                            openQueryOverlay();
-                        }}
-                    >
-                        <Icon color="primary">
-                            <Add />
-                        </Icon>
-                    </StyledIconButton>
-                </StyledButtonContainer>
-            </Stack>
-            <Modal
-                open={sheetOrderMenuOpen}
-                onClose={() => setSheetOrderMenuOpen(false)}
-                maxWidth={'xl'}
-            >
-                <Modal.Title>API Order</Modal.Title>
-                <Modal.Content sx={{ width: '600px' }}>
-                    <Stack>
-                        <DraggableTable
-                            rowsData={sheets}
-                            onReorder={(e) => {
-                                console.log('reorder', e);
-                                setOrderedSheets(e);
-                            }}
-                        />
-                    </Stack>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        onClick={() => {
-                            setOrderedSheets([]);
-                            setSheetOrderMenuOpen(false);
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            const formatted = [];
-                            orderedSheets.forEach((s) => {
-                                formatted.push(s.id);
-                            });
+        //             <Menu
+        //                 anchorEl={anchorEl}
+        //                 open={open}
+        //                 onClose={handleQueryOptionsMenuClose}
+        //             >
+        //                 <List disablePadding dense>
+        //                     <List.Item disablePadding>
+        //                         <List.ItemButton
+        //                             onClick={() => {
+        //                                 duplicateQuery(query.q.id);
+        //                             }}
+        //                         >
+        //                             <StyledListIcon>
+        //                                 <ContentCopy
+        //                                     color="inherit"
+        //                                     fontSize="small"
+        //                                 />
+        //                             </StyledListIcon>
+        //                             <List.ItemText primary="Duplicate" />
+        //                         </List.ItemButton>
+        //                     </List.Item>
+        //                     <List.Item disablePadding>
+        //                         <List.ItemButton onClick={exportHandler}>
+        //                             <StyledListIcon>
+        //                                 <Download
+        //                                     color="inherit"
+        //                                     fontSize="small"
+        //                                 />
+        //                             </StyledListIcon>
+        //                             <List.ItemText primary="Export" />
+        //                         </List.ItemButton>
+        //                     </List.Item>
+        //                     <Divider />
+        //                     <List.Item disablePadding>
+        //                         <List.ItemButton
+        //                             onClick={() => {
+        //                                 state.dispatch({
+        //                                     message:
+        //                                         ActionMessages.DELETE_QUERY,
+        //                                     payload: {
+        //                                         queryId: query.q.id,
+        //                                     },
+        //                                 });
+        //                                 if (notebook.queriesList.length) {
+        //                                     const nextQueryIndex =
+        //                                         query.index >=
+        //                                         notebook.queriesList.length
+        //                                             ? notebook.queriesList
+        //                                                   .length - 1
+        //                                             : query.index;
+        //                                     notebook.selectQuery(
+        //                                         notebook.queriesList[
+        //                                             nextQueryIndex
+        //                                         ].id,
+        //                                     );
+        //                                 }
+        //                                 handleQueryOptionsMenuClose();
+        //                             }}
+        //                         >
+        //                             <StyledListIcon>
+        //                                 <Delete
+        //                                     color="error"
+        //                                     fontSize="small"
+        //                                 />
+        //                             </StyledListIcon>
+        //                             <List.ItemText
+        //                                 primary="Delete"
+        //                                 primaryTypographyProps={{
+        //                                     color: 'error',
+        //                                 }}
+        //                             ></List.ItemText>
+        //                         </List.ItemButton>
+        //                     </List.Item>
+        //                 </List>
+        //             </Menu>
+        //         </StyledStack>
+        //         <StyledButtonContainer>
+        //             <StyledIconButton
+        //                 size="small"
+        //                 onClick={() => {
+        //                     openQueryOverlay();
+        //                 }}
+        //             >
+        //                 <Icon color="primary">
+        //                     <Add />
+        //                 </Icon>
+        //             </StyledIconButton>
+        //         </StyledButtonContainer>
+        //     </Stack>
+        //     <Modal
+        //         open={sheetOrderMenuOpen}
+        //         onClose={() => setSheetOrderMenuOpen(false)}
+        //         maxWidth={'xl'}
+        //     >
+        //         <Modal.Title>API Order</Modal.Title>
+        //         <Modal.Content sx={{ width: '600px' }}>
+        //             <Stack>
+        //                 <DraggableTable
+        //                     rowsData={sheets}
+        //                     onReorder={(e) => {
+        //                         console.log('reorder', e);
+        //                         setOrderedSheets(e);
+        //                     }}
+        //                 />
+        //             </Stack>
+        //         </Modal.Content>
+        //         <Modal.Actions>
+        //             <Button
+        //                 onClick={() => {
+        //                     setOrderedSheets([]);
+        //                     setSheetOrderMenuOpen(false);
+        //                 }}
+        //             >
+        //                 Cancel
+        //             </Button>
+        //             <Button
+        //                 variant={'contained'}
+        //                 onClick={() => {
+        //                     const formatted = [];
+        //                     orderedSheets.forEach((s) => {
+        //                         formatted.push(s.id);
+        //                     });
 
-                            state.dispatch({
-                                message:
-                                    ActionMessages.SET_SHEET_EXECUTION_ORDER,
-                                payload: {
-                                    list: formatted,
-                                },
-                            });
+        //                     state.dispatch({
+        //                         message:
+        //                             ActionMessages.SET_SHEET_EXECUTION_ORDER,
+        //                         payload: {
+        //                             list: formatted,
+        //                         },
+        //                     });
 
-                            setOrderedSheets([]);
-                            setSheetOrderMenuOpen(false);
-                        }}
-                    >
-                        Set
-                    </Button>
-                </Modal.Actions>
-            </Modal>
+        //                     setOrderedSheets([]);
+        //                     setSheetOrderMenuOpen(false);
+        //                 }}
+        //             >
+        //                 Set
+        //             </Button>
+        //         </Modal.Actions>
+        //     </Modal>
 
-            <StyledIconButton
-                size="small"
-                onClick={(event: React.MouseEvent<HTMLElement>) => {
-                    setSheetOrderMenuOpen(true);
-                    event.stopPropagation();
-                }}
-            >
-                <Icon color="primary">
-                    <Api />
-                </Icon>
-            </StyledIconButton>
-        </Stack>
+        //     <StyledIconButton
+        //         size="small"
+        //         onClick={(event: React.MouseEvent<HTMLElement>) => {
+        //             setSheetOrderMenuOpen(true);
+        //             event.stopPropagation();
+        //         }}
+        //     >
+        //         <Icon color="primary">
+        //             <Api />
+        //         </Icon>
+        //     </StyledIconButton>
+        // </Stack>
     );
 });
 

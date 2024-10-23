@@ -213,7 +213,6 @@ export const BlocksWorkspaceActions = observer(() => {
         <Stack direction="row" spacing={1} alignItems={'center'}>
             <Button
                 variant="text"
-                startIcon={<PlayCircleRounded />}
                 title="Preview App"
                 color="inherit"
                 onClick={() => {
@@ -224,7 +223,6 @@ export const BlocksWorkspaceActions = observer(() => {
             </Button>
             <Button
                 variant="text"
-                startIcon={<GetAppRounded />}
                 title="Download App"
                 color="inherit"
                 onClick={() => {
@@ -236,7 +234,6 @@ export const BlocksWorkspaceActions = observer(() => {
             <Button
                 size="small"
                 variant="text"
-                startIcon={<StyledShareIcon />}
                 title="Share App"
                 color="inherit"
                 onClick={() => {
@@ -256,8 +253,7 @@ export const BlocksWorkspaceActions = observer(() => {
             >
                 Save
             </Button>
-            <Button
-                endIcon={<LaunchRounded />}
+            {/* <Button
                 onClick={() => {
                     const encodedState = encodeURIComponent(
                         JSON.stringify(state.toJSON()),
@@ -268,7 +264,7 @@ export const BlocksWorkspaceActions = observer(() => {
                 }}
             >
                 Launch
-            </Button>
+            </Button> */}
         </Stack>
     );
 });
