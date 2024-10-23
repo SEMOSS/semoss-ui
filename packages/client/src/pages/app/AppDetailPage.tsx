@@ -296,18 +296,32 @@ export const AppDetailPage = () => {
                                 }, {}) as AppDetailsFormTypes['detailsForm'];
                             setValue('detailsForm', parsedMeta);
                             setValue('tag', parsedMeta.tag);
+                            setValue('markdown', parsedMeta.markdown);
+                            setValue(
+                                'detailsForm.markdown',
+                                parsedMeta.markdown,
+                            );
+                            setValues((prev) => ({
+                                ...prev,
+                                markdown: parsedMeta.markdown || '',
+                            }));
                             setValues((prev) => ({ ...prev, ...parsedMeta }));
                         }
                     } else if (idx === 1) {
                         if (res.value.type === 'error') {
                             emitMessage(true, res.value.output);
                         } else {
-                            setValue('markdown', res.value.output);
-                            setValue('detailsForm.markdown', res.value.output);
-                            setValues((prev) => ({
-                                ...prev,
-                                markdown: res.value.output || '',
-                            }));
+                            if (res.value.output !== null) {
+                                setValue('markdown', res.value.output);
+                                setValue(
+                                    'detailsForm.markdown',
+                                    res.value.output,
+                                );
+                                setValues((prev) => ({
+                                    ...prev,
+                                    markdown: res.value.output || '',
+                                }));
+                            }
                         }
                     } else if (idx === 2) {
                         if (res.value.type === 'error') {
