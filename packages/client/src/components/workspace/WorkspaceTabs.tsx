@@ -6,9 +6,10 @@ import { useWorkspace } from '@/hooks';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     width: theme.spacing(16),
+    textAlign: 'left',
 }));
 
-export const CodeWorkspaceTabs = observer(() => {
+export const WorkspaceTabs = observer(() => {
     const { workspace } = useWorkspace();
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -30,7 +31,10 @@ export const CodeWorkspaceTabs = observer(() => {
         }
     };
 
-    console.log(workspace.selectedLayout);
+    // if there are not other layouts, no need to show this
+    if (workspace.availableLayouts.length <= 1) {
+        return null;
+    }
 
     return (
         <>

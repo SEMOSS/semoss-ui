@@ -19,6 +19,7 @@ import { usePixel } from '@/hooks';
 import { IJsonModel, Layout, Model, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { computed } from 'mobx';
+import { WorkspaceTabs } from './WorkspaceTabs';
 
 const DEFAULT_MODEL: IJsonModel = {
     global: {},
@@ -69,9 +70,6 @@ const StyledContent = styled('div')(() => ({
 }));
 
 type WorkspaceProps = {
-    /** Start items to render in the top bar */
-    startTopbar?: React.ReactNode;
-
     /** End items to render in the top bar */
     endTopbar?: React.ReactNode;
 
@@ -89,7 +87,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const notification = useNotification();
 
     const {
-        startTopbar: startTopbar = null,
         endTopbar: endTopbar = null,
         footer = null,
         workspace,
@@ -184,8 +181,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                     >
                         <ArrowBack fontSize="medium" />
                     </IconButton>
-
-                    {startTopbar}
+                    <WorkspaceTabs />
                     <Stack flex={1} direction="row">
                         &nbsp;
                     </Stack>

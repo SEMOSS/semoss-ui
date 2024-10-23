@@ -32,7 +32,7 @@ const StyledContent = styled('div')(({ theme }) => ({
 
 type VIEW = 'CURRENT' | 'PENDING' | 'APP';
 
-export const SettingsView = () => {
+export const SettingsPanel = () => {
     const { workspace } = useWorkspace();
     const navigate = useNavigate();
 

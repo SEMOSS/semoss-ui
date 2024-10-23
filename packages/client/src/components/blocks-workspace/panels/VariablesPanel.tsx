@@ -9,15 +9,13 @@ import {
     List,
     Typography,
     Stack,
-    Tooltip,
     Search,
     Popover,
 } from '@semoss/ui';
 import { useBlocks, usePixel } from '@/hooks';
-import { AddVariablePopover } from './AddVariablePopover';
-import { NotebookVariable } from '../../../notebook/NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
 import { VARIABLE_TYPES } from '@/stores';
+import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
 
 const StyledStack = styled(Stack)(() => ({
     maxHeight: '100%',

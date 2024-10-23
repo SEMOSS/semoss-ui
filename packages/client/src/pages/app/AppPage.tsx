@@ -18,7 +18,7 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
         available: [
             {
                 id: 'renderer',
-                name: 'render',
+                name: 'App',
                 data: {
                     global: { tabEnableClose: false },
                     borders: [],
@@ -110,7 +110,6 @@ export const AppPage = observer(() => {
     return (
         <Workspace
             workspace={workspace}
-            startTopbar={null}
             endTopbar={
                 <Button
                     variant="contained"

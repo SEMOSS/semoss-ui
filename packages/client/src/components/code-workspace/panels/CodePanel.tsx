@@ -5,8 +5,8 @@ import { styled, ThemeProvider, IconButton } from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
 
-import { CodeRenderer } from './CodeRenderer';
-import { CodeViewPanel } from './CodeViewPanel';
+import { CodeRenderer } from '../CodeRenderer';
+import { CodeViewPanel } from '../CodeViewPanel';
 
 // Styles --------------------------------------*
 
@@ -58,7 +58,7 @@ const StyledIconButton = styled(IconButton)(() => ({
     fontSize: 'inherit',
 }));
 
-export const CodeEditor = observer(() => {
+export const CodePanel = observer(() => {
     // App ID Needed for pixel calls
     const { workspace } = useWorkspace();
     const [transparentOverlay, setTransparentOverlay] = useState(false);

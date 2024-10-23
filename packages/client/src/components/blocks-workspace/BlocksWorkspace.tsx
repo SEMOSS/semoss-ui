@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
+import { ConstructionOutlined } from '@mui/icons-material';
 
 import { runPixel } from '@/api';
 import {
@@ -15,18 +16,10 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
 import { Notebook } from '@/components/notebook';
 import { Designer } from '@/components/designer';
-import { Workspace, Settings, VariablesPanel } from '@/components/workspace';
+import { Workspace, SettingsPanel } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
-import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
-import { ConstructionOutlined } from '@mui/icons-material';
-import { BlocksWorkspaceTabs } from './BlocksWorkspaceTabs';
-
-const StyledMain = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: '100%',
-    overflow: 'hidden',
-}));
+import { VariablesPanel } from './panels';
 
 const StyledFooter = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -40,8 +33,6 @@ const StyledFooter = styled('div')(({ theme }) => ({
     width: '100%',
     background: 'rgba(253, 237, 225, 1)',
 }));
-
-const ACTIVE = 'page-1';
 
 const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
     layout: {
@@ -181,7 +172,7 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (node) => {
     } else if (component === 'variables') {
         return <VariablesPanel />;
     } else if (component === 'settings') {
-        return <Settings />;
+        return <SettingsPanel />;
     }
 
     return <>{component}</>;
@@ -260,7 +251,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                     color: 'error',
                     message: e.message,
                 });
-
                 console.error(e);
             })
             .finally(() => {
@@ -277,7 +267,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         <Blocks state={state} registry={DefaultBlocks}>
             <Workspace
                 workspace={workspace}
-                startTopbar={<BlocksWorkspaceTabs />}
                 endTopbar={<BlocksWorkspaceActions />}
                 footer={
                     <StyledFooter>

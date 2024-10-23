@@ -3,11 +3,10 @@ import { observer } from 'mobx-react-lite';
 
 import { WorkspaceStore } from '@/stores';
 
-import { Workspace, SettingsView } from '@/components/workspace';
+import { Workspace, SettingsPanel } from '@/components/workspace';
 
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
-import { CodeEditor } from './CodeEditor';
-import { CodeWorkspaceTabs } from './CodeWorkspaceTabs';
+import { CodePanel } from './panels';
 
 const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
     layout: {
@@ -27,12 +26,12 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
                                 type: 'tabset',
                                 weight: 100,
                                 selected: 0,
-                                enableTabStrip: true,
+                                enableTabStrip: false,
                                 children: [
                                     {
                                         type: 'tab',
                                         name: 'Editor',
-                                        component: 'editor',
+                                        component: 'code',
                                         config: {},
                                     },
                                 ],
@@ -55,12 +54,12 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
                                 type: 'tabset',
                                 weight: 100,
                                 selected: 0,
-                                enableTabStrip: true,
+                                enableTabStrip: false,
                                 children: [
                                     {
                                         type: 'tab',
-                                        name: 'Editor',
-                                        component: 'editor',
+                                        name: 'Settings',
+                                        component: 'settings',
                                         config: {},
                                     },
                                 ],
@@ -76,10 +75,10 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
 const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (node) => {
     const component = node.getComponent();
 
-    if (component === 'editor') {
-        return <CodeEditor />;
+    if (component === 'code') {
+        return <CodePanel />;
     } else if (component === 'settings') {
-        return <SettingsView />;
+        return <SettingsPanel />;
     }
 
     return <>{component}</>;
@@ -107,7 +106,6 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
         <>
             <Workspace
                 workspace={workspace}
-                startTopbar={<CodeWorkspaceTabs />}
                 endTopbar={<CodeWorkspaceActions />}
                 factory={FACTORY}
             ></Workspace>
