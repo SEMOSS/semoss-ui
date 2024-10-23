@@ -150,7 +150,7 @@ export const PromptBuilderContextStep = (props: {
                 >
                     <Typography variant="body1">Prompt Context</Typography>
                     <PromptLibraryDialogButton
-                        disabled={isPromptLibraryDisabled}
+                        disabled={false}
                         builder={props.builder}
                     />
                 </Stack>
