@@ -50,6 +50,7 @@ import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
 import PIE_CHART_IMAGE from '@/assets/img/PIE_CHART.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
+import BLOCK_PDF_VIEWER from '@/assets/img/BLOCK_PDF_VIEWER.png';
 import {
     CLASS_DIAGRAM,
     ENTITY_RELATIONSHIP_DIAGRAM,
@@ -304,6 +305,24 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                 src: '',
                 title: '',
                 enableFrameInteractions: true,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
+        image: BLOCK_PDF_VIEWER,
+        name: 'PDF Viewer',
+        json: {
+            widget: 'pdfViewer',
+            data: {
+                style: {
+                    width: '100%',
+                    height: '80px',
+                    padding: '8px',
+                },
+                selectedPdf: null,
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],
