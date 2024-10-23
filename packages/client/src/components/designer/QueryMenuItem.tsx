@@ -153,8 +153,8 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
         <StyledListItem onMouseDown={handleMouseDown}>
             <List.ItemButton
                 onClick={() => {
-                    // switch the view
-                    workspace.setView('data');
+                    // select the active panel
+                    workspace.selectPanel('notebook');
 
                     // select the query
                     notebook.selectQuery(query.id);

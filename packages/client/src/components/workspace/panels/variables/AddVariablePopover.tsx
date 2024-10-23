@@ -30,12 +30,12 @@ import {
 } from '@/stores';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
-import { DefaultBlocks } from '../block-defaults';
+import { DefaultBlocks } from '../../../block-defaults';
 import {
     BLOCK_TYPE_COMPARE,
     BLOCK_TYPE_INPUT,
-} from '../block-defaults/block-defaults.constants';
-import { BlocksRenderer } from '../blocks-workspace';
+} from '../../../block-defaults/block-defaults.constants';
+import { BlocksRenderer } from '../../../blocks-workspace';
 import { VARIABLE_TYPES } from '@/stores';
 import {
     capitalizeFirstLetter,

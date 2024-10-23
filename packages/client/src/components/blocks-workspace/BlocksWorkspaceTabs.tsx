@@ -1,33 +1,59 @@
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Tabs } from '@semoss/ui';
+import { styled, Button, Menu } from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
 
-const StyledTabItem = styled(Tabs.Item)(() => ({
-    minHeight: 'auto',
-    minWidth: 'auto',
-    paddingTop: '11px',
-    paddingRight: '8px',
-    paddingBottom: '11px',
-    paddingLeft: '8px',
+const StyledButton = styled(Button)(({ theme }) => ({
+    width: theme.spacing(16),
 }));
 
 export const BlocksWorkspaceTabs = observer(() => {
     const { workspace } = useWorkspace();
 
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const handleOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    /**
+     * Close the menu and select a layout
+     * @param layout -
+     */
+    const handleClose = (layout?: string) => {
+        setAnchorEl(null);
+
+        if (layout) {
+            workspace.selectLayout(layout);
+        }
+    };
+
+    console.log(workspace.selectedLayout);
+
     return (
-        <Tabs
-            value={workspace.view}
-            onChange={(e, v) => workspace.setView(v as string)}
-            //TODO: Fix inline style
-            sx={{
-                minHeight: '40px',
-                height: '40px',
-            }}
-        >
-            <StyledTabItem label="Data" value={'data'} />
-            <StyledTabItem label="Design" value={'design'} />
-            <StyledTabItem label="Settings" value={'settings'} />
-        </Tabs>
+        <>
+            <StyledButton
+                variant="outlined"
+                size="small"
+                onClick={(e) => handleOpen(e)}
+            >
+                {workspace.selectedLayout ? workspace.selectedLayout.name : ''}
+            </StyledButton>
+            <Menu anchorEl={anchorEl} open={open} onClose={() => handleClose()}>
+                {workspace.availableLayouts.map((a, lIdx) => {
+                    return (
+                        <Menu.Item
+                            key={lIdx}
+                            value={a.id}
+                            onClick={(e) => handleClose(a.id)}
+                        >
+                            {a.name}
+                        </Menu.Item>
+                    );
+                })}
+            </Menu>
+        </>
     );
 });

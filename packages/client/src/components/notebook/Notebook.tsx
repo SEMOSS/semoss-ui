@@ -1,67 +1,24 @@
-import { Tooltip, styled } from '@semoss/ui';
+import { styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { Code } from '@mui/icons-material';
 
-import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
-
-import { NotebookVariablesMenu } from './NotebookVariablesMenu';
 import { NotebookSheet } from './NotebookSheet';
 import { useEffect, useState } from 'react';
 import { NotebookSheetsMenu } from './NotebookSheetsMenu';
 
-import { useBlocks, usePixel } from '@/hooks';
+import { usePixel } from '@/hooks';
 
 import { LLMContext } from '@/contexts';
 
 const StyledNotebook = styled('div')(() => ({
     display: 'flex',
-    flexDirection: 'row',
+    flexDirection: 'column',
     position: 'relative',
     height: '100%',
     width: '100%',
     overflow: 'hidden',
 }));
 
-const StyledLeftPanel = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: theme.spacing(45),
-    overflow: 'hidden',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledRightPanel = styled('div')(() => ({
-    height: '100%',
-    flex: 1,
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-}));
-
 export const Notebook = observer(() => {
-    const { state } = useBlocks();
-
-    // view
-    const [view, setView] = useState<
-        'variables' | 'sources' | 'blocks' | 'transform' | 'variants' | ''
-    >('variables');
-
-    /**
-     * Set the view. If it is the same, close it
-     * @param v
-     */
-    const updateView = (v: typeof view) => {
-        // close if not passed in or the same
-        if (!v || v === view) {
-            setView('');
-            return;
-        }
-
-        // set the view
-        setView(v);
-    };
-
     const [modelId, setModelId] = useState<string>('');
     const [models, setModels] = useState<
         { app_id: string; app_name: string }[]
@@ -88,41 +45,18 @@ export const Notebook = observer(() => {
 
     return (
         <StyledNotebook>
-            <Sidebar>
-                <SidebarItem
-                    selected={view === 'variables'}
-                    onClick={() => updateView('variables')}
-                >
-                    <Tooltip title={'Add'} placement="right">
-                        <Code color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Variables</SidebarText>
-                </SidebarItem>
-            </Sidebar>
-            {view ? (
-                <StyledLeftPanel>
-                    {view === 'variables' && <NotebookVariablesMenu />}
-                </StyledLeftPanel>
-            ) : null}
-
-            <StyledRightPanel>
-                <LLMContext.Provider
-                    value={{
-                        modelId: modelId,
-                        modelOptions: models,
-                        setModel: (id) => {
-                            setModelId(id);
-                        },
-                    }}
-                >
-                    {view === 'variables' && (
-                        <>
-                            <NotebookSheetsMenu />
-                            <NotebookSheet />
-                        </>
-                    )}
-                </LLMContext.Provider>
-            </StyledRightPanel>
+            <LLMContext.Provider
+                value={{
+                    modelId: modelId,
+                    modelOptions: models,
+                    setModel: (id) => {
+                        setModelId(id);
+                    },
+                }}
+            >
+                <NotebookSheetsMenu />
+                <NotebookSheet />
+            </LLMContext.Provider>
         </StyledNotebook>
     );
 });

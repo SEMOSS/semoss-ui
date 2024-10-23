@@ -15,7 +15,7 @@ import {
 } from '@semoss/ui';
 import { useBlocks, usePixel } from '@/hooks';
 import { AddVariablePopover } from './AddVariablePopover';
-import { NotebookVariable } from './NotebookVariable';
+import { NotebookVariable } from '../../../notebook/NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
 import { VARIABLE_TYPES } from '@/stores';
 
@@ -59,9 +59,9 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 /**
- * Render the variables menu of the notebook
+ * Render the variables menu
  */
-export const NotebookVariablesMenu = observer((): JSX.Element => {
+export const VariablesPanel = observer((): JSX.Element => {
     const { state } = useBlocks();
 
     /**

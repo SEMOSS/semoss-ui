@@ -15,7 +15,7 @@ import {
 } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
-import { AddVariablePopover } from './AddVariablePopover';
+import { AddVariablePopover } from '../workspace/panels/variables/AddVariablePopover';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';

@@ -5,18 +5,29 @@ import {
     Stack,
     Typography,
     Tooltip,
-    Alert,
     useNotification,
 } from '@semoss/ui';
-import { ArrowBack, InfoOutlined, ErrorOutlined } from '@mui/icons-material';
+import { ArrowBack, InfoOutlined } from '@mui/icons-material';
 
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore } from '@/stores';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePixel } from '@/hooks';
+import { IJsonModel, Layout, Model, TabNode } from 'flexlayout-react';
+import 'flexlayout-react/style/light.css';
+import { computed } from 'mobx';
+
+const DEFAULT_MODEL: IJsonModel = {
+    global: {},
+    borders: [],
+    layout: {
+        type: 'row',
+        children: [],
+    },
+};
 
 const StyledMain = styled('div')(() => ({
     display: 'flex',
@@ -50,13 +61,14 @@ const StyledHeaderTitle = styled(Stack)(() => ({
 }));
 
 const StyledContent = styled('div')(() => ({
+    position: 'relative',
     flex: '1',
     height: '100%',
     width: '100%',
     overflow: 'hidden',
 }));
 
-interface WorkspaceProps {
+type WorkspaceProps = {
     /** Start items to render in the top bar */
     startTopbar?: React.ReactNode;
 
@@ -66,12 +78,12 @@ interface WorkspaceProps {
     /** Footer to render */
     footer?: React.ReactNode;
 
-    /** Content to render  */
-    children: React.ReactNode;
-
     /** Workspace to render */
     workspace: WorkspaceStore;
-}
+
+    /** Factor method */
+    factory: (node: TabNode) => React.ReactNode;
+};
 
 export const Workspace = observer((props: WorkspaceProps) => {
     const notification = useNotification();
@@ -81,11 +93,20 @@ export const Workspace = observer((props: WorkspaceProps) => {
         endTopbar: endTopbar = null,
         footer = null,
         workspace,
-        children,
+        factory,
     } = props;
 
     const { pathname } = useLocation();
     const navigate = useNavigate();
+
+    // build the model from the layout
+    const model = computed(() =>
+        Model.fromJson(
+            workspace.selectedLayout
+                ? workspace.selectedLayout.data
+                : DEFAULT_MODEL,
+        ),
+    ).get();
 
     const validateDependencies = usePixel(
         'ValidateUserProjectDependencies(project="' + workspace.appId + '");',
@@ -178,7 +199,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         </Alert>
                     )} */}
                     <WorkspaceLoading />
-                    {children}
+                    <Layout model={model} factory={factory} />
                 </StyledContent>
                 {footer}
             </StyledMain>

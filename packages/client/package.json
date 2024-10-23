@@ -25,6 +25,7 @@
         "axios": "^1.5.0",
         "dayjs": "^1.11.4",
         "dompurify": "^2.3.10",
+        "flexlayout-react": "^0.6.10",
         "marked": "^4.0.18",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",

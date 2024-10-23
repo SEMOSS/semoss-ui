@@ -9,6 +9,82 @@ import { CodeWorkspaceActions } from './CodeWorkspaceActions';
 import { CodeEditor } from './CodeEditor';
 import { CodeWorkspaceTabs } from './CodeWorkspaceTabs';
 
+const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
+    layout: {
+        selected: 'code',
+        available: [
+            {
+                id: 'code',
+                name: 'Code',
+                data: {
+                    global: { tabEnableClose: false },
+                    borders: [],
+                    layout: {
+                        type: 'row',
+                        weight: 100,
+                        children: [
+                            {
+                                type: 'tabset',
+                                weight: 100,
+                                selected: 0,
+                                enableTabStrip: true,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'Editor',
+                                        component: 'editor',
+                                        config: {},
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                id: 'settings',
+                name: 'Settings',
+                data: {
+                    global: { tabEnableClose: false },
+                    borders: [],
+                    layout: {
+                        type: 'row',
+                        weight: 100,
+                        children: [
+                            {
+                                type: 'tabset',
+                                weight: 100,
+                                selected: 0,
+                                enableTabStrip: true,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'Editor',
+                                        component: 'editor',
+                                        config: {},
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
+    },
+};
+
+const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (node) => {
+    const component = node.getComponent();
+
+    if (component === 'editor') {
+        return <CodeEditor />;
+    } else if (component === 'settings') {
+        return <SettingsView />;
+    }
+
+    return <>{component}</>;
+};
+
 interface CodeWorkspaceProps {
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -23,7 +99,7 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
     useEffect(() => {
         // set the initial settings
         workspace.configure({
-            view: 'code',
+            ...CONFIG,
         });
     }, []);
 
@@ -33,10 +109,8 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
                 workspace={workspace}
                 startTopbar={<CodeWorkspaceTabs />}
                 endTopbar={<CodeWorkspaceActions />}
-            >
-                {workspace.view === 'code' ? <CodeEditor /> : null}
-                {workspace.view === 'settings' ? <SettingsView /> : null}
-            </Workspace>
+                factory={FACTORY}
+            ></Workspace>
         </>
     );
 });

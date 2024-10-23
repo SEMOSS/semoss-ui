@@ -115,8 +115,8 @@ export const QueryMenu = observer((): JSX.Element => {
                         workspace.closeOverlay();
 
                         if (newQueryId) {
-                            // switch the view
-                            workspace.setView('data');
+                            // select the active panel
+                            workspace.selectPanel('notebook');
 
                             // select the query
                             notebook.selectQuery(newQueryId);

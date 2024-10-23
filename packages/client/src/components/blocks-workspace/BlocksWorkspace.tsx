@@ -15,7 +15,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
 import { Notebook } from '@/components/notebook';
 import { Designer } from '@/components/designer';
-import { Workspace, Settings } from '@/components/workspace';
+import { Workspace, Settings, VariablesPanel } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
@@ -42,6 +42,151 @@ const StyledFooter = styled('div')(({ theme }) => ({
 }));
 
 const ACTIVE = 'page-1';
+
+const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
+    layout: {
+        selected: 'builder',
+        available: [
+            {
+                id: 'builder',
+                name: 'Builder',
+                data: {
+                    global: { tabEnableClose: false },
+                    borders: [
+                        {
+                            type: 'border',
+                            location: 'left',
+                            children: [
+                                {
+                                    type: 'tab',
+                                    name: 'Variables',
+                                    component: 'variables',
+                                    config: {},
+                                },
+                            ],
+                        },
+                    ],
+                    layout: {
+                        type: 'row',
+                        weight: 100,
+                        children: [
+                            {
+                                type: 'tabset',
+                                weight: 100,
+                                selected: 1,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'Notebook',
+                                        component: 'notebook',
+                                        config: {},
+                                    },
+                                    {
+                                        type: 'tab',
+                                        name: 'Designer',
+                                        component: 'designer',
+                                        config: {},
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                id: 'data-science',
+                name: 'Data Science',
+                data: {
+                    global: { tabEnableClose: false },
+                    borders: [
+                        {
+                            type: 'border',
+                            location: 'left',
+                            children: [
+                                {
+                                    type: 'tab',
+                                    name: 'Variables',
+                                    component: 'variables',
+                                    config: {},
+                                },
+                            ],
+                        },
+                    ],
+                    layout: {
+                        type: 'row',
+                        weight: 100,
+                        children: [
+                            {
+                                type: 'tabset',
+                                weight: 100,
+                                selected: 0,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'Notebook',
+                                        component: 'notebook',
+                                        config: {},
+                                    },
+                                    {
+                                        type: 'tab',
+                                        name: 'Designer',
+                                        component: 'designer',
+                                        config: {},
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                id: 'settings',
+                name: 'Settings',
+                data: {
+                    global: { tabEnableClose: false },
+                    borders: [],
+                    layout: {
+                        type: 'row',
+                        weight: 100,
+                        children: [
+                            {
+                                type: 'tabset',
+                                weight: 100,
+                                selected: 0,
+                                enableTabStrip: true,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'Settings',
+                                        component: 'settings',
+                                        config: {},
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+        ],
+    },
+};
+
+const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (node) => {
+    const component = node.getComponent();
+
+    if (component === 'designer') {
+        return <Designer />;
+    } else if (component === 'notebook') {
+        return <Notebook />;
+    } else if (component === 'variables') {
+        return <VariablesPanel />;
+    } else if (component === 'settings') {
+        return <Settings />;
+    }
+
+    return <>{component}</>;
+};
+
 interface BlocksWorkspaceProps {
     /** Workspace to render */
     workspace: WorkspaceStore;
@@ -59,7 +204,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     useEffect(() => {
         // set the initial settings
         workspace.configure({
-            view: 'design',
+            ...CONFIG,
         });
 
         // start the loading screen
@@ -155,16 +300,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                         </Stack>
                     </StyledFooter>
                 }
-            >
-                {process.env.NODE_ENV == 'development' && (
-                    <BlocksWorkspaceDev />
-                )}
-                <StyledMain>
-                    {workspace.view === 'design' ? <Designer /> : null}
-                    {workspace.view === 'data' ? <Notebook /> : null}
-                    {workspace.view === 'settings' ? <Settings /> : null}
-                </StyledMain>
-            </Workspace>
+                factory={FACTORY}
+            />
         </Blocks>
     );
 });

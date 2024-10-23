@@ -6,3 +6,5 @@ export * from './ShareOverlay';
 export * from './PreviewOverlay';
 
 export * from './workspace.types';
+
+export * from './panels';
