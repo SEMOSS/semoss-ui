@@ -110,7 +110,7 @@ export const config: BlockConfig<ToggleButtonBlockDef> = {
                         <SelectInputSettings
                             id={id}
                             label="Size"
-                            path="color"
+                            path="size"
                             options={[
                                 {
                                     value: 'small',
