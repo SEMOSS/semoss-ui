@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
 import { setValueByPath } from '@/utility';
 
-import { CellComponent, CellConfig, CellDef } from './state.types';
+import { CellComponent, CellConfig, CellDef, PixelConfig } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
 import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
@@ -229,7 +229,7 @@ export class CellState<D extends CellDef = CellDef> {
      */
     toPixel(
         parameters: Record<string, unknown> = this._store.parameters,
-    ): string | string[] {
+    ): string | PixelConfig[] {
         const cellConfig = this.config;
 
         // use the toPixel from the cell
@@ -267,11 +267,11 @@ export class CellState<D extends CellDef = CellDef> {
             this._store.isLoading = true;
 
             // convert the cells to the raw pixel
-            const raw: string | string[] = this.toPixel();
+            const pixelReturn = this.toPixel();
 
             // Determine if multiple pixels need to be ran.
-            if (typeof raw === 'string') {
-                const { opType, output } = await this.runPixel(raw);
+            if (typeof pixelReturn === 'string') {
+                const { opType, output } = await this.runPixel(pixelReturn);
 
                 runInAction(() => {
                     // store the operation and output
@@ -280,15 +280,19 @@ export class CellState<D extends CellDef = CellDef> {
                     // save the last output
                     this._store.output = output;
                 });
-            } else if (Array.isArray(raw)) {
+            } else if (Array.isArray(pixelReturn)) {
                 // Collect responses for each call to store in state.
                 let opTypes = [];
                 const outputs = [];
 
-                for (const str of raw) {
-                    const { opType, output } = await this.runPixel(str);
-                    opTypes = [...opTypes, ...opType[0]];
-                    outputs.push(output);
+                for (const obj of pixelReturn) {
+                    const res = await this.runPixel(obj.pixel);
+                    if (typeof res.output !== 'object') return;
+                    opTypes = [...opTypes, ...res.opType[0]];
+                    outputs.push({
+                        ...res.output,
+                        variantId: obj.parameters.variantId,
+                    });
                 }
 
                 runInAction(() => {

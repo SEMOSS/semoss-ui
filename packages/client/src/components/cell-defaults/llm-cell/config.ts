@@ -19,7 +19,13 @@ export const LLMCellConfig: CellConfig<LLMCellDef> = {
             if (length) pixel += `"max_new_tokens":${length},`;
             pixel = pixel.replace(/,$/, '');
             pixel += '}]);';
-            return pixel;
+            return {
+                pixel,
+                parameters: {
+                    variantId: key,
+                    selected: variants[key].selected,
+                },
+            };
         });
         return pixels;
     },
