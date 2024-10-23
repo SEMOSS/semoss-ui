@@ -96,9 +96,29 @@ export const PromptModal = (props: PromptModalProps) => {
         return title == '' || title == null || context == '' || context == null;
     };
 
+    const createContextString = () => {
+        const stringArr = [];
+        if (prompt?.['inputs']) {
+            prompt['inputs'].forEach((input) => {
+                let currInput = '';
+                if (input.type != 'text') {
+                    currInput = '{{' + input.key + '}}';
+                    stringArr.push(currInput);
+                } else {
+                    stringArr.push(input.key);
+                }
+            });
+
+            return stringArr.join(' ');
+        }
+
+        return '';
+    };
+
     useEffect(() => {
         if (mode == 'Edit' || prompt != null) {
-            setContext(prompt['CONTEXT']);
+            console.log(createContextString());
+            setContext(createContextString());
             setTitle(prompt['TITLE']);
             setIntent(prompt['INTENT']);
             setTags(prompt['tags']);

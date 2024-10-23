@@ -30,6 +30,7 @@ export const PromptBuilderPreviewStep = (props: {
         TITLE: props?.builder?.title?.value,
         CONTEXT: props?.builder?.context?.value,
         tags: props?.builder?.tags?.value,
+        inputs: props?.builder?.inputs?.value,
     });
 
     return (
