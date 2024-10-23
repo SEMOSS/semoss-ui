@@ -1,1 +1,2 @@
-export * from './CodePanel';
+export * from './EditorPanel';
+export * from './RendererPanel';

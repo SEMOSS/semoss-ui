@@ -6,7 +6,7 @@ import { WorkspaceStore } from '@/stores';
 import { Workspace, SettingsPanel } from '@/components/workspace';
 
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
-import { CodePanel } from './panels';
+import { EditorPanel, RendererPanel } from './panels';
 
 const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
     layout: {
@@ -24,7 +24,21 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
                         children: [
                             {
                                 type: 'tabset',
-                                weight: 100,
+                                weight: 50,
+                                selected: 0,
+                                enableTabStrip: false,
+                                children: [
+                                    {
+                                        type: 'tab',
+                                        name: 'App',
+                                        component: 'renderer',
+                                        config: {},
+                                    },
+                                ],
+                            },
+                            {
+                                type: 'tabset',
+                                weight: 50,
                                 selected: 0,
                                 enableTabStrip: false,
                                 children: [
@@ -74,9 +88,12 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
 
 const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (node) => {
     const component = node.getComponent();
+    const rect = node.getRect();
 
     if (component === 'code') {
-        return <CodePanel />;
+        return <EditorPanel />;
+    } else if (component === 'renderer') {
+        return <RendererPanel width={rect.width} />;
     } else if (component === 'settings') {
         return <SettingsPanel />;
     }

@@ -144,7 +144,7 @@ const CONFIG: Parameters<WorkspaceStore['configure']>[0] = {
                                 type: 'tabset',
                                 weight: 100,
                                 selected: 0,
-                                enableTabStrip: true,
+                                enableTabStrip: false,
                                 children: [
                                     {
                                         type: 'tab',

@@ -263,7 +263,8 @@ interface AppEditorProps {
     /**
      * Width of AppEditor Panel, anytime this changes we may have to close AppExplorer
      */
-    width: string;
+    width: number;
+
     /**
      * On Save of edits in the text editor, I would use the hook no need for extra dependency
      */
@@ -362,10 +363,11 @@ export const AppEditor = (props: AppEditorProps) => {
         }
     }, [newDirectoryRefs.current]);
 
+    // TODO: split out assets panel into its own item
+
     // Anytime Panel resizes we want to close/open explorer
     useEffect(() => {
-        const w = parseInt(width.replaceAll('%', ''));
-        if (w < 35) {
+        if (width < 350) {
             setOpenAppAssetsPanel(false);
         } else {
             setOpenAppAssetsPanel(true);

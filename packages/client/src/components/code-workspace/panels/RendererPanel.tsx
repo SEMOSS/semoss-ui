@@ -12,12 +12,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     // height: 'calc(100% - 42px)',
 }));
 
-interface CodeViewPanelProps {
-    editorView: 'settings' | 'permissions' | 'code-editor';
-    width: string;
+interface RenderPanelProps {
+    width: number;
 }
 
-export const CodeViewPanel = (props: CodeViewPanelProps) => {
+export const RendererPanel = (props: RenderPanelProps) => {
     const { width } = props;
 
     const { monolithStore } = useRootStore();
