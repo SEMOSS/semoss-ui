@@ -11,6 +11,7 @@ import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { buildListener } from '../block-defaults.shared';
 import { UploadSettings } from '@/components/block-settings/shared/UploadSettings';
 import { SelectSettings } from '@/components/block-settings/shared/SelectSettings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 export const DefaultStyles: CSSProperties = {
     width: '100%',
     padding: '4px',
@@ -56,6 +57,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         loading: false,
         disabled: false,
         required: false,
+        multifile: false,
     },
     listeners: {
         onChange: [],
@@ -109,6 +111,16 @@ export const config: BlockConfig<UploadBlockDef> = {
                             label="Loading"
                             path="loading"
                             queryPath="isLoading"
+                        />
+                    ),
+                },
+                {
+                    description: 'Multiple Files',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Multiple Files"
+                            path="multifile"
                         />
                     ),
                 },
