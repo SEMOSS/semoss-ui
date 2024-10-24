@@ -63,6 +63,7 @@ export const ConfigureSubMenu = observer(() => {
 
         const modelledVariant = {
             id: editorVariantName,
+            selected: editorVariant.selected,
             sortWeight: 0, // TODO: order variants in future LLM COmparison version
             model: {
                 id: editorVariant.model.value || '',
@@ -73,41 +74,40 @@ export const ConfigureSubMenu = observer(() => {
             },
         };
 
-        let query;
-        if (
-            typeof data.queryId === 'string' &&
-            typeof data.cellId === 'string'
-        ) {
-            query = state.getQuery(data.queryId);
+        let variable;
+        if (typeof data.variableId === 'string') {
+            variable = state.variables[data.variableId];
         } else {
             console.log("Type of 'data.queryId' is NOT a string");
             return;
         }
 
-        // clear any pre-populated outputs for each cell and its variants.
-        Object.values(query.cells).forEach((cell: CellState) => {
-            if (cell.output) {
-                state.dispatch({
-                    message: ActionMessages.UPDATE_CELL,
-                    payload: {
-                        queryId:
-                            typeof data.queryId === 'string'
-                                ? data.queryId
-                                : '',
-                        cellId: cell.id,
-                        path: `output`,
-                        value: undefined,
-                    },
-                });
-            }
-        });
+        // clear any pre-populated outputs for the cell.
+        const query = state.getQuery(variable.to);
+        const cell = query.getCell(variable.cellId);
+        if (cell) {
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: variable.to,
+                    cellId: cell.id,
+                    path: 'output',
+                    value: undefined,
+                },
+            });
+        } else {
+            console.log(
+                `LLM Cell not found with variableId; ${data.variableId}`,
+            );
+            return;
+        }
 
         // Update Variant in the cell
         state.dispatch({
             message: ActionMessages.UPDATE_CELL,
             payload: {
-                queryId: data.queryId,
-                cellId: data.cellId,
+                queryId: variable.to,
+                cellId: cell.id,
                 path: `parameters.variants.${editorVariantName}`,
                 value: modelledVariant,
             },

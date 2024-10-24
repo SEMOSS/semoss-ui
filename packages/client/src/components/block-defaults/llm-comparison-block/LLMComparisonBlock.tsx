@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBlock, useBlocks } from '@/hooks';
-import { BlockComponent, BlockDef, CellState } from '@/stores';
+import {
+    ActionMessages,
+    BlockComponent,
+    BlockDef,
+    CellState,
+    Variant,
+} from '@/stores';
 import {
     IconButton,
     Stack,
@@ -9,16 +15,13 @@ import {
     styled,
     Icon,
     Checkbox,
+    useNotification,
 } from '@semoss/ui';
+import { runPixel } from '@/api';
 import { observer } from 'mobx-react-lite';
-import {
-    CheckBoxRounded,
-    CheckCircle,
-    Star,
-    StarBorder,
-} from '@mui/icons-material';
+import { CheckCircle } from '@mui/icons-material';
+import { Rating } from '@mui/material';
 import { CircularProgress } from '@semoss/ui';
-import { toJS } from 'mobx';
 
 const StyledLLMComparisonBlock = styled('section')(({ theme }) => ({
     margin: theme.spacing(1),
@@ -48,10 +51,6 @@ const StyledRatingRow = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledStarButton = styled(IconButton)(({ theme }) => ({
-    padding: 0,
-}));
-
 const StyledContentHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
@@ -67,40 +66,44 @@ export interface LLMComparisonBlockDef extends BlockDef<'llmComparison'> {
 export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock(id);
     const { state } = useBlocks();
+    const notification = useNotification();
     const cellIsLoadingRef = useRef(false);
+    const [loadingRating, toggleLodaingRating] = useState(false);
     const [selectedTab, setSelectedTab] = useState<string>('');
-    const [cell, setCell] = useState<CellState | null>(null);
+    const [variable, setVariable] = useState(null);
+    const [cell, setCell] = useState(null);
     const [variants, setVariants] = useState({});
     const displayed = (variants || {})[selectedTab] || {};
-    const [highlightedRating, setHighlightedRating] = useState(0);
+    const rating = displayed.rating ? displayed.rating : 0;
 
     // get the blocks' cell
     useEffect(() => {
-        if (!data.queryId || !data.cellId) {
+        if (!data.variableId) {
             setVariants({});
+            setVariable(null);
             setCell(null);
             return;
-        } else {
-            let selectedCell: CellState | null = null;
-            if (
-                typeof data.queryId === 'string' &&
-                typeof data.cellId === 'string'
-            ) {
-                selectedCell = state.getQuery(data.queryId).cells[data.cellId];
-            }
-
-            if (!selectedCell) {
-                setVariants({});
-                setCell(null);
+        } else if (typeof data.variableId === 'string') {
+            const variable = state.variables[data.variableId];
+            setVariable(variable || null);
+            if (!variable || variable.type !== 'cell') {
+                console.log(
+                    `Error retrieving variable with ID: ${data.variableId}`,
+                );
             } else {
-                setCell(selectedCell);
-                getVariantsFromCell(selectedCell);
+                const query = state.getQuery(variable.to);
+                const c = query.getCell(variable.cellId);
+                if (c) {
+                    setCell(c);
+                    getVariantsFromCell(c);
+                } else {
+                    console.log('Error retrieving Cell from the variable.');
+                }
             }
         }
-    }, [data.queryId, data.cellId]);
+    }, [data.variableId]);
 
     // Refresh the variant's responses when the query has finished loading.
-    // May want to refactor this to have a more direct solution for triggering the refresh.3
     useEffect(() => {
         if (!cell) return;
 
@@ -115,11 +118,13 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     const getVariantsFromCell = (selectedCell: CellState) => {
         const modelledVars = {};
         Object.values(selectedCell.parameters.variants).forEach(
-            (variant, idx) => {
+            (variant: Variant, idx) => {
                 modelledVars[variant.id] = {
                     ...variant,
                     response: (selectedCell?.output || [])[idx]?.response,
-                    selected: idx === 0,
+                    messageId: (selectedCell?.output || [])[idx]?.messageId,
+                    rating: null,
+                    selected: variant.selected,
                 };
             },
         );
@@ -129,12 +134,54 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
         setVariants(modelledVars);
     };
 
-    const handleRateResponse = (num: number) => {
-        // TODO: set rating for a variant's response using the rating from the 'num' param.
+    // Set the new rating in the DB and update the variant's rating in state.
+    const handleRateResponse = async (num: number) => {
+        toggleLodaingRating(true);
+        const pixel = `SubmitLlmFeedback(messageId="${displayed.messageId}", feedbackText="${num}", rating=true);`;
+
+        try {
+            await runPixel(pixel);
+            const variantsCopy = { ...variants };
+            variantsCopy[displayed.id].rating = num;
+            setVariants(variantsCopy);
+        } catch {
+            notification.add({
+                color: 'error',
+                message: `There was an error setting a rating for the response.`,
+            });
+        } finally {
+            toggleLodaingRating(false);
+        }
     };
 
     const handleChangeSelected = () => {
-        // TODO
+        const variantsCopy = { ...variants };
+
+        // Prevent user from de-selecting variant. (one must always be selected).
+        if (displayed.selected) return;
+
+        // update the newly selected variant, and de-select all others.
+        let currentSelected;
+        Object.keys(variantsCopy).forEach((key: string) => {
+            if (variantsCopy[key].selected) currentSelected = key;
+            variantsCopy[key].selected = selectedTab === key ? true : false;
+        });
+
+        setVariants(variantsCopy);
+
+        // update variants in the cell's state.
+        const cellVariants = { ...cell.parameters.variants };
+        if (currentSelected) cellVariants[currentSelected].selected = false;
+        cellVariants[displayed.id].selected = true;
+        state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+                queryId: variable.to,
+                cellId: cell.id,
+                path: `parameters.variants`,
+                value: cellVariants,
+            },
+        });
     };
 
     return (
@@ -158,28 +205,28 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                     >
                         {Object.keys(variants).map((key, idx: number) => {
                             const selected = variants[key].selected;
-                            const name =
+                            const variantName =
                                 key.toLowerCase() === 'default'
                                     ? 'Default Variant'
                                     : `Variant ${key.toUpperCase()}`;
-                            // const label = selected ? (
-                            //     <Stack
-                            //         direction="row"
-                            //         gap={0}
-                            //         alignItems="flex-end"
-                            //     >
-                            //         <Icon color="primary">
-                            //             <CheckCircle />
-                            //         </Icon>
-                            //         <span>{name}</span>
-                            //     </Stack>
-                            // ) : (
-                            //     name
-                            // );
+                            const label = selected ? (
+                                <Stack
+                                    direction="row"
+                                    gap={0}
+                                    alignItems="flex-end"
+                                >
+                                    <Icon color="primary">
+                                        <CheckCircle />
+                                    </Icon>
+                                    <span>{variantName}</span>
+                                </Stack>
+                            ) : (
+                                variantName
+                            );
                             return (
                                 <Tabs.Item
                                     key={`${key}-${idx}`}
-                                    label={name}
+                                    label={label}
                                     value={key}
                                 />
                             );
@@ -193,11 +240,11 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                     Model: {displayed.model.name}
                                 </Typography>
 
-                                {/* <Checkbox
+                                <Checkbox
                                     checked={displayed.selected}
                                     onChange={handleChangeSelected}
-                                    label="Use Model"
-                                /> */}
+                                    label="Use Response"
+                                />
                             </StyledContentHeader>
 
                             {cell?.isLoading ? (
@@ -208,87 +255,22 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
                                 <div>{displayed.response}</div>
                             )}
 
-                            {/* <StyledRatingRow>
+                            <StyledRatingRow>
                                 <Typography color="secondary" variant="body2">
                                     What would you rate this response?
                                 </Typography>
 
-                                <Stack
-                                    direction="row"
-                                    onMouseLeave={() => {
-                                        setHighlightedRating(0);
-                                    }}
-                                    onBlur={() => {
-                                        setHighlightedRating(0);
-                                    }}
-                                >
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(1)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(1)
+                                {loadingRating ? (
+                                    <CircularProgress />
+                                ) : (
+                                    <Rating
+                                        value={rating}
+                                        onChange={(e, val) =>
+                                            handleRateResponse(val)
                                         }
-                                        onFocus={() => setHighlightedRating(1)}
-                                    >
-                                        {highlightedRating >= 1 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(2)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(2)
-                                        }
-                                        onFocus={() => setHighlightedRating(2)}
-                                    >
-                                        {highlightedRating >= 2 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(3)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(3)
-                                        }
-                                        onFocus={() => setHighlightedRating(3)}
-                                    >
-                                        {highlightedRating >= 3 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(4)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(4)
-                                        }
-                                        onFocus={() => setHighlightedRating(4)}
-                                    >
-                                        {highlightedRating >= 4 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                    <StyledStarButton
-                                        onClick={() => handleRateResponse(5)}
-                                        onMouseEnter={() =>
-                                            setHighlightedRating(5)
-                                        }
-                                        onFocus={() => setHighlightedRating(5)}
-                                    >
-                                        {highlightedRating === 5 ? (
-                                            <Star />
-                                        ) : (
-                                            <StarBorder />
-                                        )}
-                                    </StyledStarButton>
-                                </Stack>
-                            </StyledRatingRow> */}
+                                    />
+                                )}
+                            </StyledRatingRow>
                         </Stack>
                     ) : (
                         <>

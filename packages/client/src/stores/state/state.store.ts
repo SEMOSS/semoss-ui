@@ -18,6 +18,7 @@ import {
     Variable,
     VariableType,
     VariableWithId,
+    Variant,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -495,7 +496,20 @@ export class StateStore {
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
-                return value;
+                if (Array.isArray(value)) {
+                    // From the list of responses in the variable, find and return the one that is 'selected'
+                    const selectedValue = value.find((val) => val.selected);
+                    if (!selectedValue) {
+                        console.log(
+                            'ERROR: could not find a selected value for the cell',
+                        );
+                        return undefined;
+                    } else {
+                        return selectedValue.response;
+                    }
+                } else {
+                    return value;
+                }
             }
 
             if (value === undefined) {
@@ -1153,6 +1167,7 @@ export class StateStore {
                         type: 'pixel',
                     },
                     widget: 'code',
+                    type: 'code',
                 } as Omit<CellStateConfig, 'id'>,
                 '',
             );
@@ -1265,7 +1280,6 @@ export class StateStore {
         if (isOutput) token['isOutput'] = isOutput;
         if (value) token['value'] = value;
 
-        debugger;
         this._store.variables[id] = token as Variable;
 
         return token;
@@ -1364,7 +1378,6 @@ export class StateStore {
      *
      */
     private setExecutionOrder = (orderedList: string[]) => {
-        debugger;
         this._store.executionOrder = orderedList;
         return;
     };

@@ -39,8 +39,7 @@ export type VariableType =
     | 'function'
     | 'JSON'
     | 'date'
-    | 'array'
-    | 'LLM Comparison';
+    | 'array';
 
 /**
  * Variables
@@ -83,6 +82,7 @@ export type VariableWithId =
  */
 export type Variant = {
     id: string;
+    selected: boolean;
     sortWeight: number;
     model: VariantModel;
 };
@@ -308,5 +308,14 @@ export type CellConfig<D extends CellDef = CellDef> = {
     toPixel: (
         /** Parameters associated with the cell */
         parameters: D['parameters'],
-    ) => string | string[];
+    ) => string | PixelConfig[];
+};
+
+// Adding type to handle cases for multiple pixel returns for a cell. Will want to better typeguard 'parameters' in the future.
+export type PixelConfig = {
+    /** Formatted pixel string */
+    pixel: string;
+
+    /** Parameters associated with the pixel */
+    parameters: Record<string, unknown>;
 };

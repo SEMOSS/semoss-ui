@@ -5,13 +5,12 @@ import {
     Stack,
     TextField,
     Button,
-    Typography,
     useNotification,
+    IconButton,
 } from '@semoss/ui';
 import { ActionMessages, CellComponent, CellDef, Variant } from '@/stores';
 import { useBlocks, useRootStore } from '@/hooks';
 import { LLMCellVariant } from './LLMCellVariant';
-import { toJS } from 'mobx';
 import { Add } from '@mui/icons-material';
 import { generateVariantName } from '@/components/block-defaults/llm-comparison-block/LlmComparison.utility';
 
@@ -26,29 +25,38 @@ export interface LLMCellDef extends CellDef<'llm'> {
     };
 }
 
-type ModelEngine = {
-    name: string;
-    databaseId: string;
-    topP: number;
-    temperature: number;
-    length: number;
-};
-
 const StyledStack = styled(Stack)(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledActionButtons = styled('div')(({ theme }) => ({
+const StyledVariants = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'count',
+})<{ count: number }>(({ theme, count }) => ({
     width: '100%',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: theme.spacing(1),
+    gap: theme.spacing(2),
+    overflowX: 'scroll',
+    alignItems: 'center',
+
+    ...(count < 4
+        ? {
+              display: 'grid',
+              gridTemplateColumns: `repeat(${count}, 1fr) auto`,
+          }
+        : {
+              display: 'flex',
+          }),
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+    whiteSpace: 'nowrap',
+    height: 'minContent',
 }));
 
 export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     const { state } = useBlocks();
     const { monolithStore } = useRootStore();
     const notification = useNotification();
+    const [isOpen, toggleOpen] = useState(true);
     const [allModels, setAllModels] = useState<{ name: string; id: string }[]>(
         [],
     );
@@ -69,7 +77,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
                     path: 'parameters.variants.default',
                     value: {
                         id: 'default',
-                        to: '',
+                        selected: true,
                         sortWeight: 0,
                         model: {
                             id: '',
@@ -125,6 +133,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
                     path: `parameters.variants.${newVariantName}`,
                     value: {
                         id: newVariantName,
+                        selected: false,
                         sortWeight: 0,
                         model: {
                             id: '',
@@ -146,23 +155,30 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 
     return (
         <StyledStack gap={3} id={`${cell.query.id} - ${cell.id}`}>
-            <TextField
-                value={command}
-                label={'Command'}
-                multiline={true}
-                rows={4}
-                fullWidth
-                onChange={(e) => {
-                    handleChange(e.target.value, 'parameters.command');
-                }}
-            />
+            <StyledStack gap={2} direction="row">
+                <TextField
+                    value={command}
+                    label="Command"
+                    multiline={true}
+                    rows={3}
+                    fullWidth
+                    onChange={(e) => {
+                        handleChange(e.target.value, 'parameters.command');
+                    }}
+                />
 
-            <StyledStack gap={1} direction="column">
-                <Typography variant="subtitle1" fontWeight="bold">
-                    Variants
-                </Typography>
+                <StyledButton
+                    color="secondary"
+                    variant="text"
+                    size="small"
+                    onClick={() => toggleOpen(!isOpen)}
+                >
+                    {isOpen ? 'Hide Variants' : 'Show Variants'}
+                </StyledButton>
+            </StyledStack>
 
-                <div>
+            {isOpen && (
+                <StyledVariants count={Object.keys(variants).length}>
                     {Object.keys(variants || {}).map((name, idx) => (
                         <LLMCellVariant
                             key={`variant-${name}-${idx}`}
@@ -171,19 +187,12 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
                             cell={cell}
                         />
                     ))}
-                </div>
 
-                <StyledActionButtons>
-                    <Button
-                        variant="text"
-                        color="secondary"
-                        onClick={handleAddVariant}
-                        startIcon={<Add />}
-                    >
-                        Add Variant
-                    </Button>
-                </StyledActionButtons>
-            </StyledStack>
+                    <IconButton title="Add Variant" onClick={handleAddVariant}>
+                        <Add />
+                    </IconButton>
+                </StyledVariants>
+            )}
         </StyledStack>
     );
 });

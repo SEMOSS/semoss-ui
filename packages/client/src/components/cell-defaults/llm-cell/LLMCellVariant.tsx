@@ -12,17 +12,16 @@ import {
 } from '@semoss/ui';
 import { useBlocks } from '@/hooks';
 
-const StyledHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: `${theme.spacing(2)} 0 ${theme.spacing(1)}`,
-}));
-
 const StyledContent = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
-    padding: theme.spacing(2),
-    borderRadius: theme.spacing(1),
+    padding: theme.spacing(1),
+    borderRadius: theme.spacing(1.5),
+    minWidth: '326px',
+}));
+
+const StyledModelLabel = styled(Stack)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
+    height: '34px',
 }));
 
 const StyledSelect = styled(Select)(({ theme }) => ({
@@ -94,145 +93,146 @@ export const LLMCellVariant = observer((props: LLMCellVariantProps) => {
     };
 
     return (
-        <div>
-            <StyledHeader>
-                <Typography variant="subtitle2">
+        <StyledContent>
+            <StyledModelLabel
+                alignItems="center"
+                gap={1}
+                justifyContent="space-between"
+                direction="row"
+            >
+                <Typography color="secondary" variant="body2">
                     {isDefault
-                        ? 'Default Variant'
-                        : `Variant ${variantName.toUpperCase()}`}
+                        ? 'Select Default Variant Model'
+                        : `Select Variant ${variantName.toUpperCase()} Model`}
                 </Typography>
 
                 {!isDefault && (
-                    <IconButton onClick={handleDeleteVariant}>
+                    <IconButton size="small" onClick={handleDeleteVariant}>
                         <Close />
                     </IconButton>
                 )}
-            </StyledHeader>
+            </StyledModelLabel>
 
-            <StyledContent>
-                <StyledField>
-                    <Typography variant="body2">Select Model</Typography>
+            <StyledField>
+                <StyledSelect
+                    value={variant.model.id}
+                    size="small"
+                    onChange={(e) => {
+                        handleModelChange(e.target.value);
+                    }}
+                >
+                    {allModels.map((model, idx) => (
+                        <Select.Item
+                            key={`${model.name}-${idx}`}
+                            value={model.id}
+                        >
+                            {model.name}
+                        </Select.Item>
+                    ))}
+                </StyledSelect>
+            </StyledField>
 
-                    <StyledSelect
-                        value={variant.model.id}
+            <StyledField>
+                <Typography color="secondary" variant="body2">
+                    Top P
+                </Typography>
+
+                <Stack gap={2} direction="row" justifyContent="center">
+                    <Slider
+                        onChange={(e) =>
+                            handleModelParamsChange(e.target.value, 'topP')
+                        }
+                        value={variant.model.topP}
+                        min={0}
+                        max={1}
+                        step={0.1}
                         size="small"
-                        onChange={(e) => {
-                            handleModelChange(e.target.value);
-                        }}
-                    >
-                        {allModels.map((model, idx) => (
-                            <Select.Item
-                                key={`${model.name}-${idx}`}
-                                value={model.id}
-                            >
-                                {model.name}
-                            </Select.Item>
-                        ))}
-                    </StyledSelect>
-                </StyledField>
+                        marks={[
+                            { value: 0, label: '0' },
+                            { value: 1, label: '1' },
+                        ]}
+                        valueLabelDisplay="auto"
+                    />
+                    <StyledTextField
+                        type="number"
+                        size="small"
+                        onChange={(e) =>
+                            handleModelParamsChange(e.target.value, 'topP')
+                        }
+                        value={variant.model.topP}
+                    />
+                </Stack>
+            </StyledField>
 
-                <StyledField>
-                    <Typography variant="body2">Top P</Typography>
+            <StyledField>
+                <Typography color="secondary" variant="body2">
+                    Temperature
+                </Typography>
 
-                    <Stack gap={2} direction="row" justifyContent="center">
-                        <Slider
-                            onChange={(e) =>
-                                handleModelParamsChange(e.target.value, 'topP')
-                            }
-                            value={variant.model.topP}
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            size="small"
-                            marks={[
-                                { value: 0, label: '0' },
-                                { value: 1, label: '1' },
-                            ]}
-                            valueLabelDisplay="auto"
-                        />
-                        <StyledTextField
-                            type="number"
-                            size="small"
-                            onChange={(e) =>
-                                handleModelParamsChange(e.target.value, 'topP')
-                            }
-                            value={variant.model.topP}
-                        />
-                    </Stack>
-                </StyledField>
+                <Stack gap={2} direction="row" justifyContent="center">
+                    <Slider
+                        onChange={(e) =>
+                            handleModelParamsChange(
+                                e.target.value,
+                                'temperature',
+                            )
+                        }
+                        value={variant.model.temperature}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        size="small"
+                        marks={[
+                            { value: 0, label: '0' },
+                            { value: 1, label: '1' },
+                        ]}
+                        valueLabelDisplay="auto"
+                    />
+                    <StyledTextField
+                        type="number"
+                        size="small"
+                        onChange={(e) =>
+                            handleModelParamsChange(
+                                e.target.value,
+                                'temperature',
+                            )
+                        }
+                        value={variant.model.temperature}
+                    />
+                </Stack>
+            </StyledField>
 
-                <StyledField>
-                    <Typography variant="body2">Temperature</Typography>
+            <StyledField>
+                <Typography color="secondary" variant="body2">
+                    Token Length
+                </Typography>
 
-                    <Stack gap={2} direction="row" justifyContent="center">
-                        <Slider
-                            onChange={(e) =>
-                                handleModelParamsChange(
-                                    e.target.value,
-                                    'temperature',
-                                )
-                            }
-                            value={variant.model.temperature}
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            size="small"
-                            marks={[
-                                { value: 0, label: '0' },
-                                { value: 1, label: '1' },
-                            ]}
-                            valueLabelDisplay="auto"
-                        />
-                        <StyledTextField
-                            type="number"
-                            size="small"
-                            onChange={(e) =>
-                                handleModelParamsChange(
-                                    e.target.value,
-                                    'temperature',
-                                )
-                            }
-                            value={variant.model.temperature}
-                        />
-                    </Stack>
-                </StyledField>
-
-                <StyledField>
-                    <Typography variant="body2">Token Length</Typography>
-
-                    <Stack gap={2} direction="row" justifyContent="center">
-                        <Slider
-                            onChange={(e) =>
-                                handleModelParamsChange(
-                                    e.target.value,
-                                    'length',
-                                )
-                            }
-                            value={variant.model.length}
-                            min={0}
-                            max={1024}
-                            step={1}
-                            size="small"
-                            marks={[
-                                { value: 0, label: '0' },
-                                { value: 1024, label: '1024' },
-                            ]}
-                            valueLabelDisplay="auto"
-                        />
-                        <StyledTextField
-                            type="number"
-                            size="small"
-                            onChange={(e) =>
-                                handleModelParamsChange(
-                                    e.target.value,
-                                    'length',
-                                )
-                            }
-                            value={variant.model.length}
-                        />
-                    </Stack>
-                </StyledField>
-            </StyledContent>
-        </div>
+                <Stack gap={2} direction="row" justifyContent="center">
+                    <Slider
+                        onChange={(e) =>
+                            handleModelParamsChange(e.target.value, 'length')
+                        }
+                        value={variant.model.length}
+                        min={0}
+                        max={1024}
+                        step={1}
+                        size="small"
+                        marks={[
+                            { value: 0, label: '0' },
+                            { value: 1024, label: '1024' },
+                        ]}
+                        valueLabelDisplay="auto"
+                    />
+                    <StyledTextField
+                        type="number"
+                        size="small"
+                        onChange={(e) =>
+                            handleModelParamsChange(e.target.value, 'length')
+                        }
+                        value={variant.model.length}
+                    />
+                </Stack>
+            </StyledField>
+        </StyledContent>
     );
 });
