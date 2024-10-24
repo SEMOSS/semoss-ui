@@ -12,7 +12,6 @@
             "cache": true,
             "inputs": ["production", "^production"],
             "options": {
-                "cwd": "libs/ui",
                 "main": "libs/ui/src/index.ts",
                 "tsConfig": "libs/ui/tsconfig.json",
                 "outputPath": "libs/ui/dist",
