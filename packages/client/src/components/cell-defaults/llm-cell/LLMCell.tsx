@@ -153,8 +153,6 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
         }
     };
 
-    console.log('count', Object.keys(variants).length);
-
     return (
         <StyledStack gap={3} id={`${cell.query.id} - ${cell.id}`}>
             <StyledStack gap={2} direction="row">
