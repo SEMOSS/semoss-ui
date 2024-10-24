@@ -1,14 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BlockComponent, BlockDef } from '@/stores';
 import { useBlock, useRootStore } from '@/hooks';
-import { Button, Typography, CircularProgress, Stack } from '@mui/material';
+import { Typography, CircularProgress, Paper, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useParams } from 'react-router-dom';
 import { Env } from '@/env';
@@ -25,24 +21,54 @@ export interface PDFViewerBlockDef extends BlockDef<'pdfViewer'> {
     };
 }
 
-const BootstrapDialog = styled(Dialog)(({ theme }) => ({
-    '& .MuiDialogContent-root': {
-        padding: theme.spacing(2),
-    },
-    '& .MuiDialogActions-root': {
-        padding: theme.spacing(1),
-    },
-    '& .MuiDialog-paper': {
-        width: '80%',
-        height: '85%',
-        maxWidth: '100%',
-        maxHeight: '100%',
-    },
+// Styled components
+const ViewerContainer = styled(Paper)(({ theme }) => ({
+    position: 'relative',
+    height: '100%',
+    padding: theme.spacing(1),
 }));
+
+const Header = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing(0),
+}));
+
+const LoadingContainer = styled(Box)({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+});
+
+const ErrorMessage = styled(Typography)(({ theme }) => ({
+    padding: theme.spacing(2.5),
+    color: theme.palette.error.main,
+}));
+
+const PDFContainer = styled(Box)(({ theme }) => ({
+    height: '92%',
+    flex: 1,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    overflow: 'hidden',
+}));
+
+const PDFObject = styled('object')({
+    width: '100%',
+    height: '100%',
+});
+
+const PDFIframe = styled('iframe')({
+    width: '100%',
+    border: 'none',
+    height: 'calc(100% - 35px)', // Subtract header height
+    minHeight: 340,
+});
 
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<PDFViewerBlockDef>(id);
-    const [openModal, setOpenModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pdfContent, setPdfContent] = useState<string | null>(null);
@@ -105,27 +131,24 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const handleOpenModal = useCallback(async () => {
-        if (!data?.selectedPdf) return;
-        setOpenModal(true);
-        setLoading(true);
-        setError(null);
-        try {
-            const content = await downloadAndPrepareFile(data?.selectedPdf);
-            setPdfContent(content as string);
-        } catch (err) {
-            setError('Failed to load PDF');
-            console.error(err);
-        } finally {
+    useEffect(() => {
+        if (data?.selectedPdf) {
+            downloadAndPrepareFile(data?.selectedPdf)
+                .then((content) => {
+                    setPdfContent(content as string);
+                    setLoading(false);
+                })
+                .catch((err) => {
+                    console.error('Error loading PDF:', err);
+                    setError('Failed to load PDF');
+                    setLoading(false);
+                });
+        } else {
+            setPdfContent(null);
+            setError(null);
             setLoading(false);
         }
     }, [data.selectedPdf]);
-
-    const handleCloseModal = useCallback(() => {
-        setOpenModal(false);
-        setLoading(false);
-        setError(null);
-    }, []);
 
     // Extract file name from path
     const fileName = data.selectedPdf?.split('/').pop() || '';
@@ -134,70 +157,52 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
     const handleClear = useCallback(() => {
         setData('selectedPdf', '', true);
         setPdfContent(null);
+        setError(null);
     }, [setData]);
+
+    if (!data.selectedPdf) {
+        return (
+            <div style={data.style} {...attrs}>
+                <Typography variant="body2" color="textSecondary">
+                    Select a PDF from settings to view it here
+                </Typography>
+            </div>
+        );
+    }
 
     return (
         <>
-            <div style={data.style} {...attrs}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                    <Button
-                        onClick={handleOpenModal}
-                        variant="contained"
-                        color="secondary"
-                        disabled={!data?.selectedPdf}
-                    >
-                        View PDF
-                    </Button>
-                    {data?.selectedPdf && (
-                        <Button
-                            onClick={handleClear}
-                            variant="outlined"
-                            color="secondary"
-                            startIcon={<ClearIcon />}
-                        >
-                            Clear
-                        </Button>
-                    )}
-                </Stack>
-                {data?.selectedPdf && (
-                    <Typography variant="body2" style={{ marginTop: '10px' }}>
-                        Selected PDF: {fileName}
+            <ViewerContainer elevation={2} {...attrs}>
+                <Header>
+                    <Typography variant="h6" noWrap sx={{ flex: 1 }}>
+                        {fileName}
                     </Typography>
+                    <IconButton
+                        onClick={handleClear}
+                        size="small"
+                        aria-label="clear pdf"
+                        edge="end"
+                    >
+                        <ClearIcon />
+                    </IconButton>
+                </Header>
+
+                {loading && (
+                    <LoadingContainer>
+                        <CircularProgress />
+                    </LoadingContainer>
                 )}
-            </div>
-            <BootstrapDialog
-                open={openModal}
-                onClose={handleCloseModal}
-                aria-labelledby="pdf-viewer-modal"
-                aria-describedby="modal-to-display-pdf"
-            >
-                <DialogTitle>{fileName || ''}</DialogTitle>
-                <IconButton
-                    aria-label="close"
-                    onClick={handleCloseModal}
-                    sx={(theme) => ({
-                        position: 'absolute',
-                        right: 8,
-                        top: 8,
-                        color: theme.palette.grey[500],
-                    })}
-                >
-                    <CloseIcon />
-                </IconButton>
-                <DialogContent>
-                    {loading && <CircularProgress />}
-                    {error && <Typography color="error">{error}</Typography>}
-                    {data?.selectedPdf && (
-                        <iframe
-                            src={pdfContent}
-                            style={{ border: 'none' }}
-                            width="100%"
-                            height="98%"
-                            title={fileName}
-                        ></iframe>
-                    )}
-                </DialogContent>
-            </BootstrapDialog>
+
+                {error && <ErrorMessage variant="body1">{error}</ErrorMessage>}
+
+                {pdfContent && !loading && !error && (
+                    <PDFContainer>
+                        <PDFObject data={pdfContent} type="application/pdf">
+                            <PDFIframe src={pdfContent} title={fileName} />
+                        </PDFObject>
+                    </PDFContainer>
+                )}
+            </ViewerContainer>
         </>
     );
 });

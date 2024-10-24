@@ -319,7 +319,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             data: {
                 style: {
                     width: '100%',
-                    height: '80px',
+                    height: '82%',
                     padding: '8px',
                 },
                 selectedPdf: null,
