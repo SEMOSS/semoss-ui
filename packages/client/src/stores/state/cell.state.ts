@@ -292,6 +292,7 @@ export class CellState<D extends CellDef = CellDef> {
                     outputs.push({
                         ...res.output,
                         variantId: obj.parameters.variantId,
+                        selected: obj.parameters.selected,
                     });
                 }
 

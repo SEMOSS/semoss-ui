@@ -498,9 +498,7 @@ export class StateStore {
             if (value !== undefined && value !== null) {
                 if (Array.isArray(value)) {
                     // From the list of responses in the variable, find and return the one that is 'selected'
-                    const selectedValue = value.find(
-                        (val) => val.parameters?.selected,
-                    );
+                    const selectedValue = value.find((val) => val.selected);
                     if (!selectedValue) {
                         console.log(
                             'ERROR: could not find a selected value for the cell',
