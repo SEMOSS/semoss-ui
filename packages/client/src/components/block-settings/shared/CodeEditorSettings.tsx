@@ -205,7 +205,7 @@ export const CodeEditorSettings = observer(
                         });
                     }
                 });
-                notebook.queriesList.forEach((query: QueryState) => {
+                notebook.notebooksList.forEach((query: QueryState) => {
                     // push all exposed values
                     Object.keys(query._exposed).forEach(
                         (exposedParameter: string) => {

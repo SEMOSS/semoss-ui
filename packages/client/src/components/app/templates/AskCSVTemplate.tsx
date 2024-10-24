@@ -21,6 +21,7 @@ export const AskCSVTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         variables: {
             file: {
                 to: 'file',

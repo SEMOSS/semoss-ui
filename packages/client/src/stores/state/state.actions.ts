@@ -6,7 +6,7 @@ import {
     VariableWithId,
 } from './state.types';
 import { CellStateConfig } from './cell.state';
-import { QueryStateConfig } from './query.state';
+import { NotebookStateConfig } from './query.state';
 
 export enum ActionMessages {
     SET_STATE = 'SET_STATE',
@@ -154,7 +154,7 @@ export interface NewQueryAction extends Action {
     message: ActionMessages.NEW_QUERY;
     payload: {
         queryId: string;
-        config: Omit<QueryStateConfig, 'id'>;
+        config: Omit<NotebookStateConfig, 'id'>;
     };
 }
 

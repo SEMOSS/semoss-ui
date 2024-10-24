@@ -271,7 +271,7 @@ function tourService(
                 element: '#settings__semoss-tour-settings-query',
                 popover: {
                     title: 'Admin Query',
-                    description: 'Perform SQL queries on the Database.',
+                    description: 'Perform SQL notebooks on the Database.',
                     position: 'bottom',
                 },
             },
@@ -386,7 +386,7 @@ function tourService(
                 element: '#database__semoss-tour-query',
                 popover: {
                     title: 'Query Data',
-                    description: 'Perform SQL queries on the Database.',
+                    description: 'Perform SQL notebooks on the Database.',
                     position: 'bottom',
                 },
             }

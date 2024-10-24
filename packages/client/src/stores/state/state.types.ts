@@ -1,26 +1,39 @@
 import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
 import { CellState } from './cell.state';
-import { QueryStateConfig } from './query.state';
+import { NotebookStateConfig } from './query.state';
 
 export type SerializedState = {
     /** What version the state store we currently are on link: https://semver.org/ */
     version: string;
 
-    /** Queries rendered in the insight */
-    queries: Record<string, QueryStateConfig>;
+    /** Notebook rendered in the insight */
+    notebooks: Record<string, NotebookStateConfig>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 
-    /** Variables used in notebook */
+    /** Variables used in blocks and notebooks */
     variables: Record<string, Variable>;
-
-    /** TODO: Remove, Dependencies in app */
-    dependencies: Record<string, unknown>;
 
     /** Order of how we consume app as api */
     executionOrder: string[];
+
+    /**
+     * Currently is removed from state through Migration manager
+     *
+     * TODO: Needs to be removed from types, But i don't want to have to keep going to templates and updating them
+     *
+     * */
+    dependencies?: Record<string, unknown>;
+
+    /**
+     * Currently is removed from state through Migration manager
+     *
+     * TODO: Needs to be removed from types, But i don't want to have to keep going to templates and updating them
+     *
+     * */
+    queries?: Record<string, NotebookStateConfig>;
 };
 
 /**

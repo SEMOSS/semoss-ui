@@ -3,8 +3,9 @@ import { Migration, MigrationState } from './migration.types';
 import migrate__1_0_0_alpha_to_1_0_0_alpha_1 from './migrate__1_0_0_alpha__to__1_0_0_alpha_1';
 import migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 from './migrate__1_0_0_alpha_1__to__1_0_0_alpha_2';
 import migrate__1_0_0_alpha_2_to_1_0_0_alpha_3 from './migrate__1_0_0_alpha_2__to___1_0_0_alpha_3';
+import migrate__1_0_0_alpha_3_to_1_0_0_alpha_4 from './migrate__1_0_0_alpha_3__to__1_0_0_alpha_4';
 
-export const STATE_VERSION = '1.0.0-alpha.3';
+export const STATE_VERSION = '1.0.0-alpha.4';
 
 export class MigrationManager {
     /**
@@ -22,6 +23,8 @@ export class MigrationManager {
             migrate__1_0_0_alpha_1_to_1_0_0_alpha_2,
         [migrate__1_0_0_alpha_2_to_1_0_0_alpha_3.versionFrom]:
             migrate__1_0_0_alpha_2_to_1_0_0_alpha_3,
+        [migrate__1_0_0_alpha_3_to_1_0_0_alpha_4.versionFrom]:
+            migrate__1_0_0_alpha_3_to_1_0_0_alpha_4,
     };
 
     /**

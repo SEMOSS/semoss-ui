@@ -350,7 +350,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
         Object.values(EditorLanguages).forEach((language) => {
             // if suggestion already exist, dispose and re-add
             // this may be superfluous at times but we re-add instead of setting up suggestions once
-            // so that we are pulling more real-time values off of the blocks/queries
+            // so that we are pulling more real-time values off of the blocks/notebooks
             if (completionItemProviders[language]) {
                 completionItemProviders[language].dispose();
             }

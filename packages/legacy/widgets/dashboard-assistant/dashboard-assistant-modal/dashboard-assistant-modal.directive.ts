@@ -644,7 +644,7 @@ function dashboardAssistantModalDirective(
             scope.dashboardAssistantModal.searchHistory[index].queryParamsCopy =
                 output.params;
 
-            // New queries
+            // New notebooks
             if (output.ID) {
                 scope.dashboardAssistantModal.searchHistory[index].id =
                     output.ID;

@@ -45,9 +45,9 @@ export const ListenerActionOverlay = observer(
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
 
-        // get the queries as an array
-        const queries = computed(() => {
-            return Object.values(state.queries).sort((a, b) => {
+        // get the notebooks as an array
+        const notebooks = computed(() => {
+            return Object.values(state.notebooks).sort((a, b) => {
                 const aId = a.id.toLowerCase(),
                     bId = b.id.toLowerCase();
 
@@ -180,7 +180,7 @@ export const ListenerActionOverlay = observer(
                                                     field.onChange(value)
                                                 }
                                             >
-                                                {queries.map((q) => (
+                                                {notebooks.map((q) => (
                                                     <Select.Item
                                                         key={q.id}
                                                         value={q.id}

@@ -47,10 +47,10 @@ export const ABTesting = () => {
 
                 currentState.variables[model.alias] = newVariable;
 
-                // 2. What queries in state use this model, get a copy of them, swap out variable reference and add to state
-                Object.entries(state.toJSON().queries).forEach((q) => {
-                    const query = q[1];
-                    const cells = query.cells;
+                // 2. What notebooks in state use this model, get a copy of them, swap out variable reference and add to state
+                Object.entries(state.toJSON().notebooks).forEach((q) => {
+                    const nb = q[1];
+                    const cells = nb.cells;
                     const cellsCopy = cells;
                     let hasChange = false;
 
@@ -81,18 +81,18 @@ export const ABTesting = () => {
                             newQueryId = `compare--${queryId}--${Math.floor(
                                 Math.random() * 10000,
                             )}`;
-                            if (!currentState.queries[newQueryId]) {
+                            if (!currentState.notebooks[newQueryId]) {
                                 uniqQuery = true;
                             }
                         }
 
-                        // Create new query
-                        currentState.queries[newQueryId] = {
+                        // Create new nb
+                        currentState.notebooks[newQueryId] = {
                             cells: cellsCopy,
                             id: newQueryId,
                         };
 
-                        // see if query is tied to a button, if it is add to listener
+                        // see if nb is tied to a button, if it is add to listener
                         Object.entries(currentState.blocks).forEach((block) => {
                             const b = block[1];
 
@@ -135,17 +135,17 @@ export const ABTesting = () => {
 
                             if (b.widget === 'text') {
                                 const text = b.data.text as string;
-                                if (text.includes(`{{query.${queryId}`)) {
+                                if (text.includes(`{{nb.${queryId}`)) {
                                     currentState.blocks[newBlockId] = {
                                         ...b,
                                         data: {
                                             ...b.data,
                                             text: text.replace(
                                                 new RegExp(
-                                                    `{{query.${queryId}`,
+                                                    `{{nb.${queryId}`,
                                                     'g',
                                                 ),
-                                                `{{query.${newQueryId}`,
+                                                `{{nb.${newQueryId}`,
                                             ),
                                         },
                                     };
@@ -156,17 +156,17 @@ export const ABTesting = () => {
                                 }
                             } else if (b.widget === 'markdown') {
                                 const markdown = b.data.markdown as string;
-                                if (markdown.includes(`{{query.${queryId}`)) {
+                                if (markdown.includes(`{{nb.${queryId}`)) {
                                     currentState.blocks[newBlockId] = {
                                         ...b,
                                         data: {
                                             ...b.data,
                                             markdown: markdown.replace(
                                                 new RegExp(
-                                                    `{{query.${queryId}`,
+                                                    `{{nb.${queryId}`,
                                                     'g',
                                                 ),
-                                                `{{query.${newQueryId}`,
+                                                `{{nb.${newQueryId}`,
                                             ),
                                         },
                                     };

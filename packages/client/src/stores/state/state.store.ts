@@ -19,7 +19,7 @@ import {
     VariableType,
     VariableWithId,
 } from './state.types';
-import { QueryState, QueryStateConfig } from './query.state';
+import { QueryState, NotebookStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 import { STATE_VERSION } from './migration/MigrationManager';
 
@@ -33,8 +33,8 @@ interface StateStoreInterface {
     /** token to reference (blocks, cells, dependencies) */
     variables: Record<string, Variable>;
 
-    /** Queries rendered in the insight */
-    queries: Record<string, QueryState>;
+    /** notebooks rendered in the insight */
+    notebooks: Record<string, QueryState>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
@@ -77,7 +77,7 @@ export class StateStore {
         mode: 'interactive',
         insightId: '',
         version: '',
-        queries: {},
+        notebooks: {},
         blocks: {},
         cellRegistry: {},
         variables: {},
@@ -90,7 +90,7 @@ export class StateStore {
      */
     private _utils: {
         /**
-         * Track any executing queries
+         * Track any executing notebooks
          */
         queryPromises: Record<
             string,
@@ -145,11 +145,11 @@ export class StateStore {
     }
 
     /**
-     * Get the queries
-     * @returns the queries
+     * Get the notebooks
+     * @returns the notebooks
      */
-    get queries() {
-        return this._store.queries;
+    get notebooks() {
+        return this._store.notebooks;
     }
 
     /**
@@ -198,13 +198,13 @@ export class StateStore {
     }
 
     /**
-     * Get a specific queries's state
-     * @param id - id of the queries to get
+     * Get a specific notebooks's state
+     * @param id - id of the notebooks to get
      * @returns the specific block information
      */
     getQuery(id: string): QueryState | null {
-        if (this._store.queries[id]) {
-            return this._store.queries[id];
+        if (this._store.notebooks[id]) {
+            return this._store.notebooks[id];
         }
 
         return null;
@@ -240,7 +240,7 @@ export class StateStore {
                         }
                     }
                 } else if (type === 'query') {
-                    const query = this._store.queries[pointer];
+                    const query = this._store.notebooks[pointer];
                     if (query) {
                         if (path.length === 1) {
                             // Just get query output
@@ -530,15 +530,15 @@ export class StateStore {
      */
     toJSON(): SerializedState {
         return {
-            queries: Object.keys(this._store.queries).reduce((acc, val) => {
-                acc[val] = this._store.queries[val].toJSON();
+            notebooks: Object.keys(this._store.notebooks).reduce((acc, val) => {
+                acc[val] = this._store.notebooks[val].toJSON();
                 return acc;
-            }, {} as SerializedState['queries']),
+            }, {} as SerializedState['notebooks']),
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
-            dependencies: toJS(this._store.dependencies),
             executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
+            // dependencies: toJS(this._store.dependencies),
         };
     }
 
@@ -711,11 +711,14 @@ export class StateStore {
         // store the block information
         this._store.blocks = state.blocks;
 
-        // load the queries
-        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
-            acc[val] = new QueryState(state.queries[val], this);
-            return acc;
-        }, {});
+        // load the notebooks
+        this._store.notebooks = Object.keys(state.notebooks).reduce(
+            (acc, val) => {
+                acc[val] = new QueryState(state.notebooks[val], this);
+                return acc;
+            },
+            {},
+        );
 
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
@@ -1015,9 +1018,9 @@ export class StateStore {
      */
     private newQuery = (
         queryId: string,
-        config: Omit<QueryStateConfig, 'id'>,
+        config: Omit<NotebookStateConfig, 'id'>,
     ): string => {
-        this._store.queries[queryId] = new QueryState(
+        this._store.notebooks[queryId] = new QueryState(
             {
                 ...config,
                 id: queryId,
@@ -1033,7 +1036,7 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
-        delete this._store.queries[queryId];
+        delete this._store.notebooks[queryId];
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -1058,7 +1061,7 @@ export class StateStore {
         path: string | null,
         value: unknown,
     ): void => {
-        const q = this._store.queries[queryId];
+        const q = this._store.notebooks[queryId];
 
         // set the value
         q._processUpdate(path, value);
@@ -1069,7 +1072,7 @@ export class StateStore {
      * @param queryId - name of the query that we are running
      */
     private runQuery = (queryId: string): void => {
-        const q = this._store.queries[queryId];
+        const q = this._store.notebooks[queryId];
 
         const key = `query--${queryId};`;
 
@@ -1111,7 +1114,7 @@ export class StateStore {
         previousCellId: string,
     ): void => {
         // get the query
-        const q = this._store.queries[queryId];
+        const q = this._store.notebooks[queryId];
 
         // add the cell
         q._processNewCell(cellId, config, previousCellId);
@@ -1124,7 +1127,7 @@ export class StateStore {
      */
     private deleteCell = (queryId: string, cellId: string): void => {
         // get the query
-        const q = this._store.queries[queryId];
+        const q = this._store.notebooks[queryId];
 
         // add the cell
         q._processDeleteCell(cellId);
@@ -1172,7 +1175,7 @@ export class StateStore {
         path: string | null,
         value: unknown,
     ): void => {
-        const q = this._store.queries[queryId];
+        const q = this._store.notebooks[queryId];
         const s = q.getCell(cellId);
 
         // set the value
@@ -1185,7 +1188,7 @@ export class StateStore {
      * @param cellId - id of the deleted cell
      */
     private runCell = (queryId: string, cellId: string): void => {
-        const q = this._store.queries[queryId];
+        const q = this._store.notebooks[queryId];
         const s = q.getCell(cellId);
 
         const key = `cell--${cellId} (query--${queryId});`;

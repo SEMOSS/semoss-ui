@@ -110,9 +110,9 @@ export const NotebookSheet = observer((): JSX.Element => {
                                     queryId: notebook.selectedQuery.id,
                                 },
                             });
-                            if (notebook.queriesList.length) {
+                            if (notebook.notebooksList.length) {
                                 notebook.selectQuery(
-                                    notebook.queriesList[0].id,
+                                    notebook.notebooksList[0].id,
                                 );
                             }
                         }}

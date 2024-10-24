@@ -1203,7 +1203,7 @@ function htmlWidgetDirective($timeout, $q, $compile, semossCoreService) {
                         inStyle = false;
                     }
 
-                    // TODO: fix this, media queries will put i at length of html
+                    // TODO: fix this, media notebooks will put i at length of html
                     if (i < html.length) {
                         sanitizedContent += html[i];
                     }

@@ -79,8 +79,8 @@ export const QuerySelectionSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
-        // available queries for autocomplete
-        const queries = useMemo(() => {
+        // available notebooks for autocomplete
+        const notebooks = useMemo(() => {
             return Object.keys(state.variables).reduce((acc, queryKey) => {
                 if (
                     state.variables[queryKey].type === 'query' ||
@@ -130,9 +130,9 @@ export const QuerySelectionSettings = observer(
                     disableClearable={value === ''}
                     size="small"
                     value={value}
-                    options={Object.keys(queries)}
+                    options={Object.keys(notebooks)}
                     getOptionLabel={(id: string) => {
-                        return queries[id] ?? '';
+                        return notebooks[id] ?? '';
                     }}
                     onChange={(_, value) => {
                         onChange(value);

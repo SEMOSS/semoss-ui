@@ -13,6 +13,7 @@ export const BlocksGuideTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         variables: {
             Vector: {
                 to: 'vector--3773',

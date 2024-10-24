@@ -62,7 +62,7 @@ export const NewQueryOverlay = observer(
             }
 
             // validate the name if it is new
-            if (state.queries[data.ID] || state.blocks[data.ID]) {
+            if (state.notebooks[data.ID] || state.blocks[data.ID]) {
                 setError('ID', {
                     type: 'manual',
                     message: `Query Id ${data.ID} already exists`,

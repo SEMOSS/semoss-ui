@@ -1,7 +1,7 @@
 module.exports = {
     name: 'Union',
     description:
-        'Combines the results of two or more queries into a distinct single result set',
+        'Combines the results of two or more notebooks into a distinct single result set',
     icon: require('images/vector-union.svg'),
     widgetList: {
         showOn: 'none',

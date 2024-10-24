@@ -20,6 +20,7 @@ export const AskLLMTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         variables: {
             question: {
                 to: 'question',
