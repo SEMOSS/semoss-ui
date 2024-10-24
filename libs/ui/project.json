@@ -12,6 +12,7 @@
             "cache": true,
             "inputs": ["production", "^production"],
             "options": {
+                "cwd": "libs/ui",
                 "main": "libs/ui/src/index.ts",
                 "tsConfig": "libs/ui/tsconfig.json",
                 "outputPath": "libs/ui/dist",
@@ -22,6 +23,7 @@
         },
         "dev1": {
             "options": {
+                "cwd": "libs/ui",
                 "command": "rollup -w -c libs/ui/rollup.config.js storybook"
             },
             "cache": true,

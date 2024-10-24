@@ -56,7 +56,7 @@ const config = [
             del({ targets: "dist" }),
             resolve(),
             commonjs(),
-            typescript({ tsconfig: "tsconfig.json" }),
+            typescript(),
             postcss(),
             bundleSize(),
         ],
