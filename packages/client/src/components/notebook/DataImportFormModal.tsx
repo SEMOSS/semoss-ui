@@ -483,13 +483,13 @@ export const DataImportFormModal = observer(
 
                 if (
                     previousCellId &&
-                    state.queries[query.id].cells[previousCellId].widget ===
+                    state.notebooks[query.id].cells[previousCellId].widget ===
                         widget &&
                     widget === CodeCellConfig.widget
                 ) {
                     const previousCellType =
-                        state.queries[query.id].cells[previousCellId].parameters
-                            ?.type ?? 'pixel';
+                        state.notebooks[query.id].cells[previousCellId]
+                            .parameters?.type ?? 'pixel';
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
                         type: previousCellType,

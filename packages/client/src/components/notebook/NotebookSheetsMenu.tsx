@@ -117,11 +117,11 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
     useEffect(() => {
         if (notebook.selectedQuery) return;
 
-        if (notebook.queriesList.length) {
+        if (notebook.notebooksList.length) {
             let i = 0,
                 selected = false;
             while (!selected) {
-                notebook.selectQuery(notebook.queriesList[i].id);
+                notebook.selectQuery(notebook.notebooksList[i].id);
                 selected = true;
                 i++;
             }
@@ -293,7 +293,7 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
         >
             <Stack direction={'row'} sx={{ maxWidth: '95%' }}>
                 <StyledStack direction="row" spacing={0}>
-                    {notebook.queriesList.map((q, i) => {
+                    {notebook.notebooksList.map((q, i) => {
                         return (
                             <StyledSheet
                                 key={i}
@@ -376,15 +376,15 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
                                                 queryId: query.q.id,
                                             },
                                         });
-                                        if (notebook.queriesList.length) {
+                                        if (notebook.notebooksList.length) {
                                             const nextQueryIndex =
                                                 query.index >=
-                                                notebook.queriesList.length
-                                                    ? notebook.queriesList
+                                                notebook.notebooksList.length
+                                                    ? notebook.notebooksList
                                                           .length - 1
                                                     : query.index;
                                             notebook.selectQuery(
-                                                notebook.queriesList[
+                                                notebook.notebooksList[
                                                     nextQueryIndex
                                                 ].id,
                                             );

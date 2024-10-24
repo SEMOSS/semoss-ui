@@ -458,7 +458,7 @@ function infographic($compile, semossCoreService) {
                 delete scope[name];
             }
 
-            // if all of the queries are done running
+            // if all of the notebooks are done running
             if (count === 0) {
                 compileHTML();
             }

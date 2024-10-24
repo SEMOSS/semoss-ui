@@ -63,10 +63,10 @@ export const QueryNameDropdownSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
-        // Available queries for autocomplete
-        const queries = useMemo(() => {
-            return Object.keys(state.queries);
-        }, [state.queries]);
+        // Available notebooks for autocomplete
+        const notebooks = useMemo(() => {
+            return Object.keys(state.notebooks);
+        }, [state.notebooks]);
 
         /**
          * Sync the data on change
@@ -97,7 +97,7 @@ export const QueryNameDropdownSettings = observer(
                     disableClearable={value === ''}
                     size="small"
                     value={value}
-                    options={queries}
+                    options={notebooks}
                     getOptionLabel={(queryKey: string) => queryKey}
                     onChange={(_, newValue) => {
                         onChange(newValue);

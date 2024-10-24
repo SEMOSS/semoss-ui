@@ -317,7 +317,7 @@ function impliedInsightsCompositionDirective(semossCoreService, $timeout) {
 
         /**
          * @name getData
-         * @desc queries the data from a list of frames
+         * @desc notebooks the data from a list of frames
          * @param frames list of frames
          */
         function getData(frames) {

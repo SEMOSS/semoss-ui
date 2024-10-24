@@ -36,11 +36,11 @@ export class NotebookStore {
      * Getters
      */
     /**
-     * Get the queries
-     * @returns the queries
+     * Get the notebooks
+     * @returns the notebooks
      */
-    get queriesList() {
-        return Object.values(this._state.queries).sort((a, b) => {
+    get notebooksList() {
+        return Object.values(this._state.notebooks).sort((a, b) => {
             const aId = a.id.toLowerCase(),
                 bId = b.id.toLowerCase();
 
@@ -58,7 +58,7 @@ export class NotebookStore {
      * Get the selected query
      */
     get selectedQuery() {
-        return this._state.queries[this._store.selectedQueryId];
+        return this._state.notebooks[this._store.selectedQueryId];
     }
 
     /**
@@ -93,7 +93,7 @@ export class NotebookStore {
         // set the id
         this._store.selectedQueryId = queryId;
         // automatically select last cell of query
-        const queryCells = this._state.queries[queryId].list;
+        const queryCells = this._state.notebooks[queryId].list;
         if (queryCells.length) {
             this.selectCell(queryId, queryCells[queryCells.length - 1]);
         }

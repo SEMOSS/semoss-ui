@@ -57,7 +57,7 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
                 executionOrder: [],
                 dependencies: {},
                 variables: {},
-                queries: {},
+                notebooks: {},
                 blocks: {
                     'page-1': {
                         id: 'page-1',

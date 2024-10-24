@@ -178,7 +178,7 @@ function textWidget($compile, $sce) {
          * @returns {void}
          */
         function getVars() {
-            // create a list of queries
+            // create a list of notebooks
             var restrictedNames = ['textWidget'],
                 i,
                 len,
@@ -265,7 +265,7 @@ function textWidget($compile, $sce) {
                     }
                 }
 
-                // if all of the queries are done running
+                // if all of the notebooks are done running
                 if (count === 0) {
                     compileHTML();
                 }
@@ -287,7 +287,7 @@ function textWidget($compile, $sce) {
                 delete scope[name];
             }
 
-            // if all of the queries are done running
+            // if all of the notebooks are done running
             if (count === 0) {
                 compileHTML();
             }
@@ -446,7 +446,7 @@ function textWidget($compile, $sce) {
                         inStyle = false;
                     }
 
-                    // TODO: fix this, media queries will put i at length of html
+                    // TODO: fix this, media notebooks will put i at length of html
                     if (i < html.length) {
                         sanitizedContent += html[i];
                     }

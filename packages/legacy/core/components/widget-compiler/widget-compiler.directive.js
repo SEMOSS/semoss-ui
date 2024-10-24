@@ -1667,7 +1667,7 @@ function widgetCompilerDirective(semossCoreService, ENDPOINT) {
                 queryIdx < queryLen;
                 queryIdx++
             ) {
-                // loop through all the queries
+                // loop through all the notebooks
                 for (
                     paramIdx = 0, paramLen = tempJSON[queryIdx].params.length;
                     paramIdx < paramLen;

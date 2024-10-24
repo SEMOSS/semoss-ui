@@ -421,7 +421,7 @@ export async function setBlocksAndOpenUIBuilder(
         dependencies: {
             [MODEL_ID]: builder.model.value,
         },
-        queries: {},
+        notebooks: {},
         blocks: {
             'page-1': {
                 id: 'page-1',
@@ -613,7 +613,7 @@ export async function setBlocksAndOpenUIBuilder(
         ...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
     ];
 
-    state.queries = getQueryForPrompt(
+    state.notebooks = getQueryForPrompt(
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );

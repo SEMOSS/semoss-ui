@@ -52,7 +52,7 @@ function documentSummaryDirective(monolithService, semossCoreService) {
 
         /**
          * @name execute
-         * @desc define inputs and execute queries
+         * @desc define inputs and execute notebooks
          * @return {void}
          */
         function execute() {

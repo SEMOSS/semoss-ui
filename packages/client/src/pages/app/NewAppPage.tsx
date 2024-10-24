@@ -232,7 +232,7 @@ export const NewAppPage = () => {
                                                     version: STATE_VERSION,
                                                     dependencies: {},
                                                     variables: {},
-                                                    queries: {},
+                                                    notebooks: {},
                                                     blocks: BASE_PAGE_BLOCKS,
                                                     executionOrder: [],
                                                 },

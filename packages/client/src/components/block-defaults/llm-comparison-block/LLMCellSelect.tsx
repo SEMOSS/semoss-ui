@@ -58,8 +58,8 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
     // Filter cells that are not an LLM Cell
     useEffect(() => {
         let options = [];
-        Object.keys(state.queries).forEach((name) => {
-            const query = state.queries[name];
+        Object.keys(state.notebooks).forEach((name) => {
+            const query = state.notebooks[name];
             const filteredCells = Object.values(query.cells).filter(
                 (cell) => cell.widget === 'llm',
             );
@@ -72,7 +72,7 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
             options = [...options, ...modelledCells];
         });
         setLlmCells(options);
-    }, [state.queries]);
+    }, [state.notebooks]);
 
     const onChange = (val) => {
         setValue(val.cellId);

@@ -81,7 +81,7 @@ export const BlocksGuideTemplate: Template = {
             'array--4834': [1, 2, 3],
             'number--7715': 10,
         },
-        queries: {
+        notebooks: {
             default: {
                 id: 'default',
                 cells: [

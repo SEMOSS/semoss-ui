@@ -8,7 +8,7 @@ export type SerializedState = {
     version: string;
 
     /** Queries rendered in the insight */
-    queries: Record<string, QueryStateConfig>;
+    notebooks: Record<string, QueryStateConfig>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;

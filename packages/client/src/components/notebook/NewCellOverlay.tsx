@@ -74,7 +74,7 @@ export const NewCellOverlay = observer(
             }
 
             // validate that the name is new
-            if (state.queries[queryId].cells[data.ID]) {
+            if (state.notebooks[queryId].cells[data.ID]) {
                 setError('ID', {
                     type: 'manual',
                     message: `Cell Id ${data.ID} already exists`,
@@ -92,17 +92,17 @@ export const NewCellOverlay = observer(
                     config = {
                         ...config,
                         parameters: {
-                            ...state.queries[queryId].cells[previousCellId]
+                            ...state.notebooks[queryId].cells[previousCellId]
                                 .parameters,
                         },
                     };
                 } else if (
-                    state.queries[queryId].cells[previousCellId].config
+                    state.notebooks[queryId].cells[previousCellId].config
                         .widget === 'code'
                 ) {
                     const previousCellType =
-                        state.queries[queryId].cells[previousCellId].parameters
-                            ?.type ?? 'pixel';
+                        state.notebooks[queryId].cells[previousCellId]
+                            .parameters?.type ?? 'pixel';
                     config = {
                         widget: DefaultCells['code'].widget,
                         parameters: {

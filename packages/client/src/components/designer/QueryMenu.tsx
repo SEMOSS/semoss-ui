@@ -50,9 +50,9 @@ export const QueryMenu = observer((): JSX.Element => {
     const [querySearch, setQuerySearch] = useState('');
     const [blockSearch, setBlockSearch] = useState('');
 
-    // get the queries as an array
-    const queries = computed(() => {
-        return Object.values(state.queries).sort((a, b) => {
+    // get the notebooks as an array
+    const notebooks = computed(() => {
+        return Object.values(state.notebooks).sort((a, b) => {
             const aId = a.id.toLowerCase(),
                 bId = b.id.toLowerCase();
 
@@ -69,13 +69,15 @@ export const QueryMenu = observer((): JSX.Element => {
     // get the renderedQueries
     const renderedQueries = useMemo(() => {
         if (!querySearch) {
-            return queries;
+            return notebooks;
         }
 
         const cleaned = querySearch.toUpperCase();
 
-        return queries.filter((q) => q.id.toUpperCase().indexOf(cleaned) > -1);
-    }, [queries, querySearch]);
+        return notebooks.filter(
+            (q) => q.id.toUpperCase().indexOf(cleaned) > -1,
+        );
+    }, [notebooks, querySearch]);
 
     // get the blocks as an array
     const blocks = computed(() => {

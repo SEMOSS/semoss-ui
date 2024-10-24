@@ -73,7 +73,7 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
         /**
          * A list of cells that are query imports,
          * Added here in case we want to show particular frames whether Grid, Py, R, etc
-         * TODO: Do we want to reference other queries
+         * TODO: Do we want to reference other notebooks
          */
         const frames = useMemo(() => {
             const frameList = [];

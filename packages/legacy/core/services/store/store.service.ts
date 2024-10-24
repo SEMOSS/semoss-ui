@@ -51,7 +51,7 @@ function storeService(
 
                 // loop through the commandList to remove any 'refresh' types because we are handling them differently...
                 // remove them from the commandList after storing them in refreshArray to process separately.
-                // TODO should find a better way to handle special types of queries we're trying to build
+                // TODO should find a better way to handle special types of notebooks we're trying to build
                 for (let i = 0; i < payload.commandList.length; i++) {
                     if (payload.commandList[i].type === GENERATE.REFRESH) {
                         // console.log('TODO: Clean the refresh');
@@ -1469,7 +1469,7 @@ function storeService(
      * @param replacements - replacements object
      * @param meta - should this refresh be meta?
      * @desc generates a task
-     * @returns returns the queries for the task
+     * @returns returns the notebooks for the task
      */
     function refresh(
         widgetId: string,
@@ -1942,7 +1942,7 @@ function storeService(
      * @param widgetId - id to refresh
      * @param meta - should this refresh be meta?
      * @desc generates the task for all of the panels in this insight
-     * @returns returns the queries for the tasks
+     * @returns returns the notebooks for the tasks
      */
     function load(widgetId: string, meta: boolean): string {
         let panelId = getWidget(widgetId, 'panelId'),
@@ -2016,7 +2016,7 @@ function storeService(
      * @param widgetId - id to refresh
      * @param meta - should this refresh be meta?
      * @desc generates the task for all of the panels in this insight
-     * @returns returns the queries for the tasks
+     * @returns returns the notebooks for the tasks
      */
     function auto(widgetId: string, meta: boolean): string {
         let insightID = getWidget(widgetId, 'insightID'),

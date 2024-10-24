@@ -182,21 +182,21 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
             });
     }).get();
 
-    const queries = useMemo(() => {
-        return Object.values(state.queries);
-    }, [state.queries]);
+    const notebooks = useMemo(() => {
+        return Object.values(state.notebooks);
+    }, [state.notebooks]);
 
     const cells = useMemo(() => {
         const cells = [];
 
-        Object.values(state.queries).forEach((query) => {
+        Object.values(state.notebooks).forEach((query) => {
             Object.values(query.cells).forEach((cell) => {
                 cells.push(cell);
             });
         });
 
         return cells;
-    }, [state.queries]);
+    }, [state.notebooks]);
 
     // Get the LLM Comparison Blocks
     const comparisonBlocks = computed(() => {
@@ -232,7 +232,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                 );
             });
         } else if (variableType === 'query') {
-            return queries.map((q) => {
+            return notebooks.map((q) => {
                 return (
                     <Select.Item key={q.id} value={q.id}>
                         <Typography variant="caption">{q.id}</Typography>
@@ -421,7 +421,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         executionOrder: [],
                         dependencies: {},
                         variables: {},
-                        queries: {},
+                        notebooks: {},
                         blocks: {
                             'page-1': {
                                 id: 'page-1',

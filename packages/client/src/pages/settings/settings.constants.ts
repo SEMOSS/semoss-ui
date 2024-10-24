@@ -34,7 +34,7 @@ export const SETTINGS_ROUTES: {
         path: '',
         description: 'View and edit settings for the application',
         adminDescription:
-            'View and make changes to settings at the database, app, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.',
+            'View and make changes to settings at the database, app, and insight level.  As an admin conduct notebooks on SEMOSS specific databases as well as view and edit existing social properties.',
         icon: mdiCog,
         history: [],
     },

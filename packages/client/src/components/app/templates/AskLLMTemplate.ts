@@ -37,7 +37,7 @@ export const AskLLMTemplate: Template = {
         dependencies: {
             model: '17753d59-4536-4415-a6ac-f673b1a90a87',
         },
-        queries: {
+        notebooks: {
             ['ask-llm']: {
                 id: 'ask-llm',
                 cells: [

@@ -14,7 +14,7 @@ export const LandingPageTemplate: Template = {
         executionOrder: [],
         dependencies: {},
         variables: {},
-        queries: {},
+        notebooks: {},
         blocks: {
             'text--584': {
                 parent: {
