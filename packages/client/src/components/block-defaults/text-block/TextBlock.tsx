@@ -18,7 +18,7 @@ export interface TextBlockDef extends BlockDef<'text'> {
 export const TextBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<TextBlockDef>(id);
 
-    let textContent =
+    const textContent =
         typeof data.text == 'string' ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : '');
     if (!data.isStreaming) displayTxt = textContent;

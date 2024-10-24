@@ -22,8 +22,11 @@ import {
     VerticalAlignCenter,
     VerticalAlignTop,
 } from '@mui/icons-material';
-import { DistinctPathButtonGroupSettings } from '../block-settings/shared/DistinctPathButtonGroupSettings';
-import { SelectInputSettings } from '../block-settings/shared/SelectInputSettings';
+import {
+    DistinctPathButtonGroupSettings,
+    SelectInputSettings,
+    CssRootSettings,
+} from '../block-settings/shared';
 
 /**
  * Build the Layout Section
@@ -364,3 +367,19 @@ export const buildListener = <D extends BlockDef = BlockDef>(
         render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
     },
 ];
+
+/**
+ * Build the Custom Style Sheet Section
+ * @returns a Custom Style Sheet section
+ */
+export const buildCustomStyleSheetSection = () => ({
+    name: 'Custom Style Sheet',
+    children: [
+        {
+            description: 'RootStyle',
+            render: ({ id }) => (
+                <CssRootSettings id={id} path="class" label="Class name" />
+            ),
+        },
+    ],
+});

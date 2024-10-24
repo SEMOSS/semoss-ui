@@ -19,6 +19,9 @@ export type SerializedState = {
     /** TODO: Remove, Dependencies in app */
     dependencies: Record<string, unknown>;
 
+    /** Styles in app */
+    rootStyle?: string;
+  
     /** Order of how we consume app as api */
     executionOrder: string[];
 };
