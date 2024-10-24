@@ -11,6 +11,7 @@
         "module": "esnext",
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
 
         /* Emit */
         "declaration": true,
@@ -22,7 +23,7 @@
         "skipLibCheck": true,
         "allowJs": true,
         "esModuleInterop": true,
-        "composite": true,
+        // "composite": true,
 
         /* Lang and Env */
 
@@ -30,18 +31,18 @@
             "@/*": ["*"]
         }
     },
-    "include": ["src"],
-    "exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.stories.tsx"],
-    "references": [
-        {
-            "path": "./tsconfig.lib.json"
-        },
-        {
-            "path": "./tsconfig.spec.json"
-        },
-        {
-            "path": "./tsconfig.storybook.json"
-        }
-    ]
+    "include": ["src/*"],
+    "exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.stories.tsx"]
+    // "references": [
+    //     {
+    //         "path": "./tsconfig.lib.json"
+    //     },
+    //     {
+    //         "path": "./tsconfig.spec.json"
+    //     },
+    //     {
+    //         "path": "./tsconfig.storybook.json"
+    //     }
+    // ]
     // "extends": "../../../tsconfig.base.json"
 }

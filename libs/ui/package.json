@@ -2,18 +2,18 @@
     "name": "@semoss/ui",
     "version": "1.0.0-beta.3",
     "description": "",
+    "type": "module",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
-    "types": "dist/index.d.ts",
+    "types": "dist/src/index.d.ts",
     "files": [
         "src",
         "dist"
     ],
-    "type": "module",
     "scripts": {
         "start": "pnpm run storybook",
         "dev": "run-p build:dev storybook",
-        "build12": "rollup -c",
+        "build": "nx run @semoss/ui:build",
         "build:dev": "rollup -w -c",
         "storybook": "cross-env NODE_OPTIONS=--max_old_space_size=8192 storybook dev -p 6006",
         "lint": "eslint .",
@@ -22,28 +22,6 @@
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "build-storybook": "storybook build"
-    },
-    "nx": {
-        "targets": {
-            "build": {
-                "executor": "@nx/rollup:rollup",
-                "outputs": [
-                    "{projectRoot}/dist"
-                ],
-                "cache": true,
-                "inputs": [
-                    "production",
-                    "^production"
-                ],
-                "options": {
-                    "main": "libs/ui/src/index.ts",
-                    "tsConfig": "libs/ui/tsconfig.json",
-                    "outputPath": "libs/ui/dist",
-                    "rollupConfig": "libs/ui/rollup.config.js"
-                },
-                "configurations": {}
-            }
-        }
     },
     "keywords": [],
     "author": "",

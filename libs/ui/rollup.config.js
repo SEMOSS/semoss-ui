@@ -34,7 +34,7 @@ import typescript from "@rollup/plugin-typescript";
 import bundleSize from "rollup-plugin-bundle-size";
 import postcss from "rollup-plugin-postcss";
 import del from "rollup-plugin-delete";
-import packageJson from "./package.json" assert { type: "json" };
+// packageJson from "./package.json";
 
 const config = [
     // Outputs separate declarations files and builds
@@ -42,12 +42,12 @@ const config = [
         input: "src/index.ts",
         output: [
             {
-                file: packageJson.main,
+                file: "dist/index.js",
                 format: "cjs",
                 sourcemap: true,
             },
             {
-                file: packageJson.module,
+                file: "dist/index.esm.js",
                 format: "esm",
                 sourcemap: true,
             },
@@ -56,7 +56,7 @@ const config = [
             del({ targets: "dist" }),
             resolve(),
             commonjs(),
-            typescript({ tsconfig: "libs/ui/tsconfig.json" }),
+            typescript({ tsconfig: "tsconfig.json" }),
             postcss(),
             bundleSize(),
         ],

@@ -6,10 +6,23 @@
     "tags": [],
     "// targets": "to see all targets run: nx show project libs --web",
     "targets": {
-        "build1": {
+        "build": {
+            "executor": "@nx/rollup:rollup",
+            "outputs": ["{projectRoot}/dist"],
+            "cache": true,
+            "inputs": ["production", "^production"],
             "options": {
-                "cwd": "libs/ui",
-                "command": "rollup -c rollup.config.js"
+                "main": "libs/ui/src/index.ts",
+                "tsConfig": "libs/ui/tsconfig.json",
+                "outputPath": "libs/ui/dist",
+                "rollupConfig": "libs/ui/rollup.config.js",
+                "format": ["esm", "cjs"]
+            },
+            "configurations": {}
+        },
+        "dev1": {
+            "options": {
+                "command": "rollup -w -c libs/ui/rollup.config.js storybook"
             },
             "cache": true,
             "dependsOn": ["^rollup:build"],
@@ -20,7 +33,17 @@
                     "externalDependencies": ["rollup"]
                 }
             ],
-            "outputs": ["{workspaceRoot}/dist/libs/ui"],
+            "outputs": ["{projectRoot}/dist"],
+            "executor": "nx:run-commands",
+            "configurations": {}
+        },
+        "storybook1": {
+            "options": {
+                "command": "storybook"
+            },
+            "cache": true,
+
+            "inputs": ["default", "^default"],
             "executor": "nx:run-commands",
             "configurations": {}
         }

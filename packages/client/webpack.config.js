@@ -21,7 +21,6 @@ dotenv.config({ path: '../../.env' });
 
 const isProduction = process.env.NODE_ENV == 'production';
 
-console.log('isProduction', isProduction);
 const config = {
     entry: './src/main.tsx',
     performance: {
