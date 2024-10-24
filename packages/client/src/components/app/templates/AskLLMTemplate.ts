@@ -20,6 +20,7 @@ export const AskLLMTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         variables: {
             question: {
                 to: 'question',
@@ -37,7 +38,7 @@ export const AskLLMTemplate: Template = {
         dependencies: {
             model: '17753d59-4536-4415-a6ac-f673b1a90a87',
         },
-        notebooks: {
+        queries: {
             ['ask-llm']: {
                 id: 'ask-llm',
                 cells: [

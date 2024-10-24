@@ -11,7 +11,7 @@ import {
     ActionMessages,
     Block,
     MonolithStore,
-    QueryStateConfig,
+    NotebookStateConfig,
     SerializedState,
 } from '@/stores';
 import { AppMetadata } from '../app';
@@ -192,7 +192,7 @@ function getDatabaseQuery() {
 export function getQueryForPrompt(
     tokens: Token[],
     inputTypes: object,
-): Record<string, QueryStateConfig> {
+): Record<string, NotebookStateConfig> {
     const prompt = getInputFormatPrompt(tokens, inputTypes);
 
     // filter out custom input types
@@ -372,7 +372,7 @@ export function getQueryForPrompt(
         });
     }
 
-    const queryJson: Record<string, QueryStateConfig> = {
+    const queryJson: Record<string, NotebookStateConfig> = {
         [PROMPT_QUERY_DEFINITION_ID]: {
             id: PROMPT_QUERY_DEFINITION_ID,
             cells: queryDefinitionCells,

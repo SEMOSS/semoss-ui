@@ -13,6 +13,7 @@ export const BlocksGuideTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         variables: {
             Vector: {
                 to: 'vector--3773',
@@ -81,7 +82,7 @@ export const BlocksGuideTemplate: Template = {
             'array--4834': [1, 2, 3],
             'number--7715': 10,
         },
-        notebooks: {
+        queries: {
             default: {
                 id: 'default',
                 cells: [

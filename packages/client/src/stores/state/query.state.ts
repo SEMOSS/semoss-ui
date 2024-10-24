@@ -22,11 +22,11 @@ export interface QueryStateStoreInterface {
     list: string[];
 }
 
-export interface QueryStateConfig {
-    /** Id of the query */
+export interface NotebookStateConfig {
+    /** Id of the notebook */
     id: string;
 
-    /** Cells in the query */
+    /** Cells in the notebook */
     cells: CellStateConfig[];
 }
 
@@ -43,7 +43,7 @@ export class QueryState {
         list: [],
     };
 
-    constructor(config: QueryStateConfig, state: StateStore) {
+    constructor(config: NotebookStateConfig, state: StateStore) {
         // register the state
         this._state = state;
 
@@ -212,7 +212,7 @@ export class QueryState {
     /**
      * Serialize to JSON
      */
-    toJSON = (): QueryStateConfig => {
+    toJSON = (): NotebookStateConfig => {
         return {
             id: this._store.id,
             cells: this._store.list.map((s) => this._store.cells[s].toJSON()),

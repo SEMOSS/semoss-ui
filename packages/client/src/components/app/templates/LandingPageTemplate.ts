@@ -12,9 +12,10 @@ export const LandingPageTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         dependencies: {},
         variables: {},
-        notebooks: {},
+        queries: {},
         blocks: {
             'text--584': {
                 parent: {

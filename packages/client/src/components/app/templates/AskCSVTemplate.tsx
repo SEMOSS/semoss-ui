@@ -21,6 +21,7 @@ export const AskCSVTemplate: Template = {
     state: {
         version: '1.0.0-alpha.1',
         executionOrder: [],
+        notebooks: {},
         variables: {
             file: {
                 to: 'file',
@@ -42,7 +43,7 @@ export const AskCSVTemplate: Template = {
         dependencies: {
             model: '17753d59-4536-4415-a6ac-f673b1a90a87',
         },
-        notebooks: {
+        queries: {
             ['ask-model']: {
                 id: 'ask-model',
                 cells: [

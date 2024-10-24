@@ -19,7 +19,7 @@ import {
     VariableType,
     VariableWithId,
 } from './state.types';
-import { QueryState, QueryStateConfig } from './query.state';
+import { QueryState, NotebookStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
 import { STATE_VERSION } from './migration/MigrationManager';
 
@@ -536,9 +536,9 @@ export class StateStore {
             }, {} as SerializedState['notebooks']),
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
-            dependencies: toJS(this._store.dependencies),
             executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
+            // dependencies: toJS(this._store.dependencies),
         };
     }
 
@@ -1018,7 +1018,7 @@ export class StateStore {
      */
     private newQuery = (
         queryId: string,
-        config: Omit<QueryStateConfig, 'id'>,
+        config: Omit<NotebookStateConfig, 'id'>,
     ): string => {
         this._store.notebooks[queryId] = new QueryState(
             {
