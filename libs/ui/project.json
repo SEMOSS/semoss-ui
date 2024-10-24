@@ -13,7 +13,7 @@
             "inputs": ["production", "^production"],
             "options": {
                 "main": "libs/ui/src/index.ts",
-                "tsConfig": "libs/ui/tsconfig.json",
+                "tsConfig": "tsconfig.json",
                 "outputPath": "libs/ui/dist",
                 "rollupConfig": "libs/ui/rollup.config.js",
                 "format": ["esm", "cjs"]
