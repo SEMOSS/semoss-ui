@@ -50,7 +50,7 @@ import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
 import PIE_CHART_IMAGE from '@/assets/img/PIE_CHART.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
-import BLOCK_PDF_VIEWER from '@/assets/img/BLOCK_PDF_VIEWER.png';
+import BLOCK_PDF_VIEWER from '@/assets/img/BLOCK_PDF.png';
 import {
     CLASS_DIAGRAM,
     ENTITY_RELATIONSHIP_DIAGRAM,
