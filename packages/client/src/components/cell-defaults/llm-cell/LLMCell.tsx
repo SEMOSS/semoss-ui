@@ -49,6 +49,7 @@ const StyledVariants = styled('div', {
 
 const StyledButton = styled(Button)(({ theme }) => ({
     whiteSpace: 'nowrap',
+    height: 'minContent',
 }));
 
 export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
