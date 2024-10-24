@@ -50,6 +50,7 @@ import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
 import PIE_CHART_IMAGE from '@/assets/img/PIE_CHART.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
+import BLOCK_MICROPHONE from '@/assets/img/BLOCK_MIC.png';
 import {
     CLASS_DIAGRAM,
     ENTITY_RELATIONSHIP_DIAGRAM,
@@ -129,6 +130,29 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                 disabled: false,
                 variant: 'contained',
                 color: 'primary',
+            },
+            listeners: {
+                onClick: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_MICROPHONE,
+        name: 'Audio Input',
+        json: {
+            widget: 'audio-input',
+            data: {
+                style: {
+                    width: '50px',
+                    height: '60px',
+                },
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+                value: '',
             },
             listeners: {
                 onClick: [],

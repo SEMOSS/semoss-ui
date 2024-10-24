@@ -49,6 +49,10 @@ import {
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+import {
+    config as AudioInputBlockConfig,
+    AudioInputBlockDef,
+} from './audio-input-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -79,7 +83,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | AudioInputBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -104,6 +109,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
