@@ -1,4 +1,5 @@
 import { Registry } from '@/stores';
+import { config as AudioBlockConfig, AudioBlockDef } from './audio-block';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
@@ -51,6 +52,7 @@ import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
 
 export type DefaultBlockDefinitions =
+    | AudioBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -82,6 +84,7 @@ export type DefaultBlockDefinitions =
     | ModalBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [AudioBlockConfig.widget]: AudioBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
@@ -115,6 +118,7 @@ export function getTypeForBlock(widget: string) {
 }
 
 export {
+    AudioBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
