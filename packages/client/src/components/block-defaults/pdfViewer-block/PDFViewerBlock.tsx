@@ -12,7 +12,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useParams } from 'react-router-dom';
 import { Env } from '@/env';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 export interface PDFViewerBlockDef extends BlockDef<'pdfViewer'> {
     widget: 'pdfViewer';
