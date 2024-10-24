@@ -1,15 +1,92 @@
 {
     "name": "@semoss/client",
     "scripts": {
-        "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
-        "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --mode=production --node-env=production",
-        "build:dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --mode=development --node-env=development",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
+        "dev-old": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
+        "lint": "nx eslint:lint",
+        "lint:fix": "nx eslint:lint --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",
         "type-check": "tsc --pretty --noEmit"
+    },
+    "nx": {
+        "targets": {
+            "build": {
+                "options": {
+                    "cwd": "packages/client",
+                    "args": [
+                        "--node-env=production"
+                    ],
+                    "command": "webpack-cli build"
+                },
+                "cache": true,
+                "dependsOn": [
+                    "^build"
+                ],
+                "inputs": [
+                    "production",
+                    "^production",
+                    {
+                        "externalDependencies": [
+                            "webpack-cli"
+                        ]
+                    }
+                ],
+                "outputs": [
+                    "{projectRoot}/dist"
+                ],
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Runs Webpack build",
+                    "help": {
+                        "command": "pnpm exec webpack-cli build --help",
+                        "example": {
+                            "options": {
+                                "json": "stats.json"
+                            },
+                            "args": [
+                                "--profile"
+                            ]
+                        }
+                    }
+                },
+                "executor": "nx:run-commands",
+                "configurations": {},
+                "parallelism": true
+            },
+            "dev": {
+                "options": {
+                    "cwd": "packages/client",
+                    "args": [
+                        "--mode=development",
+                        "--node-env=development",
+                        "--watch"
+                    ],
+                    "command": "webpack-cli"
+                },
+                "metadata": {
+                    "technologies": [
+                        "webpack"
+                    ],
+                    "description": "Starts Webpack dev",
+                    "help": {
+                        "command": "pnpm exec webpack-cli --help",
+                        "example": {
+                            "options": {
+                                "args": [
+                                    "--client-progress",
+                                    "--history-api-fallback "
+                                ]
+                            }
+                        }
+                    }
+                },
+                "executor": "nx:run-commands",
+                "configurations": {}
+            }
+        }
     },
     "dependencies": {
         "@emotion/react": "^11.11.1",

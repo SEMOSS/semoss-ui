@@ -2,7 +2,8 @@
     "compilerOptions": {
         "paths": {
             "@/*": ["./src/*"],
-            "react": ["./node_modules/@types/react"]
+            "react": ["./node_modules/@types/react"],
+            "@semoss/ui": ["../../libs/ui/dist/index.esm.d.ts"]
         },
         "target": "es6",
         "lib": ["dom", "dom.iterable", "esnext"],
