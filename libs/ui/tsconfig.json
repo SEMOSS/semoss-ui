@@ -31,7 +31,7 @@
             "@/*": ["*"]
         }
     },
-    "include": ["src/*"],
+    "include": ["src"],
     "exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.stories.tsx"]
     // "references": [
     //     {
