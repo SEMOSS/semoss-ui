@@ -13,7 +13,7 @@
     "scripts": {
         "start": "pnpm run storybook",
         "dev": "run-p build:dev storybook",
-        "build": "nx run @semoss/ui:build",
+        "build": "rollup -c",
         "build:dev": "rollup -w -c",
         "storybook": "cross-env NODE_OPTIONS=--max_old_space_size=8192 storybook dev -p 6006",
         "lint": "eslint .",
