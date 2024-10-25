@@ -73,7 +73,7 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
     }, []);
 
     useEffect(() => {
-        setData('value', transcript + interimTranscript);
+        setData('value', transcript);
     }, [transcript]);
 
     const handleRecording = (stopRecording = false) => {
