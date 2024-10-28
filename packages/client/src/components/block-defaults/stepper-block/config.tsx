@@ -1,25 +1,17 @@
 import { BlockConfig } from '@/stores';
-import {
-    InputSettings,
-    QuerySelectionSettings,
-    SelectOptionsSettings,
-} from '@/components/block-settings';
-
+import { InputSettings } from '@/components/block-settings';
 import { StepperBlockDef, StepperBlock } from './StepperBlock';
 import { ViewList } from '@mui/icons-material';
-
-import { buildListener } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
-import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
-import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
+import { StepperStepsSettings } from '@/components/block-settings/shared/StepperStepsSettings';
 
 // export the config for the block
 export const config: BlockConfig<StepperBlockDef> = {
     widget: 'stepper',
     type: BLOCK_TYPE_INPUT,
     data: {
+        active: 0,
         steps: [],
-        activeStep: 0,
     },
     listeners: {
         onChange: [],
@@ -36,11 +28,21 @@ export const config: BlockConfig<StepperBlockDef> = {
                 {
                     description: 'Steps',
                     render: ({ id }) => (
-                        <SwitchSettings
+                        <StepperStepsSettings
                             id={id}
-                            label="Enable Multi Select"
-                            path="multiple"
-                            description="This setting will enable the multi-select feature on the select input"
+                            label="Steps"
+                            path="steps"
+                        />
+                    ),
+                },
+                {
+                    description: 'Active Step',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Active Step"
+                            path="active"
+                            type="number"
                         />
                     ),
                 },

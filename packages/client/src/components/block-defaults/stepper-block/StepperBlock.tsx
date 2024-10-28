@@ -1,31 +1,45 @@
-import React from 'react';
-import { useBlock, useDebounce } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { observer } from 'mobx-react-lite';
-import { Step, StepLabel, Stepper } from '@mui/material';
+import { Step, StepLabel, Stepper, Typography } from '@mui/material';
+
+interface Name {
+    name: string;
+    id?: number;
+}
 
 export interface StepperBlockDef extends BlockDef<'stepper'> {
     widget: 'stepper';
     data: {
-        steps: [];
-        activeStep: 0;
+        active: number;
+        steps: Name[];
     };
 }
 
 export const StepperBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData, listeners } = useBlock<StepperBlockDef>(id);
-
-    const { steps, activeStep } = data;
+    const { attrs, data } = useBlock<StepperBlockDef>(id);
+    const { active } = data;
 
     return (
-        <Stepper {...attrs}>
-            {steps.map((label, i) => {
-                return (
-                    <Step key={`${id}--${label}--${i}`}>
-                        <StepLabel>{label}</StepLabel>
-                    </Step>
-                );
-            })}
-        </Stepper>
+        <>
+            <Stepper {...attrs} activeStep={active}>
+                {data.steps?.map((obj, i) => {
+                    return (
+                        <Step key={`${id}--${obj.name}--${i}`}>
+                            <StepLabel>{obj.name}</StepLabel>
+                        </Step>
+                    );
+                })}
+            </Stepper>
+            {Number(active) >= data.steps?.length ? (
+                <Typography variant="caption">All steps completed</Typography>
+            ) : active ? (
+                <>
+                    <Typography variant="subtitle1">Step {active}</Typography>
+                </>
+            ) : (
+                ''
+            )}
+        </>
     );
 });
