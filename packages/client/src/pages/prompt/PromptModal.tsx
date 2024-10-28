@@ -82,7 +82,7 @@ export const PromptModal = (props: PromptModalProps) => {
             title: title,
             intent: intent,
             tags: tags,
-            id: prompt['ID'],
+            id: prompt['id'],
         };
         let stringified =
             'UpdatePrompt ( map = [' + JSON.stringify(promptMap) + ' ])';
@@ -110,6 +110,8 @@ export const PromptModal = (props: PromptModalProps) => {
             });
 
             return stringArr.join(' ');
+        } else if (prompt?.['context']) {
+            return prompt?.['context'];
         }
 
         return '';
@@ -119,14 +121,14 @@ export const PromptModal = (props: PromptModalProps) => {
         if (mode == 'Edit' || prompt != null) {
             console.log(createContextString());
             setContext(createContextString());
-            setTitle(prompt['TITLE']);
-            setIntent(prompt['INTENT']);
+            setTitle(prompt['title']);
+            setIntent(prompt['intent']);
             setTags(prompt['tags']);
         }
     }, [mode, prompt]);
     return (
         <Modal open={isOpen} maxWidth={'md'} fullWidth={true}>
-            <Modal.Title>{mode} Template</Modal.Title>
+            <Modal.Title>{mode} Prompt</Modal.Title>
             <Modal.Content>
                 <StyledStack
                     spacing={2}
@@ -135,7 +137,7 @@ export const PromptModal = (props: PromptModalProps) => {
                     justifyContent={'space-between'}
                 >
                     <StyledTypographyLabel variant="body1">
-                        Template Name
+                        Prompt Title
                     </StyledTypographyLabel>
                     <FormControl fullWidth>
                         <TextField
@@ -156,7 +158,7 @@ export const PromptModal = (props: PromptModalProps) => {
                     justifyContent={'space-between'}
                 >
                     <StyledTypographyLabel variant="body1">
-                        Template Description
+                        Prompt Context
                     </StyledTypographyLabel>
                     <FormControl fullWidth>
                         <TextField
@@ -238,7 +240,7 @@ export const PromptModal = (props: PromptModalProps) => {
                     }}
                     disabled={disableCreate()}
                 >
-                    Create Template
+                    Save
                 </Button>
             </Modal.Actions>
         </Modal>

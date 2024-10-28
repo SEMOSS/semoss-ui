@@ -72,6 +72,8 @@ export const PromptCard = (props: {
     tokens: Token[];
     inputTypes: object;
     context: string;
+    intent: string;
+    id: string;
     openUIBuilderForTemplate: () => void;
 }) => {
     // todo: hook this up to a real bookmark system
@@ -81,6 +83,7 @@ export const PromptCard = (props: {
     const chooseTemplate = () => {
         setIsLoading(true);
         props.openUIBuilderForTemplate();
+        setIsLoading(false);
     };
 
     return (

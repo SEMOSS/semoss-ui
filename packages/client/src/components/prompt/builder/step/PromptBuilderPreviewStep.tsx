@@ -27,8 +27,8 @@ export const PromptBuilderPreviewStep = (props: {
     const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
     const [promptMode, setPromptMode] = useState('');
     const [promptToEdit, setPromptToEdit] = useState({
-        TITLE: props?.builder?.title?.value,
-        CONTEXT: props?.builder?.context?.value,
+        title: props?.builder?.title?.value,
+        context: props?.builder?.context?.value,
         tags: props?.builder?.tags?.value,
         inputs: props?.builder?.inputs?.value,
     });
