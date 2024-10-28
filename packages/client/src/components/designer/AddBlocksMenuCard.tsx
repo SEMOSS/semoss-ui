@@ -15,6 +15,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     border: `1px solid rgba(0, 0, 0, 0.23)`,
     //TODO: styled needs to be updated to match the theme
     borderRadius: '12px', //  theme.shape.borderRadiusLg
+    justifyContent: 'center',
 }));
 
 export interface AddBlocksMenuItemProps {
