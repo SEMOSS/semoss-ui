@@ -31,13 +31,14 @@ const StyledListItemText = styled(List.ItemText)(() => ({
 export const PromptLibraryList = (props: {
     filter: string;
     setFilter: (filter: string) => void;
+    reload?: boolean;
 }) => {
     const { monolithStore } = useRootStore();
     const [promptTags, setPromptTags] = useState([]);
 
     useEffect(() => {
         init();
-    }, []);
+    }, [props.reload]);
 
     const init = () => {
         monolithStore

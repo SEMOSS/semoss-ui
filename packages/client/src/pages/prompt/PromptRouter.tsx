@@ -16,8 +16,6 @@ export const PromptRouter = observer(() => {
     return (
         <Routes>
             <Route index element={<PromptPage />} />
-            {/* <Route path="new-prompt" element={<NewPromptBuilderAppPage />} /> */}
-            {/* <Route path="new-prompt" element={<PromptBuilder />} /> */}
         </Routes>
     );
 });
