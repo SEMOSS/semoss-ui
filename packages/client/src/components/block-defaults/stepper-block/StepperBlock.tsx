@@ -3,7 +3,7 @@ import { BlockComponent, BlockDef } from '@/stores';
 import { observer } from 'mobx-react-lite';
 import { Step, StepLabel, Stepper, Typography } from '@mui/material';
 
-interface Name {
+interface Title {
     name: string;
     id?: number;
 }
@@ -12,14 +12,13 @@ export interface StepperBlockDef extends BlockDef<'stepper'> {
     widget: 'stepper';
     data: {
         active: number;
-        steps: Name[];
+        steps: Title[];
     };
 }
 
 export const StepperBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<StepperBlockDef>(id);
     const { active } = data;
-
     return (
         <>
             <Stepper {...attrs} activeStep={active}>

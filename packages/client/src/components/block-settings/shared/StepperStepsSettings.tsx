@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, useBlocks, useDebounce } from '@/hooks';
+import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { TextField } from '@mui/material';
@@ -10,25 +10,25 @@ import { Button, IconButton } from '@mui/material';
 import { styled } from '@semoss/ui';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const StyledPaddedFlexDiv = styled('div')(({ theme }) => ({
+const StyledPaddedFlexDiv = styled('div')({
     display: 'flex',
     alignItems: 'center',
-}));
+});
 
-const StyledUlList = styled('ul')(({ theme }) => ({
+const StyledUlList = styled('ul')({
     width: '100%',
     listStyle: 'none',
     marginBottom: '1em',
-}));
+});
 
-const StyledStepItem = styled('li')(({ theme }) => ({
+const StyledStepItem = styled('li')({
     marginBottom: '0.5em',
-}));
+});
 
-const StyledIndexItem = styled('div')(({ theme }) => ({
+const StyledIndexItem = styled('div')({
     marginRight: '1em',
     fontSize: '14px',
-}));
+});
 
 interface StepperStepsSettings<D extends BlockDef = BlockDef> {
     /**
@@ -45,13 +45,13 @@ interface StepperStepsSettings<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
-interface Name {
+interface Title {
     name: string;
     id?: number;
 }
 
 type FormValues = {
-    names: Name[];
+    steps: Title[];
 };
 
 export const StepperStepsSettings = observer(
@@ -60,19 +60,24 @@ export const StepperStepsSettings = observer(
         label,
         path,
     }: StepperStepsSettings<D>) => {
-        const { control, register } = useForm<FormValues>({
+        const { control, register, getValues, watch } = useForm<FormValues>({
             defaultValues: {
-                names: [],
+                steps: [],
             },
         });
-        const { fields, append, remove, update } = useFieldArray<FormValues>({
+        const { fields, append, remove } = useFieldArray<FormValues>({
             control,
-            name: 'names',
+            name: 'steps',
         });
-        const { state } = useBlocks();
-        const { data, setData, listeners } = useBlockSettings<D>(id);
+        const { setData } = useBlockSettings<D>(id);
         // track the value
         const [nameValue, setNameValue] = useState('');
+
+        // watch
+        const watchSteps = watch();
+
+        // track the ref to debounce the input
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
         /**
          * Sync the data on change
@@ -83,8 +88,25 @@ export const StepperStepsSettings = observer(
         };
 
         useEffect(() => {
-            setData(path, fields as PathValue<D['data'], typeof path>);
-        }, [fields]);
+            const getFormValues = getValues();
+            // clear out he old timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+
+            if (getFormValues && getFormValues.steps) {
+                timeoutRef.current = setTimeout(() => {
+                    setData(
+                        path,
+                        getFormValues.steps as PathValue<
+                            D['data'],
+                            typeof path
+                        >,
+                    );
+                }, 300);
+            }
+        }, [watchSteps]);
 
         return (
             <>
@@ -99,22 +121,15 @@ export const StepperStepsSettings = observer(
                                                 index + 1
                                             })`}</StyledIndexItem>
                                             <Controller
-                                                name={`names.${index}.name`}
+                                                name={`steps.${index}.name`}
                                                 control={control}
                                                 render={({ field }) => {
                                                     return (
                                                         <TextField
                                                             {...register(
-                                                                `names.${index}.name`,
+                                                                `steps.${index}.name`,
                                                             )}
                                                             fullWidth
-                                                            onChange={(e) => {
-                                                                update(index, {
-                                                                    name: e
-                                                                        .target
-                                                                        .value,
-                                                                });
-                                                            }}
                                                             size="small"
                                                             variant="outlined"
                                                         />
