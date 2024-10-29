@@ -37,6 +37,9 @@ import TaskStepper from './TaskStepper';
 
 import Button from '@mui/material/Button';
 
+import { runPixel } from '@/api';
+import { useNavigate } from 'react-router-dom';
+
 const GridBreak = styled('div')(({ theme }) => ({
     width: '100%',
 }));
@@ -62,7 +65,9 @@ interface NewConductorStepProps {
     setTaskEditorHistory: Function;
     openAccordionIndexesSet: Set<number | unknown>;
     setOpenAccordionIndexesSet: Function;
+    appOptionIds: Array<string>;
     subtask: string;
+    allAppIdsSet: Set<string>;
 }
 
 const DUMMY_SUBTASK_INPUTS = [
@@ -97,6 +102,8 @@ export const NewConductorStep = observer(
         setTaskEditorHistory,
         openAccordionIndexesSet,
         setOpenAccordionIndexesSet,
+        appOptionIds,
+        allAppIdsSet,
         subtask,
     }: NewConductorStepProps) => {
         const { conductor } = useConductor();
@@ -117,7 +124,7 @@ export const NewConductorStep = observer(
                     conductor.setInputValue(name, v);
                 }
             });
-        }, [Object.keys(step).length, type]);
+        }, [Object.keys(step)?.length, type]);
 
         const [isExpanded, setHistoryExpanded] = useState(false);
         const [isRawInputsShown, setIsRawInputsShown] = useState(false);
@@ -128,6 +135,23 @@ export const NewConductorStep = observer(
         const [stepsComplete, setStepsComplete] = React.useState(false);
 
         const [isAppSetupComplete, setIsAppSetupComplete] = useState(false);
+
+        const navigate = useNavigate();
+
+        // TODO
+
+        // assume we have array of appIds only
+
+        // track steps
+        // selectedAppId -- if null unselected | if not null selection is made
+        // appOptions
+        // subTaskTitle
+        // subTaskInputs
+        // subTaskOutputs
+
+        // clean up component structure and all component files
+
+        // add a reactFlow component to mapping step
 
         const [taskSteps, setTaskSteps] = React.useState([
             'Select app',
@@ -223,7 +247,7 @@ export const NewConductorStep = observer(
                 newSkipped.delete(activeStep);
             }
 
-            if (activeStep === taskSteps.length - 1) {
+            if (activeStep === taskSteps?.length - 1) {
                 setStepsComplete(true);
             }
 
@@ -245,6 +269,74 @@ export const NewConductorStep = observer(
                 setSelectedSubTaskApp(null);
             }
         }, [activeStep]);
+
+        useEffect(() => {
+            // on page load
+            // fetch first suggested app detail
+            // fetch dummy suggestion app details
+            // set app options
+
+            retrieveAllAppDetails();
+        }, [appOptionIds]);
+
+        const retrieveAllAppDetails = async () => {
+            const newAppOptions = [];
+
+            appOptionIds.forEach(async (appId, appIdx) => {
+                // fetch app details from id
+                const pixel = `ProjectInfo(project=["${appId}"]);`;
+                const pixelResponse = await runPixel(pixel);
+                const appDetails = pixelResponse.pixelReturn[0].output;
+                console.log({ appDetails });
+
+                newAppOptions.push({
+                    title: appDetails['project_name'],
+                    description: appDetails['description'],
+                    imgUrl: '',
+                    appId: appDetails['project_id'],
+                });
+            });
+
+            if (appOptionIds?.length < 9) {
+                const allAppIdsSetDup = new Set(allAppIdsSet);
+                appOptionIds.forEach((appId) => {
+                    allAppIdsSetDup.delete(appId);
+                });
+
+                const dummyAppIds = Array.from(allAppIdsSetDup);
+                const dummyOptionsNeeded = 9 - appOptionIds?.length;
+
+                const dummyRandomOffset = Math.floor(Math.random() * 10);
+
+                for (let i = 0; i < dummyOptionsNeeded; i++) {
+                    const dummyAppId =
+                        dummyAppIds[
+                            (i + dummyRandomOffset) % dummyAppIds.length
+                        ];
+                    const pixel = `ProjectInfo(project=["${dummyAppId}"]);`;
+                    const pixelResponse = await runPixel(pixel);
+                    const appDetails = pixelResponse.pixelReturn[0].output;
+                    console.log({ appDetails });
+
+                    newAppOptions.push({
+                        title: appDetails['project_name'],
+                        description: appDetails['description'],
+                        imgUrl: '',
+                        appId: appDetails['project_id'],
+                    });
+                }
+            }
+
+            // setAppOptions([{
+            //     title: 'TEST Budget Calculator',
+            //     description:
+            //         'Effortlessly plan and manage spending by providing precise budget calculations and receiving insightful financial analysis.',
+            //     imgUrl: '',
+            //     appId: Math.floor(Math.random() * 1000000000)
+            // }])
+
+            setAppOptions(newAppOptions);
+        };
 
         return (
             <Accordion
@@ -336,7 +428,7 @@ export const NewConductorStep = observer(
                                 </Stepper>
                             )}
 
-                            {activeStep === taskSteps.length ? (
+                            {activeStep === taskSteps?.length ? (
                                 <React.Fragment>
                                     <div
                                         style={{
@@ -584,7 +676,7 @@ export const NewConductorStep = observer(
                                                     <ChevronLeft />
                                                 </IconButton>
                                                 {appOptions
-                                                    .slice(
+                                                    ?.slice(
                                                         appCarouselOffset,
                                                         appCarouselOffset + 3,
                                                     )
@@ -641,8 +733,8 @@ export const NewConductorStep = observer(
                                                                             DUMMY_IMG_URLS[
                                                                                 appObj
                                                                                     .title
-                                                                                    .length %
-                                                                                    DUMMY_IMG_URLS.length
+                                                                                    ?.length %
+                                                                                    DUMMY_IMG_URLS?.length
                                                                             ]
                                                                         })`,
                                                                         backgroundSize:
@@ -674,9 +766,11 @@ export const NewConductorStep = observer(
                                                                     }}
                                                                 >
                                                                     <Typography variant="body2">
-                                                                        {
-                                                                            appObj.description
-                                                                        }
+                                                                        {appObj.description?.slice(
+                                                                            0,
+                                                                            140,
+                                                                        ) +
+                                                                            '...'}
                                                                     </Typography>
                                                                 </div>
                                                             )}
@@ -690,15 +784,25 @@ export const NewConductorStep = observer(
                                                                         height: '42px',
                                                                     }}
                                                                 >
-                                                                    <Button
-                                                                        variant="text"
-                                                                        color="primary"
-                                                                        endIcon={
-                                                                            <OpenInNewRounded />
-                                                                        }
+                                                                    <a
+                                                                        target="new"
+                                                                        href={`#/app/${appObj.appId}`}
                                                                     >
-                                                                        Open
-                                                                    </Button>
+                                                                        <Button
+                                                                            variant="text"
+                                                                            color="primary"
+                                                                            endIcon={
+                                                                                <OpenInNewRounded />
+                                                                            }
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) =>
+                                                                                e.stopPropagation()
+                                                                            }
+                                                                        >
+                                                                            Open
+                                                                        </Button>
+                                                                    </a>
                                                                 </div>
                                                             )}
                                                         </AppSelectionCard>
@@ -708,14 +812,14 @@ export const NewConductorStep = observer(
                                                         sx={{
                                                             opacity:
                                                                 appCarouselOffset >=
-                                                                appOptions.length -
+                                                                appOptions?.length -
                                                                     3
                                                                     ? 0
                                                                     : 1,
                                                         }}
                                                         disabled={
                                                             appCarouselOffset >=
-                                                            appOptions.length -
+                                                            appOptions?.length -
                                                                 3
                                                         }
                                                         onClick={() => {
@@ -725,7 +829,7 @@ export const NewConductorStep = observer(
                                                             );
                                                             if (
                                                                 appCarouselOffset >
-                                                                appOptions.length -
+                                                                appOptions?.length -
                                                                     3
                                                             ) {
                                                                 // TODO display blank card space or render text saying no more apps etc
@@ -737,11 +841,11 @@ export const NewConductorStep = observer(
                                                 }
                                             </Box>
                                             {selectedSubTaskApp && (
-                                                <Box>
+                                                <Box sx={{ maxWidth: '750px' }}>
                                                     <Typography
                                                         variant="body2"
                                                         sx={{
-                                                            marginTop: '15px',
+                                                            marginTop: '25px',
                                                             marginBottom: '5px',
                                                         }}
                                                     >
@@ -754,9 +858,9 @@ export const NewConductorStep = observer(
                                                     <Typography
                                                         variant="body2"
                                                         sx={{
-                                                            marginTop: '5px',
+                                                            marginTop: '15px',
                                                             marginBottom:
-                                                                '20px',
+                                                                '30px',
                                                         }}
                                                     >
                                                         {
@@ -774,7 +878,9 @@ export const NewConductorStep = observer(
                                                         }}
                                                     >
                                                         <BlocksRenderer
-                                                            state={step}
+                                                            appId={
+                                                                selectedSubTaskApp.appId
+                                                            }
                                                         />
                                                     </Box>
                                                     <Box

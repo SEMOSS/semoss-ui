@@ -1229,7 +1229,6 @@ export class StateStore {
         if (isOutput) token['isOutput'] = isOutput;
         if (value) token['value'] = value;
 
-        debugger;
         this._store.variables[id] = token as Variable;
 
         return token;

@@ -26,10 +26,7 @@ import {
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { Editor } from '@monaco-editor/react';
-import { None } from 'vega';
-
 import { runPixel } from '@/api';
-import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
 
 import { LoadingScreen } from '@/components/ui';
 
@@ -47,9 +44,9 @@ export const Conductor = observer(() => {
     const { conductor } = useConductor();
     const notification = useNotification();
 
-    const [currentEditorJSON, setCurrentEditorJSON] = useState('');
     const [currentOutputEditorJSON, setCurrentOutputEditorJSON] = useState('');
     const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({});
+    const [currentEditorJSON, setCurrentEditorJSON] = useState('');
 
     const [subtaskSteps, setSubtaskSteps] = useState([]);
 
@@ -60,11 +57,26 @@ export const Conductor = observer(() => {
     const [selectedSubtask, setSelectedSubtask] = useState(-1);
     const { monolithStore, configStore } = useRootStore();
     const [promptText, setPromptText] = useState(null);
+
+    const [allAppIdsSet, setAllAppIdsSet] = useState(null); // temporary - collecting all app ids for dummy app suggestions in subtask carousel
+
     const [openAccordionIndexesSet, setOpenAccordionIndexesSet] = useState(
         new Set(),
     );
     const [taskContainerWidthPercent, setTaskContainerWidthPercent] =
         useState('100%');
+
+    const [allAppIds, setAllAppIds] = useState([]); // populate with all retrieved app ids for dummy demo app ids
+    const [subtaskObjectsArray, setSubtaskObjectArray] = useState();
+    // [
+    // {
+    // step: 'Find job requirements...',
+    // project_id: '123123-31231-41233123' |OR| [
+    // '123123-31231-41233123'
+    // ], ...
+    // selectedApp: null
+    // }, ...
+    // ]
 
     const { handleSubmit, control, reset, watch } = useForm<AIConductorForm>({
         defaultValues: {
@@ -213,18 +225,6 @@ export const Conductor = observer(() => {
         }, 500);
     };
 
-    const DUMMY_JSON = `
-        {
-            "imageurl": "/barbie_dream_house.png",
-            "is_house": true,
-            "color": "pink",
-            "bedrooms": "3+",
-            "has_pool": true,
-            "has_slide": true,
-            "cost": ""
-        }
-    `;
-
     const editorChangeHandler = (newString) => {
         // console.log({ newString });
     };
@@ -239,7 +239,6 @@ export const Conductor = observer(() => {
 
     const fetchSteps = handleSubmit(async (data: AIConductorForm) => {
         setIsLoading(true);
-
         setPromptText(data.taskInput);
         setSubtaskSteps([]);
 
@@ -248,21 +247,27 @@ export const Conductor = observer(() => {
             'Let’s find out...let me generate a roadmap!';
         setModelResponseText(placeholderModelResponse);
 
-        const modelId = '17753d59-4536-4415-a6ac-f673b1a90a87'; // Mixtral-8x7B
-        const testPrompt =
-            'My shop has in stock refried burritos. I sell some refried burritos daily. I can reorder refried burritos to refill my stock if needed. How can I determine when to reorder and how much to reorder extra refried burritos.';
+        // const modelId = '17753d59-4536-4415-a6ac-f673b1a90a87'; // Mixtral-8x7B
+        const modelId = '4acbe913-df40-4ac0-b28a-daa5ad91b172';
+
+        // const testPrompt = 'My shop has in stock refried burritos. I sell some refried burritos daily. I can reorder refried burritos to refill my stock if needed. How can I determine when to reorder and how much to reorder extra refried burritos.';
         const promptAddition =
             'Please limit your response to 3-10 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
+        // const promptAddition = "";
+
         const combinePrompt = [data.taskInput, promptAddition].join(' ');
-        const pixel = `LLMInstruct("4acbe913-df40-4ac0-b28a-daa5ad91b172", "${combinePrompt}")`;
-
+        const pixel = `LLMInstruct("${modelId}", "${combinePrompt}")`;
         const res = await runPixel(pixel);
-
         const outputSteps = res.pixelReturn[0].output['response'];
-        setSubtaskSteps(outputSteps);
 
-        console.log({ res });
+        // temporary - collecting all app ids for dummy app suggestions in subtask carousel
+        const newAllAppIdsSet = new Set(
+            outputSteps.map((step) => step.project_id),
+        );
+        setAllAppIdsSet(newAllAppIdsSet);
         console.log({ outputSteps });
+
+        setSubtaskSteps(outputSteps);
 
         setIsLoading(false);
     });
@@ -283,15 +288,6 @@ export const Conductor = observer(() => {
 
     return (
         <ParentContainer>
-            {/* <button
-                onClick={() =>
-                    fetchSteps(
-                        'How can I determine if I can buy a house in San Francisco?',
-                    )
-                }
-            >
-                runPixel
-            </button> */}
             <TitleContainer>
                 <div>
                     <Typography variant="h4">AI Conductor</Typography>
@@ -302,7 +298,7 @@ export const Conductor = observer(() => {
             </TitleContainer>
             <LowerParentContainer>
                 {isLoading && (
-                    <LoadingScreen.Trigger description="Awaiting AI Conductor Response" />
+                    <LoadingScreen.Trigger description="Processing Request" />
                 )}
                 <LeftParentContainer
                     style={{
@@ -415,65 +411,60 @@ export const Conductor = observer(() => {
                             </SubTaskInnerContainer>
                             <SubTaskPlayButton></SubTaskPlayButton>
                         </SubTaskParentContainerNew>
-
-                        {
-                            // {promptText &&
-                            // conductor.steps.map((step, i) => {
-                            subtaskSteps.map((subtask, i) => {
-                                return (
-                                    <SubTaskParentContainerNew>
-                                        <SubTaskInnerContainer>
-                                            <NewConductorStep
-                                                key={i}
-                                                taskIndex={i}
-                                                type={'app'}
-                                                step={conductor.steps[0]}
-                                                subtask={subtask}
-                                                selectedSubtask={
-                                                    selectedSubtask
-                                                }
-                                                setSelectedSubtask={
-                                                    setSelectedSubtask
-                                                }
-                                                taskEditorHistory={
-                                                    taskEditorHistory
-                                                }
-                                                setTaskEditorHistory={
-                                                    setTaskEditorHistory
-                                                }
-                                                openAccordionIndexesSet={
-                                                    openAccordionIndexesSet
-                                                }
-                                                setOpenAccordionIndexesSet={
-                                                    setOpenAccordionIndexesSet
-                                                }
-                                                currentEditorJSON={
-                                                    currentEditorJSON
-                                                }
-                                                setCurrentEditorJSON={
-                                                    setCurrentEditorJSON
-                                                }
-                                            />
-                                        </SubTaskInnerContainer>
-                                        <SubTaskPlayButton>
-                                            <div
-                                                style={{
-                                                    justifyContent: 'center',
-                                                    display: 'flex',
-                                                    width: '100%',
-                                                }}
+                        {subtaskSteps.map((subtask, i) => {
+                            return (
+                                <SubTaskParentContainerNew>
+                                    <SubTaskInnerContainer>
+                                        <NewConductorStep
+                                            key={i}
+                                            taskIndex={i}
+                                            type={'app'}
+                                            step={conductor.steps[0]}
+                                            subtask={subtask.step}
+                                            appOptionIds={[subtask.project_id]}
+                                            allAppIdsSet={allAppIdsSet}
+                                            selectedSubtask={selectedSubtask}
+                                            setSelectedSubtask={
+                                                setSelectedSubtask
+                                            }
+                                            taskEditorHistory={
+                                                taskEditorHistory
+                                            }
+                                            setTaskEditorHistory={
+                                                setTaskEditorHistory
+                                            }
+                                            openAccordionIndexesSet={
+                                                openAccordionIndexesSet
+                                            }
+                                            setOpenAccordionIndexesSet={
+                                                setOpenAccordionIndexesSet
+                                            }
+                                            currentEditorJSON={
+                                                currentEditorJSON
+                                            }
+                                            setCurrentEditorJSON={
+                                                setCurrentEditorJSON
+                                            }
+                                        />
+                                    </SubTaskInnerContainer>
+                                    <SubTaskPlayButton>
+                                        <div
+                                            style={{
+                                                justifyContent: 'center',
+                                                display: 'flex',
+                                                width: '100%',
+                                            }}
+                                        >
+                                            <IconButton
+                                                onClick={playClickHandler}
                                             >
-                                                <IconButton
-                                                    onClick={playClickHandler}
-                                                >
-                                                    <PlayArrow />
-                                                </IconButton>
-                                            </div>
-                                        </SubTaskPlayButton>
-                                    </SubTaskParentContainerNew>
-                                );
-                            })
-                        }
+                                                <PlayArrow />
+                                            </IconButton>
+                                        </div>
+                                    </SubTaskPlayButton>
+                                </SubTaskParentContainerNew>
+                            );
+                        })}
 
                         <Controller
                             name={'uploadFile'}
