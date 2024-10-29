@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
+import { computed } from 'mobx';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
@@ -9,6 +10,7 @@ import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { Button, IconButton } from '@mui/material';
 import { styled } from '@semoss/ui';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { getValueByPath } from '@/utility';
 
 const StyledPaddedFlexDiv = styled('div')({
     display: 'flex',
@@ -60,20 +62,17 @@ export const StepperStepsSettings = observer(
         label,
         path,
     }: StepperStepsSettings<D>) => {
+        const { data, setData } = useBlockSettings<D>(id);
         const { control, register, getValues, watch } = useForm<FormValues>({
             defaultValues: {
                 steps: [],
             },
         });
-        const { fields, append, remove } = useFieldArray<FormValues>({
+        const { fields, append, remove, replace } = useFieldArray<FormValues>({
             control,
             name: 'steps',
         });
-        const { setData } = useBlockSettings<D>(id);
-        // track the value
         const [nameValue, setNameValue] = useState('');
-
-        // watch
         const watchSteps = watch();
 
         // track the ref to debounce the input
@@ -108,48 +107,81 @@ export const StepperStepsSettings = observer(
             }
         }, [watchSteps]);
 
+        // get the value of the input
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return '';
+                }
+
+                const v = getValueByPath(data, path);
+                if (typeof v === 'undefined') {
+                    return '';
+                } else if (typeof v === 'string') {
+                    return v;
+                }
+
+                return JSON.stringify(v);
+            });
+        }, [data, path]).get();
+
+        useEffect(() => {
+            const proxyArr = data.steps;
+            const newArr: Title[] = [...(proxyArr as [])];
+            replace(newArr);
+        }, [computedValue]);
+
         return (
             <>
                 <form>
-                    <BaseSettingSection label={label}>
-                        <StyledUlList>
-                            {fields.map((field, index) => {
-                                return (
-                                    <StyledStepItem key={field.id}>
-                                        <StyledPaddedFlexDiv>
-                                            <StyledIndexItem>{`${
-                                                index + 1
-                                            })`}</StyledIndexItem>
-                                            <Controller
-                                                name={`steps.${index}.name`}
-                                                control={control}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            {...register(
-                                                                `steps.${index}.name`,
-                                                            )}
-                                                            fullWidth
-                                                            size="small"
-                                                            variant="outlined"
-                                                        />
-                                                    );
-                                                }}
-                                            />
+                    {fields.length ? (
+                        <>
+                            <BaseSettingSection label={label}>
+                                <StyledUlList>
+                                    {fields.map((field, index) => {
+                                        return (
+                                            <StyledStepItem key={field.id}>
+                                                <StyledPaddedFlexDiv>
+                                                    <StyledIndexItem>{`${
+                                                        index + 1
+                                                    })`}</StyledIndexItem>
+                                                    <Controller
+                                                        name={`steps.${index}.name`}
+                                                        control={control}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    {...register(
+                                                                        `steps.${index}.name`,
+                                                                    )}
+                                                                    fullWidth
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
 
-                                            <IconButton
-                                                color="error"
-                                                title="Delete"
-                                                onClick={() => remove(index)}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                        </StyledPaddedFlexDiv>
-                                    </StyledStepItem>
-                                );
-                            })}
-                        </StyledUlList>
-                    </BaseSettingSection>
+                                                    <IconButton
+                                                        color="error"
+                                                        title="Delete"
+                                                        onClick={() =>
+                                                            remove(index)
+                                                        }
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </StyledPaddedFlexDiv>
+                                            </StyledStepItem>
+                                        );
+                                    })}
+                                </StyledUlList>
+                            </BaseSettingSection>
+                        </>
+                    ) : (
+                        ''
+                    )}
+
                     <BaseSettingSection label="Add Step">
                         <TextField
                             value={nameValue}
