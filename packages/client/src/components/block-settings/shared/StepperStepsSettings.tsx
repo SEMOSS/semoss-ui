@@ -6,7 +6,6 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { TextField } from '@mui/material';
-import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { Button, IconButton } from '@mui/material';
 import { styled } from '@semoss/ui';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -49,12 +48,7 @@ interface StepperStepsSettings<D extends BlockDef = BlockDef> {
 
 interface Title {
     name: string;
-    id?: number;
 }
-
-type FormValues = {
-    steps: Title[];
-};
 
 export const StepperStepsSettings = observer(
     <D extends BlockDef = BlockDef>({
@@ -63,17 +57,8 @@ export const StepperStepsSettings = observer(
         path,
     }: StepperStepsSettings<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
-        const { control, register, getValues, watch } = useForm<FormValues>({
-            defaultValues: {
-                steps: [],
-            },
-        });
-        const { fields, append, remove, replace } = useFieldArray<FormValues>({
-            control,
-            name: 'steps',
-        });
         const [nameValue, setNameValue] = useState('');
-        const watchSteps = watch();
+        const [allSteps, setAllSteps] = useState<Title[]>([]);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -85,27 +70,6 @@ export const StepperStepsSettings = observer(
             // set the value
             setNameValue(value);
         };
-
-        useEffect(() => {
-            const getFormValues = getValues();
-            // clear out he old timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
-
-            if (getFormValues && getFormValues.steps) {
-                timeoutRef.current = setTimeout(() => {
-                    setData(
-                        path,
-                        getFormValues.steps as PathValue<
-                            D['data'],
-                            typeof path
-                        >,
-                    );
-                }, 300);
-            }
-        }, [watchSteps]);
 
         // get the value of the input
         const computedValue = useMemo(() => {
@@ -125,86 +89,106 @@ export const StepperStepsSettings = observer(
             });
         }, [data, path]).get();
 
+        const addStep = (): void => {
+            setAllSteps([...allSteps, { name: nameValue }]);
+            setNameValue('');
+        };
+
+        const removeStep = (index): void => {
+            setAllSteps(allSteps.filter((step, i) => i !== index));
+        };
+
+        const updateStep = (index, value: string): void => {
+            setAllSteps((prevFields) =>
+                prevFields.map((field, i) =>
+                    i === index
+                        ? {
+                              ...field,
+                              name: value,
+                          }
+                        : field,
+                ),
+            );
+        };
+
+        useEffect(() => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+            timeoutRef.current = setTimeout(() => {
+                setData(path, allSteps as PathValue<D['data'], typeof path>);
+            }, 300);
+        }, [allSteps]);
+
         useEffect(() => {
             const proxyArr = data.steps;
             const newArr: Title[] = [...(proxyArr as [])];
-            replace(newArr);
+            setAllSteps(newArr);
         }, [computedValue]);
 
         return (
             <>
-                <form>
-                    {fields.length ? (
-                        <>
-                            <BaseSettingSection label={label}>
-                                <StyledUlList>
-                                    {fields.map((field, index) => {
-                                        return (
-                                            <StyledStepItem key={field.id}>
-                                                <StyledPaddedFlexDiv>
-                                                    <StyledIndexItem>{`${
-                                                        index + 1
-                                                    })`}</StyledIndexItem>
-                                                    <Controller
-                                                        name={`steps.${index}.name`}
-                                                        control={control}
-                                                        render={({ field }) => {
-                                                            return (
-                                                                <TextField
-                                                                    {...register(
-                                                                        `steps.${index}.name`,
-                                                                    )}
-                                                                    fullWidth
-                                                                    size="small"
-                                                                    variant="outlined"
-                                                                />
-                                                            );
-                                                        }}
-                                                    />
+                {allSteps.length ? (
+                    <>
+                        <BaseSettingSection label={label}>
+                            <StyledUlList>
+                                {allSteps.map((field, index) => {
+                                    return (
+                                        <StyledStepItem key={index}>
+                                            <StyledPaddedFlexDiv>
+                                                <StyledIndexItem>{`${
+                                                    index + 1
+                                                })`}</StyledIndexItem>
 
-                                                    <IconButton
-                                                        color="error"
-                                                        title="Delete"
-                                                        onClick={() =>
-                                                            remove(index)
-                                                        }
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </StyledPaddedFlexDiv>
-                                            </StyledStepItem>
-                                        );
-                                    })}
-                                </StyledUlList>
-                            </BaseSettingSection>
-                        </>
-                    ) : (
-                        ''
-                    )}
+                                                <TextField
+                                                    value={field.name}
+                                                    onChange={(e) =>
+                                                        updateStep(
+                                                            index,
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    fullWidth
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
 
-                    <BaseSettingSection label="Add Step">
-                        <TextField
-                            value={nameValue}
-                            onChange={(e) => {
-                                // sync the data on change
-                                onChange(e.target.value);
-                            }}
-                            size="small"
-                            variant="outlined"
-                            autoComplete="off"
-                        />
-                        <Button
-                            onClick={() => {
-                                append({ name: nameValue });
-                                setNameValue('');
-                            }}
-                            size="medium"
-                            variant="contained"
-                        >
-                            Add
-                        </Button>
-                    </BaseSettingSection>
-                </form>
+                                                <IconButton
+                                                    color="error"
+                                                    title="Delete"
+                                                    onClick={() =>
+                                                        removeStep(index)
+                                                    }
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </StyledPaddedFlexDiv>
+                                        </StyledStepItem>
+                                    );
+                                })}
+                            </StyledUlList>
+                        </BaseSettingSection>
+                    </>
+                ) : (
+                    ''
+                )}
+
+                <BaseSettingSection label="Add Step">
+                    <TextField
+                        value={nameValue}
+                        onChange={(e) => {
+                            // sync the data on change
+                            onChange(e.target.value);
+                        }}
+                        size="small"
+                        variant="outlined"
+                        autoComplete="off"
+                    />
+                    <Button onClick={addStep} size="medium" variant="contained">
+                        Add
+                    </Button>
+                </BaseSettingSection>
             </>
         );
     },
