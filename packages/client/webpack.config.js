@@ -87,9 +87,6 @@ const config = {
             filename: isProduction ? '[name].[contenthash].css' : '[name].css',
             chunkFilename: isProduction ? '[id].[contenthash].css' : '[id].css',
         }),
-        // new webpack.DefinePlugin({
-        //     'process.env.NODE_OPTIONS': '--max-old-space-size=8192',
-        // }),
 
         // new MonacoWebpackPlugin({
         //     languages: ['javascript', 'typescript'],

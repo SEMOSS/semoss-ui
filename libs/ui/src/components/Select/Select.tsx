@@ -2,6 +2,7 @@ import {
     TextField as MuiTextField,
     SxProps,
     InternalStandardProps as StandardProps,
+    TextFieldProps as MuiTextFieldProps,
 } from "@mui/material";
 import { InputAdornment } from "../InputAdornment";
 
@@ -99,16 +100,7 @@ export interface SelectProps {
      * If `true`, the label is displayed as required and the `input` element is required.
      * @default false
      */
-    SelectProps?: {
-        IconComponent?: React.ElementType;
-        startAdornment?:
-            | React.ElementType
-            | React.ReactElement<typeof InputAdornment>;
-        style?: React.CSSProperties;
-        multiple?: boolean;
-        value?: string[];
-        onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    };
+    SelectProps?: MuiTextFieldProps["SelectProps"];
 
     /**
      * Tooltip text

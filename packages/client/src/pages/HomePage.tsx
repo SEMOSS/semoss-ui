@@ -15,7 +15,6 @@ import { useNavigate } from 'react-router-dom';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard } from '@/components/app';
-import { WelcomeModal } from '@/components/welcome';
 import { Search } from '@mui/icons-material';
 import { Help } from '@/components/help';
 
@@ -398,10 +397,8 @@ export const HomePage = observer((): JSX.Element => {
                                         key={i}
                                         app={app}
                                         systemApp={false}
-                                        href={`#/app/${app.project_id}/detail`}
-                                        onAction={() =>
-                                            navigate(`/app/${app.project_id}`)
-                                        }
+                                        href={`#/app/${app.project_id}`}
+                                        detailHref={`app/${app.project_id}/detail`}
                                         appType={app.project_type}
                                         isFavorite={isFavorited(app.project_id)}
                                         favorite={() => {
@@ -426,7 +423,6 @@ export const HomePage = observer((): JSX.Element => {
                                     app={BUSINESS_INTELLIGENCE_APP}
                                     background="#BADEFF"
                                     href="../../../"
-                                    onAction={() => navigate('../../../')}
                                     systemApp={true}
                                     appType={'BI'}
                                 />
@@ -438,9 +434,6 @@ export const HomePage = observer((): JSX.Element => {
                                     app={TERMINAL_APP}
                                     background="#BADEFF"
                                     href="../../../#!/embed-terminal"
-                                    onAction={() =>
-                                        navigate('../../../#!/embed-terminal')
-                                    }
                                     systemApp={true}
                                     appType={'TERMINAL'}
                                 />
@@ -472,12 +465,8 @@ export const HomePage = observer((): JSX.Element => {
                                             key={i}
                                             app={app}
                                             systemApp={false}
-                                            href={`#/app/${app.project_id}/detail`}
-                                            onAction={() =>
-                                                navigate(
-                                                    `/app/${app.project_id}`,
-                                                )
-                                            }
+                                            href={`#/app/${app.project_id}`}
+                                            detailHref={`app/${app.project_id}/detail`}
                                             appType={app.project_type}
                                             isFavorite={isFavorited(
                                                 app.project_id,

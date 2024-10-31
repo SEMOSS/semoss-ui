@@ -719,7 +719,9 @@ export const AppDetailPage = () => {
                                                     })}
                                                 </Stack>
                                             ) : (
-                                                detailsForm[k.metakey]
+                                                (detailsForm[
+                                                    k.metakey
+                                                ] as string)
                                             )}
                                         </TagsBodyWrapper>
                                     </StyledSection>
