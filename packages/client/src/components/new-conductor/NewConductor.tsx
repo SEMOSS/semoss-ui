@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { useConductor, useRootStore } from '@/hooks';
+import { useEffect, useState } from 'react';
+import { useConductor } from '@/hooks';
 import {
-    Stack,
     Typography,
     styled,
     TextField,
     IconButton,
     FileDropzone,
-    useNotification,
     Button,
-    Accordion,
 } from '@semoss/ui';
 import { NewConductorStep } from './NewConductorStep';
 import { observer } from 'mobx-react-lite';
@@ -21,8 +18,6 @@ import {
     Person,
     Close,
     Mic,
-    Visibility,
-    AccountTree,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import { Editor } from '@monaco-editor/react';
@@ -42,41 +37,18 @@ type AIConductorForm = {
 
 export const Conductor = observer(() => {
     const { conductor } = useConductor();
-    const notification = useNotification();
 
     const [currentOutputEditorJSON, setCurrentOutputEditorJSON] = useState('');
     const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({});
     const [currentEditorJSON, setCurrentEditorJSON] = useState('');
 
-    const [subtaskSteps, setSubtaskSteps] = useState([]);
-
     const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
-    const [taskEditorHistory, setTaskEditorHistory] = useState([]);
     const [modelResponseText, setModelResponseText] = useState(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selectedSubtask, setSelectedSubtask] = useState(-1);
-    const { monolithStore, configStore } = useRootStore();
-    const [promptText, setPromptText] = useState(null);
-
-    const [allAppIdsSet, setAllAppIdsSet] = useState(null); // temporary - collecting all app ids for dummy app suggestions in subtask carousel
-
-    const [openAccordionIndexesSet, setOpenAccordionIndexesSet] = useState(
-        new Set(),
-    );
+    const [allAppIdsSet, setAllAppIdsSet] = useState(null);
     const [taskContainerWidthPercent, setTaskContainerWidthPercent] =
         useState('100%');
-
-    const [allAppIds, setAllAppIds] = useState([]); // populate with all retrieved app ids for dummy demo app ids
-    const [subtaskObjectsArray, setSubtaskObjectArray] = useState();
-    // [
-    // {
-    // step: 'Find job requirements...',
-    // project_id: '123123-31231-41233123' |OR| [
-    // '123123-31231-41233123'
-    // ], ...
-    // selectedApp: null
-    // }, ...
-    // ]
 
     const { handleSubmit, control, reset, watch } = useForm<AIConductorForm>({
         defaultValues: {
@@ -101,8 +73,6 @@ export const Conductor = observer(() => {
                     const value = variable[1];
                     const newAcc = { ...acc };
                     if (value['isInput']) {
-                        // newAcc[name] = value;
-                        // How do we get / edit value from context?
                         newAcc[name] = null;
                     }
                     return newAcc;
@@ -116,8 +86,6 @@ export const Conductor = observer(() => {
                     const value = variable[1];
                     const newAcc = { ...acc };
                     if (value['isOutput']) {
-                        // newAcc[name] = value;
-                        // How do we get / edit value from context?
                         newAcc[name] = null;
                     }
                     return newAcc;
@@ -146,7 +114,7 @@ export const Conductor = observer(() => {
     }));
 
     const LowerParentContainer = styled('div')(({ theme }) => ({
-        height: 'calc(100vh - 175px)', // contained vertically
+        height: 'calc(100vh - 175px)',
         padding: '20px 0 0 0',
         display: 'flex',
         width: '100%',
@@ -175,7 +143,7 @@ export const Conductor = observer(() => {
     }));
 
     const LeftInnerTopDiv = styled('div')(({ theme }) => ({
-        overflow: promptText ? 'scroll' : 'hidden',
+        overflow: conductor.initPrompt ? 'scroll' : 'hidden',
         width: '100%',
         padding: '0px',
         boxSizing: 'border-box',
@@ -206,84 +174,67 @@ export const Conductor = observer(() => {
     }));
 
     const handleMount = (editor, monaco) => {
+        // for JSON editor
         editor.getAction('editor.action.formatDocument').run();
     };
 
     const onChange = (value: string) => {
-        // console.log({ newValue: value });
+        // for JSON editor
     };
 
     const updateButtonHandler = () => {
+        // for JSON editor
+        setIsLoading(true);
         const newCurrEditorJSONValsDict = { ...currEditorJSONValsDict };
         newCurrEditorJSONValsDict[selectedSubtask] = currentEditorJSON;
         setCurrEditorJSONValsDict(newCurrEditorJSONValsDict);
-
-        setIsLoading(true);
-        setTimeout(() => {
-            setPromptText(promptText + ' ');
-            setIsLoading(false);
-        }, 500);
+        setIsLoading(false);
     };
 
     const editorChangeHandler = (newString) => {
-        // console.log({ newString });
+        // for JSON editor
     };
 
-    const playClickHandler = () => {
+    const playClickHandler = (subTaskIdx: number) => {
         setIsLoading(true);
-        setTimeout(() => {
-            setPromptText(promptText + ' ');
-            setIsLoading(false);
-        }, 500);
+
+        if (conductor.subTasks[subTaskIdx]?.isSetupComplete == false) {
+            alert(`Cannot run task. Subtask ${subTaskIdx} not complete.`);
+        } else {
+            const selectedAppId = conductor.subTasks[subTaskIdx]?.selectedAppId;
+            alert(
+                `Subtask ${subTaskIdx} complete. Run play reactor for appId ${selectedAppId}.`,
+            );
+        }
+
+        setIsLoading(false);
     };
 
     const fetchSteps = handleSubmit(async (data: AIConductorForm) => {
         setIsLoading(true);
-        setPromptText(data.taskInput);
-        setSubtaskSteps([]);
+
+        conductor.setInitPrompt(data.taskInput);
+        conductor.setSubtasks([]);
 
         const placeholderModelResponse =
-            // "Let’s find out...let me generate a roadmap to figure out if you're qualified for this job!";
             'Let’s find out...let me generate a roadmap!';
         setModelResponseText(placeholderModelResponse);
 
-        // const modelId = '17753d59-4536-4415-a6ac-f673b1a90a87'; // Mixtral-8x7B
         const modelId = '4acbe913-df40-4ac0-b28a-daa5ad91b172';
-
-        // const testPrompt = 'My shop has in stock refried burritos. I sell some refried burritos daily. I can reorder refried burritos to refill my stock if needed. How can I determine when to reorder and how much to reorder extra refried burritos.';
         const promptAddition =
             'Please limit your response to 3-10 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
-        // const promptAddition = "";
-
         const combinePrompt = [data.taskInput, promptAddition].join(' ');
         const pixel = `LLMInstruct("${modelId}", "${combinePrompt}")`;
         const res = await runPixel(pixel);
         const outputSteps = res.pixelReturn[0].output['response'];
-
-        // temporary - collecting all app ids for dummy app suggestions in subtask carousel
         const newAllAppIdsSet = new Set(
             outputSteps.map((step) => step.project_id),
         );
-        setAllAppIdsSet(newAllAppIdsSet);
-        console.log({ outputSteps });
 
-        setSubtaskSteps(outputSteps);
+        setAllAppIdsSet(newAllAppIdsSet);
+        conductor.setSubtasks(outputSteps);
 
         setIsLoading(false);
-    });
-
-    const taskSubmitHandler = handleSubmit(async (data: AIConductorForm) => {
-        setIsLoading(true);
-        setTimeout(() => {
-            setPromptText(data.taskInput);
-            const placeholderModelResponse =
-                // "Let’s find out...let me generate a roadmap to figure out if you're qualified for this job!";
-                'Let’s find out...let me generate a roadmap!';
-            setModelResponseText(placeholderModelResponse);
-            setIsLoading(false);
-        }, 500);
-
-        return; // early return until LLM API endpoint available
     });
 
     return (
@@ -317,7 +268,9 @@ export const Conductor = observer(() => {
                                     variant={'body1'}
                                     sx={{
                                         padding: '16px',
-                                        display: promptText ? 'none' : 'flex',
+                                        display: conductor.initPrompt
+                                            ? 'none'
+                                            : 'flex',
                                         marginBottom: '20px',
                                         backgroundColor: '#fff',
                                         borderRadius: '12px',
@@ -338,14 +291,16 @@ export const Conductor = observer(() => {
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
-                                display: promptText ? 'auto' : 'none',
+                                display: conductor.initPrompt ? 'auto' : 'none',
                             }}
                         >
                             <SubTaskInnerContainer>
                                 <Typography
                                     variant={'body1'}
                                     sx={{
-                                        display: promptText ? 'flex' : 'none',
+                                        display: conductor.initPrompt
+                                            ? 'flex'
+                                            : 'none',
                                         backgroundColor: '#fff',
                                         marginBottom: '20px',
                                         borderRadius: '12px',
@@ -359,7 +314,7 @@ export const Conductor = observer(() => {
                                             marginRight: '10px',
                                         }}
                                     />{' '}
-                                    {promptText}
+                                    {conductor.initPrompt}
                                 </Typography>
                             </SubTaskInnerContainer>
                             <SubTaskPlayButton>
@@ -372,7 +327,7 @@ export const Conductor = observer(() => {
                                 >
                                     <IconButton
                                         sx={{
-                                            display: promptText
+                                            display: conductor.initPrompt
                                                 ? 'auto'
                                                 : 'none',
                                         }}
@@ -385,14 +340,16 @@ export const Conductor = observer(() => {
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
-                                display: promptText ? 'auto' : 'none',
+                                display: conductor.initPrompt ? 'auto' : 'none',
                             }}
                         >
                             <SubTaskInnerContainer>
                                 <Typography
                                     variant={'body1'}
                                     sx={{
-                                        display: promptText ? 'flex' : 'none',
+                                        display: conductor.initPrompt
+                                            ? 'flex'
+                                            : 'none',
                                         justifyContent: 'start',
                                         alignItems: 'center',
                                         backgroundColor: '#fff',
@@ -411,39 +368,20 @@ export const Conductor = observer(() => {
                             </SubTaskInnerContainer>
                             <SubTaskPlayButton></SubTaskPlayButton>
                         </SubTaskParentContainerNew>
-                        {subtaskSteps.map((subtask, i) => {
+                        {conductor.subTasks.map((subtask, subTaskIdx) => {
                             return (
                                 <SubTaskParentContainerNew>
                                     <SubTaskInnerContainer>
                                         <NewConductorStep
-                                            key={i}
-                                            taskIndex={i}
+                                            key={subTaskIdx}
+                                            taskIndex={subTaskIdx}
                                             type={'app'}
                                             step={conductor.steps[0]}
-                                            subtask={subtask.step}
-                                            appOptionIds={[subtask.project_id]}
+                                            subtask={subtask.taskName}
+                                            appOptionIds={subtask.optionAppIds}
                                             allAppIdsSet={allAppIdsSet}
-                                            selectedSubtask={selectedSubtask}
                                             setSelectedSubtask={
                                                 setSelectedSubtask
-                                            }
-                                            taskEditorHistory={
-                                                taskEditorHistory
-                                            }
-                                            setTaskEditorHistory={
-                                                setTaskEditorHistory
-                                            }
-                                            openAccordionIndexesSet={
-                                                openAccordionIndexesSet
-                                            }
-                                            setOpenAccordionIndexesSet={
-                                                setOpenAccordionIndexesSet
-                                            }
-                                            currentEditorJSON={
-                                                currentEditorJSON
-                                            }
-                                            setCurrentEditorJSON={
-                                                setCurrentEditorJSON
                                             }
                                         />
                                     </SubTaskInnerContainer>
@@ -456,7 +394,9 @@ export const Conductor = observer(() => {
                                             }}
                                         >
                                             <IconButton
-                                                onClick={playClickHandler}
+                                                onClick={() =>
+                                                    playClickHandler(subTaskIdx)
+                                                }
                                             >
                                                 <PlayArrow />
                                             </IconButton>
@@ -500,7 +440,9 @@ export const Conductor = observer(() => {
                                         flex: '1',
                                         margin: '0 5px 20px 0',
                                         borderRadius: '20px',
-                                        display: promptText ? 'none' : 'auto',
+                                        display: conductor.initPrompt
+                                            ? 'none'
+                                            : 'auto',
                                     }}
                                     multiple={false}
                                     value={field.value}

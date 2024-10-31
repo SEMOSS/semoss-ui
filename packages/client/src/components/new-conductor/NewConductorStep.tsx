@@ -3,54 +3,40 @@ import { observer } from 'mobx-react-lite';
 import { BlocksRenderer } from '../blocks-workspace';
 import { SerializedState } from '@/stores';
 import {
-    Stack,
     Typography,
-    Accordion,
     IconButton,
+    Accordion,
+    Stack,
     Switch,
     styled,
 } from '@semoss/ui';
 import { useConductor } from '@/hooks';
 import {
     Visibility,
-    Person,
-    KeyboardArrowDown,
-    Create,
     DataObject,
-    DisplaySettings,
     ChevronLeft,
     ChevronRight,
-    OpenInNewRounded,
     ArrowRightAlt,
     ReportProblem,
+    KeyboardArrowDown,
+    OpenInNewRounded,
 } from '@mui/icons-material';
 
-import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
-import Box from '@mui/material/Box';
-
+import Stepper from '@mui/material/Stepper';
 import { Grid, Select, MenuItem } from '@mui/material';
-
-import Carousel from './Carousel';
-import TaskStepper from './TaskStepper';
-
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-
 import { runPixel } from '@/api';
-import { useNavigate } from 'react-router-dom';
-
-const GridBreak = styled('div')(({ theme }) => ({
-    width: '100%',
-}));
 
 const AppSelectionCard = styled(Box)(({ theme }) => ({
-    borderRadius: '10px',
     boxShadow: '-2px 2px 12px #00000010',
+    flexDirection: 'column',
+    borderRadius: '10px',
     width: '421px',
     height: '184px',
     display: 'flex',
-    flexDirection: 'column',
     cursor: 'pointer',
     padding: '16px',
 }));
@@ -59,14 +45,9 @@ interface NewConductorStepProps {
     step: unknown | SerializedState;
     type: 'app' | 'widget';
     taskIndex: number;
-    selectedSubtask: number;
-    setSelectedSubtask: Function;
-    taskEditorHistory: Array<number>;
-    setTaskEditorHistory: Function;
-    openAccordionIndexesSet: Set<number | unknown>;
-    setOpenAccordionIndexesSet: Function;
-    appOptionIds: Array<string>;
     subtask: string;
+    setSelectedSubtask: Function;
+    appOptionIds: Array<string>;
     allAppIdsSet: Set<string>;
 }
 
@@ -96,12 +77,7 @@ export const NewConductorStep = observer(
         step,
         type,
         taskIndex,
-        selectedSubtask,
         setSelectedSubtask,
-        taskEditorHistory,
-        setTaskEditorHistory,
-        openAccordionIndexesSet,
-        setOpenAccordionIndexesSet,
         appOptionIds,
         allAppIdsSet,
         subtask,
@@ -134,26 +110,7 @@ export const NewConductorStep = observer(
         const [skipped, setSkipped] = React.useState(new Set<number>());
         const [stepsComplete, setStepsComplete] = React.useState(false);
 
-        const [isAppSetupComplete, setIsAppSetupComplete] = useState(false);
-
-        const navigate = useNavigate();
-
-        // TODO
-
-        // assume we have array of appIds only
-
-        // track steps
-        // selectedAppId -- if null unselected | if not null selection is made
-        // appOptions
-        // subTaskTitle
-        // subTaskInputs
-        // subTaskOutputs
-
-        // clean up component structure and all component files
-
-        // add a reactFlow component to mapping step
-
-        const [taskSteps, setTaskSteps] = React.useState([
+        const [taskSteps, _setTaskSteps] = React.useState([
             'Select app',
             'View App',
             'Map inputs and outputs',
@@ -171,70 +128,7 @@ export const NewConductorStep = observer(
         ];
 
         const [appCarouselOffset, setAppCarouselOffset] = useState(0);
-        const [appOptions, setAppOptions] = React.useState([
-            {
-                title: 'Purchase Budget Calculator',
-                description:
-                    'Effortlessly plan and manage spending by providing precise budget calculations and receiving insightful financial analysis.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Home Affordability Calculator',
-                description:
-                    'Determines your ideal home price range by analyzing your financial situation and providing personalized affordability insights.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Zillow Lookup',
-                description:
-                    'Quickly and easily access comprehensive property details, market trends, and real estate insights directly from Zillow.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Job Qualifications',
-                description:
-                    'Analyzes a job description and extracts required qualifications.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Job Skill Matcher',
-                description:
-                    'Takes a list of skills and matches them to relevant job titles.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Job Salary Data',
-                description:
-                    'Receives a job title and provides average salary data.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Resume Key Skills',
-                description: 'Analyzes a resume and extracts key skills.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Job Responsibilities',
-                description:
-                    'Receives a job title and lists common job responsibilities.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-            {
-                title: 'Performance Indicators',
-                description:
-                    'Takes a job description and identifies key performance indicators.',
-                imgUrl: '',
-                appId: Math.floor(Math.random() * 1000000000),
-            },
-        ]);
+        const [appOptions, setAppOptions] = React.useState([]);
 
         const isStepSkipped = (step: number) => {
             return skipped.has(step);
@@ -249,6 +143,7 @@ export const NewConductorStep = observer(
 
             if (activeStep === taskSteps?.length - 1) {
                 setStepsComplete(true);
+                conductor.setIsSetupComplete(taskIndex, true);
             }
 
             setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -262,6 +157,7 @@ export const NewConductorStep = observer(
         const handleReset = () => {
             setActiveStep(0);
             setStepsComplete(false);
+            conductor.setIsSetupComplete(taskIndex, false);
         };
 
         useEffect(() => {
@@ -271,11 +167,6 @@ export const NewConductorStep = observer(
         }, [activeStep]);
 
         useEffect(() => {
-            // on page load
-            // fetch first suggested app detail
-            // fetch dummy suggestion app details
-            // set app options
-
             retrieveAllAppDetails();
         }, [appOptionIds]);
 
@@ -283,7 +174,6 @@ export const NewConductorStep = observer(
             const newAppOptions = [];
 
             appOptionIds.forEach(async (appId, appIdx) => {
-                // fetch app details from id
                 const pixel = `ProjectInfo(project=["${appId}"]);`;
                 const pixelResponse = await runPixel(pixel);
                 const appDetails = pixelResponse.pixelReturn[0].output;
@@ -327,14 +217,6 @@ export const NewConductorStep = observer(
                 }
             }
 
-            // setAppOptions([{
-            //     title: 'TEST Budget Calculator',
-            //     description:
-            //         'Effortlessly plan and manage spending by providing precise budget calculations and receiving insightful financial analysis.',
-            //     imgUrl: '',
-            //     appId: Math.floor(Math.random() * 1000000000)
-            // }])
-
             setAppOptions(newAppOptions);
         };
 
@@ -343,6 +225,7 @@ export const NewConductorStep = observer(
                 expanded={isExpanded}
                 onChange={(e) => {
                     setHistoryExpanded(!isExpanded);
+                    conductor.setIsExpanded(taskIndex, !isExpanded);
                 }}
                 sx={{
                     paddingTop: '0px',
@@ -365,11 +248,7 @@ export const NewConductorStep = observer(
                             sx={{
                                 height: '42px',
                                 lineHeight: '42px',
-                                // whiteSpace: 'nowrap',
                                 overflow: 'hidden',
-                                // textOverflow: 'ellipsis',
-                                // maxWidth: '100%',
-                                // fontWeight: '800',
                             }}
                         >
                             <b style={{ marginRight: '10px' }}>
@@ -382,7 +261,6 @@ export const NewConductorStep = observer(
                                 setSelectedSubtask(taskIndex);
                                 e.stopPropagation();
                             }}
-                            disabled={!stepsComplete}
                         >
                             <DataObject />
                         </IconButton>
@@ -394,11 +272,11 @@ export const NewConductorStep = observer(
                         sx={{
                             backgroundColor: '#fff',
                             padding: '16px',
+                            alignItems: 'flex-start',
+                            justifyContent: 'left',
                             borderRadius: '12px',
                             paddingTop: '0px',
                             display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'left',
                         }}
                     >
                         <Box
@@ -698,6 +576,10 @@ export const NewConductorStep = observer(
                                                             onClick={() => {
                                                                 setSelectedSubTaskApp(
                                                                     appObj,
+                                                                );
+                                                                conductor.setSelectedAppId(
+                                                                    taskIndex,
+                                                                    `${appObj.appId}`,
                                                                 );
                                                                 if (
                                                                     activeStep ==
@@ -1047,13 +929,9 @@ export const NewConductorStep = observer(
                                                                     '5px',
                                                             }}
                                                         >
-                                                            {/* 1.85 */}
                                                             <Select
                                                                 labelId="demo-simple-select-label"
                                                                 id="demo-simple-select"
-                                                                // onChange={handleChange}
-                                                                // value={currentValue}
-                                                                // label=""
                                                                 size="small"
                                                                 sx={{
                                                                     width: '100%',
@@ -1086,13 +964,9 @@ export const NewConductorStep = observer(
                                                             xs={1.25}
                                                             marginLeft="10px"
                                                         >
-                                                            {/* 1.25 */}
                                                             <Select
                                                                 labelId="demo-simple-select-label"
                                                                 id="demo-simple-select"
-                                                                // onChange={handleChange}
-                                                                // value={currentValue}
-                                                                // label=""
                                                                 size="small"
                                                                 sx={{
                                                                     width: '100%',
@@ -1140,14 +1014,10 @@ export const NewConductorStep = observer(
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1.85}>
-                                                            {/* 1.85 */}
                                                             <Select
                                                                 labelId="demo-simple-select-label"
                                                                 id="demo-simple-select"
                                                                 size="small"
-                                                                // onChange={handleChange}
-                                                                // value={currentValue}
-                                                                // label=""
                                                                 sx={{
                                                                     width: '100%',
                                                                     height: '32px',
@@ -1190,7 +1060,6 @@ export const NewConductorStep = observer(
                                                             }}
                                                         >
                                                             integer{' '}
-                                                            {/* TODO This needs to be dynamic  */}
                                                         </Grid>
                                                         {eleIdx == 7 && (
                                                             <Grid item xs={3}>
@@ -1348,9 +1217,6 @@ export const NewConductorStep = observer(
                                                         <Select
                                                             labelId="demo-simple-select-label"
                                                             id="demo-simple-select"
-                                                            // onChange={handleChange}
-                                                            // value={currentValue}
-                                                            // label=""
                                                             size="small"
                                                             sx={{
                                                                 width: '100%',
@@ -1413,7 +1279,6 @@ export const NewConductorStep = observer(
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1.85}>
-                                                        {/* 1.85 */}
                                                         <Select
                                                             labelId="demo-simple-select-label"
                                                             id="demo-simple-select"
@@ -1460,9 +1325,6 @@ export const NewConductorStep = observer(
                                                         <Select
                                                             labelId="demo-simple-select-label"
                                                             id="demo-simple-select"
-                                                            // onChange={handleChange}
-                                                            // value={currentValue}
-                                                            // label=""
                                                             size="small"
                                                             sx={{
                                                                 width: '100%',
