@@ -64,6 +64,9 @@ export class StateStoreConfig {
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
+
+    /** initial params for our variables can come from query params */
+    initialParams?: Record<string, unknown>;
 }
 
 /**
@@ -111,7 +114,7 @@ export class StateStore {
         makeAutoObservable(this);
 
         // set the initial state after reactive to invoke it
-        this.setState(config.state);
+        this.setState(config.state, config.initialParams);
     }
 
     /**
@@ -701,7 +704,10 @@ export class StateStore {
      *
      * @param state - pixel to execute
      */
-    private setState = (state: SerializedState) => {
+    private setState = (
+        state: SerializedState,
+        initialParams?: Record<string, unknown>,
+    ) => {
         // store the block information
         this._store.blocks = state.blocks;
 
@@ -717,9 +723,39 @@ export class StateStore {
         // TODO: Remove, store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
+        // store the execution order of notebooks
         this._store.executionOrder = state.executionOrder
             ? state.executionOrder
             : [];
+
+        // Replace initial param values provided from URL
+        if (initialParams) {
+            Object.entries(initialParams).forEach((keyValue) => {
+                const key = keyValue[0];
+                const value = keyValue[1];
+
+                const variable = this._store.variables[key];
+
+                if (variable) {
+                    // retrieve the "to" value
+                    const toValue = variable.to;
+                    if (variable.type == 'block') {
+                        // Look into blocks section
+                        if (this._store.blocks[toValue]) {
+                            this._store.blocks[toValue].data.value = value;
+                        }
+                    } else if (
+                        variable.type == 'cell' ||
+                        variable.type == 'query'
+                    ) {
+                        // TODO: Handle query and cell types do we just swap output?
+                    } else {
+                        this._store.variables[key]['value'] = value;
+                    }
+                }
+            });
+        }
+
         // store the version or the one we currently are on
         this._store.version = state.version ? state.version : STATE_VERSION;
     };

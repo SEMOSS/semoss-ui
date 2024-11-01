@@ -11,7 +11,6 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { optimize } from 'webpack';
 
 export interface SelectBlockDef extends BlockDef<'select'> {
     widget: 'select';

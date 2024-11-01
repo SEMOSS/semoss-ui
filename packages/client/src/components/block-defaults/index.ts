@@ -1,4 +1,5 @@
 import { Registry } from '@/stores';
+import { config as AudioBlockConfig, AudioBlockDef } from './audio-block';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
@@ -48,8 +49,15 @@ import {
     LLMComparisonBlockDef,
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
+import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+
+import {
+    config as PDFViewerBlockConfig,
+    PDFViewerBlockDef,
+} from './pdfViewer-block';
 
 export type DefaultBlockDefinitions =
+    | AudioBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -73,34 +81,39 @@ export type DefaultBlockDefinitions =
     | ToggleButtonBlockDef
     | InputBlockDef
     | SectionBlockDef
+    | StepperBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | PDFViewerBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [AudioBlockConfig.widget]: AudioBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [ModalBlockConfig.widget]: ModalBlockConfig,
     [HTMLBlockConfig.widget]: HTMLBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [LogsBlockConfig.widget]: LogsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
+    [StepperBlockConfig.widget]: StepperBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
-    [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
-    [ModalBlockConfig.widget]: ModalBlockConfig,
+    [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -112,6 +125,7 @@ export function getTypeForBlock(widget: string) {
 }
 
 export {
+    AudioBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
@@ -131,4 +145,5 @@ export {
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
+    PDFViewerBlockConfig,
 };
