@@ -16,8 +16,8 @@ import { EngineRouter } from './engine';
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
-import { CookieNotice } from './CookieNotice';
-import { PrivacyNotice } from './PrivacyNotice';
+import { CookieNotice } from './legal/CookieNotice';
+import { PrivacyNotice } from './legal/PrivacyNotice';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -47,7 +47,6 @@ export const Router = observer(() => {
     };
     const showCookieNotice = parseThemeMapForValue('cookiePolicyNoticePage');
     const showPrivacyNotice = parseThemeMapForValue('privacyNoticePage');
-    console.log('SHOW', showCookieNotice, showPrivacyNotice);
 
     return (
         <Routes>
