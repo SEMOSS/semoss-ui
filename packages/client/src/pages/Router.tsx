@@ -20,37 +20,31 @@ import { CookieNotice } from './CookieNotice';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
-    const [showCookieNotice, setShowCookieNotice] = useState(false);
-    const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
 
     // don't load anything if it is pending
     if (configStore.store.status === 'INITIALIZING') {
         return <LoadingScreen.Trigger message={'Initializing'} />;
     }
 
-    // Determine if the user has access to the CookieNotice and PrivacyNotice pages.
-    useEffect(() => {
+    const parseThemeMapForValue = (value: string): boolean => {
         const theme = configStore.store.config.theme;
         if (theme && theme['THEME_MAP']) {
             try {
                 const map = JSON.parse(theme['THEME_MAP'] as string);
 
-                const themeCookiePolicyNoticePage = map[
-                    'cookiePolicyNoticePage'
-                ]
-                    ? map['cookiePolicyNoticePage']
-                    : '';
-                setShowCookieNotice(!!themeCookiePolicyNoticePage);
-
-                const themePrivacyNoticePage = map['privacyNoticePage']
-                    ? map['privacyNoticePage']
-                    : '';
-                setShowPrivacyNotice(!!themePrivacyNoticePage);
+                return !!map['cookiePolicyNoticePage'];
             } catch {
-                console.error('Unable to parse theme for the Router');
+                console.error(
+                    `Unable to parse theme for the Router for ${value}`,
+                );
+                return false;
             }
+        } else {
+            return false;
         }
-    }, [Object.keys(configStore.store.config).length]);
+    };
+    const showCookieNotice = parseThemeMapForValue('cookiePolicyNoticePage');
+    const showPrivacyNotice = parseThemeMapForValue('privacyNoticePage');
 
     return (
         <Routes>
