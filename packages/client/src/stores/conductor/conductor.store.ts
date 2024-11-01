@@ -183,6 +183,10 @@ export class ConductorStore {
         this._store.subTasks[subtaskIndex].isExpanded = isExpanded;
     }
 
+    setIsOutputsMap(subtaskIndex: number, newOutputsMap: Record<string, any>) {
+        this._store.subTasks[subtaskIndex].outputVals = newOutputsMap;
+    }
+
     setSubtasks(inputSubtasks: Array<SubtaskInterface>) {
         this._store.subTasks = inputSubtasks.map((inputSubtask: Object) => ({
             taskName: inputSubtask['step'],
