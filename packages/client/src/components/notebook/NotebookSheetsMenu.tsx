@@ -274,16 +274,25 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
 
     const sheets = useMemo(() => {
         const orderedRows = [];
+        const notebookSheets = Object.keys(state.queries);
 
-        state.executionOrder.forEach((sheetId) => {
-            orderedRows.push({
-                id: sheetId,
-                Parameters: '[]',
+        notebookSheets.forEach((s) => {
+            const found = orderedRows.find((r) => {
+                return r.id === s;
             });
+            if (!found) {
+                orderedRows.push({
+                    id: s,
+                    Parameters: '[]',
+                });
+            }
         });
 
         return orderedRows;
-    }, [JSON.stringify(state.executionOrder)]);
+    }, [
+        JSON.stringify(state.executionOrder),
+        JSON.stringify(Object.keys(state.queries)),
+    ]);
 
     return (
         <Stack

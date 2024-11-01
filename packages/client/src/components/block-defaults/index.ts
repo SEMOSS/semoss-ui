@@ -1,4 +1,5 @@
 import { Registry } from '@/stores';
+import { config as AudioBlockConfig, AudioBlockDef } from './audio-block';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
@@ -50,7 +51,13 @@ import {
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
 
+import {
+    config as PDFViewerBlockConfig,
+    PDFViewerBlockDef,
+} from './pdfViewer-block';
+
 export type DefaultBlockDefinitions =
+    | AudioBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -79,9 +86,11 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | PDFViewerBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [AudioBlockConfig.widget]: AudioBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
@@ -104,6 +113,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -115,6 +125,7 @@ export function getTypeForBlock(widget: string) {
 }
 
 export {
+    AudioBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
@@ -134,4 +145,5 @@ export {
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
+    PDFViewerBlockConfig,
 };
