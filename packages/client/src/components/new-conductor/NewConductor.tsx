@@ -8,7 +8,6 @@ import {
     FileDropzone,
     Button,
 } from '@semoss/ui';
-import { NewConductorStep } from './NewConductorStep';
 import { Subtask } from './Subtask';
 import { observer } from 'mobx-react-lite';
 import {
@@ -196,30 +195,6 @@ export const Conductor = observer(() => {
         // for JSON editor
     };
 
-    // factor out to Subtask.tsx
-    const playClickHandler = async (subTaskIdx: number) => {
-        setIsLoading(true);
-
-        if (conductor.subTasks[subTaskIdx]?.isSetupComplete == false) {
-            alert(`Cannot run task. Subtask ${subTaskIdx} not complete.`);
-        } else {
-            const selectedAppId = conductor.subTasks[subTaskIdx]?.selectedAppId;
-            alert(
-                `Subtask ${subTaskIdx} complete. Run play reactor for appId ${selectedAppId}.`,
-            );
-        }
-
-        const currInputMap = conductor.subTasks[subTaskIdx]?.inputsMap;
-
-        const currAppId = conductor.subTasks[subTaskIdx]?.selectedAppId;
-        const newPixel = `ExecuteAppAsAPI(id=[${currAppId}], inputMap=[${currInputMap}])`;
-        const res = await runPixel(newPixel);
-        const resOutputsMap = res.pixelReturn[0].output['response'];
-        conductor.setIsOutputsMap(subTaskIdx, resOutputsMap);
-
-        setIsLoading(false);
-    };
-
     const fetchSteps = handleSubmit(async (data: AIConductorForm) => {
         setIsLoading(true);
 
@@ -392,44 +367,6 @@ export const Conductor = observer(() => {
                                     setSelectedSubtask={setSelectedSubtask}
                                 />
                                 // </StateStoreContextProvider>
-                            );
-
-                            return (
-                                <SubTaskParentContainerNew>
-                                    <SubTaskInnerContainer>
-                                        {/* <StateStoreContextProvider value={selectedAppId}> */}
-                                        <NewConductorStep
-                                            key={subTaskIdx}
-                                            taskIndex={subTaskIdx}
-                                            type={'app'}
-                                            step={conductor.steps[0]}
-                                            subtask={subtask.taskName}
-                                            appOptionIds={subtask.optionAppIds}
-                                            allAppIdsSet={allAppIdsSet}
-                                            setSelectedSubtask={
-                                                setSelectedSubtask
-                                            }
-                                        />
-                                        {/* </StateStoreContextProvider> */}
-                                    </SubTaskInnerContainer>
-                                    <SubTaskPlayButton>
-                                        <div
-                                            style={{
-                                                justifyContent: 'center',
-                                                display: 'flex',
-                                                width: '100%',
-                                            }}
-                                        >
-                                            <IconButton
-                                                onClick={() =>
-                                                    playClickHandler(subTaskIdx)
-                                                }
-                                            >
-                                                <PlayArrow />
-                                            </IconButton>
-                                        </div>
-                                    </SubTaskPlayButton>
-                                </SubTaskParentContainerNew>
                             );
                         })}
 
