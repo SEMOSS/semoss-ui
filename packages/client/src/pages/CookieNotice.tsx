@@ -6,8 +6,6 @@ export const CookieNotice = observer(() => {
     const { configStore } = useRootStore();
     const [pageBody, setPageBody] = useState('');
 
-    console.log('COOKIE NOTICE', pageBody);
-
     useEffect(() => {
         const theme = configStore.store.config.theme;
         if (theme && theme['THEME_MAP']) {

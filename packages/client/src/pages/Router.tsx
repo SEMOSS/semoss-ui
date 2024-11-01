@@ -17,6 +17,7 @@ import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
 import { CookieNotice } from './CookieNotice';
+import { PrivacyNotice } from './PrivacyNotice';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -31,6 +32,7 @@ export const Router = observer(() => {
         if (theme && theme['THEME_MAP']) {
             try {
                 const map = JSON.parse(theme['THEME_MAP'] as string);
+                console.log('THEME MAP', map);
 
                 return !!map['cookiePolicyNoticePage'];
             } catch {
@@ -45,6 +47,7 @@ export const Router = observer(() => {
     };
     const showCookieNotice = parseThemeMapForValue('cookiePolicyNoticePage');
     const showPrivacyNotice = parseThemeMapForValue('privacyNoticePage');
+    console.log('SHOW', showCookieNotice, showPrivacyNotice);
 
     return (
         <Routes>
@@ -63,7 +66,7 @@ export const Router = observer(() => {
                 <Route path="/cookie-notice" element={<CookieNotice />} />
             )}
             {showPrivacyNotice && (
-                <Route path="/privacy-notice" element={<CookieNotice />} />
+                <Route path="/privacy-notice" element={<PrivacyNotice />} />
             )}
             <Route path="/login" element={<LoginPage />}></Route>
         </Routes>

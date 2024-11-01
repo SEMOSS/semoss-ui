@@ -6,8 +6,6 @@ export const PrivacyNotice = observer(() => {
     const { configStore } = useRootStore();
     const [pageBody, setPageBody] = useState('');
 
-    console.log('PRIVACYNOTICE', pageBody);
-
     useEffect(() => {
         const theme = configStore.store.config.theme;
         if (theme && theme['THEME_MAP']) {
@@ -26,7 +24,6 @@ export const PrivacyNotice = observer(() => {
 
     return (
         <div>
-            PRIVACY
             <div dangerouslySetInnerHTML={{ __html: pageBody }} />
         </div>
     );
