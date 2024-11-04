@@ -49,6 +49,10 @@ import {
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+import {
+    config as DataTabBlockConfig,
+    DataTableBlockDef,
+} from './data-table-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -79,7 +83,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
-    | ModalBlockDef;
+    | ModalBlockDef
+    | DataTableBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -104,6 +109,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [DataTabBlockConfig.widget]: DataTabBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -134,4 +140,5 @@ export {
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
+    DataTabBlockConfig,
 };

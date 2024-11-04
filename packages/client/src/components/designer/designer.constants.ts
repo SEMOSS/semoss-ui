@@ -50,6 +50,7 @@ import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
 import PIE_CHART_IMAGE from '@/assets/img/PIE_CHART.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
+import BLOCK_TABLE from '@/assets/img/BLOCK_TABLE.png';
 import {
     CLASS_DIAGRAM,
     ENTITY_RELATIONSHIP_DIAGRAM,
@@ -330,6 +331,34 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                 title: '',
             },
             listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_TABLE,
+        name: 'Data Table',
+        json: {
+            widget: 'table',
+            data: {
+                style: {
+                    margin: '8px',
+                },
+                rawData: '',
+                displayData: [],
+                headers: [],
+                enablePagination: false,
+                rowsPerPage: 10,
+                enableSorting: false,
+                enableActions: false,
+                noDataText: 'No data available',
+                loading: false,
+                fileType: undefined,
+                dataSource: undefined,
+            },
+            listeners: {
+                onChange: [],
+            },
             slots: {} as BlockJSON['slots'],
         },
     },
