@@ -26,19 +26,17 @@ axios.interceptors.response.use(
             }
         }
 
-        // Exception for returning the errorMessage provided via the API if available.
         const apiMessage = error.response?.data?.errorMessage;
         if (apiMessage && typeof apiMessage === 'string') {
+            // Exception for returning the errorMessage provided via the API if available.
             return Promise.reject(apiMessage);
-        }
-
-        // return the message if it exists
-        if (error.message) {
+        } else if (error.message) {
+            // return the message if it exists
             return Promise.reject(error.message);
+        } else {
+            // reject with generic error
+            return Promise.reject('Error');
         }
-
-        // reject with generic error
-        return Promise.reject('Error');
     },
 );
 
