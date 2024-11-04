@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import {
-    Box,
-    Button,
-    IconButton,
-    Modal,
-    Stack,
-    styled,
-    Typography,
-} from '@semoss/ui';
+import { Box, Button, IconButton, Stack, styled, Typography } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { Close } from '@mui/icons-material';
+import { PrivacyPreferenceCenterModal } from './PrivacyPreferenceCenterModal';
 
 const CustomBackdrop = styled(Box)(({ theme }) => ({
     position: 'fixed',
@@ -52,13 +45,11 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
     const [viewCookiePolicy, setViewCookiePolicy] = useState(false);
 
     const [cookieBanner, setCookieBanner] = useState('');
-    const [cookieModalBody, setCookieModalBody] = useState('');
-    const [cookieModalHeader, setCookieModalHeader] = useState('');
 
     useEffect(() => {
         const permissionGranted = localStorage.getItem(cookieName);
 
-        if (!permissionGranted) {
+        if (permissionGranted) {
             const theme = configStore.store.config.theme;
             if (theme && theme['THEME_MAP']) {
                 try {
@@ -69,25 +60,9 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                     ]
                         ? themeMap['cookiePolicyBannerReact']
                         : '';
-                    const themeCookieModalHeader = themeMap[
-                        'cookiePolicyModalHeaderReact'
-                    ]
-                        ? themeMap['cookiePolicyModalHeaederReact']
-                        : '';
-                    const themeCookieModalBody = themeMap[
-                        'cookiePolicyModalBodyReact'
-                    ]
-                        ? themeMap['cookiePolicyModalBodyReact']
-                        : '';
 
-                    if (themeCookieBanner && themeCookieModalBody) {
+                    if (themeCookieBanner) {
                         setCookieBanner(themeCookieBanner);
-                        setCookieModalHeader(
-                            themeCookieModalHeader
-                                ? themeCookieModalHeader
-                                : 'Privacy Preference Center',
-                        );
-                        setCookieModalBody(themeCookieModalBody);
                     } else {
                         setVisible(false);
                     }
@@ -155,7 +130,8 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                                     __html: cookieBanner,
                                 }}
                             />
-
+                        </Stack>
+                        <Stack direction="row" justifyContent="flex-end">
                             <StyledButton
                                 variant="text"
                                 onClick={() => {
@@ -164,49 +140,18 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                             >
                                 View cookies
                             </StyledButton>
+                            <Button variant="contained" onClick={acceptCookies}>
+                                Accept
+                            </Button>
                         </Stack>
                     </AcceptCookieContainer>
                 </>
             )}
 
-            <Modal open={viewCookiePolicy} maxWidth="md">
-                <Modal.Title>
-                    <Stack direction={'column'} gap={1}>
-                        <div
-                            id="cookie-modal-header"
-                            dangerouslySetInnerHTML={{
-                                __html: cookieModalHeader,
-                            }}
-                        />
-                    </Stack>
-                </Modal.Title>
-                <Modal.Content>
-                    <div
-                        id="cookie-modal-body"
-                        dangerouslySetInnerHTML={{
-                            __html: cookieModalBody,
-                        }}
-                    ></div>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        variant="text"
-                        onClick={() => {
-                            setVisible(false);
-                            setViewCookiePolicy(false);
-                            localStorage.setItem(
-                                cookieName,
-                                JSON.stringify(false),
-                            );
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button variant="contained" onClick={acceptCookies}>
-                        Accept
-                    </Button>
-                </Modal.Actions>
-            </Modal>
+            <PrivacyPreferenceCenterModal
+                isOpen={viewCookiePolicy}
+                onClose={() => setViewCookiePolicy(false)}
+            />
         </>
     );
 });
