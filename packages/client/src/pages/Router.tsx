@@ -11,10 +11,11 @@ import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { SharePage } from './SharePage';
 
-import { EngineRouter } from './engine';
-import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
+import { EngineRouter } from './engine';
 import { ImportRouter } from './import';
+import { PromptRouter } from './prompt';
+import { SettingsRouter } from './settings';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -33,6 +34,9 @@ export const Router = observer(() => {
                     <Route path="import" element={<ImportRouter />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
+                    {process.env.NODE_ENV == 'development' && (
+                        <Route path="prompt/*" element={<PromptRouter />} />
+                    )}
                 </Route>
                 <Route path="s/:appId" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
