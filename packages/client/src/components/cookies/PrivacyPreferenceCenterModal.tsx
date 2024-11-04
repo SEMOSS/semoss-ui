@@ -33,6 +33,10 @@ const StyledText = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(3),
 }));
 
+const StyledBodyText = styled('div')(({ theme }) => ({
+    padding: `${theme.spacing(2)} ${theme.spacing(2)} 0`,
+}));
+
 const StyledFooter = styled('div')(({ theme }) => ({
     padding: theme.spacing(2),
 }));
@@ -118,7 +122,7 @@ export const PrivacyPreferenceCenterModal = (props) => {
                         />
                     </StyledTabBox>
                 ) : (
-                    <div
+                    <StyledBodyText
                         id="cookie-modal-body"
                         dangerouslySetInnerHTML={{
                             __html: cookiePolicyModalBody,
