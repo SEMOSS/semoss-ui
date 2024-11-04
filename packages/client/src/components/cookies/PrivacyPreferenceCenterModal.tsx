@@ -41,7 +41,17 @@ const StyledFooter = styled('div')(({ theme }) => ({
     padding: theme.spacing(2),
 }));
 
-export const PrivacyPreferenceCenterModal = (props) => {
+interface PrivacyPreferenceCenterProps {
+    /** determines if the modal is displayed or not */
+    isOpen: boolean;
+
+    /** function called when the user attempts to close the modal. */
+    onClose: (boolean) => void;
+}
+
+export const PrivacyPreferenceCenterModal = (
+    props: PrivacyPreferenceCenterProps,
+) => {
     const { isOpen, onClose } = props;
     const { configStore } = useRootStore();
     const [cookiePolicyOrder, setCookiePolicyOrder] = useState<string[]>([]);
@@ -81,7 +91,7 @@ export const PrivacyPreferenceCenterModal = (props) => {
     }, [Object.keys(configStore.store.config).length]);
 
     return (
-        <Modal open={isOpen} fullWidth maxWidth="lg">
+        <Modal open={isOpen} fullWidth maxWidth="lg" onClose={onClose}>
             <StyledModalHeader
                 direction="row"
                 justifyContent="space-between"
