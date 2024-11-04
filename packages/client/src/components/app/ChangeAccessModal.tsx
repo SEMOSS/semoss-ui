@@ -111,7 +111,13 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
     return (
         <Modal open={open} maxWidth={'md'} onClose={onClose}>
-            <Modal.Title>Change Access</Modal.Title>
+            <Modal.Title>
+                {getValues('requestedPermission') === 'discoverable' ? (
+                    <>Request Access</>
+                ) : (
+                    <>Change Access</>
+                )}
+            </Modal.Title>
 
             <Modal.Content>
                 <Controller

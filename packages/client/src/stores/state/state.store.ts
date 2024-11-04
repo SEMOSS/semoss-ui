@@ -724,9 +724,28 @@ export class StateStore {
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
         // store the execution order of notebooks
-        this._store.executionOrder = state.executionOrder
-            ? state.executionOrder
-            : [];
+        let order = [];
+        const sheets = Object.keys(this._store.queries);
+
+        if (state.executionOrder.length) {
+            order = state.executionOrder;
+        } else {
+            sheets.forEach((k) => {
+                order.push(k);
+            });
+        }
+
+        sheets.forEach(async (s) => {
+            const found = await order.find((o) => {
+                return o === s;
+            });
+
+            if (!found) {
+                order.push(s);
+            }
+        });
+
+        this._store.executionOrder = order;
 
         // Replace initial param values provided from URL
         if (initialParams) {
@@ -1025,6 +1044,8 @@ export class StateStore {
             this,
         );
 
+        this._store.executionOrder.push(queryId);
+
         return queryId;
     };
 
@@ -1033,7 +1054,12 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
+        // Delete the query
         delete this._store.queries[queryId];
+
+        // Remove it from our execition order tracking
+        const index = this._store.executionOrder.indexOf(queryId);
+        this._store.executionOrder.splice(index, 1);
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -1265,7 +1291,6 @@ export class StateStore {
         if (isOutput) token['isOutput'] = isOutput;
         if (value) token['value'] = value;
 
-        debugger;
         this._store.variables[id] = token as Variable;
 
         return token;
@@ -1322,9 +1347,9 @@ export class StateStore {
             delete this._store.dependencies[variable.to];
         }
 
-        // remove the references of it from ui (don't touch users code notebook)
         // Stringify blocks
         const blocksToMutate = JSON.stringify(this._store.blocks);
+        // remove the references of it from ui (don't touch users code notebook)
         const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, 'g');
 
         const modifiedBlocks = await blocksToMutate.replace(regex, '');
@@ -1364,7 +1389,6 @@ export class StateStore {
      *
      */
     private setExecutionOrder = (orderedList: string[]) => {
-        debugger;
         this._store.executionOrder = orderedList;
         return;
     };

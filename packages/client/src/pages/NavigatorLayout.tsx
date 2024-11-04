@@ -2,7 +2,11 @@ import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
-import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
+import {
+    ArticleOutlined,
+    LibraryBooksOutlined,
+    Settings,
+} from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';
 import { ErrorBoundary } from '@/components/common';
@@ -114,6 +118,17 @@ export const NavigatorLayout = observer(() => {
                         </StyledSidebarItem>
                     </Tooltip>
                 ))}
+                {/* <Tooltip title={`Open Prompt Hub`} placement="right">
+                    <StyledSidebarItem
+                        to={'/prompt'}
+                        selected={!!matchPath('prompt/*', pathname)}
+                        aria-label={'Navigate to prompt hub'}
+                    >
+                        <Icon>
+                            <ArticleOutlined />
+                        </Icon>
+                    </StyledSidebarItem>
+                </Tooltip> */}
                 <Stack flex={1}>&nbsp;</Stack>
                 <Tooltip title={`Open Settings`} placement="right">
                     <StyledSidebarItem
