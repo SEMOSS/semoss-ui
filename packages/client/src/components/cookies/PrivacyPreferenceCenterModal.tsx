@@ -105,7 +105,8 @@ export const PrivacyPreferenceCenterModal = (
             </StyledModalHeader>
 
             <StyledContent>
-                {cookiePolicyOrder.length > 0 && cookiePolicies ? (
+                {cookiePolicyOrder.length > 0 &&
+                Object.keys(cookiePolicies).length > 0 ? (
                     <StyledTabBox>
                         <Tabs
                             value={selectedTab}
