@@ -1,6 +1,7 @@
 import { useRootStore } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
+import { LegalPage } from './components/legalPage';
 
 export const PrivacyNotice = observer(() => {
     const { configStore } = useRootStore();
@@ -23,8 +24,8 @@ export const PrivacyNotice = observer(() => {
     }, [Object.keys(configStore.store.config).length]);
 
     return (
-        <div>
+        <LegalPage>
             <div dangerouslySetInnerHTML={{ __html: pageBody }} />
-        </div>
+        </LegalPage>
     );
 });
