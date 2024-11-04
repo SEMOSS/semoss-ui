@@ -49,7 +49,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
     useEffect(() => {
         const permissionGranted = localStorage.getItem(cookieName);
 
-        if (permissionGranted) {
+        if (!permissionGranted) {
             const theme = configStore.store.config.theme;
             if (theme && theme['THEME_MAP']) {
                 try {
