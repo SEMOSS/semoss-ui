@@ -14,7 +14,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 import { Typography } from '@semoss/ui';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 
 const ACTIVE = 'page-1';
 
@@ -39,6 +39,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
+    const queryStringParams = new URLSearchParams(useLocation().search);
 
     useEffect(() => {
         // start the loading
@@ -99,12 +100,19 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     s = await migration.run(s);
                 }
 
+                // Replace variable values with query params
+                const params = {};
+                queryStringParams.forEach((value, key) => {
+                    params[key] = value;
+                });
+
                 // create a new state store
                 const store = new StateStore({
                     mode: 'interactive',
                     insightId: insightId,
                     state: s,
                     cellRegistry: DefaultCells,
+                    initialParams: params,
                 });
 
                 // set it
