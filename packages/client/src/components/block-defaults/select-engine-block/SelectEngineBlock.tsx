@@ -11,12 +11,10 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { optimize } from 'webpack';
 
 export interface SelectEngineBlockDef extends BlockDef<'select-engine'> {
     widget: 'select-engine';
     data: {
-        multiple: boolean;
         style: CSSProperties;
         label: string;
         value: string | string[];
@@ -25,7 +23,6 @@ export interface SelectEngineBlockDef extends BlockDef<'select-engine'> {
         options: string[];
         optionLabel?: string;
         optionSublabel?: string;
-        optionValue?: string;
         hint?: string;
         loading?: boolean;
     };
@@ -71,18 +68,13 @@ export const SelectEngineBlock: BlockComponent = observer(({ id }) => {
         200,
     );
 
-    // Ensure that value is always an array when multiple is true
     const value = useMemo(() => {
-        if (data.multiple) {
-            return Array.isArray(data.value) ? data.value : [];
-        }
         return data.value || null;
-    }, [data.multiple, data.value]);
+    }, [data.value]);
 
     return (
         <Autocomplete
             fullWidth
-            multiple={data.multiple}
             disableClearable
             options={stringifiedOptions}
             value={value}
