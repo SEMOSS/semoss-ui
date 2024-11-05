@@ -1,4 +1,7 @@
 import { makeAutoObservable } from 'mobx';
+import { SubtaskState, SubtaskStoreInterface } from './subtask.store';
+import { LLMInstructOutputStep } from '@/components/new-conductor/conductor.types';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface SubtaskInterface {
     // region
@@ -92,19 +95,11 @@ export interface ConductorStoreInterface {
     initPrompt: null | string;
     subTasks: Array<SubtaskInterface>;
 
-    // track subtasks, which will have their own interface
-
     /**
-     * Stores all of our inputs and outputs of apps as steps
-     * TODO: We may want to just update this to be renamed to inputPool
-     * */
-    // inputOutputPool: Record<string, unknown>;
-
-    /**
-     * Looks at our input output pool and updates values as they get updated
-     * TODO: Same as above ^
-     *  */
-    // updateInputOutputPool: (key: string, value: unknown) => void;
+     * TODO: ADD PROPERTIES TIED TO CONDUCTOR STORE
+     * 11/5/24
+     */
+    subtasks: SubtaskState[];
 }
 
 /**
@@ -117,6 +112,11 @@ export class ConductorStore {
 
         initPrompt: '',
         subTasks: [],
+
+        /**
+         * 11/5/24
+         */
+        subtasks: [],
     };
 
     constructor(config: ConductorStoreInterface) {
@@ -125,6 +125,11 @@ export class ConductorStore {
 
         this._store.initPrompt = '';
         this._store.subTasks = [];
+
+        /**
+         * TODO:
+         */
+        this._store.subtasks = [];
 
         makeAutoObservable(this); // make it observable
     }
@@ -187,11 +192,11 @@ export class ConductorStore {
         this._store.subTasks[subtaskIndex].outputVals = newOutputsMap;
     }
 
-    setSubtasks(inputSubtasks: Array<SubtaskInterface>) {
+    setSubTasks(inputSubtasks: Array<SubtaskInterface>) {
         this._store.subTasks = inputSubtasks.map((inputSubtask: Object) => ({
             taskName: inputSubtask['step'],
             taskDescription: null,
-            optionAppIds: [inputSubtask['project_id']],
+            optionAppIds: inputSubtask['project_ids'],
             optionAppDetails: null,
             selectedAppId: null,
             inputsMap: {},
@@ -201,4 +206,53 @@ export class ConductorStore {
             isExpanded: false,
         }));
     }
+
+    /**
+     * NEW
+     * TODO: FIX STORE
+     */
+    get subtasks() {
+        return this._store.subtasks;
+    }
+
+    /**
+     * ACTIONS
+     */
+
+    /**
+     * Get a specific queries's state
+     * @param id - id of the queries to get
+     * @returns the specific block information
+     */
+    getSubtask(id: string): SubtaskState | null {
+        const subtask = this._store.subtasks.find((sT) => {
+            if (sT.id === id) {
+                return sT;
+            }
+        });
+
+        if (subtask) {
+            return subtask;
+        }
+
+        return null;
+    }
+
+    setSubtasks = (subtasks: LLMInstructOutputStep[]) => {
+        // Initialize a list for subtasks
+        const stagedList = [];
+
+        subtasks.forEach((sT) => {
+            const subtask = new SubtaskState({
+                // Generate a unique UUID
+                id: uuidv4(),
+                description: sT.step,
+                apps: sT.project_ids,
+            });
+
+            stagedList.push(subtask);
+        });
+
+        this._store.subtasks = stagedList as SubtaskState[];
+    };
 }

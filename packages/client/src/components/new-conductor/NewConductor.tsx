@@ -24,10 +24,76 @@ import { Editor } from '@monaco-editor/react';
 import { runPixel } from '@/api';
 
 import { LoadingScreen } from '@/components/ui';
+import { Blocks } from '../blocks';
+import { SubtaskWrapper } from './SubtaskWrapper';
+import { LLMInstructOutputStep } from './conductor.types';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: '#fff',
     borderRadius: '20px',
+}));
+
+const ParentContainer = styled('div')(({ theme }) => ({
+    minWidth: '650px',
+}));
+
+const TitleContainer = styled('div')(({ theme }) => ({
+    boxSizing: 'border-box',
+    marginBottom: '10px',
+    height: '50px',
+    display: 'flex',
+}));
+
+const LowerParentContainer = styled('div')(({ theme }) => ({
+    height: 'calc(100vh - 175px)',
+    padding: '20px 0 0 0',
+    display: 'flex',
+    width: '100%',
+}));
+
+const LeftParentContainer = styled('div')(({ theme }) => ({
+    flexBasis: 'calc(70% - 500px)',
+    padding: '20px 20px 30px 20px',
+    transition: 'width .2s',
+    backgroundColor: '#eee',
+    flexDirection: 'column',
+    borderRadius: '20px',
+    display: 'flex',
+    flex: '1',
+}));
+
+const RightParentContainer = styled('div')(({ theme }) => ({
+    transition: 'width .2s, margin-left .2s, display 0s',
+    backgroundColor: '#eee',
+    borderRadius: '20px',
+    flexBasis: '500px',
+    marginLeft: '0px',
+    padding: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+}));
+
+const LeftInnerBottomDiv = styled('div')(({ theme }) => ({
+    marginTop: 'auto',
+    height: '50px',
+    width: '100%',
+}));
+
+const SubTaskParentContainerNew = styled('div')(({ theme }) => ({
+    justifyContent: 'flex-end',
+    display: 'flex',
+    width: '100%',
+}));
+
+const SubTaskInnerContainer = styled('div')(({ theme }) => ({
+    flexGrow: '1',
+}));
+
+const SubTaskPlayButton = styled('div')(({ theme }) => ({
+    alignItems: 'center',
+    display: 'flex',
+    height: '75px',
+    width: '50px',
 }));
 
 type AIConductorForm = {
@@ -56,6 +122,16 @@ export const Conductor = observer(() => {
             taskInput: '',
         },
     });
+
+    const LeftInnerTopDiv = styled('div')(({ theme }) => ({
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        overflow: conductor.initPrompt ? 'scroll' : 'hidden',
+        width: '100%',
+        padding: '0px',
+        boxSizing: 'border-box',
+    }));
 
     useEffect(() => {
         if (selectedSubtask == -1) {
@@ -102,77 +178,6 @@ export const Conductor = observer(() => {
         }
     }, [selectedSubtask]);
 
-    const ParentContainer = styled('div')(({ theme }) => ({
-        minWidth: '650px',
-    }));
-
-    const TitleContainer = styled('div')(({ theme }) => ({
-        boxSizing: 'border-box',
-        marginBottom: '10px',
-        height: '50px',
-        display: 'flex',
-    }));
-
-    const LowerParentContainer = styled('div')(({ theme }) => ({
-        height: 'calc(100vh - 175px)',
-        padding: '20px 0 0 0',
-        display: 'flex',
-        width: '100%',
-    }));
-
-    const LeftParentContainer = styled('div')(({ theme }) => ({
-        flexBasis: 'calc(70% - 500px)',
-        padding: '20px 20px 30px 20px',
-        transition: 'width .2s',
-        backgroundColor: '#eee',
-        flexDirection: 'column',
-        borderRadius: '20px',
-        display: 'flex',
-        flex: '1',
-    }));
-
-    const RightParentContainer = styled('div')(({ theme }) => ({
-        transition: 'width .2s, margin-left .2s, display 0s',
-        backgroundColor: '#eee',
-        borderRadius: '20px',
-        flexBasis: '500px',
-        marginLeft: '0px',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-    }));
-
-    const LeftInnerTopDiv = styled('div')(({ theme }) => ({
-        overflow: conductor.initPrompt ? 'scroll' : 'hidden',
-        width: '100%',
-        padding: '0px',
-        boxSizing: 'border-box',
-    }));
-
-    const LeftInnerBottomDiv = styled('div')(({ theme }) => ({
-        marginTop: 'auto',
-        height: '50px',
-        width: '100%',
-    }));
-
-    const SubTaskParentContainerNew = styled('div')(({ theme }) => ({
-        justifyContent: 'flex-end',
-        marginBottom: '10px',
-        display: 'flex',
-        width: '100%',
-    }));
-
-    const SubTaskInnerContainer = styled('div')(({ theme }) => ({
-        flexGrow: '1',
-    }));
-
-    const SubTaskPlayButton = styled('div')(({ theme }) => ({
-        alignItems: 'center',
-        display: 'flex',
-        height: '75px',
-        width: '50px',
-    }));
-
     const handleMount = (editor, monaco) => {
         // for JSON editor
         editor.getAction('editor.action.formatDocument').run();
@@ -207,16 +212,24 @@ export const Conductor = observer(() => {
 
         const modelId = '4acbe913-df40-4ac0-b28a-daa5ad91b172';
         const promptAddition =
-            'Please limit your response to 3-10 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
+            'Please limit your response to 3 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
         const combinePrompt = [data.taskInput, promptAddition].join(' ');
         const pixel = `LLMInstruct("${modelId}", "${combinePrompt}")`;
         const res = await runPixel(pixel);
-        const outputSteps = res.pixelReturn[0].output['response'];
-        const newAllAppIdsSet = new Set(
-            outputSteps.map((step) => step.project_id),
-        );
 
-        setAllAppIdsSet(newAllAppIdsSet);
+        // The steps that come back from LLM Instruct
+        const outputSteps = res.pixelReturn[0].output[
+            'response'
+        ] as LLMInstructOutputStep[];
+
+        /**
+         * OLD
+         */
+        // conductor.setSubTasks(outputSteps);
+
+        /**
+         * NEW
+         */
         conductor.setSubtasks(outputSteps);
 
         setIsLoading(false);
@@ -273,6 +286,7 @@ export const Conductor = observer(() => {
                                 </Typography>
                             </SubTaskInnerContainer>
                         </SubTaskParentContainerNew>
+
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
@@ -322,6 +336,7 @@ export const Conductor = observer(() => {
                                 </div>
                             </SubTaskPlayButton>
                         </SubTaskParentContainerNew>
+
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
@@ -353,20 +368,17 @@ export const Conductor = observer(() => {
                             </SubTaskInnerContainer>
                             <SubTaskPlayButton></SubTaskPlayButton>
                         </SubTaskParentContainerNew>
-                        {conductor.subTasks.map((subtask, subTaskIdx) => {
+
+                        {/* GOOD */}
+                        {conductor.subtasks.map((subtask, subTaskIdx) => {
                             return (
-                                // <StateStoreContextProvider value={selectedAppId}>
-                                <Subtask
-                                    key={subTaskIdx}
-                                    taskIndex={subTaskIdx}
-                                    type={'app'}
-                                    step={conductor.steps[0]}
-                                    subtask={subtask.taskName}
-                                    appOptionIds={subtask.optionAppIds}
-                                    allAppIdsSet={allAppIdsSet}
-                                    setSelectedSubtask={setSelectedSubtask}
-                                />
-                                // </StateStoreContextProvider>
+                                <>
+                                    <SubtaskWrapper
+                                        key={subTaskIdx}
+                                        id={subtask.id}
+                                        index={subTaskIdx}
+                                    />
+                                </>
                             );
                         })}
 
@@ -393,6 +405,7 @@ export const Conductor = observer(() => {
                             }}
                         />
                     </LeftInnerTopDiv>
+                    {/* Only shows if the prompt hasnt been asked */}
                     <Controller
                         name={'uploadFile'}
                         control={control}

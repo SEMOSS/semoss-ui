@@ -622,6 +622,33 @@ export class StateStore {
         return false;
     };
 
+    executeApp = async () => {
+        for (const q of this._store.executionOrder) {
+            const query = this._store.queries[q];
+            await query._processRun();
+        }
+
+        const appOutput = {};
+
+        Object.entries(this._store.variables).forEach((keyValue) => {
+            const key = keyValue[0];
+            const v = keyValue[1];
+            if (v.isOutput) {
+                debugger;
+
+                const val = this.getVariable(
+                    v.to,
+                    v.type,
+                    [key],
+                    undefined,
+                    v.cellId,
+                );
+                appOutput[key] = val;
+            }
+        });
+        return `OUTPUT: ${JSON.stringify(appOutput)}`;
+    };
+
     /**
      * Attach a block to the parent block's slot. At this point, we assume that everything can be attached correctly.
      * @param parent - id of the block that we are attaching to
@@ -724,9 +751,28 @@ export class StateStore {
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
         // store the execution order of notebooks
-        this._store.executionOrder = state.executionOrder
-            ? state.executionOrder
-            : [];
+        let order = [];
+        const sheets = Object.keys(this._store.queries);
+
+        if (state.executionOrder.length) {
+            order = state.executionOrder;
+        } else {
+            sheets.forEach((k) => {
+                order.push(k);
+            });
+        }
+
+        sheets.forEach(async (s) => {
+            const found = await order.find((o) => {
+                return o === s;
+            });
+
+            if (!found) {
+                order.push(s);
+            }
+        });
+
+        this._store.executionOrder = order;
 
         // Replace initial param values provided from URL
         if (initialParams) {
@@ -1025,6 +1071,8 @@ export class StateStore {
             this,
         );
 
+        this._store.executionOrder.push(queryId);
+
         return queryId;
     };
 
@@ -1033,7 +1081,12 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
+        // Delete the query
         delete this._store.queries[queryId];
+
+        // Remove it from our execition order tracking
+        const index = this._store.executionOrder.indexOf(queryId);
+        this._store.executionOrder.splice(index, 1);
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -1321,9 +1374,9 @@ export class StateStore {
             delete this._store.dependencies[variable.to];
         }
 
-        // remove the references of it from ui (don't touch users code notebook)
         // Stringify blocks
         const blocksToMutate = JSON.stringify(this._store.blocks);
+        // remove the references of it from ui (don't touch users code notebook)
         const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, 'g');
 
         const modifiedBlocks = await blocksToMutate.replace(regex, '');
@@ -1363,7 +1416,6 @@ export class StateStore {
      *
      */
     private setExecutionOrder = (orderedList: string[]) => {
-        debugger;
         this._store.executionOrder = orderedList;
         return;
     };

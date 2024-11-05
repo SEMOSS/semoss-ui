@@ -9,6 +9,11 @@ export const NewConductorPage = () => {
         steps: TEST_LIST_OF_STEPS,
         initPrompt: '',
         subTasks: [],
+        /**
+         * TODO:
+         * 11/5/24
+         */
+        subtasks: [],
     });
 
     return (

@@ -215,7 +215,7 @@ export const Subtask = observer(
                 const pixel = `ProjectInfo(project=["${appId}"]);`;
                 const pixelResponse = await runPixel(pixel);
                 const appDetails = pixelResponse.pixelReturn[0].output;
-                console.log({ appDetails });
+                // console.log({ appDetails });
 
                 newAppOptions.push({
                     title: appDetails['project_name'],
@@ -413,9 +413,9 @@ export const Subtask = observer(
                                                             overflow: 'hidden',
                                                         }}
                                                     >
-                                                        <BlocksRenderer
+                                                        {/* <BlocksRenderer
                                                             state={step}
-                                                        />
+                                                        /> */}
                                                     </div>
                                                 </span>
                                                 <span
@@ -459,7 +459,7 @@ export const Subtask = observer(
                                                     >
                                                         {Object.entries(
                                                             step['variables'],
-                                                        ).map((variable) => {
+                                                        ).map((variable, i) => {
                                                             const name =
                                                                 variable[0];
                                                             const value =
@@ -471,6 +471,7 @@ export const Subtask = observer(
                                                             ) {
                                                                 return (
                                                                     <div
+                                                                        key={i}
                                                                         style={{
                                                                             marginTop:
                                                                                 '10px',
@@ -560,7 +561,7 @@ export const Subtask = observer(
                                                     </Typography>
                                                     {Object.entries(
                                                         step['variables'],
-                                                    ).map((variable) => {
+                                                    ).map((variable, i) => {
                                                         const name =
                                                             variable[0];
                                                         const value =
@@ -568,6 +569,7 @@ export const Subtask = observer(
                                                         if (value['isInput']) {
                                                             return (
                                                                 <div
+                                                                    key={i}
                                                                     style={{
                                                                         marginTop:
                                                                             '10px',
@@ -650,137 +652,140 @@ export const Subtask = observer(
                                                                 appCarouselOffset +
                                                                     3,
                                                             )
-                                                            .map((appObj) => (
-                                                                <AppSelectionCard
-                                                                    sx={{
-                                                                        border:
-                                                                            appObj?.appId ==
-                                                                            selectedSubTaskApp?.appId
-                                                                                ? '2px solid #0471F0'
-                                                                                : '2px solid #00000000',
-                                                                        ...(activeStep ==
-                                                                        1
-                                                                            ? {
-                                                                                  height: 'auto',
-                                                                              }
-                                                                            : {}),
-                                                                    }}
-                                                                    onClick={() => {
-                                                                        setSelectedSubTaskApp(
-                                                                            appObj,
-                                                                        );
-                                                                        conductor.setSelectedAppId(
-                                                                            taskIndex,
-                                                                            `${appObj.appId}`,
-                                                                        );
-                                                                        if (
-                                                                            activeStep ==
-                                                                            0
-                                                                        ) {
-                                                                            handleNext();
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        style={{
-                                                                            display:
-                                                                                'flex',
-                                                                            width: '100%',
-                                                                            alignItems:
-                                                                                'center',
-                                                                            height: '47px',
-                                                                            marginBottom:
+                                                            .map(
+                                                                (appObj, i) => (
+                                                                    <AppSelectionCard
+                                                                        key={i}
+                                                                        sx={{
+                                                                            border:
+                                                                                appObj?.appId ==
+                                                                                selectedSubTaskApp?.appId
+                                                                                    ? '2px solid #0471F0'
+                                                                                    : '2px solid #00000000',
+                                                                            ...(activeStep ==
+                                                                            1
+                                                                                ? {
+                                                                                      height: 'auto',
+                                                                                  }
+                                                                                : {}),
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            setSelectedSubTaskApp(
+                                                                                appObj,
+                                                                            );
+                                                                            conductor.setSelectedAppId(
+                                                                                taskIndex,
+                                                                                `${appObj.appId}`,
+                                                                            );
+                                                                            if (
                                                                                 activeStep ==
-                                                                                1
-                                                                                    ? '0px'
-                                                                                    : '8px',
+                                                                                0
+                                                                            ) {
+                                                                                handleNext();
+                                                                            }
                                                                         }}
                                                                     >
-                                                                        <img
-                                                                            style={{
-                                                                                width: '50px',
-                                                                                height: '50px',
-                                                                                borderRadius:
-                                                                                    '10px',
-                                                                                backgroundImage: `url(${
-                                                                                    appObj.imgUrl ||
-                                                                                    DUMMY_IMG_URLS[
-                                                                                        appObj
-                                                                                            .title
-                                                                                            ?.length %
-                                                                                            DUMMY_IMG_URLS?.length
-                                                                                    ]
-                                                                                })`,
-                                                                                backgroundSize:
-                                                                                    'cover',
-                                                                                backgroundPosition:
-                                                                                    'center',
-                                                                                marginRight:
-                                                                                    '16px',
-                                                                            }}
-                                                                        />
-                                                                        <Typography variant="body2">
-                                                                            <b>
-                                                                                {
-                                                                                    appObj.title
-                                                                                }
-                                                                            </b>
-                                                                        </Typography>
-                                                                    </div>
-                                                                    {activeStep ==
-                                                                        0 && (
                                                                         <div
                                                                             style={{
                                                                                 display:
                                                                                     'flex',
                                                                                 width: '100%',
-                                                                                height: '70px',
+                                                                                alignItems:
+                                                                                    'center',
+                                                                                height: '47px',
                                                                                 marginBottom:
-                                                                                    '8px',
+                                                                                    activeStep ==
+                                                                                    1
+                                                                                        ? '0px'
+                                                                                        : '8px',
                                                                             }}
                                                                         >
+                                                                            <img
+                                                                                style={{
+                                                                                    width: '50px',
+                                                                                    height: '50px',
+                                                                                    borderRadius:
+                                                                                        '10px',
+                                                                                    backgroundImage: `url(${
+                                                                                        appObj.imgUrl ||
+                                                                                        DUMMY_IMG_URLS[
+                                                                                            appObj
+                                                                                                .title
+                                                                                                ?.length %
+                                                                                                DUMMY_IMG_URLS?.length
+                                                                                        ]
+                                                                                    })`,
+                                                                                    backgroundSize:
+                                                                                        'cover',
+                                                                                    backgroundPosition:
+                                                                                        'center',
+                                                                                    marginRight:
+                                                                                        '16px',
+                                                                                }}
+                                                                            />
                                                                             <Typography variant="body2">
-                                                                                {appObj.description?.slice(
-                                                                                    0,
-                                                                                    140,
-                                                                                ) +
-                                                                                    '...'}
+                                                                                <b>
+                                                                                    {
+                                                                                        appObj.title
+                                                                                    }
+                                                                                </b>
                                                                             </Typography>
                                                                         </div>
-                                                                    )}
-                                                                    {activeStep ==
-                                                                        0 && (
-                                                                        <div
-                                                                            style={{
-                                                                                display:
-                                                                                    'flex',
-                                                                                width: '100%',
-                                                                                height: '42px',
-                                                                            }}
-                                                                        >
-                                                                            <a
-                                                                                target="new"
-                                                                                href={`#/app/${appObj.appId}`}
+                                                                        {activeStep ==
+                                                                            0 && (
+                                                                            <div
+                                                                                style={{
+                                                                                    display:
+                                                                                        'flex',
+                                                                                    width: '100%',
+                                                                                    height: '70px',
+                                                                                    marginBottom:
+                                                                                        '8px',
+                                                                                }}
                                                                             >
-                                                                                <Button
-                                                                                    variant="text"
-                                                                                    color="primary"
-                                                                                    endIcon={
-                                                                                        <OpenInNewRounded />
-                                                                                    }
-                                                                                    onClick={(
-                                                                                        e,
-                                                                                    ) =>
-                                                                                        e.stopPropagation()
-                                                                                    }
+                                                                                <Typography variant="body2">
+                                                                                    {appObj.description?.slice(
+                                                                                        0,
+                                                                                        140,
+                                                                                    ) +
+                                                                                        '...'}
+                                                                                </Typography>
+                                                                            </div>
+                                                                        )}
+                                                                        {activeStep ==
+                                                                            0 && (
+                                                                            <div
+                                                                                style={{
+                                                                                    display:
+                                                                                        'flex',
+                                                                                    width: '100%',
+                                                                                    height: '42px',
+                                                                                }}
+                                                                            >
+                                                                                <a
+                                                                                    target="new"
+                                                                                    href={`#/app/${appObj.appId}`}
                                                                                 >
-                                                                                    Open
-                                                                                </Button>
-                                                                            </a>
-                                                                        </div>
-                                                                    )}
-                                                                </AppSelectionCard>
-                                                            ))}
+                                                                                    <Button
+                                                                                        variant="text"
+                                                                                        color="primary"
+                                                                                        endIcon={
+                                                                                            <OpenInNewRounded />
+                                                                                        }
+                                                                                        onClick={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            e.stopPropagation()
+                                                                                        }
+                                                                                    >
+                                                                                        Open
+                                                                                    </Button>
+                                                                                </a>
+                                                                            </div>
+                                                                        )}
+                                                                    </AppSelectionCard>
+                                                                ),
+                                                            )}
                                                         {
                                                             <IconButton
                                                                 sx={{
@@ -1572,9 +1577,9 @@ export const Subtask = observer(
                                                             width: '503px',
                                                         }}
                                                     >
-                                                        <BlocksRenderer
+                                                        {/* <BlocksRenderer
                                                             state={step}
-                                                        />
+                                                        /> */}
                                                     </Box>
                                                     <Box
                                                         sx={{ width: '503px' }}
