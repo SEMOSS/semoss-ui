@@ -9,7 +9,7 @@ import { buildDimensionsSection } from '../block-defaults.shared';
 import { AudioInputBlockDef, AudioInputBlock } from './AudioInputBlock';
 import { KeyboardVoice } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
-import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
+import { InputAudioSettings } from '@/components/block-settings/shared/InputAudioSettings';
 
 export const DefaultStyles: CSSProperties = {};
 
@@ -39,7 +39,7 @@ export const config: BlockConfig<AudioInputBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputModalSettings
+                        <InputAudioSettings
                             id={id}
                             label="Transcript"
                             path="value"
