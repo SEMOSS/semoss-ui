@@ -1,2 +1,2 @@
-export * from './NewConductor';
+export * from './Conductor';
 export * from './new-conductor.constants';

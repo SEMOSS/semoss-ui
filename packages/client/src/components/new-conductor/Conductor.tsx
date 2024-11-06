@@ -382,6 +382,13 @@ export const Conductor = observer(() => {
                             );
                         })}
 
+                        {conductor.completedSubtasks && (
+                            <>
+                                Complete bubble that executes the output of all
+                                subtasks on the LLM with the initial prompt
+                            </>
+                        )}
+
                         <Controller
                             name={'uploadFile'}
                             control={control}

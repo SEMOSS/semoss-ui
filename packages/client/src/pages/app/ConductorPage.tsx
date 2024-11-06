@@ -3,7 +3,7 @@ import { ConductorStore } from '@/stores';
 import { Conductor, TEST_LIST_OF_STEPS } from '@/components/new-conductor';
 import { Stack } from '@semoss/ui';
 
-export const NewConductorPage = () => {
+export const ConductorPage = () => {
     const conductor = new ConductorStore({
         inputPool: {},
         steps: TEST_LIST_OF_STEPS,

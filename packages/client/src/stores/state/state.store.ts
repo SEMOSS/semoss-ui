@@ -622,6 +622,10 @@ export class StateStore {
         return false;
     };
 
+    /**
+     * Allows us to exeute app as an API for AI conductor
+     * @returns
+     */
     executeApp = async () => {
         for (const q of this._store.executionOrder) {
             const query = this._store.queries[q];
@@ -634,8 +638,6 @@ export class StateStore {
             const key = keyValue[0];
             const v = keyValue[1];
             if (v.isOutput) {
-                debugger;
-
                 const val = this.getVariable(
                     v.to,
                     v.type,
@@ -646,7 +648,7 @@ export class StateStore {
                 appOutput[key] = val;
             }
         });
-        return `OUTPUT: ${JSON.stringify(appOutput)}`;
+        return appOutput;
     };
 
     /**

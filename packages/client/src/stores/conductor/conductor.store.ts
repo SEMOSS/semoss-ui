@@ -99,6 +99,31 @@ export interface ConductorStoreInterface {
      * TODO: ADD PROPERTIES TIED TO CONDUCTOR STORE
      * 11/5/24
      */
+    /**
+     * List of subtasks used to answer initial prompt
+     */
+    subtasks: SubtaskState[];
+
+    /**
+     * Are all subtasks executed, and completed
+     */
+    completedSubtasks: boolean;
+}
+
+interface ConductorStoreConfig {
+    inputPool: Record<string, unknown>;
+    steps: unknown[];
+
+    initPrompt: null | string;
+    subTasks: Array<SubtaskInterface>;
+
+    /**
+     * TODO: ADD PROPERTIES TIED TO CONDUCTOR STORE
+     * 11/5/24
+     */
+    /**
+     * List of subtasks used to answer initial prompt
+     */
     subtasks: SubtaskState[];
 }
 
@@ -117,9 +142,10 @@ export class ConductorStore {
          * 11/5/24
          */
         subtasks: [],
+        completedSubtasks: false,
     };
 
-    constructor(config: ConductorStoreInterface) {
+    constructor(config: ConductorStoreConfig) {
         this._store.inputPool = config.inputPool;
         this._store.steps = config.steps;
 
@@ -211,8 +237,19 @@ export class ConductorStore {
      * NEW
      * TODO: FIX STORE
      */
+
+    /**
+     * Gets list of subtasks
+     */
     get subtasks() {
         return this._store.subtasks;
+    }
+
+    /**
+     * Are all subtasks complete
+     */
+    get completedSubtasks() {
+        return this._store.completedSubtasks;
     }
 
     /**

@@ -10,6 +10,7 @@ import {
     Tooltip,
     Grid,
     Button,
+    CircularProgress,
 } from '@semoss/ui';
 import { SerializedState } from '@/stores';
 import { runPixel } from '@/api';
@@ -19,10 +20,12 @@ import {
     KeyboardArrowDownRounded,
     OpenInNewRounded,
 } from '@mui/icons-material';
-import { SubtaskSelectedApp } from './SubtaskSelectedApp';
 import { useConductor } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { Step, StepLabel, Stepper } from '@mui/material';
+
+import { SubtaskSelectedAppInputs } from './SubtaskSelectedAppInputs';
+import { SubtaskExecutionWrapper } from './SubtaskExecutionWrapper';
 
 const SubTaskInnerContainer = styled('div')(({ theme }) => ({
     flexGrow: '1',
@@ -97,11 +100,15 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
 
     const activeStep = useMemo(() => {
         if (subtask.selectedApp) {
-            return 1;
+            if (!subtask.isReady) {
+                return 1;
+            } else {
+                return 2;
+            }
         } else {
             return 0;
         }
-    }, [subtask.selectedApp]);
+    }, [subtask.selectedApp, subtask.isReady]);
 
     return (
         <SubTaskInnerContainer>
@@ -165,6 +172,7 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                         >
                             <DataObject />
                         </IconButton>
+                        {subtask.isLoading && <CircularProgress />}
                     </div>
                 </Accordion.Trigger>
                 <Accordion.Content sx={isExpanded ? {} : { display: 'none' }}>
@@ -180,12 +188,13 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                             <Step
                             // onClick={() => {}}
                             >
-                                <StepLabel>Map inputs</StepLabel>
+                                <StepLabel>Map User inputs</StepLabel>
                             </Step>
                             <Step>
                                 <StepLabel>Complete subtask</StepLabel>
                             </Step>
                         </Stepper>
+
                         {activeStep === 0 && (
                             <Grid container>
                                 {subtask.apps.length &&
@@ -239,7 +248,14 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                                                         <Typography variant="body1">
                                                             <b>
                                                                 {a.project_name}
-                                                            </b>
+                                                            </b>{' '}
+                                                            <Tooltip
+                                                                title={`Project Id: ${a.project_id}`}
+                                                            >
+                                                                <IconButton size="small">
+                                                                    <InfoRounded fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
                                                         </Typography>
                                                     </Stack>
                                                     <Typography
@@ -282,7 +298,19 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                         )}
 
                         {/* Show the inputs that are associated to the app */}
-                        {activeStep === 1 && <SubtaskSelectedApp />}
+                        {activeStep === 1 && (
+                            <SubtaskSelectedAppInputs
+                                id={id}
+                                onComplete={(data) => {
+                                    // set state in conductor for app inputs
+                                    subtask.setSubtaskInputs(data);
+                                }}
+                            />
+                        )}
+
+                        {activeStep === 2 && (
+                            <SubtaskExecutionWrapper id={id} />
+                        )}
                     </Stack>
                 </Accordion.Content>
             </Accordion>

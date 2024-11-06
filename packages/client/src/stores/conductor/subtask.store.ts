@@ -46,6 +46,11 @@ export interface SubtaskStoreInterface {
     isExecuted: boolean;
 
     /**
+     * Is the subtask ready to be executed, has all inputs
+     */
+    isReady: boolean;
+
+    /**
      * Apps that have been tied to the subtask
      */
     apps: AppInterface[];
@@ -89,6 +94,7 @@ export class SubtaskState {
         description: '',
         isLoading: false,
         isExecuted: false,
+        isReady: false,
         apps: [],
         selectedApp: '',
         inputs: {},
@@ -136,7 +142,7 @@ export class SubtaskState {
                 resp = pixelReturn[1];
                 appInterface = {
                     ...appInterface,
-                    ...(resp.output as Record<string, unknown>),
+                    state: resp.output as Record<string, unknown>,
                 };
 
                 appConfigList.push(appInterface);
@@ -182,6 +188,16 @@ export class SubtaskState {
     }
 
     /**
+     * Track if the subtask has all required inputs and ready to be executed
+     */
+    get isReady() {
+        if (this._store.isReady) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Gets the apps
      */
     get apps() {
@@ -212,9 +228,18 @@ export class SubtaskState {
     /**
      * ACTIONS
      */
+
+    setIsLoading = (bool: boolean) => {
+        this._store.isLoading = bool;
+    };
+
     setSelectedApp = (id?: string) => {
         if (!id) {
             this._store.selectedApp = '';
+            this._store.isReady = false;
+            this._store.inputs = {};
+            this._store.outputs = {};
+
             return;
         }
 
@@ -223,9 +248,40 @@ export class SubtaskState {
         if (app) {
             this._store.selectedApp = id;
 
+            const inputs = {};
+            const outputs = {};
+
+            Object.entries(app.state.variables).forEach((kv) => {
+                const key = kv[0];
+                const reference = kv[1];
+
+                if (reference.isInput) {
+                    inputs[key] = '';
+                }
+
+                if (reference.isOutput) {
+                    outputs[key] = '';
+                }
+            });
+
             // Set the inputs for the task
+            this._store.inputs = inputs;
 
             // Set the outputs for the task
+            this._store.outputs = outputs;
         }
+    };
+
+    setSubtaskInputs = (map: Record<string, unknown>) => {
+        this._store.isReady = true;
+
+        this._store.inputs = map;
+    };
+
+    setSubtaskOutputs = (map: Record<string, unknown>) => {
+        this._store.isExecuted = true;
+        this._store.isLoading = false;
+
+        this._store.outputs = map;
     };
 }
