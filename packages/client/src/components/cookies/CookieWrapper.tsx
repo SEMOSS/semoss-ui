@@ -112,10 +112,6 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                                 size="small"
                                 onClick={() => {
                                     setVisible(false);
-                                    localStorage.setItem(
-                                        cookieName,
-                                        JSON.stringify(false),
-                                    );
                                 }}
                             >
                                 <Close />
