@@ -728,7 +728,11 @@ export class StateStore {
 
         // store the execution order of notebooks
         let order = [];
-        const sheets = Object.keys(this._store.queries);
+
+        // const sheets = Object.keys(this._store.queries);
+        const sheets = this._store['queries']
+            ? Object.keys(this._store['queries'])
+            : [];
 
         if (state.executionOrder.length) {
             order = state.executionOrder;

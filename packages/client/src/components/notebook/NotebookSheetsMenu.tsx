@@ -274,7 +274,10 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
 
     const sheets = useMemo(() => {
         const orderedRows = [];
-        const notebookSheets = Object.keys(state.queries);
+        // const notebookSheets = Object.keys(state.queries);
+        const notebookSheets = state['queries']
+            ? Object.keys(state['queries'])
+            : [];
 
         notebookSheets.forEach((s) => {
             const found = orderedRows.find((r) => {
@@ -291,7 +294,8 @@ export const NotebookSheetsMenu = observer((): JSX.Element => {
         return orderedRows;
     }, [
         JSON.stringify(state.executionOrder),
-        JSON.stringify(Object.keys(state.queries)),
+        // JSON.stringify(Object.keys(state.queries)),
+        JSON.stringify(state['queries'] ? Object.keys(state['queries']) : []),
     ]);
 
     return (

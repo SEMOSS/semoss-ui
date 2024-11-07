@@ -96,6 +96,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
                 // run migration if not up to date
                 if (s.version !== STATE_VERSION) {
+                    alert('new MigrationManager()');
                     const migration = new MigrationManager();
                     s = await migration.run(s);
                 }
