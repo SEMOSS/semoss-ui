@@ -1,6 +1,7 @@
 import { runPixel } from '@/api';
 import { makeAutoObservable } from 'mobx';
 import { SerializedState } from '../state';
+import { ConductorStore } from './conductor.store';
 
 interface AppInterface {
     /**
@@ -61,6 +62,11 @@ export interface SubtaskStoreInterface {
     selectedApp: string;
 
     /**
+     * Reference of conductor store
+     */
+    conductor: ConductorStore | null;
+
+    /**
      * inputs tied to the subtask
      */
     inputs?: Record<string, unknown>;
@@ -86,6 +92,11 @@ export interface SubtaskConfig {
      * List of app ids for subtask
      */
     apps: string[];
+
+    /**
+     * Reference of conductor store
+     */
+    conductor: ConductorStore;
 }
 
 export class SubtaskState {
@@ -99,6 +110,7 @@ export class SubtaskState {
         selectedApp: '',
         inputs: {},
         outputs: {},
+        conductor: null,
     };
 
     constructor(config: SubtaskConfig) {
@@ -111,12 +123,19 @@ export class SubtaskState {
         // clear the selected app
         this._store.selectedApp = '';
 
+        // set the conductor store
+        this._store.conductor = config.conductor;
+
         // Get additional app meta that comes back with apps
         this.setApps(config.apps);
 
         makeAutoObservable(this); // make it observable
     }
 
+    /**
+     * LLMInstruct does not get us all the meta we need so chain reactor calls for suggestions
+     * @param apps
+     */
     private async setApps(apps) {
         const appConfigList = [];
 
@@ -229,10 +248,19 @@ export class SubtaskState {
      * ACTIONS
      */
 
+    /**
+     * Update load state of subtask
+     * @param bool
+     */
     setIsLoading = (bool: boolean) => {
         this._store.isLoading = bool;
     };
 
+    /**
+     * Selects which app you intend on using for subtask
+     * @param id
+     * @returns
+     */
     setSelectedApp = (id?: string) => {
         if (!id) {
             this._store.selectedApp = '';
@@ -272,16 +300,29 @@ export class SubtaskState {
         }
     };
 
+    /**
+     * Sets the input map to be sent as params to execution
+     * @param map
+     */
     setSubtaskInputs = (map: Record<string, unknown>) => {
         this._store.isReady = true;
 
         this._store.inputs = map;
     };
 
+    /**
+     * Called on execution of task
+     * @param map
+     */
     setSubtaskOutputs = (map: Record<string, unknown>) => {
+        // Update staus
         this._store.isExecuted = true;
         this._store.isLoading = false;
 
+        // Update Output
         this._store.outputs = map;
+
+        // Call the parent to see if all subtasks are completed
+        this._store.conductor.updateCompletedSubtask();
     };
 }

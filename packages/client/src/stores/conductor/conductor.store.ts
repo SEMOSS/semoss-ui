@@ -99,6 +99,11 @@ export interface ConductorStoreInterface {
      * TODO: ADD PROPERTIES TIED TO CONDUCTOR STORE
      * 11/5/24
      */
+
+    /**
+     * Insight tied to the conductor
+     */
+    insightId: string;
     /**
      * List of subtasks used to answer initial prompt
      */
@@ -122,6 +127,10 @@ interface ConductorStoreConfig {
      * 11/5/24
      */
     /**
+     * Insight tied to the conductor
+     */
+    insightId: string;
+    /**
      * List of subtasks used to answer initial prompt
      */
     subtasks: SubtaskState[];
@@ -141,6 +150,7 @@ export class ConductorStore {
         /**
          * 11/5/24
          */
+        insightId: '',
         subtasks: [],
         completedSubtasks: false,
     };
@@ -155,6 +165,8 @@ export class ConductorStore {
         /**
          * TODO:
          */
+
+        this._store.insightId = config.insightId;
         this._store.subtasks = [];
 
         makeAutoObservable(this); // make it observable
@@ -241,6 +253,13 @@ export class ConductorStore {
     /**
      * Gets list of subtasks
      */
+    get insightId() {
+        return this._store.insightId;
+    }
+
+    /**
+     * Gets list of subtasks
+     */
     get subtasks() {
         return this._store.subtasks;
     }
@@ -275,21 +294,42 @@ export class ConductorStore {
         return null;
     }
 
+    /**
+     * Set subtasks based on LLMInstruct reactor
+     * @param subtasks
+     */
     setSubtasks = (subtasks: LLMInstructOutputStep[]) => {
         // Initialize a list for subtasks
         const stagedList = [];
 
         subtasks.forEach((sT) => {
             const subtask = new SubtaskState({
-                // Generate a unique UUID
                 id: uuidv4(),
                 description: sT.step,
                 apps: sT.project_ids,
+                // Reference to the conductor store to inform completion of subtasks
+                conductor: this,
             });
 
             stagedList.push(subtask);
         });
 
         this._store.subtasks = stagedList as SubtaskState[];
+    };
+
+    /**
+     * Goes through all subtasks to check if they have been executed
+     */
+    updateCompletedSubtask = () => {
+        let isComplete = true;
+        this._store.subtasks.forEach((sT) => {
+            if (!sT.isExecuted) {
+                debugger;
+                isComplete = false;
+            }
+        });
+
+        debugger;
+        this._store.completedSubtasks = isComplete;
     };
 }

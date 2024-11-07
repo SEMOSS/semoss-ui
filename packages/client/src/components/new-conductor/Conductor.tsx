@@ -215,7 +215,7 @@ export const Conductor = observer(() => {
             'Please limit your response to 3 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
         const combinePrompt = [data.taskInput, promptAddition].join(' ');
         const pixel = `LLMInstruct("${modelId}", "${combinePrompt}")`;
-        const res = await runPixel(pixel);
+        const res = await runPixel(pixel, conductor.insightId);
 
         // The steps that come back from LLM Instruct
         const outputSteps = res.pixelReturn[0].output[
