@@ -1,7 +1,7 @@
 // config.tsx
 import { useState, useRef } from 'react';
 import { BlockConfig, BlockDef, Block } from '@/stores';
-import { SelectOptionsSettings } from '@/components/block-settings';
+import { QuerySelectionSettings } from '@/components/block-settings';
 import { DataTableBlock, DataTableBlockDef } from './DataTableBlock';
 import { TableChart } from '@mui/icons-material';
 import { buildListener } from '../block-defaults.shared';
@@ -9,7 +9,7 @@ import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 import { Autocomplete, Typography, Stack, Button } from '@mui/material';
 import { BaseSettingSection } from '@/components/block-settings/BaseSettingSection';
-import { useBlockSettings, useBlocks } from '@/hooks';
+import { useBlockSettings } from '@/hooks';
 import { Paths, PathValue } from '@/types';
 import { TableHeaderSettings } from '@/components/block-settings/custom/TableHeaderSettings';
 import { InputSettings } from '@/components/block-settings';
@@ -77,56 +77,6 @@ const SettingAutocomplete = <D extends BlockDef>({
     );
 };
 
-const ImprovedNumberSettings = <D extends BlockDef>({
-    id,
-    path,
-    min,
-    max,
-    step = 1,
-    helperText,
-}: {
-    id: string;
-    path: Paths<Block<D>['data'], 4>;
-    min?: number;
-    max?: number;
-    step?: number;
-    helperText?: string;
-}) => {
-    const { data, setData } = useBlockSettings<D>(id);
-    const [value, setValue] = useState(data[path] || '');
-    const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-    const handleChange = (newValue: string) => {
-        setValue(newValue);
-
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-
-        timeoutRef.current = setTimeout(() => {
-            const numValue = Number(newValue);
-            if (
-                !isNaN(numValue) &&
-                (typeof min === 'undefined' || numValue >= min) &&
-                (typeof max === 'undefined' || numValue <= max)
-            ) {
-                setData(path, numValue as PathValue<D['data'], typeof path>);
-            }
-        }, 300);
-    };
-
-    return (
-        <TextField
-            fullWidth
-            size="small"
-            value={value}
-            onChange={(e) => handleChange(e.target.value)}
-            inputProps={{ min, max, step }}
-            helperText={helperText}
-        />
-    );
-};
-
 export const config: BlockConfig<DataTableBlockDef> = {
     widget: 'table',
     type: BLOCK_TYPE_INPUT,
@@ -169,10 +119,62 @@ export const config: BlockConfig<DataTableBlockDef> = {
                     render: ({ id }) => {
                         const { data, setData } =
                             useBlockSettings<DataTableBlockDef>(id);
-                        const [uploadKey, setUploadKey] = useState(0);
                         const [selectedFile, setSelectedFile] = useState<
                             string | null
                         >(null);
+                        const [uploadKey, setUploadKey] = useState(0);
+
+                        // Handle query data in similar way as file
+                        const processQueryData = () => {
+                            if (data.dataSource === 'query' && data.rawData) {
+                                try {
+                                    let queryOutput;
+
+                                    // Handle both string template and direct array data
+                                    if (Array.isArray(data.rawData)) {
+                                        // Handle direct array case
+                                        queryOutput = data.rawData;
+                                    }
+
+                                    if (
+                                        Array.isArray(queryOutput) &&
+                                        queryOutput.length > 0
+                                    ) {
+                                        // Set displayData first
+                                        setData('displayData', queryOutput);
+
+                                        // Then handle headers exactly like file upload
+                                        if (!data.headers?.length) {
+                                            const generatedHeaders =
+                                                Object.keys(queryOutput[0]).map(
+                                                    (key) => ({
+                                                        display:
+                                                            key
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                            key
+                                                                .slice(1)
+                                                                .replace(
+                                                                    /_/g,
+                                                                    ' ',
+                                                                ),
+                                                        value: key,
+                                                    }),
+                                                );
+                                            setData(
+                                                'headers',
+                                                generatedHeaders,
+                                            );
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error(
+                                        'Error processing query data:',
+                                        error,
+                                    );
+                                }
+                            }
+                        };
 
                         const handleDataSourceChange = () => {
                             // Clear previous data when source changes
@@ -180,6 +182,7 @@ export const config: BlockConfig<DataTableBlockDef> = {
                             setData('fileType', undefined);
                             setData('displayData', []);
                             setData('headers', []);
+                            setSelectedFile(null);
                             setUploadKey((prev) => prev + 1);
                         };
 
@@ -196,16 +199,14 @@ export const config: BlockConfig<DataTableBlockDef> = {
                                 </BaseSettingSection>
 
                                 {data.dataSource === 'query' && (
-                                    <SelectOptionsSettings
+                                    <QuerySelectionSettings
                                         id={id}
-                                        optionData={[
-                                            {
-                                                label: 'Query Output',
-                                                path: 'output',
-                                            },
-                                        ]}
                                         label="Data Source Query"
                                         path="rawData"
+                                        queryPath="output"
+                                        __onChange={() => {
+                                            processQueryData();
+                                        }}
                                     />
                                 )}
 
@@ -427,21 +428,13 @@ export const config: BlockConfig<DataTableBlockDef> = {
                 },
                 {
                     description: 'Rows Per Page',
-                    render: ({ id }) => {
-                        const { data } = useBlockSettings(id);
-                        return data.enablePagination ? (
-                            <BaseSettingSection label="Rows Per Page">
-                                <ImprovedNumberSettings
-                                    id={id}
-                                    path="rowsPerPage"
-                                    min={5}
-                                    max={100}
-                                    step={5}
-                                    helperText="Number of rows to display per page"
-                                />
-                            </BaseSettingSection>
-                        ) : null;
-                    },
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Rows Per Page"
+                            path="rowsPerPage"
+                        />
+                    ),
                 },
                 {
                     description: 'Sorting',
