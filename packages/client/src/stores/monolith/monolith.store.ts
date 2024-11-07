@@ -2825,8 +2825,6 @@ export class MonolithStore {
                 throw Error(error);
             });
 
-        console.log('hi', response);
-
         return response.data;
     }
 
