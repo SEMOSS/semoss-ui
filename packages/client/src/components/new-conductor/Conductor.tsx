@@ -27,6 +27,7 @@ import { LoadingScreen } from '@/components/ui';
 import { Blocks } from '../blocks';
 import { SubtaskWrapper } from './SubtaskWrapper';
 import { LLMInstructOutputStep } from './conductor.types';
+import { TaskExecution } from './TaskExecution';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: '#fff',
@@ -206,26 +207,23 @@ export const Conductor = observer(() => {
         conductor.setInitPrompt(data.taskInput);
         conductor.setSubtasks([]);
 
+        // Pixel concat
         const placeholderModelResponse =
             'Let’s find out...let me generate a roadmap!';
         setModelResponseText(placeholderModelResponse);
-
         const modelId = '4acbe913-df40-4ac0-b28a-daa5ad91b172';
         const promptAddition =
             'Please limit your response to 3 if possible. Please include only essential steps. Please use as few steps as possible without combining steps or creating overly-complex steps. Please limit the text for each step to 12 words or less if possible. Please do not combine multiple steps. Please try to create steps that could be performed on a computer. Please use complete sentences for each step. Please do not use special characters like dashes or colons in the text for steps.';
         const combinePrompt = [data.taskInput, promptAddition].join(' ');
         const pixel = `LLMInstruct("${modelId}", "${combinePrompt}")`;
+
+        // Execute pixel with conductor insight
         const res = await runPixel(pixel, conductor.insightId);
 
         // The steps that come back from LLM Instruct
         const outputSteps = res.pixelReturn[0].output[
             'response'
         ] as LLMInstructOutputStep[];
-
-        /**
-         * OLD
-         */
-        // conductor.setSubTasks(outputSteps);
 
         /**
          * NEW
@@ -382,14 +380,11 @@ export const Conductor = observer(() => {
                             );
                         })}
 
-                        {conductor.completedSubtasks && (
-                            <>
-                                Complete bubble that executes the output of all
-                                subtasks on the LLM with the initial prompt
-                            </>
-                        )}
+                        {conductor.completedSubtasks && <TaskExecution />}
+                        {/* So I can style */}
+                        {/* <TaskExecution /> */}
 
-                        <Controller
+                        {/* <Controller
                             name={'uploadFile'}
                             control={control}
                             rules={{}}
@@ -410,10 +405,10 @@ export const Conductor = observer(() => {
                                     />
                                 );
                             }}
-                        />
+                        /> */}
                     </LeftInnerTopDiv>
                     {/* Only shows if the prompt hasnt been asked */}
-                    <Controller
+                    {/* <Controller
                         name={'uploadFile'}
                         control={control}
                         rules={{}}
@@ -436,7 +431,7 @@ export const Conductor = observer(() => {
                                 />
                             );
                         }}
-                    />
+                    /> */}
                     <LeftInnerBottomDiv>
                         <Controller
                             name={'taskInput'}

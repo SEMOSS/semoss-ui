@@ -104,6 +104,7 @@ export interface ConductorStoreInterface {
      * Insight tied to the conductor
      */
     insightId: string;
+
     /**
      * List of subtasks used to answer initial prompt
      */
@@ -113,6 +114,11 @@ export interface ConductorStoreInterface {
      * Are all subtasks executed, and completed
      */
     completedSubtasks: boolean;
+
+    /**
+     * Output from the initial prompt
+     */
+    taskOutput: string;
 }
 
 interface ConductorStoreConfig {
@@ -153,6 +159,7 @@ export class ConductorStore {
         insightId: '',
         subtasks: [],
         completedSubtasks: false,
+        taskOutput: '',
     };
 
     constructor(config: ConductorStoreConfig) {
@@ -272,9 +279,15 @@ export class ConductorStore {
     }
 
     /**
+     * Gets the output of the subtasks asked against the initial prompt
+     */
+    get taskOutput() {
+        return this._store.taskOutput;
+    }
+
+    /**
      * ACTIONS
      */
-
     /**
      * Get a specific queries's state
      * @param id - id of the queries to get
@@ -324,12 +337,15 @@ export class ConductorStore {
         let isComplete = true;
         this._store.subtasks.forEach((sT) => {
             if (!sT.isExecuted) {
-                debugger;
                 isComplete = false;
             }
         });
 
-        debugger;
         this._store.completedSubtasks = isComplete;
+    };
+
+    setTaskOutput = (output) => {
+        debugger;
+        this._store.taskOutput = output;
     };
 }

@@ -17,7 +17,7 @@ export interface MarkdownBlockDef extends BlockDef<'markdown'> {
 
 export const MarkdownBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<MarkdownBlockDef>(id);
-    let markdownTxt =
+    const markdownTxt =
         typeof data.markdown == 'string'
             ? data.markdown
             : JSON.stringify(data.markdown);

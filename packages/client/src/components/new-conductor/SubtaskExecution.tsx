@@ -80,7 +80,7 @@ export const SubtaskExecution = observer((props: SubtaskExecutionProps) => {
                     subtask.setIsLoading(true);
 
                     const resp = await state.executeApp();
-                    debugger;
+                    // debugger;
 
                     subtask.setSubtaskOutputs(resp);
                 }}
