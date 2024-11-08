@@ -59,7 +59,13 @@ export const SubtaskSelectedAppInputs = observer(
                         fontSize: '15px',
                     }}
                 >
-                    <b>Inputs</b>
+                    {/* <b>Inputs</b> */}
+                    <Typography
+                        variant={'body1'}
+                        sx={{ margin: '0px 0px 15px' }}
+                    >
+                        <b>Inputs</b>
+                    </Typography>
                 </Typography>
 
                 <Grid container spacing={1} sx={{ marginBottom: '7.5px' }}>
@@ -127,7 +133,7 @@ export const SubtaskSelectedAppInputs = observer(
                             </Grid>
                         </Grid>
                     ))}
-                    <Stack direction="row" gap={1} sx={{ marginTop: '8px' }}>
+                    <Stack direction="row" gap={1} sx={{ marginTop: '25px' }}>
                         <Button color="secondary" variant="outlined">
                             Back
                         </Button>

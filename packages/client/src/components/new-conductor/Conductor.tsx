@@ -88,12 +88,12 @@ const SubTaskParentContainerNew = styled('div')(({ theme }) => ({
 
 const SubTaskInnerContainer = styled('div')(({ theme }) => ({
     flexGrow: '1',
+    marginBottom: '15px',
 }));
 
 const SubTaskPlayButton = styled('div')(({ theme }) => ({
     alignItems: 'center',
     display: 'flex',
-    height: '75px',
     width: '50px',
 }));
 
@@ -257,6 +257,7 @@ export const Conductor = observer(() => {
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
+                                display: conductor.initPrompt ? 'none' : 'flex',
                             }}
                         >
                             <SubTaskInnerContainer>
@@ -264,10 +265,6 @@ export const Conductor = observer(() => {
                                     variant={'body1'}
                                     sx={{
                                         padding: '16px',
-                                        display: conductor.initPrompt
-                                            ? 'none'
-                                            : 'flex',
-                                        marginBottom: '20px',
                                         backgroundColor: '#fff',
                                         borderRadius: '12px',
                                         justifyContent: 'start',
@@ -299,7 +296,7 @@ export const Conductor = observer(() => {
                                             ? 'flex'
                                             : 'none',
                                         backgroundColor: '#fff',
-                                        marginBottom: '20px',
+                                        // marginBottom: '20px',
                                         borderRadius: '12px',
                                         padding: '16px',
                                         justifyContent: 'start',
@@ -322,7 +319,7 @@ export const Conductor = observer(() => {
                                         width: '100%',
                                     }}
                                 >
-                                    <IconButton
+                                    {/* <IconButton
                                         sx={{
                                             display: conductor.initPrompt
                                                 ? 'auto'
@@ -330,7 +327,7 @@ export const Conductor = observer(() => {
                                         }}
                                     >
                                         <PlayArrow />
-                                    </IconButton>
+                                    </IconButton> */}
                                 </div>
                             </SubTaskPlayButton>
                         </SubTaskParentContainerNew>
@@ -351,7 +348,6 @@ export const Conductor = observer(() => {
                                         justifyContent: 'start',
                                         alignItems: 'center',
                                         backgroundColor: '#fff',
-                                        marginBottom: '20px',
                                         borderRadius: '12px',
                                         padding: '16px',
                                     }}
@@ -380,7 +376,29 @@ export const Conductor = observer(() => {
                             );
                         })}
 
-                        {conductor.completedSubtasks && <TaskExecution />}
+                        {/* {conductor.completedSubtasks && <TaskExecution />} */}
+
+                        {conductor.completedSubtasks && (
+                            <SubTaskParentContainerNew
+                                sx={{
+                                    marginBottom: '0',
+                                    display: conductor.initPrompt
+                                        ? 'auto'
+                                        : 'none',
+                                }}
+                            >
+                                <TaskExecution />
+                                <SubTaskPlayButton>
+                                    <div
+                                        style={{
+                                            justifyContent: 'center',
+                                            display: 'flex',
+                                            width: '100%',
+                                        }}
+                                    ></div>
+                                </SubTaskPlayButton>
+                            </SubTaskParentContainerNew>
+                        )}
                         {/* So I can style */}
                         {/* <TaskExecution /> */}
 

@@ -19,6 +19,8 @@ import {
     InfoRounded,
     KeyboardArrowDownRounded,
     OpenInNewRounded,
+    PlayArrow,
+    Warning,
 } from '@mui/icons-material';
 import { useConductor } from '@/hooks';
 import { observer } from 'mobx-react-lite';
@@ -29,6 +31,9 @@ import { SubtaskExecutionWrapper } from './SubtaskExecutionWrapper';
 
 const SubTaskInnerContainer = styled('div')(({ theme }) => ({
     flexGrow: '1',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
 }));
 
 const AppCard = styled(Box)(({ theme }) => ({
@@ -36,11 +41,11 @@ const AppCard = styled(Box)(({ theme }) => ({
     flexDirection: 'column',
     borderRadius: '10px',
     width: '421px',
-    // height: '184px',
     display: 'flex',
     cursor: 'pointer',
     padding: '16px',
     gap: '8px',
+    backgroundColor: '#fff',
 }));
 
 interface SubtaskWrapperProps {
@@ -97,6 +102,7 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
     }
 
     const [isExpanded, setIsExpanded] = useState(false);
+    const [threadedExecuteTrigger, setThreadedExecuteTrigger] = useState(0);
 
     const activeStep = useMemo(() => {
         if (subtask.selectedApp) {
@@ -111,209 +117,284 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
     }, [subtask.selectedApp, subtask.isReady]);
 
     return (
-        <SubTaskInnerContainer>
-            <Accordion
-                expanded={isExpanded}
-                onChange={(e) => {
-                    setIsExpanded(!isExpanded);
-                }}
-                sx={{
-                    paddingTop: '0px',
-                    borderRadius: '12px',
-                    marginBottom: '10px',
-                }}
-            >
-                <Accordion.Trigger expandIcon={<KeyboardArrowDownRounded />}>
-                    <div
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignContent: 'center',
-                            justifyContent: 'space-between',
-                            paddingTop: '0px',
-                        }}
+        <Box sx={{ marginBottom: '15px' }}>
+            <SubTaskInnerContainer>
+                <Accordion
+                    expanded={isExpanded}
+                    onChange={(e) => {
+                        setIsExpanded(!isExpanded);
+                    }}
+                    sx={{
+                        borderRadius: '12px',
+                        flexGrow: '1',
+                        paddingTop: '0px',
+                        paddingRight: '15px',
+                        paddingBottom: isExpanded ? '25px' : 'auto',
+                        paddingLeft: '15px',
+                    }}
+                >
+                    <Accordion.Trigger
+                        expandIcon={<KeyboardArrowDownRounded />}
                     >
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                height: '42px',
-                                lineHeight: '42px',
-                                overflow: 'hidden',
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignContent: 'center',
+                                justifyContent: 'space-between',
+                                paddingTop: '0px',
                             }}
                         >
-                            <b style={{ marginRight: '10px' }}>
-                                Subtask {index + 1}
-                            </b>{' '}
-                            <Tooltip
-                                title={
-                                    <Stack direction={'column'} gap={1}>
-                                        <Typography variant="body1">
-                                            Subtask Id:
-                                            {subtask.id}
-                                        </Typography>
-                                        <Typography variant={'body2'}>
-                                            Selected App:
-                                            {subtask.selectedApp}
-                                        </Typography>
-                                    </Stack>
-                                }
-                            >
-                                <IconButton size="small">
-                                    <InfoRounded fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                            {subtask.description}
-                        </Typography>
-                        <IconButton
-                            onClick={(e) => {
-                                // setSelectedSubtask(taskIndex);
-                                e.stopPropagation();
-                            }}
-                        >
-                            <DataObject />
-                        </IconButton>
-                        {subtask.isLoading && <CircularProgress />}
-                    </div>
-                </Accordion.Trigger>
-                <Accordion.Content sx={isExpanded ? {} : { display: 'none' }}>
-                    <Stack gap={1}>
-                        <Stepper activeStep={activeStep} sx={{ width: '80%' }}>
-                            <Step
-                                onClick={() => {
-                                    subtask.setSelectedApp();
+                            <Typography
+                                variant="body1"
+                                sx={{
+                                    height: '42px',
+                                    lineHeight: '42px',
+                                    overflow: 'hidden',
                                 }}
                             >
-                                <StepLabel>Select app</StepLabel>
-                            </Step>
-                            <Step
-                            // onClick={() => {}}
+                                <b style={{ marginRight: '10px' }}>
+                                    Subtask {index + 1}
+                                </b>{' '}
+                                {/* <Tooltip
+                                    title={
+                                        <Stack direction={'column'} gap={1}>
+                                            <Typography variant="body1">
+                                                Subtask Id:
+                                                {subtask.id}
+                                            </Typography>
+                                            <Typography variant={'body2'}>
+                                                Selected App:
+                                                {subtask.selectedApp}
+                                            </Typography>
+                                        </Stack>
+                                    }
+                                >
+                                    <IconButton size="small">
+                                        <InfoRounded fontSize="small" />
+                                    </IconButton>
+                                </Tooltip> */}
+                                {subtask.description}
+                            </Typography>
+                            {/* <IconButton
+                                onClick={(e) => {
+                                    // setSelectedSubtask(taskIndex);
+                                    e.stopPropagation();
+                                }}
                             >
-                                <StepLabel>Map User inputs</StepLabel>
-                            </Step>
-                            <Step>
-                                <StepLabel>Complete subtask</StepLabel>
-                            </Step>
-                        </Stepper>
+                                <DataObject />
+                            </IconButton> */}
+                            <span
+                                style={{
+                                    backgroundColor: '#FDF0E5',
+                                    display: subtask.isReady ? 'none' : 'flex',
+                                    height: '30px',
+                                    alignItems: 'center',
+                                    borderRadius: '20px',
+                                    padding: '7.5px 15px 7.5px 10px',
+                                    fontSize: '13px',
+                                    marginTop: '5px',
+                                    marginRight: '10px',
+                                }}
+                            >
+                                <Warning
+                                    sx={{
+                                        color: '#FA9F2C',
+                                        fontSize: '18px',
+                                        marginRight: '5px',
+                                    }}
+                                />{' '}
+                                <span style={{ paddingTop: '3px' }}>
+                                    Missing input(s)
+                                </span>
+                            </span>
+                            {subtask.isLoading && (
+                                <CircularProgress
+                                    sx={{
+                                        marginRight: '15px',
+                                        marginTop: '7.5px',
+                                    }}
+                                    size={'25px'}
+                                />
+                            )}
+                        </div>
+                    </Accordion.Trigger>
+                    <Accordion.Content
+                        sx={isExpanded ? {} : { display: 'none' }}
+                    >
+                        <Stack gap={1}>
+                            <Stepper
+                                activeStep={activeStep}
+                                sx={{ width: '80%' }}
+                            >
+                                <Step
+                                    onClick={() => {
+                                        subtask.setSelectedApp();
+                                    }}
+                                >
+                                    <StepLabel>Select app</StepLabel>
+                                </Step>
+                                <Step>
+                                    <StepLabel>Map User inputs</StepLabel>
+                                </Step>
+                                <Step>
+                                    <StepLabel>Complete subtask</StepLabel>
+                                </Step>
+                            </Stepper>
 
-                        {activeStep === 0 && (
-                            <Grid container>
-                                {subtask.apps.length &&
-                                    subtask.apps.map((a) => {
-                                        return (
-                                            <Grid
-                                                item
-                                                xs={4}
-                                                key={`${subtask.id}--${a.project_id}`}
-                                            >
-                                                <AppCard
-                                                    key={`${a.project_id}`}
-                                                    sx={{
-                                                        border:
-                                                            subtask.selectedApp ===
-                                                            a.project_id
-                                                                ? '2px solid #0471F0'
-                                                                : '2px solid #00000000',
-                                                        // ...(activeStep == 1
-                                                        //     ? {
-                                                        //           height: 'auto',
-                                                        //       }
-                                                        //     : {}),
-                                                    }}
-                                                    onClick={() => {
-                                                        subtask.setSelectedApp(
-                                                            a.project_id,
-                                                        );
-                                                    }}
+                            {activeStep === 0 && (
+                                <Grid container>
+                                    {subtask.apps.length &&
+                                        subtask.apps.map((a, i) => {
+                                            return (
+                                                <Grid
+                                                    item
+                                                    xs={4}
+                                                    key={`${subtask.id}--${a.project_id}`}
+                                                    sx={{}}
                                                 >
-                                                    <Stack
-                                                        direction="row"
-                                                        gap={1}
-                                                        alignItems={'center'}
-                                                    >
-                                                        <img
-                                                            style={{
-                                                                width: '50px',
-                                                                height: '50px',
-                                                                borderRadius:
-                                                                    '10px',
-                                                                backgroundImage: `url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.7KXbdcsH9BKcYhKmd8hymAHaEu%26pid%3DApi&f=1&ipt=3d3e9d8d20653b1232ac8f02920cfca90faff98e890696f3aa1f8363e64d9758&ipo=images')`,
-                                                                backgroundSize:
-                                                                    'cover',
-                                                                backgroundPosition:
-                                                                    'center',
-                                                                marginRight:
-                                                                    '16px',
-                                                            }}
-                                                        />
-                                                        <Typography variant="body1">
-                                                            <b>
-                                                                {a.project_name}
-                                                            </b>{' '}
-                                                            <Tooltip
-                                                                title={`Project Id: ${a.project_id}`}
-                                                            >
-                                                                <IconButton size="small">
-                                                                    <InfoRounded fontSize="small" />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </Typography>
-                                                    </Stack>
-                                                    <Typography
-                                                        variant="body2"
+                                                    <AppCard
+                                                        key={`${a.project_id}`}
                                                         sx={{
-                                                            display:
-                                                                '-webkit-box',
-                                                            WebkitBoxOrient:
-                                                                'vertical',
-                                                            overflow: 'hidden',
-                                                            textOverflow:
-                                                                'ellipsis',
-                                                            WebkitLineClamp: 3,
+                                                            border:
+                                                                subtask.selectedApp ===
+                                                                a.project_id
+                                                                    ? '2px solid #0471F0'
+                                                                    : '2px solid #00000000',
+
+                                                            minHeight: '200px',
+                                                            display: 'flex',
+                                                            justifyContent:
+                                                                'center',
+                                                            zIndex: `${i + 1}`,
+
+                                                            // ...(activeStep == 1
+                                                            //     ? {
+                                                            //           height: 'auto',
+                                                            //       }
+                                                            //     : {}),
+                                                        }}
+                                                        onClick={() => {
+                                                            subtask.setSelectedApp(
+                                                                a.project_id,
+                                                            );
                                                         }}
                                                     >
-                                                        {a.description}
-                                                    </Typography>{' '}
-                                                    <a
-                                                        target="new"
-                                                        href={`#/app/${a.project_id}`}
-                                                    >
-                                                        <Button
-                                                            variant="text"
-                                                            color="primary"
-                                                            endIcon={
-                                                                <OpenInNewRounded />
-                                                            }
-                                                            onClick={(e) =>
-                                                                e.stopPropagation()
+                                                        <Stack
+                                                            direction="row"
+                                                            gap={1}
+                                                            alignItems={
+                                                                'center'
                                                             }
                                                         >
-                                                            Open
-                                                        </Button>
-                                                    </a>
-                                                </AppCard>
-                                            </Grid>
-                                        );
-                                    })}
-                            </Grid>
-                        )}
+                                                            <img
+                                                                style={{
+                                                                    width: '50px',
+                                                                    height: '50px',
+                                                                    borderRadius:
+                                                                        '10px',
+                                                                    backgroundImage: `url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.7KXbdcsH9BKcYhKmd8hymAHaEu%26pid%3DApi&f=1&ipt=3d3e9d8d20653b1232ac8f02920cfca90faff98e890696f3aa1f8363e64d9758&ipo=images')`,
+                                                                    backgroundSize:
+                                                                        'cover',
+                                                                    backgroundPosition:
+                                                                        'center',
+                                                                    marginRight:
+                                                                        '16px',
+                                                                }}
+                                                            />
+                                                            <Typography variant="body1">
+                                                                <b>
+                                                                    {
+                                                                        a.project_name
+                                                                    }
+                                                                </b>{' '}
+                                                                {/* <Tooltip
+                                                                    title={`Project Id: ${a.project_id}`}
+                                                                >
+                                                                    <IconButton size="small">
+                                                                        <InfoRounded fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip> */}
+                                                            </Typography>
+                                                        </Stack>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                display:
+                                                                    '-webkit-box',
+                                                                WebkitBoxOrient:
+                                                                    'vertical',
+                                                                overflow:
+                                                                    'hidden',
+                                                                textOverflow:
+                                                                    'ellipsis',
+                                                                WebkitLineClamp: 3,
+                                                            }}
+                                                        >
+                                                            {a.description}
+                                                        </Typography>{' '}
+                                                        <a
+                                                            target="new"
+                                                            href={`#/app/${a.project_id}`}
+                                                        >
+                                                            <Button
+                                                                variant="text"
+                                                                color="primary"
+                                                                endIcon={
+                                                                    <OpenInNewRounded />
+                                                                }
+                                                                onClick={(e) =>
+                                                                    e.stopPropagation()
+                                                                }
+                                                            >
+                                                                Open
+                                                            </Button>
+                                                        </a>
+                                                    </AppCard>
+                                                </Grid>
+                                            );
+                                        })}
+                                </Grid>
+                            )}
 
-                        {/* Show the inputs that are associated to the app */}
-                        {activeStep === 1 && (
-                            <SubtaskSelectedAppInputs
-                                id={id}
-                                onComplete={(data) => {
-                                    // set state in conductor for app inputs
-                                    subtask.setSubtaskInputs(data);
-                                }}
-                            />
-                        )}
+                            {/* Show the inputs that are associated to the app */}
+                            {activeStep === 1 && (
+                                <SubtaskSelectedAppInputs
+                                    id={id}
+                                    onComplete={(data) => {
+                                        // set state in conductor for app inputs
+                                        subtask.setSubtaskInputs(data);
+                                    }}
+                                />
+                            )}
 
-                        {activeStep === 2 && (
-                            <SubtaskExecutionWrapper id={id} />
-                        )}
-                    </Stack>
-                </Accordion.Content>
-            </Accordion>
-        </SubTaskInnerContainer>
+                            {activeStep === 2 && (
+                                <SubtaskExecutionWrapper
+                                    id={id}
+                                    threadedExecuteTrigger={
+                                        threadedExecuteTrigger
+                                    }
+                                />
+                            )}
+                        </Stack>
+                    </Accordion.Content>
+                </Accordion>
+
+                <IconButton
+                    sx={{
+                        width: '40px',
+                        height: '40px',
+                        marginLeft: '10px',
+                        marginTop: '15px',
+                    }}
+                    disabled={!subtask.isReady}
+                    onClick={() => {
+                        setThreadedExecuteTrigger(threadedExecuteTrigger + 1);
+                    }}
+                >
+                    <PlayArrow />
+                </IconButton>
+            </SubTaskInnerContainer>
+        </Box>
     );
 });

@@ -12,11 +12,13 @@ interface SubtaskExecutionWrapperProps {
      * id of the subtask
      */
     id: string;
+    threadedExecuteTrigger: number;
 }
 
 export const SubtaskExecutionWrapper = observer(
     (props: SubtaskExecutionWrapperProps) => {
         const { id } = props;
+        const { threadedExecuteTrigger } = props;
 
         const { conductor } = useConductor();
         const subtask = conductor.getSubtask(id);
@@ -54,7 +56,10 @@ export const SubtaskExecutionWrapper = observer(
 
         return (
             <Blocks state={stateStore} registry={DefaultBlocks}>
-                <SubtaskExecution id={id} />
+                <SubtaskExecution
+                    id={id}
+                    threadedExecuteTrigger={threadedExecuteTrigger}
+                />
             </Blocks>
         );
     },

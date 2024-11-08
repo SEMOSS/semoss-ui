@@ -12,6 +12,7 @@ import {
     Box,
     Stack,
     Accordion,
+    CircularProgress,
 } from '@semoss/ui';
 import { AutoFixHigh, ExpandMore } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
@@ -25,6 +26,7 @@ const StyledMessageBubble = styled(Accordion)(({ theme }) => ({
     '&:before': {
         display: 'none',
     },
+    padding: '10px 17.5px 10px 7.5px',
 }));
 
 const StyledAccordionSummary = styled(Accordion.Trigger)(({ theme }) => ({
@@ -39,7 +41,8 @@ const StyledAccordionDetails = styled(Accordion.Content)(({ theme }) => ({}));
 export const TaskExecution = observer(() => {
     const { conductor } = useConductor();
 
-    const [expanded, setExpanded] = useState(true);
+    const [expanded, setExpanded] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         executeTask();
@@ -91,6 +94,7 @@ export const TaskExecution = observer(() => {
     };
 
     const executeTask = async () => {
+        setIsLoading(true);
         const prompt = await formatPrompt();
         const pixel = `LLM(engine = "4acbe913-df40-4ac0-b28a-daa5ad91b172",command = "<encode>${prompt}</encode>", paramValues=[{}])`;
 
@@ -102,6 +106,8 @@ export const TaskExecution = observer(() => {
         const resp = pixelReturn[0].output;
 
         conductor.setTaskOutput(resp.response);
+        setExpanded(true);
+        setIsLoading(false);
     };
 
     const handleChange = () => {
@@ -114,10 +120,20 @@ export const TaskExecution = observer(() => {
                 expandIcon={<ExpandMore />}
                 aria-controls="task-execution-content"
             >
-                <Stack direction="row" alignItems="center">
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    sx={{ width: '98%' }}
+                >
                     <AutoFixHigh sx={{ marginRight: '10px' }} />
                     <Typography variant="body1">Task Execution</Typography>
                 </Stack>
+                {isLoading && (
+                    <CircularProgress
+                        sx={{ marginRight: '15px', marginTop: '2.5px' }}
+                        size={'25px'}
+                    />
+                )}
             </StyledAccordionSummary>
             <StyledAccordionDetails>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
