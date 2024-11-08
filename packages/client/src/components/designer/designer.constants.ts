@@ -176,24 +176,34 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
-    // {
-    //     section: SECTION_INPUT,
-    //     image: BLOCK_MODAL,
-    //     name: 'Modal',
-    //     json: {
-    //         widget: 'modal',
-    //         data: {
-    //             style: {},
-    //             open: true,
-    //         },
-    //         listeners: {
-    //             onChange: [],
-    //         },
-    //         slots: {
-    //             children: [],
-    //         } as BlockJSON['slots'],
-    //     },
-    // },
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_MODAL,
+        name: 'Modal',
+        json: {
+            widget: 'modal',
+            data: {
+                style: {},
+                title: 'Modal Title',
+                open: false,
+                showActions: true,
+                submitLabel: 'Submit',
+                cancelLabel: 'Cancel',
+                previewLabel: 'Open Modal',
+                fullWidth: true,
+                maxWidth: 'sm',
+                minWidth: 'sm',
+                designMode: true,
+                isOpen: false,
+            },
+            listeners: {
+                onSubmit: [],
+            },
+            slots: {
+                content: [],
+            },
+        },
+    },
     {
         section: SECTION_INPUT,
         image: BLOCK_INPUT,
