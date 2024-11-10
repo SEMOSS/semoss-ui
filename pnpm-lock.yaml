@@ -375,8 +375,8 @@ importers:
         specifier: ^2.3.10
         version: 2.4.7
       flexlayout-react:
-        specifier: ^0.6.10
-        version: 0.6.10(react-dom@18.3.1)(react@18.3.1)
+        specifier: ^0.8.1
+        version: 0.8.1(react-dom@18.3.1)(react@18.3.1)
       marked:
         specifier: ^4.0.18
         version: 4.3.0
@@ -18504,15 +18504,14 @@ packages:
     deprecated: flatten is deprecated in favor of utility frameworks such as lodash.
     dev: true
 
-  /flexlayout-react@0.6.10(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-LuMC0TIpmleEyhU3vbiMPUwq9bLrg8TjO6Y0NeLQBi0PGdtSh+tcDWHp3pUHYUalBa+n54f9CYgZIwjsQc/Sgg==}
+  /flexlayout-react@0.8.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-zNB++3bnx1XGjslpJyaDvVYkgjXNZyeHAabBvZp0REha9skljtxJYApOR9XazlFCKloqLF8Uk8ado3LsNW/rPg==}
     peerDependencies:
-      react: ^17.0.2
-      react-dom: ^17.0.2
+      react: ^18.0.0
+      react-dom: ^18.0.0
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      uuid: 8.3.2
     dev: false
 
   /flow-parser@0.214.0:
@@ -29418,6 +29417,7 @@ packages:
   /uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
+    dev: true
 
   /uuid@9.0.0:
     resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
