@@ -4,7 +4,6 @@ import {
     styled,
     Stack,
     Typography,
-    Button,
     ButtonGroup,
     CircularProgress,
     Card,
@@ -14,10 +13,8 @@ import {
     IconButton,
     Divider,
     CustomShapeOptions,
-    TextField,
     Menu,
     MenuProps,
-    Modal,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -28,7 +25,6 @@ import {
     Pending,
     KeyboardArrowRight,
     MoreVert,
-    Link,
     ArrowUpward,
     ArrowDownward,
     PlayArrowRounded,
@@ -257,7 +253,6 @@ export const NotebookCell = observer(
         const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
         const [variableModal, setVariableModal] = useState(false);
-        const [newAlias, setNewAlias] = useState('');
 
         const cardContentRef = useRef(null);
         const cardActionsRef = useRef(null);
@@ -292,7 +287,6 @@ export const NotebookCell = observer(
         ]);
 
         useEffect(() => {
-            // if (cellPlayCounter > 0) {
             if (cell.isExecuted == false) {
                 setLocalCellPlayNumber(null);
             } else {
@@ -300,7 +294,6 @@ export const NotebookCell = observer(
                 setCellPlayCounter(newPlayCount);
                 setLocalCellPlayNumber(newPlayCount);
             }
-            // }
         }, [cell.isExecuted]);
 
         useEffect(() => {
@@ -746,11 +739,7 @@ export const NotebookCell = observer(
                                     </StyledPlayWrapper>
                                 )}
                             </StyledRunIconButton>
-                            {/* { cell.widget == 'data-import' ?
-                                <div>data import bubbles</div>
-                                : */}
                             <StyledCardInput>{rendered}</StyledCardInput>
-                            {/* } */}
                         </StyledCardContent>
                         {cell.isExecuted && (
                             <>
@@ -769,7 +758,6 @@ export const NotebookCell = observer(
                                             direction="row"
                                             alignItems="center"
                                             width="100%"
-                                            // spacing={1}
                                         >
                                             {getExecutionLabel()}
                                         </Stack>

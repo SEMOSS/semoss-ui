@@ -276,7 +276,7 @@ importers:
         version: 3.9.4(@swc/core@1.5.29)(@types/node@18.16.9)(typescript@5.1.3)
       '@semoss/sdk':
         specifier: ^1.0.0-beta.15
-        version: 1.0.0-beta.22
+        version: link:../sdk
       adm-zip:
         specifier: ^0.5.10
         version: 0.5.10
@@ -374,6 +374,9 @@ importers:
       dompurify:
         specifier: ^2.3.10
         version: 2.4.7
+      flexlayout-react:
+        specifier: ^0.6.10
+        version: 0.6.10(react-dom@18.3.1)(react@18.3.1)
       marked:
         specifier: ^4.0.18
         version: 4.3.0
@@ -9976,10 +9979,6 @@ packages:
       - '@types/react-dom'
     dev: false
 
-  /@semoss/sdk@1.0.0-beta.22:
-    resolution: {integrity: sha512-Qjzrs0Nyg5wQHQ1HPAHtIIlnZ0teODOFrIHHGAod6ZAfdY89Gn1W6aQFyYAyeLuL3SFfC0b8Lzq1Fy31w6SH/Q==}
-    dev: false
-
   /@sigstore/bundle@1.1.0:
     resolution: {integrity: sha512-PFutXEy0SmQxYI4texPw3dd2KewuNqv7OuK1ZFtY2fM754yhvG2KdgwIhRnoEE2uHdtdGNQ8s0lb94dW9sELog==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
@@ -18504,6 +18503,17 @@ packages:
     resolution: {integrity: sha512-dVsPA/UwQ8+2uoFe5GHtiBMu48dWLTdsuEd7CKGlZlD78r1TTWBvDuFaFGKCo/ZfEr95Uk56vZoX86OsHkUeIg==}
     deprecated: flatten is deprecated in favor of utility frameworks such as lodash.
     dev: true
+
+  /flexlayout-react@0.6.10(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-LuMC0TIpmleEyhU3vbiMPUwq9bLrg8TjO6Y0NeLQBi0PGdtSh+tcDWHp3pUHYUalBa+n54f9CYgZIwjsQc/Sgg==}
+    peerDependencies:
+      react: ^17.0.2
+      react-dom: ^17.0.2
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      uuid: 8.3.2
+    dev: false
 
   /flow-parser@0.214.0:
     resolution: {integrity: sha512-RW1Dh6BuT14DA7+gtNRKzgzvG3GTPdrceHCi4ddZ9VFGQ9HtO5L8wzxMGsor7XtInIrbWZZCSak0oxnBF7tApw==}
@@ -29408,7 +29418,6 @@ packages:
   /uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
-    dev: true
 
   /uuid@9.0.0:
     resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
