@@ -3,7 +3,7 @@ import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
 import { Env } from '@/env';
 import { useEffect, useMemo, useRef } from 'react';
-import { debounce } from 'lodash';
+//import { debounce } from 'lodash';
 
 /**
  * @desc splits a string at the period
@@ -130,6 +130,20 @@ export const copyTextToClipboard = (text: string, notificationService) => {
             message: e.message,
         });
     }
+};
+
+const debounce = (func, wait) => {
+    let timeout;
+
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 };
 
 /**
