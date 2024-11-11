@@ -199,6 +199,7 @@ export const ConfigurationsPage = () => {
                 const fieldMap = {
                     label: prop[0],
                     value: prop[1],
+                    description:'',
                 };
 
                 fields.push(fieldMap);
@@ -380,6 +381,7 @@ const mapDefaultValues = (vals) => {
 interface FieldProps {
     label: string;
     value: string;
+    description?: string;
 }
 
 // interface PropertyProps {
@@ -390,7 +392,7 @@ interface FieldProps {
 
 const SocialProperty = (props) => {
     const { fieldName, fields, onChange } = props;
-
+    const [fieldValues, setFieldValues] = useState<FieldProps[]>(fields);
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
@@ -407,7 +409,8 @@ const SocialProperty = (props) => {
      * @param data - form data
      */
     const onSubmit = handleSubmit((data) => {
-        monolithStore.modifyLoginProperties(fieldName, data).then(() => {
+        console.log("form data", fieldValues);
+        monolithStore.modifyLoginProperties(fieldName, fieldValues).then(() => {
             notification.add({
                 color: 'success',
                 message: `Succesfully modified ${fieldName} properties`,
@@ -460,7 +463,7 @@ const SocialProperty = (props) => {
                 </StyledActionButtonsDiv>
             </StyledTitle>
 
-            {fields.map((f, i) => {
+            {fieldValues.map((f, i) => {
                 return (
                     <StyledPropContainer key={i}>
                         <StyledKeyValue>
@@ -469,17 +472,34 @@ const SocialProperty = (props) => {
                                 defaultValue={f.label}
                                 variant="outlined"
                                 fullWidth
+                                onChange={(e) => {
+                                    const newFieldValues = [...fieldValues];
+                                    newFieldValues[i].label = e.target.value;
+                                    setFieldValues([...newFieldValues]);
+                                }}
                             />
                             <TextField
                                 label="value"
                                 defaultValue={f.value}
                                 fullWidth
+                                onChange={(e) => {
+                                    const newFieldValues = [...fieldValues];
+                                    newFieldValues[i].value = e.target.value;
+                                    setFieldValues([...newFieldValues]);
+                                }}
                             />
                         </StyledKeyValue>
-                        <TextField placeholder="Description"></TextField>
+                        <TextField
+                            placeholder="Description"
+                            onChange={(e) => {
+                                const newFieldValues = [...fieldValues];
+                                newFieldValues[i].description = e.target.value;
+                                setFieldValues([...newFieldValues]);
+                            }}
+                        ></TextField>
                     </StyledPropContainer>
                 );
-            })}
+            })}      
         </StyledForm>
     );
 };
