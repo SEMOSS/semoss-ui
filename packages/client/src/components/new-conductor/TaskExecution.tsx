@@ -85,6 +85,8 @@ export const TaskExecution = observer(() => {
             `;
         });
 
+        prompt += `Generate a GFE Letter`;
+
         // Enclose context
         prompt += `
         -------------------------------------------------------
