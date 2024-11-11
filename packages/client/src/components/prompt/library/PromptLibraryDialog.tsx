@@ -94,17 +94,19 @@ export const PromptLibraryDialog = (props: {
             <Modal.Content sx={{ height: '60vh' }}>
                 <Grid container spacing={2}>
                     <Grid item xs={2}>
-                        <PromptLibraryList
+                        {/* TODO: Needs to play well with what we have */}
+                        {/* <PromptLibraryList
                             filter={filter}
                             setFilter={setFilter}
-                        />
+                        /> */}
                     </Grid>
                     <Grid item xs={10}>
-                        <PromptLibraryCards
+                        {/* TODO: onClick needs to play well with Agent Builders openUIBuilderForTemplate  */}
+                        {/* <PromptLibraryCards
                             filter={filter}
                             prompts={filteredPrompts()}
                             openUIBuilderForTemplate={openUIBuilderForTemplate}
-                        />
+                        /> */}
                     </Grid>
                 </Grid>
             </Modal.Content>

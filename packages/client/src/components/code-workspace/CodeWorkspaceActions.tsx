@@ -1,94 +1,30 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Button, IconButton, Stack, useNotification } from '@semoss/ui';
-import { GetAppRounded, ShareRounded } from '@mui/icons-material';
-import { useWorkspace, useRootStore } from '@/hooks';
-import { ShareOverlay } from '@/components/workspace';
-
-const StyledShareButton = styled(Button)(({ theme }) => ({
-    //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
-}));
-
-const StyledShareButtonText = styled('span')(({ theme }) => ({
-    ...theme.typography.button,
-    color: theme.palette.text.primary,
-}));
-
-const StyledShareIcon = styled(ShareRounded)(({ theme }) => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
+import { IconButton, Stack, Tooltip } from '@semoss/ui';
+import { ShareRounded } from '@mui/icons-material';
+import { useWorkspace } from '@/hooks';
+import { ShareOverlay } from '@/components/ui';
 
 export const CodeWorkspaceActions = observer(() => {
-    const { monolithStore, configStore } = useRootStore();
-    const notification = useNotification();
     const { workspace } = useWorkspace();
-
-    /**
-     * Method that is called to export the app
-     */
-    const exportApp = async () => {
-        // turn on loading
-        workspace.setLoading(true);
-
-        try {
-            // export  the app
-            const response = await monolithStore.runQuery<[string]>(
-                `ExportProjectApp(project=["${workspace.appId}"]);`,
-            );
-
-            // throw an error if there is no key
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error exporting app');
-            }
-
-            await monolithStore.download(configStore.store.insightID, key);
-
-            notification.add({
-                color: 'success',
-                message: 'Success',
-            });
-        } catch (e) {
-            console.error(e);
-
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            workspace.setLoading(false);
-        }
-    };
 
     return (
         <Stack direction="row" spacing={1.25} alignItems={'center'}>
-            <IconButton
-                color="default"
-                size="small"
-                title="Download App"
-                onClick={() => {
-                    exportApp();
-                }}
-            >
-                <GetAppRounded />
-            </IconButton>
-            <StyledShareButton
-                size={'small'}
-                color={'secondary'}
-                variant={'outlined'}
-                startIcon={<StyledShareIcon />}
-                onClick={() => {
-                    workspace.openOverlay(() => (
-                        <ShareOverlay
-                            appId={workspace.appId}
-                            onClose={() => workspace.closeOverlay()}
-                        />
-                    ));
-                }}
-            >
-                <StyledShareButtonText>Share</StyledShareButtonText>
-            </StyledShareButton>
+            <Tooltip title={'Share App'}>
+                <IconButton
+                    size="small"
+                    color="default"
+                    onClick={() => {
+                        workspace.openOverlay(() => (
+                            <ShareOverlay
+                                appId={workspace.appId}
+                                onClose={() => workspace.closeOverlay()}
+                            />
+                        ));
+                    }}
+                >
+                    <ShareRounded fontSize={'inherit'} />
+                </IconButton>
+            </Tooltip>
         </Stack>
     );
 });

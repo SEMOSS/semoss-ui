@@ -1,4 +1,4 @@
-export * from '../app/AppEditor';
+export * from './File';
 export * from './ErrorBoundary';
 export * from './Markdown';
 export * from './MarkdownEditor';

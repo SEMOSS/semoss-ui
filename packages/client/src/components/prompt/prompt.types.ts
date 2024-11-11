@@ -36,3 +36,13 @@ export interface Builder {
     inputTypes: BuilderStepItem;
     constraints: BuilderStepItem;
 }
+
+export interface Prompt {
+    id: string;
+    title: string;
+    tags: string[];
+    context: string;
+    intent: string;
+    created_by: string;
+    date_created: string;
+}

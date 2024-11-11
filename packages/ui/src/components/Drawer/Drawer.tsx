@@ -1,11 +1,10 @@
 import React from "react";
 import {
     Drawer as MuiDrawer,
-    ClickAwayListener,
-    SxProps,
-    ModalProps,
     SlideProps,
+    ModalProps,
     PaperProps,
+    SxProps,
 } from "@mui/material";
 
 interface DrawerProps {
@@ -43,6 +42,13 @@ interface DrawerProps {
      * Props applied to the [`Slide`](/material-ui/api/slide/) element.
      */
     SlideProps?: Partial<SlideProps>;
+
+    /**
+     * Props applied to the [`ModalProps`](/material-ui/api/modal/) element.
+     * @default {}
+     */
+    ModalProps?: Partial<ModalProps>;
+
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
@@ -55,16 +61,5 @@ interface DrawerProps {
 }
 
 export const Drawer = (props: DrawerProps) => {
-    return (
-        <ClickAwayListener
-            onClickAway={(e) => {
-                if (props.open) {
-                    props.onClose(e, "backdropClick");
-                }
-                // setOpen(!open)
-            }}
-        >
-            <MuiDrawer {...props}>{props.children}</MuiDrawer>
-        </ClickAwayListener>
-    );
+    return <MuiDrawer {...props} />;
 };
