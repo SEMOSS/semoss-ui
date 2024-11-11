@@ -16,6 +16,7 @@ import {
     KeyboardArrowDown,
     KeyboardArrowUp,
     TextFields,
+    ArticleOutlined,
 } from '@mui/icons-material';
 import {
     DefaultCellDefinitions,
@@ -26,6 +27,7 @@ import { QueryImportCellConfig } from '../cell-defaults/query-import-cell';
 import { CodeCellConfig } from '../cell-defaults/code-cell';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { DataImportFormModal } from './DataImportFormModal';
+import { PromptCellConfig } from '../cell-defaults/prompt-cell';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -151,6 +153,11 @@ const AddCellOptions: Record<string, AddCellOption> = {
         display: 'LLM',
         defaultCellType: 'llm',
         icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
+    },
+    prompt: {
+        display: 'Prompt',
+        defaultCellType: 'prompt',
+        icon: <ArticleOutlined />,
     },
 };
 

@@ -3,6 +3,7 @@ import { CellRegistry } from '@/stores';
 import { CodeCellConfig, CodeCellDef } from './code-cell';
 import { QueryImportCellConfig, QueryImportCellDef } from './query-import-cell';
 import { DataImportCellConfig, DataImportCellDef } from './data-import-cell';
+import { PromptCell, PromptCellConfig, PromptCellDef } from './prompt-cell';
 import {
     UppercaseTransformationCellConfig,
     UppercaseTransformationCellDef,
@@ -59,7 +60,8 @@ export type DefaultCellDefinitions =
     | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef
     | CollapseTransformationCellDef
-    | LLMCellDef;
+    | LLMCellDef
+    | PromptCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
@@ -82,6 +84,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
         EncodeColumnTransformationCellConfig,
     [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
     [LLMCellConfig.widget]: LLMCellConfig,
+    [PromptCellConfig.widget]: PromptCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
