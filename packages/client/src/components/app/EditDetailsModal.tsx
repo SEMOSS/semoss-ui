@@ -7,7 +7,7 @@ import {
     TextField,
     Autocomplete,
 } from '@semoss/ui';
-import { usePixel, useRootStore } from '@/hooks';
+import { usePixel } from '@/hooks';
 import { Control, Controller } from 'react-hook-form';
 import { createFilterOptions } from '@mui/material';
 import { useEffect, useState } from 'react';
@@ -46,29 +46,33 @@ interface EditDetailsModalProps {
     onClose: (reset?: boolean) => void;
     control: Control<any, any>;
     onSubmit: any;
+    projectMetaKeys: {
+        display_options:
+            | 'input'
+            | 'textarea'
+            | 'markdown'
+            | 'single-checklist'
+            | 'multi-checklist'
+            | 'single-select'
+            | 'multi-select'
+            | 'single-typeahead'
+            | 'multi-typeahead'
+            | 'select-box';
+        display_order: number;
+        metakey: string;
+        single_multi: string;
+        display_values?: string;
+    }[];
 }
 
 export const EditDetailsModal = (props: EditDetailsModalProps) => {
-    const { isOpen, onClose, control, onSubmit } = props;
-    const { configStore } = useRootStore();
+    const { isOpen, onClose, control, onSubmit, projectMetaKeys } = props;
 
     const filter = createFilterOptions<string>();
 
     const handleEditAppDetails = () => {
         onSubmit();
     };
-
-    // filter metakeys to the ones we want
-    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
-        (k) => {
-            return (
-                k.metakey !== 'description' &&
-                k.metakey !== 'markdown' &&
-                k.metakey !== 'tag' &&
-                k.metakey !== 'tags'
-            );
-        },
-    );
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<

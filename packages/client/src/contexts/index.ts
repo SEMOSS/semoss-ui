@@ -1,6 +1,7 @@
 import { BlocksContext } from './Blocks.context';
 import { DesignerContextType, DesignerContext } from './DesignerContext';
 import { EngineContextType, EngineContext } from './EngineContext';
+import { AppContextType, AppContext } from './AppContext';
 import { LLMContext, LLMContextType } from './LLMContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
 import { SettingsContextType, SettingsContext } from './SettingsContext';
@@ -13,6 +14,7 @@ import {
 } from './LLMComparisonContext';
 
 export type {
+    AppContextType,
     DesignerContextType,
     EngineContextType,
     LLMContextType,
@@ -25,6 +27,7 @@ export type {
 };
 
 export {
+    AppContext,
     BlocksContext,
     DesignerContext,
     EngineContext,

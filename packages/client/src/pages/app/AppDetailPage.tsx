@@ -851,6 +851,7 @@ export const AppDetailPage = () => {
                 onClose={handleCloseEditDetailsModal}
                 control={control}
                 onSubmit={onSubmit}
+                projectMetaKeys={projectMetaKeys}
             />
 
             <EditDependenciesModal
