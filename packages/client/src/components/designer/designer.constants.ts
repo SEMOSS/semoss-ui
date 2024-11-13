@@ -85,6 +85,12 @@ const SECTION_GENERAL_VISUALIZATION = 'General';
 const SECTION_LINE_CHART = 'Line Chart';
 const SECTION_PIE_CHART = 'Pie Chart';
 const SECTION_SCATTER_PLOTS = 'Scatter Plot';
+const colorPalettes = {
+    Default: {
+        scheme: 'category10',
+        colors: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+    },
+};
 
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
@@ -794,7 +800,14 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                     {
                         $schema:
                             'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Pie Chart',
+                        title: {
+                            text: '',
+                            fontSize: 20,
+                            color: '#000000',
+                            fontWeight: 'normal',
+                            font: 'Arial',
+                            anchor: 'start',
+                        },
                         width: 300,
                         height: 300,
                         description: 'A simple pie chart with embedded data.',
@@ -808,11 +821,52 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
                                 { category: 6, value: 8 },
                             ],
                         },
-                        mark: 'arc',
-                        encoding: {
-                            theta: { field: 'value', type: 'quantitative' },
-                            color: { field: 'category', type: 'nominal' },
-                        },
+                        layer: [
+                            {
+                                mark: {
+                                    type: 'arc',
+                                    tooltip: false,
+                                    innerRadius: 0,
+                                },
+                                encoding: {
+                                    theta: {
+                                        field: 'value',
+                                        type: 'quantitative',
+                                        stack: true,
+                                    },
+                                    color: {
+                                        field: 'value',
+                                        type: 'nominal',
+                                        legend: 'value',
+                                        scale: {
+                                            range: colorPalettes.Default.colors,
+                                        },
+                                    },
+                                },
+                            },
+                            {
+                                mark: {
+                                    type: 'text',
+                                    radius: 160,
+                                    fontSize: 12,
+                                    fill: 'black',
+                                },
+                                encoding: {
+                                    theta: {
+                                        field: '',
+                                        type: 'quantitative',
+                                        stack: true,
+                                    },
+                                    color: {
+                                        field: '',
+                                        type: 'nominal',
+                                        legend: 'value',
+                                    },
+                                    text: { field: '', type: 'quantitative' },
+                                },
+                            },
+                        ],
+                        //mark : 'arc',
                     },
                     null,
                     2,
