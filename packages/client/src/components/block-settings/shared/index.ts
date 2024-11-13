@@ -15,3 +15,4 @@ export { EchartSettings } from './EchartSettings';
 export { CodeEditorSettings } from './CodeEditorSettings';
 export { SelectOptionsSettings } from './SelectOptionsSettings';
 export { SelectSettings } from './SelectSettings';
+export { PDFViewerSettings } from './PDFViewerSettings';

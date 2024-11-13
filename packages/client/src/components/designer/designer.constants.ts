@@ -1,5 +1,6 @@
 import { BlockJSON } from '@/stores';
 
+import BLOCK_AUDIO_PLAYER from '@/assets/img/BLOCK_AUDIO_PLAYER.png';
 import BLOCK_BUTTON from '@/assets/img/BLOCK_BUTTON.png';
 import BLOCK_CHECKBOX from '@/assets/img/BLOCK_CHECKBOX.png';
 import BLOCK_CONTAINER from '@/assets/img/BLOCK_CONTAINER.png';
@@ -50,6 +51,7 @@ import SCATTER_PLOT from '@/assets/img/SCATTER_PLOT.png';
 import PIE_CHART_IMAGE from '@/assets/img/PIE_CHART.png';
 import RADIAL_CHART from '@/assets/img/RADIAL_CHART.png';
 import GRADIENT_CHART from '@/assets/img/GRADIENT_CHART.png';
+import BLOCK_PDF_VIEWER from '@/assets/img/BLOCK_PDF.png';
 import {
     CLASS_DIAGRAM,
     ENTITY_RELATIONSHIP_DIAGRAM,
@@ -121,6 +123,23 @@ export interface AddBlocksMenuItem {
  * Show the default blocks menu
  */
 export const DEFAULT_MENU: AddBlocksMenuItem[] = [
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_AUDIO_PLAYER,
+        name: 'Audio Player',
+        json: {
+            widget: 'audio-player',
+            data: {
+                label: 'Audio Player',
+                autoplay: false,
+                controls: true,
+                loop: false,
+                source: '',
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
     {
         section: SECTION_INPUT,
         image: BLOCK_BUTTON,
@@ -316,6 +335,24 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
     },
     {
         section: SECTION_ELEMENT,
+        image: BLOCK_PDF_VIEWER,
+        name: 'PDF Viewer',
+        json: {
+            widget: 'pdfViewer',
+            data: {
+                style: {
+                    width: '100%',
+                    height: '82%',
+                    padding: '8px',
+                },
+                selectedPdf: null,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ELEMENT,
         image: BLOCK_IMAGE,
         name: 'Image',
         json: {
@@ -380,6 +417,19 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    // {
+    //     section: SECTION_INPUT,
+    //     image: BLOCK_TOGGLE_BUTTON,
+    //     name: 'Stepper',
+    //     json: {
+    //         widget: 'stepper',
+    //         data: {
+    //             steps: [],
+    //         },
+    //         listeners: {},
+    //         slots: {} as BlockJSON['slots'],
+    //     },
+    // },
     {
         section: SECTION_TEXT,
         image: BLOCK_LINK,

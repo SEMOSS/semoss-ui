@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock, useDebounce } from '@/hooks';
@@ -15,12 +15,13 @@ export interface UploadBlockDef extends BlockDef<'upload'> {
     data: {
         style: CSSProperties;
         label: string;
-        value: string | number;
+        value: string | string[];
         required: boolean;
         loading: boolean;
         disabled: boolean;
         hint?: string;
         extensions?: string[];
+        multiple?: boolean;
     };
 }
 
@@ -33,8 +34,8 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
      * @param file - file to upload to the server
      * @returns
      */
-    const upload = async (file: File) => {
-        if (!file) {
+    const upload = async (file: File[]) => {
+        if (file.length === 0) {
             // clear the value
             setData('value', '');
             return;
@@ -53,13 +54,25 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             }
 
             // get the location.
-            const { fileLocation } = uploadedFiles[0];
-            if (!fileLocation) {
-                throw new Error('Missing File Location');
+            const fileLocations = uploadedFiles.map((file) => {
+                const { fileLocation } = file;
+                if (!fileLocation) {
+                    throw new Error('Missing File Location');
+                }
+
+                return fileLocation;
+            });
+
+            if (fileLocations.length === 0) {
+                throw new Error('Missing File Locations');
             }
 
-            // save it as the value
-            setData('value', fileLocation);
+            // if there are multiple, save as an array
+            if (data.multiple) {
+                setData('value', fileLocations);
+            } else {
+                setData('value', fileLocations[0]);
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -95,12 +108,15 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
                 shrink: true,
             }}
             type={'file'}
-            inputProps={{ accept: data.extensions }}
+            inputProps={{
+                accept: data.extensions,
+                multiple: data.multiple,
+            }}
             onChange={(e) => {
                 const files = (e.target as HTMLInputElement).files;
 
-                // upload the new file on change
-                upload(files[0]);
+                // upload the files
+                upload(Array.from(files));
             }}
             {...attrs}
         />

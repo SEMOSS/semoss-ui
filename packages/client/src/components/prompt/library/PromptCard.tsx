@@ -4,93 +4,106 @@ import {
     Card,
     Chip,
     Grid,
-    IconButton,
     Stack,
     Typography,
     LinearProgress,
 } from '@semoss/ui';
-import {
-    Bookmark,
-    BookmarkBorderOutlined,
-    LocalOfferOutlined,
-} from '@mui/icons-material';
-import { PromptPreview } from '../shared';
-import { Token } from '../prompt.types';
+import { Prompt } from '../prompt.types';
+import { LocalOfferOutlined } from '@mui/icons-material';
 
 const StyledCard = styled(Card)(() => ({
     height: '100%',
     cursor: 'pointer',
 }));
+
 const StyledCardActions = styled(Card.Actions)(() => ({
     padding: 0,
     margin: 0,
 }));
+
 const StyledSpacer = styled('div')(({ theme }) => ({
     minHeight: theme.spacing(0.5),
     flex: 1,
 }));
+
 const StyledChip = styled(Chip)(({ theme }) => ({
     textTransform: 'capitalize',
     paddingLeft: theme.spacing(1),
 }));
+
 const Spacer = styled('div')(() => ({
     flex: 1,
 }));
 
-export const PromptCard = (props: {
-    cardKey: string;
-    title: string;
-    tags: string[];
-    tokens: Token[];
-    inputTypes: object;
-    openUIBuilderForTemplate: () => void;
-}) => {
-    // todo: hook this up to a real bookmark system
-    const [isBookmarked, setIsBookmarked] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    overflow: 'hidden',
+    color: 'var(--Text-Secondary, #666)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '150%',
+    letterSpacing: '0.15px',
+}));
 
-    const chooseTemplate = () => {
-        setIsLoading(true);
-        props.openUIBuilderForTemplate();
-    };
+const StyledContext = styled(Typography)(({ theme }) => ({
+    overflow: 'hidden',
+    color: 'var(--Text-Secondary, #666)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '143%',
+    letterSpacing: '0.17px',
+}));
+
+interface PromptCardProps {
+    /**
+     * Used to display values on card
+     */
+    prompt: Prompt;
+
+    /**
+     * Callback for actions done on card
+     * @param p
+     * @returns
+     */
+    onClick: (p: Prompt) => void;
+}
+
+export const PromptCard = (props: PromptCardProps) => {
+    const { prompt, onClick } = props;
 
     return (
-        <StyledCard onClick={isLoading ? null : chooseTemplate}>
+        <StyledCard onClick={() => onClick(prompt)}>
             <Card.Header
                 title={
                     <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="subtitle2">
-                            {props.title}
-                        </Typography>
-                        <IconButton
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                setIsBookmarked(!isBookmarked);
-                            }}
-                        >
-                            {isBookmarked ? (
-                                <Bookmark />
-                            ) : (
-                                <BookmarkBorderOutlined />
-                            )}
-                        </IconButton>
+                        <StyledTitle variant="h6">{prompt.title}</StyledTitle>
                     </Stack>
                 }
             />
             <Card.Content>
                 <Grid container>
-                    <PromptPreview
-                        tokens={props.tokens}
-                        inputTypes={props.inputTypes}
-                    />
+                    <Grid item xs={12}>
+                        <StyledContext variant="body1" color="secondary">
+                            {prompt.context}
+                        </StyledContext>
+                    </Grid>
                 </Grid>
             </Card.Content>
             <Spacer />
             <StyledCardActions>
                 <Stack width="100%">
                     <Grid container spacing={1}>
-                        {Array.from(props.tags.sort(), (tag, i) => (
-                            <Grid item key={`${props.cardKey}-tag-${i}`}>
+                        {Array.from(prompt.tags.sort(), (tag, i) => (
+                            <Grid item key={`${prompt.id}-tag-${i}`}>
                                 <StyledChip
                                     icon={
                                         <LocalOfferOutlined fontSize="small" />
@@ -100,14 +113,7 @@ export const PromptCard = (props: {
                             </Grid>
                         ))}
                     </Grid>
-                    {isLoading ? (
-                        <LinearProgress
-                            color="primary"
-                            variant="indeterminate"
-                        />
-                    ) : (
-                        <StyledSpacer />
-                    )}
+                    <StyledSpacer />
                 </Stack>
             </StyledCardActions>
         </StyledCard>
