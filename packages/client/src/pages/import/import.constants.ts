@@ -159,7 +159,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -324,7 +336,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -485,7 +509,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -606,7 +642,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -768,7 +816,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -934,7 +994,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: 'This field is required',
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1110,7 +1182,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1276,7 +1360,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1442,7 +1538,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1610,7 +1718,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1773,7 +1893,19 @@ export const CONNECTION_OPTIONS = {
                                 component: 'text-field',
                             },
                             disabled: false,
-                            rules: { required: true },
+                            rules: {
+                                required: true,
+                                pattern: {
+                                    value: /^[\w\-\s]+$/,
+                                    message:
+                                        'Catalog names can only contain alphanumeric characters and dashes.',
+                                },
+                                custom: {
+                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    message:
+                                        'This Catalog name has already been used, please try another.',
+                                },
+                            },
                         },
                         {
                             fieldName: 'MODEL_TYPE',
@@ -1939,7 +2071,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2096,7 +2240,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2253,7 +2409,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2410,7 +2578,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2567,7 +2747,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2724,7 +2916,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -2881,7 +3085,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3038,7 +3254,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3195,7 +3423,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3352,7 +3592,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3509,7 +3761,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3672,7 +3936,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3829,7 +4105,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -3986,7 +4274,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4143,7 +4443,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4300,7 +4612,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4465,7 +4789,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4618,7 +4954,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4771,7 +5119,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MODEL',
@@ -4957,7 +5317,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'URL',
@@ -5069,6 +5441,73 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
+            {
+                name: 'AZUREOCR',
+                disable: false,
+                icon: RESTAPI,
+                fields: [
+                    {
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'AZUREOCR',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'URL',
+                        label: 'URL',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
         ],
         'File Uploads': [
             {
@@ -5105,7 +5544,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5150,10 +5601,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -5162,11 +5613,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5272,7 +5722,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5315,26 +5777,24 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
-                        defaultValue: '',
+                        defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
                         label: 'Content Overlap',
-                        defaultValue: '0',
+                        defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5408,7 +5868,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_TAGS',
@@ -5435,10 +5907,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '5432',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -5529,26 +6001,24 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
-                        defaultValue: '',
+                        defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
                         label: 'Content Overlap',
-                        defaultValue: '0',
+                        defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5675,7 +6145,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5720,10 +6202,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -5732,11 +6214,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5848,7 +6329,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -5893,10 +6386,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -5905,11 +6398,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -5952,6 +6444,71 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DIMENSION_SIZE',
+                        label: 'Embedding Dimension Size',
+                        defaultValue: '1024',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                    },
+                    {
+                        fieldName: 'METHOD_NAME',
+                        label: 'Method Name',
+                        defaultValue: 'hnsw',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'SPACE_TYPE',
+                        label: 'Space Type',
+                        defaultValue: 'l2',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'INDEX_ENGINE',
+                        label: 'Index Engine',
+                        defaultValue: 'lucene',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'EF_CONSTRUCTION',
+                        label: 'EF Construction',
+                        defaultValue: '128',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'M_VALUE',
+                        label: 'M Value',
+                        defaultValue: '24',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
                     },
                     {
                         fieldName: 'KEEP_INPUT_OUTPUT',
@@ -5999,7 +6556,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -6044,10 +6613,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Length',
                         defaultValue: '512',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
@@ -6056,11 +6625,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Content Overlap',
                         defaultValue: '20',
                         options: {
-                            component: 'text-field',
-                            options: [],
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
@@ -6156,6 +6724,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         secondary: true,
                         rules: {},
+                    },
+                    {
+                        fieldName: 'CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID',
+                        label: 'OCR PROCESSOR FUNCTION ID',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CUSTOM_DOCUMENT_PROCESSOR',
+                        label: 'Boolean flag for document processor',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
                     },
                 ],
             },
@@ -6281,7 +6869,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6318,10 +6918,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -6454,7 +7054,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6628,7 +7240,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6665,10 +7289,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'projectId',
@@ -6766,7 +7390,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6803,10 +7439,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9042',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -6940,7 +7576,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -6977,10 +7625,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9042',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -7124,7 +7772,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7161,10 +7821,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'httpPAth',
@@ -7318,7 +7978,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7355,10 +8027,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'graph',
@@ -7416,7 +8088,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7453,10 +8137,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '446',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -7590,7 +8274,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7627,10 +8323,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1527',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -7765,7 +8461,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7802,10 +8510,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9200',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'httpType',
@@ -7883,7 +8591,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -7920,10 +8640,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1000',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8058,7 +8778,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8095,10 +8827,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1000',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8233,7 +8965,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8270,10 +9014,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '21050',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8407,7 +9151,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8444,10 +9200,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '3306',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8581,7 +9337,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8618,10 +9386,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '3306',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -8754,7 +9522,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8791,10 +9571,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '9200',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'httpPath',
@@ -8872,7 +9652,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -8909,10 +9701,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'service',
@@ -9046,7 +9838,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9083,10 +9887,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '8765',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -9220,7 +10024,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9257,10 +10073,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '5432',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -9404,7 +10220,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9441,10 +10269,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '5439',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -9588,7 +10416,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9625,10 +10465,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '30015',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -9762,7 +10602,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -9799,10 +10651,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '443',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'project',
@@ -9976,7 +10828,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10013,10 +10877,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '443',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'warehouse',
@@ -10041,7 +10905,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'database',
                         label: 'Database',
-                        defaultValue: '443',
+                        defaultValue: '',
                         options: {
                             component: 'text-field',
                         },
@@ -10181,7 +11045,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10218,10 +11094,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1433',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'database',
@@ -10366,7 +11242,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10403,10 +11291,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1000',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: false, min: 0 },
                     },
                     {
                         fieldName: 'USERNAME',
@@ -10530,7 +11418,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10694,7 +11594,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10731,10 +11643,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1433',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                     },
                     {
                         fieldName: 'schema',
@@ -10868,7 +11780,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'DATABASE_DESCRIPTION',
@@ -10905,10 +11829,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '1433',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                     },
                     {
                         fieldName: 'catalog',
@@ -11055,7 +11979,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11113,7 +12049,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'CEPH_ACCESS_KEY',
@@ -11181,7 +12129,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11249,7 +12209,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11317,7 +12289,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'GCS_REGION',
@@ -11381,7 +12365,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'PATH_PREFIX',
@@ -11419,7 +12415,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'AZ_ACCOUNT_NAME',
@@ -11486,7 +12494,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'S3_REGION',
@@ -11554,7 +12574,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'MINIO_REGION',
@@ -11632,7 +12664,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'NETWORK_DOMAIN',
@@ -11701,7 +12745,19 @@ export const CONNECTION_OPTIONS = {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
                     },
                     {
                         fieldName: 'HOSTNAME',
@@ -11718,10 +12774,10 @@ export const CONNECTION_OPTIONS = {
                         label: 'Port',
                         defaultValue: '22',
                         options: {
-                            component: 'text-field',
+                            component: 'number',
                         },
                         disabled: false,
-                        rules: { required: true },
+                        rules: { required: true, min: 0 },
                     },
                     {
                         fieldName: 'USERNAME',
@@ -11738,7 +12794,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Password',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'password',
                         },
                         disabled: false,
                         rules: { required: false },
@@ -11908,6 +12964,10 @@ export const ENGINE_IMAGES = {
         {
             name: 'ZIP',
             icon: ZIP,
+        },
+        {
+            name: 'AZUREOCR',
+            icon: RESTAPI,
         },
     ],
     VECTOR: [

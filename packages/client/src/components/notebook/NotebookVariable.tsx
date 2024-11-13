@@ -15,11 +15,11 @@ import {
 } from '@semoss/ui';
 import { Variable } from '@/stores';
 import { ContentCopy, MoreVert, Delete, Edit } from '@mui/icons-material';
-import { AddVariablePopover } from './AddVariablePopover';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { VariablePreview } from './VariablePreview';
+import { AddVariablePopover } from './AddVariablePopover';
 
 const StyledListItem = styled(List.Item)(() => ({
     '&.MuiListItem-root': {
@@ -360,8 +360,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
                                                                 alias: newTokenAlias,
                                                             },
                                                         });
-
-                                                    debugger;
 
                                                     notification.add({
                                                         color: success

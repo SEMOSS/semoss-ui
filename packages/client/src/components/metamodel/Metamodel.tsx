@@ -1,10 +1,21 @@
 import { useCallback, useState, useEffect } from 'react';
-import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
-import Panel from 'react-flow-renderer';
+import {
+    ReactFlow,
+    MiniMap,
+    Controls,
+    Node,
+    Edge,
+    useNodesState,
+    useEdgesState,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
 import { Button, styled } from '@semoss/ui';
+
+import { MetamodelContext, MetamodelContextType } from '@/contexts';
+
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
-import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 const StyledMetamodelPage = styled('div')(() => ({
     display: 'flex',
@@ -97,6 +108,15 @@ export const Metamodel = (props: MetamodelProps) => {
     });
     const [data, setData] = useState({ nodes: nodes, edges: edges });
 
+    const [flowNodes, setFlowNodes, onFlowNodesChange] = useNodesState(nodes);
+    const [flowEdges, setFlowEdges, onFlowEdgesChange] = useEdgesState(edges);
+
+    // update when the props change
+    useEffect(() => {
+        setFlowNodes(nodes);
+        setFlowEdges(edges);
+    }, [nodes, edges]);
+
     const updateData = (nodeData, action) => {
         const temp = data;
         // if action === 'column name change'
@@ -141,35 +161,6 @@ export const Metamodel = (props: MetamodelProps) => {
             // handle table relationship change
         }
         // if action === 'column data type change'
-    };
-
-    // create the context
-    const metamodelContext: MetamodelContextType = {
-        selectedNodeId: selectedNode ? selectedNode.id : null,
-        onSelectNodeId: useCallback(
-            (id) => {
-                let node = null;
-
-                if (id) {
-                    for (
-                        let nodeIdx = 0, nodeLen = nodes.length;
-                        nodeIdx < nodeLen;
-                        nodeIdx++
-                    ) {
-                        const n = nodes[nodeIdx];
-                        if (id === n.id) {
-                            node = n;
-                            break;
-                        }
-                    }
-                }
-
-                onSelectNode(node);
-            },
-            [nodes],
-        ),
-        isInteractive: isInteractive,
-        updateData: updateData,
     };
 
     const onSubmit = () => {
@@ -239,24 +230,47 @@ export const Metamodel = (props: MetamodelProps) => {
         callback(payloadObj);
     };
 
+    const onSelectNodeId = useCallback(
+        (id) => {
+            let node = null;
+
+            if (id) {
+                for (
+                    let nodeIdx = 0, nodeLen = nodes.length;
+                    nodeIdx < nodeLen;
+                    nodeIdx++
+                ) {
+                    const n = nodes[nodeIdx];
+                    if (id === n.id) {
+                        node = n;
+                        break;
+                    }
+                }
+            }
+
+            onSelectNode(node);
+        },
+        [nodes],
+    );
+
     return (
-        <MetamodelContext.Provider value={metamodelContext}>
+        <MetamodelContext.Provider
+            value={{
+                selectedNodeId: selectedNode ? selectedNode.id : null,
+                onSelectNodeId: onSelectNodeId,
+                isInteractive: isInteractive,
+                updateData: updateData,
+            }}
+        >
             <ReactFlow
-                defaultNodes={nodes}
-                defaultEdges={edges}
+                nodes={flowNodes}
+                edges={flowEdges}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
+                onNodesChange={onFlowNodesChange}
+                onEdgesChange={onFlowEdgesChange}
                 fitView={true}
             >
-                {/* <Panel>
-                    <Button
-                        onClick={() => {
-                            onSubmit();
-                        }}
-                    >
-                        Apply
-                    </Button>
-                </Panel> */}
                 <MiniMap />
                 <Controls showInteractive={false} />
             </ReactFlow>

@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
-import Editor from '@monaco-editor/react';
 
+import { ALL_TYPES } from '@/types';
 import { useRootStore, usePixel, useSettings } from '@/hooks';
-import { SETTINGS_MODE } from './settings.types';
+
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 interface UpdateSMSSProps {
     /**
-     * Mode of setting
+     * Type of setting
      */
-    mode: SETTINGS_MODE;
+    type: ALL_TYPES;
 
     /**
      * Id of the setting
@@ -36,7 +37,7 @@ const StyledPaper = styled(Paper)(() => ({
 }));
 
 export const UpdateSMSS = (props: UpdateSMSSProps) => {
-    const { mode, id } = props;
+    const { type, id } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -47,11 +48,15 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
     const [readOnly, setReadOnly] = useState(true);
 
     const smssDetails = usePixel<string>(
-        mode === 'engine'
+        type === 'DATABASE' ||
+            type === 'STORAGE' ||
+            type === 'MODEL' ||
+            type === 'VECTOR' ||
+            type === 'FUNCTION'
             ? adminMode
                 ? `AdminGetEngineSMSS(engine=['${id}'])`
                 : `GetEngineSMSS(engine=['${id}'])`
-            : mode === 'app'
+            : type === 'APP'
             ? adminMode
                 ? `AdminGetProjectSMSS(project=['${id}'])`
                 : `GetProjectSMSS(project=['${id}'])`
@@ -125,16 +130,18 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                 )}
             </StyledTopDiv>
             <StyledPaper elevation={1}>
-                <Editor
-                    defaultValue={''}
-                    options={{ readOnly: readOnly }}
-                    value={value}
-                    language={'plaintext'}
-                    onChange={(newValue) => {
-                        // Handle changes in the editor's content.
-                        setValue(newValue);
-                    }}
-                />
+                <Suspense fallback={<>...</>}>
+                    <Editor
+                        defaultValue={''}
+                        options={{ readOnly: readOnly }}
+                        value={value}
+                        language={'plaintext'}
+                        onChange={(newValue) => {
+                            // Handle changes in the editor's content.
+                            setValue(newValue);
+                        }}
+                    />
+                </Suspense>
             </StyledPaper>
         </StyledContainer>
     );

@@ -25,12 +25,18 @@ interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 
     resetValueOnChange?: boolean;
+
+    /**
+     * Desciption that will show on tooltip, to inform user about the setting
+     */
+    description?: string;
 }
 
 export const SwitchSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
         label = '',
+        description = '',
         path,
         resetValueOnChange = false,
     }: SwitchSettingsProps<D>) => {
@@ -97,7 +103,7 @@ export const SwitchSettings = observer(
         };
 
         return (
-            <BaseSettingSection label={label}>
+            <BaseSettingSection label={label} description={description}>
                 <Switch
                     checked={value}
                     onChange={(e) => {

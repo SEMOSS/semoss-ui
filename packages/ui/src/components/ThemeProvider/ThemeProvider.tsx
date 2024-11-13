@@ -6,12 +6,7 @@ import {
 } from "@mui/material";
 import deepmerge from "deepmerge";
 
-import {
-    lightTheme,
-    darkTheme,
-    CustomThemeOptions,
-    customLightPaletteTokens,
-} from "../../theme";
+import { lightTheme, darkTheme, CustomThemeOptions } from "../../theme";
 
 export interface ThemeProviderProps {
     /** Apply the css reset */
@@ -32,9 +27,9 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
 
     // if the override any options and merge it with the default theme
     const t = useMemo(() => {
-        const customizedTheme =
-            type === "light" ? { ...theme, ...customLightPaletteTokens } : {};
         // extendTheme to get added properties to theme
+        const customizedTheme = type === "light" ? { ...theme } : {};
+
         return createTheme(
             deepmerge(
                 type === "light" ? lightTheme : darkTheme,

@@ -472,6 +472,47 @@ export class MonolithStore {
         return response.data;
     }
 
+    /**
+     * @name createAdminTheme
+     * @param data the data that will be sent to the BE to define a theme
+     * @desc this call will create a new theme defined by the admin
+     */
+    async createAdminTheme(data: {
+        name: string;
+        json: any;
+        isActive: boolean;
+    }) {
+        const url = `${Env.MODULE}/api/themes/createAdminTheme`;
+
+        let postData = '';
+
+        postData += 'name=' + encodeURIComponent(data.name);
+        postData += '&json=' + encodeURIComponent(JSON.stringify(data.json));
+        postData += '&isActive=' + encodeURIComponent(data.isActive);
+
+        const response = await axios.post<boolean>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response.data;
+
+        // Sets an Active theme with material ui properties
+        // const map = JSON.parse(data['theme']['THEME_MAP']);
+        // const material_map = {
+        //     ...map,
+        //     materialTheme: lightTheme,
+        // };
+
+        // console.log(JSON.stringify(material_map));
+        // monolithStore.createAdminTheme({
+        //     name: 'SEMOSS-TEST-DARK',
+        //     isActive: true,
+        //     json: material_map,
+        // });
+    }
+
     // ----------------------------------------------------------------------
     // Engine
     // ----------------------------------------------------------------------
@@ -607,10 +648,19 @@ export class MonolithStore {
     /**
      * @name getEngineUsersNoCredentials
      * @param admin
-     * @param appId
+     * @param engineId
+     * @param limit
+     * @param offSet
+     * @param searchTerm
      * @returns
      */
-    async getEngineUsersNoCredentials(admin: boolean, appId: string) {
+    async getEngineUsersNoCredentials(
+        admin: boolean,
+        engineId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/`;
 
         // Currently no admin ENDPOINT;
@@ -622,8 +672,21 @@ export class MonolithStore {
 
         // get the response
         const response = await axios
-            .get<Record<string, unknown>[]>(url, {
-                params: { engineId: appId },
+            .get<
+                {
+                    id: string;
+                    email: string;
+                    name: string;
+                    type: string;
+                    username: string;
+                }[]
+            >(url, {
+                params: {
+                    engineId: engineId,
+                    limit: limit,
+                    offset: offset,
+                    searchTerm: searchTerm,
+                },
             })
             .catch((error) => {
                 throw Error(error);
@@ -1814,10 +1877,19 @@ export class MonolithStore {
     /**
      * @name getProjectUsersNoCredentials
      * @param admin if admin initiated the call
-     * @param projectId the id of app
+     * @param appId the id of app
+     * @param limit
+     * @param offSet
+     * @param searchTerm
      * @desc get the existing users and their permissions for this app
      */
-    async getProjectUsersNoCredentials(admin: boolean, projectId: string) {
+    async getProjectUsersNoCredentials(
+        admin: boolean,
+        appId: string,
+        limit: number,
+        offset: number,
+        searchTerm: string,
+    ) {
         let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
@@ -1828,8 +1900,21 @@ export class MonolithStore {
 
         // get the response
         const response = await axios
-            .get<Record<string, unknown>[]>(url, {
-                params: { projectId: projectId },
+            .get<
+                {
+                    id: string;
+                    email: string;
+                    name: string;
+                    type: string;
+                    username: string;
+                }[]
+            >(url, {
+                params: {
+                    projectId: appId,
+                    limit: limit,
+                    offset: offset,
+                    searchTerm: searchTerm,
+                },
             })
             .catch((error) => {
                 throw Error(error);
@@ -2535,7 +2620,12 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns MemberInterface[]
      */
-    async getAllUsers(admin: boolean) {
+    async getAllUsers(
+        admin: boolean,
+        searchTerm?: string,
+        offset?: number,
+        limit?: number,
+    ) {
         let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
@@ -2556,8 +2646,18 @@ export class MonolithStore {
                     publisher?: boolean;
                     exporter?: boolean;
                     email?: string;
+                    phone?: string;
+                    phoneextension?: string;
+                    countrycode?: string;
+                    username?: string;
                 }[]
-            >(url)
+            >(url, {
+                params: {
+                    filterWord: searchTerm,
+                    offset: offset,
+                    limit: limit,
+                },
+            })
             .catch((error) => {
                 throw Error(error);
             });
@@ -2588,7 +2688,7 @@ export class MonolithStore {
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
         const response = await axios
-            .post<{ success: boolean }>(url, postData, {
+            .post<boolean>(url, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -2619,7 +2719,7 @@ export class MonolithStore {
         postData += 'userId=' + encodeURIComponent(userId);
         postData += '&type=' + encodeURIComponent(userType);
 
-        const response = await axios.post<{ success: boolean }>(url, postData, {
+        const response = await axios.post<boolean>(url, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },
@@ -2664,15 +2764,11 @@ export class MonolithStore {
             newUserInfo += '&password=' + encodeURIComponent(user.password);
         }
 
-        const response = await axios.post<{ success: boolean }>(
-            url,
-            newUserInfo,
-            {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
+        const response = await axios.post<boolean>(url, newUserInfo, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
             },
-        );
+        });
 
         return response;
     }
@@ -2728,8 +2824,6 @@ export class MonolithStore {
             .catch((error) => {
                 throw Error(error);
             });
-
-        console.log('hi', response);
 
         return response.data;
     }

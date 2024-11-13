@@ -43,6 +43,12 @@ export interface TablePaginationProps {
         HTMLTextAreaElement | HTMLInputElement
     >;
 
+    /**
+     * Is the pagination enabled?
+     *
+     */
+    disabled?: boolean;
+
     /** custom style object */
     sx?: SxProps;
 }

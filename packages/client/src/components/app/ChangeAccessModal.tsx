@@ -11,7 +11,8 @@ import {
 import { Control, Controller } from 'react-hook-form';
 import { HdrAuto, Edit, Visibility } from '@mui/icons-material';
 import { AppDetailsFormTypes } from './app-details.utility';
-import { PERMISSION_DESCRIPTION_MAP } from '../settings/member-permissions.constants';
+
+import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
 import { useRootStore } from '@/hooks';
 
 const StyledContentBox = styled(Stack)(({ theme }) => ({
@@ -56,7 +57,7 @@ interface ChangeAccessModalProps {
 
 export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
     const { open, onClose, control, getValues } = props;
-    const permissionDescriptions = PERMISSION_DESCRIPTION_MAP['app'];
+    const permissionDescriptions = PERMISSION_DESCRIPTION_MAP['APP'];
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -110,7 +111,13 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
     return (
         <Modal open={open} maxWidth={'md'} onClose={onClose}>
-            <Modal.Title>Change Access</Modal.Title>
+            <Modal.Title>
+                {getValues('requestedPermission') === 'discoverable' ? (
+                    <>Request Access</>
+                ) : (
+                    <>Change Access</>
+                )}
+            </Modal.Title>
 
             <Modal.Content>
                 <Controller

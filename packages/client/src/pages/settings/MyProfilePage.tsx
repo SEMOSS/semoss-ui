@@ -238,17 +238,22 @@ export const MyProfilePage = () => {
 
             const response = await monolithStore.editMemberInfo(true, userObj);
 
-            notification.add({
-                color: 'success',
-                message: 'Successfully edited profile information',
-            });
-        } catch (e) {
-            if (e instanceof Error) {
+            if (response.data) {
+                notification.add({
+                    color: 'success',
+                    message: 'Successfully edited profile information',
+                });
+            } else {
                 notification.add({
                     color: 'error',
-                    message: e.message,
+                    message: 'Error editing profile information',
                 });
             }
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
         }
     };
 

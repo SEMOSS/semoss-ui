@@ -1,13 +1,9 @@
 import { useEffect } from 'react';
 import axios, { isAxiosError } from 'axios';
-import { HashRouter } from 'react-router-dom';
-import { ThemeProvider, Notification } from '@semoss/ui';
-
 import { Env } from '@/env';
 import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
-import { Router } from '@/pages';
-import { LoadingScreen } from '@/components/ui';
+import { AppWrapper } from './AppWrapper';
 
 // add interceptors
 axios.interceptors.response.use(
@@ -15,7 +11,6 @@ axios.interceptors.response.use(
         return response;
     },
     function (error) {
-        console.log(error);
         if (error.status === 302 && error.headers && error.headers.redirect) {
             window.location.replace(error.headers.redirect);
         }
@@ -31,13 +26,17 @@ axios.interceptors.response.use(
             }
         }
 
-        // return the message if it exists
-        if (error.message) {
+        const apiMessage = error.response?.data?.errorMessage;
+        if (apiMessage && typeof apiMessage === 'string') {
+            // Exception for returning the errorMessage provided via the API if available.
+            return Promise.reject(apiMessage);
+        } else if (error.message) {
+            // return the message if it exists
             return Promise.reject(error.message);
+        } else {
+            // reject with generic error
+            return Promise.reject('Error');
         }
-
-        // reject with generic error
-        return Promise.reject('Error');
     },
 );
 
@@ -74,15 +73,7 @@ export const App = () => {
 
     return (
         <RootStoreContext.Provider value={_store}>
-            <ThemeProvider reset={true}>
-                <Notification>
-                    <LoadingScreen>
-                        <HashRouter>
-                            <Router />
-                        </HashRouter>
-                    </LoadingScreen>
-                </Notification>
-            </ThemeProvider>
+            <AppWrapper />
         </RootStoreContext.Provider>
     );
 };

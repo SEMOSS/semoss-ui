@@ -13,25 +13,17 @@ import {
     TextArea,
 } from '@semoss/ui';
 import { EditRounded, RemoveRedEyeRounded, Add } from '@mui/icons-material';
-import { PERMISSION_DESCRIPTION_MAP } from '@/components/settings/member-permissions.constants';
 
 import { Role } from '@/types';
 import { useRootStore, useEngine } from '@/hooks';
+import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
 
 const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-interface EngineAccessButtonProps {
-    /**
-     * Model, Vector, Storage, Database, Function
-     */
-    name: string;
-}
-
-export const EngineAccessButton = (props: EngineAccessButtonProps) => {
-    const { name } = props;
-    const { id, role } = useEngine();
+export const EngineAccessButton = () => {
+    const { id, type, role } = useEngine();
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -155,9 +147,8 @@ export const EngineAccessButton = (props: EngineAccessButtonProps) => {
                                     subheader={
                                         <Box sx={{ marginLeft: '30px' }}>
                                             {
-                                                PERMISSION_DESCRIPTION_MAP[
-                                                    name.toLowerCase()
-                                                ]?.author
+                                                PERMISSION_DESCRIPTION_MAP[type]
+                                                    .author
                                             }
                                         </Box>
                                     }
@@ -198,9 +189,8 @@ export const EngineAccessButton = (props: EngineAccessButtonProps) => {
                                     subheader={
                                         <Box sx={{ marginLeft: '30px' }}>
                                             {
-                                                PERMISSION_DESCRIPTION_MAP[
-                                                    name.toLowerCase()
-                                                ]?.editor
+                                                PERMISSION_DESCRIPTION_MAP[type]
+                                                    .editor
                                             }
                                         </Box>
                                     }
@@ -241,9 +231,8 @@ export const EngineAccessButton = (props: EngineAccessButtonProps) => {
                                     subheader={
                                         <Box sx={{ marginLeft: '30px' }}>
                                             {
-                                                PERMISSION_DESCRIPTION_MAP[
-                                                    name.toLowerCase()
-                                                ]?.readonly
+                                                PERMISSION_DESCRIPTION_MAP[type]
+                                                    .readonly
                                             }
                                         </Box>
                                     }

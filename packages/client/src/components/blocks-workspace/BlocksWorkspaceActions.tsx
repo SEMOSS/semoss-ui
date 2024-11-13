@@ -1,44 +1,16 @@
+import { useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Button,
-    IconButton,
-    Stack,
-    useNotification,
-    ButtonGroup,
-} from '@semoss/ui';
-import {
-    GetAppRounded,
-    PlayCircleRounded,
-    ShareRounded,
-} from '@mui/icons-material';
+import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
+import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
-import { ShareOverlay, PreviewOverlay } from '@/components/workspace';
-
-const StyledShareButton = styled(Button)(({ theme }) => ({
-    //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
-}));
-
-const StyledShareButtonText = styled('span')(({ theme }) => ({
-    ...theme.typography.button,
-    color: theme.palette.text.primary,
-}));
-
-const StyledShareIcon = styled(ShareRounded)(({ theme }) => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
-
-const StyledSaveButtonGroup = styled(ButtonGroup)(({ theme }) => ({
-    //TODO: styled needs to be updated to match the theme
-    borderRadius: '12px', //  theme.shape.borderRadiusLg
-}));
+import { PreviewOverlay } from '@/components/workspace';
+import { ShareOverlay } from '@/components/ui';
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
 
-    const { configStore, monolithStore } = useRootStore();
+    const { monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();
 
@@ -97,45 +69,8 @@ export const BlocksWorkspaceActions = observer(() => {
 
             notification.add({
                 color: 'success',
-                message: 'Success',
-            });
-        } catch (e) {
-            console.error(e);
-
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            workspace.setLoading(false);
-        }
-    };
-
-    /**
-     * Method that is called to export the app
-     */
-    const exportApp = async () => {
-        // turn on loading
-        workspace.setLoading(true);
-
-        try {
-            // export  the app
-            const response = await monolithStore.runQuery<[string]>(
-                `ExportProjectApp(project=["${workspace.appId}"]);`,
-            );
-
-            // throw an error if there is no key
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error exporting app');
-            }
-
-            await monolithStore.download(configStore.store.insightID, key);
-
-            notification.add({
-                color: 'success',
-                message: 'Success',
+                message:
+                    'Save successful! Make sure to double-check your changes for correctness',
             });
         } catch (e) {
             console.error(e);
@@ -197,109 +132,61 @@ export const BlocksWorkspaceActions = observer(() => {
         }
     };
 
+    /**
+     * Trigger save on ctrl+s
+     */
+    const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
+        if (event.key === 's' && event.ctrlKey) {
+            event.preventDefault();
+            saveApp();
+        }
+    }, []);
+
+    useEffect(() => {
+        // attach the event listener
+        document.addEventListener('keydown', onDocumentKeydown);
+
+        // remove the event listener
+        return () => {
+            document.removeEventListener('keydown', onDocumentKeydown);
+        };
+    }, [onDocumentKeydown]);
+
     return (
         <Stack direction="row" spacing={1} alignItems={'center'}>
-            {/* <IconButton
-                color="default"
-                size="small"
-                title="Preview App"
-                onClick={() => {
-                    previewApp();
-                }}
-            >
-                <PlayCircleRounded />
-                Preview
-            </IconButton> */}
-            <Button
-                variant="text"
-                startIcon={<PlayCircleRounded />}
-                title="Preview App"
-                color="inherit"
-                onClick={() => {
-                    previewApp();
-                }}
-            >
-                Preview
-            </Button>
-
-            {/* <IconButton
-                color="default"
-                size="small"
-                title="Download App"
-                onClick={() => {
-                    exportApp();
-                }}
-            >
-                <GetAppRounded />
-                Download
-            </IconButton> */}
-            <Button
-                variant="text"
-                startIcon={<GetAppRounded />}
-                title="Download App"
-                color="inherit"
-                onClick={() => {
-                    exportApp();
-                }}
-            >
-                Download
-            </Button>
-            {/* <StyledShareButton
-                size={'small'}
-                color={'secondary'}
-                variant={'outlined'}
-                title={'Share App'}
-                startIcon={<StyledShareIcon />}
-                onClick={() => {
-                    shareApp();
-                }}
-            >
-                <StyledShareButtonText>Share</StyledShareButtonText>
-            </StyledShareButton> */}
-            <Button
-                size="small"
-                variant="text"
-                startIcon={<StyledShareIcon />}
-                title="Share App"
-                color="inherit"
-                onClick={() => {
-                    shareApp();
-                }}
-            >
-                Share
-            </Button>
-            {/* <StyledSaveButtonGroup variant={'contained'} color={'primary'}>
-                <ButtonGroup.Item
-                    title={'Save App'}
+            <Tooltip title="Preview App">
+                <IconButton
                     size={'small'}
+                    color="default"
+                    onClick={() => {
+                        previewApp();
+                    }}
+                >
+                    <PlayArrow fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title={'Share App'}>
+                <IconButton
+                    size={'small'}
+                    color="default"
+                    onClick={() => {
+                        shareApp();
+                    }}
+                >
+                    <ShareRounded fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title={'Save App (ctrl + s)'}>
+                <IconButton
+                    size={'small'}
+                    color={'primary'}
                     onClick={() => {
                         saveApp();
                     }}
-                    color={'primary'}
                 >
-                    Save
-                </ButtonGroup.Item>
-            </StyledSaveButtonGroup> */}
-            {/* <StyledSaveButton  
-                title={'Save App'} 
-                variant={'contained'} 
-                color={'primary'}
-                onClick={() => {
-                    saveApp();
-                }}>
-                <StyledShareButtonText>Save</StyledShareButtonText>
-            </StyledSaveButton> */}
-            <Button
-                variant="contained"
-                size="small"
-                color="primary"
-                title="Save App"
-                onClick={() => {
-                    saveApp();
-                }}
-            >
-                Save
-            </Button>
+                    <SaveOutlined fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
         </Stack>
     );
 });

@@ -101,6 +101,7 @@ export const config: BlockConfig<InputBlockDef> = {
                             label="Rows"
                             path="rows"
                             type="number"
+                            description="This will determine how many rows are displayed on text input"
                         />
                     ),
                 },

@@ -6,7 +6,8 @@ import { SerializedState, Variable } from '@/stores';
 
 export const ABTesting = () => {
     const { state } = useBlocks();
-    const { variants } = useLLMComparison();
+    // const { variants } = useLLMComparison();
+    const variants = [];
     const [appState, setAppState] = useState<SerializedState | null>(null);
 
     /**

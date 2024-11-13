@@ -9,12 +9,40 @@ import { UploadBlockDef, UploadBlock } from './UploadBlock';
 import { Upload } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { buildListener } from '../block-defaults.shared';
-import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 import { UploadSettings } from '@/components/block-settings/shared/UploadSettings';
+import { SelectSettings } from '@/components/block-settings/shared/SelectSettings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 export const DefaultStyles: CSSProperties = {
     width: '100%',
     padding: '4px',
 };
+
+export const FileTypes: string[] = [
+    '.csv',
+    '.txt',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.mp3',
+    '.m4a',
+    '.wav',
+    '.mp4',
+    '.mov',
+    '.avi',
+    '.zip',
+    '.rar',
+    '.pdf',
+    '.docx',
+    '.xlx',
+    '.xlsx',
+    '.bat',
+    '.cmd',
+    '.sh',
+    '.img',
+    '.iso',
+    '.dmg',
+    '.js',
+];
 
 // export the config for the block
 export const config: BlockConfig<UploadBlockDef> = {
@@ -25,9 +53,11 @@ export const config: BlockConfig<UploadBlockDef> = {
         value: '',
         label: 'Example Input',
         hint: '',
+        extensions: [],
         loading: false,
         disabled: false,
         required: false,
+        multiple: false,
     },
     listeners: {
         onChange: [],
@@ -42,7 +72,23 @@ export const config: BlockConfig<UploadBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <UploadSettings id={id} label="Value" path={'value'} />
+                        <UploadSettings
+                            id={id}
+                            label="Value"
+                            path={'value'}
+                            restrictPath={'extensions'}
+                        />
+                    ),
+                },
+                {
+                    description: 'Extensions',
+                    render: ({ id }) => (
+                        <SelectSettings
+                            id={id}
+                            label="Extensions"
+                            path={'extensions'}
+                            options={FileTypes}
+                        />
                     ),
                 },
                 {
@@ -65,6 +111,16 @@ export const config: BlockConfig<UploadBlockDef> = {
                             label="Loading"
                             path="loading"
                             queryPath="isLoading"
+                        />
+                    ),
+                },
+                {
+                    description: 'Multiple Files',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Multiple Files"
+                            path="multiple"
                         />
                     ),
                 },

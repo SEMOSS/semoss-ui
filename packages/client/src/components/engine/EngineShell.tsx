@@ -156,7 +156,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         </Typography>
                         <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
-                            <EngineAccessButton name={name} />
+                            <EngineAccessButton />
                             {role === 'OWNER' && (
                                 <Button
                                     disabled={exportLoading}
@@ -177,7 +177,6 @@ export const EngineShell = (props: EngineShellProps) => {
                                 <>
                                     {edit && (
                                         <EditEngineDetails
-                                            type={type}
                                             values={metaVals}
                                             open={edit}
                                             onClose={(success) => {

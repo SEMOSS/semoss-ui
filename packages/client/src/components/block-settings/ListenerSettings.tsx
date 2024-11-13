@@ -5,6 +5,7 @@ import {
     Button,
     List,
     useNotification,
+    styled,
 } from '@semoss/ui';
 
 import { useBlockSettings, useBlocks, useWorkspace } from '@/hooks';
@@ -17,6 +18,26 @@ import {
 } from '@mui/icons-material';
 
 import { ListenerActionOverlay } from './ListenerActionOverlay';
+
+const StyledStatusIconContainer = styled('div')(() => ({
+    height: '100%',
+    width: '1.5em',
+    display: 'flex',
+}));
+
+const StyledRedDot = styled('div')(({ theme }) => ({
+    width: '.50em',
+    height: '.50em',
+    backgroundColor: theme.palette.error.main,
+    borderRadius: '50%',
+}));
+
+const StyledGreenDot = styled('div')(({ theme }) => ({
+    width: '.50em',
+    height: '.50em',
+    backgroundColor: theme.palette.success.main,
+    borderRadius: '50%',
+}));
 
 /**
  * TODO: reorganize and update the styling once app/blocks is up and working
@@ -59,6 +80,25 @@ export const ListenerSettings = observer(
                 });
 
                 console.error(e);
+            }
+        };
+
+        /**
+         * Get the status of the query to display icon
+         *
+         */
+        const getQueryStatusIcon = (a) => {
+            if (a.message === 'RUN_QUERY') {
+                const query = state.getQuery(a.payload.queryId);
+                if (query && query.isSuccessful) {
+                    return <StyledGreenDot />;
+                } else if (query && query.isError) {
+                    return <StyledRedDot />;
+                } else {
+                    return;
+                }
+            } else {
+                return;
             }
         };
 
@@ -129,6 +169,9 @@ export const ListenerSettings = observer(
                                 </>
                             }
                         >
+                            <StyledStatusIconContainer>
+                                {getQueryStatusIcon(a)}
+                            </StyledStatusIconContainer>
                             <List.ItemText
                                 disableTypography={true}
                                 primary={

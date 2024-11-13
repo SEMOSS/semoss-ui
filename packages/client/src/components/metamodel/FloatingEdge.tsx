@@ -1,5 +1,10 @@
-import React, { useCallback } from 'react';
-import { useStore, EdgeProps, getSmoothStepPath } from 'react-flow-renderer';
+import React from 'react';
+import {
+    EdgeProps,
+    getSmoothStepPath,
+    BaseEdge,
+    useInternalNode,
+} from '@xyflow/react';
 
 import { getEdgeParams } from './utility';
 
@@ -10,12 +15,8 @@ export const FloatingEdge: React.FC<EdgeProps> = ({
     markerEnd,
     style,
 }) => {
-    const sourceNode = useStore(
-        useCallback((store) => store.nodeInternals.get(source), [source]),
-    );
-    const targetNode = useStore(
-        useCallback((store) => store.nodeInternals.get(target), [target]),
-    );
+    const sourceNode = useInternalNode(source);
+    const targetNode = useInternalNode(target);
 
     if (!sourceNode || !targetNode) {
         return null;
@@ -26,7 +27,7 @@ export const FloatingEdge: React.FC<EdgeProps> = ({
         targetNode,
     );
 
-    const d = getSmoothStepPath({
+    const [path] = getSmoothStepPath({
         sourceX: sx,
         sourceY: sy,
         sourcePosition: sourcePos,
@@ -36,10 +37,10 @@ export const FloatingEdge: React.FC<EdgeProps> = ({
     });
 
     return (
-        <path
+        <BaseEdge
             id={id}
             className="react-flow__edge-path"
-            d={d}
+            path={path}
             markerEnd={markerEnd}
             style={style}
         />

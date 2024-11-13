@@ -8,6 +8,7 @@ export default angular
 
 import './catalog.scss';
 import Utility from '../../utility/utility';
+import { CUSTOMIZATION } from '@/custom/theme';
 
 catalogDirective.$inject = [
     '$q',
@@ -994,6 +995,21 @@ function catalogDirective(
                 appListener();
                 filterListener();
             });
+
+            const themeMap = CONFIG.theme['THEME_MAP'] ? JSON.parse(CONFIG.theme['THEME_MAP']) : {}
+            document.title = themeMap.name ? themeMap.name : CUSTOMIZATION.page.title;
+
+            // Set the favicon
+            const faviconLink = themeMap.isLogoUrl
+                ? themeMap.logo
+                : CUSTOMIZATION.page.favicon
+                ? CUSTOMIZATION.page.favicon
+                : null;
+
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = faviconLink;
+            document.head.appendChild(link);
         }
 
         searchItems(true);

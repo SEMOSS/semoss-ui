@@ -1,15 +1,17 @@
-import { Position } from 'react-flow-renderer';
+import { InternalNode, Position, XYPosition } from '@xyflow/react';
 
 // this helper function returns the intersection point
 // of the line between the center of the intersectionNode and the target node
-const getNodeIntersection = (intersectionNode, targetNode) => {
+const getNodeIntersection = (
+    intersectionNode: InternalNode,
+    targetNode: InternalNode,
+) => {
     // https://math.stackexchange.com/questions/1724792/an-algorithm-for-finding-the-intersection-point-between-a-center-of-vision-and-a
-    const {
-        width: intersectionNodeWidth,
-        height: intersectionNodeHeight,
-        positionAbsolute: intersectionNodePosition,
-    } = intersectionNode;
-    const targetPosition = targetNode.positionAbsolute;
+    const { width: intersectionNodeWidth, height: intersectionNodeHeight } =
+        intersectionNode.measured;
+    const intersectionNodePosition =
+        intersectionNode.internals.positionAbsolute;
+    const targetPosition = targetNode.internals.positionAbsolute;
 
     const w = intersectionNodeWidth / 2;
     const h = intersectionNodeHeight / 2;
@@ -31,8 +33,8 @@ const getNodeIntersection = (intersectionNode, targetNode) => {
 };
 
 // returns the position (top,right,bottom or right) passed node compared to the intersection point
-const getEdgePosition = (node, intersectionPoint) => {
-    const n = { ...node.positionAbsolute, ...node };
+const getEdgePosition = (node: InternalNode, intersectionPoint: XYPosition) => {
+    const n = { ...node.internals.positionAbsolute, ...node };
     const nx = Math.round(n.x);
     const ny = Math.round(n.y);
     const px = Math.round(intersectionPoint.x);
@@ -55,7 +57,7 @@ const getEdgePosition = (node, intersectionPoint) => {
 };
 
 // returns the parameters (sx, sy, tx, ty, sourcePos, targetPos) you need to create an edge
-export const getEdgeParams = (source, target) => {
+export const getEdgeParams = (source: InternalNode, target: InternalNode) => {
     const sourceIntersectionPoint = getNodeIntersection(source, target);
     const targetIntersectionPoint = getNodeIntersection(target, source);
 

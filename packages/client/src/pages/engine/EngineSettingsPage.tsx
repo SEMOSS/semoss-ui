@@ -30,16 +30,16 @@ export const EngineSettingsPage = () => {
         >
             <StyledContainer>
                 <SettingsTiles
-                    mode="engine"
-                    name={name}
+                    type={type}
                     id={id}
+                    name={name}
                     direction="row"
                     onDelete={() => {
                         navigate(`/engine/${type.toLowerCase()}`);
                     }}
                 />
-                <PendingMembersTable mode={'engine'} id={id} />
-                <MembersTable mode={'engine'} id={id} name={name} />
+                <PendingMembersTable type={type} id={id} />
+                <MembersTable type={type} id={id} />
             </StyledContainer>
         </SettingsContext.Provider>
     );

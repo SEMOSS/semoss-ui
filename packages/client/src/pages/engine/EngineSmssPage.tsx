@@ -13,7 +13,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 export const EngineSmssPage = () => {
-    const { id } = useEngine();
+    const { id, type } = useEngine();
 
     return (
         <SettingsContext.Provider
@@ -22,7 +22,7 @@ export const EngineSmssPage = () => {
             }}
         >
             <StyledContainer>
-                <UpdateSMSS mode={'engine'} id={id} />
+                <UpdateSMSS type={type} id={id} />
             </StyledContainer>
         </SettingsContext.Provider>
     );

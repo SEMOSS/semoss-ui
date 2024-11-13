@@ -21,8 +21,6 @@ import { Help } from '@/components/help';
 
 import { Filterbox } from '@/components/ui';
 
-// Test Comment
-
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
     display: 'flex',
@@ -384,51 +382,6 @@ export const HomePage = observer((): JSX.Element => {
                                 value={'System'}
                             />
                         </StyledToggleTabsGroup>
-
-                        {/* <StyledToggleButtonGroup value={mode}>
-                            <ToggleButton
-                                color="secondary"
-                                value="Mine"
-                                onClick={(e, v) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                {'My Apps'}
-                            </ToggleButton>
-                            <ToggleButton
-                                color="secondary"
-                                value="Discoverable"
-                                onClick={(e, v) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                {'Discoverable Apps'}
-                            </ToggleButton>
-                            <ToggleButton
-                                color="secondary"
-                                value="System"
-                                onClick={(e, v) => {
-                                    dispatch({
-                                        type: 'field',
-                                        field: 'databases',
-                                        value: [],
-                                    });
-                                    setMode(v as MODE);
-                                }}
-                            >
-                                {'System Apps'}
-                            </ToggleButton>
-                        </StyledToggleButtonGroup> */}
                     </Stack>
 
                     {mode != 'System' && favoritedApps.length > 0 ? (
@@ -445,7 +398,7 @@ export const HomePage = observer((): JSX.Element => {
                                         key={i}
                                         app={app}
                                         systemApp={false}
-                                        href={`#/app/${app.project_id}`}
+                                        href={`#/app/${app.project_id}/detail`}
                                         onAction={() =>
                                             navigate(`/app/${app.project_id}`)
                                         }
@@ -519,7 +472,7 @@ export const HomePage = observer((): JSX.Element => {
                                             key={i}
                                             app={app}
                                             systemApp={false}
-                                            href={`#/app/${app.project_id}`}
+                                            href={`#/app/${app.project_id}/detail`}
                                             onAction={() =>
                                                 navigate(
                                                     `/app/${app.project_id}`,
@@ -542,7 +495,7 @@ export const HomePage = observer((): JSX.Element => {
                     ) : null}
                 </StyledContentContainer>
             </StyledContainer>
-            <WelcomeModal />
+            {/* <WelcomeModal /> */}
             <Help />
         </Page>
     );

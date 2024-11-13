@@ -2,6 +2,6 @@
     "files.exclude": {
         "**/*.rollup.cache": true,
         "**/dist": true,
-        "**/target": true
+        "**/target": true,
     }
 }

@@ -1,28 +1,10 @@
 import React, { useState } from 'react';
-import { NodeProps, Handle, Position } from 'react-flow-renderer';
+import { NodeProps, Handle, Position, Node } from '@xyflow/react';
 
-import {
-    styled,
-    Icon,
-    Button,
-    Typography,
-    Card,
-    List,
-    Table,
-} from '@semoss/ui';
-import {
-    TableChartOutlined,
-    TableViewRounded,
-    ViewColumn,
-    EditRounded,
-    Delete,
-    AddCircleOutlineRounded,
-    KeyRounded,
-} from '@mui/icons-material';
+import { styled, Icon, Typography, Card } from '@semoss/ui';
+import { AddCircleOutlineRounded, KeyRounded } from '@mui/icons-material';
 
 import { useMetamodel } from '@/hooks';
-
-import { EditColumnModal } from '@/components/physical-database';
 
 // one-off custom icon from figma
 const TableIcon = () => {
@@ -259,63 +241,65 @@ const StyledTitleCell = styled(Typography)(() => ({
  *
  */
 
-type MetamodelNodeProps = NodeProps<{
-    /** Name of the node */
-    name: string; // table
+type MetamodelNodeProps = NodeProps<
+    Node<{
+        /** Name of the node */
+        name: string; // table
 
-    /** Array of properties associated with the node */
-    properties: {
-        /** Unique id of the property */
-        id: string;
-        /** Name of the property */
-        name: string; // column
-        /** Data type of the property */
-        type: string; // column type
-    }[];
+        /** Array of properties associated with the node */
+        properties: {
+            /** Unique id of the property */
+            id: string;
+            /** Name of the property */
+            name: string; // column
+            /** Data type of the property */
+            type: string; // column type
+        }[];
 
-    /** Bool to determine if node is interactive or not */
-    isInteractive?: boolean;
+        /** Bool to determine if node is interactive or not */
+        isInteractive?: boolean;
 
-    /** Hook to set data for edit column modal */
-    setColumnToEdit?: React.Dispatch<
-        React.SetStateAction<{
-            table: object;
-            columnName: string;
-            columnDescription: string;
-            columnType: string;
-            columnDefaultValue: string;
-            columnNotNull: boolean;
-            columnIsPrimary: boolean;
-        }>
-    >;
+        /** Hook to set data for edit column modal */
+        setColumnToEdit?: React.Dispatch<
+            React.SetStateAction<{
+                table: object;
+                columnName: string;
+                columnDescription: string;
+                columnType: string;
+                columnDefaultValue: string;
+                columnNotNull: boolean;
+                columnIsPrimary: boolean;
+            }>
+        >;
 
-    /** Hook to open/close delete confirmation modal */
-    setOpenDeleteConfirmationModal?: React.Dispatch<
-        React.SetStateAction<boolean>
-    >;
-    /** Hook to open/close edit table modal */
-    setOpenEditTableModal?: React.Dispatch<React.SetStateAction<boolean>>;
+        /** Hook to open/close delete confirmation modal */
+        setOpenDeleteConfirmationModal?: React.Dispatch<
+            React.SetStateAction<boolean>
+        >;
+        /** Hook to open/close edit table modal */
+        setOpenEditTableModal?: React.Dispatch<React.SetStateAction<boolean>>;
 
-    /** Hook to set the data describing the structure to delete confirmation modal */
-    setDataToDelete?: React.Dispatch<
-        React.SetStateAction<{
-            structureId: string;
-            structureName: string;
-            structureType: string;
-        }>
-    >;
-    /** Hook to set data for edit modal */
-    setTableToEdit?: React.Dispatch<
-        React.SetStateAction<{
-            tableId: string;
-            tableName: string;
-            tableDescription: string;
-            columns: object[];
-        }>
-    >;
-    /** Hook to open/close edit column modal */
-    setOpenEditColumnModal?: React.Dispatch<React.SetStateAction<boolean>>;
-}>;
+        /** Hook to set the data describing the structure to delete confirmation modal */
+        setDataToDelete?: React.Dispatch<
+            React.SetStateAction<{
+                structureId: string;
+                structureName: string;
+                structureType: string;
+            }>
+        >;
+        /** Hook to set data for edit modal */
+        setTableToEdit?: React.Dispatch<
+            React.SetStateAction<{
+                tableId: string;
+                tableName: string;
+                tableDescription: string;
+                columns: object[];
+            }>
+        >;
+        /** Hook to open/close edit column modal */
+        setOpenEditColumnModal?: React.Dispatch<React.SetStateAction<boolean>>;
+    }>
+>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
     const { id, data } = props;
@@ -540,11 +524,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                     );
                 })}
                 <StyledHandle type="source" position={Position.Right} />
-                <StyledTableFooterRow>
+                {/* <StyledTableFooterRow>
                     <AddCircleOutlineRounded
                         sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
                     />
-                </StyledTableFooterRow>
+                </StyledTableFooterRow> */}
             </StyledMetamodelContent>
         </StyledMetamodelCard>
     );
