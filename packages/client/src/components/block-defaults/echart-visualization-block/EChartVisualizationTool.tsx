@@ -812,7 +812,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                         <div
                             style={{
                                 display: 'flex',
-                                justifyContent: 'space-between',
+                                justifyContent: 'space-around',
                             }}
                         >
                             <div style={{ display: 'inline-block' }}>
@@ -826,12 +826,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 />
                             </div>
                         </div>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                            }}
-                        >
+                        <div>
                             {/* <button type="button" onClick={zoomChartButton} disabled={featureDisabled.xAxisDataZoomDisabled}>
                                 { showFeatureSection.xAxisDataZoomShow ? 'Hide' : 'Show' }  X-Axis Zoom
                             </button> */}
@@ -903,7 +898,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 option={data.option}
                             />
                         </div>
-                        <div
+                        {/*<div
                             style={{
                                 width: '100%',
                             }}
@@ -913,7 +908,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 chartType={chartType}
                                 option={data.option}
                             />
-                        </div>
+                        </div>*/}
                         <div
                             style={{
                                 width: '100%',
