@@ -69,6 +69,7 @@ import {
     BLOCK_DIAGRAM,
     GENERAL_MERMAID,
 } from '../block-defaults/mermaid-block/diagrams.constants';
+import { backdropClasses } from '@mui/material';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -79,6 +80,8 @@ const SECTION_COMPARE_LLMS = 'Compare LLMs';
 const SECTION_MERMAID = 'Mermaid';
 const SECTION_AREA_CHART = 'Area Chart';
 const SECTION_BAR_CHART = 'Bar Chart';
+const SECTION_BAR_CHART_TEST = 'Bar Chart Test';
+const SECTION_E_PIE_CHART_TEST = 'E Pie Chart';
 const SECTION_GENERAL_VISUALIZATION = 'General';
 const SECTION_LINE_CHART = 'Line Chart';
 const SECTION_PIE_CHART = 'Pie Chart';
@@ -97,6 +100,8 @@ export interface AddBlocksMenuItem {
         | 'Mermaid'
         | 'Area Chart'
         | 'Bar Chart'
+        | 'Bar Chart Test'
+        | 'E Pie Chart'
         | 'General'
         | 'Line Chart'
         | 'Pie Chart'
@@ -647,8 +652,219 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
  */
 export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
     {
+        section: SECTION_E_PIE_CHART_TEST,
+        name: 'Echart',
+        image: PIE_CHART,
+        json: {
+            widget: 'echart',
+            data: {
+                variation: 'echart-pie-chart',
+                option: {
+                    dataset: {
+                        source: [
+                            { name: 'a', value: 85 },
+                            { name: 'b', value: 79 },
+                        ],
+                    },
+                    // color: ['#40A0FF','#9A74B6','#FBB83A','#F18630','#51ACA8','#187687','#CD5498','#364A90'],
+                    color: [
+                        '#ff6f61',
+                        '#6b5b95',
+                        '#88b04b',
+                        '#f7cac9',
+                        '#92a8d1',
+                        '#034f84',
+                        '#f7786b',
+                        '#deeaee',
+                    ],
+                    title: {
+                        text: 'Referer of a Website',
+                        left: 'center',
+                        textStyle: {
+                            fontSize: 18,
+                            color: '#ff6f61',
+                            fontWeight: 'normal',
+                        },
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                    },
+                    legend: {
+                        show: true,
+                        orient: 'vertical',
+                        left: 'left',
+                        top: 'top',
+                        textStyle: {
+                            fontSize: 20,
+                            color: '',
+                            backgroundColor: '',
+                        },
+                    },
+                    series: [
+                        {
+                            name: 'Access From',
+                            type: 'pie',
+                            radius: '50%',
+                            label: {
+                                show: true,
+                                position: 'outside',
+                                fontSize: 10,
+                                color: '#FFFFFF',
+                                backgroundColor: '',
+                                rotate: 45,
+                            },
+                            labelLine: {
+                                length: 30,
+                            },
+                            data: [
+                                { value: 1048, name: 'Search Engine' },
+                                { value: 735, name: 'Direct' },
+                                { value: 580, name: 'Email' },
+                                { value: 484, name: 'Union Ads' },
+                                { value: 300, name: 'Video Ads' },
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0.5, 0, 0, 0.5)',
+                                },
+                            },
+                        },
+                    ],
+                },
+                specJson: JSON.stringify(
+                    {
+                        $schema: '',
+                        title: 'E Pie Chart',
+                        width: 300,
+                        height: 200,
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55 },
+                                { a: 'C', b: 43 },
+                                { a: 'D', b: 91 },
+                                { a: 'E', b: 81 },
+                                { a: 'F', b: 53 },
+                                { a: 'G', b: 19 },
+                                { a: 'H', b: 87 },
+                                { a: 'I', b: 52 },
+                            ],
+                        },
+                        mark: 'bar',
+                        encoding: {
+                            x: { field: 'a', type: 'ordinal' },
+                            y: { field: 'b', type: 'quantitative' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_BAR_CHART_TEST,
+        name: 'Echart',
+        image: BAR_CHART,
+        json: {
+            widget: 'echart',
+            data: {
+                variation: 'bar-chart',
+                option: {
+                    xAxis: {
+                        type: 'category',
+                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    },
+                    yAxis: {
+                        type: 'value',
+                    },
+                    series: [
+                        {
+                            data: [120, 200, 150, 80, 70, 110, 130],
+                            type: 'bar',
+                            encode: {
+                                x: 0,
+                                y: 1,
+                            },
+                        },
+                    ],
+                    tooltip: {
+                        show: true,
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'shadow',
+                            label: {
+                                show: true,
+                            },
+                        },
+                    },
+                    dataZoom: [
+                        {
+                            show: true,
+                            start: 0,
+                            end: 100,
+                            xAxisIndex: 0,
+                        },
+                        {
+                            show: true,
+                            start: 0,
+                            end: 100,
+                            yAxisIndex: 0,
+                        },
+                    ],
+                    brush: {
+                        toolbox: ['rect', 'polygon'],
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                show: true,
+                            },
+                        },
+                    },
+                },
+                specJson: JSON.stringify(
+                    {
+                        $schema:
+                            'https://vega.github.io/schema/vega-lite/v5.json',
+                        title: 'Bar Chart Test',
+                        width: 300,
+                        height: 300,
+                        data: {
+                            values: [
+                                { a: 'A', b: 28 },
+                                { a: 'B', b: 55 },
+                                { a: 'C', b: 43 },
+                                { a: 'D', b: 91 },
+                                { a: 'E', b: 81 },
+                                { a: 'F', b: 53 },
+                                { a: 'G', b: 19 },
+                                { a: 'H', b: 87 },
+                                { a: 'I', b: 52 },
+                            ],
+                        },
+                        mark: 'bar',
+                        encoding: {
+                            x: { field: 'a', type: 'ordinal' },
+                            y: { field: 'b', type: 'quantitative' },
+                        },
+                    },
+                    null,
+                    2,
+                ),
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
         section: SECTION_BAR_CHART,
-        name: 'Bar Chart',
+        name: 'Bar Chart chart',
         image: BAR_CHART,
         json: {
             widget: 'vega',

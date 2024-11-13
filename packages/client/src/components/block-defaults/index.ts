@@ -35,6 +35,10 @@ import {
     VegaVisualizationBlockDef,
 } from './vega-visualization-block';
 import {
+    config as EchartVisualizationBlockConfig,
+    EchartVisualizationBlockDef,
+} from './echart-poc';
+import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
 } from './progress-block';
@@ -75,6 +79,7 @@ export type DefaultBlockDefinitions =
     | SectionBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
+    | EchartVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
     | ModalBlockDef;
@@ -98,6 +103,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
     [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
     [ModalBlockConfig.widget]: ModalBlockConfig,
@@ -128,6 +134,7 @@ export {
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
+    EchartVisualizationBlockConfig,
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
