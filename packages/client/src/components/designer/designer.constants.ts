@@ -85,6 +85,7 @@ const SECTION_GENERAL_VISUALIZATION = 'General';
 const SECTION_LINE_CHART = 'Line Chart';
 const SECTION_PIE_CHART = 'Pie Chart';
 const SECTION_SCATTER_PLOTS = 'Scatter Plot';
+const SECTION_E_CHART = 'E Chart';
 
 export interface AddBlocksMenuItem {
     /** Section that the item belongs to */
@@ -102,7 +103,8 @@ export interface AddBlocksMenuItem {
         | 'General'
         | 'Line Chart'
         | 'Pie Chart'
-        | 'Scatter Plot';
+        | 'Scatter Plot'
+        | 'E Chart';
 
     /** Name of the item to show in the tooltip */
     name: string;
@@ -1316,6 +1318,82 @@ export const VISUALIZATION_MENU: AddBlocksMenuItem[] = [
             widget: 'mermaid',
             data: {
                 text: BLOCK_DIAGRAM,
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_E_CHART,
+        name: 'Bar E Chart',
+        image: BAR_CHART,
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'bar-e-chart',
+                option: {
+                    xAxis: {
+                        type: 'category',
+                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    },
+                    yAxis: {
+                        type: 'value',
+                    },
+                    series: [
+                        {
+                            name: 'Category',
+                            data: [
+                                { value: 120, name: 'testdata' },
+                                200,
+                                150,
+                                80,
+                                70,
+                                110,
+                                130,
+                            ],
+                            type: 'bar',
+                            labelLine: {
+                                show: true,
+                            },
+                        },
+                    ],
+                    tooltip: {
+                        show: true,
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'shadow',
+                            label: {
+                                show: true,
+                            },
+                        },
+                        alwaysShowContent: true,
+                    },
+                    dataZoom: [
+                        // {
+                        //     show: true,
+                        //     start: 0,
+                        //     end: 100,
+                        //     xAxisIndex: 0,
+                        // },
+                        {
+                            show: true,
+                            start: 0,
+                            end: 100,
+                            yAxisIndex: 0,
+                        },
+                    ],
+                    brush: {
+                        toolbox: ['rect', 'polygon'],
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                show: true,
+                            },
+                        },
+                    },
+                },
             },
             listeners: {},
             slots: {} as BlockJSON['slots'],

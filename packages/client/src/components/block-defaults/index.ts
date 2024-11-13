@@ -36,6 +36,10 @@ import {
     VegaVisualizationBlockDef,
 } from './vega-visualization-block';
 import {
+    config as EChartVisualizationBlockConfig,
+    EChartVisualizationBlockDef,
+} from './echart-visualization-block';
+import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
 } from './progress-block';
@@ -87,7 +91,8 @@ export type DefaultBlockDefinitions =
     | MermaidBlockDef
     | LLMComparisonBlockDef
     | ModalBlockDef
-    | PDFViewerBlockDef;
+    | PDFViewerBlockDef
+    | EChartVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,
@@ -114,6 +119,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
+    [EChartVisualizationBlockConfig.widget]: EChartVisualizationBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
@@ -146,4 +152,5 @@ export {
     CompareLLMBlockConfig,
     ModalBlockConfig,
     PDFViewerBlockConfig,
+    EChartVisualizationBlockConfig,
 };
