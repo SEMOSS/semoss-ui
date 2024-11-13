@@ -9,15 +9,15 @@ import {
     List,
     Typography,
     Stack,
-    Tooltip,
     Search,
     Popover,
 } from '@semoss/ui';
-import { useBlocks, usePixel } from '@/hooks';
-import { AddVariablePopover } from './AddVariablePopover';
-import { NotebookVariable } from './NotebookVariable';
 import { Add, FilterListRounded } from '@mui/icons-material';
+
+import { useBlocks, usePixel } from '@/hooks';
 import { VARIABLE_TYPES } from '@/stores';
+import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
+import { Panel } from '@/components/workspace';
 
 const StyledStack = styled(Stack)(() => ({
     maxHeight: '100%',
@@ -59,9 +59,9 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 /**
- * Render the variables menu of the notebook
+ * Render the variables menu
  */
-export const NotebookVariablesMenu = observer((): JSX.Element => {
+export const VariablesPanel = observer((): JSX.Element => {
     const { state } = useBlocks();
 
     /**
@@ -174,104 +174,106 @@ export const NotebookVariablesMenu = observer((): JSX.Element => {
     ]);
 
     return (
-        <StyledStack
-            direction={'column'}
-            spacing={0}
-            className="notebook-variables-menu"
-        >
-            <StyledMenu>
-                <Stack spacing={2} padding={2}>
-                    <Stack direction="row" justifyContent="space-between">
-                        <StyledMenuTitle variant="h6">
-                            Variables
-                        </StyledMenuTitle>
-                        <IconButton
-                            className="notebook-variable-menu__add-variable-button"
+        <Panel>
+            <StyledStack
+                direction={'column'}
+                spacing={0}
+                className="notebook-variables-menu"
+            >
+                <StyledMenu>
+                    <Stack spacing={2} padding={2}>
+                        <Stack direction="row" justifyContent="space-between">
+                            <StyledMenuTitle variant="h6">
+                                Variables
+                            </StyledMenuTitle>
+                            <IconButton
+                                className="notebook-variable-menu__add-variable-button"
+                                onClick={(e) => {
+                                    setPopoverAnchorEl(e.currentTarget);
+                                }}
+                            >
+                                <Add />
+                            </IconButton>
+                        </Stack>
+                    </Stack>
+                    <Stack
+                        spacing={2}
+                        paddingLeft={2}
+                        paddingBottom={1}
+                        paddingRight={2}
+                    >
+                        <Search
+                            size={'small'}
+                            placeholder="Search"
+                            onChange={(e) => {
+                                setFilterWord(e.target.value);
+                            }}
+                        />
+                    </Stack>
+                    <Stack spacing={2} paddingLeft={2} paddingBottom={1}>
+                        <StyledButton
+                            color={'secondary'}
                             onClick={(e) => {
-                                setPopoverAnchorEl(e.currentTarget);
+                                setFilterAnchorEl(e.currentTarget);
                             }}
                         >
-                            <Add />
-                        </IconButton>
-                    </Stack>
-                </Stack>
-                <Stack
-                    spacing={2}
-                    paddingLeft={2}
-                    paddingBottom={1}
-                    paddingRight={2}
-                >
-                    <Search
-                        size={'small'}
-                        placeholder="Search"
-                        onChange={(e) => {
-                            setFilterWord(e.target.value);
-                        }}
-                    />
-                </Stack>
-                <Stack spacing={2} paddingLeft={2} paddingBottom={1}>
-                    <StyledButton
-                        color={'secondary'}
-                        onClick={(e) => {
-                            setFilterAnchorEl(e.currentTarget);
-                        }}
-                    >
-                        <Stack direction={'row'} gap={1}>
-                            <FilterListRounded />
-                            Types
-                        </Stack>
-                    </StyledButton>
-                    <Popover
-                        id={'filter-variable-popover'}
-                        open={isFilterPopoverOpen}
-                        anchorEl={filterAnchorEl}
-                        onClose={() => {
-                            setFilterAnchorEl(null);
-                        }}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'center',
-                        }}
-                    >
-                        <StyledBox>
-                            <Checklist
-                                direction={'column'}
-                                options={VARIABLE_TYPES}
-                                checked={selectedFilter}
-                                onChange={(selected) => {
-                                    setSelectedFilter(selected);
-                                }}
-                            />
-                        </StyledBox>
-                    </Popover>
-                </Stack>
-                <StyledMenuScroll>
-                    <List disablePadding>
-                        {variables.map((keyValue, index) => {
-                            const id = keyValue[0];
-                            const variable = keyValue[1];
-                            return (
-                                <NotebookVariable
-                                    key={id}
-                                    id={id}
-                                    variable={variable}
-                                    engines={engines}
+                            <Stack direction={'row'} gap={1}>
+                                <FilterListRounded />
+                                Types
+                            </Stack>
+                        </StyledButton>
+                        <Popover
+                            id={'filter-variable-popover'}
+                            open={isFilterPopoverOpen}
+                            anchorEl={filterAnchorEl}
+                            onClose={() => {
+                                setFilterAnchorEl(null);
+                            }}
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'center',
+                            }}
+                        >
+                            <StyledBox>
+                                <Checklist
+                                    direction={'column'}
+                                    options={VARIABLE_TYPES}
+                                    checked={selectedFilter}
+                                    onChange={(selected) => {
+                                        setSelectedFilter(selected);
+                                    }}
                                 />
-                            );
-                        })}
-                    </List>
-                </StyledMenuScroll>
-                {isPopoverOpen && (
-                    <AddVariablePopover
-                        open={isPopoverOpen}
-                        anchorEl={popoverAnchorEle}
-                        onClose={() => {
-                            setPopoverAnchorEl(null);
-                        }}
-                        engines={engines}
-                    />
-                )}
-            </StyledMenu>
-        </StyledStack>
+                            </StyledBox>
+                        </Popover>
+                    </Stack>
+                    <StyledMenuScroll>
+                        <List disablePadding>
+                            {variables.map((keyValue, index) => {
+                                const id = keyValue[0];
+                                const variable = keyValue[1];
+                                return (
+                                    <NotebookVariable
+                                        key={id}
+                                        id={id}
+                                        variable={variable}
+                                        engines={engines}
+                                    />
+                                );
+                            })}
+                        </List>
+                    </StyledMenuScroll>
+                    {isPopoverOpen && (
+                        <AddVariablePopover
+                            open={isPopoverOpen}
+                            anchorEl={popoverAnchorEle}
+                            onClose={() => {
+                                setPopoverAnchorEl(null);
+                            }}
+                            engines={engines}
+                        />
+                    )}
+                </StyledMenu>
+            </StyledStack>
+        </Panel>
     );
 });

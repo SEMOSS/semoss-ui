@@ -55,7 +55,7 @@ export const TaskExecution = observer(() => {
         // Add initial prompt
         prompt += `
         -------------------------------------------------------
-        PROMPT: ${conductor.initPrompt}
+        PROMPT: ${conductor.task}
         -------------------------------------------------------
         `;
 
@@ -105,7 +105,7 @@ export const TaskExecution = observer(() => {
             conductor.insightId,
         );
 
-        const resp = pixelReturn[0].output;
+        const resp = pixelReturn[0].output as { response: string };
 
         conductor.setTaskOutput(resp.response);
         setExpanded(true);

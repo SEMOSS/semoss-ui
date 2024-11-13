@@ -19,6 +19,7 @@ import {
     InfoRounded,
     KeyboardArrowDownRounded,
     OpenInNewRounded,
+    Person,
     PlayArrow,
     Warning,
 } from '@mui/icons-material';
@@ -223,24 +224,33 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                         sx={isExpanded ? {} : { display: 'none' }}
                     >
                         <Stack gap={1}>
-                            <Stepper
-                                activeStep={activeStep}
-                                sx={{ width: '80%' }}
-                            >
-                                <Step
-                                    onClick={() => {
-                                        subtask.setSelectedApp();
-                                    }}
+                            <Stack direction="row" gap={1}>
+                                <Stepper
+                                    activeStep={activeStep}
+                                    sx={{ width: '80%' }}
                                 >
-                                    <StepLabel>Select app</StepLabel>
-                                </Step>
-                                <Step>
-                                    <StepLabel>Map User inputs</StepLabel>
-                                </Step>
-                                <Step>
-                                    <StepLabel>Complete subtask</StepLabel>
-                                </Step>
-                            </Stepper>
+                                    <Step
+                                        onClick={() => {
+                                            subtask.setSelectedApp();
+                                        }}
+                                    >
+                                        <StepLabel>Select app</StepLabel>
+                                    </Step>
+                                    <Step>
+                                        <StepLabel>Map User inputs</StepLabel>
+                                    </Step>
+                                    <Step>
+                                        <StepLabel>Complete subtask</StepLabel>
+                                    </Step>
+                                </Stepper>
+                                <Button
+                                    variant={'contained'}
+                                    startIcon={<Person />}
+                                >
+                                    {' '}
+                                    Gather input from User
+                                </Button>
+                            </Stack>
 
                             {activeStep === 0 && (
                                 <Grid container>

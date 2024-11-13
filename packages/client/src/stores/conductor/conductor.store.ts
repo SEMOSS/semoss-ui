@@ -2,103 +2,16 @@ import { makeAutoObservable } from 'mobx';
 import { SubtaskState, SubtaskStoreInterface } from './subtask.store';
 import { LLMInstructOutputStep } from '@/components/new-conductor/conductor.types';
 import { v4 as uuidv4 } from 'uuid';
-
-export interface SubtaskInterface {
-    // region
-    // has the play button been pressed? --> outputVals = {...} || null
-    // what are ids for the apps that have been suggested? --> appOptionIds = [ idString... ] || []
-    // what app id has been selected? --> selectedAppId = string || null
-    // what is the json for the selected app? --> not needed, fetch using selectedAppId
-    // what are the appInput variables? --> inputVarsMap
-    // populate appInputs as keys with appDetails reactor
-    // all vals default to null indicating user has not yet mapped inputVar
-    // user selects key from Object.keys(steps[i-1].outValsObj)
-    // multiple inputs can have the same output
-    // inputs must be mapped to outputs OR values must be input manually
-
-    // each step will need an inputs form built from inputVarsMap
-    // this is not a rendering of the app
-    // if input is mapped output val can be filled as default
-    // if input is not mapped a value must be input manually
-    // this can be checked at runtime for runPlayButton reactor
-    // values can be tracked in useForm rather than state?
-
-    // input values do not need to be tracked in state?
-    // could be tracked in manualInputsMap... = { inputVar: manualInputVal }
-    // manualInputsMap... = { inputVar: manualInputVal, ... } || {}
-    // can be empty, not all inputs need to have manual assignment
-    // if user enters value in field manually enters key / val here
-    // on runtime for runPlayButton reactor checks for manual input first
-    // if manual input is present ignores mapped output
-    // should flag input visually to indicate manual input value
-    // should offer reset to mapped output
-    // should flag if no output is mapped
-    // should show mapped output as varname or value if prev step has run
-    // what are the appOutput variables?
-    // if the app has been run what are the app output values?
-
-    // inputsMap = { appVarName: mappedVarName, ... } || { appVarName: null, ... }
-    // outputVals = { outputVarName: outputVal } || null (idicates if app has run)
-    // manualInputs = { inputVar: manualInputVal, ... } || {}
-    // optionAppIds = [ idStrings... ] <-- only used once to fetch details
-    // optionAppDetails = [{ id: string, appName: string, details: string, ... }, ...] <-- in same order as ids
-    // selectedAppId = string for id || null
-
-    // Possibly not needed?
-    // outputVarsMap = { appVarName: [mappedVarNames...] } <-- creates second source of truth for var mapping in inputVarsMap
-    // selectedApp = JSON for app / block structure || null <-- is this needed or just appId?
-
-    // runPlayButton () => {
-    // can only play if...
-    // conductor.step[i].selectedAppId != null
-    // conductor.step[i - 1].outputValsObj != null
-    //
-    // should be responsibility of NewConductorStep component maybe
-    // runs playSubtask reactor with selected appId (name tbd)
-    // reactor args from conductorSteps...
-    // conductor.steps[i - 1].outputValsObj dict
-    // the app id
-    // reactor will return...
-    // new OutputValsObj dict
-    // update conductor.steps[i]...
-    // update outputValues
-    // }
-
-    // inputsMap: Record<string, string>; // { appVarName: mappedVarName, ... } || { appVarName: null, ... }
-    // optionAppIds: Array<string>; // [ idStrings... ] <-- only used once to fetch details
-    // manualInputs: Record<string, string> // { inputVar: manualInputVal, ... } || {}
-    // optionAppDetails: null | Array<Object[]>; // [{ id: string, appName: string, details: string, ... }, ...] <-- in same order as ids
-    // selectedAppId: null | string; // string for id || null
-    // outputVals: null | Record<string, any>; // { outputVarName: outputVal } || null (idicates if app has run)
-
-    // endregion
-
-    taskName: string;
-    taskDescription: null | string;
-    inputsMap: Record<string, string>;
-    optionAppIds: Array<string>;
-    manualInputs: Record<string, string>;
-    optionAppDetails: null | Array<Object[]>;
-    selectedAppId: null | string;
-    isSetupComplete: boolean;
-    isExpanded: boolean;
-    outputVals: null | Record<string, any>;
-
-    // nextSubtask: null | string;
-    // prevSubtask: null | string;
-}
-
 export interface ConductorStoreInterface {
-    inputPool: Record<string, unknown>;
-    steps: unknown[];
-
-    initPrompt: null | string;
-    subTasks: Array<SubtaskInterface>;
-
     /**
      * TODO: ADD PROPERTIES TIED TO CONDUCTOR STORE
      * 11/5/24
      */
+    /**
+     * Task the user is trying to accomplish
+     * Ultimately, its just a prompt we pass to LLM
+     */
+    task: null | string;
 
     /**
      * Insight tied to the conductor
@@ -122,12 +35,6 @@ export interface ConductorStoreInterface {
 }
 
 interface ConductorStoreConfig {
-    inputPool: Record<string, unknown>;
-    steps: unknown[];
-
-    initPrompt: null | string;
-    subTasks: Array<SubtaskInterface>;
-
     /**
      * TODO: ADD PROPERTIES TIED TO CONDUCTOR STORE
      * 11/5/24
@@ -147,15 +54,10 @@ interface ConductorStoreConfig {
  */
 export class ConductorStore {
     private _store: ConductorStoreInterface = {
-        inputPool: {},
-        steps: [],
-
-        initPrompt: '',
-        subTasks: [],
-
         /**
          * 11/5/24
          */
+        task: null,
         insightId: '',
         subtasks: [],
         completedSubtasks: false,
@@ -163,12 +65,6 @@ export class ConductorStore {
     };
 
     constructor(config: ConductorStoreConfig) {
-        this._store.inputPool = config.inputPool;
-        this._store.steps = config.steps;
-
-        this._store.initPrompt = '';
-        this._store.subTasks = [];
-
         /**
          * TODO:
          */
@@ -180,85 +76,19 @@ export class ConductorStore {
     }
 
     /**
-     * Old Getters
-     */
-    get inputPool() {
-        return this._store.inputPool;
-    }
-
-    get steps() {
-        return this._store.steps;
-    }
-
-    /**
-     * New Getters
-     */
-    get initPrompt() {
-        return this._store.initPrompt;
-    }
-
-    get subTasks() {
-        return this._store.subTasks;
-    }
-
-    /**
-     * Old Actions
-     */
-    setInputValue(key: string, value: unknown) {
-        console.log(key, value);
-        this._store.inputPool[key] = value;
-    }
-
-    setSteps(newSteps: Array<string>) {
-        console.log({ newSteps });
-        this._store.steps = newSteps;
-    }
-
-    /**
-     * Old Actions
-     */
-    setInitPrompt(newInitPrompt: string) {
-        this._store.initPrompt = newInitPrompt;
-    }
-
-    setSelectedAppId(subtaskIndex: number, selectedId: string) {
-        this._store.subTasks[subtaskIndex].selectedAppId = selectedId;
-    }
-
-    setIsSetupComplete(subtaskIndex: number, isComplete: boolean) {
-        this._store.subTasks[subtaskIndex].isSetupComplete = isComplete;
-    }
-
-    setIsExpanded(subtaskIndex: number, isExpanded: boolean) {
-        this._store.subTasks[subtaskIndex].isExpanded = isExpanded;
-    }
-
-    setIsOutputsMap(subtaskIndex: number, newOutputsMap: Record<string, any>) {
-        this._store.subTasks[subtaskIndex].outputVals = newOutputsMap;
-    }
-
-    setSubTasks(inputSubtasks: Array<SubtaskInterface>) {
-        this._store.subTasks = inputSubtasks.map((inputSubtask: Object) => ({
-            taskName: inputSubtask['step'],
-            taskDescription: null,
-            optionAppIds: inputSubtask['project_ids'],
-            optionAppDetails: null,
-            selectedAppId: null,
-            inputsMap: {},
-            manualInputs: {},
-            outputVals: null,
-            isSetupComplete: false,
-            isExpanded: false,
-        }));
-    }
-
-    /**
      * NEW
      * TODO: FIX STORE
      */
 
     /**
-     * Gets list of subtasks
+     * Gets task that is determined by user
+     */
+    get task() {
+        return this._store.task;
+    }
+
+    /**
+     * Gets unique insight id tied to conductor
      */
     get insightId() {
         return this._store.insightId;
@@ -286,8 +116,21 @@ export class ConductorStore {
     }
 
     /**
+     * ------------------------------------------
      * ACTIONS
+     * ------------------------------------------
      */
+
+    /**
+     * Sets the task in store
+     * @param t
+     * @returns the task that user set
+     */
+    setTask(t: string): string {
+        this._store.task = t;
+
+        return this._store.task;
+    }
     /**
      * Get a specific queries's state
      * @param id - id of the queries to get
@@ -344,6 +187,10 @@ export class ConductorStore {
         this._store.completedSubtasks = isComplete;
     };
 
+    /**
+     * The answer to the task, compromised by completed subtasks
+     * @param output
+     */
     setTaskOutput = (output) => {
         debugger;
         this._store.taskOutput = output;

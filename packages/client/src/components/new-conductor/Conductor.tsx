@@ -8,7 +8,6 @@ import {
     FileDropzone,
     Button,
 } from '@semoss/ui';
-import { Subtask } from './Subtask';
 import { observer } from 'mobx-react-lite';
 import {
     KeyboardArrowDown,
@@ -105,15 +104,10 @@ type AIConductorForm = {
 export const Conductor = observer(() => {
     const { conductor } = useConductor();
 
-    const [currentOutputEditorJSON, setCurrentOutputEditorJSON] = useState('');
-    const [currEditorJSONValsDict, setCurrEditorJSONValsDict] = useState({});
-    const [currentEditorJSON, setCurrentEditorJSON] = useState('');
-
     const [taskEditWidthPercent, setTaskEditWidthPercent] = useState('0%');
     const [modelResponseText, setModelResponseText] = useState(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selectedSubtask, setSelectedSubtask] = useState(-1);
-    const [allAppIdsSet, setAllAppIdsSet] = useState(null);
     const [taskContainerWidthPercent, setTaskContainerWidthPercent] =
         useState('100%');
 
@@ -128,84 +122,25 @@ export const Conductor = observer(() => {
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
-        overflow: conductor.initPrompt ? 'scroll' : 'hidden',
+        overflow: conductor.task ? 'scroll' : 'hidden',
         width: '100%',
         padding: '0px',
         boxSizing: 'border-box',
     }));
 
-    useEffect(() => {
-        if (selectedSubtask == -1) {
-            setTaskContainerWidthPercent('100%');
-            setTaskEditWidthPercent('0%');
-        } else {
-            setTaskContainerWidthPercent('calc(70% - 500px)');
-            setTaskEditWidthPercent('500px');
-            const selectedTaskVariables =
-                conductor.steps[selectedSubtask]['variables'];
-
-            const inputsObj = Object.entries(selectedTaskVariables).reduce(
-                (acc, variable) => {
-                    const name = variable[0];
-                    const value = variable[1];
-                    const newAcc = { ...acc };
-                    if (value['isInput']) {
-                        newAcc[name] = null;
-                    }
-                    return newAcc;
-                },
-                {},
-            );
-
-            const outputsObj = Object.entries(selectedTaskVariables).reduce(
-                (acc, variable) => {
-                    const name = variable[0];
-                    const value = variable[1];
-                    const newAcc = { ...acc };
-                    if (value['isOutput']) {
-                        newAcc[name] = null;
-                    }
-                    return newAcc;
-                },
-                {},
-            );
-
-            if (currEditorJSONValsDict[selectedSubtask]) {
-                setCurrentEditorJSON(currEditorJSONValsDict[selectedSubtask]);
-            } else {
-                setCurrentEditorJSON(JSON.stringify(inputsObj));
-                setCurrentOutputEditorJSON(JSON.stringify(outputsObj));
-            }
-        }
-    }, [selectedSubtask]);
-
-    const handleMount = (editor, monaco) => {
-        // for JSON editor
-        editor.getAction('editor.action.formatDocument').run();
-    };
-
-    const onChange = (value: string) => {
-        // for JSON editor
-    };
-
-    const updateButtonHandler = () => {
-        // for JSON editor
-        setIsLoading(true);
-        const newCurrEditorJSONValsDict = { ...currEditorJSONValsDict };
-        newCurrEditorJSONValsDict[selectedSubtask] = currentEditorJSON;
-        setCurrEditorJSONValsDict(newCurrEditorJSONValsDict);
-        setIsLoading(false);
-    };
+    useEffect(() => {}, [selectedSubtask]);
 
     const editorChangeHandler = (newString) => {
         // for JSON editor
     };
 
+    /**
+     * Takes Prompt from User and gets Apps as Subtasks
+     */
     const fetchSteps = handleSubmit(async (data: AIConductorForm) => {
         setIsLoading(true);
 
-        conductor.setInitPrompt(data.taskInput);
-        conductor.setSubtasks([]);
+        conductor.setTask(data.taskInput);
 
         // Pixel concat
         const placeholderModelResponse =
@@ -257,7 +192,7 @@ export const Conductor = observer(() => {
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
-                                display: conductor.initPrompt ? 'none' : 'flex',
+                                display: conductor.task ? 'none' : 'flex',
                             }}
                         >
                             <SubTaskInnerContainer>
@@ -285,14 +220,14 @@ export const Conductor = observer(() => {
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
-                                display: conductor.initPrompt ? 'auto' : 'none',
+                                display: conductor.task ? 'auto' : 'none',
                             }}
                         >
                             <SubTaskInnerContainer>
                                 <Typography
                                     variant={'body1'}
                                     sx={{
-                                        display: conductor.initPrompt
+                                        display: conductor.task
                                             ? 'flex'
                                             : 'none',
                                         backgroundColor: '#fff',
@@ -308,7 +243,7 @@ export const Conductor = observer(() => {
                                             marginRight: '10px',
                                         }}
                                     />{' '}
-                                    {conductor.initPrompt}
+                                    {conductor.task}
                                 </Typography>
                             </SubTaskInnerContainer>
                             <SubTaskPlayButton>
@@ -321,7 +256,7 @@ export const Conductor = observer(() => {
                                 >
                                     {/* <IconButton
                                         sx={{
-                                            display: conductor.initPrompt
+                                            display: conductor.task
                                                 ? 'auto'
                                                 : 'none',
                                         }}
@@ -335,14 +270,14 @@ export const Conductor = observer(() => {
                         <SubTaskParentContainerNew
                             sx={{
                                 marginBottom: '0',
-                                display: conductor.initPrompt ? 'auto' : 'none',
+                                display: conductor.task ? 'auto' : 'none',
                             }}
                         >
                             <SubTaskInnerContainer>
                                 <Typography
                                     variant={'body1'}
                                     sx={{
-                                        display: conductor.initPrompt
+                                        display: conductor.task
                                             ? 'flex'
                                             : 'none',
                                         justifyContent: 'start',
@@ -382,9 +317,7 @@ export const Conductor = observer(() => {
                             <SubTaskParentContainerNew
                                 sx={{
                                     marginBottom: '0',
-                                    display: conductor.initPrompt
-                                        ? 'auto'
-                                        : 'none',
+                                    display: conductor.task ? 'auto' : 'none',
                                 }}
                             >
                                 <TaskExecution />
@@ -437,7 +370,7 @@ export const Conductor = observer(() => {
                                         flex: '1',
                                         margin: '0 5px 20px 0',
                                         borderRadius: '20px',
-                                        display: conductor.initPrompt
+                                        display: conductor.task
                                             ? 'none'
                                             : 'auto',
                                     }}
@@ -502,176 +435,6 @@ export const Conductor = observer(() => {
                         />
                     </LeftInnerBottomDiv>
                 </LeftParentContainer>
-                <RightParentContainer
-                    style={{
-                        marginLeft:
-                            taskContainerWidthPercent == '0%' ? '0px' : '20px',
-                        display: taskEditWidthPercent == '0%' ? 'none' : 'flex',
-                        width: taskEditWidthPercent,
-                        overflow: 'hidden',
-                    }}
-                >
-                    <div
-                        style={{
-                            height: '300px',
-                            width: '100%',
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <Typography variant={'body1'}>
-                                <b>
-                                    Selected Task {selectedSubtask + 1} JSON
-                                    Editor
-                                </b>
-                            </Typography>
-                            <IconButton
-                                onClick={() => {
-                                    setTaskContainerWidthPercent('100%');
-                                    setTaskEditWidthPercent('0%');
-                                    setSelectedSubtask(-1);
-                                }}
-                            >
-                                <Close />
-                            </IconButton>
-                        </div>
-
-                        <div>
-                            <Typography
-                                variant={'body1'}
-                                sx={{
-                                    fontSize: '16px',
-                                    marginTop: '12.5px',
-                                }}
-                            >
-                                <b>Input</b>
-                            </Typography>
-                        </div>
-
-                        <div
-                            style={{
-                                borderRadius: '10px',
-                                width: '100%',
-                                overflow: 'auto',
-                                flex: '1',
-                                marginTop: '20px',
-                                marginBottom: '20px',
-                                height: `220px`, // TODO make dynamic based on editor value line count
-                            }}
-                        >
-                            <Editor
-                                width="100%"
-                                height="100%"
-                                value={currentEditorJSON}
-                                language={'json'}
-                                options={{
-                                    lineNumbers: 'off',
-                                    readOnly: false,
-                                    minimap: { enabled: false },
-                                    automaticLayout: true,
-                                    scrollBeyondLastLine: false,
-                                    lineHeight: 19,
-                                    overviewRulerBorder: false,
-                                }}
-                                onChange={(e) => {
-                                    onChange(e);
-                                    editorChangeHandler(e);
-                                }}
-                                onMount={handleMount}
-                            />
-                        </div>
-                        <Button
-                            color="secondary"
-                            variant="outlined"
-                            sx={{
-                                width: '200px',
-                            }}
-                            onClick={updateButtonHandler}
-                        >
-                            Update and run task
-                        </Button>
-                    </div>
-
-                    {/* Lower RightInnerContainer */}
-                    <div
-                        style={{
-                            height: '300px',
-                            width: '100%',
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginTop: '95px',
-                            }}
-                        >
-                            <Typography
-                                variant={'h6'}
-                                sx={{
-                                    fontSize: '16px',
-                                    marginBottom: '15px',
-                                }}
-                            >
-                                <b>Output</b>
-                            </Typography>
-                        </div>
-
-                        <div>
-                            <Typography
-                                variant={'body1'}
-                                sx={{
-                                    fontSize: '14px',
-                                }}
-                            >
-                                You are manually modifying the output. If you
-                                rerun the subtask, this update will be
-                                overridden.
-                            </Typography>
-                        </div>
-
-                        <div
-                            style={{
-                                borderRadius: '10px',
-                                width: '100%',
-                                overflow: 'auto',
-                                flex: '1',
-                                marginTop: '20px',
-                                marginBottom: '20px',
-                                height: `120px`, // TODO make dynamic based on editor value line count
-                            }}
-                        >
-                            <Editor
-                                width="100%"
-                                height="100%"
-                                value={currentOutputEditorJSON}
-                                language={'json'}
-                                options={{
-                                    readOnly: false,
-                                    lineNumbers: 'off',
-                                    minimap: { enabled: false },
-                                    scrollBeyondLastLine: false,
-                                    overviewRulerBorder: false,
-                                    automaticLayout: true,
-                                    lineHeight: 19,
-                                }}
-                                onChange={(e) => {
-                                    onChange(e);
-                                    editorChangeHandler(e);
-                                }}
-                                onMount={handleMount}
-                            />
-                        </div>
-                    </div>
-                </RightParentContainer>
             </LowerParentContainer>
         </ParentContainer>
     );

@@ -13,10 +13,6 @@ export const ConductorPage = () => {
         const getInsightId = async () => {
             const { insightId } = await runPixel('1+1', 'new');
             const cond = new ConductorStore({
-                inputPool: {},
-                steps: TEST_LIST_OF_STEPS,
-                initPrompt: '',
-                subTasks: [],
                 /**
                  * TODO:
                  * 11/5/24

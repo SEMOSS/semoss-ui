@@ -10,19 +10,19 @@ import {
     Collapse,
     useNotification,
 } from '@semoss/ui';
-import { useBlocks, useDesigner } from '@/hooks';
 import {
     ContentCopy,
     LibraryAdd,
     Search,
     SearchOff,
 } from '@mui/icons-material';
-import { BlockAvatar } from './BlockAvatar';
-import { SelectedMenuSection } from './SelectedMenuSection';
-// import { getIconForMenuItemByKey } from './designer.constants';
-import { getIconForBlock } from '../block-defaults';
-import { AddVariableModal } from '../notebook/AddVariableModal';
+
 import { INPUT_BLOCK_TYPES } from '@/stores';
+import { useBlocks, useDesigner } from '@/hooks';
+
+import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
+import { AddVariableModal } from '@/components/notebook';
+import { Panel } from '@/components/workspace';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -65,7 +65,7 @@ const StyledMessage = styled('div')(({ theme }) => ({
     justifyContent: 'center',
 }));
 
-export const SelectedMenu = observer(() => {
+export const SelectedBlockPanel = observer(() => {
     const { designer } = useDesigner();
     const { state, registry } = useBlocks();
     const notification = useNotification();
@@ -179,6 +179,20 @@ export const SelectedMenu = observer(() => {
         return registry[block.widget]?.menu ?? null;
     }, [registry, block ? block.widget : '']);
 
+    // get the icon
+    const icon = useMemo(() => {
+        if (!registry || !block || !registry[block.widget]) {
+            return null;
+        }
+
+        const w = registry[block.widget];
+        if (!w) {
+            return null;
+        }
+
+        return w.icon;
+    }, [registry, block ? block.widget : '']);
+
     /**
      * Copy text and add it to the clipboard
      * @param text - text to copy
@@ -220,122 +234,140 @@ export const SelectedMenu = observer(() => {
     // ignore if there is no menu
     if (!block) {
         return (
-            <StyledMessage>
-                <Typography variant="caption">
-                    Select a block to update
-                </Typography>
-            </StyledMessage>
+            <Panel>
+                <StyledMessage>
+                    <Typography variant="caption">
+                        Select a block to update
+                    </Typography>
+                </StyledMessage>
+            </Panel>
         );
     }
 
     return (
-        <StyledMenu>
-            <StyledMenuHeader>
-                <Stack flex={1} spacing={2} direction="row" alignItems="center">
-                    <BlockAvatar icon={getIconForBlock(block.widget)} />
-                    <Stack direction={'row'} spacing={0.5} alignItems="center">
-                        <StyledTitle variant="h6">
-                            {getBlockDisplay()}
-                        </StyledTitle>
-                        {variableName ? (
-                            <IconButton
-                                aria-label="copy"
-                                color="default"
-                                size="small"
-                                title={`{{${variableName}}}`}
-                                onClick={() => copy(`{{${variableName}}}`)}
-                            >
-                                <ContentCopy fontSize="small" />
-                            </IconButton>
-                        ) : canVariabilize ? (
-                            <IconButton
-                                aria-label="copy"
-                                color="default"
-                                size="small"
-                                title={'Add variable'}
-                                onClick={() => {
-                                    setAddVariableModal(true);
-                                }}
-                            >
-                                <LibraryAdd fontSize="small" />
-                            </IconButton>
-                        ) : null}
-                    </Stack>
-
-                    {!menu && (
+        <Panel>
+            <StyledMenu>
+                <StyledMenuHeader>
+                    <Stack
+                        flex={1}
+                        spacing={2}
+                        direction="row"
+                        alignItems="center"
+                    >
+                        <BlockAvatar icon={icon} />
                         <Stack
-                            flex={1}
-                            spacing={1}
-                            direction="row"
+                            direction={'row'}
+                            spacing={0.5}
                             alignItems="center"
-                            justifyContent="end"
                         >
-                            <Collapse orientation="horizontal" in={showSearch}>
-                                <TextField
-                                    placeholder="Search"
+                            <StyledTitle variant="h6">
+                                {getBlockDisplay()}
+                            </StyledTitle>
+                            {variableName ? (
+                                <IconButton
+                                    aria-label="copy"
+                                    color="default"
                                     size="small"
-                                    value={search}
-                                    variant="outlined"
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </Collapse>
-                            <IconButton
-                                aria-label="toggle-search"
-                                color="default"
-                                size="small"
-                                onClick={() => {
-                                    setShowSearch(!showSearch);
-                                    setSearch('');
-                                }}
-                            >
-                                {showSearch ? (
-                                    <SearchOff fontSize="medium" />
-                                ) : (
-                                    <Search fontSize="medium" />
-                                )}
-                            </IconButton>
+                                    title={`{{${variableName}}}`}
+                                    onClick={() => copy(`{{${variableName}}}`)}
+                                >
+                                    <ContentCopy fontSize="small" />
+                                </IconButton>
+                            ) : canVariabilize ? (
+                                <IconButton
+                                    aria-label="copy"
+                                    color="default"
+                                    size="small"
+                                    title={'Add variable'}
+                                    onClick={() => {
+                                        setAddVariableModal(true);
+                                    }}
+                                >
+                                    <LibraryAdd fontSize="small" />
+                                </IconButton>
+                            ) : null}
                         </Stack>
-                    )}
-                </Stack>
-            </StyledMenuHeader>
-            <Divider />
-            <StyledMenuScroll>
-                {!!menu &&
-                    createElement(menu, {
-                        id: block.id,
-                    })}
 
-                {contentMenu.length ? (
-                    <SelectedMenuSection
-                        id={block.id}
-                        sectionTitle="Content"
-                        menu={contentMenu}
-                        accordion={contentAccordion}
-                        setAccordion={setContentAccordion}
+                        {!menu && (
+                            <Stack
+                                flex={1}
+                                spacing={1}
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="end"
+                            >
+                                <Collapse
+                                    orientation="horizontal"
+                                    in={showSearch}
+                                >
+                                    <TextField
+                                        placeholder="Search"
+                                        size="small"
+                                        value={search}
+                                        variant="outlined"
+                                        onChange={(e) =>
+                                            setSearch(e.target.value)
+                                        }
+                                    />
+                                </Collapse>
+                                <IconButton
+                                    aria-label="toggle-search"
+                                    color="default"
+                                    size="small"
+                                    onClick={() => {
+                                        setShowSearch(!showSearch);
+                                        setSearch('');
+                                    }}
+                                >
+                                    {showSearch ? (
+                                        <SearchOff fontSize="medium" />
+                                    ) : (
+                                        <Search fontSize="medium" />
+                                    )}
+                                </IconButton>
+                            </Stack>
+                        )}
+                    </Stack>
+                </StyledMenuHeader>
+                <Divider />
+                <StyledMenuScroll>
+                    {!!menu &&
+                        createElement(menu, {
+                            id: block.id,
+                        })}
+
+                    {contentMenu.length ? (
+                        <SelectedMenuSection
+                            id={block.id}
+                            sectionTitle="Content"
+                            menu={contentMenu}
+                            accordion={contentAccordion}
+                            setAccordion={setContentAccordion}
+                        />
+                    ) : (
+                        <></>
+                    )}
+                    {styleMenu.length ? (
+                        <SelectedMenuSection
+                            id={block.id}
+                            sectionTitle="Appearance"
+                            menu={styleMenu}
+                            accordion={styleAccordion}
+                            setAccordion={setStyleAccordion}
+                        />
+                    ) : (
+                        <></>
+                    )}
+                </StyledMenuScroll>
+                {addVariableModal ? (
+                    <AddVariableModal
+                        open={true}
+                        type="block"
+                        to={designer.selected}
+                        onClose={() => setAddVariableModal(false)}
                     />
-                ) : (
-                    <></>
-                )}
-                {styleMenu.length ? (
-                    <SelectedMenuSection
-                        id={block.id}
-                        sectionTitle="Appearance"
-                        menu={styleMenu}
-                        accordion={styleAccordion}
-                        setAccordion={setStyleAccordion}
-                    />
-                ) : (
-                    <></>
-                )}
-            </StyledMenuScroll>
-            {addVariableModal ? (
-                <AddVariableModal
-                    open={true}
-                    type="block"
-                    to={designer.selected}
-                    onClose={() => setAddVariableModal(false)}
-                />
-            ) : null}
-        </StyledMenu>
+                ) : null}
+            </StyledMenu>
+        </Panel>
     );
 });

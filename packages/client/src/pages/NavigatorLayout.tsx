@@ -2,11 +2,7 @@ import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
-import {
-    ArticleOutlined,
-    LibraryBooksOutlined,
-    Settings,
-} from '@mui/icons-material';
+import { LibraryBooksOutlined, Settings } from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';
 import { ErrorBoundary } from '@/components/common';
@@ -89,7 +85,10 @@ export const NavigatorLayout = observer(() => {
                     <StyledSidebarItem
                         data-tour="nav-app-library"
                         to={'/'}
-                        selected={!!matchPath('', pathname)}
+                        selected={
+                            !!matchPath('', pathname) ||
+                            !!matchPath('app/*', pathname)
+                        }
                         aria-label={'Navigate to app library'}
                     >
                         <Icon>

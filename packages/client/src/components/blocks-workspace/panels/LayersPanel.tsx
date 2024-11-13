@@ -22,7 +22,8 @@ import {
     SearchOff,
 } from '@mui/icons-material/';
 import { INPUT_BLOCK_TYPES } from '@/stores';
-import { AddVariableModal } from '../notebook/AddVariableModal';
+import { AddVariableModal } from '@/components/notebook';
+import { Panel } from '@/components/workspace';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -110,9 +111,9 @@ const StyledTreeItemMessage = styled('div')(() => ({
 }));
 
 /**
- * Render the LayersMenu
+ * Render the Layers
  */
-export const LayersMenu = observer((): JSX.Element => {
+export const LayersPanel = observer((): JSX.Element => {
     // get the store
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
@@ -254,93 +255,97 @@ export const LayersMenu = observer((): JSX.Element => {
     };
 
     return (
-        <StyledMenu>
-            <StyledMenuHeader>
-                <Typography variant="h6">Layers</Typography>
-                <Stack
-                    flex={1}
-                    spacing={1}
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="end"
-                >
-                    {showSearch ? (
-                        <TextField
-                            placeholder="Search"
-                            size="small"
-                            sx={{
-                                width: '100%',
-                                maxWidth: '200px',
-                            }}
-                            value={search}
-                            variant="outlined"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    ) : (
-                        <>&nbsp;</>
-                    )}
-                    <IconButton
-                        color="default"
-                        size="small"
-                        onClick={() => {
-                            setShowSearch(!showSearch);
-                            setSearch('');
-                        }}
+        <Panel>
+            <StyledMenu>
+                <StyledMenuHeader>
+                    <Typography variant="h6">Layers</Typography>
+                    <Stack
+                        flex={1}
+                        spacing={1}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="end"
                     >
                         {showSearch ? (
-                            <SearchOff fontSize="medium" />
+                            <TextField
+                                placeholder="Search"
+                                size="small"
+                                sx={{
+                                    width: '100%',
+                                    maxWidth: '200px',
+                                }}
+                                value={search}
+                                variant="outlined"
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
                         ) : (
-                            <Search fontSize="medium" />
+                            <>&nbsp;</>
                         )}
-                    </IconButton>
-                </Stack>
-            </StyledMenuHeader>
-            <Divider />
-            <StyledMenuScroll>
-                <TreeView
-                    multiSelect
-                    expanded={expanded}
-                    selected={selected}
-                    onNodeToggle={(
-                        e: React.SyntheticEvent,
-                        nodeIds: string[],
-                    ) => {
-                        setExpanded(nodeIds);
-                    }}
-                    onNodeSelect={(
-                        e: React.SyntheticEvent,
-                        nodeIds: string[],
-                    ) => {
-                        setSelected(nodeIds);
-                    }}
-                    defaultCollapseIcon={
-                        <StyledTreeItemIcon>
-                            <ExpandMore />
-                        </StyledTreeItemIcon>
-                    }
-                    defaultExpandIcon={
-                        <StyledTreeItemIcon>
-                            <ChevronRight />
-                        </StyledTreeItemIcon>
-                    }
-                >
-                    {activePage ? (
-                        renderBlock(activePage.id)
-                    ) : (
-                        <StyledTreeItemMessage>
-                            <Typography variant="caption">No Layers</Typography>
-                        </StyledTreeItemMessage>
-                    )}
-                </TreeView>
-            </StyledMenuScroll>
-            {variableModal ? (
-                <AddVariableModal
-                    open={true}
-                    to={variableModal}
-                    type={'block'}
-                    onClose={() => setVariableModal('')}
-                />
-            ) : null}
-        </StyledMenu>
+                        <IconButton
+                            color="default"
+                            size="small"
+                            onClick={() => {
+                                setShowSearch(!showSearch);
+                                setSearch('');
+                            }}
+                        >
+                            {showSearch ? (
+                                <SearchOff fontSize="medium" />
+                            ) : (
+                                <Search fontSize="medium" />
+                            )}
+                        </IconButton>
+                    </Stack>
+                </StyledMenuHeader>
+                <Divider />
+                <StyledMenuScroll>
+                    <TreeView
+                        multiSelect
+                        expanded={expanded}
+                        selected={selected}
+                        onNodeToggle={(
+                            e: React.SyntheticEvent,
+                            nodeIds: string[],
+                        ) => {
+                            setExpanded(nodeIds);
+                        }}
+                        onNodeSelect={(
+                            e: React.SyntheticEvent,
+                            nodeIds: string[],
+                        ) => {
+                            setSelected(nodeIds);
+                        }}
+                        defaultCollapseIcon={
+                            <StyledTreeItemIcon>
+                                <ExpandMore />
+                            </StyledTreeItemIcon>
+                        }
+                        defaultExpandIcon={
+                            <StyledTreeItemIcon>
+                                <ChevronRight />
+                            </StyledTreeItemIcon>
+                        }
+                    >
+                        {activePage ? (
+                            renderBlock(activePage.id)
+                        ) : (
+                            <StyledTreeItemMessage>
+                                <Typography variant="caption">
+                                    No Layers
+                                </Typography>
+                            </StyledTreeItemMessage>
+                        )}
+                    </TreeView>
+                </StyledMenuScroll>
+                {variableModal ? (
+                    <AddVariableModal
+                        open={true}
+                        to={variableModal}
+                        type={'block'}
+                        onClose={() => setVariableModal('')}
+                    />
+                ) : null}
+            </StyledMenu>
+        </Panel>
     );
 });

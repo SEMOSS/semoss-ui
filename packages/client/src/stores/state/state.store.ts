@@ -228,11 +228,11 @@ export class StateStore {
             if (pointer) {
                 if (type === 'block') {
                     const block = this._store.blocks[pointer];
-
-                    // Old Version of JSON - notebooks, will be dependent on the .value and may crash
+                    // ["location"]
                     if (path && path.length === 1) {
                         return block.data.value as string;
                     } else {
+                        // ["location", "value"]
                         if (block) {
                             // get the search path
                             const s = path.slice(1).join('.');
