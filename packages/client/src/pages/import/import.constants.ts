@@ -5170,6 +5170,31 @@ export const CONNECTION_OPTIONS = {
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'HOSTNAME',
                         label: 'Host Name',
                         defaultValue: '',
@@ -5310,6 +5335,39 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                         disabled: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
                     },
                     {
                         fieldName: 'CONTENT_LENGTH',
@@ -5548,6 +5606,31 @@ export const CONNECTION_OPTIONS = {
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'KEEP_INPUT_OUTPUT',
                         label: 'Record Questions and Responses',
                         defaultValue: 'false',
@@ -5735,6 +5818,31 @@ export const CONNECTION_OPTIONS = {
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                    },
+                    {
                         fieldName: 'HOSTNAME',
                         label: 'Host Name',
                         defaultValue: '',
@@ -5905,6 +6013,31 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
                     },
                     {
                         fieldName: 'HOSTNAME',
@@ -6120,6 +6253,31 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true, min: 0 },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
                     },
                     {
                         fieldName: 'DISTANCE_METHOD',

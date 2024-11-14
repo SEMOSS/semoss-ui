@@ -21,6 +21,7 @@ import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
+import { values } from 'mobx';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -636,6 +637,34 @@ export const ImportForm = (props) => {
         return regex.test(inputString);
     }
 
+    /**
+     * @desc Checks if the field has display rules set
+     * If it does, it will hide other fields based on the value of the field
+     * @param field
+     * @param value
+     */
+
+    const checkForDisplayRulesSet = (field, value) => {
+        const selectedDefaultField = fields.find(
+            (f) => f.fieldName === field.name,
+        );
+        if (selectedDefaultField?.displayRules?.hideOtherFields) {
+            selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
+                const optionValue = fth.value;
+                fields.forEach((f) => {
+                    if (f.fieldName === fth.fieldName) {
+                        f.hidden = optionValue.includes(value);
+                    }
+                });
+                dispatch({
+                    type: 'field',
+                    field: 'defaultFields',
+                    value: fields,
+                });
+            });
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
@@ -732,9 +761,13 @@ export const ImportForm = (props) => {
                                                             ? field.value
                                                             : ''
                                                     }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
+                                                    onChange={(value) => {
+                                                        field.onChange(value);
+                                                        checkForDisplayRulesSet(
+                                                            field,
+                                                            value.target.value,
+                                                        );
+                                                    }}
                                                     helperText={val.helperText}
                                                 >
                                                     {val.options.options.map(
