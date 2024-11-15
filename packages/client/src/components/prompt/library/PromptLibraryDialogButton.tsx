@@ -8,6 +8,7 @@ import { StyledTooltip } from '../prompt.styled';
 export const PromptLibraryDialogButton = (props: {
     disabled: boolean;
     builder: Builder;
+    setBuilderValue: (builderStepKey: string, value: string | string[]) => void;
 }) => {
     const [promptLibraryOpen, setPromptLibraryOpen] = useState(false);
 
@@ -53,6 +54,7 @@ export const PromptLibraryDialogButton = (props: {
             )}
             <PromptLibraryDialog
                 builder={props.builder}
+                setBuilderValue={props.setBuilderValue}
                 promptLibraryOpen={promptLibraryOpen}
                 closePromptLibrary={closePromptLibrary}
             />

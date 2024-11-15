@@ -7,14 +7,10 @@ export const PromptCellConfig: CellConfig<PromptCellDef> = {
     parameters: {
         id: '',
         prompt: '',
+        boundState: false,
     },
     view: PromptCell,
     toPixel: ({ id, prompt }) => {
-        if (id) {
-            //getPrompt(id) return prompt
-        }
-
-        //For now return prompt
         return prompt;
     },
 };

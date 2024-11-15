@@ -5,10 +5,11 @@ import {
     Stack,
     TextField,
     Button,
-    Typography,
     useNotification,
     Checkbox,
     Tooltip,
+    Select,
+    FormControl,
 } from '@semoss/ui';
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { useBlocks, useRootStore } from '@/hooks';
@@ -19,6 +20,7 @@ export interface PromptCellDef extends CellDef<'prompt'> {
     parameters: {
         id: string;
         prompt: string;
+        boundState: boolean;
     };
 }
 
@@ -32,6 +34,7 @@ type ModelEngine = {
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     width: '100%',
+    marginTop: '20px',
 }));
 
 const StyledActionButtons = styled('div')(({ theme }) => ({
@@ -51,26 +54,59 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
     const { monolithStore } = useRootStore();
     const notification = useNotification();
     const { cell } = props;
-    const id = cell.parameters.id;
-    const prompt = cell.parameters.prompt;
-    const [boundStateCheck, setBoundStateCheck] = useState(true);
+    const [id, setId] = useState(cell.parameters.id);
+    const [prompt, setPrompt] = useState(cell.parameters.prompt);
+    const [boundStateCheck, setBoundStateCheck] = useState(
+        cell.parameters.boundState,
+    );
+    const [allPrompts, setAllPrompts] = useState([]);
 
     useEffect(() => {
-        //fetchAllModels();
-    }, []);
+        init();
+    }, [allPrompts]);
 
-    // const fetchAllModels = async () => {
-    //     const pixel = `MyEngines(engineTypes=["MODEL"])`;
-    //     const res = await monolithStore.runQuery(pixel);
+    useEffect(() => {
+        //pull the prompt by the id if boundState is checked
+        //replace prompt
+        if (id && boundStateCheck) {
+            monolithStore
+                .runQuery("GetPrompt('" + id + "')")
+                .then((response) => {
+                    const { output } = response.pixelReturn[0];
+                    if (output.CONTEXT) {
+                        setId(id);
+                        setPrompt(output.CONTEXT);
+                    }
+                });
+        }
+    }, [boundStateCheck, id]);
 
-    //     const modelled = res.pixelReturn[0].output.map((model) => {
-    //         return {
-    //             name: model.database_name,
-    //             id: model.database_id,
-    //         };
-    //     });
-    //     setAllModels(modelled);
-    // };
+    const init = () => {
+        monolithStore.runQuery('ListPrompt()').then((response) => {
+            const { output } = response.pixelReturn[0];
+            if (output.length > 0) {
+                const promptArr = [];
+                output.map((prompt) => {
+                    if (prompt.ID) {
+                        promptArr.push({
+                            context: prompt.CONTEXT ? prompt.CONTEXT : '',
+                            created_by: prompt.CREATED_BY
+                                ? prompt.CREATED_BY
+                                : '',
+                            date_created: prompt.DATE_CREATED
+                                ? prompt.DATE_CREATED
+                                : '',
+                            id: prompt.ID ? prompt.ID : '',
+                            intent: prompt.INTENT ? prompt.INTENT : '',
+                            title: prompt.TITLE ? prompt.TITLE : '',
+                            tags: prompt.tags ? prompt.tags : [],
+                        });
+                    }
+                });
+                setAllPrompts(promptArr);
+            }
+        });
+    };
 
     const handleChange = (newValue, path) => {
         if (cell.isLoading) {
@@ -88,31 +124,56 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
         });
     };
 
-    console.log('test');
-
     return (
-        <StyledStack direction="row" spacing={1}>
-            <TextField
-                value={prompt}
-                label={'Prompt'}
-                multiline={true}
-                rows={2}
-                fullWidth
-                onChange={(e) => {
-                    handleChange(e.target.value, 'parameters.prompt');
-                }}
-            />
-            <Stack direction="row" sx={{ paddingLeft: '10px' }}>
-                <Tooltip title={'Use bound state'}>
-                    <StyledCheckbox
-                        checked={boundStateCheck}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const value = e.target.checked;
-                            setBoundStateCheck(value);
+        <div>
+            <Stack direction="row" spacing={1}>
+                <FormControl>
+                    <Select
+                        value={id ? id : ''}
+                        onChange={(e) => {
+                            setId(e.target.value);
                         }}
-                    />
-                </Tooltip>
+                    >
+                        {allPrompts.map((prompt, idx) => (
+                            <Select.Item
+                                key={`${prompt.id}-${idx}`}
+                                value={prompt.id}
+                            >
+                                {prompt.title}
+                            </Select.Item>
+                        ))}
+                    </Select>
+                </FormControl>
             </Stack>
-        </StyledStack>
+            <StyledStack direction="row" spacing={1}>
+                <TextField
+                    value={prompt}
+                    label={'Prompt'}
+                    multiline={true}
+                    rows={2}
+                    fullWidth
+                    onChange={(e) => {
+                        setPrompt(e.target.value);
+                    }}
+                />
+                <Stack direction="row" sx={{ paddingLeft: '10px' }}>
+                    <Tooltip
+                        title={
+                            'Checking this box will overwrite the prompt with what is currently stored in the database'
+                        }
+                    >
+                        <StyledCheckbox
+                            checked={boundStateCheck}
+                            onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                            ) => {
+                                const value = e.target.checked;
+                                setBoundStateCheck(value);
+                            }}
+                        />
+                    </Tooltip>
+                </Stack>
+            </StyledStack>
+        </div>
     );
 });

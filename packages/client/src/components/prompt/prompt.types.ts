@@ -35,6 +35,7 @@ export interface Builder {
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
     constraints: BuilderStepItem;
+    id: BuilderStepItem;
 }
 
 export interface Prompt {

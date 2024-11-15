@@ -189,6 +189,49 @@ function getDatabaseQuery() {
     return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
+const createContextString = (inputs) => {
+    const stringArr = [];
+    if (inputs) {
+        inputs.forEach((input) => {
+            let currInput = '';
+            if (input.type != 'text') {
+                currInput = '{{' + input.key + '}}';
+                stringArr.push(currInput);
+            } else {
+                stringArr.push(input.key);
+            }
+        });
+
+        return stringArr.join(' ');
+    }
+
+    return '';
+};
+
+export const createPromptCellQuery = (
+    inputs: Token[],
+    inputTypes: object,
+    id: string,
+): Record<string, QueryStateConfig> => {
+    const queryJson: Record<string, QueryStateConfig> = {
+        [PROMPT_QUERY_ID]: {
+            id: PROMPT_QUERY_ID,
+            cells: [
+                {
+                    id: 'py-query',
+                    widget: 'prompt',
+                    parameters: {
+                        id: id,
+                        prompt: createContextString(inputs),
+                    },
+                },
+            ],
+        },
+    };
+
+    return queryJson;
+};
+
 export function getQueryForPrompt(
     tokens: Token[],
     inputTypes: object,
@@ -613,10 +656,18 @@ export async function setBlocksAndOpenUIBuilder(
         ...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
     ];
 
-    state.queries = getQueryForPrompt(
-        builder.inputs.value as Token[],
-        builder.inputTypes.value as object,
-    );
+    if (builder?.id?.value) {
+        state.queries = createPromptCellQuery(
+            builder.inputs.value as Token[],
+            builder.inputTypes.value as object,
+            builder.id.value as string,
+        );
+    } else {
+        state.queries = getQueryForPrompt(
+            builder.inputs.value as Token[],
+            builder.inputTypes.value as object,
+        );
+    }
 
     const pixel = `CreateAppFromBlocks ( project = [ "${
         builder.title.value

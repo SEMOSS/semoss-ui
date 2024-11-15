@@ -21,6 +21,7 @@ import { styled, Box, Button, Grid, Paper, useNotification } from '@semoss/ui';
 import { PromptBuilderSummary } from './summary';
 import { useRootStore } from '@/hooks';
 import { PromptBuilderStep } from './step';
+import { FamilyRestroomOutlined } from '@mui/icons-material';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(2),
@@ -60,6 +61,12 @@ const initialBuilder: Builder = {
         value: undefined,
         required: true,
         display: 'Context',
+    },
+    id: {
+        step: PROMPT_BUILDER_CONTEXT_STEP,
+        value: undefined,
+        required: false,
+        display: 'ID',
     },
     inputs: {
         step: PROMPT_BUILDER_INPUTS_STEP,
