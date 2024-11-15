@@ -153,6 +153,7 @@ export const DEFAULT_MENU: AddBlocksMenuItem[] = [
                 variant: 'contained',
                 color: 'primary',
                 value: '',
+                mode: 'transcribe',
             },
             listeners: {
                 onClick: [],

@@ -22,6 +22,7 @@ export interface AudioInputBlockDef extends BlockDef<'audio-input'> {
         variant: 'contained' | 'outlined' | 'text';
         color: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
         value: string;
+        mode: 'transcribe' | 'record';
     };
 }
 
@@ -36,8 +37,30 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
     const [interimTranscript, setInterimTranscript] = useState('');
     const recognitionRef = useRef(null);
     const [primaryBtnColor, setPrimaryBtnColor] = useState(data.color);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+        null,
+    );
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
+    // Clear value when mode changes
     useEffect(() => {
+        cleanup();
+        setRecording(false);
+        setTranscript('');
+        setInterimTranscript('');
+        setAudioChunks([]);
+        setData('value', '');
+
+        if (data.mode === 'transcribe') {
+            setupSpeechRecognition();
+        } else {
+            setupAudioRecording();
+        }
+
+        return () => cleanup();
+    }, [data.mode]);
+
+    const setupSpeechRecognition = () => {
         if (!('webkitSpeechRecognition' in window)) {
             alert('Web Speech API is not supported in this browser.');
             return;
@@ -70,19 +93,81 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
             setInterimTranscript(interim);
         };
         recognitionRef.current = recognition;
-    }, []);
+    };
+
+    const setupAudioRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            });
+            const recorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm',
+            });
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    setAudioChunks((chunks) => [...chunks, e.data]);
+                }
+            };
+
+            recorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, {
+                    type: 'audio/webm',
+                });
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64data = reader.result as string;
+                    setData('value', base64data);
+                };
+                reader.readAsDataURL(audioBlob);
+                // Stop all tracks
+                stream.getTracks().forEach((track) => track.stop());
+            };
+
+            setMediaRecorder(recorder);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+        }
+    };
 
     useEffect(() => {
-        setData('value', transcript);
+        if (data.mode === 'transcribe') {
+            setData('value', transcript);
+        }
     }, [transcript]);
 
     const handleRecording = (stopRecording = false) => {
-        if (recognitionRef.current) {
-            if (recording || stopRecording) {
-                recognitionRef.current.stop();
-            } else {
-                recognitionRef.current.start();
+        if (data.mode === 'transcribe') {
+            if (recognitionRef.current) {
+                if (recording || stopRecording) {
+                    recognitionRef.current.stop();
+                } else {
+                    recognitionRef.current.start();
+                }
             }
+        } else {
+            if (recording) {
+                mediaRecorder?.stop();
+                setData('color', primaryBtnColor);
+            } else {
+                setupAudioRecording().then(() => {
+                    setAudioChunks([]);
+                    mediaRecorder?.start();
+                    setData('color', 'error');
+                });
+            }
+            setRecording(!recording);
+        }
+    };
+
+    const cleanup = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            const tracks = mediaRecorder.stream.getTracks();
+            tracks.forEach((track) => track.stop());
+        }
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
         }
     };
 
