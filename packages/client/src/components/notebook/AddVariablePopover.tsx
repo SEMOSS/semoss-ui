@@ -606,7 +606,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
             setVariableType(variable.type);
             setIsInput(variable.isInput);
             setIsOutput(variable.isOutput);
-
+            setVariablePointer(`${variable.to}.${variable.cellId}`);
             if (
                 variable.type !== 'query' &&
                 variable.type !== 'block' &&
