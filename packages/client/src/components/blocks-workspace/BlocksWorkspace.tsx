@@ -110,6 +110,13 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
                                     helpText:
                                         'Parameters that are used within blocks and notebooks',
                                 },
+                            ],
+                        },
+                        {
+                            type: 'border',
+                            location: 'right',
+                            size: DEFAULT_BORDER_SIZE,
+                            children: [
                                 {
                                     type: 'tab',
                                     name: 'Block Settings',
