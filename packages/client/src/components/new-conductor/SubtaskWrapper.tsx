@@ -224,7 +224,7 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                         sx={isExpanded ? {} : { display: 'none' }}
                     >
                         <Stack gap={1}>
-                            <Stack direction="row" gap={1}>
+                            {subtask.apps.length ? (
                                 <Stepper
                                     activeStep={activeStep}
                                     sx={{ width: '80%' }}
@@ -243,132 +243,130 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                                         <StepLabel>Complete subtask</StepLabel>
                                     </Step>
                                 </Stepper>
-                                <Button
-                                    variant={'contained'}
-                                    startIcon={<Person />}
-                                >
-                                    {' '}
-                                    Gather input from User
-                                </Button>
-                            </Stack>
-
+                            ) : null}
                             {activeStep === 0 && (
                                 <Grid container>
-                                    {subtask.apps.length &&
-                                        subtask.apps.map((a, i) => {
-                                            return (
-                                                <Grid
-                                                    item
-                                                    xs={4}
-                                                    key={`${subtask.id}--${a.project_id}`}
-                                                    sx={{}}
-                                                >
-                                                    <AppCard
-                                                        key={`${a.project_id}`}
-                                                        sx={{
-                                                            border:
-                                                                subtask.selectedApp ===
-                                                                a.project_id
-                                                                    ? '2px solid #0471F0'
-                                                                    : '2px solid #00000000',
+                                    {subtask.apps.length
+                                        ? subtask.apps.map((a, i) => {
+                                              return (
+                                                  <Grid
+                                                      item
+                                                      xs={4}
+                                                      key={`${subtask.id}--${a.project_id}`}
+                                                      sx={{}}
+                                                  >
+                                                      <AppCard
+                                                          key={`${a.project_id}`}
+                                                          sx={{
+                                                              border:
+                                                                  subtask.selectedApp ===
+                                                                  a.project_id
+                                                                      ? '2px solid #0471F0'
+                                                                      : '2px solid #00000000',
 
-                                                            minHeight: '200px',
-                                                            display: 'flex',
-                                                            justifyContent:
-                                                                'center',
-                                                            zIndex: `${i + 1}`,
+                                                              minHeight:
+                                                                  '200px',
+                                                              display: 'flex',
+                                                              justifyContent:
+                                                                  'center',
+                                                              zIndex: `${
+                                                                  i + 1
+                                                              }`,
 
-                                                            // ...(activeStep == 1
-                                                            //     ? {
-                                                            //           height: 'auto',
-                                                            //       }
-                                                            //     : {}),
-                                                        }}
-                                                        onClick={() => {
-                                                            subtask.setSelectedApp(
-                                                                a.project_id,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Stack
-                                                            direction="row"
-                                                            gap={1}
-                                                            alignItems={
-                                                                'center'
-                                                            }
-                                                        >
-                                                            <img
-                                                                style={{
-                                                                    width: '50px',
-                                                                    height: '50px',
-                                                                    borderRadius:
-                                                                        '10px',
-                                                                    backgroundImage: `url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.7KXbdcsH9BKcYhKmd8hymAHaEu%26pid%3DApi&f=1&ipt=3d3e9d8d20653b1232ac8f02920cfca90faff98e890696f3aa1f8363e64d9758&ipo=images')`,
-                                                                    backgroundSize:
-                                                                        'cover',
-                                                                    backgroundPosition:
-                                                                        'center',
-                                                                    marginRight:
-                                                                        '16px',
-                                                                }}
-                                                            />
-                                                            <Typography variant="body1">
-                                                                <b>
-                                                                    {
-                                                                        a.project_name
-                                                                    }
-                                                                </b>{' '}
-                                                                {/* <Tooltip
+                                                              // ...(activeStep == 1
+                                                              //     ? {
+                                                              //           height: 'auto',
+                                                              //       }
+                                                              //     : {}),
+                                                          }}
+                                                          onClick={() => {
+                                                              subtask.setSelectedApp(
+                                                                  a.project_id,
+                                                              );
+                                                          }}
+                                                      >
+                                                          <Stack
+                                                              direction="row"
+                                                              gap={1}
+                                                              alignItems={
+                                                                  'center'
+                                                              }
+                                                          >
+                                                              <img
+                                                                  style={{
+                                                                      width: '50px',
+                                                                      height: '50px',
+                                                                      borderRadius:
+                                                                          '10px',
+                                                                      backgroundImage: `url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.7KXbdcsH9BKcYhKmd8hymAHaEu%26pid%3DApi&f=1&ipt=3d3e9d8d20653b1232ac8f02920cfca90faff98e890696f3aa1f8363e64d9758&ipo=images')`,
+                                                                      backgroundSize:
+                                                                          'cover',
+                                                                      backgroundPosition:
+                                                                          'center',
+                                                                      marginRight:
+                                                                          '16px',
+                                                                  }}
+                                                              />
+                                                              <Typography variant="body1">
+                                                                  <b>
+                                                                      {
+                                                                          a.project_name
+                                                                      }
+                                                                  </b>{' '}
+                                                                  {/* <Tooltip
                                                                     title={`Project Id: ${a.project_id}`}
                                                                 >
                                                                     <IconButton size="small">
                                                                         <InfoRounded fontSize="small" />
                                                                     </IconButton>
                                                                 </Tooltip> */}
-                                                            </Typography>
-                                                        </Stack>
-                                                        <Typography
-                                                            variant="body2"
-                                                            sx={{
-                                                                display:
-                                                                    '-webkit-box',
-                                                                WebkitBoxOrient:
-                                                                    'vertical',
-                                                                overflow:
-                                                                    'hidden',
-                                                                textOverflow:
-                                                                    'ellipsis',
-                                                                WebkitLineClamp: 3,
-                                                            }}
-                                                        >
-                                                            {a.description}
-                                                        </Typography>{' '}
-                                                        <a
-                                                            target="new"
-                                                            href={`#/app/${a.project_id}`}
-                                                        >
-                                                            <Button
-                                                                variant="text"
-                                                                color="primary"
-                                                                endIcon={
-                                                                    <OpenInNewRounded />
-                                                                }
-                                                                onClick={(e) =>
-                                                                    e.stopPropagation()
-                                                                }
-                                                            >
-                                                                Open
-                                                            </Button>
-                                                        </a>
-                                                    </AppCard>
-                                                </Grid>
-                                            );
-                                        })}
+                                                              </Typography>
+                                                          </Stack>
+                                                          <Typography
+                                                              variant="body2"
+                                                              sx={{
+                                                                  display:
+                                                                      '-webkit-box',
+                                                                  WebkitBoxOrient:
+                                                                      'vertical',
+                                                                  overflow:
+                                                                      'hidden',
+                                                                  textOverflow:
+                                                                      'ellipsis',
+                                                                  WebkitLineClamp: 3,
+                                                              }}
+                                                          >
+                                                              {a.description}
+                                                          </Typography>{' '}
+                                                          <a
+                                                              target="new"
+                                                              href={`#/app/${a.project_id}`}
+                                                          >
+                                                              <Button
+                                                                  variant="text"
+                                                                  color="primary"
+                                                                  endIcon={
+                                                                      <OpenInNewRounded />
+                                                                  }
+                                                                  onClick={(
+                                                                      e,
+                                                                  ) =>
+                                                                      e.stopPropagation()
+                                                                  }
+                                                              >
+                                                                  Open
+                                                              </Button>
+                                                          </a>
+                                                      </AppCard>
+                                                  </Grid>
+                                              );
+                                          })
+                                        : null}
                                 </Grid>
                             )}
 
                             {/* Show the inputs that are associated to the app */}
-                            {activeStep === 1 && (
+                            {activeStep === 1 ? (
                                 <SubtaskSelectedAppInputs
                                     id={id}
                                     onComplete={(data) => {
@@ -376,16 +374,35 @@ export const SubtaskWrapper = observer((props: SubtaskWrapperProps) => {
                                         subtask.setSubtaskInputs(data);
                                     }}
                                 />
-                            )}
+                            ) : null}
 
-                            {activeStep === 2 && (
+                            {activeStep === 2 ? (
                                 <SubtaskExecutionWrapper
                                     id={id}
                                     threadedExecuteTrigger={
                                         threadedExecuteTrigger
                                     }
                                 />
-                            )}
+                            ) : null}
+
+                            <Stack direction="column" gap={1}>
+                                {subtask.apps.length ? (
+                                    <Typography
+                                        variant={'body1'}
+                                        fontWeight="bold"
+                                    >
+                                        Or
+                                    </Typography>
+                                ) : null}
+                                <Button
+                                    sx={{ width: '250px' }}
+                                    variant={'contained'}
+                                    startIcon={<Person />}
+                                >
+                                    {' '}
+                                    Gather input from User
+                                </Button>
+                            </Stack>
                         </Stack>
                     </Accordion.Content>
                 </Accordion>
