@@ -79,6 +79,17 @@ export type VariableWithId =
       } & { id: string });
 
 /**
+ * Frame
+ */
+export type Frame = {
+    /** Name of the frame */
+    name: string;
+
+    /** Key associated with the frame, it changes whenever the data changes */
+    key: number;
+};
+
+/**
  * Variants
  */
 export type Variant = {
