@@ -111,7 +111,7 @@ export const NewAppPage = () => {
             return;
         }
 
-        navigate(`/app/${appId}/edit`);
+        navigate(`/workspace/${appId}`);
     };
 
     return (
@@ -234,6 +234,7 @@ export const NewAppPage = () => {
                                                     variables: {},
                                                     queries: {},
                                                     blocks: BASE_PAGE_BLOCKS,
+                                                    executionOrder: [],
                                                 },
                                             })
                                         }

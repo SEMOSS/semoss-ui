@@ -5,7 +5,7 @@ import { setValueByPath } from '@/utility';
 import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
-import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
+import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -229,12 +229,13 @@ export class CellState<D extends CellDef = CellDef> {
      */
     toPixel(
         parameters: Record<string, unknown> = this._store.parameters,
-    ): string {
+    ): string | string[] {
         const cellConfig = this.config;
 
         // use the toPixel from the cell
         if (cellConfig) {
-            return cellConfig.toPixel(parameters);
+            const pixelReturn = cellConfig.toPixel(parameters);
+            return pixelReturn;
         }
 
         return Object.keys(parameters)
@@ -248,143 +249,141 @@ export class CellState<D extends CellDef = CellDef> {
      * Helpers
      */
     /**
-     * Process State
+     * Helper function to run a pixel
+     * @param rawPixel - pixel to be formatted and run
      */
+    private async runPixel(rawPixel: string) {
+        // Gets rid of braces and evaluate parameters in query
+        // const filled = this._state.flattenVar(raw);
+        const filled = this._state.flattenVariable(rawPixel);
+
+        // clear the previous messages + operation + output
+        this._store.messages = [];
+        this._store.operation = [];
+        this._store.output = undefined;
+
+        // start polling
+        const { jobId } = await runPixelAsync(filled, this._state.insightId);
+
+        // Set up polling in order to get full stdout
+        let isPolling = true;
+        while (isPolling) {
+            try {
+                // get the reponse from the job id
+                const { messages, status } = await pixelConsole(jobId);
+
+                // add the new messages
+                runInAction(() => {
+                    messages.forEach((mess) => {
+                        this._store.messages.push(mess);
+                    });
+                });
+
+                // Currently console does not get pass STREAMING
+                if (status === 'Complete') {
+                    isPolling = false;
+                } else if (status === 'Streaming') {
+                    isPolling = false;
+                } else {
+                    // poll
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                }
+            } catch (error) {
+                console.error('Error during polling:', error.message);
+
+                // turn it off
+                isPolling = false;
+            }
+        }
+
+        const { errors, results } = await pixelResult(jobId);
+        if (errors.length > 0) {
+            throw new Error(errors.join(''));
+        }
+
+        const last = results[results.length - 1];
+
+        // set the output per operation
+        let output: unknown;
+        const opType: string[] = last.operationType;
+
+        if (last.operationType.indexOf('CUSTOM_DATA_STRUCTURE') > -1) {
+            output = last.output;
+        } else if (last.operationType.indexOf('FORMATTED_DATA_SET') > -1) {
+            output = last.output[0];
+        } else if (last.operationType.indexOf('CODE_EXECUTION') > -1) {
+            output = last.output[0].output;
+        } else if (last.operationType.indexOf('CODE') > -1) {
+            output = last.output[0].value[0];
+        } else if (last.operationType.indexOf('ERROR') > -1) {
+            output = last.output[0];
+        } else if (last.operationType.indexOf('CONST_STRING') > -1) {
+            output = last.output[0];
+        } else if (last.operationType.indexOf('INVALID_SYNTAX') > -1) {
+            output = last.output[0];
+        } else if (last.operationType.indexOf('VECTOR') > -1) {
+            output = last.output[0];
+        } else {
+            output = last.output;
+        }
+
+        return { opType, output };
+    }
+
     /**
-     * Process running of the cell
+     * Run the cell
      */
-    async _processRun() {
+    async _run() {
         const start = new Date();
 
         try {
             // check the loading state
             if (this._store.isLoading) {
-                throw new Error('Cell is loading');
+                throw new Error('Cell is already loading');
             }
 
             // start the loading screen
             this._store.isLoading = true;
 
             // convert the cells to the raw pixel
-            const raw = this.toPixel();
+            const raw: string | string[] = this.toPixel();
 
-            // Gets rid of braces and evaluate parameters in query
-            // const filled = this._state.flattenVar(raw);
-            const filled = this._state.flattenVariable(raw);
+            // Determine if multiple pixels need to be ran.
+            if (typeof raw === 'string') {
+                const { opType, output } = await this.runPixel(raw);
 
-            // clear the previous messages + operation + output
-            this._store.messages = [];
-            this._store.operation = [];
-            this._store.output = undefined;
+                runInAction(() => {
+                    // store the operation and output
+                    this._store.operation = opType;
 
-            // start polling
-            const { jobId } = await runPixelAsync(
-                filled,
-                this._state.insightId,
-            );
+                    // save the last output
+                    this._store.output = output;
+                });
+            } else if (Array.isArray(raw)) {
+                // Collect responses for each call to store in state.
+                let opTypes = [];
+                const outputs = [];
 
-            // Set up polling in order to get full stdout
-            let isPolling = true;
-            while (isPolling) {
-                try {
-                    // get the reponse from the job id
-                    const { messages, status } = await pixelConsole(jobId);
-
-                    // add the new messages
-                    runInAction(() => {
-                        messages.forEach((mess) => {
-                            this._store.messages.push(mess);
-                        });
-                    });
-
-                    // Currently console does not get pass STREAMING
-                    if (status === 'Complete') {
-                        isPolling = false;
-                    } else if (status === 'Streaming') {
-                        isPolling = false;
-                    } else {
-                        // poll
-                        await new Promise((resolve) =>
-                            setTimeout(resolve, 2000),
-                        );
-                    }
-                } catch (error) {
-                    console.error('Error during polling:', error.message);
-
-                    // turn it off
-                    isPolling = false;
+                for (const str of raw) {
+                    const { opType, output } = await this.runPixel(str);
+                    opTypes = [...opTypes, ...opType];
+                    outputs.push(output);
                 }
+
+                runInAction(() => {
+                    // store the operation and output
+                    this._store.operation = opTypes;
+
+                    // save the last output
+                    this._store.output = outputs;
+                });
             }
 
-            const { errors, results } = await pixelResult(jobId);
+            // log it
+            console.log(JSON.stringify(this.operation), this.output);
 
-            if (errors.length > 0) {
-                throw new Error(errors.join(''));
-            }
-
-            const last = results[results.length - 1];
-
-            // set the output per operation
-            let output: unknown;
-            const opType: string[] = last.operationType;
-
-            if (last.operationType.indexOf('CUSTOM_DATA_STRUCTURE') > -1) {
-                output = last.output;
-            } else if (last.operationType.indexOf('FORMATTED_DATA_SET') > -1) {
-                output = last.output[0];
-            } else if (last.operationType.indexOf('CODE_EXECUTION') > -1) {
-                output = last.output[0].output;
-            } else if (last.operationType.indexOf('CODE') > -1) {
-                output = last.output[0].value[0];
-            } else if (last.operationType.indexOf('ERROR') > -1) {
-                output = last.output[0];
-            } else if (last.operationType.indexOf('CONST_STRING') > -1) {
-                output = last.output[0];
-            } else if (last.operationType.indexOf('INVALID_SYNTAX') > -1) {
-                output = last.output[0];
-            } else if (last.operationType.indexOf('VECTOR') > -1) {
-                output = last.output[0];
-            } else {
-                output = last.output;
-            }
-
-            // DEAD CODE, /result comes back totally different than /result2.  Some pixelTypes im unable to even get
-            // let opType: string[] = last.opType;
-
-            // if (last.pixelType === 'CUSTOM_DATA_STRUCTURE') {
-            //     output = last.value;
-            // } else if (last.pixelType === 'FORMATTED_DATA_SET') {
-            //     output = last.value[0];
-            // } else if (last.pixelType === 'CODE') {
-            //     output = last.value[0].value[0];
-            // } else if (last.pixelType === 'ERROR') {
-            //     output = last.value[0];
-            // } else if (last.pixelType === 'CONST_STRING') {
-            //     output = last.value[0];
-            // } else if (last.pixelType === 'INVALID_SYNTAX') {
-            //     output = last.value[0];
-            // } else if (last.pixelType === 'FRAME') {
-            //     output = last.value[0];
-
-            //     // Currently gives us 2 operations with a single output, do we want operation do determine if we show multiple outputs
-            //     opType = [opType[0]];
-            // } else if (last.pixelType === 'MAP') {
-            //     output = last.value[0];
-            // } else if (last.pixelType === 'VECTOR') {
-            //     output = last.value[0];
-            // }
-
-            runInAction(() => {
-                // store the operation and output
-                this._store.operation = opType;
-
-                // save the last output
-                this._store.output = output;
-            });
-
-            if (opType.includes('FILE_DOWNLOAD')) {
-                await download(this._state.insightId, output as string);
-            }
+            // process side effects from running a pixel
+            this._state.processSideEffects(this.operation, this.output);
         } catch (e) {
             runInAction(() => {
                 // store the operation and output
@@ -394,12 +393,13 @@ export class CellState<D extends CellDef = CellDef> {
                 this._store.output = e.message;
             });
         } finally {
-            const end = new Date();
-
-            this._store.executionDurationMilliseconds =
-                end.getTime() - start.getTime();
-
             runInAction(() => {
+                //TODO: Integrate with backend
+                const end = new Date();
+
+                this._store.executionDurationMilliseconds =
+                    end.getTime() - start.getTime();
+
                 // stop the loading screen
                 this._store.isLoading = false;
             });
@@ -411,7 +411,7 @@ export class CellState<D extends CellDef = CellDef> {
      * @param path - path of the data to set
      * @param value - value of the data
      */
-    _processUpdate(path: string | null, value: unknown) {
+    _update(path: string | null, value: unknown) {
         if (!path) {
             // set the value
             this._store = value as CellStateStoreInterface<D>;

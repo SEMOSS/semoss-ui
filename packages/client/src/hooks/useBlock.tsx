@@ -40,6 +40,7 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
     setData: <P extends Paths<Block<D>['data'], 4>>(
         path: P,
         value: PathValue<D['data'], P>,
+        tempOverrideMode?: boolean,
     ) => void;
 
     /**
@@ -87,9 +88,11 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         <P extends Paths<Block<D>['data'], 4>>(
             path: P | null,
             value: PathValue<Block<D>['data'], P>,
+            // TODO: will remove this; needed to update LLM blocks for now.
+            tempOverrideMode?: boolean,
         ): void => {
             // ignore if static
-            if (state.mode === 'static') {
+            if (!tempOverrideMode && state.mode === 'static') {
                 return;
             }
 

@@ -41,8 +41,8 @@ module.exports = () => {
                 template: './core/template.ejs',
                 filename: '../../../index.html',
                 inject: false,
-                title: CUSTOMIZATION.page.title,
-                favicon:CUSTOMIZATION.page.favicon
+                title: '',
+                favicon: ''
             }),
         ],
     });

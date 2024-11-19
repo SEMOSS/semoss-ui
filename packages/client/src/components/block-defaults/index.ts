@@ -1,4 +1,5 @@
 import { Registry } from '@/stores';
+import { config as AudioBlockConfig, AudioBlockDef } from './audio-block';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import { config as QueryBlockConfig, QueryBlockDef } from './query-block';
@@ -23,7 +24,7 @@ import {
 import { config as HTMLBlockConfig, HTMLBlockDef } from './html-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
-import { config as TableBlockConfig, TableBlockDef } from './table-block';
+import { config as GridBlockConfig, GridBlockDef } from './grid-block';
 import { config as TextBlockConfig, TextBlockDef } from './text-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
@@ -43,9 +44,20 @@ import {
     ToggleButtonBlockDef,
 } from './toggle-button-block';
 import { config as MermaidBlockConfig, MermaidBlockDef } from './mermaid-block';
+import {
+    config as CompareLLMBlockConfig,
+    LLMComparisonBlockDef,
+} from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
+import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+
+import {
+    config as PDFViewerBlockConfig,
+    PDFViewerBlockDef,
+} from './pdfViewer-block';
 
 export type DefaultBlockDefinitions =
+    | AudioBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -64,48 +76,49 @@ export type DefaultBlockDefinitions =
     | QueryBlockDef
     | LogsBlockDef
     | SelectBlockDef
-    | TableBlockDef
+    | GridBlockDef
     | TextBlockDef
     | ToggleButtonBlockDef
     | InputBlockDef
     | SectionBlockDef
+    | StepperBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
     | MermaidBlockDef
-    | ModalBlockDef;
+    | LLMComparisonBlockDef
+    | ModalBlockDef
+    | PDFViewerBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [AudioBlockConfig.widget]: AudioBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [CompareLLMBlockConfig.widget]: CompareLLMBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [ImageBlockConfig.widget]: ImageBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [ModalBlockConfig.widget]: ModalBlockConfig,
     [HTMLBlockConfig.widget]: HTMLBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [ProgressBlockConfig.widget]: ProgressBlockConfig,
     [QueryBlockConfig.widget]: QueryBlockConfig,
     [LogsBlockConfig.widget]: LogsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
+    [StepperBlockConfig.widget]: StepperBlockConfig,
+    [GridBlockConfig.widget]: GridBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
-    [ModalBlockConfig.widget]: ModalBlockConfig,
+    [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
 
-export function getIconForBlock(widget: string) {
-    return DefaultBlocks[widget]?.icon;
-}
-
-export function getTypeForBlock(widget: string) {
-    return DefaultBlocks[widget]?.type;
-}
-
 export {
+    AudioBlockConfig,
     ButtonBlockConfig,
     ContainerBlockConfig,
     CheckboxBlockConfig,
@@ -119,9 +132,12 @@ export {
     LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
+    GridBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
     MermaidBlockConfig,
+    CompareLLMBlockConfig,
     ModalBlockConfig,
+    PDFViewerBlockConfig,
 };

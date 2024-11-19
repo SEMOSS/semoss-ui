@@ -33,13 +33,18 @@ export interface RadioGroupProps {
      * Changes the orientation of the radio group.
      */
     row?: boolean;
+
+    /**
+     * Prevents FormLabel from rendering
+     */
+    hideLabel?: boolean;
 }
 
 export const RadioGroup = (props: RadioGroupProps) => {
-    const { sx, label } = props;
+    const { sx, label, hideLabel = false } = props;
     return (
         <>
-            <FormLabel>{label}</FormLabel>
+            {!hideLabel && <FormLabel>{label}</FormLabel>}
             <MuiRadioGroup sx={sx} {...props} />
         </>
     );

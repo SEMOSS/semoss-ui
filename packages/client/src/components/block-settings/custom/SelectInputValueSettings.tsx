@@ -50,7 +50,9 @@ export const SelectInputValueSettings = observer(
         }).get();
 
         // track the value
-        const [value, setValue] = useState(null);
+        const [value, setValue] = useState<string | string[]>(
+            parsedData.multiple ? [] : '',
+        );
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -59,19 +61,21 @@ export const SelectInputValueSettings = observer(
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
-                    return '';
+                    return parsedData.multiple ? [] : '';
                 }
 
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
-                    return '';
-                } else if (typeof v === 'string') {
+                    return parsedData.multiple ? [] : '';
+                } else if (Array.isArray(v) && parsedData.multiple) {
+                    return v;
+                } else if (typeof v === 'string' && !parsedData.multiple) {
                     return v;
                 }
 
-                return JSON.stringify(v);
+                return JSON.stringify(v); // check if parsedData.multiple ? [] : ''
             });
-        }, [data, path]).get();
+        }, [data, path, parsedData.multiple]).get();
 
         // update the value whenever the computed one changes
         useEffect(() => {
@@ -81,7 +85,7 @@ export const SelectInputValueSettings = observer(
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
+        const onChange = (value: string | string[]) => {
             // set the value
             setValue(value);
 
@@ -105,6 +109,7 @@ export const SelectInputValueSettings = observer(
             let arr = [];
             if (!parsedData.options) {
                 // NOOP
+                return [];
             } else if (!Array.isArray(parsedData?.options)) {
                 if (typeof parsedData.options === 'string') {
                     const opts: string = parsedData.options;
@@ -123,14 +128,27 @@ export const SelectInputValueSettings = observer(
                 }
             });
         }, [parsedData.options]);
+        const multipleple =
+            typeof parsedData.multiple === 'boolean'
+                ? parsedData.multiple
+                : false;
+
+        // Ensure that value is always an array when multiple is true
+        const selectedValue = useMemo(() => {
+            if (parsedData.multiple) {
+                return Array.isArray(value) ? value : [];
+            }
+            return value || null;
+        }, [parsedData.multiple, value]);
 
         return (
             <BaseSettingSection label="Value">
                 <Autocomplete
                     fullWidth
+                    multiple={multipleple as boolean}
                     options={stringifiedOptions}
-                    value={value}
-                    onChange={(_, newValue: string) => {
+                    value={selectedValue}
+                    onChange={(_, newValue: string | string[]) => {
                         // sync the data on change
                         onChange(newValue);
                     }}

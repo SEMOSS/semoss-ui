@@ -1,120 +1,113 @@
-import { Tooltip, styled } from '@semoss/ui';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Code } from '@mui/icons-material';
+import { styled, Stack, Container, Button, CircularProgress } from '@semoss/ui';
 
-import { Sidebar, SidebarItem, SidebarText } from '@/components/common';
+import { useBlocks } from '@/hooks';
+import { NotebookCell } from './NotebookCell';
+import { ActionMessages } from '@/stores';
+import { PlayArrowRounded } from '@mui/icons-material';
 
-import { NotebookVariablesMenu } from './NotebookVariablesMenu';
-import { NotebookSheet } from './NotebookSheet';
-import { useEffect, useState } from 'react';
-import { NotebookSheetsMenu } from './NotebookSheetsMenu';
-
-import { usePixel } from '@/hooks';
-
-import { LLMContext } from '@/contexts';
-
-const StyledNotebook = styled('div')(() => ({
+const StyledSheet = styled('div')(({ theme }) => ({
     display: 'flex',
-    flexDirection: 'row',
-    position: 'relative',
+    flexDirection: 'column',
     height: '100%',
     width: '100%',
-    overflow: 'hidden',
-}));
-
-const StyledLeftPanel = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: theme.spacing(45),
-    overflow: 'hidden',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledRightPanel = styled('div')(() => ({
-    height: '100%',
     flex: 1,
     overflow: 'hidden',
 }));
 
-export const Notebook = observer(() => {
-    // view
-    const [view, setView] = useState<
-        'variables' | 'sources' | 'blocks' | 'transform' | ''
-    >('variables');
+const StyledContainer = styled(Container)(({ theme }) => ({
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    paddingTop: theme.spacing(2),
+    paddingBottom: theme.spacing(2),
+    overflow: 'auto',
+}));
 
-    /**
-     * Set the view. If it is the same, close it
-     * @param v
-     */
-    const updateView = (v: typeof view) => {
-        // close if not passed in or the same
-        if (!v || v === view) {
-            setView('');
-            return;
-        }
+const StyledCell = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+}));
 
-        // set the view
-        setView(v);
-    };
+const StyledContainedButton = styled(Button)(() => ({
+    lineHeight: '1.25rem',
+}));
 
-    const [modelId, setModelId] = useState<string>('');
-    const [models, setModels] = useState<
-        { app_id: string; app_name: string }[]
-    >([]);
+interface NotebookProps {
+    /** Id of the notebook */
+    id: string;
+}
 
-    const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
-    MyEngines(engineTypes=['MODEL']);
-    `);
+/**
+ * Render a sheet in the notebook (contains the individual steps)
+ */
+export const Notebook = observer((props: NotebookProps): JSX.Element => {
+    const { id } = props;
+    const { state } = useBlocks();
+    const [cellPlayCounter, setCellPlayCounter] = useState(null);
 
-    useEffect(() => {
-        if (myModels.status !== 'SUCCESS') {
-            return;
-        }
-
-        setModels(
-            myModels.data.map((d) => ({
-                app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-                app_id: d.app_id,
-            })),
-        );
-
-        setModelId(myModels.data.length ? myModels.data[0].app_id : '');
-    }, [myModels.status, myModels.data]);
+    // need a notebook to render it
+    const notebook = state.getQuery(id);
+    if (!notebook) {
+        return null;
+    }
 
     return (
-        <StyledNotebook>
-            <Sidebar>
-                <SidebarItem
-                    selected={view === 'variables'}
-                    onClick={() => updateView('variables')}
-                >
-                    <Tooltip title={'Add'} placement="right">
-                        <Code color="inherit" />
-                    </Tooltip>
-                    <SidebarText>Variables</SidebarText>
-                </SidebarItem>
-            </Sidebar>
-            {view ? (
-                <StyledLeftPanel>
-                    {view === 'variables' ? <NotebookVariablesMenu /> : null}
-                </StyledLeftPanel>
-            ) : null}
-
-            <StyledRightPanel>
-                <LLMContext.Provider
-                    value={{
-                        modelId: modelId,
-                        modelOptions: models,
-                        setModel: (id) => {
-                            setModelId(id);
-                        },
-                    }}
-                >
-                    <NotebookSheetsMenu />
-                    <NotebookSheet />
-                </LLMContext.Provider>
-            </StyledRightPanel>
-        </StyledNotebook>
+        <StyledSheet>
+            <Stack
+                alignItems={'center'}
+                justifyContent={'space-between'}
+                direction="row"
+                paddingLeft={3}
+                paddingRight={3}
+                paddingY={1.25}
+                spacing={2}
+            >
+                &nbsp;
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <StyledContainedButton
+                        title="Run all cells"
+                        variant="contained"
+                        size="small"
+                        color="primary"
+                        disableElevation
+                        startIcon={
+                            notebook.isLoading ? (
+                                <CircularProgress size="0.75em" />
+                            ) : (
+                                <PlayArrowRounded />
+                            )
+                        }
+                        disabled={notebook.isLoading}
+                        onClick={() =>
+                            state.dispatch({
+                                message: ActionMessages.RUN_QUERY,
+                                payload: {
+                                    queryId: id,
+                                },
+                            })
+                        }
+                    >
+                        Run All
+                    </StyledContainedButton>
+                </Stack>
+            </Stack>
+            <StyledContainer maxWidth={'xl'}>
+                {notebook.list.map((cellId) => (
+                    <StyledCell key={cellId}>
+                        <NotebookCell
+                            queryId={id}
+                            cellId={cellId}
+                            cellPlayCounter={cellPlayCounter}
+                            setCellPlayCounter={setCellPlayCounter}
+                        ></NotebookCell>
+                    </StyledCell>
+                ))}
+            </StyledContainer>
+        </StyledSheet>
     );
 });

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
-import Editor from '@monaco-editor/react';
 
 import { ALL_TYPES } from '@/types';
 import { useRootStore, usePixel, useSettings } from '@/hooks';
+
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 interface UpdateSMSSProps {
     /**
@@ -129,16 +130,18 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                 )}
             </StyledTopDiv>
             <StyledPaper elevation={1}>
-                <Editor
-                    defaultValue={''}
-                    options={{ readOnly: readOnly }}
-                    value={value}
-                    language={'plaintext'}
-                    onChange={(newValue) => {
-                        // Handle changes in the editor's content.
-                        setValue(newValue);
-                    }}
-                />
+                <Suspense fallback={<>...</>}>
+                    <Editor
+                        defaultValue={''}
+                        options={{ readOnly: readOnly }}
+                        value={value}
+                        language={'plaintext'}
+                        onChange={(newValue) => {
+                            // Handle changes in the editor's content.
+                            setValue(newValue);
+                        }}
+                    />
+                </Suspense>
             </StyledPaper>
         </StyledContainer>
     );

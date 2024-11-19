@@ -66,10 +66,13 @@ interface User {
 
 interface EditUserForm {
     id: string;
+    newId: string;
     username: string;
+    newUsername: string;
     name: string;
     password: string;
     email: string;
+    newEmail: string;
     phone: string;
     phoneextension: string;
     countrycode: string;
@@ -110,11 +113,16 @@ const numberValidate = (number: string) => {
     if (!number) {
         return false;
     }
-    if (!number.match(/^[()-.\s0-9]{8,}$/)) {
-        return false;
-    }
 
-    return true;
+    const formatOne = /^\(\d{3}\) \d{3}-\d{4}$/;
+    const formatTwo = /^\d{3}-\d{3}-\d{4}$/;
+    const formatThree = /^\d{10}$/;
+
+    return (
+        formatOne.test(number) ||
+        formatTwo.test(number) ||
+        formatThree.test(number)
+    );
 };
 
 interface UserAddOverlayProps {
@@ -175,6 +183,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
     }, [user, open]);
 
     const type = watch('type', '');
+    const email = watch('email');
 
     // TODO: Standardize
     const providers = configStore.store.config.providers.map((val) => ({
@@ -187,6 +196,9 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
      */
     const editUser = handleSubmit(
         async (data: EditUserForm) => {
+            if (email !== user?.email) {
+                data.newEmail = email;
+            }
             let success = false;
 
             try {
@@ -199,8 +211,6 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                         data,
                     );
                 }
-
-                console.log(response);
 
                 if (!response) {
                     return;
@@ -288,7 +298,6 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 );
                             }}
                         />
-
                         <Stack direction={'row'} gap={1}>
                             <Controller
                                 name={'countrycode'}
@@ -314,8 +323,17 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 name="phone"
                                 control={control}
                                 rules={{
-                                    validate: (value) => numberValidate(value),
-                                    pattern: /^[()-.\s0-9]{8,}$/,
+                                    validate: (value) => {
+                                        if (value == '') {
+                                            return true;
+                                        }
+                                        numberValidate(value);
+                                    },
+                                    pattern: {
+                                        value: /^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$|^\d{10}$/,
+                                        message:
+                                            'Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX',
+                                    },
                                 }}
                                 render={({ field }) => {
                                     return (
@@ -337,11 +355,11 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                             {errors.phone && (
                                                 <Typography
                                                     variant={'caption'}
-                                                    color="error"
+                                                    color={'error'}
                                                 >
-                                                    Note: Number should be
-                                                    written in XXX-XXX-XXXX
-                                                    format
+                                                    Note: Phone number must be
+                                                    in the format (XXX) XXX-XXXX
+                                                    or XXX-XXX-XXXX
                                                 </Typography>
                                             )}
                                         </Stack>
@@ -462,7 +480,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 />
 
                                 {errors.password && (
-                                    <Typography variant={'caption'}>
+                                    <Typography
+                                        variant={'caption'}
+                                        color={'error'}
+                                    >
                                         Note: Password must have one letter, one
                                         capital, one number, one special
                                         character, and be a minimum of 8

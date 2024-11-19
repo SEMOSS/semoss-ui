@@ -1,5 +1,6 @@
-import { makeAutoObservable, toJS } from 'mobx';
+import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
+import { download, runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -18,6 +19,7 @@ import {
     Variable,
     VariableType,
     VariableWithId,
+    Frame,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -39,14 +41,20 @@ interface StateStoreInterface {
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 
-    /** engine dependencies */
-    dependencies: Record<string, unknown>;
+    /** Frames stored in the insight */
+    frames: Record<string, Frame>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
 
     /** What version the state store we currently are on link: https://semver.org/ */
     version: string;
+
+    /** Order of how we consume app as API */
+    executionOrder: string[];
+
+    /** TODO: Get rid of this, engine dependencies */
+    dependencies: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -61,6 +69,9 @@ export class StateStoreConfig {
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
+
+    /** initial params for our variables can come from query params */
+    initialParams?: Record<string, unknown>;
 }
 
 /**
@@ -73,9 +84,11 @@ export class StateStore {
         version: '',
         queries: {},
         blocks: {},
+        frames: {},
         cellRegistry: {},
         variables: {},
         dependencies: {}, // Maher said change to constants
+        executionOrder: [],
     };
 
     /**
@@ -107,7 +120,7 @@ export class StateStore {
         makeAutoObservable(this);
 
         // set the initial state after reactive to invoke it
-        this.setState(config.state);
+        this.setState(config.state, config.initialParams);
     }
 
     /**
@@ -151,6 +164,14 @@ export class StateStore {
      */
     get variables() {
         return this._store.variables;
+    }
+
+    /**
+     * Gets ordered list of sheet ids
+     * @returns the order sheets should be executed
+     */
+    get executionOrder() {
+        return this._store.executionOrder;
     }
 
     /**
@@ -207,6 +228,7 @@ export class StateStore {
         type: VariableType,
         path?: string[],
         cellId?: string,
+        value?: string,
     ): Variable | unknown {
         try {
             if (pointer) {
@@ -257,7 +279,10 @@ export class StateStore {
                             }
                         }
                     }
-                } else if (
+                }
+                return undefined;
+            } else {
+                if (
                     type === 'database' ||
                     type === 'model' ||
                     type === 'vector' ||
@@ -267,21 +292,15 @@ export class StateStore {
                     type === 'date' ||
                     type === 'number'
                 ) {
-                    const value = this._store.dependencies[pointer];
-
                     return value;
                 } else if (type === 'array' || type === 'JSON') {
-                    let value;
-                    if (typeof this._store.dependencies[pointer] === 'string') {
-                        value = JSON.parse(
-                            this._store.dependencies[pointer] as string,
-                        );
-                    } else value = this._store.dependencies[pointer];
+                    let v;
+                    if (value === 'string') {
+                        v = JSON.parse(value as string);
+                    } else v = value;
 
-                    return value;
+                    return v;
                 }
-                return undefined;
-            } else {
                 return undefined;
             }
         } catch (e) {
@@ -309,6 +328,21 @@ export class StateStore {
             }
         });
         return alias;
+    }
+
+    /**
+     * Get a frame. Create one if it isn't there
+     * @param name
+     */
+    getFrameKey(name: string): Frame['key'] {
+        // create the frame if it is not there
+        if (!this._store.frames[name]) {
+            runInAction(() => {
+                this.createFrame(name);
+            });
+        }
+
+        return this._store.frames[name].key;
     }
 
     /**
@@ -394,24 +428,38 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { id, to, type, cellId } = action.payload;
-
-                return this.addVariable(id, to, type, cellId);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
                 return this.renameVariable(id, alias);
+            } else if (ActionMessages.ADD_VARIABLE === action.message) {
+                const { id, to, type, cellId, value, isInput, isOutput } =
+                    action.payload;
+
+                return this.addVariable(
+                    id,
+                    to,
+                    type,
+                    cellId,
+                    value,
+                    isInput,
+                    isOutput,
+                );
             } else if (ActionMessages.EDIT_VARIABLE === action.message) {
                 const { id, from, to } = action.payload;
 
-                this.editVariable(
-                    id,
-                    from,
-                    to.type === 'cell'
-                        ? { to: to.to, cellId: to.cellId, type: 'cell' }
-                        : { to: to.to, type: to.type },
-                );
+                const newVariable = {
+                    type: to.type,
+                };
+
+                if (to.to) newVariable['to'] = to.to;
+                if (to.cellId) newVariable['cellId'] = to.cellId;
+                if (to.value) newVariable['value'] = to.value;
+
+                newVariable['isInput'] = to.isInput ? to.isInput : false;
+                newVariable['isOutput'] = to.isOutput ? to.isOutput : false;
+
+                this.editVariable(id, from, newVariable);
             } else if (ActionMessages.DELETE_VARIABLE === action.message) {
                 const { id } = action.payload;
 
@@ -424,6 +472,12 @@ export class StateStore {
                 const { id } = action.payload;
 
                 return this.removeDependency(id);
+            } else if (
+                ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
+            ) {
+                const { list } = action.payload;
+
+                return this.setExecutionOrder(list);
             }
         } catch (e) {
             console.error(e);
@@ -454,6 +508,9 @@ export class StateStore {
                 variable.type,
                 path,
                 variable.cellId,
+                variable.type !== 'cell' && variable.value
+                    ? variable.value
+                    : null,
             );
 
             // TODO: Check this, protects for false values
@@ -489,6 +546,42 @@ export class StateStore {
         });
     };
 
+    /** Side effects Methods */
+    /**
+     * Run a side effect pixel and process the response
+     *
+     * @param pixel - side effect to run
+     */
+    runSideEffect = async <O extends unknown[] | []>(pixel: string) => {
+        const response = await runPixel<O>(pixel, this._store.insightId);
+
+        // process the side effects
+        for (const { operationType, output } of response.pixelReturn) {
+            this.processSideEffects(operationType, output);
+        }
+
+        // return the response
+        return response;
+    };
+
+    /**
+     * Process side-effects from running a pixel
+     *
+     * @param operation - operation that was run
+     * @param output - output fo the operation
+     */
+    processSideEffects = (operation: string[], output: unknown) => {
+        // download the file
+        if (operation.includes('FILE_DOWNLOAD')) {
+            download(this.insightId, output as string);
+        } else if (
+            operation.includes('FRAME_DATA_CHANGE') ||
+            operation.includes('FRAME_FILTER_CHANGE')
+        ) {
+            this.syncFrame((output as { name: string }).name);
+        }
+    };
+
     /**
      * Serialize to JSON
      */
@@ -501,9 +594,14 @@ export class StateStore {
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
             dependencies: toJS(this._store.dependencies),
+            executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
         };
     }
+
+    /**
+     *
+     */
 
     /**
      * Internal
@@ -660,6 +758,29 @@ export class StateStore {
     };
 
     /**
+     * Create a new frame
+     */
+    private createFrame = (name: string) => {
+        this._store.frames[name] = {
+            name: name,
+            key: 0,
+        };
+    };
+
+    /**
+     * Resync the frame and change the data key
+     */
+    private syncFrame = (name: string) => {
+        // create the frame if it is not there
+        if (!this._store.frames[name]) {
+            this.createFrame(name);
+        }
+
+        // increment the key
+        this._store.frames[name].key = this._store.frames[name].key + 1;
+    };
+
+    /**
      * Actions
      */
     /**
@@ -667,7 +788,10 @@ export class StateStore {
      *
      * @param state - pixel to execute
      */
-    private setState = (state: SerializedState) => {
+    private setState = (
+        state: SerializedState,
+        initialParams?: Record<string, unknown>,
+    ) => {
         // store the block information
         this._store.blocks = state.blocks;
 
@@ -680,11 +804,62 @@ export class StateStore {
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
 
-        // store the dependencies
+        // TODO: Remove, store the dependencies
         this._store.dependencies = state.dependencies ? state.dependencies : {};
 
+        // store the execution order of notebooks
+        let order = [];
+        const sheets = Object.keys(this._store.queries);
+
+        if (state.executionOrder.length) {
+            order = state.executionOrder;
+        } else {
+            sheets.forEach((k) => {
+                order.push(k);
+            });
+        }
+
+        sheets.forEach(async (s) => {
+            const found = await order.find((o) => {
+                return o === s;
+            });
+
+            if (!found) {
+                order.push(s);
+            }
+        });
+
+        this._store.executionOrder = order;
+
+        // Replace initial param values provided from URL
+        if (initialParams) {
+            Object.entries(initialParams).forEach((keyValue) => {
+                const key = keyValue[0];
+                const value = keyValue[1];
+
+                const variable = this._store.variables[key];
+
+                if (variable) {
+                    // retrieve the "to" value
+                    const toValue = variable.to;
+                    if (variable.type == 'block') {
+                        // Look into blocks section
+                        if (this._store.blocks[toValue]) {
+                            this._store.blocks[toValue].data.value = value;
+                        }
+                    } else if (
+                        variable.type == 'cell' ||
+                        variable.type == 'query'
+                    ) {
+                        // TODO: Handle query and cell types do we just swap output?
+                    } else {
+                        this._store.variables[key]['value'] = value;
+                    }
+                }
+            });
+        }
+
         // store the version or the one we currently are on
-        // TODO: Look at this
         this._store.version = state.version ? state.version : STATE_VERSION;
     };
 
@@ -953,6 +1128,8 @@ export class StateStore {
             this,
         );
 
+        this._store.executionOrder.push(queryId);
+
         return queryId;
     };
 
@@ -961,7 +1138,12 @@ export class StateStore {
      * @param queryId - name of the query that we are deleting
      */
     private deleteQuery = (queryId: string): void => {
+        // Delete the query
         delete this._store.queries[queryId];
+
+        // Remove it from our execition order tracking
+        const index = this._store.executionOrder.indexOf(queryId);
+        this._store.executionOrder.splice(index, 1);
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -989,7 +1171,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // set the value
-        q._processUpdate(path, value);
+        q._update(path, value);
     };
 
     /**
@@ -1007,7 +1189,7 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the query
-            await q._processRun();
+            await q._run();
 
             // turn it off
             return true;
@@ -1042,7 +1224,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // add the cell
-        q._processNewCell(cellId, config, previousCellId);
+        q._addCell(cellId, config, previousCellId);
     };
 
     /**
@@ -1054,8 +1236,8 @@ export class StateStore {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the cell
-        q._processDeleteCell(cellId);
+        // remove the cell
+        q._removeCell(cellId);
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -1104,7 +1286,7 @@ export class StateStore {
         const s = q.getCell(cellId);
 
         // set the value
-        s._processUpdate(path, value);
+        s._update(path, value);
     };
 
     /**
@@ -1114,7 +1296,7 @@ export class StateStore {
      */
     private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
-        const s = q.getCell(cellId);
+        const c = q.getCell(cellId);
 
         const key = `cell--${cellId} (query--${queryId});`;
 
@@ -1124,7 +1306,7 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the cell
-            await s._processRun();
+            await c._run();
 
             // turn it off
             return true;
@@ -1173,6 +1355,9 @@ export class StateStore {
         to: string,
         type: VariableType,
         cellId?: string,
+        value?,
+        isInput?,
+        isOutput?,
     ) => {
         if (id.includes('.')) {
             return false;
@@ -1182,16 +1367,15 @@ export class StateStore {
             return false;
         }
 
-        const token: Variable =
-            type === 'cell'
-                ? {
-                      to,
-                      type,
-                      cellId,
-                  }
-                : { to, type };
+        const token = { type };
 
-        this._store.variables[id] = token;
+        if (to) token['to'] = to;
+        if (cellId) token['cellId'] = cellId;
+        if (isInput) token['isInput'] = isInput;
+        if (isOutput) token['isOutput'] = isOutput;
+        if (value) token['value'] = value;
+
+        this._store.variables[id] = token as Variable;
 
         return token;
     };
@@ -1222,17 +1406,7 @@ export class StateStore {
      * @param from
      * @param to
      */
-    private editVariable = (
-        id: string,
-        oldVar: VariableWithId,
-        newVar: Variable,
-    ) => {
-        if (this._store.dependencies[oldVar.to]) {
-            console.log('----------------------------');
-            console.log('remove old engine dependency');
-            console.log('----------------------------');
-            delete this._store.dependencies[oldVar.to];
-        }
+    private editVariable = (id: string, oldVar: VariableWithId, newVar) => {
         if (oldVar.id !== id) {
             console.log('----------------------------');
             console.log('remove old variable due to name change');
@@ -1257,9 +1431,9 @@ export class StateStore {
             delete this._store.dependencies[variable.to];
         }
 
-        // remove the references of it from ui (don't touch users code notebook)
         // Stringify blocks
         const blocksToMutate = JSON.stringify(this._store.blocks);
+        // remove the references of it from ui (don't touch users code notebook)
         const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, 'g');
 
         const modifiedBlocks = await blocksToMutate.replace(regex, '');
@@ -1293,5 +1467,13 @@ export class StateStore {
      */
     private removeDependency = (id: string) => {
         delete this._store.dependencies[id];
+    };
+
+    /**
+     *
+     */
+    private setExecutionOrder = (orderedList: string[]) => {
+        this._store.executionOrder = orderedList;
+        return;
     };
 }

@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Chip, List, Typography, styled } from '@semoss/ui';
 import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
 import { ActionMessages, QueryState, BlockJSON } from '@/stores';
-// import { getIconForMenuItemByKey } from './designer.constants';
 
 const StyledListItem = styled(List.Item)(() => ({
     padding: '0px 4px',
@@ -153,8 +152,8 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
         <StyledListItem onMouseDown={handleMouseDown}>
             <List.ItemButton
                 onClick={() => {
-                    // switch the view
-                    workspace.setView('data');
+                    // select the active panel
+                    // workspace.selectPanel('notebook');
 
                     // select the query
                     notebook.selectQuery(query.id);

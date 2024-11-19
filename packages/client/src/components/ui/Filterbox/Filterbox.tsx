@@ -1,4 +1,4 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, Fragment } from 'react';
 import {
     Avatar,
     Collapse,
@@ -12,6 +12,7 @@ import {
 import { usePixel, useRootStore } from '@/hooks';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { removeUnderscores, toTitleCase } from '@/utility';
+import { useSearchParams } from 'react-router-dom';
 
 const StyledFilter = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -88,6 +89,7 @@ const reducer = (state, action) => {
 export const Filterbox = (props: FilterboxProps) => {
     const { type, onChange } = props;
     const { configStore } = useRootStore();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { filterSearch } = state;
@@ -169,6 +171,16 @@ export const Filterbox = (props: FilterboxProps) => {
             : '',
     );
 
+    // Apply the URL's query params to the filters' state on component mount.
+    useEffect(() => {
+        if (searchParams.size > 0) {
+            searchParams.forEach((value, key) => {
+                setSelectedFilters(key, { value, count: 0 });
+            });
+        }
+        handleFiltersSideEffects();
+    }, []);
+
     /**
      * @desc Catalog filters
      */
@@ -205,7 +217,6 @@ export const Filterbox = (props: FilterboxProps) => {
         });
 
         metaKeysWithOpts.forEach((filter) => {
-            console.log(filter);
             if (filter.display_values) {
                 const split = filter.display_values.split(',');
                 const formatted = [];
@@ -261,7 +272,13 @@ export const Filterbox = (props: FilterboxProps) => {
 
         // Now update filter object to have new selected values
         setFilterVisibility({ ...filterVisibility });
+    };
 
+    /**
+     * @name handleFiltersSideEffects
+     * @desc handles what actions/effects are needed when the filters are changed
+     */
+    const handleFiltersSideEffects = () => {
         const constructedFilters = {};
 
         Object.entries(filterVisibility).forEach((obj) => {
@@ -271,6 +288,8 @@ export const Filterbox = (props: FilterboxProps) => {
         });
         // Pass filters to parent
         onChange(constructedFilters);
+        // Update query params in the URL
+        setSearchParams(constructedFilters);
     };
 
     return (
@@ -378,82 +397,81 @@ export const Filterbox = (props: FilterboxProps) => {
                                             ) {
                                                 shownListItems += 1;
                                                 return (
-                                                    <>
-                                                        <List.Item
+                                                    <List.Item
+                                                        disableGutters
+                                                        key={i}
+                                                    >
+                                                        <List.ItemButton
                                                             disableGutters
-                                                            key={i}
-                                                        >
-                                                            <List.ItemButton
-                                                                disableGutters
-                                                                sx={{
-                                                                    paddingLeft:
-                                                                        '16px',
-                                                                    paddingRight:
-                                                                        '16px',
-                                                                }}
-                                                                selected={
-                                                                    filterVisibility[
-                                                                        entries[0]
-                                                                    ].value.indexOf(
-                                                                        filterOption.value,
-                                                                    ) > -1
-                                                                }
-                                                                onClick={() => {
-                                                                    dispatch({
-                                                                        type: 'field',
-                                                                        field: 'databases',
-                                                                        value: [],
-                                                                    });
+                                                            sx={{
+                                                                paddingLeft:
+                                                                    '16px',
+                                                                paddingRight:
+                                                                    '16px',
+                                                            }}
+                                                            selected={
+                                                                filterVisibility[
+                                                                    entries[0]
+                                                                ].value.indexOf(
+                                                                    filterOption.value,
+                                                                ) > -1
+                                                            }
+                                                            onClick={() => {
+                                                                dispatch({
+                                                                    type: 'field',
+                                                                    field: 'databases',
+                                                                    value: [],
+                                                                });
 
-                                                                    setSelectedFilters(
-                                                                        entries[0],
-                                                                        filterOption,
-                                                                    );
+                                                                setSelectedFilters(
+                                                                    entries[0],
+                                                                    filterOption,
+                                                                );
+                                                                handleFiltersSideEffects();
+                                                            }}
+                                                            aria-label={
+                                                                filterVisibility[
+                                                                    entries[0]
+                                                                ].value.indexOf(
+                                                                    filterOption.value,
+                                                                ) > -1
+                                                                    ? `Unfilter ${filterOption.value}`
+                                                                    : `Filter ${filterOption.value}`
+                                                            }
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    width: '100%',
+                                                                    display:
+                                                                        'flex',
+                                                                    justifyContent:
+                                                                        'space-between',
                                                                 }}
-                                                                aria-label={
-                                                                    filterVisibility[
-                                                                        entries[0]
-                                                                    ].value.indexOf(
-                                                                        filterOption.value,
-                                                                    ) > -1
-                                                                        ? `Unfilter ${filterOption.value}`
-                                                                        : `Filter ${filterOption.value}`
-                                                                }
                                                             >
-                                                                <div
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        display:
-                                                                            'flex',
-                                                                        justifyContent:
-                                                                            'space-between',
-                                                                    }}
-                                                                >
-                                                                    <List.ItemText
-                                                                        disableTypography
-                                                                        primary={
-                                                                            <Typography variant="body1">
-                                                                                {
-                                                                                    filterOption.value
-                                                                                }
-                                                                            </Typography>
-                                                                        }
-                                                                    />
-                                                                    {filterOption.count && (
-                                                                        <StyledAvatarCount
-                                                                            variant={
-                                                                                'rounded'
-                                                                            }
-                                                                        >
+                                                                <List.ItemText
+                                                                    disableTypography
+                                                                    primary={
+                                                                        <Typography variant="body1">
                                                                             {
-                                                                                filterOption.count
+                                                                                filterOption.value
                                                                             }
-                                                                        </StyledAvatarCount>
-                                                                    )}
-                                                                </div>
-                                                            </List.ItemButton>
-                                                        </List.Item>
-                                                    </>
+                                                                        </Typography>
+                                                                    }
+                                                                />
+                                                                {filterOption.count && (
+                                                                    <StyledAvatarCount
+                                                                        variant={
+                                                                            'rounded'
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            filterOption.count
+                                                                        }
+                                                                    </StyledAvatarCount>
+                                                                )}
+                                                            </div>
+                                                        </List.ItemButton>
+                                                    </List.Item>
                                                 );
                                             }
                                         }

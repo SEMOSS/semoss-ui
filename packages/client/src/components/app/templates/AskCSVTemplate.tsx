@@ -20,6 +20,7 @@ export const AskCSVTemplate: Template = {
     tags: ['NLP', 'SQL', 'LLM'],
     state: {
         version: '1.0.0-alpha.1',
+        executionOrder: [],
         variables: {
             file: {
                 to: 'file',

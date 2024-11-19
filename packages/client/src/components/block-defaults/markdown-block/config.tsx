@@ -11,7 +11,8 @@ import {
 import { MarkdownBlockDef, MarkdownBlock } from './MarkdownBlock';
 import { FormatListBulleted } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
+import { QueryInputSettings } from '@/components/block-settings';
 
 // export the config for the block
 export const config: BlockConfig<MarkdownBlockDef> = {
@@ -22,6 +23,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
             padding: '4px',
         },
         markdown: '**Hello world**',
+        isStreaming: false,
     },
     listeners: {},
     slots: {},
@@ -34,10 +36,20 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                 {
                     description: 'Markdown',
                     render: ({ id }) => (
-                        <InputModalSettings
+                        <QueryInputSettings
                             id={id}
                             label="Markdown"
                             path="markdown"
+                        />
+                    ),
+                },
+                {
+                    description: 'Enable Typewriting Effect',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Enable Typewriting Effect"
+                            path="isStreaming"
                         />
                     ),
                 },

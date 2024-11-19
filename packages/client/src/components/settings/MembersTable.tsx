@@ -262,8 +262,8 @@ export const MembersTable = (props: MembersTableProps) => {
             return;
         }
 
-        setPage(0);
-        setSelectedMembers([]);
+        // setPage(0);
+        // setSelectedMembers([]);
 
         // select the member when done mounting
         memberSearchRef.current?.focus();

@@ -29,7 +29,6 @@ export interface AutocompleteProps<
         | "disablePortal"
         | "forcePopupIcon"
         | "ListboxComponent"
-        | "ListboxProps"
         | "openText"
         | "PaperComponent"
         | "PopperComponent"

@@ -149,10 +149,11 @@ export const PromptBuilderContextStep = (props: {
                     paddingBottom={1}
                 >
                     <Typography variant="body1">Prompt Context</Typography>
-                    <PromptLibraryDialogButton
+                    {/* TODO: Pull from our Prompt Library */}
+                    {/* <PromptLibraryDialogButton
                         disabled={isPromptLibraryDisabled}
                         builder={props.builder}
-                    />
+                    /> */}
                 </Stack>
                 <TextField
                     fullWidth

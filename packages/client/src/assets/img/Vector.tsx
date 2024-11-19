@@ -12,7 +12,7 @@ const StyledContainer = styled('div')(({ theme }) => {
 });
 
 const StyledIcon = styled(TokenOutlined)(({ theme }) => {
-    const palette = theme.palette as CustomPaletteOptions;
+    const palette = theme.palette as unknown as CustomPaletteOptions;
 
     return {
         color: palette.purple['300'],

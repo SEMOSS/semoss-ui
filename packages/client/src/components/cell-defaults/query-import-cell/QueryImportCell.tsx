@@ -1,28 +1,20 @@
 import { observer } from 'mobx-react-lite';
-import { useEffect, useRef, useState } from 'react';
-import Editor, { Monaco } from '@monaco-editor/react';
+import { useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { StyledSelect, StyledSelectItem } from '../shared';
-import {
-    styled,
-    Button,
-    Menu,
-    MenuProps,
-    TextField,
-    Stack,
-    InputAdornment,
-} from '@semoss/ui';
+import { styled, Button, TextField, Stack, InputAdornment } from '@semoss/ui';
 
 import {
-    AccountTree,
     CropFree,
     KeyboardArrowDown,
     DriveFileRenameOutlineRounded,
 } from '@mui/icons-material';
-import { editor } from 'monaco-editor';
 import { DatabaseTables } from './DatabaseTables';
 
 import { ActionMessages, CellComponent, CellDef } from '@/stores';
 import { useBlocks, usePixel } from '@/hooks';
+
+// Reduce Initial Bundle
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -147,10 +139,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
          * @param editor - editor that mounted
          * @param monaco - monaco instance
          */
-        const handleEditorMount = (
-            editor: editor.IStandaloneCodeEditor,
-            monaco: Monaco,
-        ) => {
+        const handleEditorMount = (editor, monaco) => {
             editorRef.current = editor;
 
             // add on change
@@ -328,26 +317,30 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                         </Stack>
                     )}
                     <StyledContainer>
-                        <Editor
-                            value={cell.parameters.selectQuery}
-                            defaultValue="--SELECT * FROM..."
-                            language="sql" /** TODO: language support? can we tell this from the database type? */
-                            options={{
-                                scrollbar: { alwaysConsumeMouseWheel: false },
-                                readOnly: false,
-                                minimap: { enabled: false },
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                lineHeight: EDITOR_LINE_HEIGHT,
-                                overviewRulerBorder: false,
-                                lineNumbers: 'on',
-                                glyphMargin: false,
-                                folding: false,
-                                lineNumbersMinChars: 2,
-                            }}
-                            onChange={handleEditorChange}
-                            onMount={handleEditorMount}
-                        />
+                        <Suspense fallback={<>...</>}>
+                            <Editor
+                                value={cell.parameters.selectQuery}
+                                defaultValue="--SELECT * FROM..."
+                                language="sql" /** TODO: language support? can we tell this from the database type? */
+                                options={{
+                                    scrollbar: {
+                                        alwaysConsumeMouseWheel: false,
+                                    },
+                                    readOnly: false,
+                                    minimap: { enabled: false },
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    lineHeight: EDITOR_LINE_HEIGHT,
+                                    overviewRulerBorder: false,
+                                    lineNumbers: 'on',
+                                    glyphMargin: false,
+                                    folding: false,
+                                    lineNumbersMinChars: 2,
+                                }}
+                                onChange={handleEditorChange}
+                                onMount={handleEditorMount}
+                            />
+                        </Suspense>
                     </StyledContainer>
                     {isExpanded && (
                         <Stack

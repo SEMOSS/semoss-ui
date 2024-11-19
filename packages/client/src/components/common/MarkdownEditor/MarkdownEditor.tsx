@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { Container, styled, ToggleTabsGroup } from '@semoss/ui';
-import Editor from '@monaco-editor/react';
-
 import { Markdown } from '../Markdown';
+
+// Reduce Initial Bundle
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
     height: theme.spacing(38),
@@ -58,16 +59,18 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
             </ToggleTabsGroup>
             <StyledTabPanel>
                 {view === 0 ? (
-                    <StyledEditor
-                        width={900}
-                        defaultValue={value}
-                        value={value}
-                        language={'markdown'}
-                        onChange={(newValue, e) => {
-                            // Handle changes in the editor's content.
-                            onChange(newValue);
-                        }}
-                    />
+                    <Suspense fallback={<>...</>}>
+                        <StyledEditor
+                            width={900}
+                            defaultValue={value}
+                            value={value}
+                            language={'markdown'}
+                            onChange={(newValue, e) => {
+                                // Handle changes in the editor's content.
+                                onChange(newValue);
+                            }}
+                        />
+                    </Suspense>
                 ) : (
                     <StyledMarkdownContainer>
                         <Markdown content={value}></Markdown>

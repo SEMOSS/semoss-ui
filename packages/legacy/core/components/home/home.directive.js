@@ -6,6 +6,7 @@ import './home-help/home-help.directive';
 import './home-intro/home-intro.directive';
 import './home-nav/home-nav.directive';
 import './home-search/home-search.directive';
+import { CUSTOMIZATION } from '@/custom/theme';
 
 export default angular
     .module('app.home.directive', [
@@ -497,6 +498,21 @@ function homeDirective(
                     scope.home.login.allowed = data;
                 });
             }
+
+            const themeMap = CONFIG.theme['THEME_MAP'] ? JSON.parse(CONFIG.theme['THEME_MAP']) : {}
+            document.title = themeMap.name ? themeMap.name : CUSTOMIZATION.page.title;
+
+            // Set the favicon
+            const faviconLink = themeMap.isLogoUrl
+                ? themeMap.logo
+                : CUSTOMIZATION.page.favicon
+                ? CUSTOMIZATION.page.favicon
+                : null;
+
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = faviconLink;
+            document.head.appendChild(link);
         }
 
         initialize();

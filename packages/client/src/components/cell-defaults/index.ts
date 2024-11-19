@@ -2,6 +2,7 @@ import { CellRegistry } from '@/stores';
 
 import { CodeCellConfig, CodeCellDef } from './code-cell';
 import { QueryImportCellConfig, QueryImportCellDef } from './query-import-cell';
+import { DataImportCellConfig, DataImportCellDef } from './data-import-cell';
 import {
     UppercaseTransformationCellConfig,
     UppercaseTransformationCellDef,
@@ -43,9 +44,12 @@ import {
     JoinTransformationCellDef,
 } from './join-transformation-cell';
 
+import { LLMCellDef, LLMCellConfig } from './llm-cell';
+
 export type DefaultCellDefinitions =
     | CodeCellDef
     | QueryImportCellDef
+    | DataImportCellDef
     | UppercaseTransformationCellDef
     | UpdateRowTransformationCellDef
     | ColumnTypeTransformationCellDef
@@ -54,11 +58,13 @@ export type DefaultCellDefinitions =
     | JoinTransformationCellDef
     | CumulativeSumTransformationCellDef
     | EncodeColumnTransformationCellDef
-    | CollapseTransformationCellDef;
+    | CollapseTransformationCellDef
+    | LLMCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [CodeCellConfig.widget]: CodeCellConfig,
     [QueryImportCellConfig.widget]: QueryImportCellConfig,
+    [DataImportCellConfig.widget]: DataImportCellConfig,
     [UppercaseTransformationCellConfig.widget]:
         UppercaseTransformationCellConfig,
     [UpdateRowTransformationCellConfig.widget]:
@@ -75,6 +81,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
     [EncodeColumnTransformationCellConfig.widget]:
         EncodeColumnTransformationCellConfig,
     [CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
+    [LLMCellConfig.widget]: LLMCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
