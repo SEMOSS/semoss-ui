@@ -5,7 +5,7 @@ import { setValueByPath } from '@/utility';
 import { CellComponent, CellConfig, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
-import { pixelConsole, pixelResult, runPixelAsync, download } from '@/api';
+import { pixelConsole, pixelResult, runPixelAsync } from '@/api';
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -249,82 +249,10 @@ export class CellState<D extends CellDef = CellDef> {
      * Helpers
      */
     /**
-     * Process State
-     */
-    /**
-     * Process running of the cell
-     */
-    async _processRun() {
-        const start = new Date();
-
-        try {
-            // check the loading state
-            if (this._store.isLoading) {
-                throw new Error('Cell is loading');
-            }
-
-            // start the loading screen
-            this._store.isLoading = true;
-
-            // convert the cells to the raw pixel
-            const raw: string | string[] = this.toPixel();
-
-            // Determine if multiple pixels need to be ran.
-            if (typeof raw === 'string') {
-                const { opType, output } = await this.runPixel(raw);
-
-                runInAction(() => {
-                    // store the operation and output
-                    this._store.operation = opType;
-
-                    // save the last output
-                    this._store.output = output;
-                });
-            } else if (Array.isArray(raw)) {
-                // Collect responses for each call to store in state.
-                let opTypes = [];
-                const outputs = [];
-
-                for (const str of raw) {
-                    const { opType, output } = await this.runPixel(str);
-                    opTypes = [...opTypes, ...opType];
-                    outputs.push(output);
-                }
-
-                runInAction(() => {
-                    // store the operation and output
-                    this._store.operation = opTypes;
-
-                    // save the last output
-                    this._store.output = outputs;
-                });
-            }
-        } catch (e) {
-            runInAction(() => {
-                // store the operation and output
-                this._store.operation = ['ERROR'];
-
-                // save the last output
-                this._store.output = e.message;
-            });
-        } finally {
-            const end = new Date();
-
-            this._store.executionDurationMilliseconds =
-                end.getTime() - start.getTime();
-
-            runInAction(() => {
-                // stop the loading screen
-                this._store.isLoading = false;
-            });
-        }
-    }
-
-    /**
-     * Helper function for _processRun
+     * Helper function to run a pixel
      * @param rawPixel - pixel to be formatted and run
      */
-    async runPixel(rawPixel: string) {
+    private async runPixel(rawPixel: string) {
         // Gets rid of braces and evaluate parameters in query
         // const filled = this._state.flattenVar(raw);
         const filled = this._state.flattenVariable(rawPixel);
@@ -369,7 +297,6 @@ export class CellState<D extends CellDef = CellDef> {
         }
 
         const { errors, results } = await pixelResult(jobId);
-
         if (errors.length > 0) {
             throw new Error(errors.join(''));
         }
@@ -400,11 +327,83 @@ export class CellState<D extends CellDef = CellDef> {
             output = last.output;
         }
 
-        if (opType.includes('FILE_DOWNLOAD')) {
-            await download(this._state.insightId, output as string);
-        }
-
         return { opType, output };
+    }
+
+    /**
+     * Run the cell
+     */
+    async _run() {
+        const start = new Date();
+
+        try {
+            // check the loading state
+            if (this._store.isLoading) {
+                throw new Error('Cell is already loading');
+            }
+
+            // start the loading screen
+            this._store.isLoading = true;
+
+            // convert the cells to the raw pixel
+            const raw: string | string[] = this.toPixel();
+
+            // Determine if multiple pixels need to be ran.
+            if (typeof raw === 'string') {
+                const { opType, output } = await this.runPixel(raw);
+
+                runInAction(() => {
+                    // store the operation and output
+                    this._store.operation = opType;
+
+                    // save the last output
+                    this._store.output = output;
+                });
+            } else if (Array.isArray(raw)) {
+                // Collect responses for each call to store in state.
+                let opTypes = [];
+                const outputs = [];
+
+                for (const str of raw) {
+                    const { opType, output } = await this.runPixel(str);
+                    opTypes = [...opTypes, ...opType];
+                    outputs.push(output);
+                }
+
+                runInAction(() => {
+                    // store the operation and output
+                    this._store.operation = opTypes;
+
+                    // save the last output
+                    this._store.output = outputs;
+                });
+            }
+
+            // log it
+            console.log(JSON.stringify(this.operation), this.output);
+
+            // process side effects from running a pixel
+            this._state.processSideEffects(this.operation, this.output);
+        } catch (e) {
+            runInAction(() => {
+                // store the operation and output
+                this._store.operation = ['ERROR'];
+
+                // save the last output
+                this._store.output = e.message;
+            });
+        } finally {
+            runInAction(() => {
+                //TODO: Integrate with backend
+                const end = new Date();
+
+                this._store.executionDurationMilliseconds =
+                    end.getTime() - start.getTime();
+
+                // stop the loading screen
+                this._store.isLoading = false;
+            });
+        }
     }
 
     /**
@@ -412,7 +411,7 @@ export class CellState<D extends CellDef = CellDef> {
      * @param path - path of the data to set
      * @param value - value of the data
      */
-    _processUpdate(path: string | null, value: unknown) {
+    _update(path: string | null, value: unknown) {
         if (!path) {
             // set the value
             this._store = value as CellStateStoreInterface<D>;

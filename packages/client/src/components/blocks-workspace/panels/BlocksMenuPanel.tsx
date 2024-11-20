@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { Search, SearchOff } from '@mui/icons-material';
 
-import { AddBlocksMenuItem, AddBlocksMenuCard } from '@/components/designer';
+import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 
 const StyledHeader = styled('div')(({ theme }) => ({
@@ -44,7 +44,7 @@ export interface AddBlocksMenuProps {
     title: string;
 
     /** Items to add to show in the menu.  */
-    items: AddBlocksMenuItem[];
+    items: DesignerMenuItem[];
 }
 
 /**
