@@ -20,6 +20,29 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
+const StyledMainSection = styled('div')(() => ({
+    display: 'block',
+    border: '1px solid gray',
+    padding: '0.5rem',
+    width: '100%',
+}));
+
+const StyledSubSection = styled('div', {
+    shouldForwardProp: (prop) => prop != 'display' && prop != 'justifyContent',
+})<{ display?: string; justifyContent?: string }>(
+    ({ theme, display, justifyContent }) => ({
+        width: '100%',
+        paddingTop: '0.5rem',
+        display: display ?? undefined,
+        justifyContent: justifyContent ?? undefined,
+    }),
+);
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    width: '100%',
+}));
+
+//having custom fields to customize charts text parts like: position, alignment, rotate, etc
 export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
     const [fieldData, setFieldData] = useState({
         position: '',
@@ -64,6 +87,7 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
         '800',
         '900',
     ];
+    //for retaining the previously selected values, this useeffect will help
     useEffect(() => {
         if (option['series']) {
             console.log('series');
@@ -100,6 +124,7 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
             console.log('in else series');
         }
     }, []);
+    //handles different input fields by setting values to state, whenever a change happens
     function updateFields(fieldName, fieldValue, fieldType) {
         setFieldData((prevData) => {
             return {
@@ -110,20 +135,8 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
     }
 
     const getAccordianDetails = (
-        <div
-            style={{
-                display: 'block',
-                border: '1px solid gray',
-                padding: '0.5rem',
-                width: '100%',
-            }}
-        >
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+        <StyledMainSection>
+            <StyledSubSection>
                 <label htmlFor="label-position">Position</label>
                 <StyledSelect
                     id="label-position"
@@ -142,31 +155,20 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledSubSection>
+            <StyledSubSection>
                 <label htmlFor="rotate-label">Rotate Label(In Degrees)</label>
-                <TextField
+                <StyledTextField
                     variant={'outlined'}
                     label="Rotate"
                     type="number"
                     id="rotate-label"
                     // defaultValue={fieldData.rotate ?? ''}
                     value={fieldData.rotate ?? ''}
-                    style={{ width: '100%' }}
                     onChange={(e) => updateFields('rotate', e, 'text')}
-                ></TextField>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+                ></StyledTextField>
+            </StyledSubSection>
+            <StyledSubSection>
                 <label htmlFor="alignment-label">Select Alignment</label>
                 <StyledSelect
                     id="alignment-label"
@@ -186,13 +188,8 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledSubSection>
+            <StyledSubSection>
                 <label htmlFor="font">Select Font</label>
                 <StyledSelect
                     id="font"
@@ -212,33 +209,22 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledSubSection>
+            <StyledSubSection>
                 <label htmlFor="font-size">
                     Select Font Size (Default: 12)
                 </label>
-                <TextField
+                <StyledTextField
                     variant={'outlined'}
                     label="Select Font Size"
                     type="number"
                     id="font-size"
                     // defaultValue={fieldData.fontsize}
                     value={fieldData.fontsize}
-                    style={{ width: '100%' }}
                     onChange={(e) => updateFields('fontsize', e, 'text')}
-                ></TextField>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+                ></StyledTextField>
+            </StyledSubSection>
+            <StyledSubSection>
                 <label htmlFor="font-weight">Select Font Weight</label>
                 <StyledSelect
                     id="font-weight"
@@ -258,36 +244,23 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledSubSection>
+            <StyledSubSection>
                 <label htmlFor="font-weight">Select Font Colour</label>
-                <TextField
+                <StyledTextField
                     variant={'outlined'}
                     id="font-weight"
                     label="Select Font Colour"
                     // defaultValue={fieldData.fontcolour}
                     value={fieldData.fontcolour}
-                    style={{ width: '100%' }}
                     onChange={(e) => updateFields('fontcolour', e, 'text')}
-                ></TextField>
-            </div>
+                ></StyledTextField>
+            </StyledSubSection>
             <br />
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-around',
-                }}
-            >
+            <StyledSubSection display="flex" justifyContent="space-around">
                 <Button onClick={() => updateChart(fieldData)}>Execute</Button>
-            </div>
-        </div>
+            </StyledSubSection>
+        </StyledMainSection>
     );
 
     return (

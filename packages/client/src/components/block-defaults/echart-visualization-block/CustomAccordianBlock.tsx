@@ -18,6 +18,7 @@ const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
         transform: 'rotate(90deg)',
     },
 }));
+//creates an accordion based on data received from called components
 const CustomAccordianBlock = ({
     accordianExpanded,
     accordianSummaryProps,
@@ -26,7 +27,7 @@ const CustomAccordianBlock = ({
 }) => {
     const [expandAccordion, setExpandAccordion] = useState(accordianExpanded);
     return (
-        <div>
+        <>
             <Accordion
                 expanded={expandAccordion}
                 onChange={() =>
@@ -38,7 +39,7 @@ const CustomAccordianBlock = ({
                 </StyledAccordionTrigger>
                 <Accordion.Content>{accordianDetails}</Accordion.Content>
             </Accordion>
-        </div>
+        </>
     );
 };
 export default CustomAccordianBlock;

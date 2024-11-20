@@ -7,7 +7,6 @@ import {
     EChartVisualizationBlockDef,
 } from './EChartVisualizationBlock';
 import { EChartVisualizationBlockMenu } from './EChartVisualizationBlockMenu';
-
 export const config: BlockConfig<EChartVisualizationBlockDef> = {
     widget: 'e-chart',
     type: BLOCK_TYPE_CHART,

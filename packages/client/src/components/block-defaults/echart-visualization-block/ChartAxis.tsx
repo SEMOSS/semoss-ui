@@ -1,9 +1,22 @@
-import { Button, Switch } from '@semoss/ui';
+import { Button, styled, Switch } from '@semoss/ui';
 import { useState, useEffect } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { BAR_CHART_DATA } from './Echart.constants';
 
+const StyledAxisMainSection = styled('div')(({ theme }) => ({
+    width: '100%',
+    padding: '10px',
+}));
+
+const StyledAxisSubSection = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'justifyContent',
+})<{ justifyContent?: string }>(({ theme, justifyContent }) => ({
+    display: 'flex',
+    justifyContent: justifyContent,
+    padding: `5px`,
+}));
+//handles all chart axis related tools
 const ChartAxis = ({ option, updateChart }) => {
     const [chartAxisState, setChartAxisState] = useState({
         xAxisZoomShow: false,
@@ -11,6 +24,7 @@ const ChartAxis = ({ option, updateChart }) => {
         showTooltip: false,
         showDisplayValues: false,
     });
+    //for retaining the previously selected values, this useeffect will help
     useEffect(() => {
         let chartAxisStateData = {
             xAxisZoomShow: false,
@@ -78,18 +92,8 @@ const ChartAxis = ({ option, updateChart }) => {
     }
 
     const accordionDetails = (
-        <div
-            style={{
-                width: '100%',
-                padding: '10px',
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
-            >
+        <StyledAxisMainSection>
+            <StyledAxisSubSection justifyContent="space-between">
                 <label>Show / Hide X-Axis Zoom</label>
                 <Switch
                     checked={chartAxisState.xAxisZoomShow ?? undefined}
@@ -101,13 +105,8 @@ const ChartAxis = ({ option, updateChart }) => {
                     }
                     title="Show / Hide X-Axis Zoom"
                 />
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
-            >
+            </StyledAxisSubSection>
+            <StyledAxisSubSection justifyContent="space-between">
                 <label>Show / Hide Y-Axis Zoom</label>
                 <Switch
                     checked={chartAxisState.yAxisZoomShow ?? undefined}
@@ -119,13 +118,8 @@ const ChartAxis = ({ option, updateChart }) => {
                     }
                     title="Show / Hide X-Axis Zoom"
                 />
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
-            >
+            </StyledAxisSubSection>
+            <StyledAxisSubSection justifyContent="space-between">
                 <label>Show / Hide Tooltip</label>
                 <Switch
                     checked={chartAxisState.showTooltip ?? undefined}
@@ -137,13 +131,8 @@ const ChartAxis = ({ option, updateChart }) => {
                     }
                     title="Show / Hide Tooltip"
                 />
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
-            >
+            </StyledAxisSubSection>
+            <StyledAxisSubSection justifyContent="space-between">
                 <label>Show / Hide Display Values</label>
                 <Switch
                     checked={chartAxisState.showDisplayValues ?? undefined}
@@ -155,18 +144,13 @@ const ChartAxis = ({ option, updateChart }) => {
                     }
                     title="Show / Hide Display Values"
                 />
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-around',
-                }}
-            >
+            </StyledAxisSubSection>
+            <StyledAxisSubSection justifyContent="space-around">
                 <Button onClick={(e) => updateChart(chartAxisState)}>
                     Execute
                 </Button>
-            </div>
-        </div>
+            </StyledAxisSubSection>
+        </StyledAxisMainSection>
     );
 
     return (

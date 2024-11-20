@@ -1,7 +1,7 @@
-import { useBlock, useBlocks, useBlockSettings } from '@/hooks';
+import { useBlock, useBlocks, useBlockSettings, usePixel } from '@/hooks';
 import { Button, Stack, styled, Switch } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { Paths, PathValue } from '@/types';
 import { ActionMessages } from '@/stores';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from './Echart.constants';
@@ -12,11 +12,23 @@ import { ChartStyling } from './ChartStyling';
 import { EditXAxis } from './Edit-X-Axis';
 import { EditYAxis } from './Edit-Y-Axis';
 import ChartAxis from './ChartAxis';
+import { BlocksContext } from '@/contexts';
 
-const StyledChartContainer = styled('div')(() => ({
-    width: 'fit-content',
-    minWidth: '50px',
-    minHeight: '50px',
+const StyledChartContainer = styled('div')<{ width?: string }>(
+    ({ theme, width }) => ({
+        width: width ?? 'fit-content',
+        minWidth: '50px',
+        minHeight: '50px',
+    }),
+);
+
+const StyledSectionContainer = styled('div')<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    width: '100%',
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
 }));
 
 export interface EChartVisualizationToolDef {
@@ -39,7 +51,7 @@ export interface EChartDisabledVisualizationTools {
     showTooltipDisabled: boolean;
     displayValueLabelDisabled: boolean;
 }
-
+//This file acts as a tool for Bar graph, for executing various functionalities in single place
 const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
     ({ showTool, id }) => {
         const [showToolsSection, setShowToolsSection] = useState(showTool);
@@ -64,86 +76,41 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
             });
         const { data, setData } = useBlockSettings<any>(id);
         const { state } = useBlocks();
+        const context = useContext(BlocksContext);
+        const getChartData = usePixel<{
+            data: {
+                headers: string[];
+                rawHeaders: string[];
+                values: unknown[];
+            };
+            headerInfo: unknown[];
+            numCollected: number;
+            sources: unknown[];
+            taskId: string;
+        }>(
+            `Frame(frame=[FRAME_6927] )|Select(AGE)|Limit(20)|CollectAll()`,
+            {},
+            context.state.insightId,
+        );
+        // useMemo(()=>{
+        function updateChartDataOnClick() {
+            if (getChartData.status !== 'SUCCESS') {
+                console.log('Result is not success');
+                return;
+            }
+            let dataResponse = getChartData.data.data;
+            let resData = dataResponse.values.map((item) => item[0]);
+            let option = data.option;
+            if (option.hasOwnProperty('series') && option['series']) {
+                let xAxisIndex = option['series'].findIndex(
+                    (item) => item.type === BAR_CHART_DATA.JSONVALUE[0],
+                );
+                option['series'][xAxisIndex].data = resData;
+                runStateUpdate(option);
+                console.log('state update completed');
+            }
+        }
 
-        // useEffect(()=>{
-        //     let option = data.option;
-        //     let featureSectionState : EChartVisualizationTools= showFeatureSection;
-        //     if(option['dataZoom']){
-        //         let xAxisPosition = option['dataZoom'].findIndex((opt) =>
-        //             opt.hasOwnProperty('xAxisIndex'),
-        //         );
-        //         let yAxisPosition = option['dataZoom'].findIndex((opt)=>{
-        //             return opt.hasOwnProperty('yAxisIndex');
-        //         });
-        //         let xyAxisDataZoom = {
-
-        //         };
-        //         if(xAxisPosition > -1){
-        //             xyAxisDataZoom = {
-        //                 ...xyAxisDataZoom,
-        //                 xAxisDataZoomShow: option['dataZoom'][xAxisPosition].show ?? false
-        //             };
-        //         }
-        //         if(yAxisPosition > -1){
-        //             xyAxisDataZoom = {
-        //                 ...xyAxisDataZoom,
-        //                 yAxisDataZoomShow: option['dataZoom'][yAxisPosition].show ?? false
-        //             }
-        //         }
-        //         // featureSectionState.xAxisDataZoomShow = option['dataZoom'][xAxisPosition].show;
-        //         // featureSectionState.yAxisDataZoomShow = option['dataZoom'][yAxisPosition].show;
-        //         setShowFeatureSection((prevShowFeatureSection)=>{
-        //             return {
-        //                 ...prevShowFeatureSection,
-        //                 ...xyAxisDataZoom,
-        //             }
-        //         });
-        //     }
-        //     else{
-        //         // featureDisabled.xAxisDataZoomDisabled = true;
-        //         // featureDisabled.yAxisDataZoomDisabled = true;
-        //         setFeatureDisabled((prevFeatureDisabled)=>{
-        //             return {
-        //                 ...prevFeatureDisabled,
-        //                 xAxisDataZoomDisabled: true,
-        //                 yAxisDataZoomDisabled: true,
-        //             }
-        //         });
-        //     }
-        //     if(option['tooltip']){
-        //         // featureSectionState.showTooltip = option['tooltip'].show;
-        //         setShowFeatureSection((prevShowFeatureSection)=>{
-        //             return {
-        //                 ...prevShowFeatureSection,
-        //                 showTooltip: option['tooltip'].show
-        //             }
-        //         });
-        //     }
-        //     else{
-        //         setFeatureDisabled((prevFeatureDisabled)=>{
-        //             return {
-        //                 ...prevFeatureDisabled,
-        //                 showTooltipDisabled: true,
-        //             };
-        //         })
-        //     }
-        //     if(option['series']){
-        //         let labelShowIndex = option['series'].findIndex((opt)=>opt.hasOwnProperty('label'));
-        //         if(labelShowIndex>=0){
-        //             setShowFeatureSection((prevShowFeatureSection)=>{
-        //                 return {
-        //                     ...prevShowFeatureSection,
-        //                     ['displayValueLabels']: option['series'][labelShowIndex]['label']['show']
-        //                 }
-        //             });
-        //         }
-        //     }
-        //     if(option['legend']){
-        //         setShowLegend(()=>{
-        //             return option['legend']['show'] ?? false;
-        //         });
-        //     }
-        // },[, data.option]);
         useEffect(() => {
             updateToolsSection();
         }, [showToolsSection]);
@@ -154,42 +121,15 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                 console.log(e);
             }
         }
-        // function isXAxisShow(){
-        //     let option = data.option;
-        //     let xAxisPosition = option['dataZoom'].findIndex((opt) =>
-        //         opt.hasOwnProperty('xAxisIndex'),
-        //     );
-        //     if(xAxisPosition > -1){
-        //         return option['dataZoom'][xAxisPosition].show;
-        //     }
-        //     return false;
-        // }
-        // function isYAxisShow(){
-        //     let option = data.option;
-        //     let yAxisPosition = option['dataZoom'].findIndex((opt) =>
-        //         opt.hasOwnProperty('yAxisIndex'),
-        //     );
-        //     if(yAxisPosition > -1){
-        //         return option['dataZoom'][yAxisPosition].show;
-        //     }
-        //     return false;
-        // }
-        // function isTooltipShown(){
-        //     let option = data.option;
-        //     if(option['tooltip']){
-        //         if(option['tooltip']['show']) return option['tooltip']['show'];
-        //         else return false;
-        //     }
-        //     return false;
-        // }
-        // function isDisplayValuesShown(){
-        //     let option  = data.option;
-        //     const displayPositionIndex = option['series'].findIndex((opt)=> BAR_CHART_DATA.JSONVALUE.includes(opt.type) );
-        //     if(option['series'][displayPositionIndex] && option['series'][displayPositionIndex].hasOwnProperty('label') && option['series'][displayPositionIndex]['label'].hasOwnProperty('show')){
-        //             return (option['series'][displayPositionIndex]['label']['show']);
-        //     }
-        //     return false;
-        // }
+        function isToggleShown() {
+            let option = data.option;
+            if (option['legend']) {
+                return option['legend'].hasOwnProperty('show')
+                    ? option['legend']['show']
+                    : false;
+            }
+            return false;
+        }
 
         function showToolHandleChange(event) {
             setShowToolsSection((prevShowToolsSection) => {
@@ -798,161 +738,92 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
         return (
             <Stack height={'100%'}>
                 <StyledChartContainer>
-                    <div style={{ display: 'inline-block' }}>
+                    <StyledSectionContainer display="inline-block">
                         <label htmlFor="showToolList">Show Tools Menu</label>
                         <Switch
                             checked={showToolsSection ?? undefined}
                             onChange={showToolHandleChange}
                             title="Show Tool"
                         />
-                    </div>
+                    </StyledSectionContainer>
                 </StyledChartContainer>
                 {showToolsSection && (
-                    <StyledChartContainer style={{ width: '100%' }}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-around',
-                            }}
+                    <StyledChartContainer width="100%">
+                        <StyledSectionContainer
+                            display="flex"
+                            justifyContent="space-around"
                         >
-                            <div style={{ display: 'inline-block' }}>
+                            <StyledSectionContainer display="inline-block">
                                 <label htmlFor="showToolList">
                                     Show Legend
                                 </label>
                                 <Switch
-                                    checked={showLegend ?? undefined}
+                                    checked={isToggleShown() ?? undefined}
                                     onChange={toggleLegend}
                                     title="Show Legend"
                                 />
+                            </StyledSectionContainer>
+                        </StyledSectionContainer>
+                        <StyledSectionContainer
+                            display="flex"
+                            justifyContent="space-around"
+                        >
+                            <div style={{ display: 'inline-block' }}>
+                                <Button onClick={updateChartDataOnClick}>
+                                    Update Chart Data
+                                </Button>
                             </div>
-                        </div>
-                        <div>
-                            {/* <button type="button" onClick={zoomChartButton} disabled={featureDisabled.xAxisDataZoomDisabled}>
-                                { showFeatureSection.xAxisDataZoomShow ? 'Hide' : 'Show' }  X-Axis Zoom
-                            </button> */}
-                            {/* <Button type="button" onClick={yAxisZoomChartButton} disabled={featureDisabled.yAxisDataZoomDisabled}>
-                            { isYAxisShow() ? 'Hide' : 'Show' } Y-Axis Zoom
-                            </Button> */}
-                            {/* <Button type='button' color='primary' onClick={zoomChartButton} disabled={featureDisabled.xAxisDataZoomDisabled}>
-                                { isXAxisShow() ? 'Hide' : 'Show' }  X-Axis Zoom
-                            </Button> */}
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <ChartAxis
                                 option={data.option}
                                 updateChart={updateChartZoom}
                             />
-                        </div>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                            {/* <Button type='button' onClick={toggleTooltip} disabled={featureDisabled.showTooltipDisabled}>
-                                { isTooltipShown() ?'Hide':'Show'} Tooltip 
-                            </Button>
-                            <Button type="button" onClick={toggleDisplayValues} disabled={featureDisabled.displayValueLabelDisabled}>
-                            { isDisplayValuesShown() ? 'Hide' : 'Show' } Display Values
-                            </Button> */}
-                        </div>
-                        <div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <CustomizeValueLabels
                                 updateChart={updateCustomizeValueLabels}
                                 option={data.option}
                                 chartType={chartType}
                             />
-                        </div>
-                        <div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <ToggleTrendline
                                 options={data.option}
                                 updateChart={updateTrendLines}
                                 chartType={chartType}
                             />
-                        </div>
-                        <div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <EChartStyles
                                 updateChart={updateChartStyle}
                                 chartType={chartType}
                                 option={data.option}
                             />
-                        </div>
-                        <div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <ChartStyling
                                 updateChart={updateChartStyling}
                                 chartType={chartType}
                                 option={data.option}
                             />
-                        </div>
-                        {/*<div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
-                            <ChartStyling
-                                updateChart={updateChartStyling}
-                                chartType={chartType}
-                                option={data.option}
-                            />
-                        </div>*/}
-                        <div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <EditXAxis
                                 updateChart={updateAxis}
                                 chartType={chartType}
                                 option={data.option}
                             />
-                        </div>
-                        <div
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
                             <EditYAxis
                                 updateChart={updateAxis}
                                 chartType={chartType}
                                 option={data.option}
                             />
-                        </div>
+                        </StyledSectionContainer>
                     </StyledChartContainer>
                 )}
-                {/* {!showToolsSection && <p>Tools for EChart</p>}
-                <StyledChartContainer>
-                    <p>Current Status:</p>
-                    <p>
-                        XAxis Zoom Button Enabled:{' '}
-                        {showFeatureSection.xAxisDataZoomShow
-                            ? 'enabled'
-                            : 'disabled'}
-                        <br />
-                        YAxis Zoom Button Enabled:{' '}
-                        {showFeatureSection.yAxisDataZoomShow
-                            ? 'enabled'
-                            : 'disabled'}
-                        <br />
-                        Showtooltip Enabled:{' '}
-                        {showFeatureSection.showTooltip
-                            ? 'enabled'
-                            : 'disabled'}
-                    </p>
-                </StyledChartContainer> */}
             </Stack>
         );
     },

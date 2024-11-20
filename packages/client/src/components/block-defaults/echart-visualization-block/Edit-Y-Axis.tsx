@@ -1,7 +1,30 @@
 import { useState, useEffect } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
-import { Button, Checkbox, Slider, TextField } from '@semoss/ui';
+import { Button, Checkbox, Slider, styled, TextField } from '@semoss/ui';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+const StyledAxisDiv = styled('div')<{
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+}));
+
+const StyledAxisSpan = styled('span')<{
+    display?: string;
+    justifyContent?: string;
+    width?: string;
+}>(({ theme, display, justifyContent, width }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    width: width ?? undefined,
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    width: '100%',
+}));
+//Changing the Y axis styling like title, rotate and changing the labels
 export const EditYAxis = ({ updateChart, chartType, option }) => {
     const [yaxisState, setYaxisState] = useState({
         yaxistitle: '',
@@ -132,17 +155,16 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
     }
 
     const accordionDetails = (
-        <div>
-            <div>
+        <StyledAxisDiv>
+            <StyledAxisDiv>
                 <label htmlFor="yaxis-title">Show X-Axis Title</label>
-                <TextField
+                <StyledTextField
                     id="yaxis-title"
                     value={yaxisState.yaxistitle}
-                    style={{ width: '100%' }}
                     onChange={(e) => handleInputChange(e, 'yaxistitle')}
                 />
-            </div>
-            <div>
+            </StyledAxisDiv>
+            <StyledAxisDiv>
                 <Checkbox
                     id="yaxis-center-align-text"
                     checked={yaxisState.centerAlignText}
@@ -151,8 +173,8 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                 <label htmlFor="yaxis-center-align-text">
                     Center Align Text
                 </label>
-            </div>
-            <div>
+            </StyledAxisDiv>
+            <StyledAxisDiv>
                 <label>Y Axis Title Gap</label>
                 <Slider
                     aria-label="Always visible"
@@ -164,19 +186,17 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                         handleInputChange(event, 'titleGapValue', newValue)
                     }
                 />
-                <span
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                    }}
+                <StyledAxisSpan
+                    display="flex"
+                    justifyContent="space-between"
+                    width="100%"
                 >
                     <span>{yaxisState.titleGapMinValue}</span>
                     <span>{yaxisState.titleGapMaxValue}</span>
-                </span>
-            </div>
+                </StyledAxisSpan>
+            </StyledAxisDiv>
 
-            <div>
+            <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-line"
                     checked={yaxisState.showYAxisLine}
@@ -189,8 +209,8 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                     }
                 />
                 <label htmlFor="show-yaxis-line">Show YAxis Line</label>
-            </div>
-            <div>
+            </StyledAxisDiv>
+            <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-line-ticks"
                     checked={yaxisState.showYAxisLineTicks}
@@ -203,8 +223,8 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                     }
                 />
                 <label htmlFor="show-yaxis-line">Show YAxis Line Ticks</label>
-            </div>
-            <div>
+            </StyledAxisDiv>
+            <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-values"
                     checked={yaxisState.showYAxisValues}
@@ -217,10 +237,10 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                     }
                 />
                 <label htmlFor="show-yaxis-values">Show YAxis Values</label>
-            </div>
+            </StyledAxisDiv>
             {yaxisState.showYAxisValues && (
-                <div>
-                    <div>
+                <StyledAxisDiv>
+                    <StyledAxisDiv>
                         <label htmlFor="rotate-label">
                             Rotate Y-Axis Values:
                         </label>
@@ -234,60 +254,51 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                                 handleInputChange(event, 'rotate', newValue)
                             }
                         />
-                        <span
-                            style={{
-                                display: 'flex',
-                                width: '100%',
-                                justifyContent: 'space-between',
-                            }}
+                        <StyledAxisSpan
+                            display="flex"
+                            width="100%"
+                            justifyContent="space-between"
                         >
                             <span>{yaxisState.rotateLabelMinValue}</span>
                             <span>{yaxisState.rotateLabelMaxValue}</span>
-                        </span>
-                    </div>
-                    <div>
+                        </StyledAxisSpan>
+                    </StyledAxisDiv>
+                    <StyledAxisDiv>
                         <label htmlFor="prepend-label-value">
                             Prepend Label Value :
                         </label>
-                        <TextField
+                        <StyledTextField
                             id="prepend-label-value"
                             value={yaxisState.prependLabelValue}
-                            style={{ width: '100%' }}
                             onChange={(e) =>
                                 handleInputChange(e, 'prependLabelValue')
                             }
                         />
-                    </div>
-                    <div>
+                    </StyledAxisDiv>
+                    <StyledAxisDiv>
                         <label htmlFor="append-label-value">
                             Append Label Value :
                         </label>
-                        <TextField
+                        <StyledTextField
                             id="append-label-value"
                             value={yaxisState.appendLabelValue}
-                            style={{ width: '100%' }}
                             onChange={(e) =>
                                 handleInputChange(e, 'appendLabelValue')
                             }
                         />
-                    </div>
-                </div>
+                    </StyledAxisDiv>
+                </StyledAxisDiv>
             )}
 
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                }}
-            >
+            <StyledAxisDiv display="flex" justifyContent="center">
                 <Button
                     type="button"
                     onClick={(e) => updateChart(yaxisState, 'yAxis')}
                 >
                     Execute
                 </Button>
-            </div>
-        </div>
+            </StyledAxisDiv>
+        </StyledAxisDiv>
     );
     return (
         <CustomAccordianBlock

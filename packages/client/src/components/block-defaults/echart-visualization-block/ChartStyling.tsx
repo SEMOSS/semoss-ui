@@ -8,6 +8,26 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
+const StyledChartMainSection = styled('div')(() => ({
+    display: 'block',
+    width: '100%',
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    width: '100%',
+}));
+
+const StyledChartSubSection = styled('div', {
+    shouldForwardProp: (prop) => prop != 'display' && prop != 'justifyContent',
+})<{ display?: string; justifyContent?: string }>(
+    ({ theme, display, justifyContent }) => ({
+        width: '100%',
+        paddingTop: '0.5rem',
+        display: display ?? undefined,
+        justifyContent: justifyContent ?? undefined,
+    }),
+);
+//handles chart styling with custom title, colour, etc
 export const ChartStyling = ({ updateChart, chartType, option }) => {
     const [chartStyle, setChartStyle] = useState({
         title: '',
@@ -55,6 +75,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
         { label: 'Segoe UI', value: 'Segoe UI' },
         { label: 'Times New Roman', value: 'Times New Roman' },
     ];
+    //for retaining the previously selected values, this useeffect will help
     useEffect(() => {
         let chartStyleData = {
             title: '',
@@ -129,6 +150,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
             });
         }
     }, [, option]);
+    //handles different input fields by setting values to state, whenever a change happens
     function handleInputChange(event, field) {
         setChartStyle((prevChartStyle) => {
             return {
@@ -139,32 +161,16 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
         console.log(field, event.target.value);
     }
     const accordionDetails = (
-        <div
-            style={{
-                display: 'block',
-                width: '100%',
-            }}
-        >
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+        <StyledChartMainSection>
+            <StyledChartSubSection>
                 <label htmlFor="change-chart-title">Set Chart Title</label>
-                <TextField
+                <StyledTextField
                     value={chartStyle.title}
                     id="change-chart-title"
-                    style={{ width: '100%' }}
                     onChange={(e) => handleInputChange(e, 'title')}
                 />
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledChartSubSection>
+            <StyledChartSubSection>
                 <label htmlFor="change-alignment">Select Alignment</label>
                 <StyledSelect
                     id="change-alignment"
@@ -182,42 +188,25 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledChartSubSection>
+            <StyledChartSubSection>
                 <label htmlFor="change-text-size">Choose Text Size(px)</label>
-                <TextField
+                <StyledTextField
                     value={chartStyle.textSize}
                     type="number"
                     id="change-text-size"
-                    style={{ width: '100%' }}
                     onChange={(e) => handleInputChange(e, 'textSize')}
                 />
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledChartSubSection>
+            <StyledChartSubSection>
                 <label htmlFor="change-font-colour">Font Colour</label>
-                <TextField
+                <StyledTextField
                     value={chartStyle.fontColour}
                     id="change-font-colour"
-                    style={{ width: '100%' }}
                     onChange={(e) => handleInputChange(e, 'fontColour')}
                 />
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledChartSubSection>
+            <StyledChartSubSection>
                 <label htmlFor="change-font-weight">Font Weight</label>
                 <StyledSelect
                     id="change-font-weight"
@@ -235,13 +224,8 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                }}
-            >
+            </StyledChartSubSection>
+            <StyledChartSubSection>
                 <label htmlFor="change-font-family">Font Family</label>
                 <StyledSelect
                     id="change-font-family"
@@ -259,14 +243,10 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                         );
                     })}
                 </StyledSelect>
-            </div>
-            <div
-                style={{
-                    width: '100%',
-                    paddingTop: '0.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
+            </StyledChartSubSection>
+            <StyledChartSubSection
+                display="flex"
+                justifyContent="space-between"
             >
                 <Button
                     onClick={(e) => updateChart(e, chartStyle)}
@@ -274,8 +254,8 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                 >
                     Execute
                 </Button>
-            </div>
-        </div>
+            </StyledChartSubSection>
+        </StyledChartMainSection>
     );
     return (
         <CustomAccordianBlock

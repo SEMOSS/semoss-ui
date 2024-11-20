@@ -1,8 +1,24 @@
 import { useEffect, useState } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Button, Select, Slider, TextField } from '@semoss/ui';
+import { Button, Select, Slider, styled, TextField } from '@semoss/ui';
 import { BAR_CHART_DATA } from './Echart.constants';
+
+const StyledBarStylesContainer = styled('div')<{
+    width?: string;
+    display?: string;
+    justifyContent?: string;
+}>(({ theme, width, display, justifyContent }) => ({
+    width: width ?? undefined,
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    width: '100%',
+}));
+
+//Updating bar chart specific styles like bar width and its colour
 export const EChartStyles = ({ updateChart, chartType, option }) => {
     const [styleData, setStyleData] = useState({
         barwidth: 45,
@@ -19,6 +35,7 @@ export const EChartStyles = ({ updateChart, chartType, option }) => {
         { label: 'Diamond', value: 'diamond' },
         { label: 'Pin', value: 'pin' },
     ];
+    //for retaining the previously selected values, this will help
     useEffect(() => {
         let styleDataObj = {
             barwidth: styleData.barwidth,
@@ -66,7 +83,7 @@ export const EChartStyles = ({ updateChart, chartType, option }) => {
             }
         }
     }, []);
-
+    //handles bar width changes and updates the value to state
     function handleInputChange(event, newValue) {
         setStyleData((prevStyleData) => {
             return {
@@ -75,6 +92,7 @@ export const EChartStyles = ({ updateChart, chartType, option }) => {
             };
         });
     }
+    //handles bar colour changes and updates the value to state
     function handleBarColourChange(e) {
         setStyleData((prevStyle) => {
             return {
@@ -84,8 +102,8 @@ export const EChartStyles = ({ updateChart, chartType, option }) => {
         });
     }
     const accordionDetails = (
-        <div>
-            <div>
+        <StyledBarStylesContainer>
+            <StyledBarStylesContainer>
                 <label>Bar Width</label>
                 <Slider
                     value={styleData.barwidth}
@@ -96,63 +114,31 @@ export const EChartStyles = ({ updateChart, chartType, option }) => {
                         handleInputChange(event, newValue)
                     }
                 />
-            </div>
-            {/* <div>
-                <label>Bar Symbol and Size</label>
-
-                <label htmlFor='chart-symbol'>Select a Symbol</label>
-                <Select>
-                    <Select.Item value={''}>Select Symbol</Select.Item>
-                    {
-                        barSymbols.map((barSymbol, index)=>{
-                            return (
-                                <Select.Item value={barSymbol.value} key={index}>{barSymbol.label}</Select.Item>
-                            )
-                        })
-                    }
-                </Select>
-                <Slider 
-                    // value={0}
-                    min={styleData.minBarWidth}
-                    max={styleData.maxBarWidth}
-                    valueLabelDisplay="auto"
-                    onChange={(event, newValue)=>handleInputChange(event, newValue)}
-                />
-            </div>             */}
-            <div>
+            </StyledBarStylesContainer>
+            <StyledBarStylesContainer>
                 <label htmlFor="bar-colour">Change Bar Colours</label>
-                <TextField
+                <StyledTextField
                     type={'text'}
                     value={styleData.barColour}
                     id="bar-colour"
-                    style={{ width: '100%' }}
                     onChange={(e) => handleBarColourChange(e)}
                 />
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                }}
-            >
+            </StyledBarStylesContainer>
+            <StyledBarStylesContainer display="flex" justifyContent="center">
                 <Button onClick={(e) => updateChart(styleData)}>Execute</Button>
-            </div>
-        </div>
+            </StyledBarStylesContainer>
+        </StyledBarStylesContainer>
     );
     return (
-        <div>
-            <div
-                style={{
-                    width: '100%',
-                }}
-            >
+        <StyledBarStylesContainer>
+            <StyledBarStylesContainer width="100%">
                 <CustomAccordianBlock
                     accordianExpanded={false}
                     accordianSummaryProps={<ExpandMoreIcon />}
                     accordianSummary={'Bar Chart Style'}
                     accordianDetails={accordionDetails}
                 />
-            </div>
-        </div>
+            </StyledBarStylesContainer>
+        </StyledBarStylesContainer>
     );
 };
