@@ -80,6 +80,7 @@ export interface AppDetailsFormTypes {
     userRole: Role | '';
     permission: 'author' | 'editor' | 'readOnly' | 'discoverable' | '';
 
+    description: string;
     markdown: string;
     tag: string[];
     detailsForm: DetailsForm;
@@ -96,6 +97,7 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
     appInfo: null,
     userRole: '',
     permission: '',
+    description: '',
     markdown: '',
     tag: [],
     detailsForm: {
