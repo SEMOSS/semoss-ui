@@ -22,7 +22,7 @@
 
 2. Build legacy and client, run `pnpm run build`.
 
-3. For local development on our new ui (./packages/client) and the component library (./libs)  run `pnpm rundev:client`
+3. For local development on our new ui (./packages/client) and the component library (./libs)  run `pnpm run dev:client`
 
 Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
