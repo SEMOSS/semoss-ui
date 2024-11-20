@@ -82,30 +82,32 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
     }, [boundStateCheck, id]);
 
     const init = () => {
-        monolithStore.runQuery('ListPrompt()').then((response) => {
-            const { output } = response.pixelReturn[0];
-            if (output.length > 0) {
-                const promptArr = [];
-                output.map((prompt) => {
-                    if (prompt.ID) {
-                        promptArr.push({
-                            context: prompt.CONTEXT ? prompt.CONTEXT : '',
-                            created_by: prompt.CREATED_BY
-                                ? prompt.CREATED_BY
-                                : '',
-                            date_created: prompt.DATE_CREATED
-                                ? prompt.DATE_CREATED
-                                : '',
-                            id: prompt.ID ? prompt.ID : '',
-                            intent: prompt.INTENT ? prompt.INTENT : '',
-                            title: prompt.TITLE ? prompt.TITLE : '',
-                            tags: prompt.tags ? prompt.tags : [],
-                        });
-                    }
-                });
-                setAllPrompts(promptArr);
-            }
-        });
+        if (allPrompts.length === 0) {
+            monolithStore.runQuery('ListPrompt()').then((response) => {
+                const { output } = response.pixelReturn[0];
+                if (output.length > 0) {
+                    const promptArr = [];
+                    output.map((prompt) => {
+                        if (prompt.ID) {
+                            promptArr.push({
+                                context: prompt.CONTEXT ? prompt.CONTEXT : '',
+                                created_by: prompt.CREATED_BY
+                                    ? prompt.CREATED_BY
+                                    : '',
+                                date_created: prompt.DATE_CREATED
+                                    ? prompt.DATE_CREATED
+                                    : '',
+                                id: prompt.ID ? prompt.ID : '',
+                                intent: prompt.INTENT ? prompt.INTENT : '',
+                                title: prompt.TITLE ? prompt.TITLE : '',
+                                tags: prompt.tags ? prompt.tags : [],
+                            });
+                        }
+                    });
+                    setAllPrompts(promptArr);
+                }
+            });
+        }
     };
 
     const handleChange = (newValue, path) => {
@@ -131,7 +133,17 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
                     <Select
                         value={id ? id : ''}
                         onChange={(e) => {
+                            console.log(e);
                             setId(e.target.value);
+                            state.dispatch({
+                                message: ActionMessages.UPDATE_CELL,
+                                payload: {
+                                    queryId: cell.query.id,
+                                    cellId: cell.id,
+                                    path: 'parameters.id',
+                                    value: e.target.value,
+                                },
+                            });
                         }}
                     >
                         {allPrompts.map((prompt, idx) => (
@@ -154,6 +166,15 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
                     fullWidth
                     onChange={(e) => {
                         setPrompt(e.target.value);
+                        state.dispatch({
+                            message: ActionMessages.UPDATE_CELL,
+                            payload: {
+                                queryId: cell.query.id,
+                                cellId: cell.id,
+                                path: 'parameters.prompt',
+                                value: e.target.value,
+                            },
+                        });
                     }}
                 />
                 <Stack direction="row" sx={{ paddingLeft: '10px' }}>
@@ -169,6 +190,15 @@ export const PromptCell: CellComponent<PromptCellDef> = observer((props) => {
                             ) => {
                                 const value = e.target.checked;
                                 setBoundStateCheck(value);
+                                state.dispatch({
+                                    message: ActionMessages.UPDATE_CELL,
+                                    payload: {
+                                        queryId: cell.query.id,
+                                        cellId: cell.id,
+                                        path: 'parameters.boundState',
+                                        value: value,
+                                    },
+                                });
                             }}
                         />
                     </Tooltip>

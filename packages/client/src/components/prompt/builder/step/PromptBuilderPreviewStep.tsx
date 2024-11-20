@@ -46,7 +46,7 @@ export const PromptBuilderPreviewStep = (props: {
                         Preview your prompt before exporting to an app.
                     </Typography>
                 </Box>
-                <Button
+                {/* <Button
                     variant={'outlined'}
                     onClick={() => {
                         setPromptMode('Create');
@@ -56,7 +56,7 @@ export const PromptBuilderPreviewStep = (props: {
                     color={'inherit'}
                 >
                     Create Template
-                </Button>
+                </Button> */}
                 <PromptModal
                     isOpen={isPromptModalOpen}
                     prompt={promptToEdit}

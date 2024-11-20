@@ -194,7 +194,8 @@ export const PromptBuilder = () => {
             (builderStepItem: BuilderStepItem) => {
                 return (
                     builderStepItem.step === step &&
-                    (builderStepItem.required || !builderStepItem.value)
+                    (builderStepItem.required || !builderStepItem.value) &&
+                    builderStepItem.display != 'ID'
                 );
             },
         );
