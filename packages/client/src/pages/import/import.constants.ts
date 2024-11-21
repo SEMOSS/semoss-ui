@@ -5505,7 +5505,7 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                    },                
+                    },
                 ],
             },
         ],
@@ -5859,6 +5859,17 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         hidden: true,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DRIVER',
+                        label: 'Driver Property',
+                        defaultValue: 'org.postgresql.Driver',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: false },
                     },
                     {
                         fieldName: 'NAME',
@@ -6313,7 +6324,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                         advanced: true,
                         helperText: '',
-                    }
+                    },
                 ],
             },
             {
