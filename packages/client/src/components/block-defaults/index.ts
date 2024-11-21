@@ -24,7 +24,7 @@ import {
 import { config as HTMLBlockConfig, HTMLBlockDef } from './html-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
-import { config as TableBlockConfig, TableBlockDef } from './table-block';
+import { config as GridBlockConfig, GridBlockDef } from './grid-block';
 import { config as TextBlockConfig, TextBlockDef } from './text-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
@@ -77,7 +77,7 @@ export type DefaultBlockDefinitions =
     | QueryBlockDef
     | LogsBlockDef
     | SelectBlockDef
-    | TableBlockDef
+    | GridBlockDef
     | TextBlockDef
     | ToggleButtonBlockDef
     | InputBlockDef
@@ -111,6 +111,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [LogsBlockConfig.widget]: LogsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [StepperBlockConfig.widget]: StepperBlockConfig,
+    [GridBlockConfig.widget]: GridBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
@@ -119,14 +120,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ChatBlockConfig.widget]: ChatBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
-
-export function getIconForBlock(widget: string) {
-    return DefaultBlocks[widget]?.icon;
-}
-
-export function getTypeForBlock(widget: string) {
-    return DefaultBlocks[widget]?.type;
-}
 
 export {
     AudioBlockConfig,
@@ -143,6 +136,7 @@ export {
     LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
+    GridBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,

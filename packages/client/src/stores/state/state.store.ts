@@ -1,5 +1,6 @@
-import { makeAutoObservable, toJS } from 'mobx';
+import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
+import { download, runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -18,6 +19,7 @@ import {
     Variable,
     VariableType,
     VariableWithId,
+    Frame,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { CellStateConfig } from './cell.state';
@@ -38,6 +40,9 @@ interface StateStoreInterface {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Frames stored in the insight */
+    frames: Record<string, Frame>;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
@@ -79,6 +84,7 @@ export class StateStore {
         version: '',
         queries: {},
         blocks: {},
+        frames: {},
         cellRegistry: {},
         variables: {},
         dependencies: {}, // Maher said change to constants
@@ -325,6 +331,21 @@ export class StateStore {
     }
 
     /**
+     * Get a frame. Create one if it isn't there
+     * @param name
+     */
+    getFrameKey(name: string): Frame['key'] {
+        // create the frame if it is not there
+        if (!this._store.frames[name]) {
+            runInAction(() => {
+                this.createFrame(name);
+            });
+        }
+
+        return this._store.frames[name].key;
+    }
+
+    /**
      * Actions
      */
     /**
@@ -525,6 +546,42 @@ export class StateStore {
         });
     };
 
+    /** Side effects Methods */
+    /**
+     * Run a side effect pixel and process the response
+     *
+     * @param pixel - side effect to run
+     */
+    runSideEffect = async <O extends unknown[] | []>(pixel: string) => {
+        const response = await runPixel<O>(pixel, this._store.insightId);
+
+        // process the side effects
+        for (const { operationType, output } of response.pixelReturn) {
+            this.processSideEffects(operationType, output);
+        }
+
+        // return the response
+        return response;
+    };
+
+    /**
+     * Process side-effects from running a pixel
+     *
+     * @param operation - operation that was run
+     * @param output - output fo the operation
+     */
+    processSideEffects = (operation: string[], output: unknown) => {
+        // download the file
+        if (operation.includes('FILE_DOWNLOAD')) {
+            download(this.insightId, output as string);
+        } else if (
+            operation.includes('FRAME_DATA_CHANGE') ||
+            operation.includes('FRAME_FILTER_CHANGE')
+        ) {
+            this.syncFrame((output as { name: string }).name);
+        }
+    };
+
     /**
      * Serialize to JSON
      */
@@ -541,6 +598,10 @@ export class StateStore {
             version: this._store.version,
         };
     }
+
+    /**
+     *
+     */
 
     /**
      * Internal
@@ -694,6 +755,29 @@ export class StateStore {
 
         // update the child
         block.parent = null;
+    };
+
+    /**
+     * Create a new frame
+     */
+    private createFrame = (name: string) => {
+        this._store.frames[name] = {
+            name: name,
+            key: 0,
+        };
+    };
+
+    /**
+     * Resync the frame and change the data key
+     */
+    private syncFrame = (name: string) => {
+        // create the frame if it is not there
+        if (!this._store.frames[name]) {
+            this.createFrame(name);
+        }
+
+        // increment the key
+        this._store.frames[name].key = this._store.frames[name].key + 1;
     };
 
     /**
@@ -1087,7 +1171,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // set the value
-        q._processUpdate(path, value);
+        q._update(path, value);
     };
 
     /**
@@ -1105,7 +1189,7 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the query
-            await q._processRun();
+            await q._run();
 
             // turn it off
             return true;
@@ -1140,7 +1224,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // add the cell
-        q._processNewCell(cellId, config, previousCellId);
+        q._addCell(cellId, config, previousCellId);
     };
 
     /**
@@ -1152,8 +1236,8 @@ export class StateStore {
         // get the query
         const q = this._store.queries[queryId];
 
-        // add the cell
-        q._processDeleteCell(cellId);
+        // remove the cell
+        q._removeCell(cellId);
 
         // clean up variables
         Object.entries(this._store.variables).forEach((keyValue) => {
@@ -1202,7 +1286,7 @@ export class StateStore {
         const s = q.getCell(cellId);
 
         // set the value
-        s._processUpdate(path, value);
+        s._update(path, value);
     };
 
     /**
@@ -1212,7 +1296,7 @@ export class StateStore {
      */
     private runCell = (queryId: string, cellId: string): void => {
         const q = this._store.queries[queryId];
-        const s = q.getCell(cellId);
+        const c = q.getCell(cellId);
 
         const key = `cell--${cellId} (query--${queryId});`;
 
@@ -1222,7 +1306,7 @@ export class StateStore {
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the cell
-            await s._processRun();
+            await c._run();
 
             // turn it off
             return true;
