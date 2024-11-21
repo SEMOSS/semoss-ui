@@ -59,7 +59,7 @@ export function useFrame(
 
                 // filter the frame
                 const response = await state.runSideEffect(
-                    `META | Frame("${frame}") | ${filterPixel};`,
+                    `META | ${frame} | ${filterPixel};`,
                 );
 
                 console.group(response);
