@@ -20,6 +20,8 @@ const Editor = lazy(() => import('@monaco-editor/react'));
 import { runPixel } from '@/api';
 import { LoadingScreen } from '@/components/ui';
 
+import { FileType } from './file.types';
+
 const IS_PRODUCTION = process.env.NODE_ENV == 'production';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -34,7 +36,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
 
 interface FileEditorProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: FileType;
 
     /** Space where the file is located */
     space: string;
@@ -72,7 +74,7 @@ export interface FileEditorRefDef {
 export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
     function FileEditor(props, ref) {
         const {
-            type = 'app',
+            type,
             space = '',
             path = '',
             agentModelEngine = '',
@@ -98,7 +100,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     formatFile: formatFile,
                 };
             },
-            [content],
+            [path, content],
         );
 
         /**
@@ -187,12 +189,12 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                 setIsLoading(true);
 
                 let pixel = '';
-                if (type === 'app') {
+                if (type === 'APP') {
                     pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
-                } else if (type === 'insight') {
-                    throw Error('TODO');
-                    // TODO: add insight
-                    // pixel = `GetAsset(filePath=["${path}"], space=["${id}"]);`;
+                } else if (type === 'INSIGHT') {
+                    pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
+                } else if (type === 'STORAGE') {
+                    //TODO:
                 }
 
                 if (!pixel) {
@@ -281,18 +283,16 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                 setIsLoading(true);
 
                 let pixel = '';
-                if (type === 'app') {
+                if (type === 'APP') {
                     pixel = `
                 SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"]); 
-                CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${space}"])
-            `;
-                } else if (type === 'insight') {
-                    throw Error('TODO');
-                    // TODO: add insight
-                    //     pixel = `
-                    //     SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${id}"]);
-                    //     CommitAsset(filePath=["${path}"], comment=["Hardcoded comment from the App Page editor"], space=["${id}"])
-                    // `;
+                CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${space}"]);`;
+                } else if (type === 'INSIGHT') {
+                    pixel = `
+                    SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=[""]); 
+                    CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=[""]);`;
+                } else if (type === 'STORAGE') {
+                    //TODO:
                 }
 
                 if (!pixel) {

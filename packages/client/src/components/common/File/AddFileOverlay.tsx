@@ -9,10 +9,11 @@ import {
     Checkbox,
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
+import { FileType } from './file.types';
 
 interface AddFileOverlayProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: FileType;
 
     /** Space where the file is located */
     space: string;
@@ -41,13 +42,22 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
             setIsLoading(true);
 
             let upload = null;
-            if (type === 'app') {
+            if (type === 'APP') {
                 upload = await monolithStore.uploadFile(
                     [uploadFile],
                     configStore.store.insightID,
                     space,
                     uploadPath,
                 );
+            } else if (type === 'INSIGHT') {
+                upload = await monolithStore.uploadFile(
+                    [uploadFile],
+                    configStore.store.insightID,
+                    '',
+                    uploadPath,
+                );
+            } else if (type === 'STORAGE') {
+                //TODO:
             } else {
                 throw new Error('TODO');
             }
@@ -59,7 +69,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
             const path = `${uploadPath}${upload[0].fileName}`;
 
             if (unzipFile) {
-                if (type === 'app') {
+                if (type === 'APP') {
                     await monolithStore.runQuery(
                         `UnzipFile(filePath=["${path}"], space=["${space}"])`,
                     );

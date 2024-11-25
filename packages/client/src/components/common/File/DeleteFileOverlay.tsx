@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Button, Modal, Typography } from '@semoss/ui';
+
 import { useRootStore } from '@/hooks';
+import { FileType } from './file.types';
 
 interface DeleteFileOverlayProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: FileType;
 
     /** Space where the file is located */
     space: string;
@@ -32,13 +34,20 @@ export const DeleteFileOverlay = (props: DeleteFileOverlayProps) => {
         try {
             setIsLoading(true);
 
-            if (type === 'app') {
-                await monolithStore.runQuery(
-                    `DeleteAsset(filePath=["${fileDeletePath}"], space=["${space}"]);`,
-                );
-            } else if (type === 'insight') {
-                throw new Error('TODO');
+            let pixel = '';
+            if (type === 'APP') {
+                pixel = `DeleteAsset(filePath=["${fileDeletePath}"], space=["${space}"]);`;
+            } else if (type === 'INSIGHT') {
+                pixel = `DeleteAsset(filePath=["${fileDeletePath}"], space=[""]);`;
+            } else if (type === 'STORAGE') {
+                //TODO:
             }
+
+            if (!pixel) {
+                throw new Error('No Pixel');
+            }
+
+            await monolithStore.runQuery(pixel);
 
             onClose(true);
         } catch (e) {

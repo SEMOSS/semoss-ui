@@ -5,6 +5,7 @@ import { ExpandMore, ChevronRight } from '@mui/icons-material';
 import { usePixel } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
+import { FileType } from './file.types';
 import { FileExplorerItem } from './FileExplorerItem';
 
 const StyledTreeView = styled(TreeView)(({ theme }) => ({
@@ -19,7 +20,7 @@ const StyledTreeView = styled(TreeView)(({ theme }) => ({
 
 interface FileExplorerProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: FileType;
 
     /** Space where the file is located */
     space: string;
@@ -50,6 +51,15 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onTrashClick = () => null,
     } = props;
 
+    let getAssetsPixel = '';
+    if (type === 'APP') {
+        getAssetsPixel = `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`;
+    } else if (type === 'INSIGHT') {
+        getAssetsPixel = `BrowseAsset(filePath=["version/assets"], space=[""]);`;
+    } else if (type === 'STORAGE') {
+        //TODO:
+    }
+
     const getAssets = usePixel<
         {
             lastModified: string;
@@ -57,11 +67,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
             path: string;
             type: 'directory' | 'file';
         }[]
-    >(
-        type === 'app'
-            ? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-            : '',
-    );
+    >(getAssetsPixel);
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
 
@@ -137,11 +143,11 @@ export const FileExplorer = (props: FileExplorerProps) => {
                                 onDragStart={(e, path) => {
                                     onDragStart(e, path);
                                 }}
-                                onDragEnd={(e, path) => {
-                                    onDragEnd(e, path);
-                                }}
                                 onTrashClick={(e, path) => {
                                     onTrashClick(e, path);
+                                }}
+                                onDragEnd={(e, path) => {
+                                    onDragEnd(e, path);
                                 }}
                             />
                         );

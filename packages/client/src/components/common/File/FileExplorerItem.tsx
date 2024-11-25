@@ -14,6 +14,8 @@ import {
 } from '@semoss/ui';
 import { usePixel } from '@/hooks';
 
+import { FileType } from './file.types';
+
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
     '.MuiCollapse-wrapperInner': {
         height: 'auto',
@@ -44,9 +46,9 @@ const StyledTypography = styled(Typography)(() => ({
 
 interface FileExplorerItemProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: FileType;
 
-    /** Space where the file is located */
+    /** Space associated with the item */
     space: string;
 
     /** file details */
@@ -78,7 +80,7 @@ interface FileExplorerItemProps {
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
     const {
         type,
-        space,
+        space: space,
         path,
         name,
         isDirectory,
@@ -93,6 +95,15 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 
     const isOpen = expanded.indexOf(path) > -1;
 
+    let getAssetsPixel = '';
+    if (type === 'APP') {
+        getAssetsPixel = `BrowseAsset(filePath=["${path}"], space=["${space}"]);`;
+    } else if (type === 'INSIGHT') {
+        getAssetsPixel = `BrowseAsset(filePath=["${path}"], space=[""]);`;
+    } else if (type === 'STORAGE') {
+        //TODO:
+    }
+
     const getAssets = usePixel<
         {
             lastModified: string;
@@ -100,13 +111,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
             path: string;
             type: 'directory' | 'file';
         }[]
-    >(
-        isDirectory && isOpen
-            ? type === 'app'
-                ? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-                : ''
-            : '',
-    );
+    >(isDirectory && isOpen ? getAssetsPixel : '');
 
     const nodeRef = useCallback((ele) => {
         ele?.addEventListener('focusin', (e) => {

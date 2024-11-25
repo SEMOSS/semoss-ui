@@ -1,3 +1,5 @@
+export * from './file.types';
+
 export * from './AddFileOverlay';
 export * from './CreateFileOverlay';
 export * from './DeleteFileOverlay';

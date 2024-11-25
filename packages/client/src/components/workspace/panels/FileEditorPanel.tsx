@@ -8,6 +8,8 @@ import { Panel } from './Panel';
 import { useRef, useState } from 'react';
 import { ContentCopyOutlined, SaveOutlined } from '@mui/icons-material';
 
+const FILE_TYPE = 'APP';
+
 interface FileEditorPanelProps {
     /** Path to the file location */
     path: string;
@@ -144,7 +146,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
         >
             <FileEditor
                 ref={fileEditorRef}
-                type={'app'}
+                type={FILE_TYPE}
                 space={workspace.appId}
                 path={path}
                 agentModelEngine={workspace.agentModelEngine}

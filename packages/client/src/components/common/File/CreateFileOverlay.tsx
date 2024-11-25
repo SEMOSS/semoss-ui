@@ -8,16 +8,17 @@ import {
     TextField,
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
+import { FileType } from './file.types';
 
 interface CreateFileOverlayProps {
     /** Type of file opened */
-    type: 'app' | 'insight';
+    type: FileType;
 
     /** Space where the file will be create */
     space: string;
 
     /** Mode of the modal */
-    mode: 'directory' | 'file';
+    mode: 'DIRECTORY' | 'FILE';
 
     /** Path where the file is being uploaded */
     uploadPath: string;
@@ -47,12 +48,12 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
             let pixel = '';
             let path = '';
-            if (type === 'app') {
+            if (type === 'APP') {
                 path = `${uploadPath}${name}`;
 
-                if (mode === 'file') {
+                if (mode === 'FILE') {
                     pixel = `SaveAsset(fileName=["${path}"], content=["<encode></encode>"], space=["${space}"]);CommitAsset(filePath=["${path}"], comment=["Creating file"], space=["${space}"]);`;
-                } else if (mode === 'directory') {
+                } else if (mode === 'DIRECTORY') {
                     // add in the /
                     if (path.slice(-1) !== '/') {
                         path = `${path}/`;
@@ -60,8 +61,21 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
                     pixel = `MakeDirectory(filePath=["${path}"], space=["${space}"]);`;
                 }
-            } else {
-                throw new Error('TODO');
+            } else if (type === 'INSIGHT') {
+                path = `${uploadPath}${name}`;
+
+                if (mode === 'FILE') {
+                    pixel = `SaveAsset(fileName=["${path}"], content=["<encode></encode>"], space=[""]);CommitAsset(filePath=["${path}"], comment=["Creating file"], space=[""]);`;
+                } else if (mode === 'DIRECTORY') {
+                    // add in the /
+                    if (path.slice(-1) !== '/') {
+                        path = `${path}/`;
+                    }
+
+                    pixel = `MakeDirectory(filePath=["${path}"], space=[""]);`;
+                }
+            } else if (type === 'STORAGE') {
+                //TODO:
             }
 
             if (!pixel) {
@@ -89,12 +103,12 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
     return (
         <>
             <Modal.Title>
-                Create {mode === 'file' ? 'File' : 'Folder'}
+                Create {mode === 'FILE' ? 'File' : 'Folder'}
             </Modal.Title>
             <Modal.Content>
                 <Stack direction={'column'} spacing={2}>
                     <Typography variant="body2">
-                        Creating {mode === 'file' ? 'File' : 'Folder'} at{' '}
+                        Creating {mode === 'FILE' ? 'File' : 'Folder'} at{' '}
                         <b>{uploadPath}</b>
                     </Typography>
                     <TextField

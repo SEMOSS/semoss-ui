@@ -17,7 +17,7 @@ import {
 } from '@/components/common';
 import { Panel } from './Panel';
 
-const EXPLORER_TYPE = 'app';
+const FILE_TYPE = 'APP';
 
 interface FileExplorerPanelProps {
     /** Current layoutobject */
@@ -69,7 +69,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     const handleOpenAddFile = () => {
         workspace.openOverlay(() => (
             <AddFileOverlay
-                type={EXPLORER_TYPE}
+                type={FILE_TYPE}
                 space={workspace.appId}
                 onClose={(success, uploadPath) => {
                     if (success) {
@@ -93,11 +93,11 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
      */
     const handleOpenCreateFile = (
         /** Mode of add file */
-        mode: 'directory' | 'file',
+        mode: 'DIRECTORY' | 'FILE',
     ) => {
         workspace.openOverlay(() => (
             <CreateFileOverlay
-                type={EXPLORER_TYPE}
+                type={FILE_TYPE}
                 space={workspace.appId}
                 onClose={(success, uploadPath) => {
                     if (success) {
@@ -139,7 +139,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     const handleOnTrashClick = (fileDeletePath: string) => {
         workspace.openOverlay(() => (
             <DeleteFileOverlay
-                type={EXPLORER_TYPE}
+                type={FILE_TYPE}
                 space={workspace.appId}
                 onClose={(success) => {
                     if (success) {
@@ -410,7 +410,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                         color={'default'}
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenCreateFile('file');
+                            handleOpenCreateFile('FILE');
                         }}
                     >
                         <NoteAddOutlined fontSize="inherit" />
@@ -421,7 +421,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                         color={'default'}
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenCreateFile('directory');
+                            handleOpenCreateFile('DIRECTORY');
                         }}
                     >
                         <CreateNewFolderOutlined fontSize="inherit" />
@@ -431,7 +431,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         >
             <FileExplorer
                 key={counter}
-                type={EXPLORER_TYPE}
+                type={FILE_TYPE}
                 space={workspace.appId}
                 onSelect={(path) => {
                     handleOnSelect(path);
