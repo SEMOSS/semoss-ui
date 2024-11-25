@@ -6,6 +6,7 @@ export * from './AppCards';
 export * from './AppFilter';
 export * from './AppLandscapeCard';
 export * from './AppSettings';
+export * from './AppRenderer';
 export * from './AppTileCard';
 export * from './ChangeAccessModal';
 export * from './DependencyTable';

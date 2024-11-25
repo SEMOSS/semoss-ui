@@ -4,13 +4,13 @@ import { WorkspaceOptions, WorkspaceStore } from '@/stores';
 
 import {
     Workspace,
-    SettingsPanel,
+    AppSettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
+    RendererPanel,
 } from '@/components/workspace';
 
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
-import { RendererPanel } from './panels';
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -115,7 +115,7 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
     } else if (component === 'renderer') {
         return <RendererPanel />;
     } else if (component === 'settings') {
-        return <SettingsPanel />;
+        return <AppSettingsPanel />;
     }
 
     return <>{component}</>;

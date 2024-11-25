@@ -18,7 +18,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
 import {
     Workspace,
-    SettingsPanel,
+    AppSettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
 } from '@/components/workspace';
@@ -331,7 +331,7 @@ const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
     } else if (component === 'variables') {
         return <VariablesPanel />;
     } else if (component === 'settings') {
-        return <SettingsPanel />;
+        return <AppSettingsPanel />;
     } else if (component === 'layers') {
         return <LayersPanel />;
     } else if (component === 'selected') {

@@ -42,7 +42,7 @@ const StyledContent = styled('div')(({ theme }) => ({
 
 type VIEW = 'CURRENT' | 'PENDING' | 'APP';
 
-export const SettingsPanel = () => {
+export const AppSettingsPanel = () => {
     const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();

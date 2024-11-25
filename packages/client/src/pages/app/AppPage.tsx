@@ -19,7 +19,7 @@ import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
 import { BlocksRenderer } from '@/components/blocks-workspace';
-import { CodeRenderer } from '@/components/code-workspace';
+import { AppRenderer } from '@/components/app';
 import { Link } from 'react-router-dom';
 
 const StyledViewport = styled('div')(() => ({
@@ -129,7 +129,7 @@ export const AppPage = observer(() => {
                     <BlocksRenderer appId={appId} />
                 ) : null}
                 {workspace.type === 'CODE' ? (
-                    <CodeRenderer appId={appId} />
+                    <AppRenderer appId={appId} />
                 ) : null}
             </StyledContent>
 

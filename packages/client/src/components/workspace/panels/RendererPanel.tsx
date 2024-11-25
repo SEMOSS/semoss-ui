@@ -5,8 +5,8 @@ import { IconButton } from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
 
-import { CodeRenderer } from '../CodeRenderer';
 import { Panel } from '@/components/workspace';
+import { AppRenderer } from '@/components/app';
 
 export const RendererPanel = observer(() => {
     // App ID Needed for pixel calls
@@ -33,7 +33,7 @@ export const RendererPanel = observer(() => {
                 </>
             }
         >
-            <CodeRenderer appId={workspace.appId} key={counter} />
+            <AppRenderer appId={workspace.appId} />;
         </Panel>
     );
 });

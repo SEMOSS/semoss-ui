@@ -5,9 +5,8 @@ import { styled, useNotification } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { CodeRenderer } from '@/components/code-workspace';
 import { BlocksRenderer } from '@/components/blocks-workspace';
-import { AppType, AppMetadata } from '@/components/app';
+import { AppType, AppMetadata, AppRenderer } from '@/components/app';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -89,7 +88,7 @@ export const SharePage = observer(() => {
 
     return (
         <StyledViewport>
-            {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
+            {type === 'CODE' ? <AppRenderer appId={appId} /> : null}
             {type === 'BLOCKS' ? <BlocksRenderer appId={appId} /> : null}
         </StyledViewport>
     );
