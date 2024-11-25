@@ -69,6 +69,7 @@ export type VariableWithId =
           value?: string;
           isInput?: boolean;
           isOutput?: boolean;
+          cellId?: string;
       } & { id: string })
     | ({
           to: string;

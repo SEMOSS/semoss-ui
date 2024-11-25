@@ -4943,7 +4943,7 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'AWS TITAN TEXT EMBEDDINGS',
-                disable: false,
+                disable: true,
                 icon: AMAZON_S3, //need to change the icon
                 fields: [
                     {

@@ -632,6 +632,12 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         setEngine(variableEngine);
                     }
                 }
+            } else {
+                if (variable.type === 'cell') {
+                    setVariablePointer(`${variable.to}.${variable.cellId}`);
+                } else {
+                    setVariablePointer(variable.to);
+                }
             }
         }
     }, [variable]);
