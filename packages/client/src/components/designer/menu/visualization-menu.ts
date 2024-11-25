@@ -101,6 +101,13 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'vega',
             data: {
+                frame: {
+                    name: '',
+                },
+                axis: {
+                    x: '',
+                    y: '',
+                },
                 variation: 'bar-chart',
                 specJson: JSON.stringify(
                     {

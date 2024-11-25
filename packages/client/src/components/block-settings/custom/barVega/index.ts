@@ -1,0 +1,1 @@
+export { BarSettings } from './BarSettings';
