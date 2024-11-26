@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { ConstructionOutlined } from '@mui/icons-material';
 import { useNotification, styled, Typography, Stack } from '@semoss/ui';
 import { runPixel } from '@/api';
 import {
@@ -11,6 +12,7 @@ import {
     DesignerStore,
     WorkspaceOptions,
 } from '@/stores';
+import { DesignerContext } from '@/contexts';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
@@ -21,13 +23,8 @@ import {
     FileEditorPanel,
 } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
+import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
-import { ConstructionOutlined } from '@mui/icons-material';
-import {
-    DEFAULT_MENU,
-    VISUALIZATION_MENU,
-} from '../designer/designer.constants';
-import { DesignerContext } from '@/contexts';
 import {
     VariablesPanel,
     BlocksMenuPanel,

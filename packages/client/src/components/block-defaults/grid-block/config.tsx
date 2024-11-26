@@ -1,14 +1,11 @@
 import { BlockConfig } from '@/stores';
 import { TableChart } from '@mui/icons-material';
-
-import {
-    buildDimensionsSection,
-    buildColorSection,
-    buildBorderSection,
-} from '../block-defaults.shared';
+import { SizeSettings } from '@/components/block-settings';
 import { BLOCK_TYPE_DATA } from '../block-defaults.constants';
 import { GridBlock, GridBlockDef } from './GridBlock';
 import { GridBlockColumnSettings } from './GridBlockColumnSettings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
+
 // export the config for the block
 export const config: BlockConfig<GridBlockDef> = {
     widget: 'grid',
@@ -19,6 +16,9 @@ export const config: BlockConfig<GridBlockDef> = {
         },
         columns: [],
         style: {},
+        view: {
+            pagination: true,
+        },
     },
     listeners: {},
     slots: {},
@@ -32,12 +32,45 @@ export const config: BlockConfig<GridBlockDef> = {
                     description: 'Columns',
                     render: ({ id }) => <GridBlockColumnSettings id={id} />,
                 },
+                {
+                    description: 'Pagination',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Pagination"
+                            path="view.pagination"
+                        />
+                    ),
+                },
             ],
         },
     ],
     styleMenu: [
-        buildDimensionsSection(),
-        buildColorSection(),
-        buildBorderSection(),
+        {
+            name: 'Dimensions',
+            children: [
+                {
+                    description: 'Width',
+                    render: ({ id }) => (
+                        <SizeSettings
+                            id={id}
+                            label="Width"
+                            path="style.width"
+                        />
+                    ),
+                },
+
+                {
+                    description: 'Height',
+                    render: ({ id }) => (
+                        <SizeSettings
+                            id={id}
+                            label="Height"
+                            path="style.height"
+                        />
+                    ),
+                },
+            ],
+        },
     ],
 };

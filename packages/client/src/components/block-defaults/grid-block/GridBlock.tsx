@@ -30,8 +30,9 @@ const StyledBlock = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-const StyledTableContainer = styled(TableContainer)(() => ({
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
     flex: '1',
+    background: theme.palette.background.paper,
 }));
 
 const StyledTableHeadRow = styled(TableRow)(() => ({
@@ -39,18 +40,23 @@ const StyledTableHeadRow = styled(TableRow)(() => ({
     backgroundColor: 'inherit',
 }));
 
-const StyledTableHeadCell = styled(TableCell)(() => ({
+const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
     textTransform: 'capitalize',
     fontWeight: 700,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    background: theme.palette.background.paper,
 }));
 
 const StyledTableCell = styled(TableCell)(() => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+}));
+
+const StyledTablePagination = styled(TablePagination)(({ theme }) => ({
+    background: theme.palette.background.paper,
 }));
 
 export interface GridBlockDef extends BlockDef<'grid'> {
@@ -67,16 +73,7 @@ export interface GridBlockDef extends BlockDef<'grid'> {
         columns: GridBlockColumn[];
 
         /** */
-        style: Pick<
-            React.CSSProperties,
-            | 'background'
-            | 'border'
-            | 'borderColor'
-            | 'borderStyle'
-            | 'borderWidth'
-            | 'height'
-            | 'width'
-        >;
+        style: Pick<React.CSSProperties, 'height' | 'width'>;
 
         /** Context Menu */
         contextMenu?: {
@@ -86,14 +83,21 @@ export interface GridBlockDef extends BlockDef<'grid'> {
             /** Show the filter related options */
             hideFilter: boolean;
         };
+
+        view?: {
+            //TODO: Include limit + offset?
+
+            /** Enable the pagination */
+            pagination: boolean;
+        };
     };
 }
 
 export const GridBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<GridBlockDef>(id);
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    console.log(data, 'gridblock');
+    const [rowsPerPage, setRowsPerPage] = useState(50);
+
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
@@ -272,18 +276,19 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                 contextMenu={contextMenu}
                 onClose={() => setContextMenu(null)}
             />
-            <TablePagination
-                rowsPerPageOptions={[10, 25, 50, 100]}
-                component="div"
-                count={frame.count}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={(_, newPage) => setPage(newPage)}
-                onRowsPerPageChange={(e) => {
-                    setRowsPerPage(parseInt(e.target.value));
-                    setPage(0);
-                }}
-            />
+            {data.view?.pagination && (
+                <StyledTablePagination
+                    rowsPerPageOptions={[10, 50, 100, 500]}
+                    count={frame.count}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={(_, newPage) => setPage(newPage)}
+                    onRowsPerPageChange={(e) => {
+                        setRowsPerPage(parseInt(e.target.value));
+                        setPage(0);
+                    }}
+                />
+            )}
         </StyledBlock>
     );
 });
