@@ -1,15 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    Button,
-    styled,
-    Chip,
-    Stack,
-    Typography,
-    Table,
-    IconButton,
-    Icon,
-} from '@semoss/ui';
+import { styled, Chip, Stack, Typography, Table, IconButton } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
 
 import { usePixel, useEngine, useRootStore } from '@/hooks';
@@ -34,7 +25,7 @@ const StyledTableContainer = styled(Table.Container)(() => ({
     height: '396px',
 }));
 
-export const EngineMetadataPage = observer(() => {
+export const DatabaseMetadataPage = observer(() => {
     const { id } = useEngine();
 
     const { monolithStore } = useRootStore();
@@ -216,13 +207,15 @@ export const EngineMetadataPage = observer(() => {
             <Section>
                 <Section.Header
                     actions={
-                        <Button
-                            startIcon={<ArrowCircleDown />}
-                            variant="outlined"
+                        <IconButton
+                            color={'default'}
                             onClick={() => printMeta()}
                         >
-                            Print Metadata
-                        </Button>
+                            <ArrowCircleDown
+                                fontSize="inherit"
+                                color={'inherit'}
+                            />
+                        </IconButton>
                     }
                 >
                     Metamodel

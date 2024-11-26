@@ -14,18 +14,29 @@ import {
     AddFileOverlay,
     CreateFileOverlay,
     DeleteFileOverlay,
+    FileType,
 } from '@/components/common';
 import { Panel } from './Panel';
 
-const FILE_TYPE = 'APP';
-
 interface FileExplorerPanelProps {
-    /** Current layoutobject */
+    /** Layout node */
+    node: TabNode;
+
+    /** Current layout object */
     layout: Layout;
+
+    /** Type of file */
+    type: FileType;
+
+    /** Space where the file is located. Dependent on tyep*/
+    space: string;
 }
 
 export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
-    const { layout } = props;
+    const { node, layout, type, space } = props;
+
+    // get the model
+    const model = node.getModel();
 
     const { workspace } = useWorkspace();
 
@@ -69,8 +80,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     const handleOpenAddFile = () => {
         workspace.openOverlay(() => (
             <AddFileOverlay
-                type={FILE_TYPE}
-                space={workspace.appId}
+                type={type}
+                space={space}
                 onClose={(success, uploadPath) => {
                     if (success) {
                         // create the panel
@@ -97,8 +108,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     ) => {
         workspace.openOverlay(() => (
             <CreateFileOverlay
-                type={FILE_TYPE}
-                space={workspace.appId}
+                type={type}
+                space={space}
                 onClose={(success, uploadPath) => {
                     if (success) {
                         // create the panel
@@ -139,8 +150,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
     const handleOnTrashClick = (fileDeletePath: string) => {
         workspace.openOverlay(() => (
             <DeleteFileOverlay
-                type={FILE_TYPE}
-                space={workspace.appId}
+                type={type}
+                space={space}
                 onClose={(success) => {
                     if (success) {
                         // trigger the delete file callback if successful
@@ -169,12 +180,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             // can can only drag in files into the workspace
             if (path.slice(-1) === '/') {
                 return;
-            }
-
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
             }
 
             // TODO: altKey key needs to be down for now. event.altKey=false is reserved for panel-to-panel interactions
@@ -218,12 +223,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             // can can only create panels for files
             if (path.slice(-1) === '/') {
                 return false;
-            }
-
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
             }
 
             // where to add the node
@@ -283,12 +282,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
             let selectedNode: TabNode | null = null;
 
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
             // visit the notes, and see if it exists
             model.visitNodes((node) => {
                 // check if it is a tabNode
@@ -301,7 +294,11 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
                     // path and space need to match
                     const config = node.getConfig();
-                    if (path !== config.path) {
+                    if (
+                        type !== config.type &&
+                        space !== config.space &&
+                        path !== config.path
+                    ) {
                         return;
                     }
 
@@ -339,12 +336,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
             const nodesToBeRemoved: TabNode[] = [];
 
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
             // visit the notes, and see if it exists
             model.visitNodes((node) => {
                 // check if it is a tabNode
@@ -357,7 +348,11 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
                     // path and space need to match
                     const config = node.getConfig();
-                    if (config.path.indexOf(path) !== 0) {
+                    if (
+                        type !== config.type &&
+                        space !== config.space &&
+                        path !== config.path
+                    ) {
                         return;
                     }
 
@@ -431,8 +426,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         >
             <FileExplorer
                 key={counter}
-                type={FILE_TYPE}
-                space={workspace.appId}
+                type={type}
+                space={space}
                 onSelect={(path) => {
                     handleOnSelect(path);
                 }}

@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
+import { RootStore } from '@/stores';
 import { runPixel } from '@/api';
 import { AppMetadata } from '@/components/app';
 
@@ -488,7 +488,7 @@ export class ConfigStore {
      *
      * @param appId - id of app to load into the workspace
      */
-    async createWorkspace(appId: string) {
+    async loadApp(appId: string) {
         // check the permission
         const getUserProjectPermission =
             await this._root.monolithStore.getUserProjectPermission(appId);
@@ -513,20 +513,31 @@ export class ConfigStore {
             ...getAppInfo.pixelReturn[0].output,
         };
 
-        const workspace: WorkspaceConfigInterface = {
-            appId: appId,
-            type: 'CODE',
-            role: role,
-            metadata: metadata,
-        };
+        const getAppDependencies = await this._root.monolithStore.runQuery<
+            [string]
+        >(`ValidateUserProjectDependencies(project=["${appId}"]);`);
 
-        // set it as blocks
-        if (metadata.project_type === 'BLOCKS') {
-            workspace.type = 'BLOCKS';
-        }
+        const needsAccess: { engineId: string }[] = [];
+        Object.entries(getAppDependencies.pixelReturn[0].output).forEach(
+            (kv) => {
+                const hasAccess = kv[1];
+
+                if (!hasAccess) {
+                    needsAccess.push({
+                        engineId: kv[0],
+                    });
+                }
+            },
+        );
 
         // create the newly loaded workspace
-        return new WorkspaceStore(this._root, workspace);
+        return {
+            appId: appId,
+            type: metadata.project_type === 'BLOCKS' ? 'BLOCKS' : 'CODE',
+            role: role,
+            metadata: metadata,
+            needsAccess: needsAccess,
+        };
     }
 
     /**

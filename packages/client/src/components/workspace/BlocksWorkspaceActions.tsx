@@ -4,15 +4,16 @@ import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
 import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
-import { PreviewOverlay } from '@/components/workspace';
-import { ShareOverlay } from '@/components/ui';
+import { LoginPopover, ShareOverlay } from '@/components/ui';
+
+import { PreviewOverlay } from './PreviewOverlay';
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
-    const { workspace } = useWorkspace();
+    const { workspace, app } = useWorkspace();
 
     /**
      * Preview the current App
@@ -59,7 +60,7 @@ export const BlocksWorkspaceActions = observer(() => {
             // save the json
             const { errors } = await monolithStore.runQuery<[true]>(
                 `SaveAppBlocksJson(project=["${
-                    workspace.appId
+                    app.appId
                 }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
             );
 
@@ -96,10 +97,10 @@ export const BlocksWorkspaceActions = observer(() => {
             let isChanged = false;
 
             // only get the json if the user can edit
-            if (workspace.role === 'OWNER' || workspace.role === 'EDIT') {
+            if (app.role === 'OWNER' || app.role === 'EDIT') {
                 const { pixelReturn, errors } = await monolithStore.runQuery<
                     [true]
-                >(`GetAppBlocksJson ( project=['${workspace.appId}']);`);
+                >(`GetAppBlocksJson ( project=['${app.appId}']);`);
 
                 if (errors.length > 0) {
                     throw new Error(errors.join(''));
@@ -115,7 +116,7 @@ export const BlocksWorkspaceActions = observer(() => {
             workspace.openOverlay(() => (
                 <ShareOverlay
                     diffs={isChanged}
-                    appId={workspace.appId}
+                    appId={app.appId}
                     onClose={() => workspace.closeOverlay()}
                 />
             ));
@@ -156,6 +157,7 @@ export const BlocksWorkspaceActions = observer(() => {
         <Stack direction="row" spacing={1} alignItems={'center'}>
             <Tooltip title="Preview App">
                 <IconButton
+                    disabled={!!app}
                     size={'small'}
                     color="default"
                     onClick={() => {
@@ -167,6 +169,7 @@ export const BlocksWorkspaceActions = observer(() => {
             </Tooltip>
             <Tooltip title={'Share App'}>
                 <IconButton
+                    disabled={!!app}
                     size={'small'}
                     color="default"
                     onClick={() => {
@@ -178,6 +181,7 @@ export const BlocksWorkspaceActions = observer(() => {
             </Tooltip>
             <Tooltip title={'Save App (ctrl + s)'}>
                 <IconButton
+                    disabled={!!app}
                     size={'small'}
                     color={'primary'}
                     onClick={() => {
@@ -187,6 +191,7 @@ export const BlocksWorkspaceActions = observer(() => {
                     <SaveOutlined fontSize="inherit" />
                 </IconButton>
             </Tooltip>
+            <LoginPopover />
         </Stack>
     );
 });

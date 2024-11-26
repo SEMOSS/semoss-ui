@@ -6,7 +6,7 @@ import {
     IconButton,
     Tooltip,
 } from '@semoss/ui';
-import { TypeLlmConfig } from '../../workspace/workspace.types';
+import { TypeLlmConfig } from './llm-compare.types';
 import { Edit } from '@mui/icons-material';
 import { getEngineImage } from '@/utility';
 import { useLLMComparison } from '@/hooks';

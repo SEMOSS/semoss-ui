@@ -1,16 +1,27 @@
+import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
+import { styled } from '@semoss/ui';
 
-import { WorkspaceOptions, WorkspaceStore } from '@/stores';
+import { WorkspaceApp, WorkspaceOptions } from '@/stores';
 
 import {
-    Workspace,
     AppSettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
     RendererPanel,
-} from '@/components/workspace';
+} from '@/components/panels';
 
+import { Workspace } from './Workspace';
 import { CodeWorkspaceActions } from './CodeWorkspaceActions';
+import { WorkspaceHeader } from './WorkspaceHeader';
+import { WorkspaceDrawer } from './WorkspaceDrawer';
+import { WorkspaceReset } from './WorkspaceReset';
+import { WorkspaceRenderer } from './WorkspaceRenderer';
+
+const StyledContainer = styled('div')(() => ({
+    height: '100vh',
+    width: '100vw',
+}));
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -101,45 +112,65 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
     },
 };
 
-const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
-    node,
-    layout,
-) => {
-    const component = node.getComponent();
-    const config = node.getConfig();
-
-    if (component === 'file-explorer') {
-        return <FileExplorerPanel layout={layout} />;
-    } else if (component === 'file-editor') {
-        return <FileEditorPanel path={config.path} />;
-    } else if (component === 'renderer') {
-        return <RendererPanel />;
-    } else if (component === 'settings') {
-        return <AppSettingsPanel />;
-    }
-
-    return <>{component}</>;
-};
-
 interface CodeWorkspaceProps {
-    /** Workspace to render */
-    workspace: WorkspaceStore;
+    /** App to render */
+    app: WorkspaceApp;
 }
 
 /**
  * Render the code workspace
  */
 export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
-    const { workspace } = props;
+    const { app } = props;
+
+    // create the factory
+    const factory = useMemo<
+        React.ComponentProps<typeof WorkspaceRenderer>['factory']
+    >(() => {
+        return function _(node, layout) {
+            const component = node.getComponent();
+            const config = node.getConfig();
+
+            if (component === 'file-explorer') {
+                return (
+                    <FileExplorerPanel
+                        node={node}
+                        layout={layout}
+                        type={'APP'}
+                        space={app.appId}
+                    />
+                );
+            } else if (component === 'file-editor') {
+                return (
+                    <FileEditorPanel
+                        node={node}
+                        type={'APP'}
+                        space={app.appId}
+                        path={config.path}
+                    />
+                );
+            } else if (component === 'renderer') {
+                return <RendererPanel appId={app.appId} />;
+            } else if (component === 'settings') {
+                return <AppSettingsPanel />;
+            }
+
+            return <>{component}</>;
+        };
+    }, [app]);
 
     return (
-        <>
+        <StyledContainer>
             <Workspace
+                name={`code--${app.appId}`}
+                app={app}
                 options={DEFAULT_OPTIONS}
-                workspace={workspace}
-                endTopbar={<CodeWorkspaceActions />}
-                factory={FACTORY}
-            />
-        </>
+                header={<WorkspaceHeader end={<CodeWorkspaceActions />} />}
+                drawer={<WorkspaceDrawer />}
+            >
+                <WorkspaceRenderer factory={factory} />
+                <WorkspaceReset />
+            </Workspace>
+        </StyledContainer>
     );
 });

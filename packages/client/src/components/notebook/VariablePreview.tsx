@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Box, Divider, styled, Typography, Stack } from '@semoss/ui';
 import { Variable } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
+import { BlocksRenderer } from '@/components/workspace';
 
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';

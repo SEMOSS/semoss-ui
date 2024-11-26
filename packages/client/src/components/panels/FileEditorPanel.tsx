@@ -3,22 +3,32 @@ import { Actions, TabNode } from 'flexlayout-react';
 import { IconButton, Stack, useNotification } from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
-import { FileEditor, FileEditorRefDef } from '@/components/common';
+import { FileEditor, FileEditorRefDef, FileType } from '@/components/common';
 import { Panel } from './Panel';
 import { useRef, useState } from 'react';
 import { ContentCopyOutlined, SaveOutlined } from '@mui/icons-material';
 
-const FILE_TYPE = 'APP';
-
 interface FileEditorPanelProps {
+    /** Layout node */
+    node: TabNode;
+
+    /** Type of file */
+    type: FileType;
+
+    /** Space where the file is located. Dependent on tyep*/
+    space: string;
+
     /** Path to the file location */
     path: string;
 }
 
 export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
-    const { path } = props;
+    const { node, type, space, path } = props;
     const { workspace } = useWorkspace();
     const notification = useNotification();
+
+    // get the model
+    const model = node.getModel();
 
     const [isModified, setIsModified] = useState(false);
 
@@ -52,12 +62,6 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
      */
     const updatePanels = (isModified: boolean) => {
         try {
-            // get the model
-            const model = workspace.selectedLayout?.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
             // visit the notes, and see if it exists
             model.visitNodes((node) => {
                 // check if it is a tabNode
@@ -70,7 +74,11 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 
                     // path and space need to match
                     const config = node.getConfig();
-                    if (path !== config.path) {
+                    if (
+                        type !== config.type &&
+                        space !== config.space &&
+                        path !== config.path
+                    ) {
                         return;
                     }
 
@@ -146,8 +154,8 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
         >
             <FileEditor
                 ref={fileEditorRef}
-                type={FILE_TYPE}
-                space={workspace.appId}
+                type={type}
+                space={space}
                 path={path}
                 agentModelEngine={workspace.agentModelEngine}
                 onChange={(content, isModified) => {

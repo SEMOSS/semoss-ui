@@ -17,7 +17,7 @@ import { Add, FilterListRounded } from '@mui/icons-material';
 import { useBlocks, usePixel } from '@/hooks';
 import { VARIABLE_TYPES } from '@/stores';
 import { NotebookVariable, AddVariablePopover } from '@/components/notebook';
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 
 const StyledStack = styled(Stack)(() => ({
     maxHeight: '100%',

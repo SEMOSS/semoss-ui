@@ -1,4 +1,4 @@
-import { TextEditorCodeGeneration } from '../../common';
+import { TextEditorCodeGeneration } from '../common';
 import { Link } from 'react-router-dom';
 
 import { Typography, Container, styled } from '@semoss/ui';

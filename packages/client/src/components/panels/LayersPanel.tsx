@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material/';
 import { INPUT_BLOCK_TYPES } from '@/stores';
 import { AddVariableModal } from '@/components/notebook';
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',

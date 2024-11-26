@@ -6,10 +6,8 @@ import { useNotification } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
-import { BlocksWorkspace } from '@/components/blocks-workspace';
-import { CodeWorkspace } from '@/components/code-workspace';
-
-import { WorkspaceStore } from '@/stores';
+import { BlocksWorkspace, CodeWorkspace } from '@/components/workspace';
+import { WorkspaceApp } from '@/stores';
 
 export const WorkspacePage = observer(() => {
     // App ID Needed for pixel calls
@@ -19,16 +17,16 @@ export const WorkspacePage = observer(() => {
     const notification = useNotification();
     const navigate = useNavigate();
 
-    const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+    const [app, setApp] = useState<WorkspaceApp | null>(null);
 
     useEffect(() => {
         // clear out the old app
-        setWorkspace(undefined);
+        setApp(null);
 
         configStore
-            .createWorkspace(appId)
-            .then((loadedWorkspace) => {
-                setWorkspace(loadedWorkspace);
+            .loadApp(appId)
+            .then((app) => {
+                setApp(app as WorkspaceApp);
             })
             .catch((e) => {
                 notification.add({
@@ -41,16 +39,16 @@ export const WorkspacePage = observer(() => {
     }, [appId]);
 
     // hide the screen while it loads
-    if (!workspace) {
+    if (!app) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
-    if (workspace.type === 'CODE') {
-        return <CodeWorkspace workspace={workspace} />;
+    if (app.type === 'CODE') {
+        return <CodeWorkspace app={app} />;
     }
 
-    if (workspace.type === 'BLOCKS') {
-        return <BlocksWorkspace workspace={workspace} />;
+    if (app.type === 'BLOCKS') {
+        return <BlocksWorkspace app={app} />;
     }
 
     return null;

@@ -9,7 +9,7 @@ import {
     TypeLlmComparisonForm,
     TypeLlmConfig,
     TypeVariants,
-} from '@/components/workspace';
+} from './llm-compare.types';
 import { LLMComparisonContext } from '@/contexts';
 import {
     LlmComparisonFormDefaultValues,

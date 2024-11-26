@@ -8,16 +8,22 @@ import { useBlocks, useWorkspace } from '@/hooks';
 import { ActionMessages } from '@/stores';
 import { NewQueryOverlay, DeleteNotebookOverlay } from '@/components/notebook';
 import { NotebookExplorerItem } from './NotebookExplorerPanelItem';
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 
 interface NotebookExplorerPanelProps {
-    /** Current layoutobject */
+    /** Current layout object */
     layout: Layout;
+
+    /** Layout node */
+    node: TabNode;
 }
 
 export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
     observer((props) => {
-        const { layout } = props;
+        const { layout, node } = props;
+
+        // get the model
+        const model = node.getModel();
 
         const { workspace } = useWorkspace();
         const { state, notebook } = useBlocks();
@@ -156,12 +162,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
          */
         const handleOnDragStart = (event: React.MouseEvent, id: string) => {
             try {
-                // get the model
-                const model = workspace.selectedLayout?.model;
-                if (!model) {
-                    throw new Error('Missing model');
-                }
-
                 // TODO: altKey key needs to be down for now. event.altKey=false is reserved for panel-to-panel interactions
                 if (!event.altKey) {
                     return;
@@ -198,12 +198,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
             try {
                 if (!id) {
                     return false;
-                }
-
-                // get the model
-                const model = workspace.selectedLayout?.model;
-                if (!model) {
-                    throw new Error('Missing model');
                 }
 
                 // get the name
@@ -258,12 +252,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
                 let selectedNode: TabNode | null = null;
 
-                // get the model
-                const model = workspace.selectedLayout?.model;
-                if (!model) {
-                    throw new Error('Missing model');
-                }
-
                 // visit the notes, and see if it exists
                 model.visitNodes((node) => {
                     // check if it is a tabNode
@@ -315,12 +303,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                 }
 
                 const nodesToBeRemoved: TabNode[] = [];
-
-                // get the model
-                const model = workspace.selectedLayout?.model;
-                if (!model) {
-                    throw new Error('Missing model');
-                }
 
                 // visit the notes, and see if it exists
                 model.visitNodes((node) => {

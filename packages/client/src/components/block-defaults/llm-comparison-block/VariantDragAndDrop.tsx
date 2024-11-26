@@ -1,5 +1,5 @@
 import { Stack, Typography, styled, IconButton } from '@semoss/ui';
-import { VariantWithName, TypeLlmConfig } from '@/components/workspace';
+import { VariantWithName } from './llm-compare.types';
 import { useEffect, useState } from 'react';
 import { DragIndicatorOutlined } from '@mui/icons-material';
 import { useDesigner, useLLMComparison } from '@/hooks';

@@ -1,6 +1,10 @@
 export * from './Workspace';
+export * from './WorkspaceHeader';
+export * from './WorkspaceRenderer';
+export * from './WorkspaceDrawer';
+export * from './WorkspaceReset';
 
-export * from './panels';
-export * from './PreviewOverlay';
+export * from './BlocksWorkspace';
+export * from './CodeWorkspace';
 
-export * from './workspace.types';
+export * from './BlocksRenderer';

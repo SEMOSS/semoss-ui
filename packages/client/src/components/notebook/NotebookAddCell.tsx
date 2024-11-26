@@ -98,6 +98,7 @@ const DataImportDropdownOptions = [
     },
 ];
 
+// TODO: Refactor Load via notebook
 const AddCellOptions: Record<string, AddCellOption> = {
     code: {
         display: 'Cell',
@@ -212,6 +213,15 @@ export const NotebookAddCell = observer(
             }
         };
 
+        /**
+         * Track if the widget is missing
+         * @param widget
+         * @returns
+         */
+        const isMissing = (widget: string): boolean => {
+            return !state.cellRegistry[widget];
+        };
+
         return (
             <>
                 {/* Dropdown for All Add Cell Option Sets */}
@@ -221,6 +231,11 @@ export const NotebookAddCell = observer(
                     <StyledBorderDiv>
                         {AddCellOptions &&
                             Object.entries(AddCellOptions).map((add, i) => {
+                                const widget = add[0];
+                                if (isMissing(widget)) {
+                                    return null;
+                                }
+
                                 const value = add[1];
                                 return (
                                     <StyledButton
@@ -235,7 +250,7 @@ export const NotebookAddCell = observer(
                                         onClick={(e) => {
                                             if (value.options) {
                                                 setAnchorEl(e.currentTarget);
-                                                setSelectedAddCell(add[0]);
+                                                setSelectedAddCell(widget);
                                             } else {
                                                 appendCell(
                                                     value.defaultCellType,

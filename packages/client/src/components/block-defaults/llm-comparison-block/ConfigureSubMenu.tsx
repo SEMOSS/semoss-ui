@@ -1,12 +1,13 @@
 import { styled, Stack, Button, useNotification, Typography } from '@semoss/ui';
 import { useBlock, useBlocks, useLLMComparison } from '@/hooks';
 import { LLMVariant } from './LLMVariant';
-import { TypeLlmComparisonForm } from '@/components/workspace';
 import { Add, ArrowBack } from '@mui/icons-material';
 import { VariantEditor } from './VariantEditor';
 import { generateVariantName } from './LlmComparison.utility';
 import { ActionMessages, CellState } from '@/stores';
 import { observer } from 'mobx-react-lite';
+
+import { TypeLlmComparisonForm } from './llm-compare.types';
 import { LLMCellSelect } from './LLMCellSelect';
 
 const StyledEditorView = styled(Stack)(({ theme }) => ({

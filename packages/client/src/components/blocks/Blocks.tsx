@@ -10,13 +10,13 @@ export interface BlocksProps<R extends Registry> {
     state: StateStore;
 
     /** Widgets available to all of the blocks */
-    registry: R;
+    registry?: R;
 }
 
 export const Blocks = <R extends Registry = Registry>(
     props: BlocksProps<R>,
 ) => {
-    const { children, registry, state } = props;
+    const { children, registry = {}, state } = props;
 
     // create a new notebook store
     const notebook = useMemo(() => {

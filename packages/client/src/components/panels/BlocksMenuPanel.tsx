@@ -13,7 +13,7 @@ import {
 import { Search, SearchOff } from '@mui/icons-material';
 
 import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 
 const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',

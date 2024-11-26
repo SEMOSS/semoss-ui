@@ -45,7 +45,7 @@ type VIEW = 'CURRENT' | 'PENDING' | 'APP';
 export const AppSettingsPanel = () => {
     const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
-    const { workspace } = useWorkspace();
+    const { workspace, app } = useWorkspace();
     const navigate = useNavigate();
 
     const [view, setView] = useState<VIEW>('CURRENT');
@@ -60,7 +60,7 @@ export const AppSettingsPanel = () => {
         try {
             // export  the app
             const response = await monolithStore.runQuery<[string]>(
-                `ExportProjectApp(project=["${workspace.appId}"]);`,
+                `ExportProjectApp(project=["${app.appId}"]);`,
             );
 
             // throw an error if there is no key
@@ -107,8 +107,7 @@ export const AppSettingsPanel = () => {
                     }}
                 >
                     <StyledContainer>
-                        {workspace.role === 'EDITOR' ||
-                        workspace.role === 'OWNER' ? (
+                        {app.role === 'EDITOR' || app.role === 'OWNER' ? (
                             <Stack
                                 sx={{ width: '100%' }}
                                 justifyContent={'flex-end'}
@@ -128,11 +127,11 @@ export const AppSettingsPanel = () => {
                                 </div>
                             </Stack>
                         ) : null}
-                        {workspace.role === 'OWNER' ? (
+                        {app.role === 'OWNER' ? (
                             <SettingsTiles
                                 type={'APP'}
-                                id={workspace.appId}
-                                name={workspace.metadata?.project_name || 'app'}
+                                id={app.appId}
+                                name={app.metadata?.project_name || 'app'}
                                 direction="row"
                                 onDelete={() => {
                                     navigate('/settings/app');
@@ -150,31 +149,29 @@ export const AppSettingsPanel = () => {
                                 />
                                 <ToggleTabsGroup.Item
                                     label="Pending Requests"
-                                    disabled={workspace.role === 'READ_ONLY'}
+                                    disabled={app.role === 'READ_ONLY'}
                                     value={'PENDING'}
                                 />
                                 <ToggleTabsGroup.Item
                                     label="Data Apps"
-                                    disabled={workspace.role === 'READ_ONLY'}
+                                    disabled={app.role === 'READ_ONLY'}
                                     value={'APP'}
                                 />
                             </ToggleTabsGroup>
                             {view === 'CURRENT' && (
                                 <MembersTable
                                     type={'APP'}
-                                    id={workspace.appId}
+                                    id={app.appId}
                                     onChange={() => console.log('TODO')}
                                 />
                             )}
                             {view === 'PENDING' && (
                                 <PendingMembersTable
                                     type={'APP'}
-                                    id={workspace.appId}
+                                    id={app.appId}
                                 />
                             )}
-                            {view === 'APP' && (
-                                <AppSettings id={workspace.appId} />
-                            )}
+                            {view === 'APP' && <AppSettings id={app.appId} />}
                         </StyledContent>
                     </StyledContainer>
                 </Container>

@@ -1,4 +1,4 @@
-import { TypeLlmConfig } from '@/components/workspace';
+import { TypeLlmConfig } from './llm-compare.types';
 import { Controller } from 'react-hook-form';
 import {
     styled,

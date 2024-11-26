@@ -22,7 +22,7 @@ import { useBlocks, useDesigner } from '@/hooks';
 
 import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',

@@ -6,26 +6,21 @@ import { runPixel } from '@/api';
 import {
     SerializedState,
     StateStore,
-    WorkspaceStore,
     MigrationManager,
     STATE_VERSION,
     DesignerStore,
     WorkspaceOptions,
+    WorkspaceApp,
 } from '@/stores';
 import { DesignerContext } from '@/contexts';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks } from '@/components/blocks';
+import { LoadingScreen } from '@/components/ui';
 import {
-    Workspace,
     AppSettingsPanel,
     FileExplorerPanel,
     FileEditorPanel,
-} from '@/components/workspace';
-import { LoadingScreen } from '@/components/ui';
-import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
-import {
     VariablesPanel,
     BlocksMenuPanel,
     LayersPanel,
@@ -33,10 +28,22 @@ import {
     DesignerPanel,
     NotebookExplorerPanel,
     NotebookViewerPanel,
-} from './panels';
+} from '@/components/panels';
+import { DEFAULT_MENU, VISUALIZATION_MENU } from '@/components/designer';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 import { BlocksWorkspaceDev } from './BlocksWorkspaceDev';
+import { Workspace } from './Workspace';
+import { WorkspaceHeader } from './WorkspaceHeader';
+import { WorkspaceDrawer } from './WorkspaceDrawer';
+import { WorkspaceRenderer } from './WorkspaceRenderer';
+import { WorkspaceReset } from './WorkspaceReset';
 
 const DEFAULT_BORDER_SIZE = 300;
+
+const StyledContainer = styled('div')(() => ({
+    height: '100vh',
+    width: '100vw',
+}));
 
 const StyledAlert = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -319,68 +326,30 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
     },
 };
 
-const FACTORY: React.ComponentProps<typeof Workspace>['factory'] = (
-    node,
-    layout,
-) => {
-    const component = node.getComponent();
-    const config = node.getConfig();
-
-    if (component === 'designer') {
-        return <DesignerPanel />;
-    } else if (component === 'variables') {
-        return <VariablesPanel />;
-    } else if (component === 'settings') {
-        return <AppSettingsPanel />;
-    } else if (component === 'layers') {
-        return <LayersPanel />;
-    } else if (component === 'selected') {
-        return <SelectedBlockPanel />;
-    } else if (component === 'blocks') {
-        return <BlocksMenuPanel title={'Add Blocks'} items={DEFAULT_MENU} />;
-    } else if (component === 'viz') {
-        return (
-            <BlocksMenuPanel
-                title={'Add Visualization'}
-                items={VISUALIZATION_MENU}
-            />
-        );
-    } else if (component === 'file-explorer') {
-        return <FileExplorerPanel layout={layout} />;
-    } else if (component === 'file-editor') {
-        return <FileEditorPanel path={config.path} />;
-    } else if (component === 'notebook-explorer') {
-        return <NotebookExplorerPanel layout={layout} />;
-    } else if (component === 'notebook-viewer') {
-        return <NotebookViewerPanel id={config.id} />;
-    }
-
-    return <>{component}</>;
-};
-
 const ACTIVE = 'page-1';
 
 interface BlocksWorkspaceProps {
-    /** Workspace to render */
-    workspace: WorkspaceStore;
+    /** App to render */
+    app: WorkspaceApp;
 }
 
 /**
  * Render the Blocks worksapce
  */
 export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
-    const { workspace } = props;
+    const { app } = props;
     const notification = useNotification();
 
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [state, setState] = useState<StateStore>();
 
     useEffect(() => {
-        // start the loading screen
-        workspace.setLoading(true);
+        // toggle off
+        setIsInitialized(false);
 
         // load the app
         runPixel<[SerializedState]>(
-            `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
+            `GetAppBlocksJson ( project=["${app.appId}"]);`,
             'new',
         )
             .then(async ({ pixelReturn, errors, insightId }) => {
@@ -412,7 +381,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 setState(s);
 
                 const { errors: errs } = await runPixel(
-                    `SetContext("${workspace.appId}");`,
+                    `SetContext("${app.appId}");`,
                     insightId,
                 );
 
@@ -431,14 +400,12 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 console.error(e);
             })
             .finally(() => {
-                // close the loading screen
-                workspace.setLoading(false);
+                // toggle on
+                setIsInitialized(true);
             });
     }, []);
 
-    /**
-     * Have the designer control the blocks
-     */
+    // Have the designer control the blocks
     const designer = useMemo(() => {
         // return the store
         if (state) {
@@ -448,49 +415,118 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         }
     }, [state]);
 
-    if (!state) {
+    // create the factory
+    const factory = useMemo<
+        React.ComponentProps<typeof WorkspaceRenderer>['factory']
+    >(() => {
+        return function _(node, layout) {
+            const component = node.getComponent();
+            const config = node.getConfig();
+
+            if (component === 'designer') {
+                return <DesignerPanel />;
+            } else if (component === 'variables') {
+                return <VariablesPanel />;
+            } else if (component === 'settings') {
+                return <AppSettingsPanel />;
+            } else if (component === 'layers') {
+                return <LayersPanel />;
+            } else if (component === 'selected') {
+                return <SelectedBlockPanel />;
+            } else if (component === 'blocks') {
+                return (
+                    <BlocksMenuPanel
+                        title={'Add Blocks'}
+                        items={DEFAULT_MENU}
+                    />
+                );
+            } else if (component === 'viz') {
+                return (
+                    <BlocksMenuPanel
+                        title={'Add Visualization'}
+                        items={VISUALIZATION_MENU}
+                    />
+                );
+            } else if (component === 'file-explorer') {
+                return (
+                    <FileExplorerPanel
+                        node={node}
+                        layout={layout}
+                        type={'APP'}
+                        space={app.appId}
+                    />
+                );
+            } else if (component === 'file-editor') {
+                return (
+                    <FileEditorPanel
+                        node={node}
+                        type={'APP'}
+                        space={app.appId}
+                        path={config.path}
+                    />
+                );
+            } else if (component === 'notebook-explorer') {
+                return <NotebookExplorerPanel node={node} layout={layout} />;
+            } else if (component === 'notebook-viewer') {
+                return <NotebookViewerPanel id={config.id} />;
+            }
+        };
+    }, [app]);
+
+    if (!state || !isInitialized) {
         return <LoadingScreen.Trigger />;
     }
 
     return (
-        <Blocks state={state} registry={DefaultBlocks}>
-            <DesignerContext.Provider
-                value={{
-                    designer: designer,
-                }}
-            >
-                <Workspace
-                    options={DEFAULT_OPTIONS}
-                    workspace={workspace}
-                    endTopbar={<BlocksWorkspaceActions />}
-                    alert={
-                        <StyledAlert>
-                            <Stack
-                                direction="row"
-                                padding={0}
-                                spacing={0.5}
-                                alignItems={'center'}
-                            >
-                                <ConstructionOutlined
-                                    fontSize="small"
-                                    color={'warning'}
-                                />
-                                <Typography
-                                    variant={'caption'}
-                                    fontWeight="bold"
-                                >
-                                    Note:
-                                </Typography>
-                                <Typography variant={'caption'}>
-                                    This feature is currently in alpha.
-                                </Typography>
-                            </Stack>
-                        </StyledAlert>
-                    }
-                    factory={FACTORY}
-                />
-                <BlocksWorkspaceDev />
-            </DesignerContext.Provider>
-        </Blocks>
+        <StyledContainer>
+            <Blocks state={state} registry={DefaultBlocks}>
+                <DesignerContext.Provider
+                    value={{
+                        designer: designer,
+                    }}
+                >
+                    <Workspace
+                        name={`blocks--${app.appId}`}
+                        app={app}
+                        options={DEFAULT_OPTIONS}
+                        header={
+                            <WorkspaceHeader
+                                alert={
+                                    <StyledAlert>
+                                        <Stack
+                                            direction="row"
+                                            padding={0}
+                                            spacing={0.5}
+                                            alignItems={'center'}
+                                        >
+                                            <ConstructionOutlined
+                                                fontSize="small"
+                                                color={'warning'}
+                                            />
+                                            <Typography
+                                                variant={'caption'}
+                                                fontWeight="bold"
+                                            >
+                                                Note:
+                                            </Typography>
+                                            <Typography variant={'caption'}>
+                                                This feature is currently in
+                                                alpha.
+                                            </Typography>
+                                        </Stack>
+                                    </StyledAlert>
+                                }
+                                end={<BlocksWorkspaceActions />}
+                            />
+                        }
+                        drawer={<WorkspaceDrawer />}
+                    >
+                        <WorkspaceRenderer factory={factory} />
+                        <WorkspaceReset />
+                    </Workspace>
+                    <BlocksWorkspaceDev />
+                </DesignerContext.Provider>
+            </Blocks>
+        </StyledContainer>
     );
 });

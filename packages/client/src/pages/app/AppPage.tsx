@@ -15,10 +15,10 @@ import {
 import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
 import { Env } from '@/env';
-import { WorkspaceStore } from '@/stores';
+import { WorkspaceApp } from '@/stores';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+import { BlocksRenderer } from '@/components/workspace';
 import { AppRenderer } from '@/components/app';
 import { Link } from 'react-router-dom';
 
@@ -47,17 +47,17 @@ export const AppPage = observer(() => {
     const notification = useNotification();
     const navigate = useNavigate();
 
-    const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+    const [app, setApp] = useState<WorkspaceApp | null>(null);
     const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 
     useEffect(() => {
         // clear out the old app
-        setWorkspace(undefined);
+        setApp(null);
 
         configStore
-            .createWorkspace(appId)
-            .then((loadedWorkspace) => {
-                setWorkspace(loadedWorkspace);
+            .loadApp(appId)
+            .then((app) => {
+                setApp(app as WorkspaceApp);
             })
             .catch((e) => {
                 notification.add({
@@ -70,7 +70,7 @@ export const AppPage = observer(() => {
     }, [appId]);
 
     // hide the screen while it loads
-    if (!workspace) {
+    if (!app) {
         return <LoadingScreen.Trigger description="Initializing app" />;
     }
 
@@ -86,10 +86,10 @@ export const AppPage = observer(() => {
                 <Stack direction="row" alignItems={'center'} spacing={1}>
                     <Avatar
                         variant="rounded"
-                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                        src={`${Env.MODULE}/api/project-${app.appId}/projectImage/download`}
                     />
                     <Typography variant={'subtitle1'}>
-                        {workspace.metadata.project_name}
+                        {app.metadata.project_name}
                     </Typography>
                 </Stack>
                 <Stack flex={1}>&nbsp;</Stack>
@@ -110,12 +110,7 @@ export const AppPage = observer(() => {
                     variant="contained"
                     size={'small'}
                     color="primary"
-                    disabled={
-                        !(
-                            workspace.role === 'OWNER' ||
-                            workspace.role === 'EDIT'
-                        )
-                    }
+                    disabled={!(app.role === 'OWNER' || app.role === 'EDIT')}
                     endIcon={<EditOutlined fontSize="inherit" />}
                     component={Link}
                     //@ts-expect-error this is expected. props are forwarded
@@ -125,12 +120,10 @@ export const AppPage = observer(() => {
                 </Button>
             </Stack>
             <StyledContent>
-                {workspace.type === 'BLOCKS' ? (
+                {app.type === 'BLOCKS' ? (
                     <BlocksRenderer appId={appId} />
                 ) : null}
-                {workspace.type === 'CODE' ? (
-                    <AppRenderer appId={appId} />
-                ) : null}
+                {app.type === 'CODE' ? <AppRenderer appId={appId} /> : null}
             </StyledContent>
 
             <Modal open={isShareOpen} onClose={() => setIsShareOpen(false)}>

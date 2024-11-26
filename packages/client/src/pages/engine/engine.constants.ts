@@ -1,7 +1,5 @@
 import {
-    Functions,
     Inventory2Outlined,
-    Polyline,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
 } from '@mui/icons-material';
@@ -11,12 +9,10 @@ import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
 
 import { EngineIndexPage } from './EngineIndexPage';
-import { EngineMetadataPage } from './EngineMetadataPage';
+import { DatabaseMetadataPage } from './database';
 import { EngineSettingsPage } from './EngineSettingsPage';
 import { EngineFilePage } from './EngineFilePage';
 import { EngineQAPage } from './EngineQAPage';
-// import { EngineQueryDataPage } from './EngineQueryDataPage';
-// import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
 
@@ -139,7 +135,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Metadata',
                 path: 'metadata',
-                component: EngineMetadataPage,
+                component: DatabaseMetadataPage,
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
@@ -148,18 +144,6 @@ export const ENGINE_ROUTES: {
                 component: EngineUsagePage,
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
-            // {
-            //     name: 'Query',
-            //     path: 'query',
-            //     component: EngineQueryDataPage,
-            //     restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
-            // },
-            // {
-            //     name: 'Replace',
-            //     path: 'replace',
-            //     component: EngineReplaceDataPage,
-            //     restrict: ['EDIT', 'OWNER'],
-            // },
             {
                 name: 'Settings',
                 path: 'settings',

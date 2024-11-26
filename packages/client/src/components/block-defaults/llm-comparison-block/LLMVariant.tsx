@@ -1,6 +1,6 @@
 import { styled, Typography, Stack, IconButton } from '@semoss/ui';
 import { Close } from '@mui/icons-material';
-import { TypeVariant } from '../../workspace/workspace.types';
+import { TypeVariant } from './llm-compare.types';
 import { useState } from 'react';
 import { LlmCard } from './LlmCard';
 import { useBlock, useBlocks, useLLMComparison } from '@/hooks';

@@ -35,7 +35,7 @@ import {
     BLOCK_TYPE_COMPARE,
     BLOCK_TYPE_INPUT,
 } from '../block-defaults/block-defaults.constants';
-import { BlocksRenderer } from '../blocks-workspace';
+import { BlocksRenderer } from '@/components/workspace';
 import { VARIABLE_TYPES } from '@/stores';
 import {
     capitalizeFirstLetter,

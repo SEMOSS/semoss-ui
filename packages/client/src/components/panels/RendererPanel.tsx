@@ -3,14 +3,16 @@ import { observer } from 'mobx-react-lite';
 import { Refresh } from '@mui/icons-material';
 import { IconButton } from '@semoss/ui';
 
-import { useWorkspace } from '@/hooks';
-
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 import { AppRenderer } from '@/components/app';
 
-export const RendererPanel = observer(() => {
+interface RendererPanelProps {
+    appId: string;
+}
+
+export const RendererPanel = observer((props: RendererPanelProps) => {
     // App ID Needed for pixel calls
-    const { workspace } = useWorkspace();
+    const { appId } = props;
 
     // temporary fix for dead refresh button should be removed
     const [counter, setCounter] = useState(0);
@@ -33,7 +35,7 @@ export const RendererPanel = observer(() => {
                 </>
             }
         >
-            <AppRenderer appId={workspace.appId} />;
+            <AppRenderer appId={appId} />;
         </Panel>
     );
 });

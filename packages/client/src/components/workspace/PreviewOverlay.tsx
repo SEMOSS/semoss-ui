@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { Button, Modal, styled } from '@semoss/ui';
 import { SerializedState } from '@/stores';
-import { BlocksRenderer } from '../blocks-workspace';
+import { BlocksRenderer } from '.';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     height: '60vh',

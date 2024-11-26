@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 
 import { Notebook } from '@/components/notebook';
-import { Panel } from '@/components/workspace';
+import { Panel } from './Panel';
 
 interface NotebookViewerPanelProps {
     /** Id of the notebook */

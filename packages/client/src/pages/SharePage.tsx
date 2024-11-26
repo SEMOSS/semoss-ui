@@ -5,7 +5,7 @@ import { styled, useNotification } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+import { BlocksRenderer } from '@/components/workspace';
 import { AppType, AppMetadata, AppRenderer } from '@/components/app';
 
 const StyledViewport = styled('div')(() => ({

@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import { WorkspaceStore } from '@/stores';
+import { WorkspaceApp, WorkspaceStore } from '@/stores';
 
 /**
  * Value
@@ -8,6 +8,9 @@ import { WorkspaceStore } from '@/stores';
 export type WorkspaceContextProps = {
     /** Widgets available to all of the blocks */
     workspace: WorkspaceStore;
+
+    /** Connected app. If no null, no app is connected */
+    app: WorkspaceApp | null;
 };
 
 /**
