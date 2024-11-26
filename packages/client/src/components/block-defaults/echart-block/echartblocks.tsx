@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-
+import { useRef } from 'react';
 import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 
@@ -10,6 +10,23 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 import { styled } from '@mui/material';
 import { createClassFromSpec } from 'react-vega';
+import { GridBlockColumn } from '../grid-block/grid-block.types';
+
+export type EchartBlockColumn = {
+    /** Name of the column */
+    name: string;
+
+    /** Selector for the column */
+    selector: string;
+
+    /** Width of the column */
+    width: string;
+};
+
+export type EchartFrameData = {
+    name: string;
+    value: string | number;
+};
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -89,18 +106,33 @@ option = {
 export interface EchartVisualizationBlockDef {
     widget: 'echart';
     data: {
+        frame: {
+            name: string;
+            values: [];
+            labels: [];
+        };
         specJson: undefined | string;
         variation?: undefined | string;
         option: undefined | string;
+        columns: EchartBlockColumn[];
     };
     listeners: never;
     slots: never;
 }
+const onClickChart = () => {};
 
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
-    echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
+    const chartRef = useRef();
+    // echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
 
+    const handleOnContextMenu = () => {
+        // prevent the default interaction
+        event.preventDefault();
+        console.log('Empty Paramsssss');
+        //const chartInstance = chartRef.current.getEchartsInstance();
+        //chartInstance.on("click",(e)=>console.log("Click",e))
+    };
     if (!data.specJson) {
         return (
             <StyledNoDataContainer {...attrs}>
@@ -117,9 +149,20 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
             const Chart = createClassFromSpec({ spec: specJson });
 
             return (
-                <StyledChartContainer {...attrs}>
+                <StyledChartContainer
+                    {...attrs}
+                    onContextMenu={(e) => {
+                        console.log('Right clikcedddd', e);
+                        //handleOnContextMenu()
+                    }}
+                >
                     {/* <Chart actions={false} /> */}
-                    <EChartsReact option={data.option} echarts={echarts}>
+                    <EChartsReact
+                        ref={chartRef}
+                        option={data.option}
+                        onChartReady={handleOnContextMenu}
+                        echarts={echarts}
+                    >
                         {' '}
                     </EChartsReact>
                 </StyledChartContainer>

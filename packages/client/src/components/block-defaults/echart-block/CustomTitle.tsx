@@ -7,12 +7,6 @@ import {
     TextField,
 } from '@semoss/ui';
 import CustomAccordianBlock from './CustomAccordianBlock';
-import {
-    AccordionActions,
-    AccordionDetails,
-    AccordionSummary,
-    Input,
-} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useEffect, useState } from 'react';
 
@@ -20,7 +14,7 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
-export const CustomizeTitle = ({ updateChart, chartType, data }) => {
+export const CustomizeTitle = ({ updateChart, data }) => {
     const [titleData, setTitleData] = useState({
         titleName: '',
         alignment: 'center',
@@ -29,84 +23,6 @@ export const CustomizeTitle = ({ updateChart, chartType, data }) => {
         titleFontWeight: 'normal',
         titleFontFamily: '',
     });
-    const ColorPalettes = ({ palettes, onPaletteClick }) => {
-        return (
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                {palettes.map((palette, index) => (
-                    <div
-                        key={index}
-                        className="titleColor"
-                        onClick={() => onPaletteClick(palette.colors)}
-                        style={{
-                            display: 'flex',
-                            padding: '10px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            border: '1px solid #ccc',
-                            width: '180px',
-                            flexWrap: 'wrap',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        {palette.colors.map((color, colorIndex) => (
-                            <div
-                                key={colorIndex}
-                                className="titleColor"
-                                style={{
-                                    backgroundColor: color,
-                                    width: '20px',
-                                    height: '20px',
-                                    margin: '2px',
-                                    borderRadius: '3px',
-                                }}
-                            />
-                        ))}
-                    </div>
-                ))}
-            </div>
-        );
-    };
-    const colorPalettes = [
-        {
-            name: 'Palette1',
-            colors: [
-                '#40A0FF',
-                '#9A74B6',
-                '#FBB83A',
-                '#F18630',
-                '#51ACA8',
-                '#187687',
-                '#CD5498',
-                '#364A90',
-            ],
-        },
-        {
-            name: 'Palette2',
-            colors: [
-                '#a832a6',
-                '#32a8a6',
-                '#f54242',
-                '#42f560',
-                '#7a42f5',
-                '#d1f542',
-                '#42f5d4',
-                '#f542a3',
-            ],
-        },
-        {
-            name: 'Palette3',
-            colors: [
-                '#ff6f61',
-                '#6b5b95',
-                '#88b04b',
-                '#f7cac9',
-                '#92a8d1',
-                '#034f84',
-                '#f7786b',
-                '#deeaee',
-            ],
-        },
-    ];
     const fontWeights = [
         'bold',
         'normal',
@@ -148,17 +64,15 @@ export const CustomizeTitle = ({ updateChart, chartType, data }) => {
         }));
     };
     useEffect(() => {
-        if (chartType === 'Echart') {
-            let option = data.option;
-            setTitleData((prev) => ({
-                ...prev,
-                titleName: option['title'].text,
-                titleFontWeight: option['title']['textStyle'].fontWeight,
-                titleSize: option['title']['textStyle'].fontSize,
-                titleFontFamily: option['title']['textStyle'].fontFamily,
-                titleColor: option['title']['textStyle'].color,
-            }));
-        }
+        let option = data.option;
+        setTitleData((prev) => ({
+            ...prev,
+            titleName: option['title'].text,
+            titleFontWeight: option['title']['textStyle'].fontWeight,
+            titleSize: option['title']['textStyle'].fontSize,
+            titleFontFamily: option['title']['textStyle'].fontFamily,
+            titleColor: option['title']['textStyle'].color,
+        }));
     }, []);
     const getAccordianDetails = (
         <div

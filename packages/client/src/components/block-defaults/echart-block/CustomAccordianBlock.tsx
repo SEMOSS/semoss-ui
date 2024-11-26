@@ -1,7 +1,5 @@
-import { AccordionDetails, AccordionSummary } from '@mui/material';
 import { Accordion, styled } from '@semoss/ui';
 import { ReactNode, useState } from 'react';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export interface accordianDef {
     accordianExpanded: false;

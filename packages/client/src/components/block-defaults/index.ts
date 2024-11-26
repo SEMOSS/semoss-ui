@@ -38,7 +38,7 @@ import {
 import {
     config as EchartVisualizationBlockConfig,
     EchartVisualizationBlockDef,
-} from './echart-poc';
+} from './echart-block';
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,

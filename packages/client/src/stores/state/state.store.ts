@@ -503,7 +503,7 @@ export class StateStore {
 
         if (this._store.variables[path[0]]) {
             const variable = this._store.variables[path[0]];
-            const value = this.getVariable(
+            let value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
@@ -512,7 +512,17 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
-
+            const stringvalue = value as string;
+            try {
+                if (stringvalue !== undefined) {
+                    let jsonValue = JSON.parse(stringvalue);
+                    if (typeof jsonValue === 'object') {
+                        value = JSON.parse(stringvalue);
+                    }
+                }
+            } catch (e) {
+                console.log('error occured while parsing');
+            }
             // TODO: Check this, protects for false values
             // (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {

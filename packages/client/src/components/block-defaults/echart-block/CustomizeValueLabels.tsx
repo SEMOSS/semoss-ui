@@ -20,23 +20,21 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
-export const CustomizeValueLabels = ({ updateChart, chartType, option }) => {
+export const CustomizeValueLabels = ({ updateChart, option }) => {
     const [fieldData, setFieldData] = useState({
         labelPosition: '',
         labelSize: '15',
         labelLineLength: '15',
     });
-    // useEffect(()=>{
-    //         let pieindex = option['series']?.findIndex((opt) =>
-    //          opt.type === 'pie',
-    //          );
-    //     setFieldData((prev)=>({
-    //         ...prev,
-    //         labelPosition : option['series'][pieindex]['label'].position,
-    //         labelSize :  option['series'][pieindex]['label'].fontSize,
-    //         labelLineLength : option['series'][pieindex]['labelLine'].length,
-    //     }))
-    // },[option])
+    useEffect(() => {
+        let pieindex = option['series']?.findIndex((opt) => opt.type === 'pie');
+        setFieldData((prev) => ({
+            ...prev,
+            labelPosition: option['series'][pieindex]['label'].position,
+            labelSize: option['series'][pieindex]['label'].fontSize,
+            labelLineLength: option['series'][pieindex]['labelLine'].length,
+        }));
+    }, [option]);
     const accordianExpanded = false;
     const labelPositionValues = ['inside', 'outside'];
     const updateFields = (e) => {
