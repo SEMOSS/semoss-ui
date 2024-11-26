@@ -108,12 +108,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                                 Here&apos;s how we use cookies
                             </Typography>
 
-                            <IconButton
-                                size="small"
-                                onClick={() => {
-                                    setVisible(false);
-                                }}
-                            >
+                            <IconButton size="small" onClick={acceptCookies}>
                                 <Close />
                             </IconButton>
                         </Stack>
@@ -127,7 +122,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                                 }}
                             />
                         </Stack>
-                        <Stack direction="row" justifyContent="flex-end">
+                        <Stack direction="row" justifyContent="center">
                             <StyledButton
                                 variant="text"
                                 onClick={() => {
@@ -136,9 +131,6 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
                             >
                                 View cookies
                             </StyledButton>
-                            <Button variant="contained" onClick={acceptCookies}>
-                                Accept
-                            </Button>
                         </Stack>
                     </AcceptCookieContainer>
                 </>
