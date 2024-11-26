@@ -398,7 +398,7 @@ export const HomePage = observer((): JSX.Element => {
                                         key={i}
                                         app={app}
                                         systemApp={false}
-                                        href={`#/app/${app.project_id}/detail`}
+                                        href={`#/app/${app.project_id}`}
                                         onAction={() =>
                                             navigate(`/app/${app.project_id}`)
                                         }
@@ -472,7 +472,7 @@ export const HomePage = observer((): JSX.Element => {
                                             key={i}
                                             app={app}
                                             systemApp={false}
-                                            href={`#/app/${app.project_id}/detail`}
+                                            href={`#/app/${app.project_id}`}
                                             onAction={() =>
                                                 navigate(
                                                     `/app/${app.project_id}`,
