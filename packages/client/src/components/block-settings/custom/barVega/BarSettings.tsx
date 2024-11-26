@@ -45,7 +45,7 @@ export const BarSettings = observer(
                     <StyledAccordion>
                         <Accordion.Trigger>Fields</Accordion.Trigger>
                         <Accordion.Content>
-                            <Fields id={id} />
+                            <Fields id={id} path={path} />
                         </Accordion.Content>
                     </StyledAccordion>
                     {/* axis */}

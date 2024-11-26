@@ -68,18 +68,31 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
     } | null>(null);
 
     // create the selector
-    const selector = `Select(${data.axis.x}, Average(${data.axis.y})).as([${data.axis.x}, Average_of_${data.axis.y}])`;
+    const selector = `Select(${data.specJson['layer'][0]['encoding']['x']['field']}, Average(${data.specJson['layer'][0]['encoding']['y']['field']})).as([${data.specJson['layer'][0]['encoding']['x']['field']}, ${data.specJson['layer'][0]['encoding']['y']['field']}])|Group(${data.specJson['layer'][0]['encoding']['x']['field']})|Sort(${data.specJson['layer'][0]['encoding']['x']['field']})`;
 
     // get the frame
     const frame = useFrame(data.frame.name, { selector: selector });
 
     const handleSelection = debounce((value: any) => {
+        // update the frame
         frame.filter(
-            `SetFrameFilter(${data.axis.x}==[${
-                value[data.axis.x.toLowerCase()]
+            `SetFrameFilter(${
+                data.specJson['layer'][0]['encoding']['x']['field']
+            }==[${
+                value[data.specJson['layer'][0]['encoding']['x']['field']]
             }])`,
         );
     }, 1000);
+
+    const formatDataPoints = (resultData: unknown) => {
+        // format the data points to match the vega specification
+        if (resultData['values']) {
+            return resultData['values'].map((row) => ({
+                [data.specJson['layer'][0]['encoding']['x']['field']]: row[0],
+                [data.specJson['layer'][0]['encoding']['y']['field']]: row[1],
+            }));
+        }
+    };
 
     const handleContextMenu = (event: React.MouseEvent) => {
         // prevent the default interaction
@@ -100,7 +113,10 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
         );
     };
 
-    if (!data.specJson) {
+    // format data for vega-lite
+    data.specJson['data']['values'] = formatDataPoints(frame.data);
+
+    if (!data.specJson || !data.frame.name) {
         return (
             <StyledNoDataContainer {...attrs}>
                 Add JSON to render your visualization
@@ -128,6 +144,8 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
             );
         }
     } else {
+        console.log('RESULT >> ', data.specJson, frame.data);
+        // if it's an object, it's valid json
         const Chart = createClassFromSpec({ spec: data.specJson });
 
         return (
