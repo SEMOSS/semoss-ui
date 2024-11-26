@@ -13,6 +13,7 @@ import { EditXAxis } from './Edit-X-Axis';
 import { EditYAxis } from './Edit-Y-Axis';
 import ChartAxis from './ChartAxis';
 import { BlocksContext } from '@/contexts';
+import { FrameDataSection } from './FrameDataSection';
 
 const StyledChartContainer = styled('div')<{ width?: string }>(
     ({ theme, width }) => ({
@@ -75,6 +76,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                 displayValueLabelDisabled: false,
             });
         const { data, setData } = useBlockSettings<any>(id);
+        console.log(data);
         const { state } = useBlocks();
         const context = useContext(BlocksContext);
         const getChartData = usePixel<{
@@ -123,7 +125,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
         }
         function isToggleShown() {
             let option = data.option;
-            if (option['legend']) {
+            if (option.hasOwnProperty('legend') && option['legend']) {
                 return option['legend'].hasOwnProperty('show')
                     ? option['legend']['show']
                     : false;
@@ -821,6 +823,9 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 chartType={chartType}
                                 option={data.option}
                             />
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
+                            <FrameDataSection id={id} />
                         </StyledSectionContainer>
                     </StyledChartContainer>
                 )}

@@ -13,6 +13,10 @@ export const config: BlockConfig<EChartVisualizationBlockDef> = {
     data: {
         option: {},
         variation: '',
+        frame: {
+            name: '',
+        },
+        columns: [],
     },
     listeners: {},
     slots: {},

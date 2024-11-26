@@ -93,7 +93,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<GridBlockDef>(id);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-
+    console.log(data, 'gridblock');
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
@@ -242,6 +242,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                                                             : DEFAULT_COLUMN_WIDTH,
                                                     }}
                                                     onContextMenu={(e) => {
+                                                        console.log('event', e);
                                                         // don't open context menu
                                                         if (!headerExists) {
                                                             return;
