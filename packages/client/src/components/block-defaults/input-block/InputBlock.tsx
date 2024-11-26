@@ -5,6 +5,7 @@ import { useBlock } from '@/hooks';
 import { useDebounce } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { LinearProgress, TextField, styled } from '@mui/material';
+import { debounced } from '@/utility';
 
 const StyledTextField = styled(TextField)({
     '& .MuiFormLabel-root.MuiInputLabel-root': {
@@ -31,13 +32,9 @@ export interface InputBlockDef extends BlockDef<'input'> {
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
 
-    useDebounce(
-        () => {
-            listeners.onChange();
-        },
-        [listeners, data.value],
-        500,
-    );
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 200);
 
     return (
         <StyledTextField
@@ -63,6 +60,7 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
                 const value = e.target.value;
                 // update the value
                 setData('value', value);
+                debouncedCallback();
             }}
             {...attrs}
         />

@@ -605,13 +605,18 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          * @param space - where to run it
          */
         runPy: async <O>(python: string, space: Space = 'insight') => {
-            const { pixelReturn } = await this.actions.run<[O]>(
-                `Py("<encode>${python}</encode>")`,
-                space,
-            );
+            const { pixelReturn } = await this.actions.run<
+                [
+                    [
+                        {
+                            output: O;
+                        },
+                    ],
+                ]
+            >(`Py("<encode>${python}</encode>")`, space);
 
             return {
-                output: pixelReturn[0].output,
+                output: pixelReturn[0].output[0].output,
             };
         },
 

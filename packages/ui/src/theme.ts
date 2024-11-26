@@ -1,4 +1,5 @@
 import {
+    alpha,
     ThemeOptions,
     styled,
     PaletteOptions,
@@ -8,7 +9,7 @@ import {
 } from "@mui/material";
 
 // export specifics from the library
-export { styled, useTheme, keyframes };
+export { alpha, styled, useTheme, keyframes };
 export type { ThemeOptions };
 
 declare module "@mui/material" {

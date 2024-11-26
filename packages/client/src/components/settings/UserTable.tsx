@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Delete, Edit } from '@mui/icons-material';
 import {
     styled,
@@ -154,6 +154,7 @@ export const UserTable = (props: UserTableProps) => {
 
     const [page, setPage] = useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+    const [displayedUsers, setDisplayedUsers] = useState([]);
     const [search, setSearch] = useState<string>('');
 
     // debounce the input
@@ -176,9 +177,22 @@ export const UserTable = (props: UserTableProps) => {
     // track if the page is loading
     const isLoading =
         getUsers.status === 'INITIAL' || getUsers.status === 'LOADING';
-    const renderedUsers = getUsers.status === 'SUCCESS' ? getUsers.data : [];
-    const totalUsers = getUsers.status === 'SUCCESS' ? 0 : 0;
+    const totalUsers = getUsers.status === 'SUCCESS' ? getUsers.data.length : 0;
     const hasUsers = getUsers.status === 'SUCCESS' && getUsers.data.length > 0;
+
+    // Set the displayed users when the data, page, or rowsPerPage change.
+    useEffect(() => {
+        if (getUsers.status === 'SUCCESS') {
+            const displayed = getUsers.data.slice(
+                page * rowsPerPage,
+                (page + 1) * rowsPerPage,
+            );
+            setDisplayedUsers(displayed);
+        } else {
+            setDisplayedUsers([]);
+        }
+    }, [getUsers.status, page, rowsPerPage]);
+
     /**
      * Update a user
      * @param user - user to update
@@ -262,16 +276,16 @@ export const UserTable = (props: UserTableProps) => {
 
     // Avatars rendered
     const Avatars = useMemo(() => {
-        if (!renderedUsers.length) {
+        if (!displayedUsers.length) {
             return [];
         }
 
         let i = 0;
         const avatarList = [];
-        while (i < 5 && i < renderedUsers.length) {
+        while (i < 5 && i < displayedUsers.length) {
             avatarList.push(
                 <Avatar key={i}>
-                    {(renderedUsers[i].name || ' ').charAt(0).toUpperCase()}
+                    {(displayedUsers[i].name || ' ').charAt(0).toUpperCase()}
                 </Avatar>,
             );
 
@@ -279,7 +293,7 @@ export const UserTable = (props: UserTableProps) => {
         }
 
         return avatarList;
-    }, [renderedUsers.length]);
+    }, [displayedUsers.length]);
 
     return (
         <StyledMemberContent>
@@ -364,7 +378,7 @@ export const UserTable = (props: UserTableProps) => {
                                         </Table.Row>
                                     </Table.Head>
                                     <Table.Body>
-                                        {renderedUsers.map((user) => {
+                                        {displayedUsers.map((user) => {
                                             if (user) {
                                                 return (
                                                     <Table.Row key={user.id}>

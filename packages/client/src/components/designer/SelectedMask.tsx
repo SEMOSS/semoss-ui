@@ -11,7 +11,6 @@ import {
 import { useBlocks, useDesigner } from '@/hooks';
 
 import { DragIndicator } from '@mui/icons-material';
-import { getImageForWidget } from './designer.constants';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -88,7 +87,7 @@ export const SelectedMask = observer(() => {
                 return true;
             },
             block.id,
-            getImageForWidget(block.widget),
+            registry[block.widget].icon,
         );
 
         // clear the hovered

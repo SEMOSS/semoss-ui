@@ -69,6 +69,7 @@ export type VariableWithId =
           value?: string;
           isInput?: boolean;
           isOutput?: boolean;
+          cellId?: string;
       } & { id: string })
     | ({
           to: string;
@@ -77,6 +78,17 @@ export type VariableWithId =
           isInput?: boolean;
           isOutput?: boolean;
       } & { id: string });
+
+/**
+ * Frame
+ */
+export type Frame = {
+    /** Name of the frame */
+    name: string;
+
+    /** Key associated with the frame, it changes whenever the data changes */
+    key: number;
+};
 
 /**
  * Variants

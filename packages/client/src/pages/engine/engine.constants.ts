@@ -210,7 +210,7 @@ export const ENGINE_ROUTES: {
                 name: 'Files',
                 path: 'files',
                 component: EngineFilePage,
-                restrict: ['OWNER'],
+                restrict: ['OWNER', 'EDIT'],
             },
             {
                 name: 'Q&A',

@@ -51,6 +51,12 @@ export interface ModalProps {
     onClose?: MuiModalProps["onClose"];
 
     /**
+     * If `true`, the backdrop is not rendered.
+     * @default false
+     */
+    hideBackdrop?: MuiModalProps["hideBackdrop"];
+
+    /**
      * If `true`, the component is shown.
      */
     open: boolean;

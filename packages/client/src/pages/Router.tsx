@@ -5,6 +5,12 @@ import { useEffect, useState } from 'react';
 import { useRootStore } from '@/hooks/';
 import { LoadingScreen } from '@/components/ui';
 
+import { AppRouter } from './app';
+import { EngineRouter } from './engine';
+import { ImportRouter } from './import';
+import { PromptRouter } from './prompt';
+import { SettingsRouter } from './settings';
+
 import { AuthenticatedLayout } from './AuthenticatedLayout';
 import { NavigatorLayout } from './NavigatorLayout';
 
@@ -12,13 +18,10 @@ import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { SharePage } from './SharePage';
 
-import { AppRouter } from './app';
-import { EngineRouter } from './engine';
-import { ImportRouter } from './import';
 import { CookieNotice } from './legal/CookieNotice';
 import { PrivacyNotice } from './legal/PrivacyNotice';
-import { PromptRouter } from './prompt';
-import { SettingsRouter } from './settings';
+
+import { WorkspacePage } from './WorkspacePage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -52,16 +55,17 @@ export const Router = observer(() => {
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
-                <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="import" element={<ImportRouter />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
+                    <Route path="app/*" element={<AppRouter />} />
                     {process.env.NODE_ENV == 'development' && (
                         <Route path="prompt/*" element={<PromptRouter />} />
                     )}
                 </Route>
+                <Route path="workspace/:appId" element={<WorkspacePage />} />
                 <Route path="s/:appId" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
