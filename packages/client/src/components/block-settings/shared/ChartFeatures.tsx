@@ -16,41 +16,13 @@ import {
     Tooltip,
     Container,
     Accordion,
+    Typography,
 } from '@semoss/ui';
 import { ToolTips } from './ToolTips';
+import { AccordionActions } from '@mui/material';
 
 // Reduce Initial Bundle
-const colorPalettes = {
-    Default: {
-        scheme: 'category10',
-        colors: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
-    },
-    Accent: {
-        scheme: 'accent',
-        colors: ['#7fc97f', '#beaed4', '#fdc086', '#ffff99', '#386cb0'],
-    },
-    Dark2: {
-        scheme: 'dark2',
-        colors: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e'],
-    },
-    Paired: {
-        scheme: 'paired',
-        colors: ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99'],
-    },
-    Pastel1: {
-        scheme: 'pastel1',
-        colors: ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6'],
-    },
-    Set1: {
-        scheme: 'set1',
-        colors: ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'],
-    },
-    Set2: {
-        scheme: 'set2',
-        colors: ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854'],
-    },
-};
-const colorPalettes1 = [
+const colorPalettes = [
     {
         name: 'Semoss',
         displayName: 'Semoss',
@@ -256,14 +228,18 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+    initialPalettes: [];
 }
 
 export const ChartFeatures = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const [activeFeature, setActiveFeature] = useState('features');
+        const [initialPalattes, setInitialPalattes] = useState<any>([]);
+        useEffect(() => {
+            setInitialPalattes(colorPalettes);
+        }, []);
         return (
             <div>
-                <h1>Chart Features</h1>
                 <div>
                     <Button
                         onClick={() => setActiveFeature('styling')}
@@ -281,10 +257,18 @@ export const ChartFeatures = observer(
 
                 <div>
                     {activeFeature === 'styling' && (
-                        <PieChartStyling id={id} path={path} />
+                        <PieChartStyling
+                            id={id}
+                            path={path}
+                            initialPalettes={initialPalattes}
+                        />
                     )}
                     {activeFeature === 'features' && (
-                        <PieChartFeatures id={id} path={path} />
+                        <PieChartFeatures
+                            id={id}
+                            path={path}
+                            initialPalettes={[]}
+                        />
                     )}
                 </div>
             </div>
@@ -294,20 +278,75 @@ export const ChartFeatures = observer(
 const PieChartStyling = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
-        const [range, setRange] = useState<any>(50);
         const [titleSettings, setTitleSettings] = useState('');
-        const [selectedPalette, setSelectedPalette] = useState<any>(
-            colorPalettes1[0],
-        );
+        const [initialPalattes, setInitialPalattes] = useState<any>([]);
+        const [selectedPalette, setSelectedPalette] = useState<any>([]);
         const [expanded, setExpanded] = useState(false);
+        const [newPaletteName, setNewPaletteName] = useState('');
+        const [newColors, setNewColors] = useState('');
+        const [editIndex, setEditIndex] = useState(null);
+        const [expand, setExpand] = useState(false);
+        const [colorPickerValue, setColorPickerValue] = useState('');
         const handlePaletteClick = (palette) => {
             setSelectedPalette(palette); // Updates selected palette immediately on change
         };
+        const handleAddOrUpdatePalette = () => {
+            if (!newPaletteName || !newColors) return;
+
+            const colorsArray = newColors
+                .split(',')
+                .map((color) => color.trim());
+
+            if (editIndex !== null) {
+                // Update existing palette
+                const updatedPalettes = [...initialPalattes];
+                updatedPalettes[editIndex] = {
+                    name: newPaletteName,
+                    displayName: newPaletteName,
+                    colors: colorsArray,
+                    isCustom: true,
+                };
+                setInitialPalattes(updatedPalettes);
+                setEditIndex(null); // Reset edit mode
+            } else {
+                // Add new palette
+                setInitialPalattes((prevPalettes) => [
+                    ...prevPalettes,
+                    {
+                        name: newPaletteName,
+                        displayName: newPaletteName,
+                        colors: colorsArray,
+                        isCustom: true,
+                    },
+                ]);
+            }
+            // Reset input fields
+            setNewPaletteName('');
+            setNewColors('');
+        };
+        useEffect(() => {
+            if (value && initialPalattes && initialPalattes.length > 0) {
+                const spec = JSON.parse(value);
+                spec['_state'] =
+                    spec['_state'] && Object.keys(spec['_state']).length > 0
+                        ? spec['_state']
+                        : {};
+
+                if (spec['_state']?.styling?.initialPalattes) {
+                    // Clear the initialPalattes object
+                    spec['_state'].styling.initialPalattes = {};
+                }
+                spec['_state']['styling'] = {
+                    ...spec['_state']['styling'],
+                    initialPalattes: initialPalattes,
+                };
+                setData(path, spec as PathValue<D['data'], typeof path>);
+                setChartFeaturesValue(JSON.stringify(spec));
+            }
+        }, [initialPalattes]);
         const handleExecute = () => {
-            console.log(selectedPalette, 'selectedPalette');
             const spec = JSON.parse(value);
             spec.layer[0].encoding.color.scale.range = selectedPalette.colors;
-            console.log(spec, 'spec');
             spec['_state'] =
                 spec['_state'] && Object.keys(spec['_state']).length > 0
                     ? spec['_state']
@@ -317,6 +356,23 @@ const PieChartStyling = observer(
                 colors: selectedPalette.colors,
                 colorName: selectedPalette.name,
                 displaycolorName: selectedPalette.displayName,
+            };
+            setData(path, spec as PathValue<D['data'], typeof path>);
+            setChartFeaturesValue(JSON.stringify(spec));
+        };
+        const handleResetColor = () => {
+            setSelectedPalette(colorPalettes[0]);
+            const spec = JSON.parse(value);
+            spec.layer[0].encoding.color.scale.range = colorPalettes[0].colors;
+            spec['_state'] =
+                spec['_state'] && Object.keys(spec['_state']).length > 0
+                    ? spec['_state']
+                    : {};
+            spec['_state']['styling'] = {
+                ...spec['_state']['styling'],
+                colors: colorPalettes[0].colors,
+                colorName: colorPalettes[0].name,
+                displaycolorName: colorPalettes[0].displayName,
             };
             setData(path, spec as PathValue<D['data'], typeof path>);
             setChartFeaturesValue(JSON.stringify(spec));
@@ -345,6 +401,8 @@ const PieChartStyling = observer(
         }, [computedValue, data]);
 
         useEffect(() => {
+            setInitialPalattes(colorPalettes);
+            setSelectedPalette(colorPalettes[0]);
             if (data) {
                 const json: PathValue<D['data'], typeof path> =
                     JSON.parse(computedValue);
@@ -355,58 +413,89 @@ const PieChartStyling = observer(
             }
         }, []);
         const reinitializeFeatures = (state) => {
-            console.log(state, 'state');
             setTitleSettings(state.pieTitle ? state.pieTitle : titleSettings);
+            if (state?.initialPalattes && state?.initialPalattes?.length > 0) {
+                setInitialPalattes(state.initialPalattes);
+            }
             if (
-                state.colors.length > 0 &&
-                state.colorName.length > 0 &&
-                state.displaycolorName.length > 0
+                state?.colors?.length > 0 &&
+                state?.colorName?.length > 0 &&
+                state?.displaycolorName?.length > 0
             ) {
                 const palatteSelected = {
                     name: state.colorName,
                     displayName: state.displaycolorName,
                     colors: [state.colors],
                 };
-                console.log(palatteSelected, 'palatteSelected');
                 setSelectedPalette(palatteSelected);
             }
         };
-        // const [titleSettings, setTitleSettings] = useState('');
         // track the ref to debounce the input
         const donutChart = () => {
-            console.log(data, 'DOnut Chart');
-            console.log(data.specJson, 'test');
-            console.log(value, 'test value');
             const spec = JSON.parse(value);
             spec.layer[0].mark.innerRadius = spec.layer[0].mark.innerRadius
                 ? 0
-                : 50;
-            setData(path, spec as PathValue<D['data'], typeof path>);
-            console.log(spec, ' test spec');
-        };
-        const handlePaletteChange = (palette) => {
-            console.log(palette, 'event');
-            console.log(palette, 'event.target');
-            const spec = JSON.parse(value);
-            spec.encoding.color.scale.scheme = colorPalettes[palette].scheme;
-            spec.encoding.color.scale.colors = colorPalettes[palette].colors;
-            console.log(spec, 'spec');
+                : 75; // initial radius of the chart to be declared otherwise this value may vary
             setData(path, spec as PathValue<D['data'], typeof path>);
         };
+        const handleEditPalette = (index) => {
+            const palette = initialPalattes[index];
+            setNewPaletteName(palette.name);
+            setNewColors(palette.colors.join(', '));
+            setEditIndex(index); // Enter edit mode for this palette
+        };
+        const isNameUnique = (custom, existing) => {
+            return !existing.some((palette) => palette.name === custom.name);
+        };
+
+        const handleColorPickerChange = (color) => {
+            setColorPickerValue(color);
+            const colorsArray = newColors
+                ? newColors.split(',').map((c) => c.trim())
+                : [];
+            if (!colorsArray.includes(color)) {
+                colorsArray.push(color);
+                setNewColors(colorsArray.join(', '));
+            }
+        };
+
+        // Handle deleting a palette
+        const handleDeletePalette = (index) => {
+            const updatedPalettes = initialPalattes.filter(
+                (_, i) => i !== index,
+            );
+            setInitialPalattes(updatedPalettes);
+            const isUnique = isNameUnique(selectedPalette, updatedPalettes);
+            if (isUnique) {
+                handlePaletteClick(updatedPalettes[0]);
+                const spec = JSON.parse(value);
+                spec.layer[0].encoding.color.scale.range =
+                    colorPalettes[0].colors;
+                spec['_state'] =
+                    spec['_state'] && Object.keys(spec['_state']).length > 0
+                        ? spec['_state']
+                        : {};
+                spec['_state']['styling'] = {
+                    ...spec['_state']['styling'],
+                    colors: colorPalettes[0].colors,
+                    colorName: colorPalettes[0].name,
+                    displaycolorName: colorPalettes[0].displayName,
+                };
+                setData(path, spec as PathValue<D['data'], typeof path>);
+                setChartFeaturesValue(JSON.stringify(spec));
+            }
+        };
+
+        useEffect(() => {
+            if (selectedPalette && selectedPalette.length > 0)
+                setSelectedPalette(selectedPalette);
+        }, [selectedPalette]);
         const handleChange = (e) => {
-            console.log(e, 'e');
-            // const { name, value } = e.target;
             setTitleSettings(e.target.value);
         };
         const titlechange = () => {
             let spec = JSON.parse(value);
-            console.log(titleSettings, 'titleSettings');
             spec.title.text = titleSettings;
-            // spec.title.fontSize= titleSettings.fontSize;
-            // spec.title.color= titleSettings.fontColor;
-            // spec.title.fontWeight= titleSettings.fontWeight;
-            // spec.title.font= titleSettings.fontFamily;
-            // spec.title.anchor= titleSettings.anchor;
             spec['_state'] =
                 spec['_state'] && Object.keys(spec['_state']).length > 0
                     ? spec['_state']
@@ -419,197 +508,246 @@ const PieChartStyling = observer(
             setChartFeaturesValue(JSON.stringify(spec));
         };
 
-        // update the value whenever the computed one changes
-        {
-            console.log(selectedPalette, 's{console.log(selectedPalette)}');
-        }
         return (
             <Suspense fallback={<>...</>}>
-                <Button onClick={() => donutChart()}>
-                    Convert it to donut chart{' '}
-                </Button>
-                <div></div>
-                <div>
-                    {/* Form to customize the title settings */}
-                    <div>
+                <Accordion
+                    expanded={expand}
+                    onChange={() => setExpand(!expand)}
+                >
+                    <Accordion.Trigger>Styling</Accordion.Trigger>
+                    <Accordion.Content>
                         <Stack>
-                            <label>
-                                Title Text:
-                                <TextField
-                                    focused={false}
-                                    type="text"
-                                    name="text"
-                                    value={titleSettings}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            {/* <label>
-      Font Size:
-      <TextField
-        focused={false}
-        type="number"
-        name="fontSize"
-        value={titleSettings.fontSize}
-        onChange={handleChange}
-      />
-    </label>
-    
-    <label>
-      Font Color:
-      <input 
-        type="color"
-        name="fontColor"
-        value={titleSettings.fontColor}
-        onChange={handleChange}
-      />
-    </label>
-    
-    <label>
-      Font Weight:
-      <Select name="fontWeight" value={titleSettings.fontWeight} onChange={(e)=>handleChange(e)}>
-        <MenuItem value="normal">Normal</MenuItem>
-        <MenuItem value="bold">Bold</MenuItem>
-        <MenuItem value="100">100</MenuItem>
-        <MenuItem value="200">200</MenuItem>
-        <MenuItem value="300">300</MenuItem>
-        <MenuItem value="400">400</MenuItem>
-        <MenuItem value="500">500</MenuItem>
-        <MenuItem value="600">600</MenuItem>
-        <MenuItem value="700">700</MenuItem>
-        <MenuItem value="800">800</MenuItem>
-        <MenuItem value="900">900</MenuItem>
-      </Select>
-    </label> 
-    
-    <label>
-      Font Family:
-      <Select name="fontFamily" value={titleSettings.fontFamily} onChange={handleChange}>
-        <MenuItem value="Arial">Arial</MenuItem>
-        <MenuItem value="Courier New">Courier New</MenuItem>
-        <MenuItem value="Georgia">Georgia</MenuItem>
-        <MenuItem value="Times New Roman">Times New Roman</MenuItem>
-        <MenuItem value="Brush Script MT">Brush Script MT</MenuItem>
-      </Select>
-    </label>
-    
-    <label>
-      Anchor:
-      <Select name="anchor" value={titleSettings.anchor} onChange={handleChange}>
-        <MenuItem value="start">Start</MenuItem>
-        <MenuItem value="middle">Middle</MenuItem>
-        <MenuItem value="end">End</MenuItem>
-      </Select>
-    </label> 
-     */}
-                            {/* Execute button to apply settings */}
-                            <Button onClick={() => titlechange()}>
-                                Execute
+                            <Button onClick={() => donutChart()}>
+                                Convert it to donut chart{' '}
                             </Button>
-                            <Accordion
-                                expanded={expanded}
-                                onChange={() => setExpanded(!expanded)}
-                            >
-                                <Accordion.Trigger>Color</Accordion.Trigger>
-                                <Accordion.Content>
-                                    <div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                flexWrap: 'wrap',
-                                                gap: '10px',
-                                            }}
-                                        >
-                                            {colorPalettes1.map(
-                                                (palette, index) => (
-                                                    <div
-                                                        key={palette.name}
-                                                        onClick={() =>
-                                                            handlePaletteClick(
-                                                                palette,
-                                                            )
-                                                        }
-                                                        style={{
-                                                            cursor: 'pointer',
-                                                            marginBottom:
-                                                                '10px',
-                                                            borderRadius: '8px',
-                                                        }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                fontWeight:
-                                                                    'bold',
-                                                                marginBottom:
-                                                                    '5px',
-                                                            }}
-                                                        >
-                                                            {
-                                                                palette.displayName
-                                                            }
-                                                        </span>
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                gap: '3px',
-                                                                padding: '10px',
-                                                                borderRadius:
-                                                                    '20px',
-                                                                backgroundColor:
-                                                                    selectedPalette.name ===
-                                                                    palette.name
-                                                                        ? '#4CAF50'
-                                                                        : '#F0F0F0',
-                                                                boxShadow:
-                                                                    selectedPalette.name ===
-                                                                    palette.name
-                                                                        ? '0px 0px 5px rgba(0, 0, 0, 0.3)'
-                                                                        : 'none',
-                                                                width: '100%',
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    display:
-                                                                        'flex',
-                                                                    gap: '5px',
-                                                                }}
-                                                            >
-                                                                {palette.colors.map(
-                                                                    (color) => (
-                                                                        <div
-                                                                            key={
-                                                                                color
-                                                                            }
-                                                                            style={{
-                                                                                backgroundColor:
-                                                                                    color,
-                                                                                width: '9px',
-                                                                                height: '20px',
-                                                                                borderRadius:
-                                                                                    '7%',
-                                                                            }}
-                                                                        />
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                        <Button
-                                            onClick={handleExecute}
-                                            color="primary"
-                                        >
+                            <div></div>
+                            <div>
+                                {/* Form to customize the title settings */}
+                                <div>
+                                    <Stack>
+                                        <Typography variant="h6" align="center">
+                                            Title Text:
+                                        </Typography>
+                                        <TextField
+                                            focused={false}
+                                            type="text"
+                                            name="text"
+                                            value={titleSettings}
+                                            onChange={handleChange}
+                                        />
+
+                                        {/* Execute button to apply settings */}
+                                        <Button onClick={() => titlechange()}>
                                             Execute
                                         </Button>
-                                    </div>
-                                </Accordion.Content>
-                            </Accordion>
+                                        <Accordion
+                                            expanded={expanded}
+                                            onChange={() =>
+                                                setExpanded(!expanded)
+                                            }
+                                        >
+                                            <Accordion.Trigger>
+                                                Color
+                                            </Accordion.Trigger>
+                                            <Accordion.Content>
+                                                <div>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            flexWrap: 'wrap',
+                                                            gap: '10px',
+                                                        }}
+                                                    >
+                                                        {initialPalattes.map(
+                                                            (
+                                                                palette,
+                                                                index,
+                                                            ) => (
+                                                                <div>
+                                                                    <div
+                                                                        key={
+                                                                            palette.name
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handlePaletteClick(
+                                                                                palette,
+                                                                            )
+                                                                        }
+                                                                        style={{
+                                                                            cursor: 'pointer',
+                                                                            marginBottom:
+                                                                                '10px',
+                                                                            borderRadius:
+                                                                                '8px',
+                                                                        }}
+                                                                    >
+                                                                        <span
+                                                                            style={{
+                                                                                fontWeight:
+                                                                                    'bold',
+                                                                                marginBottom:
+                                                                                    '5px',
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                palette.displayName
+                                                                            }
+                                                                        </span>
+                                                                        <div
+                                                                            style={{
+                                                                                display:
+                                                                                    'flex',
+                                                                                gap: '3px',
+                                                                                padding:
+                                                                                    '10px',
+                                                                                borderRadius:
+                                                                                    '20px',
+                                                                                backgroundColor:
+                                                                                    selectedPalette.name ===
+                                                                                    palette.name
+                                                                                        ? '#4CAF50'
+                                                                                        : '#F0F0F0',
+                                                                                boxShadow:
+                                                                                    selectedPalette.name ===
+                                                                                    palette.name
+                                                                                        ? '0px 0px 5px rgba(0, 0, 0, 0.3)'
+                                                                                        : 'none',
+                                                                                width: '100%',
+                                                                            }}
+                                                                        >
+                                                                            <div
+                                                                                style={{
+                                                                                    display:
+                                                                                        'flex',
+                                                                                    gap: '5px',
+                                                                                }}
+                                                                            >
+                                                                                {palette.colors.map(
+                                                                                    (
+                                                                                        color,
+                                                                                    ) => (
+                                                                                        <div
+                                                                                            key={
+                                                                                                color
+                                                                                            }
+                                                                                            style={{
+                                                                                                backgroundColor:
+                                                                                                    color,
+                                                                                                width: '9px',
+                                                                                                height: '20px',
+                                                                                                borderRadius:
+                                                                                                    '7%',
+                                                                                            }}
+                                                                                        />
+                                                                                    ),
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {palette.isCustom && (
+                                                                        <>
+                                                                            <Button
+                                                                                onClick={() =>
+                                                                                    handleEditPalette(
+                                                                                        index,
+                                                                                    )
+                                                                                }
+                                                                                color="primary"
+                                                                            >
+                                                                                Edit
+                                                                            </Button>
+                                                                            <Button
+                                                                                onClick={() =>
+                                                                                    handleDeletePalette(
+                                                                                        index,
+                                                                                    )
+                                                                                }
+                                                                                color="error"
+                                                                            >
+                                                                                Delete
+                                                                            </Button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                    <Button
+                                                        onClick={handleExecute}
+                                                        color="primary"
+                                                    >
+                                                        Execute
+                                                    </Button>
+                                                    <Button
+                                                        onClick={
+                                                            handleResetColor
+                                                        }
+                                                        color="error"
+                                                    >
+                                                        Reset
+                                                    </Button>
+                                                </div>
+                                                <h4>Add New Color Palette</h4>
+                                                <TextField
+                                                    type="text"
+                                                    placeholder="Palette Name"
+                                                    value={newPaletteName}
+                                                    onChange={(e) =>
+                                                        setNewPaletteName(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <TextField
+                                                    type="text"
+                                                    placeholder="Colors (comma-separated)"
+                                                    value={newColors}
+                                                    onChange={(e) =>
+                                                        setNewColors(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <div
+                                                    style={{ margin: '8px 0' }}
+                                                >
+                                                    <Typography variant="h6">
+                                                        Pick a Color:
+                                                        <input
+                                                            type="color"
+                                                            value={
+                                                                colorPickerValue
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleColorPickerChange(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            style={{
+                                                                marginLeft:
+                                                                    '8px',
+                                                            }}
+                                                        />
+                                                    </Typography>
+                                                </div>
+                                                <Button
+                                                    onClick={
+                                                        handleAddOrUpdatePalette
+                                                    }
+                                                >
+                                                    {editIndex !== null
+                                                        ? 'Save Palette'
+                                                        : 'Add Palette'}
+                                                </Button>
+                                            </Accordion.Content>
+                                        </Accordion>
+                                    </Stack>
+                                </div>
+                            </div>
                         </Stack>
-                    </div>
-                </div>
+                    </Accordion.Content>
+                </Accordion>
             </Suspense>
         );
     },
@@ -623,60 +761,57 @@ const PieChartFeatures = observer(
         const [labelPosition, setLabelPosition] = useState('Outside');
         const [fontSize, setFontSize] = useState(12);
         const [showLabel, setShowLabel] = useState(false);
+        const [expand, setExpand] = useState(false);
         // track the ref to debounce the input
         const showTooltip = () => {
             const spec = JSON.parse(value);
-            console.log(spec, 'spec');
             spec.layer[0].mark.tooltip = spec.layer[0].mark.tooltip
                 ? false
                 : true;
             setData(path, spec as PathValue<D['data'], typeof path>);
         };
-        const showLabels = () => {
-            const spec = JSON.parse(value);
-            console.log(spec, 'spec');
-            spec.layer[1].encoding.theta.field =
-                showLabel == false ? 'value' : '';
-            spec.layer[1].encoding.color.field =
-                showLabel == false ? 'value' : '';
-            spec.layer[1].encoding.text.field =
-                showLabel == false ? 'value' : '';
-            setShowLabel(!showLabel);
-            setData(path, spec as PathValue<D['data'], typeof path>);
-            spec['_state'] =
-                spec['_state'] && Object.keys(spec['_state']).length > 0
-                    ? spec['_state']
-                    : {};
-            spec['_state']['styling'] = {
-                ...spec['_state']['styling'],
-                canShowLabl: showLabel,
-            };
-            setValue(JSON.stringify(spec));
-        };
-        const handleChangeLabelPosition = (e) => {
-            setLabelPosition(e.target.value);
-        };
-        const handleChangeFontSize = (e) => {
-            setFontSize(e.target.value);
-        };
-        const excecute = () => {
-            console.log(labelPosition, fontSize, 'test');
-            const spec = JSON.parse(value);
-            console.log(spec, 'spec');
-            spec.layer[1].mark.radius = labelPosition === 'Inside' ? 90 : 160;
-            spec.layer[1].mark.fontSize = fontSize;
-            spec['_state'] =
-                spec['_state'] && Object.keys(spec['_state']).length > 0
-                    ? spec['_state']
-                    : {};
-            spec['_state']['styling'] = {
-                ...spec['_state']['styling'],
-                labelPosition: labelPosition,
-                fontSize: fontSize,
-            };
-            setData(path, spec as PathValue<D['data'], typeof path>);
-            setValue(JSON.stringify(spec));
-        };
+        // const showLabels = () => {
+        //     const spec = JSON.parse(value);
+        //     spec.layer[1].encoding.theta.field =
+        //         showLabel == false ? 'value' : '';
+        //     spec.layer[1].encoding.color.field =
+        //         showLabel == false ? 'value' : '';
+        //     spec.layer[1].encoding.text.field =
+        //         showLabel == false ? 'value' : '';
+        //     setShowLabel(!showLabel);
+        //     setData(path, spec as PathValue<D['data'], typeof path>);
+        //     spec['_state'] =
+        //         spec['_state'] && Object.keys(spec['_state']).length > 0
+        //             ? spec['_state']
+        //             : {};
+        //     spec['_state']['styling'] = {
+        //         ...spec['_state']['styling'],
+        //         canShowLabl: showLabel,
+        //     };
+        //     setValue(JSON.stringify(spec));
+        // };
+        // const handleChangeLabelPosition = (e) => {
+        //     setLabelPosition(e.target.value);
+        // };
+        // const handleChangeFontSize = (e) => {
+        //     setFontSize(e.target.value);
+        // };
+        // const excecute = () => {
+        //     const spec = JSON.parse(value);
+        //     spec.layer[1].mark.radius = labelPosition === 'Inside' ? 90 : 160;
+        //     spec.layer[1].mark.fontSize = fontSize;
+        //     spec['_state'] =
+        //         spec['_state'] && Object.keys(spec['_state']).length > 0
+        //             ? spec['_state']
+        //             : {};
+        //     spec['_state']['styling'] = {
+        //         ...spec['_state']['styling'],
+        //         labelPosition: labelPosition,
+        //         fontSize: fontSize,
+        //     };
+        //     setData(path, spec as PathValue<D['data'], typeof path>);
+        //     setValue(JSON.stringify(spec));
+        // };
 
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
@@ -719,38 +854,52 @@ const PieChartFeatures = observer(
 
         return (
             <Suspense fallback={<>...</>}>
-                <Stack>
-                    <ToolTips id={id} path={path} />
-                    <Button onClick={showLabels}>Display value labels</Button>
-                    {showLabel ? (
+                <Accordion
+                    expanded={expand}
+                    onChange={() => setExpand(!expand)}
+                >
+                    <Accordion.Trigger>Features </Accordion.Trigger>
+                    <Accordion.Content>
                         <Stack>
-                            <label>
-                                Choose a position for the Label
-                                <Select
-                                    name="Choose a position for the Label"
-                                    value={labelPosition}
-                                    onChange={handleChangeLabelPosition}
-                                >
-                                    <MenuItem value="Inside">Inside</MenuItem>
-                                    <MenuItem value="Outside">Outside</MenuItem>
-                                </Select>
-                            </label>
-                            <label>
-                                Font Size:
-                                <TextField
-                                    focused={false}
-                                    type="number"
-                                    name="fontSize"
-                                    value={fontSize}
-                                    onChange={handleChangeFontSize}
-                                />
-                            </label>
-                            <Button onClick={excecute}>Execute</Button>
+                            <ToolTips id={id} path={path} />
+                            {/* <Button onClick={showLabels}>
+                                Display value labels
+                            </Button>
+                            {showLabel ? (
+                                <Stack>
+                                    <Typography variant="h6">
+                                        Choose a position for the Label
+                                        <Select
+                                            name="Choose a position for the Label"
+                                            value={labelPosition}
+                                            onChange={handleChangeLabelPosition}
+                                        >
+                                            <MenuItem value="Inside">
+                                                Inside
+                                            </MenuItem>
+                                            <MenuItem value="Outside">
+                                                Outside
+                                            </MenuItem>
+                                        </Select>
+                                    </Typography>
+                                    <Typography variant="h6">
+                                        Font Size:
+                                        <TextField
+                                            focused={false}
+                                            type="number"
+                                            name="fontSize"
+                                            value={fontSize}
+                                            onChange={handleChangeFontSize}
+                                        />
+                                    </Typography>
+                                    <Button onClick={excecute}>Execute</Button>
+                                </Stack>
+                            ) : (
+                                ''
+                            )} */}
                         </Stack>
-                    ) : (
-                        ''
-                    )}
-                </Stack>
+                    </Accordion.Content>
+                </Accordion>
             </Suspense>
         );
     },

@@ -48,11 +48,9 @@ export const ToolTips = observer(
             setChartFeaturesValue(computedValue);
         }, [computedValue, data]);
         useEffect(() => {
-            console.log(data.variation, data, 'variation');
             setVariation(data.widget ? data.widget : '');
         }, []);
         useEffect(() => {
-            console.log(data, 'data');
             if (data) {
                 const json: PathValue<D['data'], typeof path> =
                     JSON.parse(computedValue);
@@ -63,7 +61,6 @@ export const ToolTips = observer(
             }
         }, []);
         const reinitializeFeatures = (state) => {
-            console.log(state, 'state');
             setCanShowEchartsTooltip(
                 state.canShowToolTipEchart
                     ? state.canShowToolTipEchart
@@ -77,9 +74,7 @@ export const ToolTips = observer(
         };
 
         const showTooltipForEcharts = () => {
-            console.log(data, 'data');
             const spec = data.Option;
-            console.log(spec, 'spec');
             spec['tooltip']['show'] = spec['tooltip']['show'] ? false : true;
             setCanShowEchartsTooltip(canshowEchartsTooltip ? false : true);
 
@@ -97,9 +92,7 @@ export const ToolTips = observer(
         };
 
         const showTooltipForVega = () => {
-            console.log(data, 'data');
             const spec = JSON.parse(value);
-            console.log(spec, 'spec');
             spec.layer[0].mark.tooltip = spec.layer[0].mark.tooltip
                 ? false
                 : true;
@@ -113,7 +106,6 @@ export const ToolTips = observer(
                 canShowToolTipVega: spec.layer[0].mark.tooltip,
             };
             setData(path, spec as PathValue<D['data'], typeof path>);
-            console.log(spec, 'test12345');
             setChartFeaturesValue(JSON.stringify(spec));
         };
 

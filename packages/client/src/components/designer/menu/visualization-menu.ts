@@ -59,7 +59,18 @@ const SECTION_SCATTER_PLOTS = 'Scatter Plot';
 const colorPalettes = {
     Default: {
         scheme: 'category10',
-        colors: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+        colors: [
+            '#4575b4',
+            '#74add1',
+            '#abd9e9',
+            '#e0f3f8',
+            '#ffffbf',
+            '#EECF96',
+            '#DD9080',
+            '#CE6661',
+            '#C0444E',
+            '#E3B28B',
+        ],
     },
 };
 
@@ -200,11 +211,6 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             'https://vega.github.io/schema/vega-lite/v5.json',
                         title: {
                             text: '',
-                            fontSize: 20,
-                            color: '#000000',
-                            fontWeight: 'normal',
-                            font: 'Arial',
-                            anchor: 'start',
                         },
                         width: 300,
                         height: 300,

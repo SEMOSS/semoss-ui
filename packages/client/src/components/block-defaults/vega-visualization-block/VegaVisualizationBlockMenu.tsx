@@ -11,35 +11,14 @@ import { useState } from 'react';
 
 export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlock(id);
-    const [activeTab, setActiveTab] = useState('json');
     return (
-        <Stack padding={2} height="100%">
+        <Stack padding={2} height="500px">
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
             {/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
             {/* <JsonSettings id={id} path="specJson" /> */}
             {/* <ChartFeatures id={id} path="specJson" /> */}
             {/* Tab buttons */}
-            <div>
-                <Button
-                    onClick={() => setActiveTab('json')}
-                    className={activeTab === 'json' ? 'active' : ''}
-                >
-                    JSON Settings
-                </Button>
-                <Button
-                    onClick={() => setActiveTab('features')}
-                    className={activeTab === 'features' ? 'active' : ''}
-                >
-                    Chart Features
-                </Button>
-            </div>
-
-            {/* Tab content */}
-            {activeTab === 'json' && <JsonSettings id={id} path="specJson" />}
-            {activeTab === 'features' && (
-                <ChartFeatures id={id} path="specJson" />
-            )}
-
+            <JsonSettings id={id} path="specJson" />
             {/* <CodeEditorSettings id={id} path="specJson" /> */}
             {!data.variation && (
                 <AIGenerationSettings
