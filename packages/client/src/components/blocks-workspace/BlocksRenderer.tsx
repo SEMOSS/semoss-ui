@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNotification } from '@semoss/ui';
+import { Button, Modal, Skeleton, useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import {
@@ -41,6 +41,9 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
 
+    const [swapDependenciesModal, setSwapDependenciesModal] = useState(false);
+    const [appState, setAppState] = useState<SerializedState | null>(null);
+
     useEffect(() => {
         // start the loading
         setIsLoading(true);
@@ -69,7 +72,9 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
         }
 
         // load the app
-        runPixel<[SerializedState]>(pixel, 'new')
+        runPixel<
+            [{ blocks: SerializedState; engineAccess: Record<string, string> }]
+        >(pixel, 'new')
             .then(async ({ pixelReturn, errors, insightId }) => {
                 if (errors.length) {
                     throw new Error(errors.join(''));
@@ -77,8 +82,10 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
                 // set the state
                 let s: SerializedState;
+
+                debugger;
                 if (appId && !stateFilter) {
-                    s = pixelReturn[0].output;
+                    s = pixelReturn[0].output.blocks;
                 } else if (state || stateFilter) {
                     if (stateFilter) {
                         s = stateFilter;
@@ -100,6 +107,9 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
                     s = await migration.run(s);
                 }
 
+                // setSwapDependenciesModal(true);
+                // setAppState(s);
+                // return;
                 // Replace variable values with query params
                 const params = {};
                 queryStringParams.forEach((value, key) => {
@@ -154,6 +164,22 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
             });
     }, [state, appId]);
 
+    const initializeStateStore = async () => {
+        // Replace variable values with query params
+        // const params = {};
+        // queryStringParams.forEach((value, key) => {
+        //     params[key] = value;
+        // });
+        // // create a new state store
+        // const store = new StateStore({
+        //     mode: 'interactive',
+        //     insightId: insightId,
+        //     state: s,
+        //     cellRegistry: DefaultCells,
+        //     initialParams: params,
+        // });
+    };
+
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
             return <LoadingScreen.Trigger />;
@@ -163,8 +189,21 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     }
 
     return (
-        <Blocks state={stateStore} registry={DefaultBlocks}>
-            <Renderer id={ACTIVE} />
-        </Blocks>
+        <>
+            {!swapDependenciesModal && stateStore ? (
+                <Blocks state={stateStore} registry={DefaultBlocks}>
+                    <Renderer id={ACTIVE} />
+                </Blocks>
+            ) : (
+                <Skeleton width={'100%'} height={'100%'} />
+            )}
+            <Modal open={swapDependenciesModal}>
+                <Modal.Content>Dependencies</Modal.Content>
+                <Modal.Actions>
+                    <Button>Cancel</Button>
+                    <Button>Continue</Button>
+                </Modal.Actions>
+            </Modal>
+        </>
     );
 });
