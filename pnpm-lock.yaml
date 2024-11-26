@@ -130,6 +130,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      '@textea/json-viewer':
+        specifier: ^4.0.0
+        version: 4.0.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@mui/material@5.14.4)(@types/react@17.0.63)(react-dom@17.0.2)(react@17.0.2)
       '@xyflow/react':
         specifier: ^12.0.4
         version: 12.0.4(@types/react@17.0.63)(react-dom@17.0.2)(react@17.0.2)
@@ -430,7 +433,7 @@ importers:
         version: 7.45.4(react@17.0.2)
       react2angular:
         specifier: ^4.0.6
-        version: 4.0.6(@types/angular@1.8.5)(@types/prop-types@15.7.12)(@types/react-dom@17.0.20)(@types/react@17.0.63)(prop-types@15.8.1)(react-dom@17.0.2)(react@17.0.2)
+        version: 4.0.6(@types/angular@1.8.5)(@types/prop-types@15.7.13)(@types/react-dom@17.0.20)(@types/react@17.0.63)(prop-types@15.8.1)(react-dom@17.0.2)(react@17.0.2)
       satellizer:
         specifier: 0.15.5
         version: 0.15.5
@@ -4587,7 +4590,7 @@ packages:
       '@mui/utils': 5.14.8(react@17.0.2)
       '@popperjs/core': 2.11.8
       '@types/react': 17.0.62
-      clsx: 2.0.0
+      clsx: 2.1.1
       prop-types: 15.8.1
       react: 17.0.2
       react-dom: 17.0.2(react@17.0.2)
@@ -4611,7 +4614,7 @@ packages:
       '@mui/utils': 5.14.8(react@17.0.2)
       '@popperjs/core': 2.11.8
       '@types/react': 17.0.63
-      clsx: 2.0.0
+      clsx: 2.1.1
       prop-types: 15.8.1
       react: 17.0.2
       react-dom: 17.0.2(react@17.0.2)
@@ -4888,7 +4891,7 @@ packages:
       '@mui/types': 7.2.4(@types/react@17.0.62)
       '@mui/utils': 5.14.8(react@17.0.2)
       '@types/react': 17.0.62
-      clsx: 2.0.0
+      clsx: 2.1.1
       csstype: 3.1.2
       prop-types: 15.8.1
       react: 17.0.2
@@ -4918,7 +4921,7 @@ packages:
       '@mui/types': 7.2.4(@types/react@17.0.63)
       '@mui/utils': 5.14.8(react@17.0.2)
       '@types/react': 17.0.63
-      clsx: 2.0.0
+      clsx: 2.1.1
       csstype: 3.1.2
       prop-types: 15.8.1
       react: 17.0.2
@@ -9113,6 +9116,28 @@ packages:
       '@testing-library/dom': 8.20.1
     dev: true
 
+  /@textea/json-viewer@4.0.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@mui/material@5.14.4)(@types/react@17.0.63)(react-dom@17.0.2)(react@17.0.2):
+    resolution: {integrity: sha512-TOrvWJ3E1Qg8pRu2eTdMSYJl/JwaYtMGD6EIzYsaicFIA0jICZa/WH4D7/0anH5At8eYfubPTfjjBqnair5WIA==}
+    peerDependencies:
+      '@emotion/react': ^11
+      '@emotion/styled': ^11
+      '@mui/material': ^6
+      react: ^17 || ^18
+      react-dom: ^17 || ^18
+    dependencies:
+      '@emotion/react': 11.11.1(@types/react@17.0.63)(react@17.0.2)
+      '@emotion/styled': 11.11.0(@emotion/react@11.11.1)(@types/react@17.0.63)(react@17.0.2)
+      '@mui/material': 5.14.4(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@17.0.63)(react-dom@17.0.2)(react@17.0.2)
+      clsx: 2.1.1
+      copy-to-clipboard: 3.3.3
+      react: 17.0.2
+      react-dom: 17.0.2(react@17.0.2)
+      zustand: 4.5.5(@types/react@17.0.63)(react@17.0.2)
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+    dev: false
+
   /@tootallnate/once@1.1.2:
     resolution: {integrity: sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==}
     engines: {node: '>= 6'}
@@ -9754,6 +9779,10 @@ packages:
 
   /@types/prop-types@15.7.12:
     resolution: {integrity: sha512-5zvhXYtRNRluoE/jAp4GVsSduVUzNWKkOZrCDBWYtE7biZywwdC2AcEzg+cSMLFRfVgeAFqpfNabiPjxFddV1Q==}
+    dev: false
+
+  /@types/prop-types@15.7.13:
+    resolution: {integrity: sha512-hCZTSvwbzWGvhqxp/RqVqwU999pBf2vp7hzIjiYOsl8wqOmUxkQ6ddw1cV3l8811+kdUFus/q4d1Y3E3SyEifA==}
     dev: false
 
   /@types/prop-types@15.7.5:
@@ -12506,6 +12535,12 @@ packages:
     dependencies:
       is-what: 3.14.1
     dev: true
+
+  /copy-to-clipboard@3.3.3:
+    resolution: {integrity: sha512-2KV8NhB5JqC3ky0r9PMCAZKbUHSwtEo4CwCs0KXgruG43gX5PMqDEBbVU4OUzw2MuAWUfsuFmWvEKG5QRfSnJA==}
+    dependencies:
+      toggle-selection: 1.0.6
+    dev: false
 
   /core-js-compat@3.32.0:
     resolution: {integrity: sha512-7a9a3D1k4UCVKnLhrgALyFcP7YCsLOQIxPd0dKjf/6GuPcgyiGP70ewWdCGrSK7evyhymi0qO4EqCmSJofDeYw==}
@@ -21703,7 +21738,7 @@ packages:
       vega-lite: 5.16.3(vega@5.27.0)
     dev: false
 
-  /react2angular@4.0.6(@types/angular@1.8.5)(@types/prop-types@15.7.12)(@types/react-dom@17.0.20)(@types/react@17.0.63)(prop-types@15.8.1)(react-dom@17.0.2)(react@17.0.2):
+  /react2angular@4.0.6(@types/angular@1.8.5)(@types/prop-types@15.7.13)(@types/react-dom@17.0.20)(@types/react@17.0.63)(prop-types@15.8.1)(react-dom@17.0.2)(react@17.0.2):
     resolution: {integrity: sha512-MDl2WRoTyu7Gyh4+FAIlmsM2mxIa/DjSz6G/d90L1tK8ZRubqVEayKF6IPyAruC5DMhGDVJ7tlAIcu/gMNDjXg==}
     peerDependencies:
       '@types/angular': '>=1.5'
@@ -21716,7 +21751,7 @@ packages:
     dependencies:
       '@types/angular': 1.8.5
       '@types/lodash.frompairs': 4.0.7
-      '@types/prop-types': 15.7.12
+      '@types/prop-types': 15.7.13
       '@types/react': 17.0.63
       '@types/react-dom': 17.0.20
       angular: 1.8.3
@@ -23581,6 +23616,10 @@ packages:
     dependencies:
       is-number: 7.0.0
 
+  /toggle-selection@1.0.6:
+    resolution: {integrity: sha512-BiZS+C1OS8g/q2RRbJmy59xpyghNBqrr6k5L/uKBGRsTfxmu3ffiRnd8mlGPUVayg8pvfi5urfnu8TU7DVOkLQ==}
+    dev: false
+
   /toidentifier@1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
@@ -24312,6 +24351,14 @@ packages:
 
   /use-sync-external-store@1.2.0(react@17.0.2):
     resolution: {integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 17.0.2
+    dev: false
+
+  /use-sync-external-store@1.2.2(react@17.0.2):
+    resolution: {integrity: sha512-PElTlVMwpblvbNqQ82d2n6RjStvdSoNe9FG28kNfz3WiXilJm4DdNkEzRhCZuIDwY8U08WVihhGR5iRqAwfDiw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
@@ -25643,6 +25690,26 @@ packages:
       '@types/react': 17.0.63
       react: 17.0.2
       use-sync-external-store: 1.2.0(react@17.0.2)
+    dev: false
+
+  /zustand@4.5.5(@types/react@17.0.63)(react@17.0.2):
+    resolution: {integrity: sha512-+0PALYNJNgK6hldkgDq2vLrw5f6g/jCInz52n9RTpropGgeAf/ioFUCdtsjCqu4gNhW9D01rUQBROoRjdzyn2Q==}
+    engines: {node: '>=12.7.0'}
+    peerDependencies:
+      '@types/react': '>=16.8'
+      immer: '>=9.0.6'
+      react: '>=16.8'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+    dependencies:
+      '@types/react': 17.0.63
+      react: 17.0.2
+      use-sync-external-store: 1.2.2(react@17.0.2)
     dev: false
 
   /zwitch@2.0.4:

@@ -1,8 +1,9 @@
 import React, {
     createElement,
+    useCallback,
     useEffect,
-    useState,
     useMemo,
+    useState,
     Suspense,
     lazy,
 } from 'react';
@@ -40,9 +41,11 @@ import { VARIABLE_TYPES } from '@/stores';
 import {
     capitalizeFirstLetter,
     getEngineImage,
+    isOutputJSON,
     splitAtPeriod,
 } from '@/utility';
 import { MoreSharp, WarningRounded } from '@mui/icons-material';
+import { JsonViewer } from '@textea/json-viewer';
 
 import { ENGINE_ROUTES } from '@/pages/engine';
 
@@ -513,7 +516,17 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         );
                     }
                 } else if (inputVariableTypeList.indexOf(variableType) > -1) {
-                    return JSON.stringify(variableInputValue);
+                    let value = null;
+                    value = isOutputJSON(variableInputValue);
+                    return (
+                        <JsonViewer
+                            value={value === null ? variableInputValue : value}
+                            displayDataTypes={true}
+                            displaySize={true}
+                            displayComma={true}
+                            rootName={false}
+                        />
+                    );
                 } else {
                     const image = getEngineImage(
                         engine.app_type,
@@ -569,8 +582,18 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
             engine || variablePointer.length > 0 || variableInputValue,
         );
 
-        const isValid = hasRequiredFields && hasRequiredDependency;
+        let isValid = null;
 
+        // Disable the add button when adding in JSON / array incorrectly
+        if (variableType === 'JSON' || variableType === 'array') {
+            const checkValidJSON = Boolean(
+                isOutputJSON(variableInputValue) != null,
+            );
+            isValid =
+                hasRequiredFields && hasRequiredDependency && checkValidJSON;
+        } else {
+            isValid = hasRequiredFields && hasRequiredDependency;
+        }
         let v;
 
         if (variable) {

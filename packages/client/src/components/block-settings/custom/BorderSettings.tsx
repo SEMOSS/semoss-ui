@@ -202,7 +202,7 @@ export const BorderSettings = observer(
                         onChange={(e) => {
                             if (e.target.value) {
                                 onChange(
-                                    borderSizeValue ?? '0.125rem',
+                                    borderSizeValue ?? '0px',
                                     e.target.value,
                                     borderColorValue ?? '#FFFFFF',
                                 );
@@ -227,7 +227,7 @@ export const BorderSettings = observer(
                         onChange={(e) => {
                             if (e.target.value) {
                                 onChange(
-                                    borderSizeValue ?? '0.125rem',
+                                    borderSizeValue ?? '0px',
                                     borderStyleValue ?? 'solid',
                                     e.target.value,
                                 );

@@ -25,6 +25,7 @@ import {
 import { useRootStore } from '@/hooks';
 import MS from '@/assets/img/ms.png';
 import GOOGLE from '@/assets/img/google.png';
+import OKTA from '@/assets/img/okta.png';
 
 const StyledMain = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -1211,6 +1212,30 @@ export const LoginPage = observer(() => {
                                                         <StyledActionText>
                                                             Google
                                                         </StyledActionText>
+                                                    </StyledActionBox>
+                                                </StyledAction>
+                                            )}
+                                            {providers.indexOf('okta') > -1 && (
+                                                <StyledAction
+                                                    variant="outlined"
+                                                    onClick={() => {
+                                                        oauth('okta');
+                                                    }}
+                                                    fullWidth
+                                                >
+                                                    <StyledActionBox>
+                                                        <StyledActionImage
+                                                            src={OKTA}
+                                                        />
+                                                        <StyledActionText>
+                                                            Okta
+                                                        </StyledActionText>
+                                                        {/* <img
+                                                            src={OKTA}
+                                                            alt="okta"
+                                                            height={46}
+                                                            width="auto"
+                                                        /> */}
                                                     </StyledActionBox>
                                                 </StyledAction>
                                             )}
