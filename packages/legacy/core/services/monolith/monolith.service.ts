@@ -784,6 +784,19 @@ function monolithService(
     }
 
     /**
+     * @name getUserInfoByID
+     * @desc get specific user information by ID
+     * @returns $http promise
+     */
+    function getUserInfoByID(): ng.IPromise<any> {
+        return HTTPReq(
+            '/api/auth/admin/user/getUserInfoByID',
+            '',
+            METHODS.GET
+        ).then(...THEN_ARGS);
+    }
+
+    /**
      * @name getAllUserDbs
      * @desc to list all user information for admin
      * @returns $http promise
@@ -2249,6 +2262,7 @@ function monolithService(
         removeAdminUser: removeAdminUser,
         getUserInformation: getUserInformation,
         getAllUsers: getAllUsers,
+        getUserInfoByID: getUserInfoByID,
         getAllUserDbs: getAllUserDbs,
 
         // auth/app

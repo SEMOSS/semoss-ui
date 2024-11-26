@@ -1,5 +1,5 @@
 import { styled, Avatar, Typography, Stack } from '@semoss/ui';
-
+import { Link } from 'react-router-dom';
 const StyledUser = styled(Stack)(({ theme }) => ({
     paddingTop: theme.spacing(1),
     paddingRight: theme.spacing(2),
@@ -74,13 +74,25 @@ export const UserTableUser = (props: UserTableUserProps) => {
         <StyledUser direction="row" alignItems={'center'} spacing={1}>
             <StyledAvatar variant="circular">{initials}</StyledAvatar>
             <Stack direction={'column'} spacing={0} flex={1}>
-                <StyledPrimaryText
-                    variant="body1"
-                    noWrap={true}
-                    title={`Name: ${name}`}
+                <Link
+                    to={`/settings/user-profile?userId=${id}`}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
                 >
-                    {name || <>&nbsp;</>}
-                </StyledPrimaryText>
+                    <StyledPrimaryText
+                        variant="body1"
+                        noWrap={true}
+                        title={`Name: ${name}`}
+                        sx={{
+                            cursor: 'pointer',
+                            '&:hover': {
+                                textDecoration: 'underline',
+                                color: 'primary.main',
+                            },
+                        }}
+                    >
+                        {name || <>&nbsp;</>}
+                    </StyledPrimaryText>
+                </Link>
                 <Stack
                     flex={1}
                     direction={'row'}

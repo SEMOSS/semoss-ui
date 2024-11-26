@@ -129,6 +129,7 @@ interface MonolithService {
     removeAdminUser: (id: string, type: string) => ng.IPromise<any>;
     getUserInformation: (search: any) => ng.IPromise<any>;
     getAllUsers: () => ng.IPromise<any>;
+    getUserInfoByID: () => ng.IPromise<any>;
     getDBUsers: (admin: boolean, dbId: string) => ng.IPromise<any>;
     getProjectUsers: (admin: boolean, projectId: string) => ng.IPromise<any>;
     getDBUsersNoCredentials: (

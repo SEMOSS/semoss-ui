@@ -28,6 +28,7 @@ import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
 import { getSDKSnippet } from '@/utility';
+import { useLocation } from 'react-router-dom';
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
@@ -165,10 +166,34 @@ interface EditUserInfoForm {
     USERID?: string | undefined;
 }
 
-export const MyProfilePage = () => {
+interface MyProfilePageProps {
+    userInfo?: {
+        exporter: boolean;
+        phone?: string;
+        countrycode?: string;
+        name?: string;
+        admin?: boolean;
+        publisher?: boolean;
+        id: string;
+        type: string;
+        email?: string;
+        username?: string;
+    };
+}
+
+export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
+    const location = useLocation();
     const notification = useNotification();
     const { configStore, monolithStore } = useRootStore();
-    const { email, id, name, admin, loggedIn } = configStore.store.user;
+    // Determine if we're in admin view of another user's profile
+    const isAdminViewingUser =
+        location.pathname.includes('user-profile') && !!userInfo;
+
+    // Use either provided user info or logged in user's info
+    const userData = isAdminViewingUser ? userInfo : configStore.store.user;
+
+    const { email, id, name, admin } = userData;
+    const type = 'type' in userData ? userData.type : '';
 
     // track the models
     const [addModal, setAddModal] = useState(false);
@@ -202,7 +227,7 @@ export const MyProfilePage = () => {
         defaultValues: {
             NAME: name,
             USERNAME: id,
-            USERID: nativeLogin,
+            USERID: isAdminViewingUser ? userInfo?.id : nativeLogin,
             EMAIL: email,
         },
     });
@@ -226,13 +251,14 @@ export const MyProfilePage = () => {
 
             const userObj = {
                 password: '',
-                id: nativeLogin,
+                id: isAdminViewingUser ? userInfo?.id : nativeLogin,
                 email: email,
                 username: id,
                 name: data.NAME,
             };
 
-            data.USERID !== nativeLogin && (userObj['newId'] = data.USERID);
+            data.USERID !== (isAdminViewingUser ? userInfo?.id : nativeLogin) &&
+                (userObj['newId'] = data.USERID);
             data.USERNAME !== id && (userObj['newUsername'] = data.USERNAME);
             data.EMAIL !== email && (userObj['newEmail'] = data.EMAIL);
 
@@ -374,7 +400,9 @@ export const MyProfilePage = () => {
                 <StyledGrid container spacing={3}>
                     <GridItem sm={4}>
                         <Typography variant="h6">
-                            {nativeLogin
+                            {isAdminViewingUser
+                                ? `Edit User Profile: ${userInfo?.name}`
+                                : nativeLogin
                                 ? 'Edit profile information'
                                 : 'Profile Info'}
                         </Typography>
@@ -426,7 +454,10 @@ export const MyProfilePage = () => {
                                                         maxLength: 255,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={!admin}
+                                                    disabled={
+                                                        !admin &&
+                                                        !isAdminViewingUser
+                                                    }
                                                 ></TextField>
                                             );
                                         }}
@@ -454,7 +485,10 @@ export const MyProfilePage = () => {
                                                         maxLength: 500,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={!admin}
+                                                    disabled={
+                                                        !admin &&
+                                                        !isAdminViewingUser
+                                                    }
                                                 ></TextField>
                                             );
                                         }}
@@ -481,7 +515,10 @@ export const MyProfilePage = () => {
                                                         maxLength: 500,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={!admin}
+                                                    disabled={
+                                                        !admin &&
+                                                        !isAdminViewingUser
+                                                    }
                                                 ></TextField>
                                             );
                                         }}
@@ -509,7 +546,10 @@ export const MyProfilePage = () => {
                                                         maxLength: 500,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={!admin}
+                                                    disabled={
+                                                        !admin &&
+                                                        !isAdminViewingUser
+                                                    }
                                                 ></TextField>
                                             );
                                         }}
@@ -521,7 +561,7 @@ export const MyProfilePage = () => {
                                         variant="contained"
                                         color="primary"
                                         type="submit"
-                                        disabled={!admin}
+                                        disabled={!admin && !isAdminViewingUser}
                                     >
                                         Save
                                     </Button>
@@ -532,7 +572,7 @@ export const MyProfilePage = () => {
                                         onClick={() => {
                                             userInfoReset();
                                         }}
-                                        disabled={!admin}
+                                        disabled={!admin && !isAdminViewingUser}
                                     >
                                         Reset
                                     </Button>
@@ -544,6 +584,7 @@ export const MyProfilePage = () => {
                                     <TextField
                                         label={'Login Type'}
                                         value={
+                                            type ||
                                             Object.keys(
                                                 configStore.store.config
                                                     .loginDetails,

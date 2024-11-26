@@ -21,6 +21,7 @@ import { ConfigurationsPage } from './ConfigurationsPage';
 import { AdminQueryPage } from './AdminQueryPage';
 import { MyProfilePage } from './MyProfilePage';
 import { JobsPage } from '../jobs/JobsPage';
+import { UserProfilePage } from './UserProfilePage';
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
@@ -33,6 +34,7 @@ const SETTINGS_COMPONETS = {
     'social-properties': ConfigurationsPage,
     'admin-query': AdminQueryPage,
     'my-profile': MyProfilePage,
+    'user-profile': UserProfilePage,
     jobs: JobsPage,
     'team-permissions': TeamsSettingsPage,
     'team-permissions/:id': TeamSettingsDetailPage,

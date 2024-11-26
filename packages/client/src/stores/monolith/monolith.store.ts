@@ -2671,6 +2671,64 @@ export class MonolithStore {
     }
 
     /**
+     * @name getUserInfoByID
+     * @param admin - is admin user
+     * @param searchTerm - user id to search for
+     * @param offset - pagination offset
+     * @param limit - pagination limit
+     * @returns Promise with user info
+     */
+    async getUserInfoByID(
+        admin: boolean,
+        userId: string,
+        offset?: number,
+        limit?: number,
+    ) {
+        let url = `${Env.MODULE}/api/auth/`;
+
+        if (admin) {
+            url += 'admin/';
+        } else {
+            return;
+        }
+
+        url += 'user/getUserInfoByID';
+
+        // get the response
+        const response = await axios
+            .get<
+                {
+                    exporter: boolean;
+                    phone?: string;
+                    countrycode?: string;
+                    name?: string;
+                    admin?: boolean;
+                    publisher?: boolean;
+                    id: string;
+                    type: string;
+                    email?: string;
+                    username?: string;
+                }[]
+            >(url, {
+                params: {
+                    userid: userId,
+                    offset: offset,
+                    limit: limit,
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get User Info');
+        }
+
+        return response.data;
+    }
+
+    /**
      * @name editMemberInfo
      * @param admin
      * @param user
