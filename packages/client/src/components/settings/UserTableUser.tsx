@@ -76,6 +76,7 @@ export const UserTableUser = (props: UserTableUserProps) => {
             <Stack direction={'column'} spacing={0} flex={1}>
                 <Link
                     to={`/settings/user-profile?userId=${id}`}
+                    state={{ name: name }}
                     style={{ textDecoration: 'none', color: 'inherit' }}
                 >
                     <StyledPrimaryText

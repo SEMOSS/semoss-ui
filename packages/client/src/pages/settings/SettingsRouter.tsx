@@ -79,6 +79,11 @@ export const SettingsRouter = observer(() => {
                         />
                     );
                 })}
+                <Route
+                    key={'user-profile'}
+                    path={'user-profile'}
+                    element={<UserProfilePage />}
+                />
             </Route>
             <Route path="*" element={<Navigate to={`.`} replace />} />
         </Routes>

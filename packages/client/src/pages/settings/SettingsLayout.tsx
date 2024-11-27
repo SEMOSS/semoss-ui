@@ -81,6 +81,11 @@ export const SettingsLayout = observer(() => {
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
 
+    // to get userId from URL if present
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get('userId');
+    const isUserProfile = pathname.includes('user-profile');
+
     // if the user is not an admin turn it off
     useEffect(() => {
         if (!configStore.store.user.admin) {
@@ -89,6 +94,20 @@ export const SettingsLayout = observer(() => {
     }, [configStore.store.user.admin]);
 
     const matchedRoute = useMemo(() => {
+        if (isUserProfile) {
+            // Return custom route object for user profile
+            return {
+                title: state?.name ? `${state.name}'s Profile` : 'User Profile',
+                path: 'user-profile',
+                adminDescription: '',
+                description: state?.name
+                    ? `View and edit ${state.name}'s profile settings.`
+                    : 'View and edit user profile settings.',
+                history: ['settings/'],
+                admin: true,
+            };
+        }
+
         for (const r of SETTINGS_ROUTES) {
             if (matchPath(`/settings/${r.path}`, pathname)) {
                 return r;
@@ -96,7 +115,7 @@ export const SettingsLayout = observer(() => {
         }
 
         return null;
-    }, [pathname]);
+    }, [pathname, isUserProfile]);
 
     if (!matchedRoute) {
         return null;

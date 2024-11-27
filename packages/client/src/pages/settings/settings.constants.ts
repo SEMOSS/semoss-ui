@@ -200,12 +200,4 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: false,
     },
-    {
-        title: 'User Profile',
-        path: 'user-profile',
-        description: 'View and edit user profile settings.',
-        icon: mdiAccountGroup,
-        history: ['settings/'],
-        admin: true,
-    },
 ];

@@ -454,10 +454,7 @@ export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
                                                         maxLength: 255,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={
-                                                        !admin &&
-                                                        !isAdminViewingUser
-                                                    }
+                                                    disabled={!admin}
                                                 ></TextField>
                                             );
                                         }}
@@ -485,10 +482,7 @@ export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
                                                         maxLength: 500,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={
-                                                        !admin &&
-                                                        !isAdminViewingUser
-                                                    }
+                                                    disabled={!admin}
                                                 ></TextField>
                                             );
                                         }}
@@ -515,10 +509,7 @@ export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
                                                         maxLength: 500,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={
-                                                        !admin &&
-                                                        !isAdminViewingUser
-                                                    }
+                                                    disabled={!admin}
                                                 ></TextField>
                                             );
                                         }}
@@ -546,10 +537,7 @@ export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
                                                         maxLength: 500,
                                                     }}
                                                     fullWidth={true}
-                                                    disabled={
-                                                        !admin &&
-                                                        !isAdminViewingUser
-                                                    }
+                                                    disabled={!admin}
                                                 ></TextField>
                                             );
                                         }}
@@ -561,7 +549,7 @@ export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
                                         variant="contained"
                                         color="primary"
                                         type="submit"
-                                        disabled={!admin && !isAdminViewingUser}
+                                        disabled={!admin}
                                     >
                                         Save
                                     </Button>
@@ -572,7 +560,7 @@ export const MyProfilePage = ({ userInfo }: MyProfilePageProps) => {
                                         onClick={() => {
                                             userInfoReset();
                                         }}
-                                        disabled={!admin && !isAdminViewingUser}
+                                        disabled={!admin}
                                     >
                                         Reset
                                     </Button>
