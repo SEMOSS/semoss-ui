@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Menu, MenuItem } from '@mui/material';
+import { Divider } from '@semoss/ui';
 
 import { useBlock, useFrame } from '@/hooks';
 import { VegaVisualizationBlockDef } from './VegaVisualizationBlock';
@@ -40,6 +41,54 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         : undefined
                 }
             >
+                {contextMenu && !data.contextMenu?.hideFilter ? (
+                    <>
+                        <MenuItem dense={true}>
+                            {`${contextMenu.value['label']} = ${JSON.stringify(
+                                contextMenu.value['value'][
+                                    contextMenu.value['label']
+                                ],
+                            )}`}
+                        </MenuItem>
+                        <MenuItem
+                            dense={true}
+                            value={'filter'}
+                            onClick={() => {
+                                frame.filter(
+                                    `SetFrameFilter(${
+                                        contextMenu.value['label']
+                                    }==${JSON.stringify(
+                                        contextMenu.value['value'][
+                                            contextMenu.value['label']
+                                        ],
+                                    )})`,
+                                );
+                                onClose();
+                            }}
+                        >
+                            Include
+                        </MenuItem>
+                        <MenuItem
+                            dense={true}
+                            value={'filter'}
+                            onClick={() => {
+                                frame.filter(
+                                    `AddFrameFilter(${
+                                        contextMenu.value['label']
+                                    }!=${JSON.stringify(
+                                        contextMenu.value['value'][
+                                            contextMenu.value['label']
+                                        ],
+                                    )})`,
+                                );
+                                onClose();
+                            }}
+                        >
+                            Exclude
+                        </MenuItem>
+                    </>
+                ) : null}
+                <Divider />
                 {contextMenu && !data.contextMenu?.hideUnfilter ? (
                     <MenuItem
                         dense={true}
@@ -50,31 +99,6 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         }}
                     >
                         Unfilter
-                    </MenuItem>
-                ) : null}
-                {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItem
-                        dense={true}
-                        value={'filter'}
-                        onClick={() => {
-                            frame.filter(
-                                `SetFrameFilter(${
-                                    contextMenu.value['label']
-                                }==${JSON.stringify(
-                                    contextMenu.value['value'][
-                                        contextMenu.value['label']
-                                    ],
-                                )})`,
-                            );
-                            onClose();
-                        }}
-                    >
-                        Filter ==
-                        {`${contextMenu.value['label']}: ${JSON.stringify(
-                            contextMenu.value['value'][
-                                contextMenu.value['label']
-                            ],
-                        )}`}
                     </MenuItem>
                 ) : null}
             </Menu>

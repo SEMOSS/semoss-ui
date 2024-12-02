@@ -322,6 +322,7 @@ export const Axis = observer(
                             { value: 360, label: '360 d' },
                         ]}
                         valueLabelDisplay="auto"
+                        value={xAxisRotation}
                     />
                     <Slider
                         onChange={(e) =>
@@ -334,6 +335,7 @@ export const Axis = observer(
                             { value: 360, label: '360 Deg' },
                         ]}
                         valueLabelDisplay="auto"
+                        value={yAxisRotation}
                     />
                 </RowContainer>
                 <RowContainer sx={{ display: 'flex' }}>

@@ -63,7 +63,7 @@ export const Styling = observer(
 
         //local states
         const [barColor, setBarColor] = useState<string>('#4c78a8');
-        const [barWidth, setBarWidth] = useState<number>(20);
+        const [barWidth, setBarWidth] = useState<number>(10);
         const [barTitle, setBarTitle] = useState<string>('');
         const [fontSizeColor, setFontSizeColor] = useState({
             fontSize: 12,
@@ -75,7 +75,7 @@ export const Styling = observer(
 
         const reinitializeStates = (state) => {
             setBarColor(state['barColor'] ?? '#4c78a8');
-            setBarWidth(state['barWidth'] ?? 20);
+            setBarWidth(state['barWidth'] ?? 10);
             setBarTitle(state['barTitle'] ?? '');
             setFontSizeColor(
                 state['fontSizeColor'] ?? { fontSize: 12, color: '#00000' },
