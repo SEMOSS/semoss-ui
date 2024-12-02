@@ -17,8 +17,7 @@ export interface PieChartContextMenuProps {
     contextMenu: {
         mouseX: number;
         mouseY: number;
-        column: GridBlockColumn;
-        value: unknown;
+        value: any;
     } | null;
 
     /** Close the context menu */
@@ -62,16 +61,55 @@ export const PieChartContextMenu: React.FC<PieChartContextMenuProps> = observer(
                         onClick={() => {
                             frame.filter(
                                 `SetFrameFilter(${
-                                    contextMenu.column.selector
-                                }==${JSON.stringify(contextMenu.value)})`,
+                                    contextMenu.value.label
+                                }==${JSON.stringify(
+                                    contextMenu.value.value[
+                                        contextMenu.value.label
+                                    ],
+                                )})`,
                             );
                             onClose();
                         }}
                     >
-                        Filter {contextMenu.column.name} ==
-                        {typeof contextMenu.value === 'string'
-                            ? contextMenu.value
-                            : JSON.stringify(contextMenu.value)}
+                        Filter {contextMenu.value.label} ==
+                        {typeof contextMenu.value.value[
+                            contextMenu.value.label
+                        ] === 'string'
+                            ? contextMenu.value.value[contextMenu.value.label]
+                            : JSON.stringify(
+                                  contextMenu.value.value[
+                                      contextMenu.value.label
+                                  ],
+                              )}
+                    </MenuItem>
+                ) : null}
+                {contextMenu && !data.contextMenu?.hideExclude ? (
+                    <MenuItem
+                        dense={true}
+                        value={'filter'}
+                        onClick={() => {
+                            frame.filter(
+                                `SetFrameFilter(${
+                                    contextMenu.value.label
+                                }!=${JSON.stringify(
+                                    contextMenu.value.value[
+                                        contextMenu.value.label
+                                    ],
+                                )})`,
+                            );
+                            onClose();
+                        }}
+                    >
+                        Exclude {contextMenu.value.label} !=
+                        {typeof contextMenu.value.value[
+                            contextMenu.value.label
+                        ] === 'string'
+                            ? contextMenu.value.value[contextMenu.value.label]
+                            : JSON.stringify(
+                                  contextMenu.value.value[
+                                      contextMenu.value.label
+                                  ],
+                              )}
                     </MenuItem>
                 ) : null}
             </Menu>

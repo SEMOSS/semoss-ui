@@ -5,18 +5,26 @@ import {
     Autocomplete,
     IconButton,
     List,
+    Select,
     TextField,
     useNotification,
+    MenuItem,
+    Typography,
 } from '@semoss/ui';
-import { useBlockSettings, useBlocksPixel, useFrameHeaders } from '@/hooks';
+import {
+    useBlockSettings,
+    useBlocksPixel,
+    useFrame,
+    useFrameHeaders,
+} from '@/hooks';
 import { BaseSettingSection } from '@/components/block-settings';
 import { Sync } from '@mui/icons-material';
 
 import { Stack } from '@mui/material';
 import { GridBlockColumn } from '../grid-block/grid-block.types';
-import { BlockDef } from '@/stores';
 import { PieChartBlockSettingsItem } from './PieChartBlockSettingsItem';
 import { VegaVisualizationBlockDef } from './VegaVisualizationBlock';
+import { useState } from 'react';
 
 interface PieChartBlockSettingsProps {
     /** Id of the block */
@@ -28,6 +36,9 @@ export const PieChartBlockSettings = observer(
         const notification = useNotification();
         const { data, setData } =
             useBlockSettings<VegaVisualizationBlockDef>(id);
+        const [label, setLabel] = useState<any>([]);
+        const [dataValue, setDataValue] = useState<any>();
+        const [dataLabel, setDataLabel] = useState<any>();
 
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>('GetFrames();', {
@@ -38,6 +49,25 @@ export const PieChartBlockSettings = observer(
         // get headers associated with the selected frames
         const frameHeaders = useFrameHeaders(data?.frame?.name);
 
+        const handleChangeLabel = (event) => {
+            console.log('testecnmlcndl');
+            const spec = data.specJson;
+            spec['layer'][0]['encoding']['color']['field'] = event.target.value;
+            spec['layer'][1]['encoding']['text']['field'] = event.target.value;
+            setDataLabel(event.target.value);
+            setData('specJson', spec);
+        };
+
+        const handleChangeValue = (event) => {
+            console.log('testecnmlcndl');
+            setDataValue(event.target.value);
+            const spec = data.specJson;
+            console.log(spec, 'spec');
+            spec['layer'][0]['encoding']['theta']['field'] = event.target.value;
+            spec['layer'][1]['encoding']['theta']['field'] = event.target.value;
+            setData('specJson', spec);
+        };
+
         /**
          * Sync the columns with the frame headers
          */
@@ -45,11 +75,6 @@ export const PieChartBlockSettings = observer(
             try {
                 // get the columns by selector
                 const columnMap: Record<string, GridBlockColumn> = {};
-                // data.columns.reduce((acc, val) => {
-                //     acc[val.name] = acc;
-
-                //     return acc;
-                // }, {});
 
                 // get the frameHeaders as columns
                 const columns: GridBlockColumn[] = frameHeaders?.data?.list.map(
@@ -65,6 +90,8 @@ export const PieChartBlockSettings = observer(
                         };
                     },
                 );
+                frameHeaders &&
+                    setLabel(frameHeaders.data.list.map((item) => item.alias));
 
                 // update the data
                 setData('columns', columns);
@@ -140,6 +167,38 @@ export const PieChartBlockSettings = observer(
                         <Sync />
                     </IconButton>
                 </BaseSettingSection>
+                <Stack>
+                    <Typography variant="h6">
+                        Label
+                        <Select
+                            fullWidth
+                            name="Label"
+                            value={dataLabel ? dataLabel : ''}
+                            onChange={handleChangeLabel}
+                        >
+                            {label.map((item, index) => (
+                                <MenuItem key={index} value={item}>
+                                    {item}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </Typography>
+                    <Typography variant="h6">
+                        Value
+                        <Select
+                            fullWidth
+                            name="Value"
+                            value={dataValue ? dataValue : ''}
+                            onChange={handleChangeValue}
+                        >
+                            {label.map((item, index) => (
+                                <MenuItem key={index} value={item}>
+                                    {item}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </Typography>
+                </Stack>
                 <Stack direction={'column'} width={'100%'} overflow={'hjdden'}>
                     <DragDropContext
                         onDragEnd={(result) => {
@@ -174,15 +233,6 @@ export const PieChartBlockSettings = observer(
                                             />
                                         );
                                     })}
-                                    {/* <List.Item
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        dense={true}
-                                        divider
-                                    >
-                                        <List.ItemText primary={'Add Column'} />
-                                    </List.Item> */}
                                 </List>
                             )}
                         </Droppable>
