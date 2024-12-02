@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Container, Stack, Accordion, styled } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { Block, BlockDef } from '@/stores';
-import { Axis, Events, Fields, Styling } from './features';
+import { Axis, Events, Fields, Styling, Features } from './features';
 import { getValueByPath } from '@/utility';
 import { computed } from 'mobx';
 import { useBlockSettings } from '@/hooks';
@@ -100,6 +100,18 @@ export const BarSettings = observer(
                         <Accordion.Trigger>Styling</Accordion.Trigger>
                         <Accordion.Content>
                             <Styling
+                                id={id}
+                                path={path}
+                                value={value}
+                                setValue={setValue}
+                            />
+                        </Accordion.Content>
+                    </StyledAccordion>
+                    {/* Feature */}
+                    <StyledAccordion>
+                        <Accordion.Trigger>Feature</Accordion.Trigger>
+                        <Accordion.Content>
+                            <Features
                                 id={id}
                                 path={path}
                                 value={value}
