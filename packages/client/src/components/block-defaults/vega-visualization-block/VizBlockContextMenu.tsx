@@ -52,6 +52,31 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         Unfilter
                     </MenuItem>
                 ) : null}
+                {contextMenu && !data.contextMenu?.hideFilter ? (
+                    <MenuItem
+                        dense={true}
+                        value={'filter'}
+                        onClick={() => {
+                            frame.filter(
+                                `SetFrameFilter(${
+                                    contextMenu.value['label']
+                                }==${JSON.stringify(
+                                    contextMenu.value['value'][
+                                        contextMenu.value['label']
+                                    ],
+                                )})`,
+                            );
+                            onClose();
+                        }}
+                    >
+                        Filter ==
+                        {`${contextMenu.value['label']}: ${JSON.stringify(
+                            contextMenu.value['value'][
+                                contextMenu.value['label']
+                            ],
+                        )}`}
+                    </MenuItem>
+                ) : null}
             </Menu>
         );
     },

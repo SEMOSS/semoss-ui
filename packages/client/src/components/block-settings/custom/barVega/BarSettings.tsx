@@ -1,8 +1,12 @@
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Container, Stack, Accordion, styled } from '@semoss/ui';
-import { Paths } from '@/types';
+import { Paths, PathValue } from '@/types';
 import { Block, BlockDef } from '@/stores';
-import { Axis, Events, Fields } from './features';
+import { Axis, Events, Fields, Styling } from './features';
+import { getValueByPath } from '@/utility';
+import { computed } from 'mobx';
+import { useBlockSettings } from '@/hooks';
 
 const NoPaddingContainer = styled(Container)(({ theme }) => ({
     padding: '0px!important',
@@ -38,6 +42,37 @@ interface BarSettingsProps<D extends BlockDef = BlockDef> {
 
 export const BarSettings = observer(
     <D extends BlockDef = BlockDef>({ id, path }: BarSettingsProps<D>) => {
+        const { data } = useBlockSettings<D>(id);
+        // track the value
+        const [value, setValue] = useState('');
+
+        // get the value of the input (wrapped in usememo because of path prop)
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return '';
+                }
+                const v = getValueByPath(data, path);
+                if (typeof v === 'undefined') {
+                    return '';
+                } else if (typeof v === 'string') {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, path]).get();
+
+        // update the value whenever the computed one changes
+        useEffect(() => {
+            const json: PathValue<D['data'], typeof path> =
+                JSON.parse(computedValue);
+            let state = json['_state'];
+            if (!json.hasOwnProperty('_state')) {
+                json['_state'] = { axis: {}, styling: {} };
+            }
+
+            setValue(JSON.stringify(json));
+        }, [computedValue]);
         return (
             <NoPaddingContainer>
                 <Stack>
@@ -52,16 +87,26 @@ export const BarSettings = observer(
                     <StyledAccordion>
                         <Accordion.Trigger>Axis</Accordion.Trigger>
                         <Accordion.Content>
-                            <Axis id={id} path={path} />
+                            <Axis
+                                id={id}
+                                path={path}
+                                value={value}
+                                setValue={setValue}
+                            />
                         </Accordion.Content>
                     </StyledAccordion>
                     {/* styling */}
-                    {/* <StyledAccordion>
+                    <StyledAccordion>
                         <Accordion.Trigger>Styling</Accordion.Trigger>
                         <Accordion.Content>
-                            <Styling id={id} path={path} />
+                            <Styling
+                                id={id}
+                                path={path}
+                                value={value}
+                                setValue={setValue}
+                            />
                         </Accordion.Content>
-                    </StyledAccordion> */}
+                    </StyledAccordion>
                     {/* Events */}
                     <StyledAccordion>
                         <Accordion.Trigger>Events</Accordion.Trigger>

@@ -8,6 +8,7 @@ import {
     Accordion,
     styled,
     Typography,
+    Button,
 } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
@@ -45,16 +46,22 @@ interface StyleSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    value: string;
+
+    setValue: (value: string) => void;
 }
 
 export const Styling = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: StyleSettingsProps<D>) => {
-        const { state } = useBlocks();
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+        value,
+        setValue,
+    }: StyleSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
-        // track the value
-        const [value, setValue] = useState('');
-
+        //local states
         const [barColor, setBarColor] = useState<string>('#4c78a8');
         const [barWidth, setBarWidth] = useState<number>(20);
         const [barTitle, setBarTitle] = useState<string>('');
@@ -65,59 +72,26 @@ export const Styling = observer(
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-        //get the variable from data tab
-        const variables = useMemo(() => {
-            return Object.entries(state.variables);
-        }, [Object.entries(state.variables).length]);
-        // get the value of the input (wrapped in usememo because of path prop)
-        const computedValue = useMemo(() => {
-            return computed(() => {
-                if (!data) {
-                    return '';
-                }
-                const v = getValueByPath(data, path);
-                if (typeof v === 'undefined') {
-                    return '';
-                } else if (typeof v === 'string') {
-                    return v;
-                }
-
-                return JSON.stringify(v, null, 2);
-            });
-        }, [data, path]).get();
 
         const reinitializeStates = (state) => {
-            if (state) {
-                setBarColor(state['barColor'] ?? '#4c78a8');
-                setBarWidth(state['barWidth'] ?? 20);
-                setBarTitle(state['barTitle'] ?? '');
-                setFontSizeColor(
-                    state['fontSizeColor'] ?? { fontSize: 12, color: '#00000' },
-                );
-            }
+            setBarColor(state['barColor'] ?? '#4c78a8');
+            setBarWidth(state['barWidth'] ?? 20);
+            setBarTitle(state['barTitle'] ?? '');
+            setFontSizeColor(
+                state['fontSizeColor'] ?? { fontSize: 12, color: '#00000' },
+            );
         };
 
-        // update the value whenever the computed one changes
         useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
-
-        useEffect(() => {
-            if (data) {
+            if (value) {
                 const json: PathValue<D['data'], typeof path> =
-                    JSON.parse(computedValue);
-                const found = state.parseVariable(json['data']['values'] || []);
-                // console.log("?? > \n",found)
-                let state1 = json['_state'];
-                if (state1 && state1.hasOwnProperty('styling')) {
-                    reinitializeStates(state1['styling']);
-                }
-                if (!json.hasOwnProperty('_state')) {
-                    json['_state'] = {};
-                    setValue(JSON.stringify(json, null, 2));
+                    JSON.parse(value);
+                let state = json['_state'];
+                if (state && state.hasOwnProperty('styling')) {
+                    reinitializeStates(state['styling']);
                 }
             }
-        }, []);
+        }, [value]);
 
         const dispatchData = (newSpec: PathValue<D['data'], typeof path>) => {
             // clear out he old timeout
@@ -136,31 +110,16 @@ export const Styling = observer(
             }, 300);
         };
 
-        const handleBarColorChange = (newColor: string) => {
-            setBarColor(newColor);
-
+        const handleExcecute = () => {
             // insert the new value
             let tempValue = JSON.parse(value);
+            // update the bar color
             tempValue['layer'][0]['encoding']['color'] = {
                 ...tempValue['layer'][0]['encoding']['color'],
-                value: newColor,
+                value: barColor,
             };
 
-            tempValue['_state']['styling'] = {
-                ...tempValue['_state']['styling'],
-                barColor: newColor,
-            };
-
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
-        };
-
-        const handleBarWidth = (newWidth: number) => {
-            setBarWidth(newWidth);
-
-            // insert the new value
-            let tempValue = JSON.parse(value);
+            // update the bar width
             if (typeof tempValue['layer'][0]['mark'] === 'string') {
                 tempValue['layer'][0]['mark'] = {
                     type: tempValue['layer'][0]['mark'],
@@ -168,12 +127,22 @@ export const Styling = observer(
             }
             tempValue['layer'][0]['mark'] = {
                 ...tempValue['layer'][0]['mark'],
-                size: newWidth,
+                size: barWidth,
+            };
+
+            // update the bar title, font size and color
+            tempValue['title'] = {
+                ...tempValue['title'],
+                ...fontSizeColor,
+                text: barTitle,
             };
 
             tempValue['_state']['styling'] = {
                 ...tempValue['_state']['styling'],
-                barWidth: newWidth,
+                barColor: barColor,
+                barWidth: barWidth,
+                barTitle: barTitle,
+                fontSizeColor: fontSizeColor,
             };
 
             // set the value
@@ -181,27 +150,16 @@ export const Styling = observer(
             dispatchData(tempValue);
         };
 
+        const handleBarColorChange = (newColor: string) => {
+            setBarColor(newColor);
+        };
+
+        const handleBarWidth = (newWidth: number) => {
+            setBarWidth(newWidth);
+        };
+
         const handleBarTitle = (newTitle: string) => {
             setBarTitle(newTitle);
-
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            // if (!tempValue.hasOwnProperty('title')) {
-            //     tempValue['title'] = {};
-            // }
-            tempValue['title'] = {
-                ...tempValue['title'],
-                text: newTitle,
-            };
-
-            tempValue['_state']['styling'] = {
-                ...tempValue['_state']['styling'],
-                barTitle: newTitle,
-            };
-
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         const handleColorByValueChange = (rules) => {
@@ -234,21 +192,6 @@ export const Styling = observer(
 
         const handleFontSizeColorChange = (val: string, type: string) => {
             setFontSizeColor({ ...fontSizeColor, [type]: val });
-            // insert the new value into JSOn specification
-            let tempValue = JSON.parse(value);
-            tempValue['title'] = {
-                ...tempValue['title'],
-                [type]: val,
-            };
-
-            tempValue['_state']['styling'] = {
-                ...tempValue['_state']['styling'],
-                fontSizeColor: { ...fontSizeColor, [type]: val },
-            };
-
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         return (
@@ -336,6 +279,7 @@ export const Styling = observer(
                             label="Font Size"
                         />
                     </RowContainer>
+                    <Button onClick={handleExcecute}>Excecute</Button>
                 </Stack>
             </Stack>
         );

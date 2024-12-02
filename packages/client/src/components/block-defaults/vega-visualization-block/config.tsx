@@ -15,10 +15,6 @@ export const config: BlockConfig<VegaVisualizationBlockDef> = {
         frame: {
             name: '',
         },
-        axis: {
-            x: '',
-            y: '',
-        },
         specJson: '',
         variation: undefined,
     },

@@ -46,10 +46,10 @@ export const Fields = observer(
         const frameHeaders = useFrameHeaders(data.frame.name);
         const fields = frameHeaders.data.list.map((field) => field.alias) || [];
 
-        const reinitializeStates = (state) => {
-            setXAxis(state.xAxis ?? '');
-            setYAxis(state.yAxis ?? '');
-        };
+        // const reinitializeStates = (state) => {
+        //     setXAxis(state.xAxis ?? '');
+        //     setYAxis(state.yAxis ?? '');
+        // };
 
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
@@ -72,19 +72,19 @@ export const Fields = observer(
             setValue(computedValue);
         }, [computedValue]);
 
-        useEffect(() => {
-            if (data) {
-                const json: PathValue<D['data'], typeof path> =
-                    JSON.parse(computedValue);
-                let state = json['_state'];
-                if (state && state.hasOwnProperty('fields')) {
-                    reinitializeStates(state['fields']);
-                } else {
-                    json['_state'] = {};
-                    setValue(JSON.stringify(json, null, 2));
-                }
-            }
-        }, []);
+        // useEffect(() => {
+        //     if (data) {
+        //         const json: PathValue<D['data'], typeof path> =
+        //             JSON.parse(computedValue);
+        //         let state = json['_state'];
+        //         if (state && state.hasOwnProperty('fields')) {
+        //             reinitializeStates(state['fields']);
+        //         } else {
+        //             json['_state'] = {};
+        //             setValue(JSON.stringify(json, null, 2));
+        //         }
+        //     }
+        // }, []);
 
         const dispatchData = (newSpec: PathValue<D['data'], typeof path>) => {
             // clear out he old timeout
@@ -119,11 +119,11 @@ export const Fields = observer(
                 field: newValue,
             };
 
-            tempValue['_state']['fields'] = {
-                ...tempValue['_state']['fields'],
-                xAxis: axis === 'x' ? newValue : xAxis,
-                yAxis: axis === 'y' ? newValue : yAxis,
-            };
+            // tempValue['_state']['fields'] = {
+            //     ...tempValue['_state']['fields'],
+            //     xAxis: axis === 'x' ? newValue : xAxis,
+            //     yAxis: axis === 'y' ? newValue : yAxis,
+            // };
 
             // set the value
             setValue(JSON.stringify(tempValue));

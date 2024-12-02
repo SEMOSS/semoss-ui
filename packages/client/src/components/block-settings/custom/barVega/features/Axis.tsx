@@ -8,6 +8,7 @@ import {
     styled,
     Checkbox,
     Slider,
+    Button,
 } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
@@ -30,15 +31,22 @@ interface AxisSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    value: string;
+
+    setValue: (value: string) => void;
 }
 
 export const Axis = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: AxisSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+        value,
+        setValue,
+    }: AxisSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
-        // track the value
-        const [value, setValue] = useState('');
-
+        //local states
         const [showXAxis, setShowXAxis] = useState<boolean>(true);
         const [showYAxis, setShowYAxis] = useState<boolean>(true);
         const [xAxisTitle, setXAxisTitle] = useState<string>('');
@@ -82,40 +90,16 @@ export const Axis = observer(
             setYTitleFontSize(state.yTitleFontSize ?? 12);
         };
 
-        // get the value of the input (wrapped in usememo because of path prop)
-        const computedValue = useMemo(() => {
-            return computed(() => {
-                if (!data) {
-                    return '';
-                }
-                const v = getValueByPath(data, path);
-                if (typeof v === 'undefined') {
-                    return '';
-                } else if (typeof v === 'string') {
-                    return v;
-                }
-                return JSON.stringify(v, null, 2);
-            });
-        }, [data, path]).get();
-
-        // update the value whenever the computed one changes
         useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
-
-        useEffect(() => {
-            if (data) {
+            if (value) {
                 const json: PathValue<D['data'], typeof path> =
-                    JSON.parse(computedValue);
+                    JSON.parse(value);
                 let state = json['_state'];
                 if (state && state.hasOwnProperty('axis')) {
                     reinitializeStates(state['axis']);
-                } else {
-                    json['_state'] = {};
-                    setValue(JSON.stringify(json, null, 2));
                 }
             }
-        }, []);
+        }, [value]);
 
         const dispatchData = (newSpec: PathValue<D['data'], typeof path>) => {
             // clear out he old timeout
@@ -134,28 +118,74 @@ export const Axis = observer(
             }, 300);
         };
 
-        const handleShowAxisLine = (axis: string, canShow: boolean) => {
-            if (axis === 'x') {
-                setShowXAxis(canShow);
-            } else if (axis === 'y') {
-                setShowYAxis(canShow);
-            }
+        const handleExcecute = () => {
             // insert the new value
             let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                domain: canShow,
+
+            // update axis properties
+            tempValue['layer'][0]['encoding'] = {
+                ...tempValue['layer'][0]['encoding'],
+                x: {
+                    ...tempValue['layer'][0]['encoding']['x'],
+                    axis: {
+                        ...tempValue['layer'][0]['encoding']['x']['axis'],
+                        domain: showXAxis,
+                        title: showXAxisTitle ? xAxisTitle : '',
+                        titleFontSize: xTitleFontSize,
+                        ticks: showXTicks,
+                        labelAngle: xAxisRotation,
+                        labelExpr: `'${xPrependVal}'+datum.value+'${xAppendVal}'`,
+                        labelFontSize: xFontSize,
+                    },
+                },
+                y: {
+                    ...tempValue['layer'][0]['encoding']['y'],
+                    axis: {
+                        ...tempValue['layer'][0]['encoding']['y']['axis'],
+                        domain: showYAxis,
+                        title: showYAxisTitle ? yAxisTitle : '',
+                        titleFontSize: yTitleFontSize,
+                        ticks: showYTicks,
+                        labelAngle: yAxisRotation,
+                        labelExpr: `'${yPrependVal}'+datum.value+'${yAppendVal}'`,
+                        labelFontSize: yFontSize,
+                    },
+                },
             };
 
             tempValue['_state']['axis'] = {
                 ...tempValue['_state']['axis'],
-                showXAxis: axis === 'x' ? canShow : showXAxis,
-                showYAxis: axis === 'y' ? canShow : showYAxis,
+                showXAxis: showXAxis,
+                showYAxis: showYAxis,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle,
+                showXAxisTitle: showXAxisTitle,
+                showYAxisTitle: showYAxisTitle,
+                xTitleFontSize: xTitleFontSize,
+                yTitleFontSize: yTitleFontSize,
+                showXTicks: showXTicks,
+                showYTicks: showYTicks,
+                xAxisRotation: xAxisRotation,
+                yAxisRotation: yAxisRotation,
+                xPrependVal: xPrependVal,
+                yPrependVal: yPrependVal,
+                xAppendVal: xAppendVal,
+                yAppendVal: yAppendVal,
+                xFontSize: xFontSize,
+                yFontSize: yFontSize,
             };
 
             // set the value
             setValue(JSON.stringify(tempValue));
             dispatchData(tempValue);
+        };
+
+        const handleShowAxisLine = (axis1: string, canShow: boolean) => {
+            if (axis1 === 'x') {
+                setShowXAxis(canShow);
+            } else if (axis1 === 'y') {
+                setShowYAxis(canShow);
+            }
         };
 
         const editAxisTitle = (axis: string, title: string) => {
@@ -165,22 +195,6 @@ export const Axis = observer(
             if (axis === 'y') {
                 setYAxisTitle(title);
             }
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                title: title,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                xAxisTitle: axis === 'x' ? title : xAxisTitle,
-                yAxisTitle: axis === 'y' ? title : yAxisTitle,
-            };
-
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         const handleShowAxisTitle = (axis: string, canShow: boolean) => {
@@ -192,150 +206,34 @@ export const Axis = observer(
                 if (!canShow) setYAxisTitle('');
                 setShowYAxisTitle(canShow);
             }
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            if (!canShow)
-                tempValue['layer'][0]['encoding'][`${axis}`]['title'] = '';
-            else if (xAxisTitle && axis === 'x')
-                tempValue['layer'][0]['encoding'][`${axis}`]['title'] =
-                    xAxisTitle;
-            else if (yAxisTitle && axis === 'y')
-                tempValue['layer'][0]['encoding'][`${axis}`]['title'] =
-                    yAxisTitle;
-            else delete tempValue['layer'][0]['encoding'][`${axis}`]['title'];
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                showXAxisTitle: axis === 'x' ? canShow : showXAxisTitle,
-                showYAxisTitle: axis === 'y' ? canShow : showYAxisTitle,
-            };
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
         const handleTitleFontSize = (axis: string, fontSize: number) => {
             if (axis === 'x') setXTitleFontSize(fontSize);
             if (axis === 'y') setYTitleFontSize(fontSize);
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                titleFontSize: fontSize,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                xTitleFontSize: axis === 'x' ? fontSize : xTitleFontSize,
-                yTitleFontSize: axis === 'y' ? fontSize : yTitleFontSize,
-            };
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
         const handleShowAxisTicks = (axis: string, canShow: boolean) => {
             if (axis === 'x') setShowXTicks(canShow);
             if (axis === 'y') setShowYTicks(canShow);
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                ticks: canShow,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                showXTicks: axis === 'x' ? canShow : showXTicks,
-                showYTicks: axis === 'y' ? canShow : showYTicks,
-            };
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         const handleAxisRotation = (axis: string, rotation: number) => {
             if (axis === 'x') setXAxisRotation(rotation);
             if (axis === 'y') setYAxisRotation(rotation);
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                labelAngle: rotation,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                xAxisRotation: axis === 'x' ? rotation : xAxisRotation,
-                yAxisRotation: axis === 'y' ? rotation : yAxisRotation,
-            };
-
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         const handlePrependValue = (axis: string, text: string) => {
             if (axis === 'x') setXPrependVal(text);
             if (axis === 'y') setYPrependVal(text);
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                labelExpr: `'${text}'+datum.value+'${
-                    axis === 'x' ? xAppendVal ?? '' : yAppendVal ?? ''
-                }'`,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                xPrependVal: axis === 'x' ? text : xPrependVal,
-                yPrependVal: axis === 'y' ? text : yPrependVal,
-            };
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         const handleAppendValue = (axis: string, text: string) => {
             if (axis === 'x') setXAppendVal(text);
             if (axis === 'y') setYAppendVal(text);
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                labelExpr: `'${
-                    axis === 'x' ? xPrependVal ?? '' : yPrependVal ?? ''
-                }'+datum.value+'${text}'`,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                xAppendVal: axis === 'x' ? text : xAppendVal,
-                yAppendVal: axis === 'y' ? text : yAppendVal,
-            };
-
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         const handleFontSize = (axis: string, fontSize: number) => {
             if (axis === 'x') setXFontSize(fontSize);
             if (axis === 'y') setYFontSize(fontSize);
-            // insert the new value
-            let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding'][`${axis}`]['axis'] = {
-                ...tempValue['layer'][0]['encoding'][`${axis}`]['axis'],
-                labelFontSize: fontSize,
-            };
-
-            tempValue['_state']['axis'] = {
-                ...tempValue['_state']['axis'],
-                xFontSize: axis === 'x' ? fontSize : xFontSize,
-                yFontSize: axis === 'y' ? fontSize : yFontSize,
-            };
-            // set the value
-            setValue(JSON.stringify(tempValue));
-            dispatchData(tempValue);
         };
 
         return (
@@ -484,6 +382,7 @@ export const Axis = observer(
                         }
                     />
                 </RowContainer>
+                <Button onClick={handleExcecute}>Excecute</Button>
             </Stack>
         );
     },

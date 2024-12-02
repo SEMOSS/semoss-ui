@@ -1,6 +1,12 @@
 import { observer } from 'mobx-react-lite';
-import { Autocomplete, TextField, useNotification } from '@semoss/ui';
-import { useBlockSettings, useBlocksPixel, useFrameHeaders } from '@/hooks';
+import {
+    Autocomplete,
+    TextField,
+    useNotification,
+    IconButton,
+} from '@semoss/ui';
+import { Sync } from '@mui/icons-material';
+import { useBlockSettings, useBlocksPixel } from '@/hooks';
 import { BaseSettingSection } from '@/components/block-settings';
 import { VegaVisualizationBlockDef } from './VegaVisualizationBlock';
 import { BarSettings } from '@/components/block-settings';
@@ -24,6 +30,11 @@ export const VegaVisualizationBlockSettings = observer(
 
         // options for the autocomplete
         const options = getFrames.status === 'SUCCESS' ? getFrames.data : [];
+
+        // sync block data
+        const syncBlockData = () => {
+            getFrames.refresh();
+        };
 
         return (
             <>
@@ -51,6 +62,9 @@ export const VegaVisualizationBlockSettings = observer(
                             />
                         )}
                     />
+                    <IconButton size="small" onClick={() => syncBlockData()}>
+                        <Sync />
+                    </IconButton>
                 </BaseSettingSection>
                 {data.variation === BAR_VARIANT && (
                     <BarSettings id={id} path="specJson" />
