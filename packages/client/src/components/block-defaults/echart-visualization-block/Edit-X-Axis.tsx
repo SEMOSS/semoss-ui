@@ -171,7 +171,7 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="xaxis-center-align-text"
-                    checked={xaxisState.centerAlignText}
+                    defaultChecked={xaxisState.centerAlignText ?? undefined}
                     onChange={(e) => handleInputChange(e, 'centerAlignText')}
                 />
                 <label htmlFor="xaxis-center-align-text">
@@ -203,7 +203,7 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-xaxis-line"
-                    checked={xaxisState.showXAxisLine}
+                    defaultChecked={xaxisState.showXAxisLine}
                     onChange={(e) =>
                         handleInputChange(
                             e,
@@ -217,7 +217,7 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-xaxis-line-ticks"
-                    checked={xaxisState.showXAxisLineTicks}
+                    defaultChecked={xaxisState.showXAxisLineTicks}
                     onChange={(e) =>
                         handleInputChange(
                             e,
@@ -231,7 +231,7 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-xaxis-values"
-                    checked={xaxisState.showXAxisValues}
+                    defaultChecked={xaxisState.showXAxisValues}
                     onChange={(e) =>
                         handleInputChange(
                             e,
@@ -247,7 +247,7 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
                     <StyledAxisDiv>
                         <Checkbox
                             id="show-all-labels"
-                            checked={xaxisState.showAllLabels}
+                            defaultChecked={xaxisState.showAllLabels}
                             onChange={(e) =>
                                 handleInputChange(
                                     e,

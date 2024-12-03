@@ -40,6 +40,10 @@ export interface EChartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: EChartColumns[];
+        contextMenu: {
+            hideUnfilter: boolean;
+            hideFilter: boolean;
+        };
     };
     listeners: {};
     slots: never;
@@ -52,22 +56,7 @@ interface FrameData {
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs, listeners } =
         useBlock<EChartVisualizationBlockDef>(id);
-    const { setData } = useBlockSettings<EChartVisualizationBlockDef>(id);
-    const currentFrameData: MutableRefObject<FrameData> = useRef<FrameData>({
-        frameName: '',
-        frameFiltered: false,
-    });
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
-    const echartsEvents = {};
-    console.log(data, attrs, listeners);
-
-    function latestChartData(frameName, chartData) {
-        setTimeout(() => {
-            setData('option', chartData as PathValue<any, any>);
-        }, 300);
-        console.log(chartData, 'chartData');
-        currentFrameData.current.frameName = frameName;
-    }
 
     if (!data.option) {
         return (
@@ -78,13 +67,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     } else {
         return (
             <StyledNoDataContainer {...attrs}>
-                <EChartContainer
-                    id={id}
-                    dataOption={data}
-                    listenersObj={listeners}
-                    currentFrame={currentFrameData.current.frameName}
-                    updateChartData={latestChartData}
-                />
+                <EChartContainer id={id} />
             </StyledNoDataContainer>
         );
     }

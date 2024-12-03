@@ -167,7 +167,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="yaxis-center-align-text"
-                    checked={yaxisState.centerAlignText}
+                    defaultChecked={yaxisState.centerAlignText}
                     onChange={(e) => handleInputChange(e, 'centerAlignText')}
                 />
                 <label htmlFor="yaxis-center-align-text">
@@ -199,7 +199,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-line"
-                    checked={yaxisState.showYAxisLine}
+                    defaultChecked={yaxisState.showYAxisLine}
                     onChange={(e) =>
                         handleInputChange(
                             e,
@@ -213,7 +213,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-line-ticks"
-                    checked={yaxisState.showYAxisLineTicks}
+                    defaultChecked={yaxisState.showYAxisLineTicks}
                     onChange={(e) =>
                         handleInputChange(
                             e,
@@ -227,7 +227,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-values"
-                    checked={yaxisState.showYAxisValues}
+                    defaultChecked={yaxisState.showYAxisValues}
                     onChange={(e) =>
                         handleInputChange(
                             e,

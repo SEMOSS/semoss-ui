@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef, useContext, useMemo } from 'react';
-import { useBlock, useBlockSettings, useFrame, usePixel } from '@/hooks';
+import {
+    useBlock,
+    useBlockSettings,
+    useFrame,
+    useFrameHeaders,
+    usePixel,
+} from '@/hooks';
 import { EChartVisualizationBlockDef } from './EChartVisualizationBlock';
 import EChartsReact from 'echarts-for-react';
 import * as echarts from 'echarts/core';
-import { ACTION } from 'mobx/dist/internal';
+import { computed } from 'mobx';
 import { ActionMessages } from '@/stores';
 import { BlocksContext } from '@/contexts';
 import { styled } from '@semoss/ui';
@@ -13,113 +19,61 @@ import { TooltipComponent } from 'echarts/components';
 import { BAR_CHART_DATA } from './Echart.constants';
 import { Paths, PathValue } from '@/types';
 import { EChartContextMenu } from './EChartContextMenu';
+import { observer } from 'mobx-react-lite';
+import { getValueByPath } from '@/utility';
 
 const StyledMainContainer = styled('div')(({ theme }) => ({}));
 const StyledSubContainer = styled('div')(({ theme }) => ({}));
 
-//Main Container for holding the EchartComponent
-const EChartContainer = ({
-    id,
-    dataOption,
-    listenersObj,
-    currentFrame,
-    updateChartData,
-}) => {
-    // const { data, attrs } = useBlock<EChartVisualizationBlockDef>(id);
-    // const echartInstanceData = useRef({});
-    // echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
+export interface EChartContainerProps {
+    id: string;
+    // updateChartData: ()=>{}
+}
 
+//Main Container for holding the EchartComponent
+const EChartContainer = observer<EChartContainerProps>(({ id }) => {
+    function debounce(fn, delay) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn(...args), delay);
+        };
+    }
     const [selectedChart, setSelectedChart] = useState<any>({});
     const [echartState, setEchartState] = useState<any>({});
-    const { data } = useBlockSettings<EChartVisualizationBlockDef>(id);
-    let latestOption = useRef();
-    let chartOperationData = useRef({ brushSelected: [], contextMenu: null });
-    let selector = '';
-    if (data.hasOwnProperty('columns')) {
-        selector = `Select(${data.columns
-            .map((c) => {
-                return c.selector;
-            })
-            .join(', ')}).as([${data.columns
-            .map((c) => {
-                return c.name;
-            })
-            .join(', ')}])`;
-    }
-    const frameData = useFrame(dataOption.frame?.name, {
-        selector: selector,
-        // offset:0,
-        // limit: 10,
-        // enableCount: true
-    });
-    if (
-        !frameData.isLoading &&
-        frameData.data['values'].length > 0 &&
-        currentFrame !== dataOption.frame?.name
-    ) {
-        let tempFrameData = frameData;
-        console.log(tempFrameData['data']);
-        let dataArray = {
-            headerData: tempFrameData['data']['headers'],
-            values: {},
-        };
-        tempFrameData['data']['headers']?.forEach((item, index) => {
-            dataArray['values'][item] = [];
-        });
-        console.log(dataArray, 'dataArray');
-        tempFrameData['data']['values'].forEach((item, index) => {
-            item.forEach((subItem, subIndex) => {
-                dataArray['values'] = {
-                    ...dataArray['values'],
-                    [tempFrameData['data']['headers'][subIndex]]: [
-                        item[subIndex],
-                        ...dataArray['values'][
-                            tempFrameData['data']['headers'][subIndex]
-                        ],
-                    ],
-                };
-            });
-        });
-        let option = dataOption.option;
-        let xAxisIndex = tempFrameData['data']['headers'][0] ?? 'data 1',
-            yAxisIndex = tempFrameData['data']['headers'][1] ?? 'data 2';
+    const { data, setData } = useBlockSettings<EChartVisualizationBlockDef>(id);
 
-        if (option.hasOwnProperty('xAxis') && option['xAxis']) {
-            option['xAxis'] = {
-                ...option['xAxis'],
-                ['data']: dataArray['values'][xAxisIndex],
-                ['name']: xAxisIndex,
-            };
-        }
-        if (option.hasOwnProperty('yAxis') && option['yAxis']) {
-            option['yAxis'] = {
-                ...option['yAxis'],
-                ['name']: yAxisIndex,
-            };
-        }
-        if (option.hasOwnProperty('series') && option['series']) {
-            let seriesDataIndex = option['series'].findIndex(
-                (item) => item.type === BAR_CHART_DATA.JSONVALUE[0],
-            );
-            option['series'][seriesDataIndex] = {
-                ...option['series'][seriesDataIndex],
-                ['data']: dataArray['values'][yAxisIndex],
-            };
-        }
-        // option = {
-        //     ...option,
-        //     ['uiUpdateManual']: true,
-        // };
-        console.log(option, 'updated option');
-        latestOption.current = option;
-        updateChartData(dataOption.frame?.name, latestOption.current);
-    }
-    console.log(dataOption, data, frameData, 'dataoption, data, framedata');
-    //Custom object to define and handle different events
-    const handleChartEvents = {
-        // 'click': (params)=>processChartEvents(params, id,data, 'click', selectedChart, echartState),
-        // 'dblclick': (params)=>processChartEvents(params, id, data, 'dblclick', selectedChart, echartState),
-    };
+    const path = 'option';
+    let latestOption = useRef();
+    let chartOperationData = useRef({
+        brushSelected: [],
+        contextMenu: null,
+        yAxisColumn: { name: '', selector: '', width: undefined },
+        chartInstance: { setOption: null },
+    });
+    // track the ref to debounce the input
+    const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+    const selector = `Select(${data.columns
+        ?.map((c) => {
+            return c.selector;
+        })
+        .join(', ')}).as([${data.columns
+        ?.map((c) => {
+            return c.name;
+        })
+        .join(', ')}])`;
+
+    const frameData = useFrame(data.frame.name, {
+        selector: selector,
+    });
+    //Based on the brushselection data filter query will run in a specific debounce time
+    const handleSelection = debounce((column, value) => {
+        frameData.filter(`SetFrameFilter(${column}==[${value}])`);
+    }, 500);
+
+    //Custom object to define and handle different events, later current instance setup will be updated to onEvents object
+    const handleChartEvents = {};
 
     //run perform operations when the echarts component is loaded
     useEffect(() => {
@@ -127,7 +81,6 @@ const EChartContainer = ({
             limitStart = 0;
         let echartElementId = document.getElementById(id);
         let canvasElement: any = echartElementId.getElementsByTagName('CANVAS');
-        console.log(canvasElement, 'canvas Element');
         if (!canvasElement.length) {
             return;
         }
@@ -143,41 +96,27 @@ const EChartContainer = ({
             }
             limitStart++;
         }
-        console.log(echartInstance, 'instance got');
         if (echartInstance) {
+            chartOperationData.current.chartInstance = echartInstance;
             if (Object.keys(selectedChart).length == 0) {
                 setSelectedChart(echartInstance);
             }
             echartInstance.getZr().on('contextmenu', function (params) {
-                console.log('contextmenu from instance', params);
                 chartOperationData.current.contextMenu = {
                     mouseX: params.event.clientX,
                     mouseY: params.event.clientY,
+                    column: chartOperationData.current.yAxisColumn,
+                    value: chartOperationData.current.brushSelected,
                 };
+                handleSelection(
+                    chartOperationData.current.yAxisColumn.name,
+                    chartOperationData.current.brushSelected,
+                );
             });
             echartInstance.on('dblclick', function (e) {
-                console.log('dblclick', e);
-                const paramsToFilter = e['data'];
-                if (
-                    paramsToFilter.hasOwnProperty('value') &&
-                    paramsToFilter['value'] !== undefined
-                ) {
-                }
-            });
-            echartInstance.on('selectchanged', function (params) {
-                console.log('selectchanged', params);
-            });
-            echartInstance.on('dataramgeselected', function (params) {
-                console.log('datarange selected', params);
-            });
-            echartInstance.on('brush', function (params) {
-                console.log('brush', params);
-            });
-            echartInstance.on('brushEnd', function (params) {
-                console.log('brushEnd', params);
+                return;
             });
             echartInstance.on('brushselected', function (params) {
-                console.log('brushselected', params);
                 let dataIndex = [];
                 let seriesIndex = -1;
                 let selectedData = [];
@@ -195,7 +134,7 @@ const EChartContainer = ({
                         }
                     });
                 }
-                let option = dataOption.option;
+                let option = data.option;
                 if (
                     seriesIndex > -1 &&
                     dataIndex.length > 0 &&
@@ -206,15 +145,30 @@ const EChartContainer = ({
                     let filteredData = dataToFind.filter((item, index) =>
                         dataIndex.includes(index),
                     );
-                    console.log(filteredData, 'selectionFiltered');
                     chartOperationData.current.brushSelected = filteredData;
+                    chartOperationData.current.yAxisColumn = {
+                        ...chartOperationData.current.yAxisColumn,
+                        name: option['yAxis']['name'],
+                        selector: option['yAxis']['name'],
+                    };
                 }
-            });
-            echartInstance.on('click', function (param) {
-                console.log(param);
             });
         }
     }, [echartState]);
+
+    function processReceivedData(frameResult) {
+        return {
+            xAxis: frameResult.values.map((item) => {
+                return item[0];
+            }),
+            yAxis: frameResult.values.map((item) => {
+                return item[1];
+            }),
+        };
+    }
+    const optionDataProcessed = processReceivedData(frameData.data);
+    data.option['xAxis']['data'] = optionDataProcessed['xAxis'];
+    data.option['series'][0]['data'] = optionDataProcessed['yAxis'];
 
     //this function is automatically called, when the chart is ready
     function echartsLoaded(echartInstance) {
@@ -226,66 +180,11 @@ const EChartContainer = ({
                 };
             });
         }
-        // if(dataOption.frame.name){
-
-        // }
-        // echartInstanceData.current = echartInstance;
-
-        // echartInstance.dispatchAction({
-        //     type: 'takeGlobalCursor',
-        //     key: 'dataZoomSelect',
-        //     // Activate or inactivate.
-        //     dataZoomSelectActive: true,
-        // });
-        echartInstance.on('selectchanged', function () {
-            console.log('select changed');
-        });
-        echartInstance.on('restore', function () {
-            console.log('restore');
-        });
-        echartInstance.getZr().on('contextmenu', function (params) {
-            console.log('onContextMenu', params);
-        });
-        // echartInstance.on('click', 'series', function (data) {
-        //     echartInstance.dispatchAction({
-        //         type: 'dataZoom',
-        //         dataZoomIndex: 1,
-        //         startValue: 0,
-        //         endValue: 100,
-        //     });
-        //     echartInstance.dispatchAction({
-        //         type: 'dataZoom',
-        //         dataZoomIndex: 0,
-        //         startValue: 0,
-        //         endValue: 100,
-        //     });
-        //     return listenersObj.onClick;
-        // });
-        echartInstance.on('click', 'series', function (data) {
-            console.log(data, 'click');
-        });
-        echartInstance.on('dblclick', 'series', function (data) {
-            console.log(data, 'dblclick');
-        });
-        // echartInstance.on('dataZoom', 'series', function (data) {
-        // console.log('datazoom');
-        // console.log(data, echartInstance);
-        // setEchartState((prevChartState)=>{
-        //     return {
-        //         ...prevChartState,
-        //         ['dataZoom']: true,
-        //     }
-        // })
-        // echartInstanceData.current = {
-        //     ...echartInstanceData.current,
-        //     ['dataZoom']: true,
-        // };
-        // });
     }
     return (
         <StyledMainContainer id={id}>
             <EChartsReact
-                option={dataOption.option}
+                option={data.option}
                 onChartReady={echartsLoaded}
                 // onEvents={handleChartEvents}
             />
@@ -293,10 +192,13 @@ const EChartContainer = ({
                 id={id}
                 frame={frameData}
                 contextMenu={chartOperationData.current.contextMenu}
-                onClose={() => {}}
+                chartInstance={chartOperationData.current.chartInstance}
+                onClose={() => {
+                    chartOperationData.current.contextMenu = null;
+                }}
             />
         </StyledMainContainer>
     );
-};
+});
 
 export default EChartContainer;

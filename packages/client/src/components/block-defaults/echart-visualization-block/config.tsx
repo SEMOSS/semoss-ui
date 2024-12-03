@@ -17,6 +17,10 @@ export const config: BlockConfig<EChartVisualizationBlockDef> = {
             name: '',
         },
         columns: [],
+        contextMenu: {
+            hideFilter: false,
+            hideUnfilter: false,
+        },
     },
     listeners: {},
     slots: {},

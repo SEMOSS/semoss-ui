@@ -1,7 +1,7 @@
 import { useBlock, useBlocks, useBlockSettings, usePixel } from '@/hooks';
 import { Button, Stack, styled, Switch } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Paths, PathValue } from '@/types';
 import { ActionMessages } from '@/stores';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from './Echart.constants';
@@ -14,6 +14,9 @@ import { EditYAxis } from './Edit-Y-Axis';
 import ChartAxis from './ChartAxis';
 import { BlocksContext } from '@/contexts';
 import { FrameDataSection } from './FrameDataSection';
+import { FrameOperationsEchart } from './FrameOperationsEchart';
+import { computed } from 'mobx';
+import { getValueByPath } from '@/utility';
 
 const StyledChartContainer = styled('div')<{ width?: string }>(
     ({ theme, width }) => ({
@@ -76,53 +79,50 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                 displayValueLabelDisabled: false,
             });
         const { data, setData } = useBlockSettings<any>(id);
-        console.log(data);
+        const path = 'option';
+        const [value, setValue] = useState(data.option);
+        // track the ref to debounce the input
+        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+
         const { state } = useBlocks();
         const context = useContext(BlocksContext);
-        const getChartData = usePixel<{
-            data: {
-                headers: string[];
-                rawHeaders: string[];
-                values: unknown[];
-            };
-            headerInfo: unknown[];
-            numCollected: number;
-            sources: unknown[];
-            taskId: string;
-        }>(
-            `Frame(frame=[FRAME_6927] )|Select(AGE)|Limit(20)|CollectAll()`,
-            {},
-            context.state.insightId,
-        );
-        // useMemo(()=>{
-        function updateChartDataOnClick() {
-            if (getChartData.status !== 'SUCCESS') {
-                console.log('Result is not success');
-                return;
-            }
-            let dataResponse = getChartData.data.data;
-            let resData = dataResponse.values.map((item) => item[0]);
-            let option = data.option;
-            if (option.hasOwnProperty('series') && option['series']) {
-                let xAxisIndex = option['series'].findIndex(
-                    (item) => item.type === BAR_CHART_DATA.JSONVALUE[0],
-                );
-                option['series'][xAxisIndex].data = resData;
-                runStateUpdate(option);
-                console.log('state update completed');
-            }
-        }
+        // get the value of the input (wrapped in usememo because of path prop)
+        const computedValue = useMemo(() => {
+            return computed(() => {
+                if (!data) {
+                    return '';
+                }
+                const v = getValueByPath(data, path);
+                if (typeof v === 'undefined') {
+                    return '';
+                } else if (typeof v === 'string') {
+                    return v;
+                }
+                return JSON.stringify(v, null, 2);
+            });
+        }, [data, path]).get();
+
+        useEffect(() => {
+            setValue(computedValue);
+        }, [computedValue]);
 
         useEffect(() => {
             updateToolsSection();
         }, [showToolsSection]);
-        function runStateUpdate(updatedOption: any) {
-            try {
-                setData('option', updatedOption as PathValue<any, any>);
-            } catch (e) {
-                console.log(e);
-            }
+        //updating the state of Block with a debounce time
+        function runStateUpdate(updatedOption: PathValue<any, typeof path>) {
+            setTimeout(() => {
+                try {
+                    setData(
+                        'option',
+                        updatedOption as PathValue<any, typeof path>,
+                    );
+                } catch (e) {
+                    console.log(e);
+                }
+            }, 300);
         }
+        //returns the current state of the legend whether it is shown(true) or not (false)
         function isToggleShown() {
             let option = data.option;
             if (option.hasOwnProperty('legend') && option['legend']) {
@@ -138,8 +138,9 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                 return !prevShowToolsSection;
             });
         }
+        //toggle the tools option in visualization
         function updateToolsSection() {
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
             option = {
                 ...option,
                 ['toolbox']: {
@@ -147,25 +148,31 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     ['show']: showToolsSection,
                 },
             };
-            runStateUpdate(option);
+            let optionUpdated = option;
+            runStateUpdate(optionUpdated);
         }
+        //update the chart's x and y axis zoom option and tooltip
         function updateChartZoom(event) {
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             if (event.hasOwnProperty('xAxisZoomShow')) {
-                zoomChartButton(event);
+                optionUpdated = zoomChartButton(event, option);
             }
             if (event.hasOwnProperty('yAxisZoomShow')) {
-                yAxisZoomChartButton(event);
+                optionUpdated = yAxisZoomChartButton(event, option);
             }
             if (event.hasOwnProperty('showTooltip')) {
-                toggleTooltip(event);
+                optionUpdated = toggleTooltip(event, option);
             }
             if (event.hasOwnProperty('showDisplayValues')) {
-                toggleDisplayValues(event);
+                optionUpdated = toggleDisplayValues(event, option);
             }
+            runStateUpdate(optionUpdated);
         }
-        function zoomChartButton(event) {
+
+        function zoomChartButton(event, optionSrc) {
             // event.preventDefault();
-            let option = data.option;
+            let option = optionSrc;
             if (option['dataZoom']) {
                 let xAxisPosition = option['dataZoom'].findIndex((opt) =>
                     opt.hasOwnProperty('xAxisIndex'),
@@ -198,10 +205,11 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                         !prevshowFeatureSection.xAxisDataZoomShow,
                 };
             });
-            runStateUpdate(option);
+            // runStateUpdate(option);
+            return option;
         }
-        function yAxisZoomChartButton(event) {
-            let option = data.option;
+        function yAxisZoomChartButton(event, optionSrc) {
+            let option = optionSrc;
             if (option['dataZoom']) {
                 let yAxisPosition = option['dataZoom'].findIndex((opt) =>
                     opt.hasOwnProperty('yAxisIndex'),
@@ -234,10 +242,11 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                         !prevshowFeatureSection.yAxisDataZoomShow,
                 };
             });
-            runStateUpdate(option);
+            // runStateUpdate(option);
+            return option;
         }
-        function toggleTooltip(event) {
-            let option = data.option;
+        function toggleTooltip(event, optionSrc) {
+            let option = optionSrc;
             if (option['tooltip']) {
                 option['tooltip'] = {
                     ...option['tooltip'],
@@ -251,6 +260,21 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     },
                 };
             }
+            if (
+                option['tooltip'].hasOwnProperty('axisPointer') &&
+                option['tooltip']['axisPointer'].hasOwnProperty('label')
+            ) {
+                option['tooltip'] = {
+                    ...option['tooltip'],
+                    ['axisPointer']: {
+                        ...option['tooltip']['axisPointer'],
+                        ['label']: {
+                            ...option['tooltip']['axisPointer']['label'],
+                            ['show']: event.showTooltip,
+                        },
+                    },
+                };
+            }
             setShowFeatureSection((prevShowFeatureSection) => {
                 return {
                     ...prevShowFeatureSection,
@@ -258,18 +282,18 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     showTooltip: !prevShowFeatureSection.showTooltip,
                 };
             });
-            runStateUpdate(option);
+            // setValue(JSON.stringify(option));
+            // console.log('option', value, JSON.stringify(option));
+            // runStateUpdate(option);
+            return option;
         }
-        function toggleDisplayValues(event) {
-            let option = data.option;
+        function toggleDisplayValues(event, optionSrc) {
+            let option = optionSrc;
             let seriesData = option['series'];
             let showValue = event.showDisplayValues;
             const displayPositionIndex = option['series'].findIndex((opt) =>
                 BAR_CHART_DATA.JSONVALUE.includes(opt.type),
             );
-            // if(option['series'][displayPositionIndex] && option['series'][displayPositionIndex].hasOwnProperty('label') && option['series'][displayPositionIndex]['label'].hasOwnProperty('show')){
-            //  showValue = (option['series'][displayPositionIndex]['label']['show'] ? true : false);
-            // }
 
             if (option['series'][displayPositionIndex]['label']) {
                 option['series'][displayPositionIndex] = {
@@ -296,11 +320,13 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     displayValueLabels: !prevShow.displayValueLabels,
                 };
             });
-            runStateUpdate(option);
+            // runStateUpdate(option);
+            return option;
         }
 
         function updateCustomizeValueLabels(values: any) {
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             let customizeLabelOptionsData = {};
 
             Object.keys(values).forEach((val) => {
@@ -309,7 +335,6 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     [val]: values[val],
                 };
             });
-            console.log('customizeLabelOptions', showFeatureSection);
             const customizeLabelOptionsValue = customizeLabelOptionsData;
             const displayPositionIndex = option['series'].findIndex((opt) =>
                 BAR_CHART_DATA.JSONVALUE.includes(opt.type),
@@ -409,10 +434,12 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     currentFeatureChange: 'customizeLabelOptions',
                 };
             });
-            runStateUpdate(option);
+            optionUpdated = option;
+            runStateUpdate(optionUpdated);
         }
         function updateTrendLines(trendLinesSelected) {
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             if (trendLinesSelected != '') {
                 const displayPositionIndex = option['series'].findIndex((opt) =>
                     BAR_CHART_DATA.JSONVALUE.includes(opt.type),
@@ -481,14 +508,14 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                         );
                         runStateUpdate(option);
                     }, 300);
-                    // option['series'] = option['series'].filter((opt,index)=> index!=displayPositionIndex);
-                    //[...option['series'].slice(0,(displayPositionIndex)), ...option['series'].slice((displayPositionIndex+1))];
                 }
             }
-            runStateUpdate(option);
+            optionUpdated = option;
+            runStateUpdate(optionUpdated);
         }
         function toggleLegend() {
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             if (option['legend']) {
                 option = {
                     ...option,
@@ -508,12 +535,14 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                 };
                 setShowLegend(true);
             }
-            runStateUpdate(option);
+            optionUpdated = option;
+            runStateUpdate(optionUpdated);
         }
         function updateChartStyle(barChartData) {
             const barWidth = barChartData['barwidth'];
             const barColour = barChartData['barColour'];
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             if (option['series']) {
                 const barChartDataIndex = option['series'].findIndex((opt) =>
                     BAR_CHART_DATA.JSONVALUE.includes(opt.type),
@@ -547,10 +576,12 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     }
                 }
             }
+            optionUpdated = option;
             runStateUpdate(option);
         }
         function updateChartStyling(e, chartStylingData) {
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             if (option.hasOwnProperty('title')) {
                 option['title'] = {
                     ...option['title'],
@@ -583,10 +614,12 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     },
                 };
             }
-            runStateUpdate(option);
+            optionUpdated = option;
+            runStateUpdate(optionUpdated);
         }
         function updateAxis(xAxisData, axis = 'xAxis') {
-            let option = data.option;
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            let optionUpdated = option;
             if (option.hasOwnProperty(axis) && option[axis]) {
                 if (xAxisData.hasOwnProperty('xaxistitle')) {
                     option[axis] = {
@@ -734,7 +767,8 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                         },
                     };
                 }
-                runStateUpdate(option);
+                optionUpdated = option;
+                runStateUpdate(optionUpdated);
             }
         }
         return (
@@ -766,7 +800,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 />
                             </StyledSectionContainer>
                         </StyledSectionContainer>
-                        <StyledSectionContainer
+                        {/* <StyledSectionContainer
                             display="flex"
                             justifyContent="space-around"
                         >
@@ -775,6 +809,9 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                     Update Chart Data
                                 </Button>
                             </div>
+                        </StyledSectionContainer> */}
+                        <StyledSectionContainer>
+                            <FrameOperationsEchart id={id} />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <ChartAxis
@@ -823,9 +860,6 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 chartType={chartType}
                                 option={data.option}
                             />
-                        </StyledSectionContainer>
-                        <StyledSectionContainer>
-                            <FrameDataSection id={id} />
                         </StyledSectionContainer>
                     </StyledChartContainer>
                 )}
