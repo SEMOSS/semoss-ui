@@ -1,37 +1,18 @@
 import { useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Button,
-    IconButton,
-    Stack,
-    useNotification,
-    ButtonGroup,
-} from '@semoss/ui';
-import {
-    GetAppRounded,
-    PlayCircleRounded,
-    ShareRounded,
-    LaunchRounded,
-} from '@mui/icons-material';
+import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
+import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
-import { ShareOverlay, PreviewOverlay } from '@/components/workspace';
-import { useNavigate } from 'react-router-dom';
-import { Env } from '@/env';
-import { env } from 'process';
-
-const StyledShareIcon = styled(ShareRounded)(({ theme }) => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
+import { PreviewOverlay } from '@/components/workspace';
+import { ShareOverlay } from '@/components/ui';
 
 export const BlocksWorkspaceActions = observer(() => {
     const { state } = useBlocks();
 
-    const { configStore, monolithStore } = useRootStore();
+    const { monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();
-    const navigate = useNavigate();
 
     /**
      * Preview the current App
@@ -90,44 +71,6 @@ export const BlocksWorkspaceActions = observer(() => {
                 color: 'success',
                 message:
                     'Save successful! Make sure to double-check your changes for correctness',
-            });
-        } catch (e) {
-            console.error(e);
-
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            workspace.setLoading(false);
-        }
-    };
-
-    /**
-     * Method that is called to export the app
-     */
-    const exportApp = async () => {
-        // turn on loading
-        workspace.setLoading(true);
-
-        try {
-            // export  the app
-            const response = await monolithStore.runQuery<[string]>(
-                `ExportProjectApp(project=["${workspace.appId}"]);`,
-            );
-
-            // throw an error if there is no key
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error exporting app');
-            }
-
-            await monolithStore.download(configStore.store.insightID, key);
-
-            notification.add({
-                color: 'success',
-                message: 'Success',
             });
         } catch (e) {
             console.error(e);
@@ -211,64 +154,39 @@ export const BlocksWorkspaceActions = observer(() => {
 
     return (
         <Stack direction="row" spacing={1} alignItems={'center'}>
-            <Button
-                variant="text"
-                startIcon={<PlayCircleRounded />}
-                title="Preview App"
-                color="inherit"
-                onClick={() => {
-                    previewApp();
-                }}
-            >
-                Preview
-            </Button>
-            <Button
-                variant="text"
-                startIcon={<GetAppRounded />}
-                title="Download App"
-                color="inherit"
-                onClick={() => {
-                    exportApp();
-                }}
-            >
-                Download
-            </Button>
-            <Button
-                size="small"
-                variant="text"
-                startIcon={<StyledShareIcon />}
-                title="Share App"
-                color="inherit"
-                onClick={() => {
-                    shareApp();
-                }}
-            >
-                Share
-            </Button>
-            <Button
-                variant="contained"
-                size="small"
-                color="primary"
-                title="Save App"
-                onClick={() => {
-                    saveApp();
-                }}
-            >
-                Save
-            </Button>
-            <Button
-                endIcon={<LaunchRounded />}
-                onClick={() => {
-                    const encodedState = encodeURIComponent(
-                        JSON.stringify(state.toJSON()),
-                    );
-                    const url = `${window.location.origin}${window.location.pathname}#/s/${workspace.appId}?state=${encodedState}`;
-
-                    window.open(url, '_blank');
-                }}
-            >
-                Launch
-            </Button>
+            <Tooltip title="Preview App">
+                <IconButton
+                    size={'small'}
+                    color="default"
+                    onClick={() => {
+                        previewApp();
+                    }}
+                >
+                    <PlayArrow fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title={'Share App'}>
+                <IconButton
+                    size={'small'}
+                    color="default"
+                    onClick={() => {
+                        shareApp();
+                    }}
+                >
+                    <ShareRounded fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title={'Save App (ctrl + s)'}>
+                <IconButton
+                    size={'small'}
+                    color={'primary'}
+                    onClick={() => {
+                        saveApp();
+                    }}
+                >
+                    <SaveOutlined fontSize="inherit" />
+                </IconButton>
+            </Tooltip>
         </Stack>
     );
 });
