@@ -11,7 +11,6 @@ axios.interceptors.response.use(
         return response;
     },
     function (error) {
-        console.log(error);
         if (error.status === 302 && error.headers && error.headers.redirect) {
             window.location.replace(error.headers.redirect);
         }
@@ -27,13 +26,17 @@ axios.interceptors.response.use(
             }
         }
 
-        // return the message if it exists
-        if (error.message) {
+        const apiMessage = error.response?.data?.errorMessage;
+        if (apiMessage && typeof apiMessage === 'string') {
+            // Exception for returning the errorMessage provided via the API if available.
+            return Promise.reject(apiMessage);
+        } else if (error.message) {
+            // return the message if it exists
             return Promise.reject(error.message);
+        } else {
+            // reject with generic error
+            return Promise.reject('Error');
         }
-
-        // reject with generic error
-        return Promise.reject('Error');
     },
 );
 

@@ -1,6 +1,7 @@
 import { ActionMessages } from './state.actions';
 
 export const INPUT_BLOCK_TYPES = [
+    'audio-input',
     'input',
     'select',
     'upload',

@@ -111,7 +111,7 @@ export const NewAppPage = () => {
             return;
         }
 
-        navigate(`/app/${appId}/edit`);
+        navigate(`/workspace/${appId}`);
     };
 
     return (

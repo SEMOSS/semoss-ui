@@ -6,6 +6,8 @@ import { BlocksRenderer } from '../blocks-workspace';
 
 import { SerializedState } from '@/stores';
 import { useBlocks } from '@/hooks';
+import { isOutputJSON } from '@/utility';
+import { JsonViewer } from '@textea/json-viewer';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
@@ -116,12 +118,22 @@ export const VariablePreview = observer((props: VariablePreviewProps) => {
             }
         } else {
             const found = state.parseVariable(`{{${id}}}`);
-
-            return (
-                <Typography variant="body2" fontWeight="bold">
-                    {typeof found !== 'string' ? JSON.stringify(found) : found}{' '}
-                </Typography>
-            );
+            const value = isOutputJSON(found);
+            if (value != null) {
+                return (
+                    <JsonViewer
+                        value={value}
+                        displayComma={true}
+                        rootName={false}
+                    />
+                );
+            } else {
+                return (
+                    <Typography variant="body2" fontWeight="bold">
+                        {found}
+                    </Typography>
+                );
+            }
         }
     }, [variable, id]);
 

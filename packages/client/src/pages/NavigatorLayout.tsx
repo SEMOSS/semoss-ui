@@ -85,7 +85,10 @@ export const NavigatorLayout = observer(() => {
                     <StyledSidebarItem
                         data-tour="nav-app-library"
                         to={'/'}
-                        selected={!!matchPath('', pathname)}
+                        selected={
+                            !!matchPath('', pathname) ||
+                            !!matchPath('app/*', pathname)
+                        }
                         aria-label={'Navigate to app library'}
                     >
                         <Icon>
@@ -114,6 +117,17 @@ export const NavigatorLayout = observer(() => {
                         </StyledSidebarItem>
                     </Tooltip>
                 ))}
+                {/* <Tooltip title={`Open Prompt Hub`} placement="right">
+                    <StyledSidebarItem
+                        to={'/prompt'}
+                        selected={!!matchPath('prompt/*', pathname)}
+                        aria-label={'Navigate to prompt hub'}
+                    >
+                        <Icon>
+                            <ArticleOutlined />
+                        </Icon>
+                    </StyledSidebarItem>
+                </Tooltip> */}
                 <Stack flex={1}>&nbsp;</Stack>
                 <Tooltip title={`Open Settings`} placement="right">
                     <StyledSidebarItem

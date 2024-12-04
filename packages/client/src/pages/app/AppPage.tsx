@@ -1,16 +1,43 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { Button, useNotification } from '@semoss/ui';
+import {
+    Avatar,
+    styled,
+    Stack,
+    Typography,
+    useNotification,
+    Button,
+    Modal,
+    Tooltip,
+    IconButton,
+} from '@semoss/ui';
+import { EditOutlined, ShareRounded } from '@mui/icons-material';
 
+import { Env } from '@/env';
+import { WorkspaceStore } from '@/stores';
 import { useRootStore } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
-
+import { LoadingScreen, ShareOverlay } from '@/components/ui';
 import { BlocksRenderer } from '@/components/blocks-workspace';
 import { CodeRenderer } from '@/components/code-workspace';
+import { Link } from 'react-router-dom';
 
-import { WorkspaceStore } from '@/stores';
-import { Workspace } from '@/components/workspace';
+const StyledViewport = styled('div')(() => ({
+    height: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+}));
+
+const StyledContent = styled('div')(({ theme }) => ({
+    position: 'relative',
+    flex: '1',
+    height: '100%',
+    width: '100%',
+    overflow: 'hidden',
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
+    paddingBottom: theme.spacing(1.5),
+}));
 
 export const AppPage = observer(() => {
     // App ID Needed for pixel calls
@@ -21,6 +48,8 @@ export const AppPage = observer(() => {
     const navigate = useNavigate();
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+    const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+
     useEffect(() => {
         // clear out the old app
         setWorkspace(undefined);
@@ -46,34 +75,70 @@ export const AppPage = observer(() => {
     }
 
     return (
-        <Workspace
-            workspace={workspace}
-            startTopbar={null}
-            endTopbar={
+        <StyledViewport>
+            <Stack
+                direction={'row'}
+                justifyContent={'space-between'}
+                alignItems={'center'}
+                padding={1}
+                spacing={1}
+            >
+                <Stack direction="row" alignItems={'center'} spacing={1}>
+                    <Avatar
+                        variant="rounded"
+                        src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
+                    />
+                    <Typography variant={'subtitle1'}>
+                        {workspace.metadata.project_name}
+                    </Typography>
+                </Stack>
+                <Stack flex={1}>&nbsp;</Stack>
+
+                <Tooltip title={'Share App'}>
+                    <IconButton
+                        size="small"
+                        color="default"
+                        onClick={() => {
+                            setIsShareOpen(true);
+                        }}
+                    >
+                        <ShareRounded fontSize={'inherit'} />
+                    </IconButton>
+                </Tooltip>
+
                 <Button
                     variant="contained"
                     size={'small'}
-                    color={'primary'}
+                    color="primary"
                     disabled={
                         !(
                             workspace.role === 'OWNER' ||
                             workspace.role === 'EDIT'
                         )
                     }
-                    onClick={() => {
-                        navigate('edit');
-                    }}
+                    endIcon={<EditOutlined fontSize="inherit" />}
+                    component={Link}
+                    //@ts-expect-error this is expected. props are forwarded
+                    to={`../../workspace/${appId}`}
                 >
-                    Edit App
+                    Edit
                 </Button>
-            }
-        >
-            {workspace.type === 'CODE' ? (
-                <CodeRenderer appId={workspace.appId} />
-            ) : null}
-            {workspace.type === 'BLOCKS' ? (
-                <BlocksRenderer appId={workspace.appId} />
-            ) : null}
-        </Workspace>
+            </Stack>
+            <StyledContent>
+                {workspace.type === 'BLOCKS' ? (
+                    <BlocksRenderer appId={appId} />
+                ) : null}
+                {workspace.type === 'CODE' ? (
+                    <CodeRenderer appId={appId} />
+                ) : null}
+            </StyledContent>
+
+            <Modal open={isShareOpen} onClose={() => setIsShareOpen(false)}>
+                <ShareOverlay
+                    appId={appId}
+                    onClose={() => setIsShareOpen(false)}
+                />
+            </Modal>
+        </StyledViewport>
     );
 });

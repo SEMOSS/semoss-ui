@@ -4,8 +4,9 @@ import { styled, Card, Tooltip } from '@semoss/ui';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
-import { AddBlocksMenuItem, getImageForWidget } from './designer.constants';
 import { THEME } from '@/constants';
+
+import { DesignerMenuItem } from './menu';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     height: '100%',
@@ -15,11 +16,12 @@ const StyledCard = styled(Card)(({ theme }) => ({
     border: `1px solid rgba(0, 0, 0, 0.23)`,
     //TODO: styled needs to be updated to match the theme
     borderRadius: '12px', //  theme.shape.borderRadiusLg
+    justifyContent: 'center',
 }));
 
 export interface AddBlocksMenuItemProps {
     /** Item that can be dragged onto the block */
-    item: AddBlocksMenuItem;
+    item: DesignerMenuItem;
 }
 
 /**
@@ -44,7 +46,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            getImageForWidget(item.json.widget),
+            item.image,
         );
 
         // clear the hovered
