@@ -3,17 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
-import * as echarts from 'echarts/core';
-import { BarChart } from 'echarts/charts';
-import { CanvasRenderer } from 'echarts/renderers';
-import { TooltipComponent } from 'echarts/components';
-import EChartsReact from 'echarts-for-react';
-
-const StyledChartContainer = styled('div')(() => ({
-    width: 'fit-content',
-    minWidth: '50px',
-    minHeight: '50px',
-}));
+import { Bar } from './Variants/Bar';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -49,7 +39,6 @@ export interface EchartVisualizationBlockDef {
 
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
-    echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
 
     if (!data.option) {
         return (
@@ -61,11 +50,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <StyledNoDataContainer {...attrs}>
-            <EChartsReact
-                option={data.option}
-                // onChartReady={echartsLoaded}
-                // onEvents={handleChartEvents}
-            />
+            {data.variation === 'echart-bar-graph' && <Bar id={id} />}
         </StyledNoDataContainer>
     );
 });
