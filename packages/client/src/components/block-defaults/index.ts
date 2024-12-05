@@ -51,6 +51,10 @@ import {
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
 import { config as RadioBlockConfig, RadioBlockDef } from './radio-block';
+import {
+    config as AudioInputBlockConfig,
+    AudioInputBlockDef,
+} from './audio-input-block';
 
 import {
     config as PDFViewerBlockConfig,
@@ -59,6 +63,7 @@ import {
 
 export type DefaultBlockDefinitions =
     | AudioBlockDef
+    | AudioInputBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -117,6 +122,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
     [RadioBlockConfig.widget]: RadioBlockConfig,
+    [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
 
