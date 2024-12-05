@@ -649,11 +649,13 @@ export const ImportForm = (props) => {
      * @params form field and user input
      * @returns boolean
      */
-    const validateFormField = async (field, userInput) => {
-        let pixelToExecute = '';
-        let validName = false;
-
-        pixelToExecute = field.rules.custom.value.replace('[VALUE]', userInput);
+    const validateFormField = async (field, userInput): Promise<boolean> => {
+        //TODO: Validate Types.
+        //TODO: Update Syntax or rule name. This won't handle other pixels
+        const pixelToExecute = field.rules.custom.value.replace(
+            '[VALUE]',
+            userInput,
+        );
 
         const response = await monolithStore.runQuery(pixelToExecute);
         const output = response.pixelReturn[0].output,
@@ -668,12 +670,12 @@ export const ImportForm = (props) => {
         }
 
         //if the name already exists then the engine name is not valid
-        output.exists ? (validName = false) : (validName = true);
+        if (output.exists) {
+            setFocus(field.fieldName);
+            return false;
+        }
 
-        //set the form field error focus
-        !validName && setFocus(field.fieldName);
-
-        return validName;
+        return true;
     };
 
     /**

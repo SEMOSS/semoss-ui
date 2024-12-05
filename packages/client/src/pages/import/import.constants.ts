@@ -167,7 +167,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -344,7 +344,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -517,7 +517,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -650,7 +650,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -824,7 +824,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -1002,7 +1002,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -1190,7 +1190,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -1368,7 +1368,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -1546,7 +1546,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -1726,7 +1726,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -1901,7 +1901,7 @@ export const CONNECTION_OPTIONS = {
                                         'Catalog names can only contain alphanumeric characters and dashes.',
                                 },
                                 custom: {
-                                    value: 'CheckEngineName ( [VALUE] ) ;',
+                                    value: 'CheckEngineName ( "[VALUE]") ;',
                                     message:
                                         'This Catalog name has already been used, please try another.',
                                 },
@@ -2079,7 +2079,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -2248,7 +2248,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -2417,7 +2417,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -2586,7 +2586,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -2755,7 +2755,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -2924,7 +2924,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -3093,7 +3093,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -3262,7 +3262,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -3431,7 +3431,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -3600,7 +3600,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -3769,7 +3769,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -3944,7 +3944,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -4113,7 +4113,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -4282,7 +4282,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -4451,7 +4451,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -4620,7 +4620,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -4797,7 +4797,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -5055,7 +5055,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -5220,7 +5220,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -5418,7 +5418,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -5939,7 +5939,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -6171,7 +6171,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -6371,7 +6371,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -6702,7 +6702,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -6940,7 +6940,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -7221,7 +7221,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -7588,7 +7588,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -7773,7 +7773,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -7959,7 +7959,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -8109,7 +8109,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -8295,7 +8295,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -8491,7 +8491,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -8697,7 +8697,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -8807,7 +8807,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -8993,7 +8993,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -9180,7 +9180,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -9286,7 +9286,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'RDBMS_TYPE',
                         label: 'Driver Name',
-                        defaultValue: 'HIVE',
+                        defaultValue: 'H2_DB',
                         options: {
                             component: 'text-field',
                         },
@@ -9310,7 +9310,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -9497,7 +9497,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -9684,7 +9684,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -9870,7 +9870,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -10056,7 +10056,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -10241,7 +10241,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -10371,7 +10371,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -10557,7 +10557,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -10743,7 +10743,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -10939,7 +10939,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -11135,7 +11135,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]" ) ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -11321,7 +11321,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -11547,7 +11547,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -11764,7 +11764,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -11961,7 +11961,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12137,7 +12137,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12313,7 +12313,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12499,7 +12499,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12698,7 +12698,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12768,7 +12768,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12848,7 +12848,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -12928,7 +12928,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13008,7 +13008,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13084,7 +13084,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13134,7 +13134,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13213,7 +13213,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13293,7 +13293,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13383,7 +13383,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },
@@ -13464,7 +13464,7 @@ export const CONNECTION_OPTIONS = {
                                     'Catalog names can only contain alphanumeric characters and dashes.',
                             },
                             custom: {
-                                value: 'CheckEngineName ( [VALUE] ) ;',
+                                value: 'CheckEngineName ( "[VALUE]") ;',
                                 message:
                                     'This Catalog name has already been used, please try another.',
                             },

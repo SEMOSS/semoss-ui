@@ -50,6 +50,10 @@ import {
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+import {
+    config as AudioInputBlockConfig,
+    AudioInputBlockDef,
+} from './audio-input-block';
 
 import {
     config as PDFViewerBlockConfig,
@@ -58,6 +62,7 @@ import {
 
 export type DefaultBlockDefinitions =
     | AudioBlockDef
+    | AudioInputBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -114,6 +119,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
 
