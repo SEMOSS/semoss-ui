@@ -2,6 +2,7 @@ import { BlockJSON } from '@/stores';
 import { DesignerMenuItem } from './menu.types';
 
 import BLOCK_AUDIO_PLAYER from '@/assets/img/BLOCK_AUDIO_PLAYER.png';
+import BLOCK_AUDIO_INPUT from '@/assets/img/BLOCK_MIC.png';
 import BLOCK_BUTTON from '@/assets/img/BLOCK_BUTTON.png';
 import BLOCK_CHECKBOX from '@/assets/img/BLOCK_CHECKBOX.png';
 import BLOCK_CONTAINER from '@/assets/img/BLOCK_CONTAINER.png';
@@ -143,6 +144,29 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             slots: {
                 content: [],
             },
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_AUDIO_INPUT,
+        name: 'Audio Input',
+        json: {
+            widget: 'audio-input',
+            data: {
+                style: {
+                    width: '50px',
+                    height: '60px',
+                },
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+                value: '',
+            },
+            listeners: {
+                onClick: [],
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
     {
