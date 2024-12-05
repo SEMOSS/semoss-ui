@@ -1,5 +1,11 @@
-import { useState, useMemo } from 'react';
-import { useBlocks } from '@/hooks';
+import { useState, useMemo, useEffect } from 'react';
+import {
+    useBlocks,
+    useBlockSettings,
+    useFrameHeaders,
+    useFrame,
+    usePixel,
+} from '@/hooks';
 import {
     styled,
     Container,
@@ -13,6 +19,7 @@ import {
 import { observer } from 'mobx-react-lite';
 import { Block, BlockDef } from '@/stores';
 import { Paths } from '@/types';
+import { VegaVisualizationBlockDef } from '@/components/block-defaults/vega-visualization-block';
 
 const RowContainer = styled(Container)(({ theme }) => ({
     display: 'flex',
@@ -40,6 +47,10 @@ export const ColorByValue = observer(
         path,
         handleRules,
     }: ColorByValueProps<D>) => {
+        const { data } = useBlockSettings<VegaVisualizationBlockDef>(id);
+        const { state } = useBlocks();
+
+        //local states
         const [colorByVal, setColorByVal] = useState({
             columnToColor: '',
             valueToColor: '',
@@ -48,32 +59,21 @@ export const ColorByValue = observer(
         });
         const [selectedList, setSelectedList] = useState<string[]>([]);
         const [appliedRules, setAppliedRules] = useState([]);
-        const { state } = useBlocks();
-        // track the ref to debounce the input
 
-        const columns = useMemo(() => {
-            const a = JSON.stringify(
-                state.parseVariable('{{Selected_Columns}}'),
-            );
-            return JSON.parse(a) ?? {};
-        }, [Object.entries(state.variables).length]);
+        const frameHeaders = useFrameHeaders(data.frame.name);
+        const columns =
+            frameHeaders.data.list.map((field) => field.alias) || [];
 
         const comparator = useMemo(() => {
             const a = JSON.stringify(state.parseVariable('{{Comparators}}'));
             setColorByVal({
                 ...colorByVal,
                 selectComparator: JSON.parse(a)[0].value,
-                columnToColor: columns[0].value,
-                valueToColor: columns[0].value,
+                columnToColor: columns[0],
+                valueToColor: columns[0],
             });
             return JSON.parse(a) ?? {};
-        }, [Object.entries(state.variables).length]);
-
-        const agelist = useMemo(() => {
-            const a = JSON.stringify(state.parseVariable('{{Age-obj}}'));
-            let values = JSON.parse(a)['data']['values'].flat(Infinity);
-            return values ?? [];
-        }, [Object.entries(state.variables).length]);
+        }, [Object.entries(state.variables)?.length]);
 
         const handleColumnToColor = (value: string) => {
             setColorByVal({
@@ -87,6 +87,28 @@ export const ColorByValue = observer(
                 selectColor: newColor,
             });
         };
+
+        const selector = `Select(${colorByVal.valueToColor}).as([${colorByVal.valueToColor}])|Sort(columns=["${colorByVal.valueToColor}"])`;
+        const getSelectionList = usePixel<{
+            data: {
+                headers: string[];
+                values: unknown[][];
+            };
+        }>(
+            data.frame.name
+                ? `META | Frame("${data.frame.name}") | ${selector} | Offset(0) | Collect(1000);`
+                : '',
+            {
+                silent: true,
+            },
+            state.insightId,
+        );
+
+        const selectionList =
+            getSelectionList.status === 'SUCCESS'
+                ? getSelectionList.data?.data?.values?.flat(Infinity) ?? []
+                : [];
+
         const handleValueToColor = (value: string) => {
             setColorByVal({
                 ...colorByVal,
@@ -116,8 +138,8 @@ export const ColorByValue = observer(
             // setJsonRules(temp);
             setAppliedRules([...appliedRules, obj]);
             setColorByVal({
-                columnToColor: columns[0].value,
-                valueToColor: columns[0].value,
+                columnToColor: columns[0],
+                valueToColor: columns[0],
                 selectComparator: comparator[0].value,
                 selectColor: '#4c78a8',
             });
@@ -153,11 +175,8 @@ export const ColorByValue = observer(
                             size="small"
                         >
                             {columns.map((item) => (
-                                <Select.Item
-                                    key={item.label}
-                                    value={item.value}
-                                >
-                                    {item.label}
+                                <Select.Item key={`${item}_key`} value={item}>
+                                    {item}
                                 </Select.Item>
                             ))}
                         </Select>
@@ -185,11 +204,8 @@ export const ColorByValue = observer(
                             size="small"
                         >
                             {columns.map((item) => (
-                                <Select.Item
-                                    key={item.label}
-                                    value={item.value}
-                                >
-                                    {item.label}
+                                <Select.Item key={`${item}_key`} value={item}>
+                                    {item}
                                 </Select.Item>
                             ))}
                         </Select>
@@ -220,7 +236,7 @@ export const ColorByValue = observer(
                                 Select values
                             </Typography>
                             <Autocomplete
-                                options={agelist}
+                                options={selectionList}
                                 value={selectedList}
                                 fullWidth
                                 multiple

@@ -180,7 +180,10 @@ export const Styling = observer(
 
             // insert the new value into JSOn specification
             let tempValue = JSON.parse(value);
-            tempValue['layer'][0]['encoding']['color']['condition'] = condition;
+            tempValue['layer'][0]['encoding']['color'] = {
+                condition: condition,
+                ...tempValue['layer'][0]['encoding']['color'],
+            };
             tempValue['_state']['styling'] = {
                 ...tempValue['_state']['styling'],
                 colorByVal: rules,
@@ -214,8 +217,11 @@ export const Styling = observer(
                     <StyledAccordion>
                         <Accordion.Trigger>Color by value</Accordion.Trigger>
                         <Accordion.Content>
-                            <ColorByValue id={id} path={path} handleRules={handleColorByValueChange}/>
-                            
+                            <ColorByValue
+                                id={id}
+                                path={path}
+                                handleRules={handleColorByValueChange}
+                            />
                         </Accordion.Content>
                     </StyledAccordion>
                 </Stack> */}
