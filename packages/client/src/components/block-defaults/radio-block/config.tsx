@@ -9,8 +9,9 @@ import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 import { Autocomplete, Stack, Button } from '@mui/material';
 import { BaseSettingSection } from '@/components/block-settings/BaseSettingSection';
-import { useBlockSettings, useBlock } from '@/hooks';
+import { useBlockSettings } from '@/hooks';
 import { TextField } from '@semoss/ui';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { Paths, PathValue } from '@/types';
 
 // Define options
@@ -132,82 +133,67 @@ export const config: BlockConfig<RadioBlockDef> = {
                     render: ({ id }) => {
                         const { data, setData } =
                             useBlockSettings<RadioBlockDef>(id);
-                        const [numAdditionalOptions, setNumAdditionalOptions] =
-                            useState<string>('');
-                        const [optionLabels, setOptionLabels] =
-                            useState<string>('');
+                        const [currentLabel, setCurrentLabel] = useState('');
+                        const [currentValue, setCurrentValue] = useState('');
 
-                        const handleAddOptions = () => {
-                            const num = parseInt(numAdditionalOptions);
-                            if (num > 0 && optionLabels) {
-                                const labels = optionLabels
-                                    .split(',')
-                                    .map((label) => label.trim());
-                                const newOptions = labels
-                                    .slice(0, num)
-                                    .map((label) => ({
-                                        label,
-                                        value: label
-                                            .toLowerCase()
-                                            .replace(/\s+/g, '_'),
-                                    }));
+                        const handleAddOption = () => {
+                            if (currentLabel && currentValue) {
+                                const newOptions = [
+                                    ...data.options,
+                                    {
+                                        label: currentLabel,
+                                        value: currentValue,
+                                    },
+                                ];
+                                setData('options', newOptions);
 
-                                setData('options', [
-                                    ...(data.options as Array<{
-                                        label: string;
-                                        value: string;
-                                    }>),
-                                    ...newOptions,
-                                ]);
-                                setNumAdditionalOptions('');
-                                setOptionLabels('');
+                                // Clear the fields after adding
+                                setCurrentLabel('');
+                                setCurrentValue('');
                             }
                         };
 
                         // Find the current option object for the selected value
                         return (
                             <Stack spacing={2}>
-                                <BaseSettingSection label="Number of Options">
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        type="number"
-                                        value={numAdditionalOptions}
-                                        onChange={(e) =>
-                                            setNumAdditionalOptions(
-                                                e.target.value,
-                                            )
-                                        }
-                                        inputProps={{ min: 1 }}
-                                    />
-                                </BaseSettingSection>
-                                {numAdditionalOptions &&
-                                    parseInt(numAdditionalOptions) > 0 && (
-                                        <BaseSettingSection label="Option Labels">
-                                            <TextField
-                                                fullWidth
-                                                size="small"
-                                                value={optionLabels}
-                                                onChange={(e) =>
-                                                    setOptionLabels(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                helperText="Enter labels separated by commas"
-                                            />
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                onClick={handleAddOptions}
-                                                sx={{ mt: 1 }}
-                                                style={{ height: '40px' }}
-                                                fullWidth
-                                            >
-                                                Add Options
-                                            </Button>
-                                        </BaseSettingSection>
-                                    )}
-
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <BaseSettingSection label="Label">
+                                        <TextField
+                                            size="small"
+                                            variant="outlined"
+                                            value={currentLabel}
+                                            onChange={(e) =>
+                                                setCurrentLabel(e.target.value)
+                                            }
+                                            fullWidth
+                                        />
+                                    </BaseSettingSection>
+                                    <BaseSettingSection label="Value">
+                                        <TextField
+                                            size="small"
+                                            value={currentValue}
+                                            variant="outlined"
+                                            onChange={(e) =>
+                                                setCurrentValue(e.target.value)
+                                            }
+                                            fullWidth
+                                        />
+                                    </BaseSettingSection>
+                                </Stack>
+                                <Button
+                                    startIcon={<AddCircleOutlineIcon />}
+                                    onClick={handleAddOption}
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    disabled={!currentLabel || !currentValue}
+                                >
+                                    Add Option
+                                </Button>
                                 {/* Current Value Selection */}
                                 <BaseSettingSection label="Selected Value">
                                     <Autocomplete
