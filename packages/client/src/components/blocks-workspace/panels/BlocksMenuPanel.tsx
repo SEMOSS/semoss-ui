@@ -10,7 +10,6 @@ import {
     Typography,
     Divider,
 } from '@semoss/ui';
-import { Search, SearchOff } from '@mui/icons-material';
 
 import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
@@ -24,17 +23,11 @@ const StyledTitle = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledSearchBox = styled('div')(({ theme }) => ({
-    padding: theme.spacing(2),
-    width: '100%',
-}));
-
 const StyledMenu = styled('div')(({ theme }) => ({
     position: 'relative',
     display: 'flex',
     height: '100%',
     overflowY: 'auto',
-    paddingLeft: theme.spacing(2),
 }));
 
 const StyledSection = styled('div')(({ theme }) => ({
@@ -56,43 +49,46 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const { title, items } = props;
 
     const [search, setSearch] = useState('');
-    const [showSearch, setShowSearch] = useState<boolean>(false);
+    // TODO: filters
+    // const [showFilters, setShowFilters] = useState<boolean>(false);
 
     // TODO: Move to backend + lazyload
     // sort by section so we can show the keys when they are different
-    const sortedItems = useMemo(() => {
-        return items.sort((a, b) => {
-            const aSection = a.section.toLowerCase();
-            const bSection = b.section.toLowerCase();
-            const aName = a.name.toLowerCase();
-            const bName = b.name.toLowerCase();
-            if (aSection < bSection) {
-                return -1;
-            }
-            if (aSection > bSection) {
-                return 1;
-            }
-            if (aName < bName) {
-                return -1;
-            }
-            if (aName > bName) {
-                return 1;
-            }
-            return 0;
+    const sortedItems: DesignerMenuItem[][] = useMemo(() => {
+        const sectionRecord: Record<string, DesignerMenuItem[]> = {};
+
+        items.forEach((item) => {
+            if (!sectionRecord[item.section]) sectionRecord[item.section] = [];
+            sectionRecord[item.section].push(item);
         });
+
+        return Object.keys(sectionRecord)
+            .sort()
+            .map((section) =>
+                sectionRecord[section].sort((a, b) =>
+                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+                ),
+            );
     }, [items]);
 
     // get the rendered items
-    const renderedItems = useMemo(() => {
+    const renderedItems: DesignerMenuItem[][] = useMemo(() => {
         if (!search) {
-            return items;
+            return sortedItems;
         }
 
-        const s = search.toLowerCase();
+        const s = search.replace(/[^a-z0-9]/gi, '').toLowerCase();
 
-        return items.filter((block) => {
-            return block.name.toLowerCase().replaceAll('-', ' ').includes(s);
-        });
+        return sortedItems
+            .map((sectionItems) =>
+                sectionItems.filter((item) =>
+                    item.name
+                        .replace(/[^a-z0-9]/gi, '')
+                        .toLowerCase()
+                        .includes(s),
+                ),
+            )
+            .filter((sectionItems) => sectionItems.length);
     }, [sortedItems, search]);
 
     return (
@@ -103,96 +99,62 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         {title}
                     </Typography>
                 </StyledTitle>
-                <StyledSearchBox>
+                <Stack padding={2}>
                     <TextField
+                        // TODO: start + end icons
                         placeholder="Search Components"
                         size="small"
                         fullWidth
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
-                </StyledSearchBox>
-                {/* <Stack
-                    flex={1}
-                    spacing={1}
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="end"
-                >
-                    {showSearch ? (
-                        <TextField
-                            placeholder="Search"
-                            size="small"
-                            sx={{
-                                width: '100%',
-                                maxWidth: '200px',
-                            }}
-                            value={search}
-                            variant="outlined"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    ) : (
-                        <>&nbsp;</>
-                    )}
-                    <IconButton
-                        color="default"
-                        size="small"
-                        onClick={() => {
-                            setShowSearch(!showSearch);
-                            setSearch('');
-                        }}
-                    >
-                        {showSearch ? (
-                            <SearchOff fontSize="medium" />
-                        ) : (
-                            <Search fontSize="medium" />
-                        )}
-                    </IconButton>
-                </Stack> */}
-            </Stack>
-            <StyledMenu>
+                </Stack>
+                <Divider orientation="horizontal" variant="fullWidth" />
                 {renderedItems.length ? (
-                    <Grid container spacing={2}>
-                        {renderedItems.map((item, idx) => {
-                            // get the previous + next item
-                            const prev = renderedItems[idx - 1] || null;
-                            const next = renderedItems[idx + 1] || null;
+                    // <StyledMenu>
+                    // <Grid container spacing={2}>
+                    //     {renderedItems.map((item, idx) => {
+                    //         // get the previous + next item
+                    //         const prev = renderedItems[idx - 1] || null;
+                    //         const next = renderedItems[idx + 1] || null;
 
-                            return (
-                                <React.Fragment key={idx}>
-                                    {/* Why does width extend Designer screen */}
-                                    {!prev || prev.section !== item.section ? (
-                                        <Grid
-                                            item
-                                            xs={12}
-                                            sx={{ width: '50px' }}
-                                        >
-                                            <StyledSection>
-                                                {item.section}
-                                            </StyledSection>
-                                        </Grid>
-                                    ) : null}
+                    //         return (
+                    //             <React.Fragment key={idx}>
+                    //                 {/* Why does width extend Designer screen */}
+                    //                 {!prev || prev.section !== item.section ? (
+                    //                     <Grid
+                    //                         item
+                    //                         xs={12}
+                    //                         sx={{ width: '50px' }}
+                    //                     >
+                    //                         <StyledSection>
+                    //                             {item.section}
+                    //                         </StyledSection>
+                    //                     </Grid>
+                    //                 ) : null}
 
-                                    <Grid item xs={6} sx={{ width: '50px' }}>
-                                        <AddBlocksMenuCard item={item} />
-                                    </Grid>
-                                    {next && next.section !== item.section ? (
-                                        <Grid
-                                            item
-                                            xs={12}
-                                            sx={{ width: '50px' }}
-                                        >
-                                            <Divider
-                                                orientation="horizontal"
-                                                variant="fullWidth"
-                                                flexItem={true}
-                                            />
-                                        </Grid>
-                                    ) : null}
-                                </React.Fragment>
-                            );
-                        })}
-                    </Grid>
+                    //                 <Grid item xs={6} sx={{ width: '50px' }}>
+                    //                     <AddBlocksMenuCard item={item} />
+                    //                 </Grid>
+                    //                 {next && next.section !== item.section ? (
+                    //                     <Grid
+                    //                         item
+                    //                         xs={12}
+                    //                         sx={{ width: '50px' }}
+                    //                     >
+                    //                         <Divider
+                    //                             orientation="horizontal"
+                    //                             variant="fullWidth"
+                    //                             flexItem={true}
+                    //                         />
+                    //                     </Grid>
+                    //                 ) : null}
+                    //             </React.Fragment>
+                    //         );
+                    //     })}
+                    // </Grid>
+                    // </StyledMenu>
+                    <Typography variant="caption">No items found</Typography>
                 ) : (
                     <Stack
                         direction="row"
@@ -204,7 +166,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         </Typography>
                     </Stack>
                 )}
-            </StyledMenu>
+            </Stack>
         </Panel>
     );
 });
