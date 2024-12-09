@@ -1,4 +1,4 @@
-import { Role } from '@/types';
+import { Role, PixelResponse } from '@/types';
 import { ENGINE_IMAGES } from '@/pages/import';
 import BRAIN from '@/assets/img/BRAIN.png';
 import { Env } from '@/env';
@@ -220,4 +220,72 @@ export const isOutputJSON = (output: unknown) => {
         }
     }
     return null;
+};
+
+/**
+ * Custom error class for API responses that return 200 but contain errors
+ */
+export class ApiResponseError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'ApiResponseError';
+    }
+}
+
+/**
+ * Utility function to check if a pixel response contains errors
+ * @param response The pixel response from the API
+ * @throws {ApiResponseError} If the response contains errors
+ */
+export const validatePixelResponse = (response: PixelResponse) => {
+    // Check if any operation type contains ERROR
+    const hasError = response.pixelReturn.some((p) =>
+        p.operationType.includes('ERROR'),
+    );
+
+    if (hasError) {
+        // Collect all error messages
+        const errorMessages = response.pixelReturn
+            .filter((p) => p.operationType.includes('ERROR'))
+            .map((p) => p.output as string)
+            .join(', ');
+
+        throw new ApiResponseError(errorMessages);
+    }
+
+    return response;
+};
+
+/**
+ * Wrapper function to safely execute API calls with proper error handling
+ * @param apiCall The API function to execute
+ * @param errorContext Optional context for the error message
+ */
+export const executeApiCall = async <T>(
+    apiCall: () => Promise<T>,
+    errorContext?: string,
+): Promise<T> => {
+    try {
+        const response = await apiCall();
+
+        // If response is a pixel response type, validate it
+        if (
+            response &&
+            typeof response === 'object' &&
+            'pixelReturn' in response
+        ) {
+            return validatePixelResponse(
+                response as unknown as PixelResponse,
+            ) as T;
+        }
+
+        return response;
+    } catch (error) {
+        if (error instanceof ApiResponseError) {
+            throw error;
+        }
+        throw new Error(
+            `${errorContext ? `${errorContext}: ` : ''}${error.message}`,
+        );
+    }
 };

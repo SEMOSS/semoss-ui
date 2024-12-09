@@ -27,6 +27,7 @@ import { usePixel, useRootStore, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { Java } from '@/assets/img/Java';
+import { executeApiCall } from '@/utility';
 
 const StyledAppSettings = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -486,32 +487,54 @@ export const AppSettings = (props: AppSettingsProps) => {
             const path = 'version/assets/';
 
             // unzip the file in the new app
-            await monolithStore.runQuery(
-                `DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
+            await executeApiCall(
+                () =>
+                    monolithStore.runQuery(
+                        `DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
+                    ),
+                'Failed to delete asset',
             );
 
             // upload the file
-            const upload = await monolithStore.uploadFile(
-                [data.PROJECT_UPLOAD],
-                configStore.store.insightID,
-                id,
-                path,
+            const upload = await executeApiCall(
+                () =>
+                    monolithStore.uploadFile(
+                        [data.PROJECT_UPLOAD],
+                        configStore.store.insightID,
+                        id,
+                        path,
+                    ),
+                'Failed to upload file',
             );
 
             // upnzip the file in the new app
-            await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
+            await executeApiCall(
+                () =>
+                    monolithStore.runQuery(
+                        `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
+                    ),
+                'Failed to unzip file',
             );
 
             // Load the insight classes
-            await monolithStore.runQuery(`ReloadInsightClasses('${id}');`);
+            await executeApiCall(
+                () => monolithStore.runQuery(`ReloadInsightClasses('${id}');`),
+                'Failed to reload insight classes',
+            );
 
             // set the app portal
-            await monolithStore.setProjectPortal(false, id, true, 'public');
+            await executeApiCall(
+                () => monolithStore.setProjectPortal(false, id, true, 'public'),
+                'Failed to set project portal',
+            );
 
             // Publish the app the insight classes
-            await monolithStore.runQuery(
-                `PublishProject('${id}', release=true);`,
+            await executeApiCall(
+                () =>
+                    monolithStore.runQuery(
+                        `PublishProject('${id}', release=true);`,
+                    ),
+                'Failed to publish project',
             );
 
             notification.add({

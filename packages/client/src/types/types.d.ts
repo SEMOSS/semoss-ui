@@ -86,3 +86,17 @@ export type PathValue<
         ? PathValue<Idx<T, Key>, Rest>
         : never
     : Idx<T, P>;
+
+export interface PixelReturn {
+    isMeta?: boolean;
+    operationType?: string[];
+    additionalOutput?: { output: string }[];
+    output?: unknown;
+    pixelExpression?: string;
+    pixelId?: string;
+}
+
+export interface PixelResponse {
+    insightID: string;
+    pixelReturn: PixelReturn[];
+}
