@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Checkbox, FormControlLabel, Stack } from "../../";
+import { Checkbox } from "../Checkbox";
+import { Stack } from "../Stack";
+import { FormControlLabel } from "../FormControl";
 import { SxProps } from "@mui/material";
 
 interface ChecklistProps {

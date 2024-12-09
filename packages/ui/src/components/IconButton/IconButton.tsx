@@ -1,1 +1,1 @@
-export { IconButton, IconButtonProps } from "@mui/material";
+export { IconButton, type IconButtonProps } from "@mui/material";
