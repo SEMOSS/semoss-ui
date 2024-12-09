@@ -27,6 +27,10 @@ export interface AudioInputBlockDef extends BlockDef<'audio-input'> {
 }
 
 const StyledContainer = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: '8px',
     padding: '4px',
 }));
 
@@ -160,6 +164,20 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
+    const handleDownload = () => {
+        if (
+            data.mode === 'record' &&
+            (data.value as string)?.startsWith('data:audio/')
+        ) {
+            const link = document.createElement('a');
+            link.href = data.value as string;
+            link.download = `recording-${new Date().toISOString()}.webm`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
     const cleanup = () => {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
@@ -187,6 +205,17 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
             >
                 {recording ? <MicOffIcon /> : <MicIcon />}
             </StyledButton>
+            {data.mode === 'record' &&
+                (data.value as string)?.startsWith('data:audio/') && (
+                    <Button
+                        size="small"
+                        onClick={handleDownload}
+                        variant="text"
+                        color={data.color}
+                    >
+                        Download Recording
+                    </Button>
+                )}
         </StyledContainer>
     );
 });
