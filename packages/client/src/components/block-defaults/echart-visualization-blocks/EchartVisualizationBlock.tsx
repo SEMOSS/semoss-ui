@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
-import { Bar } from './Variants/Bar';
+import { Bar } from './Variants/bar-chart/Bar';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -31,6 +31,7 @@ export interface EchartVisualizationBlockDef {
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
+            hideExclude: boolean;
         };
     };
     listeners: {};

@@ -19,10 +19,14 @@ export interface FrameOperationsEChartProps {
 }
 
 const StyledSubSection = styled('div')(() => ({
-    display: 'block',
+    display: 'inline-flex',
     // border: '1px solid gray',
     padding: '0.5rem',
     width: '100%',
+}));
+const StyledDropDownSection = styled('div')(() => ({
+    display: 'block',
+    padding: '0.5rem',
 }));
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
@@ -45,6 +49,10 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
         });
         const [value, setValue] = useState({});
         const path = 'option';
+        const [selectedValues, setSelectedValues] = useState({
+            xAxis: '',
+            yAxis: '',
+        });
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>('GetFrames();', {
             data: [],
@@ -66,6 +74,13 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                 };
             });
             setColumnsData(columns);
+            setSelectedValues((prevValues) => {
+                return {
+                    ...prevValues,
+                    ['xAxis']: data.option['xAxis'].pixelvalue,
+                    ['yAxis']: data.option['yAxis'].pixelvalue,
+                };
+            });
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -126,15 +141,26 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                 tempVal['xAxis'] = {
                     ...tempVal['xAxis'],
                     ['name']: columns['xaxis'].name,
+                    ['pixelname']: columns['xaxis'].name,
+                    ['pixelvalue']: columns['xaxis'].selector,
                 };
                 tempVal['yAxis'] = {
                     ...tempVal['yAxis'],
                     ['name']: columns['yaxis'].name,
+                    ['pixelname']: columns['yaxis'].name,
+                    ['pixelvalue']: columns['yaxis'].selector,
                 };
                 tempVal['series'][seriesIndex] = {
                     ...tempVal['series'][seriesIndex],
                     ['name']: columns['yaxis'].name,
                 };
+                setSelectedValues((prevValues) => {
+                    return {
+                        ...prevValues,
+                        ['xAxis']: columns['xaxis'].selector,
+                        ['yAxis']: columns['yaxis'].selector,
+                    };
+                });
                 dispatchData(tempVal);
                 setData('columns', combinedColumns);
             }
@@ -157,7 +183,12 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
         return (
             <>
                 <StyledSubSection>
+                    <label htmlFor="Echart-Frame">Select a Frame</label>
+                </StyledSubSection>
+                <StyledSubSection>
                     <Autocomplete
+                        fullWidth
+                        id="Echart-Frame"
                         multiple={false}
                         disabled={getFrames.status !== 'SUCCESS'}
                         value={data.frame?.name}
@@ -184,11 +215,16 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                         <Sync />
                     </Button>
                 </StyledSubSection>
-                <StyledSubSection>
+                <StyledDropDownSection>
                     <label htmlFor="font-weight">X Axis Field</label>
                     <StyledSelect
                         id="font-weight"
                         label="Select X Axis Field"
+                        value={
+                            columnsData.length > 0
+                                ? selectedValues['xAxis'] ?? ''
+                                : ''
+                        }
                         onChange={(e) => updateFields('xaxis', e)}
                     >
                         <Select.Item key="-1" value="">
@@ -202,12 +238,17 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                             );
                         })}
                     </StyledSelect>
-                </StyledSubSection>
-                <StyledSubSection>
+                </StyledDropDownSection>
+                <StyledDropDownSection>
                     <label htmlFor="font-weight">Y Axis Field</label>
                     <StyledSelect
                         id="font-weight"
                         label="Select Y Axis Field"
+                        value={
+                            columnsData.length > 0
+                                ? selectedValues['yAxis'] ?? ''
+                                : ''
+                        }
                         onChange={(e) => updateFields('yaxis', e)}
                     >
                         <Select.Item key="-1" value="">
@@ -221,7 +262,7 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                             );
                         })}
                     </StyledSelect>
-                </StyledSubSection>
+                </StyledDropDownSection>
             </>
         );
     },

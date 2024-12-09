@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { EChartVisualizationBlockDef } from './EChartVisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
 import { useBlock, useFrame } from '@/hooks';
 import { Menu, MenuItem } from '@mui/material';
 import { PathValue } from 'react-hook-form';
@@ -16,7 +16,7 @@ export interface EChartContextMenuProps {
             selector: string;
             // width: string;
         };
-        value: unknown;
+        value: unknown[];
     } | null;
     chartInstance: any;
     onClose: () => void;
@@ -24,10 +24,11 @@ export interface EChartContextMenuProps {
 //Open this contextmenu when right click event is triggered
 export const EChartContextMenu: React.FC<EChartContextMenuProps> = observer(
     ({ id, frame, contextMenu, chartInstance, onClose }) => {
-        const { data, setData } = useBlock<EChartVisualizationBlockDef>(id);
+        const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
         let currentOperation = useRef({
             unfilterActive: false,
             filterActive: false,
+            excludeActive: false,
         });
         //Checking the current action state for filtering and unfiltering to set and update the data to chart using setoption and setData
         useEffect(() => {
@@ -63,6 +64,33 @@ export const EChartContextMenu: React.FC<EChartContextMenuProps> = observer(
                         if (chartInstance.setOption !== null) {
                             chartInstance.setOption(data.option);
                             currentOperation.current.filterActive = false;
+                            contextMenu = {
+                                ...contextMenu,
+                                ['value']: null,
+                            };
+                            disableSelection();
+                        }
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+                if (currentOperation.current.excludeActive) {
+                    try {
+                        let optionDataProcessed = processReceivedData(
+                            frame.data,
+                        );
+                        data.option['xAxis']['data'] =
+                            optionDataProcessed['xAxis'];
+                        data.option['series'][0]['data'] =
+                            optionDataProcessed['yAxis'];
+                        setData('option', data.option as PathValue<any, any>);
+                        if (chartInstance.setOption !== null) {
+                            chartInstance.setOption(data.option);
+                            currentOperation.current.excludeActive = false;
+                            contextMenu = {
+                                ...contextMenu,
+                                ['value']: null,
+                            };
                             disableSelection();
                         }
                     } catch (e) {
@@ -91,6 +119,7 @@ export const EChartContextMenu: React.FC<EChartContextMenuProps> = observer(
                 }),
             };
         }
+        console.log(contextMenu, data.contextMenu);
         return (
             <Menu
                 open={contextMenu !== null}
@@ -160,6 +189,36 @@ export const EChartContextMenu: React.FC<EChartContextMenuProps> = observer(
                         {typeof contextMenu.value === 'string'
                             ? contextMenu.value
                             : JSON.stringify(contextMenu.value)}
+                    </MenuItem>
+                ) : null}
+                {contextMenu &&
+                !data.contextMenu?.hideExclude &&
+                contextMenu.value.length === 1 ? (
+                    <MenuItem
+                        dense={true}
+                        value={'exclude'}
+                        onClick={() => {
+                            frame.filter(
+                                `SetFrameFilter(${
+                                    contextMenu.column.selector
+                                }!="${contextMenu.value.toString()}")`,
+                            );
+                            let optionUp = data.option;
+                            const reUpdate = data.option['series'];
+                            optionUp = {
+                                ...optionUp,
+                                ['series']: null,
+                            };
+                            setData('option', optionUp as PathValue<any, any>);
+                            currentOperation.current.excludeActive = true;
+                            // runSeriesUpdate(reUpdate);
+                            onClose();
+                        }}
+                    >
+                        Exclude {contextMenu.column.name} !=
+                        {typeof contextMenu.value === 'string'
+                            ? contextMenu.value
+                            : contextMenu.value}
                     </MenuItem>
                 ) : null}
             </Menu>

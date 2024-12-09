@@ -102,16 +102,40 @@ const EChartContainer = observer<EChartContainerProps>(({ id }) => {
                 setSelectedChart(echartInstance);
             }
             echartInstance.getZr().on('contextmenu', function (params) {
-                chartOperationData.current.contextMenu = {
-                    mouseX: params.event.clientX,
-                    mouseY: params.event.clientY,
-                    column: chartOperationData.current.yAxisColumn,
-                    value: chartOperationData.current.brushSelected,
-                };
-                handleSelection(
-                    chartOperationData.current.yAxisColumn.name,
-                    chartOperationData.current.brushSelected,
-                );
+                if (chartOperationData.current.brushSelected !== null) {
+                    chartOperationData.current.contextMenu = {
+                        mouseX: params.event.clientX,
+                        mouseY: params.event.clientY,
+                        column: chartOperationData.current.yAxisColumn,
+                        value: chartOperationData.current.brushSelected,
+                    };
+                    handleSelection(
+                        chartOperationData.current.yAxisColumn.name,
+                        chartOperationData.current.brushSelected,
+                    );
+                }
+            });
+            echartInstance.on('contextmenu', function (params) {
+                console.log(params, 'right click');
+                if (chartOperationData.current.brushSelected === null) {
+                    let dataIndex = params.dataIndex;
+                    let option = data.option;
+                    chartOperationData.current.yAxisColumn = {
+                        name: option['xAxis']['pixelname'] ?? '',
+                        selector: option['xAxis']['pixelvalue'] ?? '',
+                        width: undefined,
+                    };
+                    chartOperationData.current.contextMenu = {
+                        mouseX: params['event']?.event?.clientX,
+                        mouseY: params['event']?.event?.clientY,
+                        column: chartOperationData.current.yAxisColumn,
+                        value: option['xAxis']['data'][dataIndex],
+                    };
+                    handleSelection(
+                        chartOperationData.current.yAxisColumn.name,
+                        chartOperationData.current.brushSelected,
+                    );
+                }
             });
             echartInstance.on('dblclick', function (e) {
                 return;
@@ -145,11 +169,12 @@ const EChartContainer = observer<EChartContainerProps>(({ id }) => {
                     let filteredData = dataToFind.filter((item, index) =>
                         dataIndex.includes(index),
                     );
+                    console.log(filteredData, 'final brush selection');
                     chartOperationData.current.brushSelected = filteredData;
                     chartOperationData.current.yAxisColumn = {
                         ...chartOperationData.current.yAxisColumn,
-                        name: option['yAxis']['name'],
-                        selector: option['yAxis']['name'],
+                        name: option['xAxis']['pixelname'],
+                        selector: option['xAxis']['pixelname'],
                     };
                 }
             });
@@ -195,6 +220,8 @@ const EChartContainer = observer<EChartContainerProps>(({ id }) => {
                 chartInstance={chartOperationData.current.chartInstance}
                 onClose={() => {
                     chartOperationData.current.contextMenu = null;
+                    chartOperationData.current.yAxisColumn = null;
+                    chartOperationData.current.brushSelected = null;
                 }}
             />
         </StyledMainContainer>

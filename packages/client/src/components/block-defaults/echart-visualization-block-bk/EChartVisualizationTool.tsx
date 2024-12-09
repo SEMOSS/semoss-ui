@@ -17,6 +17,7 @@ import { FrameDataSection } from './FrameDataSection';
 import { FrameOperationsEchart } from './FrameOperationsEchart';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
+import ColourByValue from './ColourByValue';
 
 const StyledChartContainer = styled('div')<{ width?: string }>(
     ({ theme, width }) => ({
@@ -860,6 +861,9 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                                 chartType={chartType}
                                 option={data.option}
                             />
+                        </StyledSectionContainer>
+                        <StyledSectionContainer>
+                            <ColourByValue id={id} />
                         </StyledSectionContainer>
                     </StyledChartContainer>
                 )}

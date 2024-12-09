@@ -43,6 +43,7 @@ export interface EChartVisualizationBlockDef {
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
+            hideExclude: boolean;
         };
     };
     listeners: {};

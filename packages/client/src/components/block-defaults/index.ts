@@ -36,10 +36,6 @@ import {
     VegaVisualizationBlockDef,
 } from './vega-visualization-block';
 import {
-    config as EChartVisualizationBlockConfig,
-    EChartVisualizationBlockDef,
-} from './echart-visualization-block';
-import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
 } from './progress-block';

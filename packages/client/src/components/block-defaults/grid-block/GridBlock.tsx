@@ -246,7 +246,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                                                             : DEFAULT_COLUMN_WIDTH,
                                                     }}
                                                     onContextMenu={(e) => {
-                                                        console.log('event', e);
                                                         // don't open context menu
                                                         if (!headerExists) {
                                                             return;

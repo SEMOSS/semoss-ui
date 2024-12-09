@@ -1,5 +1,10 @@
 import { BaseSettingSection } from '@/components/block-settings';
-import { useBlockSettings, useBlocksPixel, useFrameHeaders } from '@/hooks';
+import {
+    useBlockSettings,
+    useBlocksPixel,
+    useFrame,
+    useFrameHeaders,
+} from '@/hooks';
 import {
     Autocomplete,
     IconButton,
@@ -15,17 +20,112 @@ import {
 import { Sync } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Delete } from '@mui/icons-material';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BAR_CHART_DATA } from './Echart.constants';
+import { PathValue } from '@/types';
 
-export const FrameDataSection = ({ id }) => {
+export const FrameDataSection = ({ id, updateChart }) => {
+    console.log('frame');
     const { data, setData } = useBlockSettings<EChartVisualizationBlockDef>(id);
+    const [frameName, setFrameName] = useState('');
     const notification = useNotification();
     // get all of the frames
     const getFrames = useBlocksPixel<string[]>('GetFrames();', {
         data: [],
     });
     // get headers associated with the selected frames
-    const frameHeaders = useFrameHeaders(data.frame?.name);
-    console.log(frameHeaders, data);
+    const frameHeaders = useFrameHeaders(frameName);
+    let selector = `Select(${data?.columns
+        ?.map((c) => {
+            return c.selector;
+        })
+        .join(', ')}).as([${data?.columns
+        ?.map((c) => {
+            return c.name;
+        })
+        .join(', ')}])`;
+    const frameData = useFrame(data.frame?.name, {
+        selector: selector,
+        // offset:0,
+        // limit: 10,
+        // enableCount: true
+    });
+
+    if (
+        !frameData.isLoading &&
+        frameData.data['values'].length > 0
+        // &&
+        // currentFrame !== dataOption.frame?.name
+    ) {
+        let tempFrameData = frameData;
+        let dataArray = {
+            headerData: tempFrameData['data']['headers'],
+            values: {},
+        };
+        tempFrameData['data']['headers']?.forEach((item, index) => {
+            dataArray['values'][item] = [];
+        });
+        tempFrameData['data']['values'].forEach((item, index) => {
+            item.forEach((subItem, subIndex) => {
+                dataArray['values'] = {
+                    ...dataArray['values'],
+                    [tempFrameData['data']['headers'][subIndex]]: [
+                        item[subIndex],
+                        ...dataArray['values'][
+                            tempFrameData['data']['headers'][subIndex]
+                        ],
+                    ],
+                };
+            });
+        });
+
+        // let option = data.option;
+        let xAxisIndex = tempFrameData['data']['headers'][1] ?? 'data 1',
+            yAxisIndex = tempFrameData['data']['headers'][0] ?? 'data 2';
+
+        // chartOperationData.current.yAxisColumn = {
+        //     ...chartOperationData.current.yAxisColumn,
+        //     ['name']:yAxisIndex,
+        //     ['selector']: data.columns[data.columns.findIndex((col)=>col.name === yAxisIndex)]['selector'] ?? '',
+        // };
+        // console.log('yAxis', chartOperationData.current);
+        getOptions(xAxisIndex, yAxisIndex, dataArray);
+        // updateChart(option);
+        // data.option = data.option;
+        // updateChartData(dataOption.frame?.name, option);
+        // setTimeout(()=>{
+        try {
+            setData('option', data.option as PathValue<any, any>);
+        } catch (e) {
+            console.log('exception', e);
+        }
+        // },200);
+    }
+    function getOptions(xAxisIndex, yAxisIndex, dataArray) {
+        if (data.option.hasOwnProperty('xAxis') && data.option['xAxis']) {
+            data.option['xAxis'] = {
+                ...data.option['xAxis'],
+                ['data']: dataArray['values'][xAxisIndex],
+                ['name']: xAxisIndex,
+            };
+        }
+        if (data.option.hasOwnProperty('yAxis') && data.option['yAxis']) {
+            data.option['yAxis'] = {
+                ...data.option['yAxis'],
+                ['name']: yAxisIndex,
+            };
+        }
+        if (data.option.hasOwnProperty('series') && data.option['series']) {
+            let seriesDataIndex = data.option['series'].findIndex(
+                (item) => item.type === BAR_CHART_DATA.JSONVALUE[0],
+            );
+            data.option['series'][seriesDataIndex] = {
+                ...data.option['series'][seriesDataIndex],
+                ['data']: dataArray['values'][yAxisIndex],
+            };
+        }
+    }
+
     /**
      * Sync the columns with the frame headers
      */
@@ -38,8 +138,8 @@ export const FrameDataSection = ({ id }) => {
 
             //         return acc;
             //     }, {});
+            console.log(frameHeaders, 'frameHeaders on Sync');
             const columnMap: Record<string, EChartColumns> = {};
-
             // get the frameHeaders as columns
             const columns: EChartColumns[] = frameHeaders.data.list.map((h) => {
                 return {
@@ -58,6 +158,7 @@ export const FrameDataSection = ({ id }) => {
                 color: 'success',
                 message: 'Succesfully synchronized headers',
             });
+            // updateChart();
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -85,6 +186,16 @@ export const FrameDataSection = ({ id }) => {
         setData('columns', columns);
     };
 
+    useEffect(() => {
+        if (data.hasOwnProperty('frame')) {
+            if (!data.frame.hasOwnProperty('name')) {
+                setData('frame.name', '');
+            }
+        } else {
+            setData('frame.name', '');
+        }
+    }, []);
+
     return (
         <>
             <BaseSettingSection label="Frame">
@@ -100,6 +211,7 @@ export const FrameDataSection = ({ id }) => {
                     onChange={(_, value) => {
                         // update the frame
                         setData('frame.name', value);
+                        setFrameName(value);
                     }}
                     freeSolo={false}
                     renderInput={(params) => (
@@ -162,10 +274,6 @@ export const FrameDataSection = ({ id }) => {
                                                                 size="small"
                                                                 onClick={() => {
                                                                     // get the columns except the current one
-                                                                    console.log(
-                                                                        data.columns,
-                                                                        'before change',
-                                                                    );
                                                                     const columns =
                                                                         data.columns.filter(
                                                                             (
@@ -175,9 +283,7 @@ export const FrameDataSection = ({ id }) => {
                                                                                 cIdx !==
                                                                                 idx,
                                                                         );
-                                                                    console.log(
-                                                                        columns,
-                                                                    );
+
                                                                     // update the data
                                                                     setData(
                                                                         'columns',
