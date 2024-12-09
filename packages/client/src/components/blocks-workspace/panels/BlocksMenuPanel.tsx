@@ -15,18 +15,17 @@ import { Search, SearchOff } from '@mui/icons-material';
 import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 
-const StyledHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-}));
-
 const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(2),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
     backgroundColor: theme.palette.action.focus,
+    width: '100%',
+}));
+
+const StyledSearchBox = styled('div')(({ theme }) => ({
+    padding: theme.spacing(2),
     width: '100%',
 }));
 
@@ -98,12 +97,21 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
     return (
         <Panel>
-            <StyledHeader>
+            <Stack spacing={0}>
                 <StyledTitle>
                     <Typography variant={'h6'} color="primary">
                         {title}
                     </Typography>
                 </StyledTitle>
+                <StyledSearchBox>
+                    <TextField
+                        placeholder="Search Components"
+                        size="small"
+                        fullWidth
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </StyledSearchBox>
                 {/* <Stack
                     flex={1}
                     spacing={1}
@@ -141,7 +149,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         )}
                     </IconButton>
                 </Stack> */}
-            </StyledHeader>
+            </Stack>
             <StyledMenu>
                 {renderedItems.length ? (
                     <Grid container spacing={2}>
