@@ -792,4 +792,66 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
             slots: {} as BlockJSON['slots'],
         },
     },
+    {
+        section: SECTION_LINE_CHART,
+        name: 'Line Chart',
+        image: LINE_CHART,
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-line-chart',
+                frame: {
+                    name: '',
+                },
+                option: {
+                    title: {
+                        text: 'ECharts Line Chart',
+                        left: 'center',
+                        top: 20,
+                    },
+                    dataset: {
+                        source: [
+                            { category: 'A', value: 28 },
+                            { category: 'B', value: 30 },
+                            { category: 'C', value: 22 },
+                            { category: 'D', value: 35 },
+                        ],
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: 'Category',
+                        nameLocation: 'middle',
+                        nameGap: 30,
+                        axisTick: {
+                            alignWithLabel: true,
+                        },
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: 'Values',
+                        nameLocation: 'middle',
+                        nameGap: 40,
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                        },
+                    },
+                    series: [
+                        {
+                            name: 'Values',
+                            type: 'line',
+                            encode: {
+                                x: 'category',
+                                y: 'value',
+                            },
+                        },
+                    ],
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
 ];

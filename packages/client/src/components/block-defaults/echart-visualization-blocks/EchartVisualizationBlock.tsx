@@ -4,6 +4,7 @@ import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/Bar';
+import { LineBlock } from './Variants';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -22,7 +23,7 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
     widget: 'e-chart';
     data: {
-        option: {};
+        option: {} | string;
         frame: {
             name: string;
         };
@@ -40,6 +41,17 @@ export interface EchartVisualizationBlockDef {
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
 
+    const SelectVariant = () => {
+        switch (data.variation) {
+            case 'echart-bar-graph':
+                return <Bar id={id} />;
+            case 'echart-line-chart':
+                return <LineBlock id={id} />;
+            default:
+                return <></>;
+        }
+    };
+
     if (!data.option) {
         return (
             <StyledNoDataContainer {...attrs}>
@@ -48,9 +60,5 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
         );
     }
 
-    return (
-        <StyledNoDataContainer {...attrs}>
-            {data.variation === 'echart-bar-graph' && <Bar id={id} />}
-        </StyledNoDataContainer>
-    );
+    return <>{SelectVariant()}</>;
 });
