@@ -19,12 +19,15 @@ const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    lineHeight: theme.spacing(5),
+}));
+
+const StyledTitle = styled('div')(({ theme }) => ({
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(2),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
-    gap: theme.spacing(1),
+    backgroundColor: theme.palette.action.focus,
+    width: '100%',
 }));
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -96,8 +99,12 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     return (
         <Panel>
             <StyledHeader>
-                <Typography variant={'h6'}>{title}</Typography>
-                <Stack
+                <StyledTitle>
+                    <Typography variant={'h6'} color="primary">
+                        {title}
+                    </Typography>
+                </StyledTitle>
+                {/* <Stack
                     flex={1}
                     spacing={1}
                     direction="row"
@@ -133,7 +140,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                             <Search fontSize="medium" />
                         )}
                     </IconButton>
-                </Stack>
+                </Stack> */}
             </StyledHeader>
             <StyledMenu>
                 {renderedItems.length ? (
