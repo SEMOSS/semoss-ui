@@ -809,13 +809,8 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         left: 'center',
                         top: 20,
                     },
-                    dataset: {
-                        source: [
-                            { category: 'A', value: 28 },
-                            { category: 'B', value: 30 },
-                            { category: 'C', value: 22 },
-                            { category: 'D', value: 35 },
-                        ],
+                    tooltip: {
+                        trigger: 'axis',
                     },
                     xAxis: {
                         type: 'category',
@@ -825,6 +820,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         axisTick: {
                             alignWithLabel: true,
                         },
+                        data: ['A', 'B', 'C', 'D', 'E'],
                     },
                     yAxis: {
                         type: 'value',
@@ -842,10 +838,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         {
                             name: 'Values',
                             type: 'line',
-                            encode: {
-                                x: 'category',
-                                y: 'value',
-                            },
+                            data: [28, 30, 22, 35, 30],
                         },
                     ],
                 },
