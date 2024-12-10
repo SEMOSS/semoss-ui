@@ -25,6 +25,7 @@ export const config: BlockConfig<AudioInputBlockDef> = {
         variant: 'contained',
         color: 'primary',
         value: '',
+        mode: 'transcribe',
     },
     listeners: {
         onClick: [],
@@ -37,11 +38,28 @@ export const config: BlockConfig<AudioInputBlockDef> = {
             name: 'General',
             children: [
                 {
+                    description: 'Mode',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Mode"
+                            path="mode"
+                            options={[
+                                {
+                                    value: 'transcribe',
+                                    display: 'Speech to Text',
+                                },
+                                { value: 'record', display: 'Audio Recording' },
+                            ]}
+                        />
+                    ),
+                },
+                {
                     description: 'Value',
                     render: ({ id }) => (
                         <InputAudioSettings
                             id={id}
-                            label="Transcript"
+                            label="Value"
                             path="value"
                         />
                     ),
