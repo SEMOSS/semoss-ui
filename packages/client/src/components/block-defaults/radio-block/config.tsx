@@ -115,13 +115,11 @@ const OptionRow = ({
     value,
     onChange,
     onDelete,
-    disabled,
 }: {
     label: string;
     value: string;
     onChange?: (field: 'label' | 'value', value: string) => void;
     onDelete?: () => void;
-    disabled?: boolean;
 }) => (
     <Box sx={{ width: '100%', mb: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center">
@@ -131,7 +129,6 @@ const OptionRow = ({
                     value={label}
                     onChange={(e) => onChange?.('label', e.target.value)}
                     fullWidth
-                    disabled={disabled}
                 />
             </Box>
             <Box flex={1}>
@@ -140,7 +137,6 @@ const OptionRow = ({
                     value={value}
                     onChange={(e) => onChange?.('value', e.target.value)}
                     fullWidth
-                    disabled={disabled}
                 />
             </Box>
 
@@ -217,13 +213,33 @@ export const config: BlockConfig<RadioBlockDef> = {
                             field: 'label' | 'value',
                             newValue: string,
                         ) => {
-                            setConfigOptions((current) =>
-                                current.map((opt) =>
-                                    opt.id === optionId
-                                        ? { ...opt, [field]: newValue }
-                                        : opt,
-                                ),
+                            const updatedOptions = configOptions.map((opt) =>
+                                opt.id === optionId
+                                    ? { ...opt, [field]: newValue }
+                                    : opt,
                             );
+                            setConfigOptions(updatedOptions);
+
+                            // Immediately update the actual options for the radio group
+                            setData(
+                                'options',
+                                updatedOptions.map((opt) => ({
+                                    label: opt.label,
+                                    value: opt.value,
+                                })),
+                            );
+
+                            // If we're changing the value of the currently selected option,
+                            // update the selected value too
+                            if (
+                                field === 'value' &&
+                                data.value ===
+                                    configOptions.find(
+                                        (opt) => opt.id === optionId,
+                                    )?.value
+                            ) {
+                                setData('value', newValue);
+                            }
                         };
 
                         const handleAddOption = () => {
@@ -242,26 +258,35 @@ export const config: BlockConfig<RadioBlockDef> = {
                             const optionToDelete = configOptions.find(
                                 (opt) => opt.id === optionId,
                             );
-                            setConfigOptions((current) =>
-                                current.filter((opt) => opt.id !== optionId),
+                            const remainingOptions = configOptions.filter(
+                                (opt) => opt.id !== optionId,
                             );
 
-                            if (data.value === optionToDelete?.value) {
-                                // If there will be other options after deletion, select the first one
-                                const remainingOptions = configOptions.filter(
-                                    (opt) => opt.id !== optionId,
+                            if (remainingOptions.length === 0) {
+                                // If deleting last option, create new default
+                                const defaultOption = {
+                                    id: 'default',
+                                    label: 'Default',
+                                    value: 'no_value',
+                                };
+                                setConfigOptions([defaultOption]);
+                                setData('options', [
+                                    { label: 'Default', value: 'no_value' },
+                                ]);
+                                setData('value', 'no_value');
+                            } else {
+                                setConfigOptions(remainingOptions);
+                                setData(
+                                    'options',
+                                    remainingOptions.map((opt) => ({
+                                        label: opt.label,
+                                        value: opt.value,
+                                    })),
                                 );
-                                if (remainingOptions.length > 0) {
+
+                                // If deleted option was selected, select first remaining option
+                                if (data.value === optionToDelete?.value) {
                                     setData('value', remainingOptions[0].value);
-                                } else {
-                                    // If no options will remain, add back the default
-                                    const defaultOption = {
-                                        id: 'default',
-                                        label: 'Default',
-                                        value: 'no_value',
-                                    };
-                                    setConfigOptions([defaultOption]);
-                                    setData('value', 'no_value');
                                 }
                             }
                         };
@@ -306,7 +331,6 @@ export const config: BlockConfig<RadioBlockDef> = {
                                         onDelete={() =>
                                             handleDeleteOption(option.id)
                                         }
-                                        disabled={option.id === 'default'}
                                     />
                                 ))}
 
@@ -317,9 +341,45 @@ export const config: BlockConfig<RadioBlockDef> = {
                                     variant="outlined"
                                     size="small"
                                     fullWidth
+                                    sx={{ mb: 2 }}
                                 >
                                     Add Option
                                 </Button>
+
+                                {/* Current Value Selection */}
+                                <BaseSettingSection label="Selected Value">
+                                    <Autocomplete
+                                        value={
+                                            configOptions.find(
+                                                (opt) =>
+                                                    opt.value === data.value,
+                                            ) || null
+                                        }
+                                        options={configOptions}
+                                        onChange={(_, newValue) => {
+                                            if (newValue) {
+                                                setData(
+                                                    'value',
+                                                    newValue.value,
+                                                );
+                                            }
+                                        }}
+                                        getOptionLabel={(option) =>
+                                            option.label
+                                        }
+                                        isOptionEqualToValue={(option, value) =>
+                                            option.value === value.value
+                                        }
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        )}
+                                        fullWidth
+                                    />
+                                </BaseSettingSection>
                             </Box>
                         );
                     },
