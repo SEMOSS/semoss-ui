@@ -292,7 +292,11 @@ export const InputAudioSettings = observer(
                                 </Button>
                             )}
                     </Box>
-                    <IconButton size="small" onClick={() => handleRecording()}>
+                    <IconButton
+                        size="small"
+                        onClick={() => handleRecording()}
+                        color={recording ? 'error' : 'primary'}
+                    >
                         {recording ? <MicOffIcon /> : <MicIcon />}
                     </IconButton>
                 </BaseSettingSection>

@@ -27,10 +27,6 @@ export interface AudioInputBlockDef extends BlockDef<'audio-input'> {
 }
 
 const StyledContainer = styled('div')(() => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '8px',
     padding: '4px',
 }));
 
@@ -45,6 +41,7 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
         null,
     );
     const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+    const previousValueRef = useRef(data.value);
 
     // Clear value when mode changes
     useEffect(() => {
@@ -178,6 +175,19 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
+    // Auto-download effect when recording becomes available
+    useEffect(() => {
+        if (
+            data.mode === 'record' &&
+            (data.value as string)?.startsWith('data:audio/') &&
+            (data.value as string) !== previousValueRef.current &&
+            !recording
+        ) {
+            handleDownload();
+        }
+        previousValueRef.current = data.value;
+    }, [data.value, recording]);
+
     const cleanup = () => {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
@@ -205,17 +215,6 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
             >
                 {recording ? <MicOffIcon /> : <MicIcon />}
             </StyledButton>
-            {data.mode === 'record' &&
-                (data.value as string)?.startsWith('data:audio/') && (
-                    <Button
-                        size="small"
-                        onClick={handleDownload}
-                        variant="text"
-                        color={data.color}
-                    >
-                        Download Recording
-                    </Button>
-                )}
         </StyledContainer>
     );
 });
