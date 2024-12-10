@@ -277,7 +277,7 @@ export const FileTable = (props: FileTableProps) => {
             }
         });
 
-        const pixel = `META | FileDownload(engine = "${id}", filenames=[${fileArray}]);`;
+        const pixel = `META | VectorFileDownload(engine = "${id}", filenames=[${fileArray}]);`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output,
