@@ -40,96 +40,45 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
         null,
     );
-    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+    const chunks = useRef<Blob[]>([]);
     const previousValueRef = useRef(data.value);
 
-    // Clear value when mode changes
     useEffect(() => {
-        cleanup();
-        setRecording(false);
-        setTranscript('');
-        setInterimTranscript('');
-        setAudioChunks([]);
-        setData('value', '');
-
         if (data.mode === 'transcribe') {
-            setupSpeechRecognition();
+            const recognition = new (window as any).webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                setRecording(true);
+                setData('color', 'error');
+                setTranscript('');
+            };
+            recognition.onend = () => {
+                setRecording(false);
+                setData('color', primaryBtnColor);
+            };
+            recognition.onresult = (event) => {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final += event.results[i][0].transcript;
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                setTranscript((prev) => prev + final);
+                setInterimTranscript(interim);
+            };
+            recognitionRef.current = recognition;
         } else {
-            setupAudioRecording();
-        }
-
-        return () => cleanup();
-    }, [data.mode]);
-
-    const setupSpeechRecognition = () => {
-        if (!('webkitSpeechRecognition' in window)) {
-            alert('Web Speech API is not supported in this browser.');
-            return;
-        }
-        const recognition = new (window as any).webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onstart = () => {
-            setRecording(true);
-            setData('color', 'error');
-            setTranscript('');
-        };
-        recognition.onend = () => {
-            setRecording(false);
-            setData('color', primaryBtnColor);
-        };
-        recognition.onresult = (event) => {
-            let interim = '';
-            let final = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    final += event.results[i][0].transcript;
-                } else {
-                    interim += event.results[i][0].transcript;
-                }
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
             }
-            setTranscript((prev) => prev + final);
-            setInterimTranscript(interim);
-        };
-        recognitionRef.current = recognition;
-    };
-
-    const setupAudioRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-            });
-            const recorder = new MediaRecorder(stream, {
-                mimeType: 'audio/webm',
-            });
-
-            recorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    setAudioChunks((chunks) => [...chunks, e.data]);
-                }
-            };
-
-            recorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, {
-                    type: 'audio/webm',
-                });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64data = reader.result as string;
-                    setData('value', base64data);
-                };
-                reader.readAsDataURL(audioBlob);
-                // Stop all tracks
-                stream.getTracks().forEach((track) => track.stop());
-            };
-
-            setMediaRecorder(recorder);
-        } catch (error) {
-            console.error('Error accessing microphone:', error);
         }
-    };
+    }, [data.mode]);
 
     useEffect(() => {
         if (data.mode === 'transcribe') {
@@ -147,17 +96,50 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
                 }
             }
         } else {
-            if (recording) {
-                mediaRecorder?.stop();
+            if (recording || stopRecording) {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
                 setData('color', primaryBtnColor);
+                setRecording(false);
             } else {
-                setupAudioRecording().then(() => {
-                    setAudioChunks([]);
-                    mediaRecorder?.start();
-                    setData('color', 'error');
-                });
+                chunks.current = []; // Clear chunks before new recording
+                navigator.mediaDevices
+                    .getUserMedia({ audio: true })
+                    .then((stream) => {
+                        const recorder = new MediaRecorder(stream);
+
+                        recorder.ondataavailable = (e) => {
+                            if (e.data.size > 0) {
+                                chunks.current.push(e.data);
+                            }
+                        };
+
+                        recorder.onstop = () => {
+                            const audioBlob = new Blob(chunks.current, {
+                                type: 'audio/webm',
+                            });
+
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                const base64Audio = reader.result as string;
+                                setData('value', base64Audio);
+                            };
+                            reader.readAsDataURL(audioBlob);
+
+                            // Stop and cleanup tracks
+                            stream.getTracks().forEach((track) => track.stop());
+                        };
+
+                        setMediaRecorder(recorder);
+                        recorder.start();
+                        setRecording(true);
+                        setData('color', 'error');
+                    })
+                    .catch((err) => {
+                        console.error('Error getting media stream:', err);
+                    });
             }
-            setRecording(!recording);
         }
     };
 
@@ -188,16 +170,19 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
         previousValueRef.current = data.value;
     }, [data.value, recording]);
 
-    const cleanup = () => {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            const tracks = mediaRecorder.stream.getTracks();
-            tracks.forEach((track) => track.stop());
-        }
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-        }
-    };
+    // Cleanup effect
+    useEffect(() => {
+        return () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                const tracks = mediaRecorder.stream.getTracks();
+                tracks.forEach((track) => track.stop());
+            }
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        };
+    }, [mediaRecorder]);
 
     return (
         <StyledContainer {...attrs}>
