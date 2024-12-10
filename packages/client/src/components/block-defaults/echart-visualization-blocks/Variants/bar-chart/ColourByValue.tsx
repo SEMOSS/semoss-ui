@@ -351,16 +351,10 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                         <td>{`${rule.column} ${
                                             rule.columnComparision
                                         } ${
-                                            conditionForShowingField
-                                                ? rule.filterValue
-                                                : rule.valuesToColour.length ==
-                                                  1
-                                                ? rule.valuesToColour
-                                                : [
-                                                      rule.valuesToColour.join(
-                                                          ',',
-                                                      ),
-                                                  ]
+                                            rule.columnComparision === '==' ||
+                                            rule.columnComparision === '!='
+                                                ? rule.valuesToColour.join(',')
+                                                : rule.filterValue
                                         }`}</td>
                                         <td></td>
                                     </tr>
