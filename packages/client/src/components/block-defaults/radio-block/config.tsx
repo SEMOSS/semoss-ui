@@ -1,5 +1,5 @@
 // config.tsx
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Block, BlockDef, BlockConfig } from '@/stores';
 import { InputSettings } from '@/components/block-settings';
 import { RadioBlock, RadioBlockDef } from './RadioBlock';
@@ -7,11 +7,19 @@ import RadioButtonCheckedOutlinedIcon from '@mui/icons-material/RadioButtonCheck
 import { buildListener } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
-import { Autocomplete, Stack, Button } from '@mui/material';
+import {
+    Autocomplete,
+    Stack,
+    Button,
+    IconButton,
+    Box,
+    Typography,
+} from '@mui/material';
 import { BaseSettingSection } from '@/components/block-settings/BaseSettingSection';
 import { useBlockSettings } from '@/hooks';
 import { TextField } from '@semoss/ui';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import { Paths, PathValue } from '@/types';
 
 // Define options
@@ -96,6 +104,53 @@ const SettingAutocomplete = <D extends BlockDef>({
     );
 };
 
+interface ConfigOption {
+    id: string;
+    label: string;
+    value: string;
+}
+
+const OptionRow = ({
+    label,
+    value,
+    onChange,
+    onDelete,
+    disabled,
+}: {
+    label: string;
+    value: string;
+    onChange?: (field: 'label' | 'value', value: string) => void;
+    onDelete?: () => void;
+    disabled?: boolean;
+}) => (
+    <Box sx={{ width: '100%', mb: 2 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+            <Box flex={1}>
+                <TextField
+                    size="small"
+                    value={label}
+                    onChange={(e) => onChange?.('label', e.target.value)}
+                    fullWidth
+                    disabled={disabled}
+                />
+            </Box>
+            <Box flex={1}>
+                <TextField
+                    size="small"
+                    value={value}
+                    onChange={(e) => onChange?.('value', e.target.value)}
+                    fullWidth
+                    disabled={disabled}
+                />
+            </Box>
+
+            <IconButton onClick={onDelete} size="small">
+                <CloseIcon />
+            </IconButton>
+        </Stack>
+    </Box>
+);
+
 export const config: BlockConfig<RadioBlockDef> = {
     widget: 'radio',
     type: BLOCK_TYPE_INPUT,
@@ -133,102 +188,139 @@ export const config: BlockConfig<RadioBlockDef> = {
                     render: ({ id }) => {
                         const { data, setData } =
                             useBlockSettings<RadioBlockDef>(id);
-                        const [currentLabel, setCurrentLabel] = useState('');
-                        const [currentValue, setCurrentValue] = useState('');
+                        const [configOptions, setConfigOptions] = useState<
+                            ConfigOption[]
+                        >([
+                            {
+                                id: 'default',
+                                label: data.options[0].label,
+                                value: data.options[0].value,
+                            },
+                        ]);
+
+                        // Sync config options to actual radio options
+                        useEffect(() => {
+                            const validOptions = configOptions.filter(
+                                (opt) => opt.label && opt.value,
+                            );
+                            setData(
+                                'options',
+                                validOptions.map((opt) => ({
+                                    label: opt.label,
+                                    value: opt.value,
+                                })),
+                            );
+                        }, [configOptions]);
+
+                        const handleOptionChange = (
+                            optionId: string,
+                            field: 'label' | 'value',
+                            newValue: string,
+                        ) => {
+                            setConfigOptions((current) =>
+                                current.map((opt) =>
+                                    opt.id === optionId
+                                        ? { ...opt, [field]: newValue }
+                                        : opt,
+                                ),
+                            );
+                        };
 
                         const handleAddOption = () => {
-                            if (currentLabel && currentValue) {
-                                const newOptions = [
-                                    ...data.options,
-                                    {
-                                        label: currentLabel,
-                                        value: currentValue,
-                                    },
-                                ];
-                                setData('options', newOptions);
+                            setConfigOptions((current) => [
+                                ...current,
+                                {
+                                    id: `option-${Date.now()}`,
+                                    label: '',
+                                    value: '',
+                                },
+                            ]);
+                        };
 
-                                // Clear the fields after adding
-                                setCurrentLabel('');
-                                setCurrentValue('');
+                        // Delete actual option
+                        const handleDeleteOption = (optionId: string) => {
+                            const optionToDelete = configOptions.find(
+                                (opt) => opt.id === optionId,
+                            );
+                            setConfigOptions((current) =>
+                                current.filter((opt) => opt.id !== optionId),
+                            );
+
+                            if (data.value === optionToDelete?.value) {
+                                // If there will be other options after deletion, select the first one
+                                const remainingOptions = configOptions.filter(
+                                    (opt) => opt.id !== optionId,
+                                );
+                                if (remainingOptions.length > 0) {
+                                    setData('value', remainingOptions[0].value);
+                                } else {
+                                    // If no options will remain, add back the default
+                                    const defaultOption = {
+                                        id: 'default',
+                                        label: 'Default',
+                                        value: 'no_value',
+                                    };
+                                    setConfigOptions([defaultOption]);
+                                    setData('value', 'no_value');
+                                }
                             }
                         };
 
                         // Find the current option object for the selected value
                         return (
-                            <Stack spacing={2}>
-                                <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    alignItems="center"
-                                >
-                                    <BaseSettingSection label="Label">
-                                        <TextField
-                                            size="small"
-                                            variant="outlined"
-                                            value={currentLabel}
-                                            onChange={(e) =>
-                                                setCurrentLabel(e.target.value)
-                                            }
-                                            fullWidth
-                                        />
-                                    </BaseSettingSection>
-                                    <BaseSettingSection label="Value">
-                                        <TextField
-                                            size="small"
-                                            value={currentValue}
-                                            variant="outlined"
-                                            onChange={(e) =>
-                                                setCurrentValue(e.target.value)
-                                            }
-                                            fullWidth
-                                        />
-                                    </BaseSettingSection>
-                                </Stack>
+                            <Box sx={{ width: '100%' }}>
+                                {/* Headers */}
+                                <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+                                    <Box flex={1}>
+                                        <Typography
+                                            variant="caption"
+                                            fontWeight="medium"
+                                        >
+                                            Label
+                                        </Typography>
+                                    </Box>
+                                    <Box flex={1}>
+                                        <Typography
+                                            variant="caption"
+                                            fontWeight="medium"
+                                        >
+                                            Value
+                                        </Typography>
+                                    </Box>
+                                    <Box width={40} />
+                                </Box>
+
+                                {/* Options */}
+                                {configOptions.map((option) => (
+                                    <OptionRow
+                                        key={option.id}
+                                        label={option.label}
+                                        value={option.value}
+                                        onChange={(field, value) =>
+                                            handleOptionChange(
+                                                option.id,
+                                                field,
+                                                value,
+                                            )
+                                        }
+                                        onDelete={() =>
+                                            handleDeleteOption(option.id)
+                                        }
+                                        disabled={option.id === 'default'}
+                                    />
+                                ))}
+
+                                {/* Add Button */}
                                 <Button
-                                    startIcon={<AddCircleOutlineIcon />}
+                                    startIcon={<AddIcon />}
                                     onClick={handleAddOption}
                                     variant="outlined"
                                     size="small"
                                     fullWidth
-                                    disabled={!currentLabel || !currentValue}
                                 >
                                     Add Option
                                 </Button>
-                                {/* Current Value Selection */}
-                                <BaseSettingSection label="Selected Value">
-                                    <Autocomplete
-                                        value={
-                                            data.options.find(
-                                                (opt) =>
-                                                    opt.value === data.value,
-                                            ) ?? data.options[0]
-                                        }
-                                        options={data.options}
-                                        onChange={(_, newValue) => {
-                                            if (newValue) {
-                                                setData(
-                                                    'value',
-                                                    newValue.value,
-                                                );
-                                            }
-                                        }}
-                                        getOptionLabel={(option) =>
-                                            option.label
-                                        }
-                                        isOptionEqualToValue={(option, value) =>
-                                            option.value === value.value
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                size="small"
-                                                variant="outlined"
-                                            />
-                                        )}
-                                        fullWidth
-                                    />
-                                </BaseSettingSection>
-                            </Stack>
+                            </Box>
                         );
                     },
                 },
