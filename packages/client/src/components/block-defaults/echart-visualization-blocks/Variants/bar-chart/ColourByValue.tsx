@@ -94,7 +94,21 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 });
                 if (option['xAxis']['pixelname'] === jsonPropName['name']) {
                     setValuesToColour(option['xAxis']['data']);
-                    let dataArray = option['xAxis']['data'];
+                    let dataArray = option['xAxis']['data'].filter(
+                        (item) => !isNaN(item),
+                    );
+                    console.log(
+                        dataArray,
+                        Math.min(...dataArray),
+                        Math.max(...dataArray),
+                    );
+                    setNewRules((prevValues) => {
+                        return {
+                            ...prevValues,
+                            ['filterMinValue']: Math.min(...dataArray),
+                            ['filterMaxValue']: Math.max(...dataArray),
+                        };
+                    });
                 }
                 if (option['yAxis']['pixelname'] === jsonPropName['name']) {
                     let seriesIndex = option['series'].findIndex(
@@ -107,6 +121,21 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                         setValuesToColour(
                             option['series'][seriesIndex]['data'],
                         );
+                        let dataArray = option['series'][seriesIndex][
+                            'data'
+                        ].filter((item) => !isNaN(item));
+                        console.log(
+                            dataArray,
+                            Math.min(...dataArray),
+                            Math.max(...dataArray),
+                        );
+                        setNewRules((prevValues) => {
+                            return {
+                                ...prevValues,
+                                ['filterMinValue']: Math.min(...dataArray),
+                                ['filterMaxValue']: Math.max(...dataArray),
+                            };
+                        });
                     }
                 }
             }
@@ -153,15 +182,39 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         }
         if (newRules.columnComparision === '<') {
             //less than comparision
+            let dataVerify = option['xAxis']['data'];
+            dataVerify.forEach((item, index) => {
+                if (!isNaN(item) && item < newRules.filterValue) {
+                    positions.push(index);
+                }
+            });
         }
         if (newRules.columnComparision === '>') {
             //greater than comparision
+            let dataVerify = option['xAxis']['data'];
+            dataVerify.forEach((item, index) => {
+                if (!isNaN(item) && item > newRules.filterValue) {
+                    positions.push(index);
+                }
+            });
         }
         if (newRules.columnComparision === '<=') {
             //less than or equal to comparision
+            let dataVerify = option['xAxis']['data'];
+            dataVerify.forEach((item, index) => {
+                if (!isNaN(item) && item <= newRules.filterValue) {
+                    positions.push(index);
+                }
+            });
         }
         if (newRules.columnComparision === '>=') {
             //greater than or equal to comparision
+            let dataVerify = option['xAxis']['data'];
+            dataVerify.forEach((item, index) => {
+                if (!isNaN(item) && item >= newRules.filterValue) {
+                    positions.push(index);
+                }
+            });
         }
 
         return positions;
@@ -264,6 +317,12 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         },
     ];
 
+    const conditionForShowingField =
+        newRules.columnComparision == '<' ||
+        newRules.columnComparision == '>' ||
+        newRules.columnComparision == '<=' ||
+        newRules.columnComparision == '>=';
+
     const accordionDetails = (
         <Stack width={'100%'}>
             <StyledMainSection>
@@ -292,7 +351,10 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                         <td>{`${rule.column} ${
                                             rule.columnComparision
                                         } ${
-                                            rule.valuesToColour.length == 1
+                                            conditionForShowingField
+                                                ? rule.filterValue
+                                                : rule.valuesToColour.length ==
+                                                  1
                                                 ? rule.valuesToColour
                                                 : [
                                                       rule.valuesToColour.join(
@@ -400,25 +462,22 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             )}
             {
                 <StyledMainSection>
-                    <span>
-                        <label>Min: {newRules}</label>
-                        <br />
-                        <label>Max: {newRules}</label>
-                        <br />
-                    </span>
-                    {newRules.columnComparision == '<' ||
-                        newRules.columnComparision == '>' ||
-                        newRules.columnComparision == '<=' ||
-                        newRules.columnComparision == '>='}{' '}
-                    &&{' '}
-                    {
+                    {conditionForShowingField && (
+                        <StyledMainSection>
+                            <label>Min: {newRules.filterMinValue}</label>
+                            <br />
+                            <label>Max: {newRules.filterMaxValue}</label>
+                            <br />
+                        </StyledMainSection>
+                    )}
+                    {conditionForShowingField && (
                         <StyledTextField
                             label="Select Value"
                             name="filterValue"
                             value={newRules.filterValue}
                             onChange={(e) => updateFields('filterValue', e)}
                         ></StyledTextField>
-                    }
+                    )}
                 </StyledMainSection>
             }
             <StyledMainSection>
