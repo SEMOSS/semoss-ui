@@ -162,6 +162,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'contained',
                 color: 'primary',
                 value: '',
+                mode: 'transcribe',
             },
             listeners: {
                 onClick: [],
