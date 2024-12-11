@@ -118,6 +118,7 @@ export const AppPage = observer(() => {
                     }
                     endIcon={<EditOutlined fontSize="inherit" />}
                     component={Link}
+                    //@ts-expect-error this is expected. props are forwarded
                     to={`../../workspace/${appId}`}
                 >
                     Edit
