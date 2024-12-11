@@ -23,11 +23,12 @@ import BLOCK_IFRAME from '@/assets/img/BLOCK_IFRAME.png';
 import BLOCK_IMAGE from '@/assets/img/BLOCK_IMAGE.png';
 import BLOCK_LINK from '@/assets/img/BLOCK_LINK.png';
 import BLOCK_MARKDOWN from '@/assets/img/BLOCK_MARKDOWN.png';
-import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_PROGRESS_BAR from '@/assets/img/BLOCK_PROGRESS_BAR.png';
 import BLOCK_SELECT from '@/assets/img/BLOCK_SELECT.png';
 import BLOCK_TOGGLE_BUTTON from '@/assets/img/BLOCK_TOGGLE_BUTTON.png';
 import BLOCK_PDF_VIEWER from '@/assets/img/BLOCK_PDF.png';
+import BLOCK_RADIO from '@/assets/img/BLOCK_RADIO.png';
+import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -92,6 +93,33 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 required: false,
                 disabled: false,
                 value: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_INPUT,
+        image: BLOCK_RADIO,
+        name: 'Radio',
+        json: {
+            widget: 'radio',
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                value: 'no_value',
+                label: 'Radio Input',
+                isGroup: false,
+                options: [{ label: 'Default', value: 'no_value' }],
+                size: 'medium',
+                direction: 'column',
+                color: 'primary',
+                labelPlacement: 'end',
+                required: false,
+                disabled: false,
             },
             listeners: {
                 onChange: [],

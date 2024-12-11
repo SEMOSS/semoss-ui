@@ -14,7 +14,7 @@ import {
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { Add, Delete,SimCardDownload } from '@mui/icons-material';
+import { Add, Delete, SimCardDownload } from '@mui/icons-material';
 import { usePixel, useRootStore } from '@/hooks';
 
 const StyledTableContainer = styled(Table.Container)({
@@ -261,7 +261,7 @@ export const FileTable = (props: FileTableProps) => {
             setDeleteFilesModal(false);
         }
     };
-   
+
     const downloadSelectedFiles = async (files: FileExplorerProps[]) => {
         // construct the string of files
         setExportLoading(true);
@@ -286,7 +286,6 @@ export const FileTable = (props: FileTableProps) => {
             monolithStore.download(insightId, output);
         });
         setExportLoading(false);
-       
     };
 
     return (
@@ -320,21 +319,22 @@ export const FileTable = (props: FileTableProps) => {
                         )}
                         {selectedFiles.length > 0 && (
                             <Button
-                            
-                            disabled={exportLoading}
-                            startIcon={
-                                exportLoading ? (
-                                    <CircularProgress size="1em" />
-                                ) : (
-                                    <SimCardDownload />
-                                )
-                            }
-                            variant="outlined"
-                            onClick={() => downloadSelectedFiles(selectedFiles)}
-                            style={{ marginRight: '10px' }}
-                        >
-                            Download
-                        </Button>
+                                disabled={exportLoading}
+                                startIcon={
+                                    exportLoading ? (
+                                        <CircularProgress size="1em" />
+                                    ) : (
+                                        <SimCardDownload />
+                                    )
+                                }
+                                variant="outlined"
+                                onClick={() =>
+                                    downloadSelectedFiles(selectedFiles)
+                                }
+                                style={{ marginRight: '10px' }}
+                            >
+                                Download
+                            </Button>
                         )}
                         <Button
                             startIcon={<StyledIcon fontSize="small" />}
