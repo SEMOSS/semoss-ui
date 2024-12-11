@@ -1,7 +1,7 @@
 import { useBlock, useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Select, Stack, styled, Table, TextField } from '@semoss/ui';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -9,6 +9,8 @@ import { PathValue } from 'react-hook-form';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import { BAR_CHART_DATA } from '../../Echart.constants';
+import { Delete, Edit } from '@mui/icons-material';
+import { assign } from 'mobx/dist/internal';
 
 const StyledMainSection = styled('div')(() => ({
     display: 'inline-flex',
@@ -39,7 +41,13 @@ const INITIAL_NEW_RULES = {
     filterValue: 0,
     filterMinValue: 0,
     filterMaxValue: 0,
+    index: -1,
 };
+
+const StyledSpan = styled('span')(() => ({
+    display: 'flex',
+    justifyContent: 'space-around',
+}));
 
 const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
@@ -49,6 +57,10 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     const [valuesToColour, setValuesToColour] = useState([]);
     const [value, setValue] = useState({});
     const [appliedRules, setAppliedRules] = useState([]);
+    let functionCallReference = useRef({
+        valuesResetCheck: false,
+        assignedRules: [],
+    });
     const path = 'option';
     // get the value of the input (wrapped in usememo because of path prop)
     const computedValue = useMemo(() => {
@@ -68,6 +80,30 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
 
     useEffect(() => {
         setValue(computedValue);
+        if (functionCallReference.current.valuesResetCheck) {
+            let optionToValidate =
+                typeof computedValue === 'string'
+                    ? JSON.parse(computedValue)
+                    : computedValue;
+            let seriesIndex = optionToValidate['series'].findIndex((opt) =>
+                BAR_CHART_DATA.JSONVALUE.includes(opt.type),
+            );
+            let dataToValidate =
+                optionToValidate['series'][seriesIndex]['data'] || [];
+            let styleExists = dataToValidate.some(
+                (data) =>
+                    typeof data === 'object' &&
+                    data.hasOwnProperty('itemStyle'),
+            );
+            if (!styleExists) {
+                updateExistingRules(
+                    functionCallReference.current.assignedRules,
+                    computedValue,
+                );
+                functionCallReference.current.valuesResetCheck = false;
+                functionCallReference.current.assignedRules = [];
+            }
+        }
     }, [computedValue]);
 
     function updateFields(column, event) {
@@ -146,11 +182,14 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             return array.indexOf(item, indexPosition);
         }
     }
-    function getXAxisPositions() {
+    function getXAxisPositions(sourceObject: any = {}) {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let positions = [];
-        if (newRules.columnComparision === '==') {
-            newRules.valuesToColour.forEach((item) => {
+        if (Object.keys(sourceObject).length === 0) {
+            sourceObject = newRules;
+        }
+        if (sourceObject.columnComparision === '==') {
+            sourceObject.valuesToColour.forEach((item) => {
                 let xAxisPosition = [];
                 option['xAxis']['data'].forEach((itemAvailable, index) => {
                     if (item === itemAvailable) {
@@ -161,9 +200,9 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 positions = [...xAxisPosition, ...positions];
             });
         }
-        if (newRules.columnComparision === '!=') {
+        if (sourceObject.columnComparision === '!=') {
             let dataVerify = option['xAxis']['data'];
-            newRules.valuesToColour.forEach((item) => {
+            sourceObject.valuesToColour.forEach((item) => {
                 let xAxisPosition = [];
                 option['xAxis']['data'].forEach((itemAvailable, index) => {
                     if (item === itemAvailable) {
@@ -180,38 +219,38 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             });
             positions = xAxisReversedPositions;
         }
-        if (newRules.columnComparision === '<') {
+        if (sourceObject.columnComparision === '<') {
             //less than comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item < newRules.filterValue) {
+                if (!isNaN(item) && item < sourceObject.filterValue) {
                     positions.push(index);
                 }
             });
         }
-        if (newRules.columnComparision === '>') {
+        if (sourceObject.columnComparision === '>') {
             //greater than comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item > newRules.filterValue) {
+                if (!isNaN(item) && item > sourceObject.filterValue) {
                     positions.push(index);
                 }
             });
         }
-        if (newRules.columnComparision === '<=') {
+        if (sourceObject.columnComparision === '<=') {
             //less than or equal to comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item <= newRules.filterValue) {
+                if (!isNaN(item) && item <= sourceObject.filterValue) {
                     positions.push(index);
                 }
             });
         }
-        if (newRules.columnComparision === '>=') {
+        if (sourceObject.columnComparision === '>=') {
             //greater than or equal to comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item >= newRules.filterValue) {
+                if (!isNaN(item) && item >= sourceObject.filterValue) {
                     positions.push(index);
                 }
             });
@@ -219,8 +258,11 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
 
         return positions;
     }
-    function updatePositionsForAxis(option, positions) {
+    function updatePositionsForAxis(option, positions, rules: any = {}) {
         let optionToUpdate = option;
+        if (Object.keys(rules).length === 0) {
+            rules = newRules;
+        }
         positions.forEach((item) => {
             let currentValue = optionToUpdate[item];
             if (typeof optionToUpdate[item] === 'object') {
@@ -228,14 +270,14 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                     ...optionToUpdate[item],
                     ['itemStyle']: {
                         ...optionToUpdate[item]['itemStyle'],
-                        ['color']: newRules.columnColour,
+                        ['color']: rules.columnColour,
                     },
                 };
             } else {
                 optionToUpdate[item] = {
                     ['value']: currentValue,
                     ['itemStyle']: {
-                        ['color']: newRules.columnColour,
+                        ['color']: rules.columnColour,
                     },
                 };
             }
@@ -244,50 +286,77 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     }
     function updateData() {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
-        let xAxisPosition = getXAxisPositions();
-        let optionUpdated = option;
-        if (xAxisPosition.length) {
-            let seriesIndex = option['series'].findIndex((opt) =>
-                BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-            );
-            if (seriesIndex > -1) {
-                let data = option['series'][seriesIndex]['data'];
-                let updatedAxisValues = updatePositionsForAxis(
-                    option['series'][seriesIndex]['data'],
-                    xAxisPosition,
-                );
-                // let valueToUpdate  = option['series'][seriesIndex]['data'][xAxisPosition];
-                // if(typeof valueToUpdate !== 'object'){
-                //     option['series'][seriesIndex]['data'][xAxisPosition] = {
-                //         value: valueToUpdate,
-                //         ['itemStyle']:{
-                //             ...option['series'][seriesIndex]['data'][xAxisPosition],
-                //             ['color']: newRules.columnColour
-                //         }
-                //     };
-                //     option['customSettings'] = {
-                //         ...option['customSettings'],
-                //         ['optionStateChange']: true,
-                //     };
-                // }
-                option['series'][seriesIndex]['data'] = updatedAxisValues;
-                option['customSettings'] = {
-                    ...option['customSettings'],
-                    ['optionStateChange']: true,
-                };
-                optionUpdated = option;
-                setTimeout(() => {
-                    try {
-                        updateChart(optionUpdated);
-                        let appliedRulesUpdated = appliedRules;
-                        appliedRulesUpdated.push(newRules);
-                        setAppliedRules(appliedRulesUpdated);
-                        setNewRules(INITIAL_NEW_RULES);
-                    } catch (e) {
-                        console.log(e);
-                    }
-                }, 300);
+        let seriesIndex = option['series'].findIndex((opt) =>
+            BAR_CHART_DATA.JSONVALUE.includes(opt.type),
+        );
+        if (newRules.index === -1) {
+            let xAxisPosition = getXAxisPositions();
+            let optionUpdated = option;
+            if (xAxisPosition.length) {
+                if (seriesIndex > -1) {
+                    let data = option['series'][seriesIndex]['data'];
+                    let updatedAxisValues = updatePositionsForAxis(
+                        option['series'][seriesIndex]['data'],
+                        xAxisPosition,
+                    );
+                    // let valueToUpdate  = option['series'][seriesIndex]['data'][xAxisPosition];
+                    // if(typeof valueToUpdate !== 'object'){
+                    //     option['series'][seriesIndex]['data'][xAxisPosition] = {
+                    //         value: valueToUpdate,
+                    //         ['itemStyle']:{
+                    //             ...option['series'][seriesIndex]['data'][xAxisPosition],
+                    //             ['color']: newRules.columnColour
+                    //         }
+                    //     };
+                    //     option['customSettings'] = {
+                    //         ...option['customSettings'],
+                    //         ['optionStateChange']: true,
+                    //     };
+                    // }
+                    option['series'][seriesIndex]['data'] = updatedAxisValues;
+                    option['customSettings'] = {
+                        ...option['customSettings'],
+                        ['optionStateChange']: true,
+                    };
+                    optionUpdated = option;
+                    setTimeout(() => {
+                        try {
+                            updateChart(optionUpdated);
+                            let appliedRulesUpdated = appliedRules;
+                            appliedRulesUpdated.push({
+                                ...newRules,
+                                ['index']: appliedRulesUpdated.length,
+                            });
+                            setAppliedRules(appliedRulesUpdated);
+                            setNewRules(INITIAL_NEW_RULES);
+                        } catch (e) {
+                            console.log(e);
+                        }
+                    }, 300);
+                }
             }
+        } else {
+            let index = newRules.index;
+            let assignedRules = appliedRules;
+            console.log(
+                [
+                    ...assignedRules.filter(
+                        (item, itemIndex) => itemIndex < index,
+                    ),
+                    newRules,
+                    ...assignedRules.filter(
+                        (item, itemIndex) => itemIndex > index,
+                    ),
+                ],
+                'updatedEdit',
+            );
+            let updatedRules = [
+                ...assignedRules.filter((item, itemIndex) => itemIndex < index),
+                newRules,
+                ...assignedRules.filter((item, itemIndex) => itemIndex > index),
+            ];
+            updateExistingRules(updatedRules, computedValue);
+            setNewRules(INITIAL_NEW_RULES);
         }
     }
     const columnComparision = [
@@ -329,7 +398,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 <h3>Applied Rules</h3>
             </StyledMainSection>
             <StyledMainSection>
-                <Table>
+                <table>
                     <thead>
                         <tr>
                             <td>Column</td>
@@ -343,25 +412,47 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                 <td colSpan={3}>No Records Found</td>
                             </tr>
                         )}
-                        {appliedRules.length !== 0 &&
-                            appliedRules.map((rule) => {
-                                return (
-                                    <tr>
-                                        <td>{rule.column}</td>
-                                        <td>{`${rule.column} ${
-                                            rule.columnComparision
-                                        } ${
-                                            rule.columnComparision === '==' ||
-                                            rule.columnComparision === '!='
-                                                ? rule.valuesToColour.join(',')
-                                                : rule.filterValue
-                                        }`}</td>
-                                        <td></td>
-                                    </tr>
-                                );
-                            })}
+                        {appliedRules.map((rule, index) => {
+                            return (
+                                <tr>
+                                    <td>{rule.column}</td>
+                                    <td>{`${rule.column} ${
+                                        rule.columnComparision
+                                    } ${
+                                        rule.columnComparision === '==' ||
+                                        rule.columnComparision === '!='
+                                            ? rule.valuesToColour.join(',')
+                                            : rule.filterValue
+                                    }`}</td>
+                                    <td>
+                                        <StyledSpan>
+                                            <span
+                                                onClick={() =>
+                                                    deleteAssignedRule(
+                                                        rule,
+                                                        index,
+                                                    )
+                                                }
+                                            >
+                                                <Delete />
+                                            </span>
+                                            <span
+                                                onClick={() =>
+                                                    editAssignedRule(
+                                                        rule,
+                                                        index,
+                                                    )
+                                                }
+                                            >
+                                                <Edit />
+                                            </span>
+                                        </StyledSpan>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
-                </Table>
+                </table>
             </StyledMainSection>
             <StyledMainSection>
                 <h3>New Rule</h3>
@@ -479,6 +570,77 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             </StyledMainSection>
         </Stack>
     );
+    function updateExistingRules(assignedRules, valueCompute) {
+        setTimeout(() => {
+            console.log(assignedRules, 'appliedRulesonUpdateExistingRules');
+            let option =
+                typeof valueCompute === 'string'
+                    ? JSON.parse(valueCompute)
+                    : valueCompute;
+            assignedRules.forEach((item, index) => {
+                let xAxisPositions = getXAxisPositions(item);
+                let seriesIndex = option['series'].findIndex((item) =>
+                    BAR_CHART_DATA.JSONVALUE.includes(item.type),
+                );
+                let optionUpdatedList = updatePositionsForAxis(
+                    option['series'][seriesIndex]['data'],
+                    xAxisPositions,
+                    item,
+                );
+                option['series'][seriesIndex]['data'] = optionUpdatedList;
+                option = {
+                    ...option,
+                    ['customSettings']: {
+                        ...option['customSettings'],
+                        ['optionStateChange']: true,
+                    },
+                };
+                let chartOption = option;
+                updateChart(chartOption);
+            });
+        }, 100);
+    }
+    function deleteAssignedRule(rule, index) {
+        let assignedRules = appliedRules;
+        assignedRules = assignedRules.filter(
+            (item, itemindex) => index !== itemindex,
+        );
+        setAppliedRules(assignedRules);
+        console.log(assignedRules, 'assignedRules');
+        setTimeout(() => {
+            try {
+                let dataVal =
+                    typeof value === 'string' ? JSON.parse(value) : value;
+                let dataValUpdated = dataVal;
+                let seriesIndex = dataVal['series'].findIndex((opt) =>
+                    BAR_CHART_DATA.JSONVALUE.includes(opt.type),
+                );
+                let dataArrayToUpdate = dataVal['series'][seriesIndex]['data'];
+                dataArrayToUpdate = dataArrayToUpdate.map((item) => {
+                    return {
+                        ['value']: item.value || item,
+                    };
+                });
+                console.log(dataArrayToUpdate, 'dataArrayToupdate');
+                dataVal['series'][seriesIndex]['data'] = dataArrayToUpdate;
+                dataVal['customSettings'] = {
+                    ...dataVal['customSettings'],
+                    ['optionStateChange']: true,
+                };
+                dataValUpdated = dataVal;
+                updateChart(dataValUpdated);
+                functionCallReference.current.valuesResetCheck = true;
+                functionCallReference.current.assignedRules = assignedRules;
+                // updateExistingRules(assignedRules);
+            } catch (e) {
+                console.log('e', e);
+            }
+        }, 100);
+    }
+    function editAssignedRule(rule, index) {
+        let assignedRules = rule;
+        setNewRules(assignedRules);
+    }
 
     return (
         <CustomAccordianBlock

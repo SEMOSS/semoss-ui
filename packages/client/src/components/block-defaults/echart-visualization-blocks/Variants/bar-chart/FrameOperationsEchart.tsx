@@ -74,13 +74,46 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                 };
             });
             setColumnsData(columns);
-            setSelectedValues((prevValues) => {
-                return {
-                    ...prevValues,
-                    ['xAxis']: data.option['xAxis'].pixelvalue,
-                    ['yAxis']: data.option['yAxis'].pixelvalue,
+            let option = typeof value === 'string' ? JSON.parse(value) : value;
+            if (
+                option['xAxis'].hasOwnProperty('pixelvalue') &&
+                option['yAxis'].hasOwnProperty('pixelvalue')
+            ) {
+                setSelectedValues((prevValues) => {
+                    return {
+                        ...prevValues,
+                        ['xAxis']: option['xAxis'].pixelvalue,
+                        ['yAxis']: option['yAxis'].pixelvalue,
+                    };
+                });
+                let tempVal = JSON.parse(computedValue) || {};
+                let seriesIndex =
+                    tempVal['series'].findIndex((item) =>
+                        BAR_CHART_DATA.JSONVALUE.includes(item.type),
+                    ) || 0;
+                tempVal['xAxis'] = {
+                    ...tempVal['xAxis'],
+                    ['name']: option['xAxis'].pixelname,
+                    ['pixelname']: option['xAxis'].pixelname,
+                    ['pixelvalue']: option['xAxis'].pixelvalue,
                 };
-            });
+                tempVal['yAxis'] = {
+                    ...tempVal['yAxis'],
+                    ['name']: option['yAxis'].pixelname,
+                    ['pixelname']: option['yAxis'].pixelname,
+                    ['pixelvalue']: option['yAxis'].selector,
+                };
+                tempVal['series'][seriesIndex] = {
+                    ...tempVal['series'][seriesIndex],
+                    ['name']: option['yAxis'].pixelname,
+                };
+                tempVal['customSettings'] = {
+                    ...tempVal['customSettings'],
+                    ['optionStateChange']: false,
+                };
+                dispatchData(tempVal);
+                setData('columns', columns);
+            }
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
