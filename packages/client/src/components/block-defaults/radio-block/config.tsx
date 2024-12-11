@@ -184,28 +184,47 @@ export const config: BlockConfig<RadioBlockDef> = {
                     render: ({ id }) => {
                         const { data, setData } =
                             useBlockSettings<RadioBlockDef>(id);
+                        const [nextId, setNextId] = useState(
+                            data.options.length,
+                        );
                         const [configOptions, setConfigOptions] = useState<
                             ConfigOption[]
-                        >([
-                            {
-                                id: 'default',
-                                label: data.options[0].label,
-                                value: data.options[0].value,
-                            },
-                        ]);
+                        >(() => {
+                            // Initialize with default if no options exist
+                            if (!data.options.length) {
+                                return [
+                                    {
+                                        id: 'option-0',
+                                        label: 'Default',
+                                        value: 'no_value',
+                                    },
+                                ];
+                            }
+                            return data.options.map((opt, index) => ({
+                                id: `option-${index}`,
+                                label: opt.label,
+                                value: opt.value,
+                            }));
+                        });
 
-                        // Sync config options to actual radio options
+                        // Ensure we always have at least one complete option
                         useEffect(() => {
-                            const validOptions = configOptions.filter(
-                                (opt) => opt.label && opt.value,
+                            const completeOptions = configOptions.filter(
+                                (opt) => opt.label.trim() && opt.value.trim(),
                             );
-                            setData(
-                                'options',
-                                validOptions.map((opt) => ({
-                                    label: opt.label,
-                                    value: opt.value,
-                                })),
-                            );
+                            if (completeOptions.length === 0) {
+                                // Reset to default state
+                                const defaultOption = {
+                                    id: 'option-0',
+                                    label: 'Default',
+                                    value: 'no_value',
+                                };
+                                setConfigOptions([defaultOption]);
+                                setData('options', [
+                                    { label: 'Default', value: 'no_value' },
+                                ]);
+                                setData('value', 'no_value');
+                            }
                         }, [configOptions]);
 
                         const handleOptionChange = (
@@ -220,17 +239,21 @@ export const config: BlockConfig<RadioBlockDef> = {
                             );
                             setConfigOptions(updatedOptions);
 
-                            // Immediately update the actual options for the radio group
-                            setData(
-                                'options',
-                                updatedOptions.map((opt) => ({
+                            // Only update the actual radio options with options that have both label and value
+                            const completeOptions = updatedOptions
+                                .filter(
+                                    (opt) =>
+                                        opt.label.trim() && opt.value.trim(),
+                                )
+                                .map((opt) => ({
                                     label: opt.label,
                                     value: opt.value,
-                                })),
-                            );
+                                }));
 
-                            // If we're changing the value of the currently selected option,
-                            // update the selected value too
+                            if (completeOptions.length > 0) {
+                                setData('options', completeOptions);
+                            }
+
                             if (
                                 field === 'value' &&
                                 data.value ===
@@ -243,29 +266,31 @@ export const config: BlockConfig<RadioBlockDef> = {
                         };
 
                         const handleAddOption = () => {
-                            setConfigOptions((current) => [
-                                ...current,
-                                {
-                                    id: `option-${Date.now()}`,
-                                    label: '',
-                                    value: '',
-                                },
-                            ]);
+                            const newId = `option-${nextId}`;
+                            const newOptions = [
+                                ...configOptions,
+                                { id: newId, label: '', value: '' },
+                            ];
+                            setConfigOptions(newOptions);
+                            setNextId(nextId + 1);
                         };
 
-                        // Delete actual option
                         const handleDeleteOption = (optionId: string) => {
-                            const optionToDelete = configOptions.find(
-                                (opt) => opt.id === optionId,
-                            );
                             const remainingOptions = configOptions.filter(
                                 (opt) => opt.id !== optionId,
                             );
 
-                            if (remainingOptions.length === 0) {
-                                // If deleting last option, create new default
+                            const completeRemainingOptions =
+                                remainingOptions.filter(
+                                    (opt) =>
+                                        opt.label.trim() && opt.value.trim(),
+                                );
+
+                            if (completeRemainingOptions.length === 0) {
+                                // If deleting would leave us with no complete options,
+                                // reset to default state
                                 const defaultOption = {
-                                    id: 'default',
+                                    id: 'option-0',
                                     label: 'Default',
                                     value: 'no_value',
                                 };
@@ -278,19 +303,23 @@ export const config: BlockConfig<RadioBlockDef> = {
                                 setConfigOptions(remainingOptions);
                                 setData(
                                     'options',
-                                    remainingOptions.map((opt) => ({
+                                    completeRemainingOptions.map((opt) => ({
                                         label: opt.label,
                                         value: opt.value,
                                     })),
                                 );
 
-                                // If deleted option was selected, select first remaining option
-                                if (data.value === optionToDelete?.value) {
-                                    setData('value', remainingOptions[0].value);
+                                const deletedOption = configOptions.find(
+                                    (opt) => opt.id === optionId,
+                                );
+                                if (data.value === deletedOption?.value) {
+                                    setData(
+                                        'value',
+                                        completeRemainingOptions[0].value,
+                                    );
                                 }
                             }
                         };
-
                         // Find the current option object for the selected value
                         return (
                             <Box sx={{ width: '100%' }}>
@@ -355,7 +384,11 @@ export const config: BlockConfig<RadioBlockDef> = {
                                                     opt.value === data.value,
                                             ) || null
                                         }
-                                        options={configOptions}
+                                        options={configOptions.filter(
+                                            (opt) =>
+                                                opt.label.trim() &&
+                                                opt.value.trim(),
+                                        )}
                                         onChange={(_, newValue) => {
                                             if (newValue) {
                                                 setData(
