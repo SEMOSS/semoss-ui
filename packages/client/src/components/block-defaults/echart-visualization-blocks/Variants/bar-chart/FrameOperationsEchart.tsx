@@ -101,7 +101,7 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                     ...tempVal['yAxis'],
                     ['name']: option['yAxis'].pixelname,
                     ['pixelname']: option['yAxis'].pixelname,
-                    ['pixelvalue']: option['yAxis'].selector,
+                    ['pixelvalue']: option['yAxis'].pixelvalue,
                 };
                 tempVal['series'][seriesIndex] = {
                     ...tempVal['series'][seriesIndex],
