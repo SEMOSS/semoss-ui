@@ -91,8 +91,16 @@ export const ImportForm = (props) => {
 
     const watchedFieldRef = useRef({});
 
-    const { control, handleSubmit, reset, watch, setValue, getValues } =
-        useForm();
+    //** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
+    const {
+        control,
+        handleSubmit,
+        reset,
+        watch,
+        setValue,
+        getValues,
+        setFocus,
+    } = useForm();
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -146,7 +154,7 @@ export const ImportForm = (props) => {
      * to call the reactor that dependsOn that field
      */
     useEffect(() => {
-        console.warn('WATCHED FIELD CHANGED');
+        // console.warn('WATCHED FIELD CHANGED');
         const destructuredFieldRefs = Object.entries(watchedFieldRef.current);
 
         if (!destructuredFieldRefs.length) {
@@ -636,6 +644,68 @@ export const ImportForm = (props) => {
         return regex.test(inputString);
     }
 
+    /**
+     * Check if custom validation is needed
+     * @params form field and user input
+     * @returns boolean
+     */
+    const validateFormField = async (field, userInput): Promise<boolean> => {
+        //TODO: Validate Types.
+        //TODO: Update Syntax or rule name. This won't handle other pixels
+        const pixelToExecute = field.rules.custom.value.replace(
+            '[VALUE]',
+            userInput,
+        );
+
+        const response = await monolithStore.runQuery(pixelToExecute);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+            return;
+        }
+
+        //if the name already exists then the engine name is not valid
+        if (output.exists) {
+            setFocus(field.fieldName);
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * @desc Checks if the field has display rules set
+     * If it does, it will hide other fields based on the value of the field
+     * @param field
+     * @param value
+     */
+
+    const checkForDisplayRulesSet = (field, value) => {
+        const selectedDefaultField = fields.find(
+            (f) => f.fieldName === field.name,
+        );
+        if (selectedDefaultField?.displayRules?.hideOtherFields) {
+            selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
+                const optionValue = fth.value;
+                fields.forEach((f) => {
+                    if (f.fieldName === fth.fieldName) {
+                        f.hidden = optionValue.includes(value);
+                    }
+                });
+                dispatch({
+                    type: 'field',
+                    field: 'defaultFields',
+                    value: fields,
+                });
+            });
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
@@ -646,9 +716,29 @@ export const ImportForm = (props) => {
                                 <Controller
                                     name={val.fieldName}
                                     control={control}
-                                    rules={val.rules}
-                                    render={({ field, fieldState }) => {
-                                        const hasError = fieldState.error;
+                                    rules={{
+                                        required: val.rules.required,
+                                        validate: {
+                                            ...(val.rules.custom && {
+                                                checkField: async (fieldVal) =>
+                                                    validateFormField(
+                                                        val,
+                                                        fieldVal,
+                                                    ),
+                                            }),
+                                        },
+                                        pattern: {
+                                            ...(val.rules.pattern && {
+                                                value: val.rules.pattern.value,
+                                                message:
+                                                    val.rules.pattern.message,
+                                            }),
+                                        },
+                                    }}
+                                    render={({
+                                        field: { ref, ...field },
+                                        fieldState: { invalid, error },
+                                    }) => {
                                         if (
                                             val.options.component ===
                                             'text-field'
@@ -656,6 +746,7 @@ export const ImportForm = (props) => {
                                             return (
                                                 <TextField
                                                     id={`${val.fieldName}`}
+                                                    inputRef={ref}
                                                     fullWidth
                                                     required={
                                                         val.rules.required
@@ -689,7 +780,18 @@ export const ImportForm = (props) => {
                                                     //             </Tooltip>
                                                     //         ) : null,
                                                     // }}
-                                                    helperText={val.helperText}
+                                                    helperText={
+                                                        invalid
+                                                            ? error?.type ==
+                                                              'checkField'
+                                                                ? val.rules
+                                                                      .custom
+                                                                      .message
+                                                                : error?.message
+                                                            : val.helperText
+                                                    }
+                                                    error={invalid}
+                                                    {...field}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -732,9 +834,13 @@ export const ImportForm = (props) => {
                                                             ? field.value
                                                             : ''
                                                     }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
+                                                    onChange={(value) => {
+                                                        field.onChange(value);
+                                                        checkForDisplayRulesSet(
+                                                            field,
+                                                            value.target.value,
+                                                        );
+                                                    }}
                                                     helperText={val.helperText}
                                                 >
                                                     {val.options.options.map(

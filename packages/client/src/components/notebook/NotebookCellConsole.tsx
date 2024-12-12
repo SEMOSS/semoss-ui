@@ -1,5 +1,7 @@
 import React from 'react';
+import { JsonViewer } from '@textea/json-viewer';
 import { Typography, styled } from '@semoss/ui';
+import { isOutputJSON } from '@/utility/general';
 
 const StyledConsole = styled('div')({
     display: 'flex',
@@ -18,11 +20,25 @@ export const NotebookCellConsole = (props: ConsoleProps) => {
     return (
         <StyledConsole>
             {messages.map((m, i) => {
-                return (
-                    <Typography key={`${i}-${m}`} variant="caption">
-                        {m}
-                    </Typography>
-                );
+                const value = isOutputJSON(m);
+                if (value != null) {
+                    return (
+                        <JsonViewer
+                            key={`${i}-${m}`}
+                            value={value}
+                            displayDataTypes={true}
+                            displaySize={true}
+                            displayComma={true}
+                            rootName={false}
+                        />
+                    );
+                } else {
+                    return (
+                        <Typography key={`${i}-${m}`} variant="caption">
+                            {m}
+                        </Typography>
+                    );
+                }
             })}
         </StyledConsole>
     );

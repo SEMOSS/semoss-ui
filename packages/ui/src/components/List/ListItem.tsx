@@ -1,6 +1,10 @@
-import { ListItem as MuiListItem, SxProps } from "@mui/material";
+import { ForwardedRef, forwardRef } from "react";
+import {
+    ListItem as MuiListItem,
+    ListItemProps as MuiListItemProps,
+} from "@mui/material";
 
-export interface ListItemProps {
+export interface ListItemProps extends MuiListItemProps {
     /**
      * Defines the `align-items` style property.
      * @default 'center'
@@ -64,25 +68,19 @@ export interface ListItemProps {
      * @deprecated checkout [ListItemButton](/material-ui/api/list-item-button/) instead
      */
     selected?: boolean;
-
-    /**
-     * The system prop that allows defining system overrides as well as additional CSS styles.
-     */
-    sx?: SxProps;
-
-    /**
-     * Events we need access to for list items
-     */
-    onClick?: React.MouseEventHandler<HTMLLIElement>;
-    onMouseDown?: React.MouseEventHandler<HTMLLIElement>;
-    onHover?: React.MouseEventHandler<HTMLLIElement>;
-    onMouseOver?: React.MouseEventHandler<HTMLLIElement>;
-    onMouseLeave?: React.MouseEventHandler<HTMLLIElement>;
-    onFocus?: React.FocusEventHandler<HTMLLIElement>;
-    onBlur?: React.FocusEventHandler<HTMLLIElement>;
 }
 
-export const ListItem = (props: ListItemProps) => {
-    const { sx } = props;
-    return <MuiListItem sx={sx} {...props} />;
+const _ListItem = (
+    props: ListItemProps,
+    ref: ForwardedRef<HTMLLIElement>,
+): JSX.Element => {
+    const { children, ...otherProps } = props;
+
+    return (
+        <MuiListItem ref={ref} {...otherProps}>
+            {children}
+        </MuiListItem>
+    );
 };
+
+export const ListItem = forwardRef(_ListItem);

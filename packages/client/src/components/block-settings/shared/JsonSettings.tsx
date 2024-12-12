@@ -21,10 +21,25 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Height of the editor
+     */
+    height?: string;
+
+    /**
+     * Width of the editor
+     */
+    width?: string;
 }
 
 export const JsonSettings = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+        height = '100%',
+        width = '100%',
+    }: JsonSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
         const { state, notebook } = useBlocks();
 
@@ -234,8 +249,8 @@ export const JsonSettings = observer(
         return (
             <Suspense fallback={<>...</>}>
                 <Editor
-                    width="100%"
-                    height="100%"
+                    height={height}
+                    width={width}
                     value={value}
                     language="json"
                     options={{
