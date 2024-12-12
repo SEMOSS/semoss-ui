@@ -9,6 +9,7 @@ import {
     getNearestBlockElement,
     getNearestSlot,
     getNearestSlotElement,
+    getRootElement,
 } from '@/stores';
 
 import { SelectedMask } from './SelectedMask';
@@ -69,16 +70,19 @@ const StyledContentInner = styled('div', {
 );
 
 interface ScreenProps {
+    reference: string;
     /** Children to render */
     children: React.ReactNode;
 }
 
 export const Screen = observer((props: ScreenProps) => {
-    const { children } = props;
+    const { reference, children } = props;
 
     // save the ref
     const rootRef = useRef<HTMLDivElement | null>(null);
+    // const rootRef = useRef<string | null>(reference);
 
+    const [showMask, setShowMask] = useState(true);
     // get the designer
     const { state } = useBlocks();
     const { designer } = useDesigner();
@@ -245,14 +249,30 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
+    useEffect(() => {
+        const rootEl = rootRef.current;
+        const currEle = document.querySelector(
+            `[data-block="${designer.selected}"]`,
+        );
+        setShowMask(rootEl.contains(currEle));
+    }, [designer.selected]);
+
+    useEffect(() => {
+        const rootEl = rootRef.current;
+        const currEle = document.querySelector(
+            `[data-block="${designer.hovered}"]`,
+        );
+        setShowMask(rootEl.contains(currEle));
+    }, [designer.hovered]);
+
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
-            {designer.selected && <SelectedMask />}
-            {designer.hovered && <HoveredMask />}
+        <StyledContainer data-block={`root-${reference}`} ref={rootRef}>
+            {designer.selected && showMask && <SelectedMask />}
+            {designer.hovered && showMask && <HoveredMask />}
             {designer.selected && !designer.drag.active && (
                 <DeleteDuplicateMask />
             )}

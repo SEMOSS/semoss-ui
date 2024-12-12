@@ -66,7 +66,7 @@ export const DeleteDuplicateMask = observer(() => {
         }
 
         // get the root element
-        const rootEle = getRootElement();
+        const rootEle = getRootElement(designer.selected);
 
         // reposition the mask
         const repositionMask = () => {
@@ -103,7 +103,7 @@ export const DeleteDuplicateMask = observer(() => {
 
     const getStyle = () => {
         // get position of page root block element
-        const rootElement = getRootElement();
+        const rootElement = getRootElement(designer.selected);
         const rootElementSize = rootElement.getBoundingClientRect();
         // get position of selected block element
         const selectedElement = getBlockElement(designer.selected);

@@ -7,17 +7,23 @@ import { ErrorBoundary } from '@/components/common';
 import { Renderer } from '@/components/blocks';
 import { Screen } from './Screen';
 
-export const Designer = observer((): JSX.Element => {
+interface DesignerPanelProps {
+    /** Id of the designer */
+    id: string;
+}
+
+export const Designer = observer((props: DesignerPanelProps): JSX.Element => {
     const { designer } = useDesigner();
+    const id = props.id;
 
     if (!designer) {
         return null;
     }
 
     return (
-        <Screen>
+        <Screen reference={id || designer.rendered}>
             <ErrorBoundary title={'Something went wrong!'}>
-                <Renderer id={designer.rendered} />
+                <Renderer id={id || designer.rendered} />
             </ErrorBoundary>
         </Screen>
     );

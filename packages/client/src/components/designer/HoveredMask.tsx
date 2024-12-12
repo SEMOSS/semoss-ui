@@ -77,7 +77,7 @@ export const HoveredMask = observer(() => {
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
         // get the root element
-        const rootEle = getRootElement();
+        const rootEle = getRootElement(designer.hovered);
 
         // reposition the mask
         const repositionMask = () => {
@@ -119,7 +119,9 @@ export const HoveredMask = observer(() => {
             height={size.height}
             width={size.width}
             hideHoveredMask={
-                designer.hovered === designer.selected || designer.drag.active
+                false ||
+                designer.hovered === designer.selected ||
+                designer.drag.active
             }
         >
             <StyledTitle>

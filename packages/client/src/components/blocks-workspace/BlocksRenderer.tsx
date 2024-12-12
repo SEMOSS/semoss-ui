@@ -4,6 +4,7 @@ import { useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import {
+    Block,
     SerializedState,
     StateStore,
     MigrationManager,
@@ -14,7 +15,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 import { Typography } from '@semoss/ui';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { Routes, Route, useSearchParams, useLocation } from 'react-router-dom';
 
 const ACTIVE = 'page-1';
 
@@ -37,6 +38,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
 
+    const [allPages, setAllPages] = useState<Block[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
@@ -117,6 +119,8 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
                 // set it
                 setStateStore(store);
+                const allBlocks = Object.values(store.blocks);
+                setAllPages(allBlocks.filter((b) => b.widget == 'page'));
 
                 if (appId) {
                     const { errors: errs } = await runPixel(
@@ -162,9 +166,23 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
         }
     }
 
+    const getPage = (pageId: string) => {
+        return (
+            <Blocks state={stateStore} registry={DefaultBlocks}>
+                <Renderer id={pageId} />
+            </Blocks>
+        );
+    };
+
     return (
-        <Blocks state={stateStore} registry={DefaultBlocks}>
-            <Renderer id={ACTIVE} />
-        </Blocks>
+        <Routes>
+            {allPages.map((page) => (
+                <Route
+                    path={page.data.route as string}
+                    element={getPage(page.id)}
+                    key={page.id}
+                />
+            ))}
+        </Routes>
     );
 });
