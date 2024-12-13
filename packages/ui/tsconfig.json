@@ -22,6 +22,8 @@
         "outDir": "dist",
 
         /* Skip */
+        "isolatedModules": true,
+        // "incremental": true,
         "skipLibCheck": true
     },
     "include": ["src"],
