@@ -199,3 +199,25 @@ export const debounced = (callback, delay) => {
 
     return debouncedCallback;
 };
+
+/**
+ * @desc Checks if output and verify if its a JSON object
+ */
+export const isOutputJSON = (output: unknown) => {
+    if (typeof output === 'object' && output !== null) {
+        return output;
+    }
+    if (typeof output === 'string') {
+        try {
+            return JSON.parse(output);
+        } catch (e) {
+            const validateJsonString = output.replace(/'/g, '"');
+            try {
+                return JSON.parse(validateJsonString);
+            } catch (InnerError) {
+                return null;
+            }
+        }
+    }
+    return null;
+};

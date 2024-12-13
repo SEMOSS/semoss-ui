@@ -5,7 +5,12 @@ import { Checklist } from "./";
 const meta: Meta<typeof Checklist> = {
     title: "Components/Checklist",
     component: Checklist,
-    args: {},
+    args: {
+        options: ["Option 1", "Option 2", "Option 3"],
+        onChange: (selected) => console.log(selected),
+        sx: { width: "100%" },
+        checked: ["1"],
+    },
     argTypes: {},
 };
 

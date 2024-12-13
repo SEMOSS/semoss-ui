@@ -11,6 +11,8 @@ interface ConfigStoreInterface {
     authenticated: boolean;
     /** InsightID to run actions against */
     insightID: string;
+    /** Session ID */
+    userEpoch: string;
     /** User information (if logged in) */
     user: {
         loggedIn: boolean;
@@ -76,6 +78,7 @@ export class ConfigStore {
         status: 'INITIALIZING',
         authenticated: false,
         insightID: '',
+        userEpoch: '',
         user: {
             loggedIn: false,
             id: '',
@@ -209,19 +212,27 @@ export class ConfigStore {
         const { monolithStore } = this._root;
 
         try {
-            const { pixelReturn, insightId } = await monolithStore.run(
-                'new',
-                `GetUserInfo();`,
-            );
+            const { pixelReturn, insightId, errors } = await monolithStore.run<
+                [
+                    {
+                        [key: string]: {
+                            id: string;
+                            name: string;
+                            email: string;
+                            admin: boolean;
+                        };
+                    } & {
+                        userEpoch: string;
+                    },
+                ]
+            >('new', `GetUserInfo();`);
 
             // track if the user is an admin
             const isAdmin = await monolithStore.isAdminUser();
 
             const output = pixelReturn[0].output;
-            const type = pixelReturn[0].operationType;
-
-            if (type.indexOf('ERROR') > -1) {
-                throw Error(output as string);
+            if (errors.length > 0) {
+                throw Error(errors.join(''));
             }
 
             runInAction(() => {
@@ -235,6 +246,10 @@ export class ConfigStore {
                     admin: false,
                 };
 
+                // set the userEpoch
+                this._store.userEpoch = output.userEpoch;
+
+                // get the user based on provider
                 if (output['SAML']) {
                     user = output['SAML'];
                 } else if (output['NATIVE']) {

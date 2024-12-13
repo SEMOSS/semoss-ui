@@ -3,6 +3,7 @@ import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
 import { useBlocksPixel } from './useBlocksPixel';
 import { useBlockSettings } from './useBlockSettings';
+import { useCacheState } from './useCacheState';
 import { useEngine } from './useEngine';
 import { useFrame } from './useFrame';
 import { useFrameHeaders } from './useFrameHeaders';
@@ -25,6 +26,7 @@ export {
     useBlocks,
     useBlocksPixel,
     useBlockSettings,
+    useCacheState,
     useEngine,
     useFrame,
     useFrameHeaders,
