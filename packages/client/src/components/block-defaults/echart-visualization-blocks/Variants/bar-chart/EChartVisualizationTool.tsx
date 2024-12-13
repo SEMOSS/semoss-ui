@@ -189,14 +189,18 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                     option['dataZoom'].push({
                         type: 'slider',
                         xAxisIndex: [0],
-                        show: true,
+                        show: event.hasOwnProperty('xAxisZoomShow')
+                            ? event.xAxisZoomShow
+                            : false,
                     });
                 }
             } else {
                 option = {
                     ...option,
                     ['dataZoom']: {
-                        show: true,
+                        show: event.hasOwnProperty('xAxisZoomShow')
+                            ? event.xAxisZoomShow
+                            : false,
                         type: 'slider',
                         xAxisIndex: [0],
                     },
@@ -224,7 +228,9 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                         event.yAxisZoomShow;
                 } else {
                     option['dataZoom'].push({
-                        show: true,
+                        show: event.hasOwnProperty('yAxisDataZoomShow')
+                            ? event.yAxisDataZoomShow
+                            : false,
                         type: 'slider',
                         yAxisIndex: [0],
                     });
@@ -233,7 +239,9 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                 option = {
                     ...option,
                     ['dataZoom']: {
-                        show: true,
+                        show: event.hasOwnProperty('yAxisDataZoomShow')
+                            ? event.yAxisDataZoomShow
+                            : false,
                         type: 'slider',
                         yAxisIndex: [0],
                     },

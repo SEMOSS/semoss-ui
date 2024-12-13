@@ -203,6 +203,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                 <StyledTextField
                     value={chartStyle.fontColour}
                     id="change-font-colour"
+                    type="color"
                     onChange={(e) => handleInputChange(e, 'fontColour')}
                 />
             </StyledChartSubSection>

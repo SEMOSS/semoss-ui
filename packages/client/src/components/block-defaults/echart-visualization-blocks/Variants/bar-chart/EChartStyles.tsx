@@ -118,7 +118,7 @@ export const EChartStyles = ({ updateChart, chartType, option }) => {
             <StyledBarStylesContainer>
                 <label htmlFor="bar-colour">Change Bar Colours</label>
                 <StyledTextField
-                    type={'text'}
+                    type={'color'}
                     value={styleData.barColour}
                     id="bar-colour"
                     onChange={(e) => handleBarColourChange(e)}

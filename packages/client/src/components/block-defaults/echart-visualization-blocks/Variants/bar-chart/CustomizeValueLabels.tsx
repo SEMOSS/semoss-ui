@@ -251,6 +251,7 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
                     variant={'outlined'}
                     id="font-weight"
                     label="Select Font Colour"
+                    type="color"
                     // defaultValue={fieldData.fontcolour}
                     value={fieldData.fontcolour}
                     onChange={(e) => updateFields('fontcolour', e, 'text')}

@@ -475,6 +475,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 <StyledTextField
                     label="Enter Colour"
                     name="columnColour"
+                    type="color"
                     value={newRules.columnColour}
                     onChange={(e) => updateFields('columnColour', e)}
                 ></StyledTextField>

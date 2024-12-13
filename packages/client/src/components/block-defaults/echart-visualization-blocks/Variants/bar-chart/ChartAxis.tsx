@@ -80,6 +80,7 @@ const ChartAxis = ({ option, updateChart }) => {
                 ...chartAxisStateData,
             };
         });
+        console.log(chartAxisStateData, 'chartAxisStateData');
     }, []);
 
     function updateXAxisState(axisState, axisValue) {
