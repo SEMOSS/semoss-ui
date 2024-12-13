@@ -1,17 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-
 import {
     styled,
     Grid,
-    IconButton,
     Stack,
     TextField,
     Typography,
     Divider,
 } from '@semoss/ui';
-
-import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
+import { DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 
 const StyledTitle = styled('div')(({ theme }) => ({
@@ -24,11 +21,11 @@ const StyledTitle = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledMenu = styled('div')(({ theme }) => ({
-    position: 'relative',
-    display: 'flex',
+const StyledMenu = styled(Stack)(() => ({
     height: '100%',
+    width: '100%',
     overflowY: 'auto',
+    overflowX: 'hidden',
 }));
 
 const StyledSection = styled('div')(({ theme }) => ({
@@ -101,7 +98,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
     return (
         <Panel>
-            <Stack>
+            <Stack height="100%">
                 <StyledTitle>
                     <Typography variant={'h6'}>{title}</Typography>
                 </StyledTitle>
@@ -161,19 +158,33 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     // </Grid>
                     // </StyledMenu>
 
-                    <Stack overflow="auto" height="100%">
+                    <StyledMenu>
                         {renderedItems.map((sectionItems, index) => (
-                            <Stack key={index}>
-                                {index > 0 && <Divider />}
+                            <Stack key={index} width="100%">
+                                {index > 0 && (
+                                    <Divider variant="fullWidth" flexItem />
+                                )}
                                 <Stack padding={2}>
                                     <Typography variant="subtitle2" key={index}>
                                         {sectionItems[0].section}
                                     </Typography>
                                 </Stack>
-                                <div>items</div>
+                                <Grid container spacing={2} width="100%">
+                                    {sectionItems.map((block, index) => (
+                                        <Grid
+                                            item
+                                            key={index}
+                                            style={{
+                                                backgroundColor: 'primary',
+                                            }}
+                                        >
+                                            <div>{block.name}</div>
+                                        </Grid>
+                                    ))}
+                                </Grid>
                             </Stack>
                         ))}
-                    </Stack>
+                    </StyledMenu>
                 ) : (
                     <Stack padding={2}>
                         <Typography variant="subtitle2">
