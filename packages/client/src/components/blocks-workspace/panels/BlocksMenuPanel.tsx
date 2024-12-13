@@ -19,7 +19,8 @@ const StyledTitle = styled('div')(({ theme }) => ({
     paddingRight: theme.spacing(2),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
-    backgroundColor: theme.palette.action.focus,
+    backgroundColor: theme.palette.primary.selected,
+    color: theme.palette.info.dark,
     width: '100%',
 }));
 
@@ -57,14 +58,17 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
     const sortedItems: DesignerMenuItem[][] = useMemo(() => {
         const sectionRecord: Record<string, DesignerMenuItem[]> = {};
 
+        // sort items by section
         items.forEach((item) => {
             if (!sectionRecord[item.section]) sectionRecord[item.section] = [];
             sectionRecord[item.section].push(item);
         });
 
+        // sort sections by name
         return Object.keys(sectionRecord)
             .sort()
             .map((section) =>
+                // sort items within each section by name
                 sectionRecord[section].sort((a, b) =>
                     a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
                 ),
@@ -79,25 +83,27 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
         const s = search.replace(/[^a-z0-9]/gi, '').toLowerCase();
 
-        return sortedItems
-            .map((sectionItems) =>
-                sectionItems.filter((item) =>
-                    item.name
-                        .replace(/[^a-z0-9]/gi, '')
-                        .toLowerCase()
-                        .includes(s),
-                ),
-            )
-            .filter((sectionItems) => sectionItems.length);
+        return (
+            sortedItems
+                .map((sectionItems) =>
+                    // pattern match on s
+                    sectionItems.filter((item) =>
+                        item.name
+                            .replace(/[^a-z0-9]/gi, '')
+                            .toLowerCase()
+                            .includes(s),
+                    ),
+                )
+                // only include sections that have remaining blocks
+                .filter((sectionItems) => sectionItems.length)
+        );
     }, [sortedItems, search]);
 
     return (
         <Panel>
-            <Stack spacing={0}>
+            <Stack>
                 <StyledTitle>
-                    <Typography variant={'h6'} color="primary">
-                        {title}
-                    </Typography>
+                    <Typography variant={'h6'}>{title}</Typography>
                 </StyledTitle>
                 <Stack padding={2}>
                     <TextField
@@ -109,7 +115,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </Stack>
-                <Divider orientation="horizontal" variant="fullWidth" />
+                <Divider />
                 {renderedItems.length ? (
                     // <StyledMenu>
                     // <Grid container spacing={2}>
@@ -154,14 +160,23 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                     //     })}
                     // </Grid>
                     // </StyledMenu>
-                    <Typography variant="caption">No items found</Typography>
+
+                    <Stack overflow="auto" height="100%">
+                        {renderedItems.map((sectionItems, index) => (
+                            <Stack key={index}>
+                                {index > 0 && <Divider />}
+                                <Stack padding={2}>
+                                    <Typography variant="subtitle2" key={index}>
+                                        {sectionItems[0].section}
+                                    </Typography>
+                                </Stack>
+                                <div>items</div>
+                            </Stack>
+                        ))}
+                    </Stack>
                 ) : (
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'center'}
-                    >
-                        <Typography variant="caption">
+                    <Stack padding={2}>
+                        <Typography variant="subtitle2">
                             No items found
                         </Typography>
                     </Stack>
