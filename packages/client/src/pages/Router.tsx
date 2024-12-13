@@ -66,7 +66,7 @@ export const Router = observer(() => {
                     )}
                 </Route>
                 <Route path="workspace/:appId" element={<WorkspacePage />} />
-                <Route path="s/:appId" element={<SharePage />} />
+                <Route path="s/:appId/*" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             {showCookieNotice && (

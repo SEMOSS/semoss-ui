@@ -22,7 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
+    // padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -40,7 +40,7 @@ const StyledContent = styled('div', {
 }));
 
 const StyledContentOuter = styled('div')(({ theme }) => ({
-    padding: theme.spacing(1),
+    // padding: theme.spacing(1),
     display: 'flex',
     flex: 1,
     minWidth: '100%',
@@ -250,7 +250,7 @@ export const Screen = observer((props: ScreenProps) => {
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
+        <StyledContainer data-block="root" ref={rootRef} className="dnd-screen">
             {designer.selected && <SelectedMask />}
             {designer.hovered && <HoveredMask />}
             {designer.selected && !designer.drag.active && (
