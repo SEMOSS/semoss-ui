@@ -1,1 +1,1 @@
-export { Icon, IconProps } from "@mui/material";
+export { Icon, type IconProps } from "@mui/material";

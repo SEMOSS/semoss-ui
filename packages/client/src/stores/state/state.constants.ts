@@ -7,6 +7,7 @@ export const INPUT_BLOCK_TYPES = [
     'upload',
     'checkbox',
     'toggle-button',
+    'radio',
 ];
 
 export const VARIABLE_TYPES = [
