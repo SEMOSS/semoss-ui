@@ -28,6 +28,7 @@ import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 import { WorkspaceTabs } from './WorkspaceTabs';
 import { reaction } from 'mobx';
+import { Screen } from '../designer/Screen';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -279,19 +280,21 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         <StyledSpacer>
                             {model ? (
                                 <>
-                                    <Layout
-                                        ref={layoutRef}
-                                        model={model}
-                                        factory={(node) => {
-                                            return factory(
-                                                node,
-                                                layoutRef.current,
-                                            );
-                                        }}
-                                        onModelChange={() => {
-                                            workspace.saveToCache();
-                                        }}
-                                    />
+                                    <Screen>
+                                        <Layout
+                                            ref={layoutRef}
+                                            model={model}
+                                            factory={(node) => {
+                                                return factory(
+                                                    node,
+                                                    layoutRef.current,
+                                                );
+                                            }}
+                                            onModelChange={() => {
+                                                workspace.saveToCache();
+                                            }}
+                                        />
+                                    </Screen>
                                     <StyledActions
                                         direction="column"
                                         justifyContent={'center'}

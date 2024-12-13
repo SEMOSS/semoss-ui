@@ -21,10 +21,8 @@ export const Designer = observer((props: DesignerPanelProps): JSX.Element => {
     }
 
     return (
-        <Screen reference={id || designer.rendered}>
-            <ErrorBoundary title={'Something went wrong!'}>
-                <Renderer id={id || designer.rendered} />
-            </ErrorBoundary>
-        </Screen>
+        <ErrorBoundary title={'Something went wrong!'}>
+            <Renderer id={id || designer.rendered} />
+        </ErrorBoundary>
     );
 });
