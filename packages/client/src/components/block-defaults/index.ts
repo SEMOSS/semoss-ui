@@ -35,10 +35,10 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from './vega-visualization-block';
-import {
-    config as EchartVisualizationBlockConfig,
-    EchartVisualizationBlockDef,
-} from './echart-block';
+// import {
+//     config as EchartVisualizationBlockConfig,
+//     EchartVisualizationBlockDef,
+// } from './echart-visualization-blocks/Variants/PieChart';
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
@@ -135,7 +135,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [RadioBlockConfig.widget]: RadioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
-    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
 };
 
 export {
@@ -163,5 +162,4 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
-    EchartVisualizationBlockConfig,
 };

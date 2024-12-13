@@ -12,8 +12,6 @@ import { TooltipComponent } from 'echarts/components';
 import { styled } from '@mui/material';
 import { createClassFromSpec } from 'react-vega';
 import { Paths, PathValue } from '@/types';
-import { GridBlockColumn } from '../grid-block/grid-block.types';
-import { handleClick1 } from './CustomEvents';
 import { CustomContextMenu } from './CustomContextMenu';
 import { useBlocksPixel, useFrame, useFrameHeaders } from '@/hooks';
 
@@ -127,7 +125,7 @@ export interface EchartVisualizationBlockDef {
     slots: never;
 }
 
-export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
+export const Pie: BlockComponent = observer(({ id }) => {
     const { attrs } = useBlock<EchartVisualizationBlockDef>(id);
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{

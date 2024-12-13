@@ -1,10 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { Menu, MenuItem } from '@mui/material';
-
 import { useBlock, useFrame } from '@/hooks';
-
-import { GridBlockColumn } from '../grid-block/grid-block.types';
-import { GridBlockDef } from '../grid-block/GridBlock';
+import { GridBlockDef } from '../../../grid-block/GridBlock';
 
 export interface GridBlockContextMenuProps {
     /** ID of the block */

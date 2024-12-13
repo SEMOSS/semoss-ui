@@ -14,7 +14,6 @@ import { CustomizeTitle } from './CustomTitle';
 import { EchartVisualizationBlockDef } from './echartblocks';
 import { CustomBlockColumnSettings } from './CustomBlockColumnSettings';
 import { ColorByValue } from './ColorByValue';
-import { forEach } from 'vega-lite/build/src/encoding';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -85,7 +84,7 @@ export interface E_PieChartDef {
     showTool: boolean;
     id: any;
 }
-const E_PieChart = observer<any>(({ showTool, id, frame }) => {
+const E_PieChart = observer<any>(({ id, frame }) => {
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     // setData('frame.name', '');
     // setData('columns', []);

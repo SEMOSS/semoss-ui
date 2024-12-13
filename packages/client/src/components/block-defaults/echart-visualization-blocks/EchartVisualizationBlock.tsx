@@ -4,6 +4,8 @@ import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/Bar';
+//import E_PieChart from './Variants/PieChart/pie-chart-feature';
+import { Pie } from './Variants/PieChart/echartblocks';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
@@ -51,6 +53,7 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
     return (
         <StyledNoDataContainer {...attrs}>
             {data.variation === 'echart-bar-graph' && <Bar id={id} />}
+            {data.variation === 'echart-pie-chart' && <Pie id={id}></Pie>}
         </StyledNoDataContainer>
     );
 });

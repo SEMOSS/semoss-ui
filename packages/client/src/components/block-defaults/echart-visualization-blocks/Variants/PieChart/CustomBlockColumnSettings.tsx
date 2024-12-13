@@ -18,7 +18,7 @@ import {
 } from '@/hooks';
 import { BaseSettingSection } from '@/components/block-settings';
 import { Sync } from '@mui/icons-material';
-import { GridBlockColumn } from '../grid-block/grid-block.types';
+import { GridBlockColumn } from '../../../grid-block/grid-block.types';
 import { Stack } from '@mui/material';
 import { EchartVisualizationBlockDef } from './echartblocks';
 import { PathValue } from '@/types';

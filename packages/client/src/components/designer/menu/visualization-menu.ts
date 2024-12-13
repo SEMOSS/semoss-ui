@@ -83,7 +83,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
         name: 'Echart Pie Chart',
         image: PIE_CHART,
         json: {
-            widget: 'echart',
+            widget: 'e-chart',
             data: {
                 variation: 'echart-pie-chart',
                 option: {
