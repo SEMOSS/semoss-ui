@@ -13,6 +13,8 @@ import { CustomizeValueLabels } from './CustomizeValueLabels';
 import { CustomizeTitle } from './CustomTitle';
 import { EchartVisualizationBlockDef } from './echartblocks';
 import { CustomBlockColumnSettings } from './CustomBlockColumnSettings';
+import { ColorByValue } from './ColorByValue';
+import { forEach } from 'vega-lite/build/src/encoding';
 
 const StyledChartContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -83,10 +85,10 @@ export interface E_PieChartDef {
     showTool: boolean;
     id: any;
 }
-const E_PieChart = observer<any>(({ showTool, id }) => {
+const E_PieChart = observer<any>(({ showTool, id, frame }) => {
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    setData('frame.name', '');
-    setData('columns', []);
+    // setData('frame.name', '');
+    // setData('columns', []);
     const [LegendSection, setlegendSection] = useState({
         legendVertical: '',
         legendHorizontal: '',
@@ -453,6 +455,131 @@ const E_PieChart = observer<any>(({ showTool, id }) => {
         option['title']['textStyle'].fontFamily = values.titleFontFamily;
         setData('option', option as PathValue<any, any>);
     }
+    function updateColorByValue(value) {
+        let option = data.option;
+        let selectedValue = value;
+        let color = option['color'];
+        switch (selectedValue.selectedComparator) {
+            case 'is Equal To':
+                let selectedValues = selectedValue.selectedData;
+                let optionData = option['series'][0].data.map((item, index) => {
+                    if (selectedValues.includes(item.value)) {
+                        return {
+                            ...item,
+                            itemStyle: { color: value.selectedColor },
+                        };
+                    } else {
+                        return {
+                            ...item,
+                            itemStyle: { color: color[index] },
+                        };
+                    }
+                });
+                option['series'][0].data = optionData;
+                setData('option', option as PathValue<any, any>);
+                break;
+            case 'is Not Equal To':
+                let SelectedValue = selectedValue.selectedData;
+                let optionsData = option['series'][0].data.map(
+                    (item, index) => {
+                        if (SelectedValue.includes(item.value)) {
+                            return {
+                                ...item,
+                                itemStyle: { color: color[index] },
+                            };
+                        } else {
+                            return {
+                                ...item,
+                                itemStyle: { color: value.selectedColor },
+                            };
+                        }
+                    },
+                );
+                option['series'][0].data = optionsData;
+                setData('option', option as PathValue<any, any>);
+                break;
+            case 'is Less Than':
+                let inputValue = selectedValue.selectedData;
+                let optionsData1 = option['series'][0].data.map(
+                    (item, index) => {
+                        if (item.value < inputValue) {
+                            return {
+                                ...item,
+                                itemStyle: { color: value.selectedColor },
+                            };
+                        } else {
+                            return {
+                                ...item,
+                                itemStyle: { color: color[index] },
+                            };
+                        }
+                    },
+                );
+                option['series'][0].data = optionsData1;
+                setData('option', option as PathValue<any, any>);
+                break;
+            case 'is Less Than or Equal To':
+                let inputValue2 = selectedValue.selectedData;
+                let optionsData2 = option['series'][0].data.map(
+                    (item, index) => {
+                        if (item.value <= inputValue2) {
+                            return {
+                                ...item,
+                                itemStyle: { color: value.selectedColor },
+                            };
+                        } else {
+                            return {
+                                ...item,
+                                itemStyle: { color: color[index] },
+                            };
+                        }
+                    },
+                );
+                option['series'][0].data = optionsData2;
+                setData('option', option as PathValue<any, any>);
+                break;
+            case 'is Greater Than':
+                let inputValue3 = selectedValue.selectedData;
+                let optionsData3 = option['series'][0].data.map(
+                    (item, index) => {
+                        if (item.value > inputValue3) {
+                            return {
+                                ...item,
+                                itemStyle: { color: value.selectedColor },
+                            };
+                        } else {
+                            return {
+                                ...item,
+                                itemStyle: { color: color[index] },
+                            };
+                        }
+                    },
+                );
+                option['series'][0].data = optionsData3;
+                setData('option', option as PathValue<any, any>);
+                break;
+            case 'is Greater Than or Equal To':
+                let inputValue4 = selectedValue.selectedData;
+                let optionsData4 = option['series'][0].data.map(
+                    (item, index) => {
+                        if (item.value >= inputValue4) {
+                            return {
+                                ...item,
+                                itemStyle: { color: value.selectedColor },
+                            };
+                        } else {
+                            return {
+                                ...item,
+                                itemStyle: { color: color[index] },
+                            };
+                        }
+                    },
+                );
+                option['series'][0].data = optionsData4;
+                setData('option', option as PathValue<any, any>);
+                break;
+        }
+    }
     return (
         <Stack height={'100%'}>
             <StyledChartContainer>
@@ -472,6 +599,11 @@ const E_PieChart = observer<any>(({ showTool, id }) => {
                         updateChart={updateCustonTitle}
                         data={data}
                     ></CustomizeTitle>
+                    <ColorByValue
+                        updateChart={updateColorByValue}
+                        option={data.option}
+                        id={id}
+                    ></ColorByValue>
                     {/* <CustomizeColorPalette
                         updateChart={updateCustonTitle}
                         option={data}
@@ -483,6 +615,7 @@ const E_PieChart = observer<any>(({ showTool, id }) => {
                     />
                     <CustomBlockColumnSettings
                         id={id}
+                        frame={frame}
                     ></CustomBlockColumnSettings>
                 </div>
             </StyledChartContainer>

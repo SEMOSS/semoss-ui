@@ -22,32 +22,60 @@ import { GridBlockColumn } from '../grid-block/grid-block.types';
 import { Stack } from '@mui/material';
 import { EchartVisualizationBlockDef } from './echartblocks';
 import { PathValue } from '@/types';
+import { useEffect } from 'react';
 
 interface GridBlockColumnSettingsProps {
     /** Id of the block */
     id: string;
+    /** Frame that the user is interacting with */
+    frame: ReturnType<typeof useFrame>;
 }
 const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
 export const CustomBlockColumnSettings = observer(
-    ({ id }: GridBlockColumnSettingsProps) => {
+    ({ id, frame }: GridBlockColumnSettingsProps) => {
         debugger;
         const notification = useNotification();
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
+        useEffect(() => {
+            try {
+                const LableData: [] = [];
+                const ValueData: [] = [];
+                let valueIndex = data.frame.valueIndex;
+                let labelIndex = data.frame.labelIndex;
+                frame1.data.values.forEach((item: []) => {
+                    ValueData.push(item[valueIndex]),
+                        setData('frame.values', ValueData);
+                });
+                frame1.data.values.forEach((item: []) => {
+                    LableData.push(item[labelIndex]),
+                        setData('frame.labels', LableData);
+                });
+                let labels = data.frame.labels;
+                let values = data.frame.values;
+                const Data = values.map((value, index) => ({
+                    value: value,
+                    name: labels[index],
+                }));
+                data.option['series'][0].data = Data;
+                setData('option', data.option as PathValue<any, any>);
+            } catch {}
+        });
+
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>('GetFrames();', {
             data: [],
         });
-        const frame = useFrame(data.frame.name, {
+        const frame1 = useFrame(data.frame?.name, {
             selector: 'QueryAll()',
             offset: 0,
             limit: 10,
             enableCount: true,
         });
-        const frameHeaders = useFrameHeaders(data.frame.name);
+        const frameHeaders = useFrameHeaders(data.frame?.name);
         const syncFrameHeaders = () => {
             let labels = data.frame.labels;
             let values = data.frame.values;
@@ -93,8 +121,9 @@ export const CustomBlockColumnSettings = observer(
             const index = frameHeaders.data.list.findIndex(
                 (item) => item.alias === value,
             );
+            setData('frame.valueIndex', index);
             const Data: [] = [];
-            frame.data.values.forEach((item: []) => {
+            frame1.data.values.forEach((item: []) => {
                 Data.push(item[index]), setData('frame.values', Data);
             });
         }
@@ -103,8 +132,9 @@ export const CustomBlockColumnSettings = observer(
             const index = frameHeaders.data.list.findIndex(
                 (item) => item.alias === value,
             );
+            setData('frame.labelIndex', index);
             let Labels: [] = [];
-            frame.data.values.forEach((item: []) => {
+            frame1.data.values.forEach((item: []) => {
                 Labels.push(item[index]), setData('frame.labels', Labels);
             });
         }
@@ -140,7 +170,7 @@ export const CustomBlockColumnSettings = observer(
                         <Sync />
                     </IconButton>
                 </BaseSettingSection>
-                {data.frame.name !== '' && (
+                {data.frame?.name !== '' && (
                     <Stack
                         direction={'column'}
                         width={'100%'}

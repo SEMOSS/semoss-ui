@@ -1,16 +1,21 @@
 import { observer } from 'mobx-react-lite';
-import { useRef } from 'react';
-import { useBlock } from '@/hooks';
+import { useEffect, useRef, useState } from 'react';
+import { useBlock, useBlockSettings } from '@/hooks';
 import { BlockComponent } from '@/stores';
 
 import EChartsReact from 'echarts-for-react';
+import ReactEChart from 'echarts-for-react';
 import * as echarts from 'echarts/core';
 import { BarChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 import { styled } from '@mui/material';
 import { createClassFromSpec } from 'react-vega';
+import { Paths, PathValue } from '@/types';
 import { GridBlockColumn } from '../grid-block/grid-block.types';
+import { handleClick1 } from './CustomEvents';
+import { CustomContextMenu } from './CustomContextMenu';
+import { useBlocksPixel, useFrame, useFrameHeaders } from '@/hooks';
 
 export type EchartBlockColumn = {
     /** Name of the column */
@@ -110,6 +115,8 @@ export interface EchartVisualizationBlockDef {
             name: string;
             values: [];
             labels: [];
+            labelIndex: number;
+            valueIndex: number;
         };
         specJson: undefined | string;
         variation?: undefined | string;
@@ -119,19 +126,69 @@ export interface EchartVisualizationBlockDef {
     listeners: never;
     slots: never;
 }
-const onClickChart = () => {};
 
 export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
-    const chartRef = useRef();
-    // echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
+    const { attrs } = useBlock<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const [contextMenu, setContextMenu] = useState<{
+        mouseX: number;
+        mouseY: number;
+        value: any;
+    } | null>(null);
+    const frame = useFrame(data?.frame?.name, {
+        selector: 'QueryAll()',
+        offset: 0,
+        limit: 10,
+        enableCount: true,
+    });
 
-    const handleOnContextMenu = () => {
-        // prevent the default interaction
-        event.preventDefault();
-        console.log('Empty Paramsssss');
-        //const chartInstance = chartRef.current.getEchartsInstance();
-        //chartInstance.on("click",(e)=>console.log("Click",e))
+    const handleClick = (params) => {
+        console.log('Data', data);
+        console.log('Params', params);
+        let option = data.option;
+        let selectedIndex = params.dataIndex;
+        let chartData = option['series'][0].data;
+        console.log('ChartData', chartData);
+        chartData = chartData.map((item, index) => ({
+            ...item,
+            itemStyle: {
+                borderColor: selectedIndex === index ? '#000000' : '#fff',
+                borderWidth: selectedIndex === index ? 2 : 1,
+            },
+        }));
+        console.log('Revised Chart Data', chartData);
+        data.option['series'][0].data = chartData;
+        console.log('Final Data', data);
+        setData('option', data.option as PathValue<any, any>);
+    };
+
+    const onClickChart = {
+        contextmenu: (params) => {
+            if (params.componentType === 'series') {
+                let mouseX = params.event.event.clientX;
+                setContextMenu({
+                    mouseX: params.event.event.clientX,
+                    mouseY: params.event.event.clientY,
+                    value: { label: 'SCHOOL', value: params.data.name },
+                });
+
+                params.event.event.preventDefault();
+            }
+        },
+        click: (params) => {
+            let option = data.option;
+            let selectedIndex = params.dataIndex;
+            let chartData = option['series'][0].data;
+            chartData = chartData.map((item, index) => ({
+                ...item,
+                itemStyle: {
+                    borderColor: selectedIndex === index ? '#000000' : '#fff',
+                    borderWidth: selectedIndex === index ? 2 : 1,
+                },
+            }));
+            data.option['series'][0].data = chartData;
+            setData('option', data.option as PathValue<any, any>);
+        },
     };
     if (!data.specJson) {
         return (
@@ -145,26 +202,24 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
         // try to parse, and show error otherwise
         try {
             const specJson = JSON.parse(data.specJson);
-
+            if (frame.count != -1) {
+            }
             const Chart = createClassFromSpec({ spec: specJson });
-
+            setData('option', data.option as PathValue<any, any>);
             return (
-                <StyledChartContainer
-                    {...attrs}
-                    onContextMenu={(e) => {
-                        console.log('Right clikcedddd', e);
-                        //handleOnContextMenu()
-                    }}
-                >
-                    {/* <Chart actions={false} /> */}
-                    <EChartsReact
-                        ref={chartRef}
+                <StyledChartContainer {...attrs} id={id}>
+                    <ReactEChart
+                        //ref={chartRef}
                         option={data.option}
-                        onChartReady={handleOnContextMenu}
-                        echarts={echarts}
-                    >
-                        {' '}
-                    </EChartsReact>
+                        onEvents={onClickChart}
+                        //onEvents={handleClick1}
+                    ></ReactEChart>
+                    <CustomContextMenu
+                        id={id}
+                        frame={frame}
+                        contextMenu={contextMenu}
+                        onClose={() => setContextMenu(null)}
+                    ></CustomContextMenu>
                 </StyledChartContainer>
             );
         } catch (e) {
@@ -181,6 +236,12 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
             <StyledChartContainer {...attrs}>
                 {/* <Chart actions={false} /> */}
                 <EChartsReact option={option}> </EChartsReact>
+                <CustomContextMenu
+                    id={id}
+                    frame={frame}
+                    contextMenu={contextMenu}
+                    onClose={() => setContextMenu(null)}
+                ></CustomContextMenu>
             </StyledChartContainer>
         );
     }

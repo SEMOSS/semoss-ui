@@ -16,6 +16,8 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
             name: '',
             labels: [],
             values: [],
+            labelIndex: -1,
+            valueIndex: -1,
         },
         specJson: '',
         variation: undefined,
