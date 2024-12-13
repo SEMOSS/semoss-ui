@@ -12,6 +12,7 @@ import { EchartVisualizationBlockDef } from './EchartVisualizationBlock';
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',
 }));
+import E_PieChart from './Variants/PieChart/pie-chart-feature';
 
 export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlock<EchartVisualizationBlockDef>(id);
@@ -24,7 +25,11 @@ export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
                 {data.variation === 'echart-bar-graph' && (
                     <EChartVisualizationTool showTool={true} id={id} />
                 )}
+                {data.variation === 'echart-pie-chart' && (
+                    <E_PieChart id={id}></E_PieChart>
+                )}
             </StyledContainer>
+
             {/* <CodeEditorSettings id={id} path="specJson" /> */}
             {!data.variation && (
                 <AIGenerationSettings

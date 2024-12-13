@@ -204,14 +204,15 @@ export const Bar: BlockComponent = observer(({ id }) => {
         };
     }
     console.log('option', data.option, frameData.data);
-    if (
-        data.option.hasOwnProperty('customSettings') &&
-        !data.option['customSettings']['optionStateChange']
-    ) {
+    // if (
+    //     data.option.hasOwnProperty('customSettings') &&
+    //     !data.option['customSettings']['optionStateChange']
+    // )
+    const tempFunc = () => {
         const optionDataProcessed = processReceivedData(frameData.data);
         data.option['xAxis']['data'] = optionDataProcessed['xAxis'];
         data.option['series'][0]['data'] = optionDataProcessed['yAxis'];
-    }
+    };
     //this function is automatically called, when the chart is ready
     function echartsLoaded(echartInstance) {
         if (!echartState.hasOwnProperty('chartLoaded')) {
@@ -223,7 +224,9 @@ export const Bar: BlockComponent = observer(({ id }) => {
             });
         }
     }
-
+    if (frameData.data?.values?.length) {
+        tempFunc();
+    }
     return (
         <StyledMainContainer id={id}>
             <EChartsReact option={data.option} onChartReady={echartsLoaded} />

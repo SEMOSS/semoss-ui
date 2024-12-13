@@ -16,6 +16,7 @@ import { getValueByPath } from '@/utility';
 
 export interface FrameOperationsEChartProps {
     id: string;
+    updateFrame: (option) => void;
 }
 
 const StyledSubSection = styled('div')(() => ({
@@ -33,7 +34,7 @@ const StyledSelect = styled(Select)(() => ({
 }));
 
 export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
-    ({ id }) => {
+    ({ id, updateFrame }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
@@ -79,14 +80,21 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                 option['xAxis'].hasOwnProperty('pixelvalue') &&
                 option['yAxis'].hasOwnProperty('pixelvalue')
             ) {
-                setSelectedValues((prevValues) => {
-                    return {
-                        ...prevValues,
-                        ['xAxis']: option['xAxis'].pixelvalue,
-                        ['yAxis']: option['yAxis'].pixelvalue,
-                    };
-                });
+                let colsToUpdated = [
+                    {
+                        name: option['xAxis']['pixelname'],
+                        selector: option['xAxis']['pixelvalue'],
+                        width: undefined,
+                    },
+                    {
+                        name: option['yAxis']['pixelname'],
+                        selector: option['yAxis']['pixelvalue'],
+                        width: undefined,
+                    },
+                ];
+                setData('columns', colsToUpdated);
                 let tempVal = JSON.parse(computedValue) || {};
+                let tempValUpdated = tempVal;
                 let seriesIndex =
                     tempVal['series'].findIndex((item) =>
                         BAR_CHART_DATA.JSONVALUE.includes(item.type),
@@ -110,9 +118,18 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
                 tempVal['customSettings'] = {
                     ...tempVal['customSettings'],
                     ['optionStateChange']: false,
+                    // ['syncTriggered']: true,
                 };
-                dispatchData(tempVal);
-                setData('columns', columns);
+                setSelectedValues((prevValues) => {
+                    return {
+                        ...prevValues,
+                        ['xAxis']: option['xAxis'].pixelvalue,
+                        ['yAxis']: option['yAxis'].pixelvalue,
+                    };
+                });
+                tempValUpdated = tempVal;
+                updateFrame(tempValUpdated);
+                dispatchData(tempValUpdated);
             }
         }
 

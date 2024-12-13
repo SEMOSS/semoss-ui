@@ -35,6 +35,10 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from './vega-visualization-block';
+// import {
+//     config as EchartVisualizationBlockConfig,
+//     EchartVisualizationBlockDef,
+// } from './echart-visualization-blocks/Variants/PieChart';
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
@@ -94,6 +98,7 @@ export type DefaultBlockDefinitions =
     | StepperBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
+    | EchartVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
     | ModalBlockDef
@@ -125,11 +130,11 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
     [RadioBlockConfig.widget]: RadioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
-    [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
 };
 
 export {
@@ -151,10 +156,10 @@ export {
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
+    EchartVisualizationBlockConfig,
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
-    EchartVisualizationBlockConfig,
 };

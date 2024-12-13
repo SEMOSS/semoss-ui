@@ -56,7 +56,7 @@ export function useFrame(
         async (filterPixel: string): Promise<boolean> => {
             try {
                 setIsLoading(true);
-
+                console.log('Inside Use Effect', frame);
                 // filter the frame
                 const response = await state.runSideEffect(
                     `META | ${frame} | ${filterPixel};`,

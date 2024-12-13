@@ -102,6 +102,11 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
             });
         }, [data, path]).get();
 
+        const parsedOption = useMemo(
+            () => JSON.parse(computedValue),
+            [computedValue],
+        );
+
         useEffect(() => {
             setValue(computedValue);
         }, [computedValue]);
@@ -124,7 +129,7 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
         }
         //returns the current state of the legend whether it is shown(true) or not (false)
         function isToggleShown() {
-            let option = data.option;
+            let option = parsedOption;
             if (option.hasOwnProperty('legend') && option['legend']) {
                 return option['legend'].hasOwnProperty('show')
                     ? option['legend']['show']
@@ -789,6 +794,11 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
             console.log(optionUpdated, 'option');
             runStateUpdate(optionUpdated);
         }
+        function updateFrameOperations(option) {
+            let existingOption =
+                typeof value === 'string' ? JSON.parse(value) : value;
+            runStateUpdate(existingOption);
+        }
         return (
             <Stack height={'100%'}>
                 <StyledChartContainer>
@@ -829,24 +839,27 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                             </div>
                         </StyledSectionContainer> */}
                         <StyledSectionContainer>
-                            <FrameOperationsEchart id={id} />
+                            <FrameOperationsEchart
+                                id={id}
+                                updateFrame={updateFrameOperations}
+                            />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <ChartAxis
-                                option={data.option}
+                                option={parsedOption}
                                 updateChart={updateChartZoom}
                             />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <CustomizeValueLabels
                                 updateChart={updateCustomizeValueLabels}
-                                option={data.option}
+                                option={parsedOption}
                                 chartType={chartType}
                             />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <ToggleTrendline
-                                options={data.option}
+                                options={parsedOption}
                                 updateChart={updateTrendLines}
                                 chartType={chartType}
                             />
@@ -855,28 +868,28 @@ const EChartVisualizationTool = observer<EChartVisualizationToolDef>(
                             <EChartStyles
                                 updateChart={updateChartStyle}
                                 chartType={chartType}
-                                option={data.option}
+                                option={parsedOption}
                             />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <ChartStyling
                                 updateChart={updateChartStyling}
                                 chartType={chartType}
-                                option={data.option}
+                                option={parsedOption}
                             />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <EditXAxis
                                 updateChart={updateAxis}
                                 chartType={chartType}
-                                option={data.option}
+                                option={parsedOption}
                             />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
                             <EditYAxis
                                 updateChart={updateAxis}
                                 chartType={chartType}
-                                option={data.option}
+                                option={parsedOption}
                             />
                         </StyledSectionContainer>
                         <StyledSectionContainer>
