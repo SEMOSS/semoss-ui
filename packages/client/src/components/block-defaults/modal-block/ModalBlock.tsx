@@ -1,4 +1,4 @@
-import { CSSProperties, FC } from 'react';
+import { CSSProperties, FC, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Modal as MuiModal,
@@ -21,7 +21,7 @@ export interface ModalBlockDef extends BlockDef<'modal'> {
         maxWidth: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
         minWidth: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
         designMode: boolean;
-        isOpen: string; // Changed to string to store query
+        open: string | boolean | number; // Changed to string to store query
     };
     slots: {
         content: true;
@@ -152,21 +152,35 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, setData } = useBlock<ModalBlockDef>(id);
     const { state } = useBlocks();
     const isStatic = state.mode === 'static';
-    const isModalOpen = data.isOpen?.toLowerCase() === 'true';
+
+    const open = useMemo(() => {
+        let o = false;
+        // Interpret Python
+        if (
+            data.open === true ||
+            data.open === 'True' ||
+            data.open === 1 ||
+            data.open === '1'
+        ) {
+            o = true;
+        }
+
+        return o;
+    }, [data.open]);
 
     const handleClose = () => {
         if (!isStatic) {
-            setData('isOpen', 'false');
+            setData('open', 'false');
         }
     };
 
     // Helper to determine if modal should be shown
     const shouldShowModal = isStatic
         ? data.designMode // In static mode, show when design mode is on
-        : isModalOpen; // In interactive mode, show when query returns true
+        : open; // In interactive mode, show when query returns true
 
     if (!shouldShowModal && !isStatic) {
-        return null;
+        return <></>;
     }
 
     // In static mode with design mode on, show as modal but without portal

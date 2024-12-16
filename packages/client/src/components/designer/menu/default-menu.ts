@@ -129,7 +129,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_INPUT,
+        section: SECTION_LAYOUT,
         image: BLOCK_MODAL,
         name: 'Modal',
         json: {
@@ -142,7 +142,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 maxWidth: 'sm',
                 minWidth: 'sm',
                 designMode: true,
-                isOpen: '',
             },
             listeners: {
                 onSubmit: [],

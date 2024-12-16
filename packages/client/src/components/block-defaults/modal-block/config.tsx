@@ -90,7 +90,7 @@ export const config: BlockConfig<ModalBlockDef> = {
         maxWidth: 'sm',
         minWidth: 'sm',
         designMode: true, // Default to design mode when first dropped
-        isOpen: '', // Default to closed
+        open: '', // Default to closed
     },
     listeners: {
         onSubmit: [],
@@ -132,7 +132,7 @@ export const config: BlockConfig<ModalBlockDef> = {
                         <QueryInputSettings
                             id={id}
                             label="Open Modal"
-                            path="isOpen"
+                            path="open"
                         />
                     ),
                 },
