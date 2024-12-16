@@ -1,9 +1,9 @@
+import { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 
-import { useRootStore } from '@/hooks/';
-import { Button, Modal, Typography } from '@semoss/ui';
-import { useState, useMemo } from 'react';
+import { useCacheState, useRootStore } from '@/hooks';
+import { Button, Modal } from '@semoss/ui';
 import { WelcomeModal } from '@/components/welcome';
 import { cookieName } from '@/components/cookies';
 
@@ -13,38 +13,33 @@ import { cookieName } from '@/components/cookies';
 export const AuthenticatedLayout = observer(() => {
     const { configStore } = useRootStore();
     const location = useLocation();
-    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useCacheState(
+        false,
+        `smss--terms--${configStore.store.userEpoch}`,
+    );
 
     const TERMS = useMemo(() => {
-        if (!sessionStorage.getItem('attention-message')) {
-            const theme = configStore.store.config['theme'];
-            try {
-                if (theme && theme['THEME_MAP']) {
-                    const themeMap = JSON.parse(theme['THEME_MAP'] as string);
-                    return {
-                        header: themeMap['termsHeaderReact']
-                            ? themeMap['termsHeaderReact']
-                            : 'Attention',
-                        text: themeMap['termsReact']
-                            ? themeMap['termsReact']
-                            : '',
-                    };
-                }
+        const theme = configStore.store.config['theme'];
+        try {
+            if (theme && theme['THEME_MAP']) {
+                const themeMap = JSON.parse(theme['THEME_MAP'] as string);
                 return {
-                    header: '',
-                    text: '',
-                };
-            } catch {
-                return {
-                    header: '',
-                    text: '',
+                    header: themeMap['termsHeaderReact']
+                        ? themeMap['termsHeaderReact']
+                        : 'Attention',
+                    text: themeMap['termsReact'] ? themeMap['termsReact'] : '',
                 };
             }
+            return {
+                header: '',
+                text: '',
+            };
+        } catch {
+            return {
+                header: '',
+                text: '',
+            };
         }
-        return {
-            header: '',
-            text: '',
-        };
     }, []);
 
     // wait till the config is authenticated to load the view
@@ -79,10 +74,6 @@ export const AuthenticatedLayout = observer(() => {
                             variant="contained"
                             onClick={() => {
                                 setAcceptedTerms(true);
-                                sessionStorage.setItem(
-                                    'attention-message',
-                                    'true',
-                                );
                             }}
                         >
                             Accept
