@@ -34,34 +34,44 @@ import typescript from "@rollup/plugin-typescript";
 import bundleSize from "rollup-plugin-bundle-size";
 import postcss from "rollup-plugin-postcss";
 import del from "rollup-plugin-delete";
-// packageJson from "./package.json";
+import { defineConfig } from "rollup";
+import { terser } from "rollup-plugin-terser";
 
-const config = [
-    // Outputs separate declarations files and builds
-    {
-        input: "src/index.ts",
-        output: [
-            {
-                file: "dist/index.js",
-                format: "cjs",
-                sourcemap: true,
-            },
-            {
-                file: "dist/index.esm.js",
-                format: "esm",
-                sourcemap: true,
-            },
-        ],
-        plugins: [
-            del({ targets: "dist" }),
-            resolve(),
-            commonjs(),
-            typescript({ tsconfig: "./tsconfig.json" }),
-            postcss(),
-            bundleSize(),
-        ],
-        external: ["react", "react-dom"],
-    },
-];
+import packageJson from "./package.json";
 
-export default config;
+export default defineConfig({
+    input: "src/index.ts",
+    output: [
+        {
+            file: packageJson.main,
+            format: "cjs",
+            sourcemap: true,
+            plugins: [terser()],
+        },
+        {
+            file: packageJson.module,
+            format: "esm",
+            sourcemap: true,
+            plugins: [terser()],
+        },
+    ],
+    plugins: [
+        del({ targets: "dist" }),
+        resolve(),
+        commonjs(),
+        typescript({
+            tsconfig: "./tsconfig.json",
+            outputToFilesystem: true,
+        }),
+        postcss(),
+        bundleSize(),
+    ],
+    external: [
+        "react",
+        "react-dom",
+        "@mui/material",
+        "@mui/icons-material",
+        "@emotion/react",
+        "@emotion/styled",
+    ],
+});

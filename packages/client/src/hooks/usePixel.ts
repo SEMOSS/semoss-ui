@@ -15,6 +15,9 @@ interface PixelState<D> {
 export interface PixelConfig<D> {
     /** Initial Data */
     data: D;
+
+    /** Mangually process errors. Does not throw notifications */
+    silent: boolean;
 }
 
 interface usePixel<D> extends PixelState<D> {
@@ -43,6 +46,7 @@ export function usePixel<D>(
     const options: PixelConfig<D> = useMemo(() => {
         return {
             data: undefined,
+            silent: false,
             ...config,
         };
     }, [config]);
@@ -114,17 +118,7 @@ export function usePixel<D>(
                 if (operationType.indexOf('ERROR') > -1) {
                     const error = output as string;
 
-                    notification.add({
-                        color: 'error',
-                        message: error,
-                    });
-
-                    setState({
-                        status: 'ERROR',
-                        error: Error(error),
-                    });
-
-                    return;
+                    throw new Error(error);
                 }
 
                 // set as success
@@ -139,10 +133,14 @@ export function usePixel<D>(
                     return;
                 }
 
-                notification.add({
-                    color: 'error',
-                    message: error.message,
-                });
+                if (!options.silent) {
+                    notification.add({
+                        color: 'error',
+                        message: error.message,
+                    });
+                } else {
+                    console.log(error.message);
+                }
 
                 setState({
                     status: 'ERROR',

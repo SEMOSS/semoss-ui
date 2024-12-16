@@ -89,6 +89,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
         const isModified = initialContent !== content;
 
+        // update whenever the content changes
         useImperativeHandle(
             ref,
             () => {
@@ -97,7 +98,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     formatFile: formatFile,
                 };
             },
-            [],
+            [content],
         );
 
         /**

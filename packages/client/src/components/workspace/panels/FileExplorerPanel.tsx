@@ -149,6 +149,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                         // refresh the content
                         refreshFiles();
                     }
+                    // close the overlay
+                    workspace.closeOverlay();
                 }}
                 fileDeletePath={fileDeletePath}
             />

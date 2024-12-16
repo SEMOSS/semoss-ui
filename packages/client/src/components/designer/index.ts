@@ -1,4 +1,4 @@
-export * from './designer.constants';
+export * from './menu/';
 
 export * from './Designer';
 

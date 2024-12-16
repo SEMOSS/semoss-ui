@@ -24,7 +24,7 @@ import {
 import { config as HTMLBlockConfig, HTMLBlockDef } from './html-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
-import { config as TableBlockConfig, TableBlockDef } from './table-block';
+import { config as GridBlockConfig, GridBlockDef } from './grid-block';
 import { config as TextBlockConfig, TextBlockDef } from './text-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
@@ -50,6 +50,11 @@ import {
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+import { config as RadioBlockConfig, RadioBlockDef } from './radio-block';
+import {
+    config as AudioInputBlockConfig,
+    AudioInputBlockDef,
+} from './audio-input-block';
 
 import {
     config as PDFViewerBlockConfig,
@@ -58,6 +63,7 @@ import {
 
 export type DefaultBlockDefinitions =
     | AudioBlockDef
+    | AudioInputBlockDef
     | BodyBlockDef
     | ButtonBlockDef
     | CheckboxBlockDef
@@ -76,7 +82,7 @@ export type DefaultBlockDefinitions =
     | QueryBlockDef
     | LogsBlockDef
     | SelectBlockDef
-    | TableBlockDef
+    | GridBlockDef
     | TextBlockDef
     | ToggleButtonBlockDef
     | InputBlockDef
@@ -87,6 +93,7 @@ export type DefaultBlockDefinitions =
     | MermaidBlockDef
     | LLMComparisonBlockDef
     | ModalBlockDef
+    | RadioBlockDef
     | PDFViewerBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
@@ -108,21 +115,16 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [LogsBlockConfig.widget]: LogsBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [StepperBlockConfig.widget]: StepperBlockConfig,
+    [GridBlockConfig.widget]: GridBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [RadioBlockConfig.widget]: RadioBlockConfig,
+    [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
 };
-
-export function getIconForBlock(widget: string) {
-    return DefaultBlocks[widget]?.icon;
-}
-
-export function getTypeForBlock(widget: string) {
-    return DefaultBlocks[widget]?.type;
-}
 
 export {
     AudioBlockConfig,
@@ -139,11 +141,13 @@ export {
     LogsBlockConfig,
     ProgressBlockConfig,
     SelectBlockConfig,
+    GridBlockConfig,
     TextBlockConfig,
     UploadBlockConfig,
     VegaVisualizationBlockConfig,
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
+    RadioBlockConfig,
     PDFViewerBlockConfig,
 };

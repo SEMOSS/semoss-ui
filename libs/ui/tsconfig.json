@@ -23,6 +23,7 @@
         "skipLibCheck": true,
         "allowJs": true,
         "esModuleInterop": true,
+        "isolatedModules": true,
         // "composite": true,
 
         /* Lang and Env */
