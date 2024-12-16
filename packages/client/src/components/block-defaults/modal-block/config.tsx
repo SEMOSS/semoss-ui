@@ -11,6 +11,7 @@ import { BaseSettingSection } from '@/components/block-settings/BaseSettingSecti
 import { TextField } from '@semoss/ui';
 import { useBlockSettings } from '@/hooks';
 import { Paths, PathValue } from '@/types';
+import { QueryInputSettings } from '@/components/block-settings';
 
 // Size options for both min and max width
 const WIDTH_OPTIONS = [
@@ -85,21 +86,18 @@ export const config: BlockConfig<ModalBlockDef> = {
     data: {
         style: {},
         title: 'Modal Title',
-        showActions: true,
-        submitLabel: 'Submit',
-        cancelLabel: 'Cancel',
-        previewLabel: 'Open Modal',
         fullWidth: true,
         maxWidth: 'sm',
         minWidth: 'sm',
         designMode: true, // Default to design mode when first dropped
-        isOpen: false, // Default to closed
+        isOpen: '', // Default to closed
     },
     listeners: {
         onSubmit: [],
     },
     slots: {
         content: [],
+        footer: [], // New slot for footer content
     },
     render: ModalBlock,
     icon: Schema,
@@ -129,42 +127,12 @@ export const config: BlockConfig<ModalBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Show Actions',
+                    description: 'Open',
                     render: ({ id }) => (
-                        <SwitchSettings
+                        <QueryInputSettings
                             id={id}
-                            label="Show Action Buttons"
-                            path="showActions"
-                        />
-                    ),
-                },
-                {
-                    description: 'Preview Button Label',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Preview Button Label"
-                            path="previewLabel"
-                        />
-                    ),
-                },
-                {
-                    description: 'Submit Button Label',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Submit Button Text"
-                            path="submitLabel"
-                        />
-                    ),
-                },
-                {
-                    description: 'Cancel Button Label',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Cancel Button Text"
-                            path="cancelLabel"
+                            label="Open Modal"
+                            path="isOpen"
                         />
                     ),
                 },
