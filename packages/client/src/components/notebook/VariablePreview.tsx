@@ -134,9 +134,10 @@ export const VariablePreview = observer(
                     );
                 } else {
                     return (
-                        <Typography variant="body2" fontWeight="bold">
-                            {found}
-                        </Typography>
+                        <Typography
+                            variant="body2"
+                            fontWeight="bold"
+                        ></Typography>
                     );
                 }
             }
