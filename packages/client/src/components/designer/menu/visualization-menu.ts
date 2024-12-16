@@ -814,7 +814,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     },
                     xAxis: {
                         type: 'category',
-                        name: 'Category',
+                        name: 'a',
                         nameLocation: 'middle',
                         nameGap: 30,
                         axisTick: {
@@ -824,7 +824,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     },
                     yAxis: {
                         type: 'value',
-                        name: 'Values',
+                        name: 'b',
                         nameLocation: 'middle',
                         nameGap: 40,
                         axisLine: {
@@ -836,11 +836,20 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     },
                     series: [
                         {
-                            name: 'Values',
+                            name: 'b',
                             type: 'line',
                             data: [28, 30, 22, 35, 30],
                         },
                     ],
+                    brush: {
+                        xAxisIndex: 'all',
+                        brushMode: 'single',
+                        brushStyle: {
+                            borderWidth: 1,
+                            color: 'rgba(120,140,180,0.3)',
+                            borderColor: 'rgba(120,140,180,0.8)',
+                        },
+                    },
                 },
             },
             listeners: {},
