@@ -233,7 +233,7 @@ export const SelectedMask = observer(() => {
                 opacity: designer.drag.active ? 0 : 1,
             }}
         >
-            {block.widget !== 'page' && (
+            {block?.widget !== 'page' && (
                 <StyledTitle onMouseDown={handleMouseDown}>
                     <Stack direction={'row'}>
                         <Typography variant={'body2'}>

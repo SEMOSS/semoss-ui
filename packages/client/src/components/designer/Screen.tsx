@@ -182,6 +182,9 @@ export const Screen = observer((props: ScreenProps) => {
                     return;
                 }
 
+                // check if the block is in the root
+                if (!rootRef.current.contains(nearestElement)) return;
+
                 // update
                 designer.updatePlaceholder(
                     {
@@ -199,7 +202,7 @@ export const Screen = observer((props: ScreenProps) => {
             const block = state.getBlock(id);
 
             // if there is no parent, we cannot add
-            if (!block.parent) {
+            if (!block?.parent) {
                 return;
             }
 
@@ -267,11 +270,6 @@ export const Screen = observer((props: ScreenProps) => {
         setShowMask(checkIfBlockIsSelected(designer.hovered));
         setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
     }, [designer.hovered]);
-
-    useEffect(() => {
-        setShowMask(checkIfBlockIsSelected(designer.drag.active));
-        setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
-    }, [designer.drag.active]);
 
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;

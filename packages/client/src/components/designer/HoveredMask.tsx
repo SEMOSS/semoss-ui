@@ -122,7 +122,7 @@ export const HoveredMask = observer(() => {
                 designer.hovered === designer.selected || designer.drag.active
             }
         >
-            {block.widget !== 'page' && (
+            {block?.widget !== 'page' && (
                 <StyledTitle>
                     <Typography variant={'body2'}>
                         {variableName ? variableName : designer.hovered}
