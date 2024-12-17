@@ -9,7 +9,6 @@ import {
     getNearestBlockElement,
     getNearestSlot,
     getNearestSlotElement,
-    getRootElement,
 } from '@/stores';
 
 import { SelectedMask } from './SelectedMask';
@@ -23,7 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
+    // padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -41,7 +40,7 @@ const StyledContent = styled('div', {
 }));
 
 const StyledContentOuter = styled('div')(({ theme }) => ({
-    padding: theme.spacing(1),
+    // padding: theme.spacing(1),
     display: 'flex',
     flex: 1,
     minWidth: '100%',
@@ -70,20 +69,19 @@ const StyledContentInner = styled('div', {
 );
 
 interface ScreenProps {
-    reference: string;
     /** Children to render */
     children: React.ReactNode;
 }
 
 export const Screen = observer((props: ScreenProps) => {
-    const { reference, children } = props;
+    const { children } = props;
 
     // save the ref
     const rootRef = useRef<HTMLDivElement | null>(null);
     // const rootRef = useRef<string | null>(reference);
 
-    const [showMask, setShowMask] = useState(true);
-    const [showSelectedMask, setShowSelectedMask] = useState(true);
+    // const [showMask, setShowMask] = useState(true);
+    // const [showSelectedMask, setShowSelectedMask] = useState(true);
     // get the designer
     const { state } = useBlocks();
     const { designer } = useDesigner();
@@ -262,28 +260,19 @@ export const Screen = observer((props: ScreenProps) => {
         return currEle ? rootEl.contains(currEle) : false;
     };
 
-    useEffect(() => {
-        setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
-    }, [designer.selected]);
-
-    useEffect(() => {
-        setShowMask(checkIfBlockIsSelected(designer.hovered));
-        setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
-    }, [designer.hovered]);
-
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block={`root-${reference}`} ref={rootRef}>
-            {designer.selected && showSelectedMask && <SelectedMask />}
-            {designer.hovered && showMask && <HoveredMask />}
-            {designer.selected && showSelectedMask && !designer.drag.active && (
+        <StyledContainer data-block="root" ref={rootRef} className="dnd-screen">
+            {designer.selected && <SelectedMask />}
+            {designer.hovered && <HoveredMask />}
+            {designer.selected && !designer.drag.active && (
                 <DeleteDuplicateMask />
             )}
-            {designer.drag.active && showMask && <Placeholder />}
-            {designer.drag.active && showMask && <Ghost />}
+            {designer.drag.active && <Placeholder />}
+            {designer.drag.active && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>

@@ -20,7 +20,6 @@ import {
     Route,
     useSearchParams,
     useLocation,
-    useParams,
     useNavigate,
 } from 'react-router-dom';
 

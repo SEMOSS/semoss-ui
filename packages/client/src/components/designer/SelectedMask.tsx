@@ -161,7 +161,7 @@ export const SelectedMask = observer(() => {
     // reposition the mask
     const repositionMask = () => {
         // get the root element
-        const rootEle = getRootElement(designer.selected);
+        const rootEle = getRootElement();
 
         // get the block elemenent
         const blockEle = getBlockElement(designer.selected);
@@ -189,7 +189,7 @@ export const SelectedMask = observer(() => {
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
         // get the root element
-        const rootEle = getRootElement(designer.selected);
+        const rootEle = getRootElement();
 
         const observer = new MutationObserver(() => {
             repositionMask();

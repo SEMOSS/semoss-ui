@@ -77,7 +77,7 @@ export const HoveredMask = observer(() => {
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
         // get the root element
-        const rootEle = getRootElement(designer.hovered);
+        const rootEle = getRootElement();
 
         // reposition the mask
         const repositionMask = () => {

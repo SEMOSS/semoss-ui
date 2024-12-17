@@ -40,19 +40,9 @@ export const getRelativeSize = (
  *
  * @returns the root element
  */
-export const getRootElement = (childEleId): Element => {
-    const rootElementArr = document.querySelectorAll(`[data-block*="root-"]`);
-    const childElement = document.querySelector(`[data-block="${childEleId}"]`);
-    if (!rootElementArr.length) {
-        throw `ERROR ::: Cannot find Root`;
-    }
-    let rootElement = rootElementArr[0];
-    rootElementArr.forEach((ele) => {
-        if (ele.contains(childElement)) {
-            rootElement = ele;
-        }
-    });
-    if (!rootElement && childElement) {
+export const getRootElement = (): Element => {
+    const rootElement = document.querySelector(`[data-block="root"]`);
+    if (!rootElement) {
         throw `ERROR ::: Cannot find Root`;
     }
     return rootElement;
@@ -68,7 +58,7 @@ export const getRootElement = (childEleId): Element => {
  */
 export const getBlockElement = (id: string): Element | null => {
     // get the root
-    const rootElement = getRootElement(id);
+    const rootElement = getRootElement();
 
     // get the block
     return rootElement.querySelector(`[data-block="${id}"]`);
