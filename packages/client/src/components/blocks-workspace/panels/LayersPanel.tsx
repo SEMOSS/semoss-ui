@@ -1,27 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { Actions, DockLocation, TabNode } from 'flexlayout-react';
 import {
-    Button,
     Divider,
     Icon,
     IconButton,
     Stack,
-    TextField,
+    Search,
     TreeView,
     Typography,
     styled,
     useNotification,
 } from '@semoss/ui';
-import { useBlocks, useDesigner } from '@/hooks';
+import { useBlocks, useDesigner, useWorkspace } from '@/hooks';
 import {
+    Add,
     ChevronRight,
     ContentCopy,
     ExpandMore,
     LibraryAdd,
-    Search,
-    SearchOff,
 } from '@mui/icons-material/';
-import { INPUT_BLOCK_TYPES } from '@/stores';
+import { INPUT_BLOCK_TYPES, ActionMessages } from '@/stores';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
 
@@ -35,12 +34,12 @@ const StyledMenu = styled('div')(({ theme }) => ({
 
 const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     lineHeight: theme.spacing(5),
     width: '100%',
     paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(1),
+    paddingRight: theme.spacing(2),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
     gap: theme.spacing(1),
@@ -110,6 +109,26 @@ const StyledTreeItemMessage = styled('div')(() => ({
     justifyContent: 'center',
 }));
 
+const PAGE_BLOCK = {
+    widget: 'page',
+    data: {
+        style: {
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px',
+            gap: '8px',
+            fontFamily: 'roboto',
+        },
+        route: '',
+    },
+    listeners: {
+        onPageLoad: [],
+    },
+    slots: {
+        content: [],
+    },
+};
+
 /**
  * Render the Layers
  */
@@ -118,16 +137,18 @@ export const LayersPanel = observer((): JSX.Element => {
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
     const notification = useNotification();
-
+    const { workspace } = useWorkspace();
     const [expanded, setExpanded] = useState<string[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
-
     const [variableModal, setVariableModal] = useState('');
+    const allPages = state.getAllBlocksOfType('page');
 
-    // get the active page
-    const activePage = state.blocks[designer.rendered];
+    useEffect(() => {
+        setExpanded(state.getAllParents(designer.selected));
+        setSelected([designer.selected]);
+    }, [designer.selected]);
 
     /**
      * Render the block and it's children
@@ -214,6 +235,7 @@ export const LayersPanel = observer((): JSX.Element => {
                 onClick={(e: React.SyntheticEvent) => {
                     e.stopPropagation();
                     designer.setSelected(block.id);
+                    handleOnSelect(block);
                 }}
                 onMouseOver={(e: React.SyntheticEvent) => {
                     e.stopPropagation();
@@ -232,6 +254,64 @@ export const LayersPanel = observer((): JSX.Element => {
                 })}
             </TreeView.Item>
         );
+    };
+
+    /** Helpers */
+    /**
+     * Create a new panel and highlight it
+     *
+     * id - id of the notebook
+     */
+    const createPanel = (id: string): boolean => {
+        try {
+            if (!id) {
+                return false;
+            }
+
+            // get the model
+            const model = workspace.selectedLayout?.model;
+            if (!model) {
+                throw new Error('Missing model');
+            }
+
+            // get the name
+            const name = id;
+
+            // where to add the node
+            const addId =
+                model.getActiveTabset()?.getId() ||
+                model.getRoot().getChildren()[0]?.getId() ||
+                '';
+
+            // create and select the panel
+            model.doAction(
+                Actions.addNode(
+                    {
+                        type: 'tab',
+                        name: name,
+                        component: 'designer',
+                        config: {
+                            id: id,
+                        },
+                        enableClose: true,
+                    },
+                    addId,
+                    DockLocation.CENTER,
+                    -1,
+                    true,
+                ),
+            );
+            // designer.setRendered(id);
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e,
+            });
+
+            return false;
+        }
+
+        return true;
     };
 
     /**
@@ -254,47 +334,122 @@ export const LayersPanel = observer((): JSX.Element => {
         }
     };
 
+    /**
+     * Select a panel and create one if it doesn't exist
+     *
+     * id - id of the layer
+     */
+    const handleOnSelect = (blockData) => {
+        if (blockData.widget !== 'page') return;
+        const id = blockData.id;
+        // try to select a panel, if it doesn't exist create it. Save the path
+        const IsSelected = selectPanel(id);
+        if (!IsSelected) {
+            createPanel(id);
+        }
+        // set the path
+        setSelected([id]);
+        // designer.setRendered(id);
+    };
+
+    /**
+     * Select a panel if it is there. Return false if not selected.
+     *
+     * id - id of the layer
+     */
+    const selectPanel = (id: string): boolean => {
+        try {
+            if (!id) {
+                return false;
+            }
+
+            let selectedNode: TabNode | null = null;
+
+            // get the model
+            const model = workspace.selectedLayout?.model;
+            if (!model) {
+                throw new Error('Missing model');
+            }
+
+            // visit the notes, and see if it exists
+            model.visitNodes((node) => {
+                // check if it is a tabNode
+                if (node instanceof TabNode) {
+                    // it needs to be a notebook-viewer
+                    const component = node.getComponent();
+                    if (component !== 'designer') {
+                        return;
+                    }
+
+                    // path and space need to match
+                    const config = node.getConfig();
+                    if (config.id !== id) {
+                        return;
+                    }
+
+                    selectedNode = node;
+                }
+            });
+
+            // create a new panel if there is no node
+            if (!selectedNode) {
+                return false;
+            }
+
+            const selectedNodeId = selectedNode.getId();
+            model.doAction(Actions.selectTab(selectedNodeId));
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: e,
+            });
+
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * handle the add page
+     */
+    const handlePageAdd = () => {
+        state.dispatch({
+            message: ActionMessages.ADD_BLOCK,
+            payload: {
+                json: PAGE_BLOCK,
+            },
+        });
+    };
+
     return (
         <Panel>
             <StyledMenu>
                 <StyledMenuHeader>
-                    <Typography variant="h6">Layers</Typography>
-                    <Stack
-                        flex={1}
-                        spacing={1}
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="end"
-                    >
-                        {showSearch ? (
-                            <TextField
-                                placeholder="Search"
-                                size="small"
-                                sx={{
-                                    width: '100%',
-                                    maxWidth: '200px',
-                                }}
-                                value={search}
-                                variant="outlined"
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        ) : (
-                            <>&nbsp;</>
-                        )}
-                        <IconButton
-                            color="default"
-                            size="small"
-                            onClick={() => {
-                                setShowSearch(!showSearch);
-                                setSearch('');
-                            }}
+                    <Stack spacing={2} paddingBottom={1} width={'100%'}>
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems={'center'}
                         >
-                            {showSearch ? (
-                                <SearchOff fontSize="medium" />
-                            ) : (
-                                <Search fontSize="medium" />
-                            )}
-                        </IconButton>
+                            <Typography variant="h6">Layers</Typography>
+                            <IconButton
+                                className="layers-menu__add-layer-button"
+                                onClick={(e) => {
+                                    // setPopoverAnchorEl(e.currentTarget);
+                                    handlePageAdd();
+                                }}
+                            >
+                                <Add />
+                            </IconButton>
+                        </Stack>
+                    </Stack>
+                    <Stack spacing={2} width={'100%'}>
+                        <Search
+                            placeholder="Search"
+                            size="small"
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </Stack>
                 </StyledMenuHeader>
                 <Divider />
@@ -326,8 +481,8 @@ export const LayersPanel = observer((): JSX.Element => {
                             </StyledTreeItemIcon>
                         }
                     >
-                        {activePage ? (
-                            renderBlock(activePage.id)
+                        {allPages?.length ? (
+                            allPages.map((page) => renderBlock(page.id))
                         ) : (
                             <StyledTreeItemMessage>
                                 <Typography variant="caption">

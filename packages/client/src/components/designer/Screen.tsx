@@ -9,6 +9,7 @@ import {
     getNearestBlockElement,
     getNearestSlot,
     getNearestSlotElement,
+    getRootElement,
 } from '@/stores';
 
 import { SelectedMask } from './SelectedMask';
@@ -69,16 +70,20 @@ const StyledContentInner = styled('div', {
 );
 
 interface ScreenProps {
+    reference: string;
     /** Children to render */
     children: React.ReactNode;
 }
 
 export const Screen = observer((props: ScreenProps) => {
-    const { children } = props;
+    const { reference, children } = props;
 
     // save the ref
     const rootRef = useRef<HTMLDivElement | null>(null);
+    // const rootRef = useRef<string | null>(reference);
 
+    const [showMask, setShowMask] = useState(true);
+    const [showSelectedMask, setShowSelectedMask] = useState(true);
     // get the designer
     const { state } = useBlocks();
     const { designer } = useDesigner();
@@ -211,6 +216,9 @@ export const Screen = observer((props: ScreenProps) => {
                     100,
             );
 
+            // check if the block is in the root
+            if (!rootRef.current.contains(nearestElement)) return;
+
             if (percent <= 30) {
                 designer.updatePlaceholder(
                     {
@@ -245,19 +253,39 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
+    const checkIfBlockIsSelected = (selectedEle) => {
+        const rootEl = rootRef.current;
+        const currEle = document.querySelector(`[data-block="${selectedEle}"]`);
+        return currEle ? rootEl.contains(currEle) : false;
+    };
+
+    useEffect(() => {
+        setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
+    }, [designer.selected]);
+
+    useEffect(() => {
+        setShowMask(checkIfBlockIsSelected(designer.hovered));
+        setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
+    }, [designer.hovered]);
+
+    useEffect(() => {
+        setShowMask(checkIfBlockIsSelected(designer.drag.active));
+        setShowSelectedMask(checkIfBlockIsSelected(designer.selected));
+    }, [designer.drag.active]);
+
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
-            {designer.selected && <SelectedMask />}
-            {designer.hovered && <HoveredMask />}
-            {designer.selected && !designer.drag.active && (
+        <StyledContainer data-block={`root-${reference}`} ref={rootRef}>
+            {designer.selected && showSelectedMask && <SelectedMask />}
+            {designer.hovered && showMask && <HoveredMask />}
+            {designer.selected && showSelectedMask && !designer.drag.active && (
                 <DeleteDuplicateMask />
             )}
-            {designer.drag.active && <Placeholder />}
-            {designer.drag.active && <Ghost />}
+            {designer.drag.active && showMask && <Placeholder />}
+            {designer.drag.active && showMask && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>

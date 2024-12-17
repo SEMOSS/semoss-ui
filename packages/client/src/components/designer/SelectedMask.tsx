@@ -161,7 +161,7 @@ export const SelectedMask = observer(() => {
     // reposition the mask
     const repositionMask = () => {
         // get the root element
-        const rootEle = getRootElement();
+        const rootEle = getRootElement(designer.selected);
 
         // get the block elemenent
         const blockEle = getBlockElement(designer.selected);
@@ -189,7 +189,7 @@ export const SelectedMask = observer(() => {
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
         // get the root element
-        const rootEle = getRootElement();
+        const rootEle = getRootElement(designer.selected);
 
         const observer = new MutationObserver(() => {
             repositionMask();
@@ -233,19 +233,21 @@ export const SelectedMask = observer(() => {
                 opacity: designer.drag.active ? 0 : 1,
             }}
         >
-            <StyledTitle onMouseDown={handleMouseDown}>
-                <Stack direction={'row'}>
-                    <Typography variant={'body2'}>
-                        {variableName ? variableName : designer.selected}
-                    </Typography>
-                </Stack>
-                {isDraggable && (
-                    <DragIndicator
-                        fontSize="inherit"
-                        sx={{ marginLeft: '2px' }}
-                    />
-                )}
-            </StyledTitle>
+            {block.widget !== 'page' && (
+                <StyledTitle onMouseDown={handleMouseDown}>
+                    <Stack direction={'row'}>
+                        <Typography variant={'body2'}>
+                            {variableName ? variableName : designer.selected}
+                        </Typography>
+                    </Stack>
+                    {isDraggable && (
+                        <DragIndicator
+                            fontSize="inherit"
+                            sx={{ marginLeft: '2px' }}
+                        />
+                    )}
+                </StyledTitle>
+            )}
         </StyledContainer>
     );
 });
