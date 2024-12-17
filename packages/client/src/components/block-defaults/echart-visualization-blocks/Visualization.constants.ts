@@ -10,3 +10,4 @@ export const LINE_CHART_DATA = {
     ECHARTCODE: 'line-e-chart',
     JSONVALUE: ['line'],
 };
+export const ECHART_BAR_COLOUR = '#5470c6';

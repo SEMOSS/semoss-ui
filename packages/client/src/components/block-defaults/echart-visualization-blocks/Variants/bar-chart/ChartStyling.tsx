@@ -182,7 +182,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                     </Select.Item>
                     {chartAlignment.map((chart, index) => {
                         return (
-                            <Select.Item value={chart.value}>
+                            <Select.Item value={chart.value} key={index}>
                                 {chart.label}
                             </Select.Item>
                         );
@@ -219,7 +219,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                     </Select.Item>
                     {fontWeightDetails.map((chart, index) => {
                         return (
-                            <Select.Item value={chart.value}>
+                            <Select.Item value={chart.value} key={index}>
                                 {chart.label}
                             </Select.Item>
                         );
@@ -238,7 +238,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
                     </Select.Item>
                     {fontFamilyDetails.map((chart, index) => {
                         return (
-                            <Select.Item value={chart.value}>
+                            <Select.Item value={chart.value} key={index}>
                                 {chart.label}
                             </Select.Item>
                         );

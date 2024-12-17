@@ -2,7 +2,7 @@ import { Button, styled, Switch } from '@semoss/ui';
 import { useState, useEffect } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { BAR_CHART_DATA } from '../../Echart.constants';
+import { BAR_CHART_DATA } from '../../Visualization.constants';
 
 const StyledAxisMainSection = styled('div')(({ theme }) => ({
     width: '100%',

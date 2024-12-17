@@ -6,16 +6,16 @@ import {
     JsonSettings,
 } from '@/components/block-settings';
 import { useBlock } from '@/hooks';
-import EChartVisualizationTool from './Variants/bar-chart/EChartVisualizationTool';
-import { EchartVisualizationBlockDef } from './EchartVisualizationBlock';
+import VisualizationTool from './Variants/bar-chart/VisualizationTool';
+import { VisualizationBlockDef } from './VisualizationBlock';
 
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',
 }));
 import E_PieChart from './Variants/PieChart/pie-chart-feature';
 
-export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
-    const { data } = useBlock<EchartVisualizationBlockDef>(id);
+export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
+    const { data } = useBlock<VisualizationBlockDef>(id);
     return (
         <Stack>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
@@ -23,7 +23,7 @@ export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 <JsonSettings id={id} path="option" height="50vh" />
                 {data.variation === 'echart-bar-graph' && (
-                    <EChartVisualizationTool showTool={true} id={id} />
+                    <VisualizationTool showTool={true} id={id} />
                 )}
                 {data.variation === 'echart-pie-chart' && (
                     <E_PieChart id={id}></E_PieChart>

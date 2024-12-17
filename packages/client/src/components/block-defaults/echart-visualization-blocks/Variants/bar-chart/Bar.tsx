@@ -7,8 +7,8 @@ import { BarChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 import EChartsReact from 'echarts-for-react';
-import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
-import { EChartContextMenu } from './EChartContextMenu';
+import { VisualizationBlockDef } from '../../VisualizationBlock';
+import { ChartContextMenu } from './ChartContextMenu';
 import { useEffect, useRef, useState } from 'react';
 
 const StyledChartContainer = styled('div')(() => ({
@@ -41,7 +41,7 @@ export const Bar: BlockComponent = observer(({ id }) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlockSettings<VisualizationBlockDef>(id);
     const [echartState, setEchartState] = useState<any>({});
     const [selectedChart, setSelectedChart] = useState<any>({});
 
@@ -208,7 +208,7 @@ export const Bar: BlockComponent = observer(({ id }) => {
     //     data.option.hasOwnProperty('customSettings') &&
     //     !data.option['customSettings']['optionStateChange']
     // )
-    const tempFunc = () => {
+    const updateFrameData = () => {
         const optionDataProcessed = processReceivedData(frameData.data);
         data.option['xAxis']['data'] = optionDataProcessed['xAxis'];
         data.option['series'][0]['data'] = optionDataProcessed['yAxis'];
@@ -225,12 +225,12 @@ export const Bar: BlockComponent = observer(({ id }) => {
         }
     }
     if (frameData.data?.values?.length) {
-        tempFunc();
+        updateFrameData();
     }
     return (
         <StyledMainContainer id={id}>
             <EChartsReact option={data.option} onChartReady={echartsLoaded} />
-            <EChartContextMenu
+            <ChartContextMenu
                 id={id}
                 frame={frameData}
                 contextMenu={chartOperationData.current.contextMenu}

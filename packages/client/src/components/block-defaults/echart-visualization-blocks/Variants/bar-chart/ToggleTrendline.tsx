@@ -2,7 +2,7 @@ import { Button, Select, styled, Switch } from '@semoss/ui';
 import { useEffect, useState } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Echart.constants';
+import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Visualization.constants';
 
 const StyledSelect = styled(Select)(() => ({
     width: '100%',

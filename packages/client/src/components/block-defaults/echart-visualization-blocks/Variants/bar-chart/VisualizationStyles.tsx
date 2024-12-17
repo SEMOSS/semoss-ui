@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Button, Select, Slider, styled, TextField } from '@semoss/ui';
-import { BAR_CHART_DATA } from '../../Echart.constants';
+import { BAR_CHART_DATA } from '../../Visualization.constants';
 
 const StyledBarStylesContainer = styled('div')<{
     width?: string;
@@ -19,7 +19,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 //Updating bar chart specific styles like bar width and its colour
-export const EChartStyles = ({ updateChart, chartType, option }) => {
+export const VisualizationStyles = ({ updateChart, chartType, option }) => {
     const [styleData, setStyleData] = useState({
         barwidth: 45,
         minBarWidth: 1,

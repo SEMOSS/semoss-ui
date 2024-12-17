@@ -5,16 +5,16 @@ import {
     useFrameHeaders,
 } from '@/hooks';
 import { Autocomplete, Button, Select, styled, TextField } from '@semoss/ui';
-import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
+import { VisualizationBlockDef } from '../../VisualizationBlock';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { BAR_CHART_DATA } from '../../Echart.constants';
+import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { PathValue } from '@/types';
 import { Sync } from '@mui/icons-material';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 
-export interface FrameOperationsEChartProps {
+export interface FrameOperationsProps {
     id: string;
     updateFrame: (option) => void;
 }
@@ -33,10 +33,9 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
-export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
+export const FrameOperations = observer<FrameOperationsProps>(
     ({ id, updateFrame }) => {
-        const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
+        const { data, setData } = useBlockSettings<VisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [fieldsData, setFieldsData] = useState({
             xaxis: {
@@ -153,7 +152,6 @@ export const FrameOperationsEchart = observer<FrameOperationsEChartProps>(
             setValue(computedValue);
         }, [computedValue]);
 
-        console.log(data, 'data on FrameOperationsEchart');
         function updateFields(axis, event) {
             let value = event.target.value || '';
             let name = columnsData.find((col) => col.selector === value);

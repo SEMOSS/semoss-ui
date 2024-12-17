@@ -14,13 +14,13 @@ const StyledNoDataContainer = styled('div', {
     color: error ? theme.palette.error.main : 'unset',
 }));
 
-export interface EChartColumns {
+export interface VisualizationColumns {
     name: string;
     selector: string;
     width: string;
 }
 
-export interface EchartVisualizationBlockDef {
+export interface VisualizationBlockDef {
     widget: 'e-chart';
     data: {
         option: {};
@@ -28,7 +28,7 @@ export interface EchartVisualizationBlockDef {
             name: string;
         };
         variation: undefined | string;
-        columns: EChartColumns[];
+        columns: VisualizationColumns[];
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
@@ -39,8 +39,8 @@ export interface EchartVisualizationBlockDef {
     slots: never;
 }
 
-export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+export const VisualizationBlock: BlockComponent = observer(({ id }) => {
+    const { data, attrs } = useBlock<VisualizationBlockDef>(id);
 
     if (!data.option) {
         return (

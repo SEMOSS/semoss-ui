@@ -35,10 +35,6 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from './vega-visualization-block';
-// import {
-//     config as EchartVisualizationBlockConfig,
-//     EchartVisualizationBlockDef,
-// } from './echart-visualization-blocks/Variants/PieChart';
 import {
     config as ProgressBlockConfig,
     ProgressBlockDef,
@@ -66,7 +62,7 @@ import {
 } from './pdfViewer-block';
 import {
     config as EchartVisualizationBlockConfig,
-    EchartVisualizationBlockDef,
+    VisualizationBlockDef,
 } from './echart-visualization-blocks';
 
 export type DefaultBlockDefinitions =
@@ -98,13 +94,12 @@ export type DefaultBlockDefinitions =
     | StepperBlockDef
     | UploadBlockDef
     | VegaVisualizationBlockDef
-    | EchartVisualizationBlockDef
     | MermaidBlockDef
     | LLMComparisonBlockDef
     | ModalBlockDef
     | RadioBlockDef
     | PDFViewerBlockDef
-    | EchartVisualizationBlockDef;
+    | VisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,

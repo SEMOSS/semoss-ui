@@ -1,11 +1,11 @@
 import { observer } from 'mobx-react-lite';
-import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
+import { VisualizationBlockDef } from '../../VisualizationBlock';
 import { useBlock, useFrame } from '@/hooks';
 import { Menu, MenuItem } from '@mui/material';
 import { PathValue } from 'react-hook-form';
 import { useEffect, useRef } from 'react';
 
-export interface EChartContextMenuProps {
+export interface ChartContextMenuProps {
     id: string;
     frame: ReturnType<typeof useFrame>;
     contextMenu: {
@@ -22,9 +22,9 @@ export interface EChartContextMenuProps {
     onClose: () => void;
 }
 //Open this contextmenu when right click event is triggered
-export const EChartContextMenu: React.FC<EChartContextMenuProps> = observer(
+export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
     ({ id, frame, contextMenu, chartInstance, onClose }) => {
-        const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+        const { data, setData } = useBlock<VisualizationBlockDef>(id);
         let currentOperation = useRef({
             unfilterActive: false,
             filterActive: false,

@@ -2,12 +2,12 @@ import { BlockConfig } from '@/stores';
 import { Insights } from '@mui/icons-material';
 import { BLOCK_TYPE_CHART } from '../block-defaults.constants';
 import {
-    EchartVisualizationBlock,
-    EchartVisualizationBlockDef,
-} from './EchartVisualizationBlock';
-import { EchartVisualizationBlockMenu } from './EchartVisualizationBlockMenu';
+    VisualizationBlock,
+    VisualizationBlockDef,
+} from './VisualizationBlock';
+import { VisualizationBlockMenu } from './VisualizationBlockMenu';
 
-export const config: BlockConfig<EchartVisualizationBlockDef> = {
+export const config: BlockConfig<VisualizationBlockDef> = {
     widget: 'e-chart',
     type: BLOCK_TYPE_CHART,
     data: {
@@ -25,7 +25,7 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
     },
     listeners: {},
     slots: {},
-    render: EchartVisualizationBlock,
+    render: VisualizationBlock,
     icon: Insights,
-    menu: EchartVisualizationBlockMenu,
+    menu: VisualizationBlockMenu,
 };

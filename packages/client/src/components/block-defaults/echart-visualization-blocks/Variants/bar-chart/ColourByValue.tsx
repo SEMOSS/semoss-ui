@@ -1,6 +1,6 @@
 import { useBlock, useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
+import { VisualizationBlockDef } from '../../VisualizationBlock';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Select, Stack, styled, Table, TextField } from '@semoss/ui';
 import CustomAccordianBlock from './CustomAccordianBlock';
@@ -8,9 +8,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { PathValue } from 'react-hook-form';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
-import { BAR_CHART_DATA } from '../../Echart.constants';
+import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { Delete, Edit } from '@mui/icons-material';
 import { assign } from 'mobx/dist/internal';
+import { ECHART_BAR_COLOUR } from '../../Visualization.constants';
 
 const StyledMainSection = styled('div')(() => ({
     display: 'inline-flex',
@@ -50,7 +51,7 @@ const StyledSpan = styled('span')(() => ({
 }));
 
 const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<VisualizationBlockDef>(id);
 
     const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
 
@@ -80,7 +81,20 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             return JSON.stringify(v, null, 2);
         });
     }, [data, path]).get();
-
+    useEffect(() => {
+        functionCallReference.current.applyRulesToChart = false;
+        let option =
+            typeof computedValue === 'string'
+                ? JSON.parse(computedValue)
+                : computedValue;
+        if (
+            option.hasOwnProperty('customSettings') &&
+            option['customSettings'].hasOwnProperty('appliedColourByValue')
+        ) {
+            let appliedRules = option['customSettings']['appliedColourByValue'];
+            setAppliedRules(appliedRules);
+        }
+    }, []);
     useEffect(() => {
         setValue(computedValue);
         if (functionCallReference.current.valuesResetCheck) {
@@ -111,14 +125,13 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     useEffect(() => {
         if (functionCallReference.current.applyRulesToChart) {
             let option = typeof value === 'string' ? JSON.parse(value) : value;
-            console.log('appliedRules');
             let seriesIndex = option['series'].findIndex((opt) =>
                 BAR_CHART_DATA.JSONVALUE.includes(opt.type),
             );
             let colourObj = {};
+            let optionUpdated = option;
             appliedRules.forEach((appliedItem, index) => {
                 let xAxisPosition = getXAxisPositions(appliedItem);
-                let optionUpdated = option;
                 if (xAxisPosition.length) {
                     if (seriesIndex > -1) {
                         let data = option['series'][seriesIndex]['data'];
@@ -129,7 +142,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                     ? appliedItem.columnColour
                                     : colourObj.hasOwnProperty(dataindex)
                                     ? colourObj[dataindex]
-                                    : '#5470c6',
+                                    : ECHART_BAR_COLOUR,
                             };
                         });
                         setValuesColourMapping((prevColour) => {
@@ -160,15 +173,30 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                 },
                             };
                         }
-                        // option['customSettings'] = {
-                        //     ...option['customSettings'],
-                        //     ['optionStateChange']: true,
-                        // };
-                        optionUpdated = option;
-                        updateChart(optionUpdated);
+                        let appliedItemToUpdate = [];
+                        if (
+                            option['customSettings'].hasOwnProperty(
+                                'appliedColourByValue',
+                            )
+                        ) {
+                            appliedItemToUpdate = [
+                                ...option['customSettings'][
+                                    'appliedColourByValue'
+                                ],
+                                appliedItem,
+                            ];
+                        } else {
+                            appliedItemToUpdate.push(appliedItem);
+                        }
+                        option['customSettings'] = {
+                            ...option['customSettings'],
+                            ['appliedColourByValue']: appliedItemToUpdate,
+                        };
                     }
                 }
             });
+            optionUpdated = option;
+            updateChart(optionUpdated);
             functionCallReference.current.applyRulesToChart = false;
         }
         /*} else {
@@ -203,13 +231,11 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 [column]: event.target.value,
             };
         });
-        console.log(newRules, 'newRules', value);
         if (column === 'columnToColour') {
             let option = data.option;
             let jsonPropName = data.columns.find(
                 (item) => item.selector === event.target.value,
             );
-            console.log('colum to colour', event, jsonPropName.name);
             if (jsonPropName.hasOwnProperty('name')) {
                 setNewRules((prevValues) => {
                     return {
@@ -222,11 +248,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                     setValuesToColour(option['xAxis']['data']);
                     let dataArray = option['xAxis']['data'].filter(
                         (item) => !isNaN(item),
-                    );
-                    console.log(
-                        dataArray,
-                        Math.min(...dataArray),
-                        Math.max(...dataArray),
                     );
                     setNewRules((prevValues) => {
                         return {
@@ -250,11 +271,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                         let dataArray = option['series'][seriesIndex][
                             'data'
                         ].filter((item) => !isNaN(item));
-                        console.log(
-                            dataArray,
-                            Math.min(...dataArray),
-                            Math.max(...dataArray),
-                        );
                         setNewRules((prevValues) => {
                             return {
                                 ...prevValues,
@@ -289,7 +305,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 //option['xAxis']['data'].findIndex((data)=>(data.hasOwnProperty('value') ? (data.value === item) : (data === item)));
                 positions = [...xAxisPosition, ...positions];
             });
-            console.log('positions for ==', positions);
         }
         if (sourceObject.columnComparision === '!=') {
             let dataVerify = option['xAxis']['data'];
@@ -379,7 +394,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         if (colourObj.hasOwnProperty(seriesData.dataIndex)) {
             return colourObj[seriesData.dataIndex];
         }
-        return '#5470c6';
+        return ECHART_BAR_COLOUR;
     }
     function updateData() {
         if (
@@ -627,12 +642,10 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
     );
     function updateExistingRules(assignedRules, valueCompute) {
         setTimeout(() => {
-            console.log(assignedRules, 'appliedRulesonUpdateExistingRules');
             let option =
                 typeof valueCompute === 'string'
                     ? JSON.parse(valueCompute)
                     : valueCompute;
-            console.log(valuesColourMapping, 'valueColourMap');
             assignedRules.forEach((item, index) => {
                 let xAxisPositions = getXAxisPositions(item);
                 let seriesIndex = option['series'].findIndex((seriesitem) =>
@@ -641,7 +654,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 let colourObj = {};
                 option['series'][seriesIndex]['data'].forEach(
                     (seriesItem, index) => {
-                        console.log(seriesItem, 'itemcolour');
                         if (xAxisPositions.includes(index)) {
                             colourObj = {
                                 ...colourObj,
@@ -650,7 +662,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                         } else {
                             colourObj = {
                                 ...colourObj,
-                                [index]: '#5470c6',
+                                [index]: ECHART_BAR_COLOUR,
                             };
                         }
                     },
@@ -705,9 +717,14 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             (item, itemindex) => index !== itemindex,
         );
         functionCallReference.current.applyRulesToChart = true;
+        assignedRules = assignedRules.map((item, index) => {
+            return {
+                ...item,
+                ['index']: index,
+            };
+        });
         setAppliedRules(assignedRules);
         // updateColourValueMap(assignedRules);
-        console.log(assignedRules, 'assignedRules');
         // setTimeout(() => {
         //     try {
         //         let dataVal =
