@@ -78,10 +78,7 @@ export const Screen = observer((props: ScreenProps) => {
 
     // save the ref
     const rootRef = useRef<HTMLDivElement | null>(null);
-    // const rootRef = useRef<string | null>(reference);
 
-    // const [showMask, setShowMask] = useState(true);
-    // const [showSelectedMask, setShowSelectedMask] = useState(true);
     // get the designer
     const { state } = useBlocks();
     const { designer } = useDesigner();
@@ -253,12 +250,6 @@ export const Screen = observer((props: ScreenProps) => {
             document.removeEventListener('mousemove', handleDocumentMouseMove);
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
-
-    const checkIfBlockIsSelected = (selectedEle) => {
-        const rootEl = rootRef.current;
-        const currEle = document.querySelector(`[data-block="${selectedEle}"]`);
-        return currEle ? rootEl.contains(currEle) : false;
-    };
 
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
