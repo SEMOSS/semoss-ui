@@ -198,6 +198,17 @@ export const JobsTable = (props: {
                                     cronExpression:
                                         job.cronExpression.replaceAll('?', '*'),
                                     cronTz: job.timeZone,
+                                    smtpHost: job.smtpHost,
+                                    smtpPort: job.smtpPort,
+                                    subject: job.subject,
+                                    jobType: job.jobType,
+                                    to: job.to,
+                                    cc: job.cc,
+                                    bcc: job.bcc,
+                                    from: job.from,
+                                    message: job.message,
+                                    username: job.username,
+                                    password: job.password,
                                 });
                             }}
                         >
