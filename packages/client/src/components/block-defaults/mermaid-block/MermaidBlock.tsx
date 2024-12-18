@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 import { useBlock } from '@/hooks';
 import { Alert, styled } from '@mui/material';
 
+const StyledContainer = styled('div')(() => ({
+    width: '100%',
+    minHeight: '10%',
+}));
+
 // Container for Mermaid Diagram
 const MermaidContainer = styled('div')(() => ({
     width: 'fit-content',
@@ -90,22 +95,22 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 
     // Render Block
     return (
-        <MermaidContainer
-            className="mermaid-container"
-            id={`mermaid-container-${id}`}
-            {...attrs}
-        >
-            {/* Mermaid Diagram */}
-            <pre
-                className="mermaid"
-                id={id}
-                style={{
-                    display: errorMessage || !data.text ? 'none' : 'block',
-                }}
+        <StyledContainer {...attrs}>
+            <MermaidContainer
+                className="mermaid-container"
+                id={`mermaid-container-${id}`}
             >
-                {data.text}
-            </pre>
-
+                {/* Mermaid Diagram */}
+                <pre
+                    className="mermaid"
+                    id={id}
+                    style={{
+                        display: errorMessage || !data.text ? 'none' : 'block',
+                    }}
+                >
+                    {data.text}
+                </pre>
+            </MermaidContainer>
             {/* Error UI */}
             {errorMessage && (
                 <div className="mermaid-error-ui">
@@ -118,13 +123,8 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
                 </div>
             )}
 
-            {!data.text && (
-                // <ErrorAlert severity="warning">
-                //     No diagram text provided
-                // </ErrorAlert>
-                <></>
-            )}
-            {/* Suggestion:Warning block for Missing Text can be added instead of not shwowing */}
-        </MermaidContainer>
+            {/* Suggestion: Warning Alert for undefined can be added instead of not shwowing */}
+            {!data.text && <div></div>}
+        </StyledContainer>
     );
 });
