@@ -433,7 +433,7 @@ export const LayersPanel = observer((): JSX.Element => {
                             alignItems={'center'}
                         >
                             <Typography variant="h6">Layers</Typography>
-                            <IconButton
+                            {/* <IconButton
                                 className="layers-menu__add-layer-button"
                                 onClick={(e) => {
                                     // setPopoverAnchorEl(e.currentTarget);
@@ -441,7 +441,7 @@ export const LayersPanel = observer((): JSX.Element => {
                                 }}
                             >
                                 <Add />
-                            </IconButton>
+                            </IconButton> */}
                         </Stack>
                     </Stack>
                     <Stack spacing={2} width={'100%'}>
