@@ -26,6 +26,7 @@ import { APP_IMAGES } from './app.images';
 import { removeUnderscores } from '@/utility';
 import { AppDeleteModal } from '@/components/app';
 import { useNavigate } from 'react-router-dom';
+import { AddAppCloneModal } from './save-app/AddAppCloneModal';
 
 const StyledName = styled(Typography)(() => ({
     fontWeight: 500,
@@ -220,11 +221,18 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const navigate = useNavigate();
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
 
     const open = Boolean(anchorEl);
 
+    const navigateApp = (appId: string) => {
+        if (!appId) {
+            return;
+        }
+
+        navigate(`/workspace/${appId}`);
+    };
     const copyProjectId = (projectId: string) => {
         try {
             navigator.clipboard.writeText(projectId);
@@ -476,6 +484,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
+                <Menu.Item
+                    value="clone"
+                    onClick={() => {
+                        setIsUploadOpen(true);
+                    }}
+                >
+                    App Clones
+                </Menu.Item>
                 {app?.user_permission && app.user_permission < 2 && (
                     <Menu.Item
                         value="delete"
@@ -499,6 +515,21 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     onDelete();
                 }}
             />
+            {isUploadOpen ? (
+                <AddAppCloneModal
+                    open={isUploadOpen}
+                    handleClose={(appId) => {
+                        console.log('ok');
+                        // if there is an appId navigate to it
+                        if (appId) {
+                            navigateApp(appId);
+                        }
+
+                        // close it
+                        setIsUploadOpen(false);
+                    }}
+                />
+            ) : null}
         </StyledTileCard>
     );
 };
