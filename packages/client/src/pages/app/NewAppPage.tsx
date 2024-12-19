@@ -230,7 +230,6 @@ export const NewAppPage = () => {
                                                 type: 'blocks',
                                                 state: {
                                                     version: STATE_VERSION,
-                                                    dependencies: {},
                                                     variables: {},
                                                     queries: {},
                                                     blocks: BASE_PAGE_BLOCKS,
