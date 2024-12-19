@@ -1,14 +1,6 @@
 import { ActionMessages } from '@/stores';
-import {
-    ButtonBlockConfig,
-    ContainerBlockConfig,
-    InputBlockConfig,
-    PageBlockConfig,
-    TextBlockConfig,
-} from '@/components/block-defaults';
-import CHATAI from '@/assets/img/query.jpeg';
-
 import { Template } from './templates.types';
+import CHATAI from '@/assets/img/query.jpeg';
 
 export const AskLLMTemplate: Template = {
     name: 'Ask LLM',
@@ -18,187 +10,219 @@ export const AskLLMTemplate: Template = {
     lastUpdatedDate: new Date().toISOString(),
     tags: ['LLM'],
     state: {
-        version: '1.0.0-alpha.1',
-        executionOrder: [],
-        variables: {
-            question: {
-                to: 'question',
-                type: 'block',
-            },
-            'ask-llm': {
-                to: 'ask-llm',
-                type: 'query',
-            },
-            model: {
-                to: 'model',
-                type: 'model',
-            },
-        },
-        dependencies: {
-            model: '17753d59-4536-4415-a6ac-f673b1a90a87',
-        },
         queries: {
-            ['ask-llm']: {
+            'ask-llm': {
                 id: 'ask-llm',
                 cells: [
                     {
                         id: 'cell-1',
                         widget: 'code',
                         parameters: {
+                            code: 'LLM(engine=["{{model}}"], command=["{{question}}"]);',
                             type: 'pixel',
-                            // Do we want to replace hardcoded LLM to a user default
-                            code: `LLM(engine=["{{model}}"], command=["{{question}}"]);`,
                         },
                     },
                 ],
             },
         },
         blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    style: PageBlockConfig.data.style,
-                },
-                listeners: {
-                    onPageLoad: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: ['container'],
-                    },
-                },
-            },
-            ['container']: {
-                id: 'container',
-                widget: 'container',
+            container: {
                 parent: {
                     id: 'page-1',
                     slot: 'content',
                 },
-                data: {
-                    style: ContainerBlockConfig.data.style,
-                },
-                listeners: {},
                 slots: {
                     children: {
-                        name: 'children',
                         children: ['title', 'description', 'form', 'response'],
+                        name: 'children',
                     },
                 },
-            },
-            ['title']: {
-                id: 'title',
-                widget: 'text',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        fontSize: '1.5rem',
-                        ...TextBlockConfig.data.style,
-                    },
-                    text: 'Ask LLM',
-                },
-                listeners: {},
-                slots: {},
-            },
-            ['description']: {
-                id: 'description',
-                widget: 'text',
-                parent: {
-                    id: 'container',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        fontSize: '1.25rem',
-                        ...TextBlockConfig.data.style,
-                    },
-                    text: 'Ask an LLM a question',
-                },
-                listeners: {},
-                slots: {},
-            },
-            ['form']: {
-                id: 'form',
                 widget: 'container',
+                data: {
+                    style: {
+                        padding: '4px',
+                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
+                },
+                listeners: {},
+                id: 'container',
+            },
+            form: {
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
-                data: {
-                    style: ContainerBlockConfig.data.style,
-                },
-                listeners: {},
                 slots: {
                     children: {
-                        name: 'children',
                         children: ['question', 'submit'],
+                        name: 'children',
                     },
                 },
+                widget: 'container',
+                data: {
+                    style: {
+                        padding: '4px',
+                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
+                },
+                listeners: {},
+                id: 'form',
             },
-            ['question']: {
-                id: 'question',
-                widget: 'input',
+            question: {
                 parent: {
                     id: 'form',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'input',
                 data: {
-                    style: InputBlockConfig.data.style,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
                     label: 'Question',
                     rows: 3,
                     type: 'text',
                     required: true,
+                    value: '',
                 },
                 listeners: {
                     onClick: [],
                 },
-                slots: {},
+                id: 'question',
             },
-            ['submit']: {
-                id: 'submit',
-                widget: 'button',
+            submit: {
                 parent: {
                     id: 'form',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'button',
                 data: {
-                    style: ButtonBlockConfig.data.style,
+                    variant: 'contained',
+                    style: {},
                     label: 'Ask',
                     loading: '{{ask-llm.isLoading}}',
-                    variant: 'contained',
                 },
                 listeners: {
                     onClick: [
                         {
-                            message: ActionMessages.RUN_QUERY,
                             payload: {
                                 queryId: 'ask-llm',
                             },
+                            message: ActionMessages.RUN_QUERY,
                         },
                     ],
                 },
-                slots: {},
+                id: 'submit',
             },
-            ['response']: {
-                id: 'response',
-                widget: 'text',
+            'page-1': {
+                parent: null,
+                slots: {
+                    content: {
+                        children: ['container'],
+                        name: 'content',
+                    },
+                },
+                widget: 'page',
+                data: {
+                    style: {
+                        padding: '24px',
+                        fontFamily: 'roboto',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
+                },
+                listeners: {
+                    onPageLoad: [],
+                },
+                id: 'page-1',
+            },
+            response: {
                 parent: {
                     id: 'container',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
-                    style: TextBlockConfig.data.style,
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
                     text: '{{ask-llm.output.response}}',
                 },
                 listeners: {},
+                id: 'response',
+            },
+            description: {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
                 slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        fontSize: '1.25rem',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Ask an LLM a question',
+                },
+                listeners: {},
+                id: 'description',
+            },
+            title: {
+                parent: {
+                    id: 'container',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        fontSize: '1.5rem',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Ask LLM',
+                },
+                listeners: {},
+                id: 'title',
             },
         },
+        variables: {
+            question: {
+                to: 'question',
+                type: 'block',
+                isInput: true,
+                isOutput: false,
+            },
+            'ask-llm': {
+                to: 'ask-llm',
+                type: 'query',
+                isInput: false,
+                isOutput: true,
+            },
+            model: {
+                type: 'model',
+                value: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
+                isInput: true,
+                isOutput: false,
+            },
+        },
+        executionOrder: ['ask-llm'],
+        version: '1.0.0-alpha.3',
     },
 };

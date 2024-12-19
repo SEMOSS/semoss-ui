@@ -19,28 +19,33 @@ export const AskCSVTemplate: Template = {
     lastUpdatedDate: new Date().toISOString(),
     tags: ['NLP', 'SQL', 'LLM'],
     state: {
-        version: '1.0.0-alpha.1',
-        executionOrder: [],
+        version: '1.0.0-alpha.3',
+        executionOrder: ['ask-model'],
         variables: {
             file: {
                 to: 'file',
                 type: 'block',
+                isInput: true,
+                isOutput: false,
             },
             question: {
                 to: 'question',
                 type: 'block',
+                isInput: true,
+                isOutput: false,
+            },
+            model: {
+                type: 'model',
+                isInput: true,
+                isOutput: false,
+                value: '17753d59-4536-4415-a6ac-f673b1a90a87',
             },
             'ask-model': {
                 to: 'ask-model',
                 type: 'query',
+                isInput: false,
+                isOutput: true,
             },
-            model: {
-                to: 'model',
-                type: 'model',
-            },
-        },
-        dependencies: {
-            model: '17753d59-4536-4415-a6ac-f673b1a90a87',
         },
         queries: {
             ['ask-model']: {

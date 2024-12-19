@@ -213,7 +213,7 @@ export const DeleteDuplicateMask = observer(() => {
             },
         });
 
-        designer.setSelected(id ? id : '');
+        designer.setSelected(id ? (id as string) : '');
     };
 
     // TODO: revisit these actions for the base page once multiple pages/routing is enabled

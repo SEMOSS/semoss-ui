@@ -422,7 +422,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     const s: SerializedState = {
                         version: STATE_VERSION,
                         executionOrder: [],
-                        dependencies: {},
                         variables: {},
                         queries: {},
                         blocks: {
