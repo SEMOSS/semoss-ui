@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Paper } from '@semoss/ui';
+import { Stack } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { ErrorBoundary } from '@/components/common';
 import { Renderer } from '@/components/blocks';
-import { Screen } from './Screen';
 
 interface DesignerPanelProps {
     /** Id of the designer */
