@@ -18,7 +18,7 @@ import {
 import { Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Job, JobBuilder } from './job.types';
 import { runPixel } from '@/api';
-import { getHumanReadableCronExpression } from './job.utils';
+import { convertTimetoDate, getHumanReadableCronExpression } from './job.utils';
 
 const StyledDataGrid = styled(DataGrid)(() => ({
     '.MuiDataGrid-overlayWrapper': {
@@ -133,6 +133,7 @@ export const JobsTable = (props: {
             minWidth: 200,
             renderCell: (params) => {
                 let time = '';
+                console.log(params);
                 if (
                     !(
                         !params.value ||
@@ -140,7 +141,7 @@ export const JobsTable = (props: {
                         params.value === 'INACTIVE'
                     )
                 ) {
-                    time = dayjs(params.value).format('MM/DD/YYYY h:MM A');
+                    time = convertTimetoDate(params.value);
                 }
                 return <>{time}</>;
             },

@@ -177,6 +177,8 @@ export const JobBuilderModal = (props: {
                 );
             case JobTypeCustomJob:
                 return !!builder.name && !!builder.pixel && !!builder.cronTz;
+            default:
+                return false;
         }
     }, [
         builder.name,

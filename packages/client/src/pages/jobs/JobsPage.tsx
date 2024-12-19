@@ -7,15 +7,7 @@ import {
     NotStartedOutlined,
     Pause,
 } from '@mui/icons-material';
-import {
-    Button,
-    Modal,
-    Tabs,
-    Search,
-    useNotification,
-    Stack,
-    Typography,
-} from '@semoss/ui';
+import { Button, Tabs, Search, useNotification, Stack } from '@semoss/ui';
 
 import { useDebounce, useRootStore } from '@/hooks';
 import { AvTimer } from '@mui/icons-material';
@@ -426,7 +418,7 @@ export function JobsPage() {
     };
 
     const getFailedJobCount = () => {
-        let pixel =
+        const pixel =
             'META|SchedulerHistory(filters=[Filter(SMSS_AUDIT_TRAIL__SUCCESS == "false")])';
         monolithStore
             .runQuery<

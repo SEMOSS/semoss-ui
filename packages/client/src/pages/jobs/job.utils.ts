@@ -148,7 +148,7 @@ export function convertSendEmailRecipeToJob(recipe: string): SendEmailJob {
         return;
     }
     const recipeMatches: RegExpMatchArray = recipe.match(/(?<=\().*/g);
-    if (recipeMatches.length === 0) {
+    if (!recipeMatches || recipeMatches.length === 0) {
         return;
     }
     let cleanedRecipe: string = recipeMatches[0];
@@ -167,6 +167,17 @@ export function getEncodeByJobType(builder: JobBuilder) {
         case JobTypeCustomJob:
             return builder.pixel;
         case JobTypeSendEmail:
+            if (
+                !builder.smtpHost ||
+                !builder.smtpPort ||
+                !builder.to ||
+                !builder.from ||
+                !builder.message
+            ) {
+                throw new Error(
+                    'Missing required fields for SendEmail job type',
+                );
+            }
             return `SendEmail(smtpHost=['${builder.smtpHost}'], smtpPort=['${builder.smtpPort}'], subject=['${builder.subject}'], to=['${builder.to}'], cc=['${builder.cc}'], bcc=['${builder.bcc}'], from=['${builder.from}'], message=['${builder.message}'], username=['${builder.username}'], password=['${builder.password}']);`;
     }
 }

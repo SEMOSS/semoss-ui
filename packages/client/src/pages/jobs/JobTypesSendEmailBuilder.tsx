@@ -157,6 +157,7 @@ export const JobTypesSendEmailBuilder = (props: {
                 size="small"
                 type="password"
                 value={builder.password}
+                autoComplete="new-password"
                 onChange={(e) => setBuilderField('password', e.target.value)}
             />
         </Stack>
