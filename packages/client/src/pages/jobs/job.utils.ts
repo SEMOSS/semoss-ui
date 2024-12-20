@@ -1,4 +1,10 @@
-import { DaysOfWeek, Months } from './job.constants';
+import {
+    DaysOfWeek,
+    JobTypeCustomJob,
+    JobTypeSendEmail,
+    Months,
+} from './job.constants';
+import { JobBuilder, SendEmailJob } from './job.types';
 
 export function getHumanReadableCronExpression(cronExpression: string) {
     const cronValues = cronExpression.split(' ');
@@ -135,4 +141,32 @@ export function convertDeltaToRuntimeString(duration) {
     }
     milliseconds = milliseconds.substring(0, 3);
     return hoursStr + ':' + minutesStr + ':' + secondsStr + '.' + milliseconds;
+}
+
+export function convertSendEmailRecipeToJob(recipe: string): SendEmailJob {
+    if (!recipe.includes('SendEmail')) {
+        return;
+    }
+    const recipeMatches: RegExpMatchArray = recipe.match(/(?<=\().*/g);
+    if (recipeMatches.length === 0) {
+        return;
+    }
+    let cleanedRecipe: string = recipeMatches[0];
+    cleanedRecipe = cleanedRecipe.replaceAll(/[\(\[\]\;\)]/g, '');
+    cleanedRecipe = cleanedRecipe.replaceAll(',,', ',');
+    cleanedRecipe = cleanedRecipe.replaceAll('=', "':");
+    cleanedRecipe = cleanedRecipe.replaceAll("', ", "', '");
+    cleanedRecipe = cleanedRecipe.replaceAll("'", '"');
+    cleanedRecipe = `{"${cleanedRecipe}}`;
+    const job: SendEmailJob = JSON.parse(cleanedRecipe);
+    return job;
+}
+
+export function getEncodeByJobType(builder: JobBuilder) {
+    switch (builder.jobType) {
+        case JobTypeCustomJob:
+            return builder.pixel;
+        case JobTypeSendEmail:
+            return `SendEmail(smtpHost=['${builder.smtpHost}'], smtpPort=['${builder.smtpPort}'], subject=['${builder.subject}'], to=['${builder.to}'], cc=['${builder.cc}'], bcc=['${builder.bcc}'], from=['${builder.from}'], message=['${builder.message}'], username=['${builder.username}'], password=['${builder.password}']);`;
+    }
 }

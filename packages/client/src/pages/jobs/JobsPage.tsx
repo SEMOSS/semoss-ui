@@ -28,8 +28,13 @@ import {
     JobBuilder,
     JobUIState,
     PixelReturnJob,
+    SendEmailJob,
 } from './job.types';
-import { convertDeltaToRuntimeString, convertTimetoDate } from './job.utils';
+import {
+    convertDeltaToRuntimeString,
+    convertSendEmailRecipeToJob,
+    convertTimetoDate,
+} from './job.utils';
 import { JobsTable } from './JobsTable';
 import { runPixel } from '@/api';
 import { JobBuilderModal } from './JobBuilderModal';
@@ -83,6 +88,16 @@ export function JobsPage() {
                     const pixelJobs: Record<string, PixelReturnJob> =
                         response.pixelReturn[0].output;
                     const jobs: Job[] = Object.values(pixelJobs).map((job) => {
+                        let uiState: JobUIState;
+                        if (job.uiState) {
+                            uiState = JSON.parse(job.uiState);
+                        }
+                        let sendEmailJob: SendEmailJob;
+                        if (job.recipe) {
+                            sendEmailJob = convertSendEmailRecipeToJob(
+                                job.recipe,
+                            );
+                        }
                         return {
                             id: job.jobId,
                             name: job.jobName,
@@ -98,6 +113,23 @@ export function JobsPage() {
                             isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
                             group: job.jobGroup,
                             pixel: job.recipe,
+                            smtpHost: sendEmailJob?.smtpHost,
+                            smtpPort: sendEmailJob?.smtpPort,
+                            subject: sendEmailJob?.subject,
+                            jobType: uiState?.jobType,
+                            to: (sendEmailJob?.to ?? '')
+                                .split(',')
+                                .filter((to) => !!to),
+                            cc: (sendEmailJob?.cc ?? '')
+                                .split(',')
+                                .filter((cc) => !!cc),
+                            bcc: (sendEmailJob?.bcc ?? '')
+                                .split(',')
+                                .filter((bcc) => !!bcc),
+                            from: sendEmailJob?.from,
+                            message: sendEmailJob?.message,
+                            username: sendEmailJob?.username,
+                            password: sendEmailJob?.password,
                         };
                     });
 
@@ -545,6 +577,17 @@ export function JobsPage() {
                                     tags: [],
                                     cronExpression: '0 0 12 * * *',
                                     cronTz: 'Eastern Standard Time',
+                                    smtpHost: '',
+                                    smtpPort: '',
+                                    subject: '',
+                                    jobType: '',
+                                    to: [],
+                                    cc: [],
+                                    bcc: [],
+                                    from: '',
+                                    message: '',
+                                    username: '',
+                                    password: '',
                                 })
                             }
                         >
