@@ -49,6 +49,5 @@ export type AccordionProps = {
 };
 
 export const Accordion = (props: AccordionProps) => {
-    console.log("accordion");
     return <MuiAccordion {...props}>{props.children}</MuiAccordion>;
 };

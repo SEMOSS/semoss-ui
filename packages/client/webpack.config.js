@@ -56,9 +56,7 @@ const config = {
             outputHashing:
                 process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
             watch: process.env['NODE_ENV'] == 'production' ? false : true,
-            nodeOptions: {
-                NODE_OPTIONS: '--max-old-space-size=8192',
-            },
+            memoryLimit: 8192,
         }),
         new NxReactWebpackPlugin({
             // Uncomment this line if you don't want to use SVGR
