@@ -10,7 +10,7 @@ import { useBlock } from '@/hooks';
 export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
     const { data } = useBlock(id);
     return (
-        <Stack>
+        <Stack style={{ height: '500px' }}>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
             {/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
             <JsonSettings id={id} path="option" />

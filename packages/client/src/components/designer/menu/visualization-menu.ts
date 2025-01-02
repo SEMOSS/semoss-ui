@@ -48,6 +48,7 @@ import {
     GENERAL_MERMAID,
 } from '@/components/block-defaults/mermaid-block';
 import { DesignerMenuItem } from './menu.types';
+import { truncateSync } from 'fs';
 
 const SECTION_GENERAL_VISUALIZATION = 'General';
 const SECTION_MERMAID = 'Mermaid';
@@ -57,6 +58,7 @@ const SECTION_LINE_CHART = 'Line Chart';
 const SECTION_PIE_CHART = 'Pie Chart';
 const SECTION_SCATTER_PLOTS = 'Scatter Plot';
 const SECTION_ECHART_BAR_CHART = 'Bar E Chart';
+const SECTION_ECHART_SCATTER_PLOTS = 'Scatter Plots E Charts';
 
 /**
  * Show the visualizations in the menu
@@ -781,6 +783,108 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                             fontWeight: 'bold',
                             fontFamily: 'Arial Narrow',
                             fontSize: 12,
+                        },
+                    },
+                },
+                frame: {
+                    name: '',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_ECHART_SCATTER_PLOTS,
+        image: SCATTER_PLOT,
+        name: '',
+        json: {
+            widget: 'e-chart',
+            data: {
+                variation: 'echart-scatter-plots',
+                option: {
+                    title: {
+                        text: '',
+                        left: 'center',
+                        top: 'top',
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                    },
+                    xAxis: {
+                        name: '',
+                        pixelName: '',
+                        nameLocation: 'middle',
+                        show: true,
+                        type: 'value',
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                    },
+                    yAxis: {
+                        name: '',
+                        pixelName: '',
+                        type: 'value',
+                        show: true,
+                        axisLine: {
+                            show: true,
+                        },
+                        axisTick: {
+                            show: true,
+                            alignWithLabel: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 12,
+                        },
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                    },
+                    series: [
+                        {
+                            data: [],
+                            label: {
+                                name: '',
+                                position: top,
+                            },
+                            symbolSize: 15,
+                            symbol: 'circle',
+                            type: 'scatter',
+                        },
+                    ],
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: [
+                                    'rect',
+                                    'polygon',
+                                    'lineX',
+                                    'lineY',
+                                    'clear',
+                                ],
+                            },
+                        },
+                    },
+                    brush: {
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
                         },
                     },
                 },

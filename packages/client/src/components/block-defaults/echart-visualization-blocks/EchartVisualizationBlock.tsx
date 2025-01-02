@@ -4,11 +4,12 @@ import { useBlock } from '@/hooks';
 import { BlockComponent } from '@/stores';
 import { styled } from '@mui/material';
 import { Bar } from './Variants/Bar';
+import { ScatterPlotBlock } from './Variants/ScatterPlot';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
 })<{ error?: boolean }>(({ error = false, theme }) => ({
-    height: '30vh',
+    height: '50vh',
     width: '80vh',
     color: error ? theme.palette.error.main : 'unset',
 }));
@@ -31,6 +32,7 @@ export interface EchartVisualizationBlockDef {
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
+            hideExclude: boolean;
         };
     };
     listeners: {};
@@ -47,10 +49,31 @@ export const EchartVisualizationBlock: BlockComponent = observer(({ id }) => {
             </StyledNoDataContainer>
         );
     }
-
-    return (
-        <StyledNoDataContainer {...attrs}>
-            {data.variation === 'echart-bar-graph' && <Bar id={id} />}
-        </StyledNoDataContainer>
-    );
+    if (typeof data.option === 'string') {
+        try {
+            return (
+                <StyledNoDataContainer {...attrs}>
+                    {data.variation === 'echart-bar-graph' && <Bar id={id} />}
+                    {data.variation === 'echart-scatter-plots' && (
+                        <ScatterPlotBlock id={id} />
+                    )}
+                </StyledNoDataContainer>
+            );
+        } catch (e) {
+            return (
+                <StyledNoDataContainer error {...attrs}>
+                    There was an issue parsing your JSON.
+                </StyledNoDataContainer>
+            );
+        }
+    } else {
+        return (
+            <StyledNoDataContainer {...attrs}>
+                {data.variation === 'echart-bar-graph' && <Bar id={id} />}
+                {data.variation === 'echart-scatter-plots' && (
+                    <ScatterPlotBlock id={id} />
+                )}
+            </StyledNoDataContainer>
+        );
+    }
 });
