@@ -32,7 +32,7 @@ interface StateStoreInterface {
     /** insightID to load */
     insightId: string;
 
-    /** token to reference (blocks, cells, dependencies) */
+    /** token to reference (blocks, cells, constants) */
     variables: Record<string, Variable>;
 
     /** Queries rendered in the insight */
@@ -52,9 +52,6 @@ interface StateStoreInterface {
 
     /** Order of how we consume app as API */
     executionOrder: string[];
-
-    /** TODO: Get rid of this, engine dependencies */
-    dependencies: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -87,7 +84,6 @@ export class StateStore {
         frames: {},
         cellRegistry: {},
         variables: {},
-        dependencies: {}, // Maher said change to constants
         executionOrder: [],
     };
 
@@ -172,14 +168,6 @@ export class StateStore {
      */
     get executionOrder() {
         return this._store.executionOrder;
-    }
-
-    /**
-     * Gets all tokens
-     * @returns the tokens
-     */
-    get dependencies() {
-        return this._store.dependencies;
     }
 
     /**
@@ -464,14 +452,6 @@ export class StateStore {
                 const { id } = action.payload;
 
                 this.deleteVariable(id);
-            } else if (ActionMessages.ADD_DEPENDENCY === action.message) {
-                const { id, type } = action.payload;
-
-                return this.addDependency(id, type);
-            } else if (ActionMessages.REMOVE_DEPENDENCY === action.message) {
-                const { id } = action.payload;
-
-                return this.removeDependency(id);
             } else if (
                 ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
             ) {
@@ -593,7 +573,6 @@ export class StateStore {
             }, {} as SerializedState['queries']),
             blocks: toJS(this._store.blocks),
             variables: toJS(this._store.variables),
-            dependencies: toJS(this._store.dependencies),
             executionOrder: toJS(this._store.executionOrder),
             version: this._store.version,
         };
@@ -803,9 +782,6 @@ export class StateStore {
 
         // store the variables
         this._store.variables = state.variables ? state.variables : {};
-
-        // TODO: Remove, store the dependencies
-        this._store.dependencies = state.dependencies ? state.dependencies : {};
 
         // store the execution order of notebooks
         let order = [];
@@ -1422,15 +1398,6 @@ export class StateStore {
      * @param id - id to delete
      */
     private deleteVariable = async (id: string) => {
-        const variable = this._store.variables[id];
-        if (
-            variable.type !== 'block' &&
-            variable.type !== 'query' &&
-            variable.type !== 'cell'
-        ) {
-            delete this._store.dependencies[variable.to];
-        }
-
         // Stringify blocks
         const blocksToMutate = JSON.stringify(this._store.blocks);
         // remove the references of it from ui (don't touch users code notebook)
@@ -1441,32 +1408,6 @@ export class StateStore {
         this._store.blocks = JSON.parse(modifiedBlocks);
 
         delete this._store.variables[id];
-    };
-
-    /**
-     * Adds a constant/dependency to use as a token
-     * @param value can be an engine id, string, number, date, and etc
-     * @param type - what type of dependency - Model, Database, String, Date, Number
-     * @returns id of newly added dependency for token value
-     */
-    private addDependency = (value: unknown, type: string) => {
-        let id;
-
-        do {
-            id = `${type}--${Math.floor(Math.random() * 10000)}`;
-        } while (this._store.dependencies[id]);
-
-        this._store.dependencies[id] = value;
-
-        return id;
-    };
-
-    /**
-     * Removes a dependency if unsuccesful variable creation
-     * @param id id to remove
-     */
-    private removeDependency = (id: string) => {
-        delete this._store.dependencies[id];
     };
 
     /**

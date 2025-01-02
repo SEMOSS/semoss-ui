@@ -1,6 +1,6 @@
-import LANDINGPAGE from '@/assets/img/query.jpeg';
-
+import { ActionMessages } from '@/stores';
 import { Template } from './templates.types';
+import LANDINGPAGE from '@/assets/img/query.jpeg';
 
 export const BlocksGuideTemplate: Template = {
     name: 'Variables Guide',
@@ -11,76 +11,6 @@ export const BlocksGuideTemplate: Template = {
     lastUpdatedDate: new Date().toISOString(),
     tags: [],
     state: {
-        version: '1.0.0-alpha.1',
-        executionOrder: [],
-        variables: {
-            Vector: {
-                to: 'vector--3773',
-                type: 'vector',
-            },
-            DB: {
-                to: 'database--820',
-                type: 'database',
-            },
-            block: {
-                to: 'input--2178',
-                type: 'block',
-            },
-            query: {
-                to: 'python_code',
-                type: 'query',
-            },
-            cell: {
-                to: 'python_code',
-                type: 'cell',
-                cellId: '21756',
-            },
-            py_code: {
-                to: 'py-code',
-                type: 'query',
-            },
-            new_var: {
-                to: 'model--8923',
-                type: 'model',
-            },
-            string: {
-                to: 'string--75',
-                type: 'string',
-            },
-            date: {
-                to: 'date--5417',
-                type: 'date',
-            },
-            LLM: {
-                to: 'model--1476',
-                type: 'model',
-            },
-            json: {
-                to: 'JSON--7633',
-                type: 'JSON',
-            },
-            array: {
-                to: 'array--4834',
-                type: 'array',
-            },
-            number: {
-                to: 'number--7715',
-                type: 'number',
-            },
-        },
-        dependencies: {
-            'vector--3773': 'aa72a4be-cb7a-4f7e-b384-7be5c3c081f5',
-            'database--820': '61b2d7c0-5dd4-4ea9-bc6e-9f39f2ae8d7a',
-            'string--75': 'This is a string variable',
-            'model--8923': 'e338934d-bef1-4920-9136-dc0e37060dfa',
-            'date--5417': '2024-12-31',
-            'model--1476': '001510f8-b86e-492e-a7f0-41299775e7d9',
-            'JSON--7633': {
-                a: 'this is a label for a',
-            },
-            'array--4834': [1, 2, 3],
-            'number--7715': 10,
-        },
         queries: {
             default: {
                 id: 'default',
@@ -127,8 +57,8 @@ export const BlocksGuideTemplate: Template = {
                         id: '1423',
                         widget: 'code',
                         parameters: {
-                            type: 'py',
                             code: '',
+                            type: 'py',
                         },
                     },
                 ],
@@ -148,8 +78,8 @@ export const BlocksGuideTemplate: Template = {
                         id: '74964',
                         widget: 'code',
                         parameters: {
-                            type: 'py',
                             code: '"Output of Query"',
+                            type: 'py',
                         },
                     },
                 ],
@@ -169,82 +99,123 @@ export const BlocksGuideTemplate: Template = {
             },
         },
         blocks: {
-            'welcome-container-block': {
+            'text--6141': {
                 parent: {
-                    id: 'page-1',
-                    slot: 'content',
+                    id: 'container--620',
+                    slot: 'children',
                 },
-                slots: {
-                    children: {
-                        children: [
-                            'welcome-text-block',
-                            'text--5619',
-                            'text--7984',
-                            'text--6141',
-                            'text--9777',
-                            'text--3669',
-                            'text--7221',
-                            'text--9903',
-                            'text--8976',
-                            'text--1176',
-                            'text--8076',
-                            'text--8483',
-                            'text--3551',
-                        ],
-                        name: 'children',
+                slots: {},
+                widget: 'text',
+                data: {
+                    variant: 'h1',
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
                     },
+                    text: 'Data Structure Variables',
                 },
-                widget: 'container',
+                listeners: {},
+                id: 'text--6141',
+            },
+            'text--8076': {
+                parent: {
+                    id: 'container--1511',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
                 data: {
                     style: {
                         padding: '4px',
-                        overflow: 'hidden',
-                        flexWrap: 'wrap',
-                        flexDirection: 'column',
-                        display: 'flex',
-                        gap: '8px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
                     },
+                    text: '{{py_code}}',
                 },
                 listeners: {},
-                id: 'welcome-container-block',
+                id: 'text--8076',
             },
-            'page-1': {
-                parent: null,
-                slots: {
-                    content: {
-                        children: [
-                            'text--1771',
-                            'text--4214',
-                            'text--6115',
-                            'welcome-container-block',
-                            'text--4832',
-                            'text--4898',
-                            'text--9255',
-                            'text--2520',
-                            'text--890',
-                            'input--2178',
-                        ],
-                        name: 'content',
-                    },
+            'text--8483': {
+                parent: {
+                    id: 'container--1511',
+                    slot: 'children',
                 },
-                widget: 'page',
+                slots: {},
+                widget: 'text',
                 data: {
                     style: {
-                        padding: '24px',
-                        fontFamily: 'roboto',
-                        flexDirection: 'column',
-                        display: 'flex',
-                        gap: '8px',
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
                     },
+                    text: '{{py_code.isExecuted}}',
                 },
-                listeners: {
-                    onPageLoad: [],
+                listeners: {},
+                id: 'text--8483',
+            },
+            'text--9255': {
+                parent: {
+                    id: 'container--7223',
+                    slot: 'children',
                 },
-                id: 'page-1',
+                slots: {},
+                widget: 'text',
+                data: {
+                    variant: 'h1',
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Block Variables',
+                },
+                listeners: {},
+                id: 'text--9255',
+            },
+            'text--7221': {
+                parent: {
+                    id: 'container--620',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{json}}',
+                },
+                listeners: {},
+                id: 'text--7221',
+            },
+            'text--890': {
+                parent: {
+                    id: 'container--7223',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{block.label}}',
+                },
+                listeners: {},
+                id: 'text--890',
             },
             'welcome-text-block': {
                 parent: {
-                    id: 'welcome-container-block',
+                    id: 'container--9623',
                     slot: 'children',
                 },
                 slots: {},
@@ -261,235 +232,70 @@ export const BlocksGuideTemplate: Template = {
                 listeners: {},
                 id: 'welcome-text-block',
             },
-            'input--2178': {
-                id: 'input--2178',
-                widget: 'input',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        width: '100%',
-                        padding: '4px',
-                    },
-                    value: 'MOOSE AI',
-                    label: 'Name',
-                    hint: '',
-                    type: 'text',
-                    rows: 1,
-                    multiline: false,
-                    disabled: false,
-                    required: false,
-                    loading: false,
-                },
-                listeners: {
-                    onChange: [],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
             'text--6115': {
-                id: 'text--6115',
-                widget: 'text',
                 parent: {
-                    id: 'page-1',
-                    slot: 'content',
+                    id: 'container--9623',
+                    slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
+                    variant: 'h1',
                     style: {
                         padding: '4px',
                         whiteSpace: 'pre-line',
                         textOverflow: 'ellipsis',
                     },
                     text: 'Engine Variables',
-                    variant: 'h1',
                 },
                 listeners: {},
-                slots: {},
-            },
-            'text--5619': {
-                id: 'text--5619',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{DB}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--7984': {
-                id: 'text--7984',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{Vector}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--6141': {
-                id: 'text--6141',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: 'Data Structure Variables',
-                    variant: 'h1',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--9777': {
-                id: 'text--9777',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{string}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--9903': {
-                id: 'text--9903',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{array}}',
-                },
-                listeners: {},
-                slots: {},
+                id: 'text--6115',
             },
             'text--8976': {
-                id: 'text--8976',
-                widget: 'text',
                 parent: {
-                    id: 'welcome-container-block',
+                    id: 'container--1511',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
+                    variant: 'h1',
                     style: {
                         padding: '4px',
                         whiteSpace: 'pre-line',
                         textOverflow: 'ellipsis',
                     },
                     text: 'Notebook Variables',
-                    variant: 'h1',
                 },
                 listeners: {},
-                slots: {},
-            },
-            'text--1176': {
-                id: 'text--1176',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: 'Query',
-                    variant: 'h3',
-                },
-                listeners: {},
-                slots: {},
+                id: 'text--8976',
             },
             'text--3551': {
-                id: 'text--3551',
-                widget: 'text',
                 parent: {
-                    id: 'welcome-container-block',
+                    id: 'container--1511',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
+                    variant: 'h3',
                     style: {
                         padding: '4px',
                         whiteSpace: 'pre-line',
                         textOverflow: 'ellipsis',
                     },
                     text: 'Cell',
-                    variant: 'h3',
                 },
                 listeners: {},
-                slots: {},
-            },
-            'text--9255': {
-                id: 'text--9255',
-                widget: 'text',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: 'Block Variables',
-                    variant: 'h1',
-                },
-                listeners: {},
-                slots: {},
+                id: 'text--3551',
             },
             'text--2520': {
-                id: 'text--2520',
-                widget: 'text',
                 parent: {
-                    id: 'page-1',
-                    slot: 'content',
+                    id: 'container--7223',
+                    slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
                     style: {
                         padding: '4px',
@@ -500,152 +306,68 @@ export const BlocksGuideTemplate: Template = {
                     text: '{{block}}',
                 },
                 listeners: {},
-                slots: {},
-            },
-            'text--890': {
-                id: 'text--890',
-                widget: 'text',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{block.label}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--8076': {
-                id: 'text--8076',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{py_code}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--8483': {
-                id: 'text--8483',
-                widget: 'text',
-                parent: {
-                    id: 'welcome-container-block',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{py_code.isExecuted}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--4832': {
-                id: 'text--4832',
-                widget: 'text',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{cell}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--4898': {
-                id: 'text--4898',
-                widget: 'text',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        overflow: 'auto',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: '{{cell.isLoading}}',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--1771': {
-                id: 'text--1771',
-                widget: 'text',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                        textAlign: 'center',
-                        textDecoration: 'underline',
-                    },
-                    text: 'Variables Example',
-                    variant: 'h1',
-                },
-                listeners: {},
-                slots: {},
+                id: 'text--2520',
             },
             'text--4214': {
-                id: 'text--4214',
-                widget: 'text',
                 parent: {
                     id: 'page-1',
                     slot: 'content',
                 },
+                slots: {},
+                widget: 'text',
                 data: {
+                    variant: 'p',
                     style: {
                         padding: '4px',
                         whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
                         textAlign: 'center',
                         textDecoration: '',
+                        textOverflow: 'ellipsis',
                     },
                     text: 'This is an app used to help you understand the usage of our variables within our drag and drop app  builder',
-                    variant: 'p',
                 },
                 listeners: {},
-                slots: {},
+                id: 'text--4214',
             },
-            'text--7221': {
-                id: 'text--7221',
-                widget: 'text',
+            'input--2178': {
                 parent: {
-                    id: 'welcome-container-block',
+                    id: 'container--7223',
                     slot: 'children',
                 },
+                slots: {
+                    content: {
+                        children: [],
+                        name: 'content',
+                    },
+                },
+                widget: 'input',
+                data: {
+                    hint: '',
+                    multiline: false,
+                    style: {
+                        padding: '4px',
+                        width: '100%',
+                    },
+                    disabled: false,
+                    label: 'Name',
+                    type: 'text',
+                    rows: 1,
+                    loading: false,
+                    value: 'MOOSE AI',
+                    required: false,
+                },
+                listeners: {
+                    onChange: [],
+                },
+                id: 'input--2178',
+            },
+            'text--7984': {
+                parent: {
+                    id: 'container--9623',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
                 data: {
                     style: {
                         padding: '4px',
@@ -653,18 +375,77 @@ export const BlocksGuideTemplate: Template = {
                         overflow: 'auto',
                         textOverflow: 'ellipsis',
                     },
-                    text: '{{json}}',
+                    text: '{{Vector}}',
                 },
                 listeners: {},
-                slots: {},
+                id: 'text--7984',
             },
-            'text--3669': {
-                id: 'text--3669',
-                widget: 'text',
+            'text--9777': {
                 parent: {
-                    id: 'welcome-container-block',
+                    id: 'container--620',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{string}}',
+                },
+                listeners: {},
+                id: 'text--9777',
+            },
+            'text--1176': {
+                parent: {
+                    id: 'container--1511',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    variant: 'h3',
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Query',
+                },
+                listeners: {},
+                id: 'text--1176',
+            },
+            'text--1771': {
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    variant: 'h1',
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textAlign: 'center',
+                        textDecoration: 'underline',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Variables Example',
+                },
+                listeners: {},
+                id: 'text--1771',
+            },
+            'text--3669': {
+                parent: {
+                    id: 'container--620',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
                 data: {
                     style: {
                         padding: '4px',
@@ -675,8 +456,366 @@ export const BlocksGuideTemplate: Template = {
                     text: '{{number}}',
                 },
                 listeners: {},
+                id: 'text--3669',
+            },
+            'text--5619': {
+                parent: {
+                    id: 'container--9623',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{DB}}',
+                },
+                listeners: {},
+                id: 'text--5619',
+            },
+            'text--4832': {
+                parent: {
+                    id: 'container--1511',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{cell}}',
+                },
+                listeners: {},
+                id: 'text--4832',
+            },
+            'text--4898': {
+                parent: {
+                    id: 'container--620',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{cell.isLoading}}',
+                },
+                listeners: {},
+                id: 'text--4898',
+            },
+            'page-1': {
+                parent: null,
+                slots: {
+                    content: {
+                        children: [
+                            'text--1771',
+                            'text--4214',
+                            'container--9623',
+                            'container--620',
+                            'container--7223',
+                            'container--1511',
+                        ],
+                        name: 'content',
+                    },
+                },
+                widget: 'page',
+                data: {
+                    style: {
+                        padding: '24px',
+                        fontFamily: 'roboto',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                    },
+                },
+                listeners: {
+                    onPageLoad: [
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: 'python_code',
+                            },
+                        },
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: 'py-code',
+                            },
+                        },
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: 'default',
+                            },
+                        },
+                    ],
+                },
+                id: 'page-1',
+            },
+            'text--9903': {
+                parent: {
+                    id: 'container--620',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: '{{array}}',
+                },
+                listeners: {},
+                id: 'text--9903',
+            },
+            'container--9623': {
+                id: 'container--9623',
+                widget: 'container',
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '4px',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        border: '2px solid ',
+                        height: '6000px',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: [
+                            'text--6115',
+                            'text--5619',
+                            'text--7984',
+                            'welcome-text-block',
+                        ],
+                    },
+                },
+            },
+            'container--620': {
+                id: 'container--620',
+                widget: 'container',
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '4px',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        border: '2px solid #ff0000',
+                        height: '6000px',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: [
+                            'text--6141',
+                            'text--3669',
+                            'text--9777',
+                            'text--4898',
+                            'text--7221',
+                            'text--9903',
+                        ],
+                    },
+                },
+            },
+            'container--7223': {
+                id: 'container--7223',
+                widget: 'container',
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '4px',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        border: '2px solid #0040ff',
+                        height: '6000px',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: [
+                            'text--9255',
+                            'input--2178',
+                            'text--890',
+                            'text--2520',
+                        ],
+                    },
+                },
+            },
+            'container--1511': {
+                id: 'container--1511',
+                widget: 'container',
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '4px',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        border: '2px solid #008009',
+                        height: '6000px',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: [
+                            'text--8976',
+                            'text--1176',
+                            'text--8076',
+                            'text--3551',
+                            'text--4832',
+                            'text--7385',
+                            'text--8483',
+                        ],
+                    },
+                },
+            },
+            'text--7385': {
+                id: 'text--7385',
+                widget: 'text',
+                parent: {
+                    id: 'container--1511',
+                    slot: 'children',
+                },
+                data: {
+                    variant: 'h3',
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Query State',
+                },
+                listeners: {},
                 slots: {},
             },
         },
+        variables: {
+            date: {
+                type: 'date',
+                isInput: true,
+                isOutput: false,
+                value: '2024-12-31',
+            },
+            string: {
+                type: 'string',
+                isInput: true,
+                isOutput: false,
+                value: 'This is a string variable',
+            },
+            query: {
+                to: 'python_code',
+                type: 'query',
+                isInput: false,
+                isOutput: true,
+            },
+            new_var: {
+                type: 'model',
+                isInput: true,
+                isOutput: false,
+                value: 'e338934d-bef1-4920-9136-dc0e37060dfa',
+            },
+            cell: {
+                to: 'python_code',
+                type: 'cell',
+                cellId: '21756',
+                isInput: false,
+                isOutput: true,
+            },
+            LLM: {
+                type: 'model',
+                isInput: true,
+                isOutput: false,
+                value: '001510f8-b86e-492e-a7f0-41299775e7d9',
+            },
+            number: {
+                type: 'number',
+                isInput: true,
+                isOutput: false,
+                value: 10,
+            },
+            array: {
+                type: 'array',
+                isInput: true,
+                isOutput: false,
+                value: [1, 2, 3],
+            },
+            json: {
+                type: 'JSON',
+                isInput: true,
+                isOutput: false,
+                value: {
+                    a: 'this is a label for a',
+                },
+            },
+            block: {
+                to: 'input--2178',
+                type: 'block',
+                isInput: true,
+                isOutput: false,
+            },
+            Vector: {
+                type: 'vector',
+                isInput: true,
+                isOutput: false,
+                value: 'aa72a4be-cb7a-4f7e-b384-7be5c3c081f5',
+            },
+            DB: {
+                type: 'database',
+                isInput: true,
+                isOutput: false,
+                value: '61b2d7c0-5dd4-4ea9-bc6e-9f39f2ae8d7a',
+            },
+            py_code: {
+                to: 'py-code',
+                type: 'query',
+                isInput: false,
+                isOutput: true,
+            },
+        },
+        executionOrder: ['default', 'python_code', 'py-code'],
+        version: '1.0.0-alpha.3',
     },
 };

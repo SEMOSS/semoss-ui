@@ -14,7 +14,7 @@ import {
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { Add, Delete } from '@mui/icons-material';
+import { Add, Delete, SimCardDownload } from '@mui/icons-material';
 import { usePixel, useRootStore } from '@/hooks';
 
 const StyledTableContainer = styled(Table.Container)({
@@ -95,6 +95,9 @@ export const FileTable = (props: FileTableProps) => {
     const didMount = useRef<boolean>(false);
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+
+    //download multiple files modal
+    const [exportLoading, setExportLoading] = useState(false);
 
     //grabbing ID out of props
     const { id } = props;
@@ -259,6 +262,32 @@ export const FileTable = (props: FileTableProps) => {
         }
     };
 
+    const downloadSelectedFiles = async (files: FileExplorerProps[]) => {
+        // construct the string of files
+        setExportLoading(true);
+        let fileArray = '';
+        files.forEach((file, index) => {
+            const { fileName } = file;
+            if (index + 1 === files.length) {
+                //structuring the last element
+                fileArray = fileArray + `"${fileName}"`;
+            } else {
+                // all but the last element
+                fileArray = fileArray + `"${fileName}", `;
+            }
+        });
+
+        const pixel = `META | VectorFileDownload(engine = "${id}", filenames=[${fileArray}]);`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightId = response.insightId;
+
+            monolithStore.download(insightId, output);
+        });
+        setExportLoading(false);
+    };
+
     return (
         <StyledFileContent>
             <StyledTableContainer>
@@ -286,6 +315,25 @@ export const FileTable = (props: FileTableProps) => {
                                 onClick={() => setDeleteFilesModal(true)}
                             >
                                 Delete Selected
+                            </Button>
+                        )}
+                        {selectedFiles.length > 0 && (
+                            <Button
+                                disabled={exportLoading}
+                                startIcon={
+                                    exportLoading ? (
+                                        <CircularProgress size="1em" />
+                                    ) : (
+                                        <SimCardDownload />
+                                    )
+                                }
+                                variant="outlined"
+                                onClick={() =>
+                                    downloadSelectedFiles(selectedFiles)
+                                }
+                                style={{ marginRight: '10px' }}
+                            >
+                                Download
                             </Button>
                         )}
                         <Button
