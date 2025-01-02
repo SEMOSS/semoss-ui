@@ -173,28 +173,14 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                 },
                             };
                         }
-                        let appliedItemToUpdate = [];
-                        if (
-                            option['customSettings'].hasOwnProperty(
-                                'appliedColourByValue',
-                            )
-                        ) {
-                            appliedItemToUpdate = [
-                                ...option['customSettings'][
-                                    'appliedColourByValue'
-                                ],
-                                appliedItem,
-                            ];
-                        } else {
-                            appliedItemToUpdate.push(appliedItem);
-                        }
-                        option['customSettings'] = {
-                            ...option['customSettings'],
-                            ['appliedColourByValue']: appliedItemToUpdate,
-                        };
                     }
                 }
             });
+
+            option['customSettings'] = {
+                ...option['customSettings'],
+                ['appliedColourByValue']: appliedRules,
+            };
             optionUpdated = option;
             updateChart(optionUpdated);
             functionCallReference.current.applyRulesToChart = false;

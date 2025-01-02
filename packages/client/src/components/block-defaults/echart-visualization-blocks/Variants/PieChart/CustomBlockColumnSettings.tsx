@@ -36,7 +36,6 @@ const StyledSelect = styled(Select)(() => ({
 
 export const CustomBlockColumnSettings = observer(
     ({ id, frame }: GridBlockColumnSettingsProps) => {
-        debugger;
         const notification = useNotification();
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);

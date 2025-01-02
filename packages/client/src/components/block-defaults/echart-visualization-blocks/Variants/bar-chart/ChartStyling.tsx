@@ -160,6 +160,7 @@ export const ChartStyling = ({ updateChart, chartType, option }) => {
         });
         console.log(field, event.target.value);
     }
+    //define component to a variable and assign the value to accordion
     const accordionDetails = (
         <StyledChartMainSection>
             <StyledChartSubSection>

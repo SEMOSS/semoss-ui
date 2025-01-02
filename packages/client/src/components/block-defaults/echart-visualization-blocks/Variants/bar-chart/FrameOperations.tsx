@@ -33,25 +33,25 @@ const StyledSelect = styled(Select)(() => ({
     width: '100%',
 }));
 
+interface pixelColumn {
+    name: string;
+    selector: string;
+    width: undefined;
+}
+
 export const FrameOperations = observer<FrameOperationsProps>(
     ({ id, updateFrame }) => {
         const { data, setData } = useBlockSettings<VisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [fieldsData, setFieldsData] = useState({
-            xaxis: {
-                name: '',
-                selector: '',
-            },
-            yaxis: {
-                name: '',
-                selector: '',
-            },
+            xaxis: [],
+            yaxis: [],
         });
         const [value, setValue] = useState({});
         const path = 'option';
         const [selectedValues, setSelectedValues] = useState({
-            xAxis: '',
-            yAxis: '',
+            xAxis: [],
+            yAxis: [],
         });
         // get all of the frames
         const getFrames = useBlocksPixel<string[]>('GetFrames();', {
@@ -74,62 +74,6 @@ export const FrameOperations = observer<FrameOperationsProps>(
                 };
             });
             setColumnsData(columns);
-            let option = typeof value === 'string' ? JSON.parse(value) : value;
-            if (
-                option['xAxis'].hasOwnProperty('pixelvalue') &&
-                option['yAxis'].hasOwnProperty('pixelvalue')
-            ) {
-                let colsToUpdated = [
-                    {
-                        name: option['xAxis']['pixelname'],
-                        selector: option['xAxis']['pixelvalue'],
-                        width: undefined,
-                    },
-                    {
-                        name: option['yAxis']['pixelname'],
-                        selector: option['yAxis']['pixelvalue'],
-                        width: undefined,
-                    },
-                ];
-                setData('columns', colsToUpdated);
-                let tempVal = JSON.parse(computedValue) || {};
-                let tempValUpdated = tempVal;
-                let seriesIndex =
-                    tempVal['series'].findIndex((item) =>
-                        BAR_CHART_DATA.JSONVALUE.includes(item.type),
-                    ) || 0;
-                tempVal['xAxis'] = {
-                    ...tempVal['xAxis'],
-                    ['name']: option['xAxis'].pixelname,
-                    ['pixelname']: option['xAxis'].pixelname,
-                    ['pixelvalue']: option['xAxis'].pixelvalue,
-                };
-                tempVal['yAxis'] = {
-                    ...tempVal['yAxis'],
-                    ['name']: option['yAxis'].pixelname,
-                    ['pixelname']: option['yAxis'].pixelname,
-                    ['pixelvalue']: option['yAxis'].pixelvalue,
-                };
-                tempVal['series'][seriesIndex] = {
-                    ...tempVal['series'][seriesIndex],
-                    ['name']: option['yAxis'].pixelname,
-                };
-                tempVal['customSettings'] = {
-                    ...tempVal['customSettings'],
-                    ['optionStateChange']: false,
-                    // ['syncTriggered']: true,
-                };
-                setSelectedValues((prevValues) => {
-                    return {
-                        ...prevValues,
-                        ['xAxis']: option['xAxis'].pixelvalue,
-                        ['yAxis']: option['yAxis'].pixelvalue,
-                    };
-                });
-                tempValUpdated = tempVal;
-                updateFrame(tempValUpdated);
-                dispatchData(tempValUpdated);
-            }
         }
 
         // get the value of the input (wrapped in usememo because of path prop)
@@ -153,69 +97,114 @@ export const FrameOperations = observer<FrameOperationsProps>(
         }, [computedValue]);
 
         function updateFields(axis, event) {
-            let value = event.target.value || '';
-            let name = columnsData.find((col) => col.selector === value);
-            let nameValue = name.hasOwnProperty('name') ? name['name'] : '';
-            setFieldsData((prevField) => {
-                return {
-                    ...prevField,
-                    [axis]: {
-                        name: nameValue,
-                        selector: value,
-                        width: undefined,
-                    },
-                };
-            });
+            let value = event.target.value || [];
             let columns = { ...fieldsData };
-            columns = {
-                ...columns,
-                [axis]: {
-                    name: nameValue,
-                    selector: value,
-                    width: undefined,
-                },
-            };
-            console.log(columns, 'updatefields');
+            if (axis === 'xaxis') {
+                let recentValue = value.slice(-1) || [];
+                let name = columnsData.find(
+                    (col) => col.selector === recentValue[0],
+                );
+                columns['xaxis'] = [
+                    {
+                        ['name']: name?.name || '',
+                        ['selector']: recentValue,
+                        ['width']: undefined,
+                    },
+                ];
+                setFieldsData((prevFields) => {
+                    return {
+                        ...prevFields,
+                        ['xaxis']: columns['xaxis'],
+                    };
+                });
+                setSelectedValues((prevValues) => {
+                    return {
+                        ...prevValues,
+                        ['xAxis']: columns['xaxis'][0]['selector'],
+                    };
+                });
+            }
+            if (axis === 'yaxis') {
+                columns['yaxis'] = [];
+                value.forEach((item, index) => {
+                    let name = columnsData.find((col) => col.selector === item);
+                    columns['yaxis'].push({
+                        ['name']: name?.name || '',
+                        ['selector']: item,
+                        ['width']: undefined,
+                    });
+                });
+                setFieldsData((prevFields) => {
+                    return {
+                        ...prevFields,
+                        ['yaxis']: columns['yaxis'],
+                    };
+                });
+                let yAxisData = [];
+                columns['yaxis'].forEach((yaxisItem, yAxisIndex) => {
+                    yAxisData = [...yAxisData, yaxisItem.selector];
+                });
+                setSelectedValues((prevValues) => {
+                    return {
+                        ...prevValues,
+                        ['yAxis']: yAxisData,
+                    };
+                });
+            }
             if (columns['xaxis'] && columns['yaxis']) {
-                let combinedColumns = [];
-                combinedColumns.push(columns['xaxis']);
-                combinedColumns.push(columns['yaxis']);
-                console.log(computedValue, 'computedValue');
                 let tempVal = JSON.parse(computedValue) || {};
                 let seriesIndex =
                     tempVal['series'].findIndex((item) =>
                         BAR_CHART_DATA.JSONVALUE.includes(item.type),
                     ) || 0;
+                let columnsmerged = [];
                 tempVal['xAxis'] = {
                     ...tempVal['xAxis'],
-                    ['name']: columns['xaxis'].name,
-                    ['pixelname']: columns['xaxis'].name,
-                    ['pixelvalue']: columns['xaxis'].selector,
+                    ['name']: columns['xaxis'][0].name || '',
+                    ['pixelname']: columns['xaxis'][0].name || '',
+                    ['pixelvalue']: columns['xaxis'][0].selector || '',
                 };
+                columnsmerged = [
+                    {
+                        name: columns['xaxis'][0].name || '',
+                        selector: columns['xaxis'][0].selector[0] || '',
+                    },
+                ];
+                let pixelName = [],
+                    pixelValue = [];
+                columns['yaxis'].forEach((columItem, columIndex) => {
+                    pixelName.push(columItem.name);
+                    pixelValue.push(columItem.selector);
+                    columnsmerged.push({
+                        name: columItem.name,
+                        selector: columItem.selector,
+                    });
+                });
                 tempVal['yAxis'] = {
                     ...tempVal['yAxis'],
-                    ['name']: columns['yaxis'].name,
-                    ['pixelname']: columns['yaxis'].name,
-                    ['pixelvalue']: columns['yaxis'].selector,
+                    ['name']: columns['yaxis'][0]?.name,
+                    ['pixelname']: pixelName,
+                    ['pixelvalue']: pixelValue,
                 };
-                tempVal['series'][seriesIndex] = {
-                    ...tempVal['series'][seriesIndex],
-                    ['name']: columns['yaxis'].name,
-                };
-                tempVal['customSettings'] = {
-                    ...tempVal['customSettings'],
-                    ['optionStateChange']: false,
-                };
-                setSelectedValues((prevValues) => {
-                    return {
-                        ...prevValues,
-                        ['xAxis']: columns['xaxis'].selector,
-                        ['yAxis']: columns['yaxis'].selector,
+                for (let i = 0; i < columns['yaxis'].length; i++) {
+                    tempVal['series'][i] = {
+                        ...tempVal['series'][i],
+                        data: [],
+                        name:
+                            i === 0
+                                ? columns['xaxis'][0].name
+                                : columns['yaxis'][i].name,
+                        type: 'bar',
                     };
-                });
+                }
+                console.log('state', tempVal);
                 dispatchData(tempVal);
-                setData('columns', combinedColumns);
+                setData('columns', columnsmerged);
+                // console.log('yAxisData', yAxisData);
             }
+            console.log(columns, 'columns');
+            let name = columnsData.find((col) => col.selector === value);
+            console.log(columnsData, axis, value, 'updateFields');
         }
         function dispatchData(option) {
             if (timeoutRef.current) {
@@ -272,10 +261,13 @@ export const FrameOperations = observer<FrameOperationsProps>(
                     <StyledSelect
                         id="font-weight"
                         label="Select X Axis Field"
+                        SelectProps={{
+                            multiple: true,
+                        }}
                         value={
                             columnsData.length > 0
-                                ? selectedValues['xAxis'] ?? ''
-                                : ''
+                                ? selectedValues['xAxis'] ?? []
+                                : []
                         }
                         onChange={(e) => updateFields('xaxis', e)}
                     >
@@ -296,10 +288,13 @@ export const FrameOperations = observer<FrameOperationsProps>(
                     <StyledSelect
                         id="font-weight"
                         label="Select Y Axis Field"
+                        SelectProps={{
+                            multiple: true,
+                        }}
                         value={
                             columnsData.length > 0
-                                ? selectedValues['yAxis'] ?? ''
-                                : ''
+                                ? selectedValues['yAxis'] ?? []
+                                : []
                         }
                         onChange={(e) => updateFields('yaxis', e)}
                     >

@@ -9,8 +9,10 @@ import { Pie } from './Variants/PieChart/echartblocks';
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
 })<{ error?: boolean }>(({ error = false, theme }) => ({
-    height: '30vh',
-    width: '80vh',
+    minHeight: '50%',
+    minWidth: '50%',
+    maxWidth: '80%',
+    maxHeight: '80%',
     color: error ? theme.palette.error.main : 'unset',
 }));
 

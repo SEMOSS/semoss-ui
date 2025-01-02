@@ -82,7 +82,7 @@ const ChartAxis = ({ option, updateChart }) => {
         });
         console.log(chartAxisStateData, 'chartAxisStateData');
     }, []);
-
+    //update the axis state when any of field is changed
     function updateXAxisState(axisState, axisValue) {
         setChartAxisState((prevState) => {
             return {
@@ -91,7 +91,7 @@ const ChartAxis = ({ option, updateChart }) => {
             };
         });
     }
-
+    //assign component content into a variable and pass to custom accordion block for rendering data in accordion
     const accordionDetails = (
         <StyledAxisMainSection>
             <StyledAxisSubSection justifyContent="space-between">

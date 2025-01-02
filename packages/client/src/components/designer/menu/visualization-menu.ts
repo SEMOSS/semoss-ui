@@ -63,7 +63,7 @@ const SECTION_ECHART_BAR_CHART = 'Bar E Chart';
 /**
  * Show the visualizations in the menu
  */
-export const VISUALIZATION_MENU: DesignerMenuItem[] = [
+export const VISUALIZATION_MENU_INITIAL: DesignerMenuItem[] = [
     {
         section: SECTION_GENERAL_VISUALIZATION,
         name: 'Vega',
@@ -79,9 +79,9 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
         },
     },
     {
-        section: SECTION_E_PIE_CHART_TEST,
+        section: SECTION_ECHART_BAR_CHART,
         name: 'Echart Pie Chart',
-        image: PIE_CHART,
+        image: PIE_CHART_IMAGE,
         json: {
             widget: 'e-chart',
             data: {
@@ -862,13 +862,6 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     tooltip: {
                         show: true,
                         trigger: 'axis',
-                        axisPointer: {
-                            type: 'shadow',
-                            label: {
-                                show: true,
-                            },
-                        },
-                        alwaysShowContent: true,
                     },
                     dataZoom: [
                         {
@@ -910,3 +903,6 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
         },
     },
 ];
+
+export const VISUALIZATION_MENU = VISUALIZATION_MENU_INITIAL; //.filter((menu)=> (![SECTION_GENERAL_VISUALIZATION, SECTION_MERMAID, SECTION_AREA_CHART,SECTION_BAR_CHART,SECTION_LINE_CHART,SECTION_PIE_CHART,SECTION_SCATTER_PLOTS].includes(menu.section)));
+// export default VISUALIZATION_MENU;

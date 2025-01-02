@@ -265,21 +265,21 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                 },
             };
         }
-        if (
-            option['tooltip'].hasOwnProperty('axisPointer') &&
-            option['tooltip']['axisPointer'].hasOwnProperty('label')
-        ) {
-            option['tooltip'] = {
-                ...option['tooltip'],
-                ['axisPointer']: {
-                    ...option['tooltip']['axisPointer'],
-                    ['label']: {
-                        ...option['tooltip']['axisPointer']['label'],
-                        ['show']: event.showTooltip,
-                    },
-                },
-            };
-        }
+        // if (
+        //     option['tooltip'].hasOwnProperty('axisPointer') &&
+        //     option['tooltip']['axisPointer'].hasOwnProperty('label')
+        // ) {
+        //     option['tooltip'] = {
+        //         ...option['tooltip'],
+        //         ['axisPointer']: {
+        //             ...option['tooltip']['axisPointer'],
+        //             ['label']: {
+        //                 ...option['tooltip']['axisPointer']['label'],
+        //                 ['show']: event.showTooltip,
+        //             },
+        //         },
+        //     };
+        // }
         setShowFeatureSection((prevShowFeatureSection) => {
             return {
                 ...prevShowFeatureSection,
