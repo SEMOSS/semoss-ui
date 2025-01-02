@@ -197,7 +197,7 @@ export const Bar: BlockComponent = observer(({ id }) => {
         ?.map((c, index) => {
             return c.name;
         })
-        .join(', ')}])|Group(${data.columns[0]?.name})`;
+        .join(', ')}])|Group(${data.columns?.[0]?.name})`;
 
     const frameData = useFrame(data.frame.name, {
         selector: selector,
