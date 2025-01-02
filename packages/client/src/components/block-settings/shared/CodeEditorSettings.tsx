@@ -100,11 +100,11 @@ export const CodeEditorSettings = observer(
             setModels(
                 myModels.data.map((d) => ({
                     app_name: d.app_name ? d.app_name.replace(/_/g, ' ') : '',
-                    app_id: d.app_id,
+                    app_id: d?.app_id,
                 })),
             );
 
-            setModelId(myModels.data[0].app_id);
+            setModelId(myModels.data[0]?.app_id);
         }, [myModels.status, myModels.data]);
 
         /**
