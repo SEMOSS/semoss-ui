@@ -22,10 +22,13 @@ const StyledPanelContent = styled(Stack)(({ theme }) => ({
 }));
 
 interface PanelProps {
+    /** Children */
+    children: React.ReactNode;
+
     /** Actions to render */
     actions?: React.ReactNode;
 }
-export const Panel: React.FC<PanelProps> = ({ children, actions = null }) => {
+export const Panel = ({ children, actions = null }: PanelProps) => {
     return (
         <StyledPanel>
             {actions ? (

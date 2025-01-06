@@ -171,7 +171,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
                 const name = id.split('/').pop();
 
                 // add to layout
-                layout.addTabWithDragAndDrop(name, {
+                layout.addTabWithDragAndDrop(event as unknown as DragEvent, {
                     type: 'tab',
                     name: name,
                     component: 'notebook-viewer',

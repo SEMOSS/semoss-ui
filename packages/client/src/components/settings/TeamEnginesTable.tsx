@@ -787,7 +787,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Select Engine"
-                            placeholder="Engine Name"
                             multiple={true}
                             options={nonCredentialedEngines}
                             limitTags={2}

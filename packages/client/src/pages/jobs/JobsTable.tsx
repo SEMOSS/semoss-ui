@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import {
-    DataGrid,
-    GridColDef,
-    GridRowSelectionModel,
-    GridSlots,
-} from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import {
     Chip,
     IconButton,

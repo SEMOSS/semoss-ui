@@ -22,22 +22,31 @@ export const WorkspacePage = observer(() => {
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
 
     useEffect(() => {
-        // clear out the old app
-        setWorkspace(undefined);
+        let isMounted = true;
+        if (appId) {
+            // clear out the old app
+            setWorkspace(undefined);
 
-        configStore
-            .createWorkspace(appId)
-            .then((loadedWorkspace) => {
-                setWorkspace(loadedWorkspace);
-            })
-            .catch((e) => {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
+            configStore
+                .createWorkspace(appId)
+                .then((loadedWorkspace) => {
+                    if (isMounted) {
+                        setWorkspace(loadedWorkspace);
+                    }
+                })
+                .catch((e) => {
+                    notification.add({
+                        color: 'error',
+                        message: e.message,
+                    });
+
+                    navigate('/');
                 });
+        }
 
-                navigate('/');
-            });
+        return () => {
+            isMounted = false;
+        };
     }, [appId]);
 
     // hide the screen while it loads

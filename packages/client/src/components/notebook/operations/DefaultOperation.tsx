@@ -33,7 +33,7 @@ export const DefaultOperation = observer(
                     />
                 );
             } else {
-                return <StyledJson>{output}</StyledJson>;
+                return <StyledJson>{output as string}</StyledJson>;
             }
         }
 
