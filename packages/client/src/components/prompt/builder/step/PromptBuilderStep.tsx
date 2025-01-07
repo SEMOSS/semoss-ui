@@ -23,7 +23,13 @@ export const PromptBuilderStep = (props: {
     currentBuilderStep: number;
     setBuilderValue: (
         builderStepKey: string,
-        value: string | Token[] | ConstraintSettings | object,
+        value:
+            | string
+            | Token[]
+            | ConstraintSettings
+            | object
+            | boolean
+            | undefined,
     ) => void;
 }) => {
     switch (props.currentBuilderStep) {

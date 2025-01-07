@@ -13,8 +13,14 @@ export interface Token {
     type: string; // can be text or input
     isHiddenPhraseInputToken: boolean; // additional words in phrase input, keep record but don't display
     linkedInputToken: undefined | number;
+    options?: string[]; // options for select type inputs
 }
 
+export interface InputTypeValue {
+    type: string;
+    meta: string | null;
+    options?: string[] | null;
+}
 export interface BuilderStepItem {
     step: number;
     value:
@@ -23,10 +29,12 @@ export interface BuilderStepItem {
         | Token[]
         | ConstraintSettings
         | object
+        | boolean
         | undefined;
     required: boolean;
     display: string;
 }
+
 export interface Builder {
     title: BuilderStepItem;
     tags: BuilderStepItem;
@@ -35,6 +43,8 @@ export interface Builder {
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
     constraints: BuilderStepItem;
+    useDefaultLLM: BuilderStepItem; // new field for LLM checkbox
+    temperature: BuilderStepItem; // new field for LLM temperature
 }
 
 export interface Prompt {
@@ -45,4 +55,6 @@ export interface Prompt {
     intent: string;
     created_by: string;
     date_created: string;
+    useDefaultLLM?: boolean; // optional field for LLM settings
+    temperature?: string; // optional field for temperature
 }

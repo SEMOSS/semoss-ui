@@ -37,6 +37,18 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 const initialBuilder: Builder = {
+    useDefaultLLM: {
+        step: PROMPT_BUILDER_CONTEXT_STEP,
+        value: false,
+        required: false,
+        display: 'Use Default LLM',
+    },
+    temperature: {
+        step: PROMPT_BUILDER_CONTEXT_STEP,
+        value: '0.7',
+        required: false,
+        display: 'Temperature',
+    },
     title: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
@@ -91,7 +103,13 @@ export const PromptBuilder = () => {
 
     const setBuilderValue = (
         builderStepKey: string,
-        value: string | Token[] | ConstraintSettings | object,
+        value:
+            | string
+            | Token[]
+            | ConstraintSettings
+            | object
+            | boolean
+            | undefined,
     ) => {
         setBuilder((state) => ({
             ...state,
@@ -271,7 +289,7 @@ export const PromptBuilder = () => {
                 )}
                 <Button
                     color="primary"
-                    disabled={!isBuilderStepComplete(currentBuilderStep)}
+                    // disabled={!isBuilderStepComplete(currentBuilderStep)}
                     variant="contained"
                     onClick={nextButtonAction}
                     loading={createAppLoading}

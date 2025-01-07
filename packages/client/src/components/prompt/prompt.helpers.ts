@@ -6,6 +6,9 @@ import {
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_CUSTOM_QUERY,
     INPUT_TYPE_DATABASE,
+    SELECT_TYPE_MODELS,
+    SELECT_TYPE_VECTORS,
+    SELECT_TYPE_USER_INPUT,
 } from './prompt.constants';
 import {
     ActionMessages,
@@ -25,6 +28,9 @@ export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
 export const PROMPT_QUERY_ID = 'Prompt Query';
 export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
 export const MODEL_ID = 'Model';
+export const MODELS_ID = 'Models';
+export const VECTORS_ID = 'Vectors';
+export const PROMPT_MY_ENGINES_ID = 'My Engines';
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -66,7 +72,18 @@ function getTextFieldInputBlock(
     };
 }
 
-function getSelectInputBlock(inputType: string, index: number, label: string) {
+function getSelectInputBlock(
+    inputType: string,
+    index: number,
+    label: string,
+    inputTypeMeta: string | null,
+) {
+    let optionsVariable = '';
+    if (inputTypeMeta === SELECT_TYPE_MODELS) {
+        optionsVariable = MODELS_ID;
+    } else if (inputTypeMeta === SELECT_TYPE_VECTORS) {
+        optionsVariable = VECTORS_ID;
+    }
     return {
         id: getIdForInput(inputType, index),
         widget: 'select',
@@ -80,7 +97,8 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
             },
             label: label,
             value: '',
-            options: [],
+            options: optionsVariable ? `{{${optionsVariable}.output}}` : [], // Added .output
+            optionLabel: optionsVariable ? 'app_name' : '',
         },
         listeners: {
             onChange: [],
@@ -92,6 +110,7 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
 export function getBlockForInput(
     token: Token,
     inputType: string,
+    inputTypeMeta: string | null,
 ): Block | null {
     switch (inputType) {
         case INPUT_TYPE_TEXT:
@@ -113,6 +132,7 @@ export function getBlockForInput(
                 inputType,
                 token.index,
                 capitalizeLabel(token.key),
+                inputTypeMeta,
             );
         default:
             alert('Block not implemented for this input type yet.');
@@ -192,6 +212,7 @@ function getDatabaseQuery() {
 export function getQueryForPrompt(
     tokens: Token[],
     inputTypes: object,
+    temperature = '0.7', // Added temperature parameter
 ): Record<string, QueryStateConfig> {
     const prompt = getInputFormatPrompt(tokens, inputTypes);
 
@@ -298,7 +319,7 @@ export function getQueryForPrompt(
     }limit = 5) -> str:
     import json
     from gaas_gpt_model import ModelEngine
-    model = ModelEngine(engine_id = "{{${MODEL_ID}}}", insight_id = '\${i}')
+    model = ModelEngine(engine_id = "{{${MODEL_ID}}}", insight_id = '\${i}', temperature = ${temperature})
     ${buildQueryDefinitionFunctionCalls()}
     ${buildQueryDefinitionPromptStatement()}
     response = model.ask(question = prompt)
@@ -326,6 +347,51 @@ export function getQueryForPrompt(
             },
         },
     ];
+
+    const myEnginesCells = [];
+    // Add Models cell if needed
+    if (
+        Object.values(inputTypes ?? {}).some(
+            (inputType) =>
+                inputType.type === INPUT_TYPE_SELECT &&
+                inputType.meta === SELECT_TYPE_MODELS,
+        )
+    ) {
+        myEnginesCells.push(
+            ...[
+                {
+                    id: 'models-query',
+                    widget: 'code',
+                    parameters: {
+                        type: 'pixel',
+                        code: `MyEngines(engineTypes=['MODEL']);`,
+                    },
+                },
+            ],
+        );
+    }
+
+    // Add Vectors cell if needed
+    if (
+        Object.values(inputTypes ?? {}).some(
+            (inputType) =>
+                inputType.type === INPUT_TYPE_SELECT &&
+                inputType.meta === SELECT_TYPE_VECTORS,
+        )
+    ) {
+        myEnginesCells.push(
+            ...[
+                {
+                    id: 'vectors-query',
+                    widget: 'code',
+                    parameters: {
+                        type: 'pixel',
+                        code: `MyEngines(engineTypes=['VECTOR']);`,
+                    },
+                },
+            ],
+        );
+    }
     Object.keys(customInputTypes).forEach(
         (customInputTokenIndex, index: number) => {
             if (
@@ -390,6 +456,10 @@ export function getQueryForPrompt(
                 },
             ],
         },
+        [PROMPT_MY_ENGINES_ID]: {
+            id: PROMPT_MY_ENGINES_ID,
+            cells: myEnginesCells,
+        },
     };
 
     return queryJson;
@@ -400,6 +470,23 @@ export async function setBlocksAndOpenUIBuilder(
     monolithStore: MonolithStore,
     navigate: (route: string) => void,
 ) {
+    // Get the temperature value and useDefaultLLM status
+    const temperature = String(builder.temperature?.value ?? '0.7');
+    const useDefaultLLM = builder.useDefaultLLM?.value ?? false;
+
+    // Check if we need Models/Vectors variables
+    const needsModels = Object.values(builder.inputTypes.value as object).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_MODELS,
+    );
+
+    const needsVectors = Object.values(builder.inputTypes.value as object).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_VECTORS,
+    );
+
     // create the state
     const state: SerializedState = {
         version: '1.0.0-alpha.1',
@@ -417,6 +504,18 @@ export async function setBlocksAndOpenUIBuilder(
                 type: 'model',
                 to: MODEL_ID,
             },
+            ...(needsModels && {
+                [MODELS_ID]: {
+                    type: 'query',
+                    to: PROMPT_MY_ENGINES_ID,
+                },
+            }),
+            ...(needsVectors && {
+                [VECTORS_ID]: {
+                    type: 'query',
+                    to: PROMPT_MY_ENGINES_ID,
+                },
+            }),
         },
         dependencies: {
             [MODEL_ID]: builder.model.value,
@@ -441,6 +540,29 @@ export async function setBlocksAndOpenUIBuilder(
                                 queryId: PROMPT_QUERY_DEFINITION_ID,
                             },
                         },
+                        // If needed, also run Models/Vectors queries
+                        ...(needsModels
+                            ? [
+                                  {
+                                      message:
+                                          ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
+                                      payload: {
+                                          queryId: PROMPT_MY_ENGINES_ID,
+                                      },
+                                  },
+                              ]
+                            : []),
+                        ...(needsVectors
+                            ? [
+                                  {
+                                      message:
+                                          ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
+                                      payload: {
+                                          queryId: PROMPT_MY_ENGINES_ID,
+                                      },
+                                  },
+                              ]
+                            : []),
                     ],
                 },
                 slots: {
@@ -592,7 +714,11 @@ export async function setBlocksAndOpenUIBuilder(
         (builder.inputTypes.value as object) ?? {},
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
-        const inputBlock = getBlockForInput(token, inputType.type);
+        const inputBlock = getBlockForInput(
+            token,
+            inputType.type,
+            inputType.meta,
+        );
         if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
             state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
@@ -616,6 +742,7 @@ export async function setBlocksAndOpenUIBuilder(
     state.queries = getQueryForPrompt(
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
+        temperature, // Pass temperature to query generation
     );
 
     const pixel = `CreateAppFromBlocks ( project = [ "${
@@ -637,6 +764,8 @@ export async function setBlocksAndOpenUIBuilder(
         `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
             tag: builder.tags.value,
             description: builder.context.value,
+            useDefaultLLM: useDefaultLLM,
+            temperature: temperature,
         })}])`,
     );
 

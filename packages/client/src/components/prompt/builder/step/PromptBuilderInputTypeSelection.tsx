@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Token } from '../../prompt.types';
 import { Autocomplete } from '@mui/material';
+import { usePixel } from '@/hooks';
 import {
     styled,
     Grid,
@@ -17,6 +18,11 @@ import {
     INPUT_TYPE_DISPLAY,
     INPUT_TYPE_HELP_TEXT,
     INPUT_TYPE_VECTOR,
+    INPUT_TYPE_SELECT,
+    SELECT_TYPE_MODELS,
+    SELECT_TYPE_VECTORS,
+    SELECT_TYPE_USER_INPUT,
+    SELECT_TYPE_OPTIONS,
 } from '../../prompt.constants';
 import { PromptReadonlyInputToken } from '../../shared/token';
 
@@ -43,11 +49,60 @@ export const PromptBuilderInputTypeSelection = (props: {
         inputTokenIndex: number,
         inputType: string,
         inputTypeMeta: string | null,
+        options?: string[] | null,
     ) => void;
 }) => {
+    // Fetch models only when Models type is selected
+    const myModels = usePixel<
+        { app_id: string; app_name: string; tag: string }[]
+    >(
+        props.inputTypeMeta === SELECT_TYPE_MODELS
+            ? `MyEngines(engineTypes=['MODEL']);`
+            : null,
+    );
+
+    // Fetch vectors only when Vectors type is selected
+    const myVectors = usePixel<{ app_id: string; app_name: string }[]>(
+        props.inputTypeMeta === SELECT_TYPE_VECTORS
+            ? `MyEngines(engineTypes=['VECTOR']);`
+            : null,
+    );
+
+    // Auto-populate options when Models/Vectors are selected
+    useEffect(() => {
+        if (
+            props.inputTypeMeta === SELECT_TYPE_MODELS &&
+            myModels.status === 'SUCCESS'
+        ) {
+            const modelOptions = myModels.data
+                .filter((model) => model.tag !== 'embeddings')
+                .map((model) => model.app_name);
+            props.setInputType(
+                props.inputToken.index,
+                INPUT_TYPE_SELECT,
+                SELECT_TYPE_MODELS,
+                modelOptions,
+            );
+        } else if (
+            props.inputTypeMeta === SELECT_TYPE_VECTORS &&
+            myVectors.status === 'SUCCESS'
+        ) {
+            const vectorOptions = myVectors.data.map(
+                (vector) => vector.app_name,
+            );
+            props.setInputType(
+                props.inputToken.index,
+                INPUT_TYPE_SELECT,
+                SELECT_TYPE_VECTORS,
+                vectorOptions,
+            );
+        }
+    }, [myModels.status, myVectors.status, props.inputTypeMeta]);
+
     const showMetaAutocomplete =
         props.inputType === INPUT_TYPE_VECTOR ||
-        props.inputType === INPUT_TYPE_DATABASE;
+        props.inputType === INPUT_TYPE_DATABASE ||
+        props.inputType === INPUT_TYPE_SELECT;
 
     const getMetaSelectorLoading = (): boolean => {
         switch (props.inputType) {
@@ -55,6 +110,12 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return props.cfgLibraryVectorDbs.loading;
             case INPUT_TYPE_DATABASE:
                 return props.cfgLibraryDatabases.loading;
+            case INPUT_TYPE_SELECT:
+                return props.inputTypeMeta === SELECT_TYPE_MODELS
+                    ? myModels.status === 'LOADING'
+                    : props.inputTypeMeta === SELECT_TYPE_VECTORS
+                    ? myVectors.status === 'LOADING'
+                    : false;
             default:
                 return false;
         }
@@ -66,6 +127,8 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return props.cfgLibraryVectorDbs.ids;
             case INPUT_TYPE_DATABASE:
                 return props.cfgLibraryDatabases.ids;
+            case INPUT_TYPE_SELECT:
+                return ['User Input', 'Models', 'Vectors'];
             default:
                 return [];
         }
@@ -77,6 +140,8 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return props.cfgLibraryVectorDbs.display[value] ?? '';
             case INPUT_TYPE_DATABASE:
                 return props.cfgLibraryDatabases.display[value] ?? '';
+            case INPUT_TYPE_SELECT:
+                return value;
             default:
                 return '';
         }
@@ -88,6 +153,8 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return 'Knowledge Repository';
             case INPUT_TYPE_DATABASE:
                 return 'Database';
+            case INPUT_TYPE_SELECT:
+                return 'Select Type';
             default:
                 return '';
         }
@@ -117,6 +184,9 @@ export const PromptBuilderInputTypeSelection = (props: {
                             props.setInputType(
                                 props.inputToken.index,
                                 newInputType,
+                                newInputType === INPUT_TYPE_SELECT
+                                    ? SELECT_TYPE_USER_INPUT
+                                    : null,
                                 null,
                             );
                         }}

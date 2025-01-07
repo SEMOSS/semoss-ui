@@ -25,6 +25,16 @@ export const INPUT_TYPE_SELECT = 'select';
 export const INPUT_TYPE_VECTOR = 'vector';
 export const INPUT_TYPE_CUSTOM_QUERY = 'custom';
 export const INPUT_TYPE_DATABASE = 'database';
+
+export const SELECT_TYPE_USER_INPUT = 'User Input';
+export const SELECT_TYPE_MODELS = 'Models';
+export const SELECT_TYPE_VECTORS = 'Vectors';
+export const SELECT_TYPE_OPTIONS = [
+    SELECT_TYPE_USER_INPUT,
+    SELECT_TYPE_MODELS,
+    SELECT_TYPE_VECTORS,
+];
+
 export const INPUT_TYPES = [
     INPUT_TYPE_TEXT,
     INPUT_TYPE_SELECT,
@@ -44,6 +54,8 @@ export const INPUT_TYPE_HELP_TEXT = {
         'This input will be used as a search term for the selected knowledge repository. The search results can be modified to fit your needs and will be used to support your prompt.',
     [INPUT_TYPE_DATABASE]:
         'This input will be used to query the selected database. The query results generated can be modified to fit your needs and will be used to support your prompt.',
+    [INPUT_TYPE_SELECT]:
+        'Select from predefined options: User Input for manual entry, Models for model selection, or Vectors for knowledge base integration.',
 };
 
 export const SUMMARY_STEPS = [

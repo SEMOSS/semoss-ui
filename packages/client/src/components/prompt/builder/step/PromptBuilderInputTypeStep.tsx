@@ -101,7 +101,11 @@ export const PromptBuilderInputTypeStep = (props: {
             const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
                 return {
                     ...acc,
-                    [token.index]: { type: INPUT_TYPE_TEXT, meta: null },
+                    [token.index]: {
+                        type: INPUT_TYPE_TEXT,
+                        meta: null,
+                        options: null,
+                    },
                 };
             }, {});
 
@@ -118,12 +122,14 @@ export const PromptBuilderInputTypeStep = (props: {
         inputTokenIndex: number,
         inputType: string,
         inputTypeMeta: string | null,
+        options: string[] | null = null,
     ) => {
         const inputTypesDup = {
             ...inputTypes,
             [inputTokenIndex]: {
                 type: inputType,
                 meta: inputTypeMeta,
+                options,
             },
         };
 

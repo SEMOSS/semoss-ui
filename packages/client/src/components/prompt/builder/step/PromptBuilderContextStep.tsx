@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Builder } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { createFilterOptions, Autocomplete } from '@mui/material';
+import {
+    createFilterOptions,
+    Autocomplete,
+    FormControlLabel,
+    Checkbox,
+} from '@mui/material';
 import { styled, Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
 import { usePixel } from '@/hooks';
@@ -24,12 +29,16 @@ const StyledContainerGrid = styled(Grid)(({ theme }) => ({
 
 export const PromptBuilderContextStep = (props: {
     builder: Builder;
-    setBuilderValue: (builderStepKey: string, value: string | string[]) => void;
+    setBuilderValue: (
+        builderStepKey: string,
+        value: string | string[] | boolean,
+    ) => void;
 }) => {
     const [cfgLibraryModels, setCfgLibraryModels] = useState(
         InitialCfgLibraryEngineState,
     );
     const filter = createFilterOptions<string>();
+    const showLLMSettings = props.builder.useDefaultLLM.value as boolean;
 
     const isPromptLibraryDisabled =
         !props.builder.model.value || !props.builder.title.value;
@@ -40,6 +49,7 @@ export const PromptBuilderContextStep = (props: {
     const myModels = usePixel<
         { app_id: string; app_name: string; tag: string }[]
     >(`MyEngines(engineTypes=['MODEL']);`);
+
     useMemo(() => {
         if (myModels.status !== 'SUCCESS') {
             return;
@@ -60,6 +70,13 @@ export const PromptBuilderContextStep = (props: {
             display: modelDisplay,
         });
     }, [myModels.status, myModels.data]);
+
+    const handleTemperatureChange = (value: string) => {
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
+            props.setBuilderValue('temperature', value);
+        }
+    };
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -115,30 +132,65 @@ export const PromptBuilderContextStep = (props: {
                                 <TextField {...params} label="Tags" />
                             )}
                         />
-                        <Autocomplete
-                            disableClearable
-                            fullWidth
-                            id="model-autocomplete"
-                            loading={cfgLibraryModels.loading}
-                            options={cfgLibraryModels.ids}
-                            value={props.builder.model.value ?? null}
-                            getOptionLabel={(modelId: string) =>
-                                cfgLibraryModels.display[modelId] ?? ''
-                            }
-                            onChange={(_, newModelId) => {
-                                props.setBuilderValue(
-                                    'model',
-                                    newModelId as string,
-                                );
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Large Language Model"
-                                    variant="outlined"
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={showLLMSettings}
+                                    onChange={(e) =>
+                                        props.setBuilderValue(
+                                            'useDefaultLLM',
+                                            e.target.checked,
+                                        )
+                                    }
                                 />
-                            )}
+                            }
+                            label="Set user's default LLM and Temperature"
                         />
+                        {showLLMSettings && (
+                            <>
+                                <Autocomplete
+                                    disableClearable
+                                    fullWidth
+                                    id="model-autocomplete"
+                                    loading={cfgLibraryModels.loading}
+                                    options={cfgLibraryModels.ids}
+                                    value={props.builder.model.value ?? null}
+                                    getOptionLabel={(modelId: string) =>
+                                        cfgLibraryModels.display[modelId] ?? ''
+                                    }
+                                    onChange={(_, newModelId) => {
+                                        props.setBuilderValue(
+                                            'model',
+                                            newModelId as string,
+                                        );
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Large Language Model"
+                                            variant="outlined"
+                                        />
+                                    )}
+                                />
+                                <TextField
+                                    label="Temperature"
+                                    variant="outlined"
+                                    type="number"
+                                    inputProps={{
+                                        step: 0.1,
+                                        min: 0,
+                                        max: 1,
+                                    }}
+                                    value={
+                                        props.builder.temperature?.value ??
+                                        '0.7'
+                                    }
+                                    onChange={(e) =>
+                                        handleTemperatureChange(e.target.value)
+                                    }
+                                />
+                            </>
+                        )}
                     </Stack>
                 </Grid>
             </StyledContainerGrid>
