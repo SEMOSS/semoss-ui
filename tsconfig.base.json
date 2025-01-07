@@ -15,7 +15,8 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "@semoss/ui": ["libs/ui/src/index.ts"]
+            "@semoss/ui": ["libs/ui/src/index.ts"],
+            "react": [ "./node_modules/@types/react" ]
         },
         "jsx": "react-jsx"
     },
