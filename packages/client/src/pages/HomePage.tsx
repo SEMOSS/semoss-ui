@@ -20,6 +20,8 @@ import { Help } from '@/components/help';
 
 import { Filterbox } from '@/components/ui';
 
+import { Brick } from '@semoss/blocks-renderer';
+
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
     display: 'flex',
@@ -443,6 +445,7 @@ export const HomePage = observer((): JSX.Element => {
                         </StyledSection>
                     )}
 
+                    <Brick></Brick>
                     {mode != 'System' && apps.length > 0 ? (
                         <StyledSectionLabel variant="subtitle1">
                             All Apps

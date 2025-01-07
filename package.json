@@ -6,7 +6,7 @@
         "preinstall": "npx only-allow pnpm",
         "prepare": "husky install",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client fix",
-        "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/client @semoss/legacy",
+        "dev": "npx nx run-many -t dev -p @semoss/ui @semoss/blocks-renderer @semoss/client @semoss/legacy",
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy"
