@@ -95,7 +95,6 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
                 (opt) => opt.type === chartType,
             );
             if (option['series'][seriesChartData]['label']) {
-                console.log('if condition');
                 let customizeLabelsOptions = {
                     position:
                         option['series'][seriesChartData]['label'].position ??

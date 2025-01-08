@@ -254,7 +254,10 @@ export const Bar: BlockComponent = observer(({ id }) => {
             ) {
                 if (
                     resultData['series'][seriesIdx] !== undefined &&
-                    resultData['series'][seriesIdx].hasOwnProperty('data')
+                    resultData['series'][seriesIdx].hasOwnProperty('data') &&
+                    !resultData['series'][seriesIdx].hasOwnProperty(
+                        'toggleTrendLineObject',
+                    )
                 ) {
                     resultData['series'][seriesIdx]['data'] =
                         frameData.data?.values?.map((item, index) => {
@@ -267,7 +270,10 @@ export const Bar: BlockComponent = observer(({ id }) => {
             for (i = frameDataIndex; i < optionSeriesLength; i++) {
                 if (
                     resultData['series'][i - 1] !== undefined &&
-                    resultData['series'][i - 1].hasOwnProperty('data')
+                    resultData['series'][i - 1].hasOwnProperty('data') &&
+                    !resultData['series'][i - 1].hasOwnProperty(
+                        'toggleTrendLineObject',
+                    )
                 ) {
                     resultData['series'][i - 1]['data'] =
                         frameData.data?.values?.map((item, index) => {

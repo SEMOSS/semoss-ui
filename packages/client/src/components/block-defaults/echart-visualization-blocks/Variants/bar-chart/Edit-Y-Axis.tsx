@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, SyntheticEvent, ChangeEvent } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import { Button, Checkbox, Slider, styled, TextField } from '@semoss/ui';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -137,6 +137,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
     }, []);
 
     function handleInputChange(e, title, directVal = undefined) {
+        console.log(e, 'event');
         if (directVal != undefined) {
             setYaxisState((prevXaxisState) => {
                 return {
@@ -145,6 +146,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                 };
             });
         } else {
+            debugger;
             setYaxisState((prevXaxisState) => {
                 return {
                     ...prevXaxisState,
@@ -167,11 +169,18 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="yaxis-center-align-text"
-                    defaultChecked={yaxisState.centerAlignText}
-                    onChange={(e) => handleInputChange(e, 'centerAlignText')}
+                    checked={yaxisState.centerAlignText}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(
+                            e,
+                            'centerAlignText',
+                            e.target.checked,
+                        )
+                    }
                 />
                 <label htmlFor="yaxis-center-align-text">
-                    Center Align Text
+                    Center Align Text{' '}
+                    {yaxisState.centerAlignText ? 'true' : 'false'}
                 </label>
             </StyledAxisDiv>
             <StyledAxisDiv>
@@ -199,26 +208,39 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-line"
-                    defaultChecked={yaxisState.showYAxisLine}
-                    onChange={(e) =>
-                        handleInputChange(
-                            e,
-                            'showYAxisLine',
-                            !yaxisState.showYAxisLine,
-                        )
+                    checked={yaxisState.showYAxisLine}
+                    // onChange={(e) =>
+                    //     handleInputChange(
+                    //         e,
+                    //         'showYAxisLine',
+                    //         !yaxisState.showYAxisLine,
+                    //     )
+                    // }
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(e, 'showYAxisLine', e.target.checked)
                     }
                 />
-                <label htmlFor="show-yaxis-line">Show YAxis Line</label>
+                <label htmlFor="show-yaxis-line">
+                    Show YAxis Line{' '}
+                    {yaxisState.showYAxisLine ? 'true' : 'false'}
+                </label>
             </StyledAxisDiv>
             <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-line-ticks"
-                    defaultChecked={yaxisState.showYAxisLineTicks}
-                    onChange={(e) =>
+                    checked={yaxisState.showYAxisLineTicks}
+                    // onChange={(e) =>
+                    //     handleInputChange(
+                    //         e,
+                    //         'showYAxisLineTicks',
+                    //         !yaxisState.showYAxisLineTicks,
+                    //     )
+                    // }
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         handleInputChange(
                             e,
                             'showYAxisLineTicks',
-                            !yaxisState.showYAxisLineTicks,
+                            e.target.checked,
                         )
                     }
                 />
@@ -227,12 +249,12 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-yaxis-values"
-                    defaultChecked={yaxisState.showYAxisValues}
-                    onChange={(e) =>
+                    checked={yaxisState.showYAxisValues}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         handleInputChange(
                             e,
                             'showYAxisValues',
-                            !yaxisState.showYAxisValues,
+                            e.target.checked,
                         )
                     }
                 />

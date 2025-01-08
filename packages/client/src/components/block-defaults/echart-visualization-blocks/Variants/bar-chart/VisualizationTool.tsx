@@ -17,6 +17,7 @@ import { FrameOperations } from './FrameOperations';
 import { computed } from 'mobx';
 import { getValueByPath } from '@/utility';
 import ColourByValue from './ColourByValue';
+import { BarChartProperties } from './BarChartProperties';
 
 const StyledChartContainer = styled('div')<{ width?: string }>(
     ({ theme, width }) => ({
@@ -296,28 +297,28 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
         let option = optionSrc;
         let seriesData = option['series'];
         let showValue = event.showDisplayValues;
-        const displayPositionIndex = option['series'].findIndex((opt) =>
-            BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-        );
-
-        if (option['series'][displayPositionIndex]['label']) {
-            option['series'][displayPositionIndex] = {
-                ...option['series'][displayPositionIndex],
-                ['label']: {
-                    ...option['series'][displayPositionIndex]['label'],
-                    show: showValue,
-                    position: 'top',
-                },
-            };
-        } else {
-            option['series'][displayPositionIndex] = {
-                ...option['series'][displayPositionIndex],
-                ['label']: {
-                    show: showValue,
-                    position: 'top',
-                },
-            };
-        }
+        const filteredSeries = getFilteredSeriesIndex();
+        filteredSeries.forEach((item) => {
+            const displayPositionIndex = item;
+            if (option['series'][displayPositionIndex]['label']) {
+                option['series'][displayPositionIndex] = {
+                    ...option['series'][displayPositionIndex],
+                    ['label']: {
+                        ...option['series'][displayPositionIndex]['label'],
+                        show: showValue,
+                        position: 'top',
+                    },
+                };
+            } else {
+                option['series'][displayPositionIndex] = {
+                    ...option['series'][displayPositionIndex],
+                    ['label']: {
+                        show: showValue,
+                        position: 'top',
+                    },
+                };
+            }
+        });
         setShowFeatureSection((prevShow) => {
             return {
                 ...prevShow,
@@ -325,8 +326,19 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                 displayValueLabels: !prevShow.displayValueLabels,
             };
         });
+
         // runStateUpdate(option);
         return option;
+    }
+    function getFilteredSeriesIndex() {
+        let index = [];
+        let seriesAvailable: any[] = data.option['series'].filter((item) =>
+            BAR_CHART_DATA.JSONVALUE.includes(item.type),
+        );
+        seriesAvailable.forEach((item, seriesIndex) => {
+            index.push(seriesIndex);
+        });
+        return index;
     }
 
     function updateCustomizeValueLabels(values: any) {
@@ -341,94 +353,97 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
             };
         });
         const customizeLabelOptionsValue = customizeLabelOptionsData;
-        const displayPositionIndex = option['series'].findIndex((opt) =>
-            BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-        );
-        if (customizeLabelOptionsValue['position']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['position']: customizeLabelOptionsValue['position'],
-                    },
-                };
+        const filteredSeries = getFilteredSeriesIndex();
+        filteredSeries.forEach((item) => {
+            const displayPositionIndex = item;
+            if (customizeLabelOptionsValue['position']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['position']:
+                                customizeLabelOptionsValue['position'],
+                        },
+                    };
+                }
             }
-        }
-        if (customizeLabelOptionsValue['rotate']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['rotate']: customizeLabelOptionsValue['rotate'],
-                    },
-                };
+            if (customizeLabelOptionsValue['rotate']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['rotate']: customizeLabelOptionsValue['rotate'],
+                        },
+                    };
+                }
             }
-        }
-        if (customizeLabelOptionsValue['alignment']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['align']: customizeLabelOptionsValue['alignment'],
-                    },
-                };
+            if (customizeLabelOptionsValue['alignment']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['align']: customizeLabelOptionsValue['alignment'],
+                        },
+                    };
+                }
             }
-        }
-        if (customizeLabelOptionsValue['font']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['fontFamily']: customizeLabelOptionsValue['font'],
-                    },
-                };
+            if (customizeLabelOptionsValue['font']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['fontFamily']: customizeLabelOptionsValue['font'],
+                        },
+                    };
+                }
             }
-        }
-        if (customizeLabelOptionsValue['fontsize']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['fontSize']: customizeLabelOptionsValue['fontsize'],
-                    },
-                };
+            if (customizeLabelOptionsValue['fontsize']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['fontSize']:
+                                customizeLabelOptionsValue['fontsize'],
+                        },
+                    };
+                }
             }
-        }
-        if (customizeLabelOptionsValue['fontweight']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['fontWeight']:
-                            customizeLabelOptionsValue['fontweight'],
-                    },
-                };
+            if (customizeLabelOptionsValue['fontweight']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['fontWeight']:
+                                customizeLabelOptionsValue['fontweight'],
+                        },
+                    };
+                }
             }
-        }
-        if (customizeLabelOptionsValue['fontcolour']) {
-            if (option['series'][displayPositionIndex]) {
-                option['series'][displayPositionIndex] = {
-                    ...option['series'][displayPositionIndex],
-                    ['label']: {
-                        ...option['series'][displayPositionIndex]['label'],
-                        ['show']: true,
-                        ['color']: customizeLabelOptionsValue['fontcolour'],
-                    },
-                };
+            if (customizeLabelOptionsValue['fontcolour']) {
+                if (option['series'][displayPositionIndex]) {
+                    option['series'][displayPositionIndex] = {
+                        ...option['series'][displayPositionIndex],
+                        ['label']: {
+                            ...option['series'][displayPositionIndex]['label'],
+                            ['show']: true,
+                            ['color']: customizeLabelOptionsValue['fontcolour'],
+                        },
+                    };
+                }
             }
-        }
+        });
 
         setShowFeatureSection((prevShowFeatureSection) => {
             return {
@@ -443,74 +458,85 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
     function updateTrendLines(trendLinesSelected) {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
         let optionUpdated = option;
+        const filteredSeries = getFilteredSeriesIndex();
         if (trendLinesSelected != '') {
-            const displayPositionIndex = option['series'].findIndex((opt) =>
-                BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-            );
-            const lineAlreadyExists = option['series'].findIndex(
-                (opt) =>
-                    opt.hasOwnProperty('toggleTrendLineObject') &&
-                    LINE_CHART_DATA.JSONVALUE.includes(opt.type),
-            );
-            let trendLinesData = {};
-            if (['smooth', 'exact'].includes(trendLinesSelected)) {
-                trendLinesData = {
-                    ...trendLinesData,
-                    ['smooth']: trendLinesSelected === 'smooth' ? true : false,
-                };
-            }
-            if (trendLinesSelected.startsWith('step')) {
-                trendLinesData = {
-                    ...trendLinesData,
-                    ['step']: trendLinesSelected.split('_')[1] ?? false,
-                };
-            }
-            if (lineAlreadyExists >= 0 && displayPositionIndex >= 0) {
-                option['series'][lineAlreadyExists] = {
-                    ...option['series'][lineAlreadyExists],
-                    ...trendLinesData,
-                    ['data']: option['series'][displayPositionIndex]['data'],
-                };
-            }
+            filteredSeries.forEach((item) => {
+                const displayPositionIndex = item;
+                const lineAlreadyExists = option['series'].findIndex(
+                    (opt) =>
+                        opt.hasOwnProperty('toggleTrendLineObject') &&
+                        LINE_CHART_DATA.JSONVALUE.includes(opt.type),
+                );
+                let trendLinesData = {};
+                if (['smooth', 'exact'].includes(trendLinesSelected)) {
+                    trendLinesData = {
+                        ...trendLinesData,
+                        ['smooth']:
+                            trendLinesSelected === 'smooth' ? true : false,
+                    };
+                }
+                if (trendLinesSelected.startsWith('step')) {
+                    trendLinesData = {
+                        ...trendLinesData,
+                        ['step']: trendLinesSelected.split('_')[1] ?? false,
+                    };
+                }
+                if (lineAlreadyExists >= 0 && displayPositionIndex >= 0) {
+                    option['series'][lineAlreadyExists] = {
+                        ...option['series'][lineAlreadyExists],
+                        ...trendLinesData,
+                        ['data']:
+                            option['series'][displayPositionIndex]['data'],
+                    };
+                    console.log(option['series'], 'line exists');
+                }
 
-            if (displayPositionIndex > -1 && lineAlreadyExists == -1) {
-                let toggleLineData = {
-                    ...trendLinesData,
-                    data: option['series'][displayPositionIndex]['data'] || [],
-                    type: 'line',
-                    toggleTrendLineObject: true,
-                };
+                if (displayPositionIndex > -1 && lineAlreadyExists == -1) {
+                    let toggleLineData = {
+                        ...trendLinesData,
+                        data:
+                            option['series'][displayPositionIndex]['data'] ||
+                            [],
+                        type: 'line',
+                        toggleTrendLineObject: true,
+                    };
 
-                option['series'] = [
-                    ...option['series'].slice(0, displayPositionIndex + 1),
-                    toggleLineData,
-                    ...option['series'].slice(displayPositionIndex + 1),
-                ];
-                console.log(option['series']);
-            }
+                    option['series'] = [
+                        ...option['series'].slice(0, displayPositionIndex + 1),
+                        toggleLineData,
+                        ...option['series'].slice(displayPositionIndex + 1),
+                    ];
+                    console.log(option['series'], 'line not exists');
+                }
+            });
+            runStateUpdate(optionUpdated);
         } else {
-            const displayPositionIndex = option['series'].findIndex(
-                (opt) =>
-                    opt.hasOwnProperty('toggleTrendLineObject') &&
-                    LINE_CHART_DATA.JSONVALUE.includes(opt.type),
+            let displayPositionIndex = option['series'].findIndex(
+                (item) =>
+                    item.type === 'line' &&
+                    item.hasOwnProperty('toggleTrendLineObject'),
             );
-            if (displayPositionIndex > -1) {
+            let lineData = [];
+            option['series'][displayPositionIndex]['data'].forEach((item) => {
+                lineData.push(null);
+            });
+            setTimeout(() => {
                 option['series'][displayPositionIndex] = {
                     ...option['series'][displayPositionIndex],
-                    ['data']: [],
+                    ['data']: lineData,
                     ['toggleTrendLineObject']: true,
                     ['type']: 'line',
                 };
-                setTimeout(() => {
-                    option['series'] = option['series'].filter(
-                        (opt, index) => index != displayPositionIndex,
-                    );
-                    runStateUpdate(option);
-                }, 300);
-            }
+                // option['series'] = [
+                //     ...option['series'].filter(
+                //     (opt, index) => index != displayPositionIndex,
+                //     )
+                // ];
+                runStateUpdate(option);
+            }, 300);
         }
         optionUpdated = option;
-        runStateUpdate(optionUpdated);
+        // runStateUpdate(optionUpdated);
     }
     function toggleLegend() {
         let option = typeof value === 'string' ? JSON.parse(value) : value;
@@ -835,6 +861,9 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                             id={id}
                             updateFrame={updateFrameOperations}
                         />
+                    </StyledSectionContainer>
+                    <StyledSectionContainer>
+                        <BarChartProperties id={id} />
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <ChartAxis

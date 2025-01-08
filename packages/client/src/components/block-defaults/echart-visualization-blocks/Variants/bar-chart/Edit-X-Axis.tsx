@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
 import { Button, Checkbox, Slider, styled, TextField } from '@semoss/ui';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -171,8 +171,16 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="xaxis-center-align-text"
-                    defaultChecked={xaxisState.centerAlignText ?? undefined}
-                    onChange={(e) => handleInputChange(e, 'centerAlignText')}
+                    // defaultChecked={xaxisState.centerAlignText ?? undefined}
+                    // onChange={(e) => handleInputChange(e, 'centerAlignText')}
+                    checked={xaxisState.centerAlignText}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(
+                            e,
+                            'centerAlignText',
+                            e.target.checked,
+                        )
+                    }
                 />
                 <label htmlFor="xaxis-center-align-text">
                     Center Align Text
@@ -203,13 +211,17 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-xaxis-line"
-                    defaultChecked={xaxisState.showXAxisLine}
-                    onChange={(e) =>
-                        handleInputChange(
-                            e,
-                            'showXAxisLine',
-                            !xaxisState.showXAxisLine,
-                        )
+                    // defaultChecked={xaxisState.showXAxisLine}
+                    // onChange={(e) =>
+                    //     handleInputChange(
+                    //         e,
+                    //         'showXAxisLine',
+                    //         !xaxisState.showXAxisLine,
+                    //     )
+                    // }
+                    checked={xaxisState.showXAxisLine}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(e, 'showXAxisLine', e.target.checked)
                     }
                 />
                 <label htmlFor="show-xaxis-line">Show XAxis Line</label>
@@ -217,12 +229,20 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-xaxis-line-ticks"
-                    defaultChecked={xaxisState.showXAxisLineTicks}
-                    onChange={(e) =>
+                    // defaultChecked={xaxisState.showXAxisLineTicks}
+                    // onChange={(e) =>
+                    //     handleInputChange(
+                    //         e,
+                    //         'showXAxisLineTicks',
+                    //         !xaxisState.showXAxisLineTicks,
+                    //     )
+                    // }
+                    checked={xaxisState.showXAxisLineTicks}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         handleInputChange(
                             e,
                             'showXAxisLineTicks',
-                            !xaxisState.showXAxisLineTicks,
+                            e.target.checked,
                         )
                     }
                 />
@@ -231,14 +251,13 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
             <StyledAxisDiv>
                 <Checkbox
                     id="show-xaxis-values"
-                    defaultChecked={xaxisState.showXAxisValues}
-                    onChange={(e) =>
+                    checked={xaxisState.showXAxisValues}
+                    onChange={(e) => (e: ChangeEvent<HTMLInputElement>) =>
                         handleInputChange(
                             e,
                             'showXAxisValues',
-                            !xaxisState.showXAxisValues,
-                        )
-                    }
+                            e.target.checked,
+                        )}
                 />
                 <label htmlFor="show-xaxis-values">Show XAxis Values</label>
             </StyledAxisDiv>
@@ -247,12 +266,12 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
                     <StyledAxisDiv>
                         <Checkbox
                             id="show-all-labels"
-                            defaultChecked={xaxisState.showAllLabels}
-                            onChange={(e) =>
+                            checked={xaxisState.showAllLabels}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                 handleInputChange(
                                     e,
                                     'showAllLabels',
-                                    !xaxisState.showAllLabels,
+                                    e.target.checked,
                                 )
                             }
                         />
