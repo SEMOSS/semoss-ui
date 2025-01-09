@@ -8,13 +8,13 @@ import {
     Typography,
     Table,
     IconButton,
-    Icon,
 } from '@semoss/ui';
-import { ArrowCircleDown, Create } from '@mui/icons-material';
+import { ArrowCircleDown, Create, Refresh } from '@mui/icons-material';
 
 import { usePixel, useEngine, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
+import { DbSyncModal } from './DbSyncModal';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -38,6 +38,8 @@ export const EngineMetadataPage = observer(() => {
     const { id } = useEngine();
 
     const { monolithStore } = useRootStore();
+
+    const [openDbSyncModal, setOpenDbSyncModal] = useState(false);
 
     // track the selected node
     const [selectedNode, setSelectedNode] =
@@ -216,13 +218,22 @@ export const EngineMetadataPage = observer(() => {
             <Section>
                 <Section.Header
                     actions={
-                        <Button
-                            startIcon={<ArrowCircleDown />}
-                            variant="outlined"
-                            onClick={() => printMeta()}
-                        >
-                            Print Metadata
-                        </Button>
+                        <Stack gap={1} direction="row">
+                            <Button
+                                startIcon={<Refresh />}
+                                variant="text"
+                                onClick={() => setOpenDbSyncModal(true)}
+                            >
+                                Refresh Data
+                            </Button>
+                            <Button
+                                startIcon={<ArrowCircleDown />}
+                                variant="outlined"
+                                onClick={() => printMeta()}
+                            >
+                                Print Metadata
+                            </Button>
+                        </Stack>
                     }
                 >
                     Metamodel
@@ -432,6 +443,11 @@ export const EngineMetadataPage = observer(() => {
                     </StyledTableContainer>
                 </Section>
             )}
+
+            <DbSyncModal
+                open={openDbSyncModal}
+                onClose={() => setOpenDbSyncModal(false)}
+            />
         </StyledPage>
     );
 });
