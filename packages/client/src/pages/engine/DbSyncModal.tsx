@@ -9,10 +9,6 @@ import {
 } from '@semoss/ui';
 import { useState } from 'react';
 
-const StyledLabel = styled(Typography)(({ theme }) => ({
-    // fontWeight: theme.fontW,
-}));
-
 const StyledList = styled('div')(({ theme }) => ({
     border: `1px solid ${theme.palette.primary.border}`,
     padding: `${theme.spacing(2)} ${theme.spacing(1)}`,
