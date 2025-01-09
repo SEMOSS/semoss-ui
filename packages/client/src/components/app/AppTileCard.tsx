@@ -484,14 +484,16 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 >
                     Copy App ID
                 </Menu.Item>
-                <Menu.Item
-                    value="clone"
-                    onClick={() => {
-                        setIsUploadOpen(true);
-                    }}
-                >
-                    App Clones
-                </Menu.Item>
+                {app?.user_permission && app.user_permission < 2 && (
+                    <Menu.Item
+                        value="clone"
+                        onClick={() => {
+                            setIsUploadOpen(true);
+                        }}
+                    >
+                        Clone This App
+                    </Menu.Item>
+                )}
                 {app?.user_permission && app.user_permission < 2 && (
                     <Menu.Item
                         value="delete"
@@ -518,6 +520,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
             {isUploadOpen ? (
                 <AddAppCloneModal
                     open={isUploadOpen}
+                    appId={app.project_id}
                     handleClose={(appId) => {
                         console.log('ok');
                         // if there is an appId navigate to it

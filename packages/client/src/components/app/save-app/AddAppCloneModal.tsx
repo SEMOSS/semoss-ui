@@ -1,12 +1,6 @@
 import React, { Dispatch, SetStateAction, useState } from 'react';
-import { Control } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
-import {
-    OpenInBrowser,
-    Edit,
-    LocalOffer,
-    Visibility,
-} from '@mui/icons-material';
+import { Edit, LocalOffer, Visibility } from '@mui/icons-material';
 import {
     ADD_APP_FORM_FIELD_APP_TYPE,
     ADD_APP_FORM_FIELD_DESCRIPTION,
@@ -16,12 +10,12 @@ import {
     ADD_APP_FORM_FIELD_UPLOAD,
     ADD_APP_FORM_FIELD_TYPE,
 } from './save-app.constants';
-import { AppUploadStep } from './AppUploadStep';
 import { AppAccessStep } from './AppAccessStep';
 import { SaveAppModal } from './SaveAppModal';
 import { AppDetailsStep } from './AppDetailsStep';
 import { useNotification } from '@semoss/ui';
 import { AppTagsStep } from './AppTagsStep';
+import { Control } from 'react-hook-form';
 
 type AddAppForm = {
     [ADD_APP_FORM_FIELD_NAME]: string;
@@ -50,54 +44,13 @@ export type AddAppFormStep = {
 interface AddAppProps {
     /** Track if the model is open */
     open: boolean;
-
+    appId: string;
     /** Callback that is triggered on close */
     handleClose: (appId?: string) => void;
 }
 
 export const AddAppCloneModal = (props: AddAppProps) => {
-    const addAppUploadStep = (props: { control: Control<any, any> }) => (
-        <AppUploadStep
-            control={props.control}
-            setAddAppFormSteps={setAddAppFormSteps}
-            appZipFormSteps={appZipFormSteps}
-            projectZipFormSteps={projectZipFormSteps}
-        />
-    );
-
-    const appZipFormSteps = [
-        {
-            name: 'Upload',
-            icon: <OpenInBrowser />,
-            title: 'Upload a zip file',
-            component: addAppUploadStep,
-            requiredFields: [
-                ADD_APP_FORM_FIELD_UPLOAD,
-                ADD_APP_FORM_FIELD_TYPE,
-            ],
-        },
-
-        {
-            name: 'Access',
-            icon: <Visibility />,
-            title: 'Access',
-            component: AppAccessStep,
-            requiredFields: [],
-        },
-    ];
-
     const projectZipFormSteps = [
-        {
-            name: 'Upload',
-            icon: <OpenInBrowser />,
-            title: 'Upload a zip file',
-            component: addAppUploadStep,
-            requiredFields: [
-                ADD_APP_FORM_FIELD_UPLOAD,
-                ADD_APP_FORM_FIELD_TYPE,
-            ],
-        },
-
         {
             name: 'Details',
             icon: <Edit />,
@@ -124,22 +77,21 @@ export const AddAppCloneModal = (props: AddAppProps) => {
         },
     ];
 
-    const [addAppFormSteps, setAddAppFormSteps] =
-        useState<AddAppFormStep[]>(projectZipFormSteps);
+    const [addAppFormSteps] = useState<AddAppFormStep[]>(projectZipFormSteps);
 
-    const { open, handleClose } = props;
+    const { open, handleClose, appId } = props;
 
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
     const notification = useNotification();
 
     const defaultFormValues: AddAppForm = {
         [ADD_APP_FORM_FIELD_NAME]: '',
         [ADD_APP_FORM_FIELD_DESCRIPTION]: '',
-        [ADD_APP_FORM_FIELD_APP_TYPE]: '',
+        [ADD_APP_FORM_FIELD_APP_TYPE]: 'CODE',
         [ADD_APP_FORM_FIELD_TAGS]: [],
         [ADD_APP_FORM_FIELD_UPLOAD]: null,
         [ADD_APP_FORM_FIELD_IS_GLOBAL]: false,
-        [ADD_APP_FORM_FIELD_TYPE]: 'App Zip',
+        [ADD_APP_FORM_FIELD_TYPE]: 'Assets Copy',
     };
 
     /**
@@ -148,119 +100,86 @@ export const AddAppCloneModal = (props: AddAppProps) => {
     const createApp = async (data: AddAppForm) => {
         // upload the file
 
-        if (data[ADD_APP_FORM_FIELD_TYPE] === 'App Zip') {
-            const upload = await monolithStore.uploadFile(
-                [data[ADD_APP_FORM_FIELD_UPLOAD]],
-                configStore.store.insightID,
-            );
-            const resp = await monolithStore.runQuery(
-                `UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
-            );
+        const createProjectResponse = await monolithStore.runQuery(
+            `CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], portal=["true"])`,
+        );
 
-            let output = undefined;
-            let type = undefined;
+        let createProjectOutput = undefined;
+        let type = undefined;
 
-            output = resp.pixelReturn[0].output;
-            type = resp.pixelReturn[0].operationType[0];
+        createProjectOutput = createProjectResponse.pixelReturn[0].output;
+        type = createProjectResponse.pixelReturn[0].operationType[0];
 
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
+        if (type.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: createProjectOutput,
+            });
 
-                return;
-            }
-            handleClose(output.project_id);
-        } else {
-            const createProjectResponse = await monolithStore.runQuery(
-                `CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["${data[ADD_APP_FORM_FIELD_APP_TYPE]}"], portal=["true"])`,
-            );
-
-            let createProjectOutput = undefined;
-            let type = undefined;
-
-            createProjectOutput = createProjectResponse.pixelReturn[0].output;
-            type = createProjectResponse.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: createProjectOutput,
-                });
-
-                return;
-            }
-            const setProjectMetadataResponse = await monolithStore.runQuery(
-                `SetProjectMetadata(project=["${
-                    createProjectOutput.project_id
-                }"], meta=[${JSON.stringify({
-                    tag: data['tags'],
-                    description: data['description'],
-                })}])`,
-            );
-
-            let output = undefined;
-            type = undefined;
-
-            output = setProjectMetadataResponse.pixelReturn[0].output;
-            type = setProjectMetadataResponse.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                return;
-            }
-
-            const deleteAssetResponse = await monolithStore.runQuery(
-                `DeleteAsset(filePath=["version/assets/"], space=["${createProjectOutput.project_id}"]);`,
-            );
-            output = undefined;
-            type = undefined;
-
-            output = deleteAssetResponse.pixelReturn[0].output;
-            type = deleteAssetResponse.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                return;
-            }
-
-            const upload = await monolithStore.uploadFile(
-                [data[ADD_APP_FORM_FIELD_UPLOAD]],
-                configStore.store.insightID,
-                createProjectOutput.project_id,
-                'version',
-            );
-
-            const unzipFileResponse = await monolithStore.runQuery(
-                `UnzipFile(filePath=["${upload[0].fileLocation}"], space=["${createProjectOutput.project_id}"]);`,
-            );
-            output = undefined;
-            type = undefined;
-
-            output = unzipFileResponse.pixelReturn[0].output;
-            type = unzipFileResponse.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-
-                return;
-            }
-            // close it
-
-            handleClose(createProjectOutput.project_id);
+            return;
         }
+        const setProjectMetadataResponse = await monolithStore.runQuery(
+            `SetProjectMetadata(project=["${
+                createProjectOutput.project_id
+            }"], meta=[${JSON.stringify({
+                tag: data['tags'],
+                description: data['description'],
+            })}])`,
+        );
+
+        let output = undefined;
+        type = undefined;
+
+        output = setProjectMetadataResponse.pixelReturn[0].output;
+        type = setProjectMetadataResponse.pixelReturn[0].operationType[0];
+
+        if (type.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        }
+
+        const deleteAssetResponse = await monolithStore.runQuery(
+            `DeleteAsset(filePath=["version/assets/"], space=["${createProjectOutput.project_id}"]);`,
+        );
+        output = undefined;
+        type = undefined;
+
+        output = deleteAssetResponse.pixelReturn[0].output;
+        type = deleteAssetResponse.pixelReturn[0].operationType[0];
+
+        if (type.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        }
+
+        const clonePorjectResponse = await monolithStore.runQuery(
+            `CloneProject(project=["${appId}"], space=["${createProjectOutput.project_id}"]);`,
+        );
+        output = undefined;
+        type = undefined;
+
+        output = clonePorjectResponse.pixelReturn[0].output;
+        type = clonePorjectResponse.pixelReturn[0].operationType[0];
+
+        if (type.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        }
+        // close it
+
+        handleClose(createProjectOutput.project_id);
     };
 
     return (
