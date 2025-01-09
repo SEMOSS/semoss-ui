@@ -402,24 +402,27 @@ export async function setBlocksAndOpenUIBuilder(
 ) {
     // create the state
     const state: SerializedState = {
-        version: '1.0.0-alpha.1',
+        version: '1.0.0-alpha.3',
         executionOrder: [],
         variables: {
             [PROMPT_QUERY_DEFINITION_ID]: {
                 type: 'query',
                 to: PROMPT_QUERY_DEFINITION_ID,
+                isOutput: true,
+                isInput: false,
             },
             [PROMPT_QUERY_ID]: {
                 type: 'query',
                 to: PROMPT_QUERY_ID,
+                isOutput: true,
+                isInput: false,
             },
             [MODEL_ID]: {
                 type: 'model',
-                to: MODEL_ID,
+                value: builder.model.value,
+                isOutput: false,
+                isInput: true,
             },
-        },
-        dependencies: {
-            [MODEL_ID]: builder.model.value,
         },
         queries: {},
         blocks: {
@@ -603,6 +606,8 @@ export async function setBlocksAndOpenUIBuilder(
             state.variables[inputId] = {
                 type: 'block',
                 to: inputId,
+                isInput: true,
+                isOutput: false,
             };
         }
     }

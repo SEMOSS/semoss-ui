@@ -1,6 +1,5 @@
-import LANDINGPAGE from '@/assets/img/LandingPage.jpeg';
-
 import { Template } from './templates.types';
+import LANDINGPAGE from '@/assets/img/LandingPage.jpeg';
 
 export const LandingPageTemplate: Template = {
     name: 'Landing Page',
@@ -10,10 +9,6 @@ export const LandingPageTemplate: Template = {
     lastUpdatedDate: new Date().toISOString(),
     tags: [],
     state: {
-        version: '1.0.0-alpha.1',
-        executionOrder: [],
-        dependencies: {},
-        variables: {},
         queries: {},
         blocks: {
             'text--584': {
@@ -33,6 +28,24 @@ export const LandingPageTemplate: Template = {
                 },
                 listeners: {},
                 id: 'text--584',
+            },
+            'text--1255': {
+                parent: {
+                    id: 'container--6803',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
+                },
+                listeners: {},
+                id: 'text--1255',
             },
             'text--5552': {
                 parent: {
@@ -173,6 +186,7 @@ export const LandingPageTemplate: Template = {
                 id: 'container--2367',
             },
             'page-1': {
+                parent: null,
                 slots: {
                     content: {
                         children: ['container--2367', 'container--2846'],
@@ -193,7 +207,6 @@ export const LandingPageTemplate: Template = {
                 listeners: {
                     onPageLoad: [],
                 },
-                parent: null,
                 id: 'page-1',
             },
             'text--2926': {
@@ -313,6 +326,38 @@ export const LandingPageTemplate: Template = {
                 listeners: {},
                 id: 'container--2406',
             },
+            'container--6803': {
+                parent: {
+                    id: 'container--8339',
+                    slot: 'children',
+                },
+                slots: {
+                    children: {
+                        children: [
+                            'image--2421',
+                            'text--2158',
+                            'text--1255',
+                            'link--5550',
+                        ],
+                        name: 'children',
+                    },
+                },
+                widget: 'container',
+                data: {
+                    style: {
+                        border: '1px solid #f2f2f2',
+                        'border-radius': '8px',
+                        padding: '16px',
+                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                        width: '280px',
+                    },
+                },
+                listeners: {},
+                id: 'container--6803',
+            },
             'text--6096': {
                 parent: {
                     id: 'container--2367',
@@ -389,6 +434,24 @@ export const LandingPageTemplate: Template = {
                 listeners: {},
                 id: 'link--1766',
             },
+            'text--4050': {
+                parent: {
+                    id: 'container--6798',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
+                },
+                listeners: {},
+                id: 'text--4050',
+            },
             'text--6236': {
                 parent: {
                     id: 'container--651',
@@ -408,6 +471,30 @@ export const LandingPageTemplate: Template = {
                 listeners: {},
                 id: 'text--6236',
             },
+            'image--1722': {
+                parent: {
+                    id: 'container--6798',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'image',
+                data: {
+                    src: 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
+                    style: {
+                        alignItems: 'center',
+                        display: 'flex',
+                        width: '100%',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center center',
+                        backgroundRepeat: 'no-repeat',
+                        justifyContent: 'center',
+                        height: '200px',
+                    },
+                    title: '',
+                },
+                listeners: {},
+                id: 'image--1722',
+            },
             'text--6474': {
                 parent: {
                     id: 'container--7869',
@@ -426,6 +513,25 @@ export const LandingPageTemplate: Template = {
                 },
                 listeners: {},
                 id: 'text--6474',
+            },
+            'text--2234': {
+                parent: {
+                    id: 'container--6798',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                        fontWeight: 'bold',
+                    },
+                    text: 'Resource 6',
+                },
+                listeners: {},
+                id: 'text--2234',
             },
             'container--9691': {
                 parent: {
@@ -458,6 +564,25 @@ export const LandingPageTemplate: Template = {
                 },
                 listeners: {},
                 id: 'container--9691',
+            },
+            'text--2158': {
+                parent: {
+                    id: 'container--6803',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'text',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                        fontWeight: 'bold',
+                    },
+                    text: 'Resource 5',
+                },
+                listeners: {},
+                id: 'text--2158',
             },
             'text--6477': {
                 parent: {
@@ -544,6 +669,25 @@ export const LandingPageTemplate: Template = {
                 listeners: {},
                 id: 'image--4342',
             },
+            'link--5550': {
+                parent: {
+                    id: 'container--6803',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'link',
+                data: {
+                    style: {
+                        padding: '4px',
+                        whiteSpace: 'pre-line',
+                        textOverflow: 'ellipsis',
+                    },
+                    href: '',
+                    text: 'Navigate',
+                },
+                listeners: {},
+                id: 'link--5550',
+            },
             'text--2539': {
                 parent: {
                     id: 'container--9691',
@@ -562,6 +706,30 @@ export const LandingPageTemplate: Template = {
                 },
                 listeners: {},
                 id: 'text--2539',
+            },
+            'image--2421': {
+                parent: {
+                    id: 'container--6803',
+                    slot: 'children',
+                },
+                slots: {},
+                widget: 'image',
+                data: {
+                    src: 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
+                    style: {
+                        alignItems: 'center',
+                        display: 'flex',
+                        width: '100%',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center center',
+                        backgroundRepeat: 'no-repeat',
+                        justifyContent: 'center',
+                        height: '200px',
+                    },
+                    title: '',
+                },
+                listeners: {},
+                id: 'image--2421',
             },
             'container--8339': {
                 parent: {
@@ -593,6 +761,38 @@ export const LandingPageTemplate: Template = {
                 },
                 listeners: {},
                 id: 'container--8339',
+            },
+            'container--6798': {
+                parent: {
+                    id: 'container--8339',
+                    slot: 'children',
+                },
+                slots: {
+                    children: {
+                        children: [
+                            'image--1722',
+                            'text--2234',
+                            'text--4050',
+                            'link--6225',
+                        ],
+                        name: 'children',
+                    },
+                },
+                widget: 'container',
+                data: {
+                    style: {
+                        border: '1px solid #f2f2f2',
+                        'border-radius': '8px',
+                        padding: '16px',
+                        flexWrap: 'wrap',
+                        flexDirection: 'column',
+                        display: 'flex',
+                        gap: '8px',
+                        width: '280px',
+                    },
+                },
+                listeners: {},
+                id: 'container--6798',
             },
             'text--3906': {
                 parent: {
@@ -668,218 +868,13 @@ export const LandingPageTemplate: Template = {
                 listeners: {},
                 id: 'container--7869',
             },
-            'container--6803': {
-                id: 'container--6803',
-                widget: 'container',
-                parent: {
-                    id: 'container--8339',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '16px',
-                        gap: '8px',
-                        flexWrap: 'wrap',
-                        width: '280px',
-                        border: '1px solid #f2f2f2',
-                        'border-radius': '8px',
-                    },
-                },
-                listeners: {},
-                slots: {
-                    children: {
-                        name: 'children',
-                        children: [
-                            'image--2421',
-                            'text--2158',
-                            'text--1255',
-                            'link--5550',
-                        ],
-                    },
-                },
-            },
-            'container--6798': {
-                id: 'container--6798',
-                widget: 'container',
-                parent: {
-                    id: 'container--8339',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '16px',
-                        gap: '8px',
-                        flexWrap: 'wrap',
-                        width: '280px',
-                        border: '1px solid #f2f2f2',
-                        'border-radius': '8px',
-                    },
-                },
-                listeners: {},
-                slots: {
-                    children: {
-                        name: 'children',
-                        children: [
-                            'image--1722',
-                            'text--2234',
-                            'text--4050',
-                            'link--6225',
-                        ],
-                    },
-                },
-            },
-            'image--2421': {
-                id: 'image--2421',
-                widget: 'image',
-                parent: {
-                    id: 'container--6803',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        width: '100%',
-                        height: '200px',
-                        backgroundSize: 'cover',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'center center',
-                    },
-                    src: 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
-                    title: '',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'image--1722': {
-                id: 'image--1722',
-                widget: 'image',
-                parent: {
-                    id: 'container--6798',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        width: '100%',
-                        height: '200px',
-                        backgroundSize: 'cover',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'center center',
-                    },
-                    src: 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
-                    title: '',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--2158': {
-                id: 'text--2158',
-                widget: 'text',
-                parent: {
-                    id: 'container--6803',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                        fontWeight: 'bold',
-                    },
-                    text: 'Resource 5',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--2234': {
-                id: 'text--2234',
-                widget: 'text',
-                parent: {
-                    id: 'container--6798',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                        fontWeight: 'bold',
-                    },
-                    text: 'Resource 6',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--1255': {
-                id: 'text--1255',
-                widget: 'text',
-                parent: {
-                    id: 'container--6803',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'text--4050': {
-                id: 'text--4050',
-                widget: 'text',
-                parent: {
-                    id: 'container--6798',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
-                },
-                listeners: {},
-                slots: {},
-            },
-            'link--5550': {
-                id: 'link--5550',
-                widget: 'link',
-                parent: {
-                    id: 'container--6803',
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                        whiteSpace: 'pre-line',
-                        textOverflow: 'ellipsis',
-                    },
-                    href: '',
-                    text: 'Navigate',
-                },
-                listeners: {},
-                slots: {},
-            },
             'link--6225': {
-                id: 'link--6225',
-                widget: 'link',
                 parent: {
                     id: 'container--6798',
                     slot: 'children',
                 },
+                slots: {},
+                widget: 'link',
                 data: {
                     style: {
                         padding: '4px',
@@ -890,8 +885,11 @@ export const LandingPageTemplate: Template = {
                     text: 'Navigate',
                 },
                 listeners: {},
-                slots: {},
+                id: 'link--6225',
             },
         },
+        variables: {},
+        executionOrder: [],
+        version: '1.0.0-alpha.3',
     },
 };

@@ -12,7 +12,8 @@ cache:
         - node_modules/
         - .m2/repository/
         - dist/
-        - index.html
+        - index.html\
+        - .nx/cache
     key: ${CI_BUILD_REF_NAME}
 
 # Does not push to maven central
@@ -35,7 +36,9 @@ pnpm_build_dev:
         - npm install -g pnpm@8
         - pnpm install
         - pnpm -v
-        - pnpm run build
+        - NX_HEAD=$CI_COMMIT_SHA
+        - NX_BASE=${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}
+        - npx NX_REJECT_UNKNOWN_LOCAL_CACHE=0 nx run-many -t build -p @semoss/client @semoss/legacy --verbose
         - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${VERSION}-SNAPSHOT
         # So that the cache takes up less space
         - rm -rf .m2/repository/org/semoss
