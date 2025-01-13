@@ -16,20 +16,24 @@
     NODE_ENV=development
 ```
 
-**If you are coming from another client project (within SEMOSS)**, MODULE may have to be adjusted for that client specific endpoint, consult with your client project lead for details on that endpoint.
+**If you are coming from another client project (within SEMOSS)**, MODULE within the `.env.local` as well as `.packages/legacy/app.constants` may have to be adjusted for that client specific endpoint, consult with your client project lead for details on that endpoint.
 
-4. Run `pnpm install` in root directory.
+1. Run `pnpm install` in root directory.
 
-5. Build our component library, go to `packages/ui` and run `pnpm run build`.
+2. Build legacy and client, run `pnpm run build`.
 
-6. Upon completion of the build on our component library, navigate back to our root directory and run `pnpm run dev:client`
+3. For local development on our new ui (./packages/client) and the component library (./libs)  run `pnpm run dev:client`
 
 Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
-## Common Errors
- 1. `Cannot find module @semoss/ui` - This error indicates that our component library is not fully built out which is a required dependency in SemossUI.  To get around this do these steps rerun steps **4** and **5**.
+4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook`
 
- 2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
+5. For local development on the legacy application, run `pnpm run dev:legacy`
+
+Legacy application will be accesible at: `http://localhost:9090/semoss-ui/#!/`
+
+## Common Errors
+ 2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` and/or `.packages/legacy/app.constants` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
 
  ### Must be on a version of Node 18
 1. We use a node version manager to handle swapping between different versions.  https://github.com/coreybutler/nvm-windows, Most members are on version `18.16.0`
