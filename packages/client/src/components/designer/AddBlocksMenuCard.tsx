@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Card, Tooltip } from '@semoss/ui';
+import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
@@ -11,12 +11,20 @@ import { DesignerMenuItem } from './menu';
 const StyledCard = styled(Card)(({ theme }) => ({
     height: '100%',
     width: '100%',
-    padding: theme.spacing(2),
+    // paddingX: theme.spacing(1),
+    // paddingY: theme.spacing(1.5),
     cursor: 'grab',
+    // borderWidth: '1px',
+    // borderColor: theme.palette.text.secondary,
+    // borderStyle: "solid",
     border: `1px solid rgba(0, 0, 0, 0.23)`,
     //TODO: styled needs to be updated to match the theme
     borderRadius: '12px', //  theme.shape.borderRadiusLg
     justifyContent: 'center',
+}));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
 }));
 
 export interface AddBlocksMenuItemProps {
@@ -140,10 +148,22 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <StyledCard onMouseDown={handleMouseDown}>
-            <Tooltip title={`Add ${item.name}`}>
-                <img draggable={false} src={item.image || THEME.logo} />
-            </Tooltip>
-        </StyledCard>
+        <Stack spacing={1} alignItems="center">
+            <StyledTypography variant="body2" fontWeight="medium">
+                {item.name}
+            </StyledTypography>
+            <StyledCard onMouseDown={handleMouseDown}>
+                <Tooltip title={`Add ${item.name}`}>
+                    <Stack paddingX={1} paddingY={1.5}>
+                        <img
+                            draggable={false}
+                            src={item.image || THEME.logo}
+                            width="133px"
+                            height="106px"
+                        />
+                    </Stack>
+                </Tooltip>
+            </StyledCard>
+        </Stack>
     );
 });

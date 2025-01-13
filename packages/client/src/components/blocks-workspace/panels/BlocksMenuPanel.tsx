@@ -8,7 +8,7 @@ import {
     Typography,
     Divider,
 } from '@semoss/ui';
-import { DesignerMenuItem } from '@/components/designer';
+import { AddBlocksMenuCard, DesignerMenuItem } from '@/components/designer';
 import { Panel } from '@/components/workspace';
 
 const StyledTitle = styled('div')(({ theme }) => ({
@@ -26,10 +26,6 @@ const StyledMenu = styled(Stack)(() => ({
     width: '100%',
     overflowY: 'auto',
     overflowX: 'hidden',
-}));
-
-const StyledSection = styled('div')(({ theme }) => ({
-    ...theme.typography.caption,
 }));
 
 export interface AddBlocksMenuProps {
@@ -114,53 +110,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                 </Stack>
                 <Divider />
                 {renderedItems.length ? (
-                    // <StyledMenu>
-                    // <Grid container spacing={2}>
-                    //     {renderedItems.map((item, idx) => {
-                    //         // get the previous + next item
-                    //         const prev = renderedItems[idx - 1] || null;
-                    //         const next = renderedItems[idx + 1] || null;
-
-                    //         return (
-                    //             <React.Fragment key={idx}>
-                    //                 {/* Why does width extend Designer screen */}
-                    //                 {!prev || prev.section !== item.section ? (
-                    //                     <Grid
-                    //                         item
-                    //                         xs={12}
-                    //                         sx={{ width: '50px' }}
-                    //                     >
-                    //                         <StyledSection>
-                    //                             {item.section}
-                    //                         </StyledSection>
-                    //                     </Grid>
-                    //                 ) : null}
-
-                    //                 <Grid item xs={6} sx={{ width: '50px' }}>
-                    //                     <AddBlocksMenuCard item={item} />
-                    //                 </Grid>
-                    //                 {next && next.section !== item.section ? (
-                    //                     <Grid
-                    //                         item
-                    //                         xs={12}
-                    //                         sx={{ width: '50px' }}
-                    //                     >
-                    //                         <Divider
-                    //                             orientation="horizontal"
-                    //                             variant="fullWidth"
-                    //                             flexItem={true}
-                    //                         />
-                    //                     </Grid>
-                    //                 ) : null}
-                    //             </React.Fragment>
-                    //         );
-                    //     })}
-                    // </Grid>
-                    // </StyledMenu>
-
                     <StyledMenu>
                         {renderedItems.map((sectionItems, index) => (
-                            <Stack key={index} width="100%">
+                            <Stack key={sectionItems[0].section} width="100%">
                                 {index > 0 && (
                                     <Divider variant="fullWidth" flexItem />
                                 )}
@@ -173,12 +125,12 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
                                     {sectionItems.map((block, index) => (
                                         <Grid
                                             item
-                                            key={index}
+                                            key={block.name}
                                             style={{
                                                 backgroundColor: 'primary',
                                             }}
                                         >
-                                            <div>{block.name}</div>
+                                            <AddBlocksMenuCard item={block} />
                                         </Grid>
                                     ))}
                                 </Grid>
