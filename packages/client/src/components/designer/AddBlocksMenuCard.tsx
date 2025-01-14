@@ -4,15 +4,11 @@ import { styled, Card, Tooltip, Stack, Typography } from '@semoss/ui';
 
 import { ActionMessages } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
-import { THEME } from '@/constants';
 
 import { DesignerMenuItem } from './menu';
+import { BlockCardContent } from './BlockCardContent';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-    height: '100%',
-    width: '100%',
-    // paddingX: theme.spacing(1),
-    // paddingY: theme.spacing(1.5),
+const StyledCard = styled(Card)({
     cursor: 'grab',
     // borderWidth: '1px',
     // borderColor: theme.palette.text.secondary,
@@ -21,7 +17,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     //TODO: styled needs to be updated to match the theme
     borderRadius: '12px', //  theme.shape.borderRadiusLg
     justifyContent: 'center',
-}));
+});
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
@@ -54,7 +50,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 return true;
             },
             item.name,
-            item.image,
+            item.hoverImage || item.image,
         );
 
         // clear the hovered
@@ -159,30 +155,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     placement="bottom"
                 >
                     <div>
-                        <Stack
-                            marginX={1}
-                            marginY={1.5}
-                            width="133px"
-                            height="106px"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            {item.image || item.hoverImage ? (
-                                <img
-                                    draggable={false}
-                                    src={item.image || item.hoverImage}
-                                    width="100%"
-                                    height="100%"
-                                />
-                            ) : (
-                                <StyledTypography
-                                    variant="body2"
-                                    fontWeight="medium"
-                                >
-                                    {item.name}
-                                </StyledTypography>
-                            )}
-                        </Stack>
+                        <BlockCardContent
+                            image={item.image || item.hoverImage}
+                            name={item.name}
+                        />
                     </div>
                 </Tooltip>
             </StyledCard>

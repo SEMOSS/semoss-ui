@@ -3,12 +3,12 @@ import { styled, Card, Stack, Typography } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerStoreInterface } from '@/stores';
+import { BlockCardContent } from './BlockCardContent';
 
 const StyledCard = styled(Card)(({ theme }) => ({
     border: `1px solid ${theme.palette.primary.main}`,
     borderRadius: '8px',
     boxShadow: 'none',
-    padding: `${theme.spacing(0.5)} ${theme.spacing(2)}`,
     opacity: 0.5,
 }));
 
@@ -17,25 +17,14 @@ const StyledGhost = styled('div')(({ theme }) => ({
     alignItems: 'center',
     position: 'fixed',
     zIndex: '20',
-    paddingLeft: theme.spacing(1),
-    paddingRight: theme.spacing(1),
     pointerEvents: 'auto',
     userSelect: 'none',
     whiteSpace: 'nowrap',
     cursor: 'grabbing',
 }));
 
-const StyledStack = styled(Stack)(() => ({
-    alignItems: 'center',
-    justifyContent: 'center',
-}));
-
-const StyledTypography = styled(Typography)(() => ({
-    textTransform: 'capitalize',
-}));
-
 /**
- * Calculate the size of the ghost
+ * Calculate the position of the ghost relative to the cursor
  * @param ghostPosition - position of the tracked widget
  * @returns bounding box of the ghost
  */
@@ -74,19 +63,10 @@ export const Ghost = observer(() => {
             }}
         >
             <StyledCard>
-                <StyledStack direction="column" padding={1} spacing={1}>
-                    <div>
-                        <img
-                            src={designer.drag.ghostIcon}
-                            alt="ghost-image"
-                            width={50}
-                            height={50}
-                        />
-                    </div>
-                    <StyledTypography variant="subtitle2">
-                        {designer.drag.ghostDisplay}
-                    </StyledTypography>
-                </StyledStack>
+                <BlockCardContent
+                    image={designer.drag.ghostIcon}
+                    name={designer.drag.ghostDisplay}
+                />
             </StyledCard>
         </StyledGhost>
     );

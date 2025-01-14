@@ -1,0 +1,33 @@
+import { Stack, styled, Typography } from '@semoss/ui';
+
+export interface BlockCardContentProps {
+    name?: string;
+    image?: string;
+}
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
+}));
+
+export const BlockCardContent = (props: BlockCardContentProps) => {
+    const { name = '', image } = props;
+
+    return (
+        <Stack
+            marginX={1}
+            marginY={1.5}
+            width="133px"
+            height="106px"
+            alignItems="center"
+            justifyContent="center"
+        >
+            {image ? (
+                <img draggable={false} src={image} width="100%" height="100%" />
+            ) : (
+                <StyledTypography variant="body2" fontWeight="medium">
+                    {name}
+                </StyledTypography>
+            )}
+        </Stack>
+    );
+};
