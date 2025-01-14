@@ -154,7 +154,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
             </StyledTypography>
             <StyledCard onMouseDown={handleMouseDown}>
                 <Tooltip
-                    title={item?.hoverText ?? item.name}
+                    title={item.hoverText ?? item.name}
                     arrow
                     placement="bottom"
                 >
