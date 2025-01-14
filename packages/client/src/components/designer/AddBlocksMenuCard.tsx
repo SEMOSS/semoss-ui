@@ -159,13 +159,29 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     placement="bottom"
                 >
                     <div>
-                        <Stack paddingX={1} paddingY={1.5}>
-                            <img
-                                draggable={false}
-                                src={item.image || THEME.logo}
-                                width="133px"
-                                height="106px"
-                            />
+                        <Stack
+                            marginX={1}
+                            marginY={1.5}
+                            width="133px"
+                            height="106px"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+                            {item.image || item.hoverImage ? (
+                                <img
+                                    draggable={false}
+                                    src={item.image || item.hoverImage}
+                                    width="100%"
+                                    height="100%"
+                                />
+                            ) : (
+                                <StyledTypography
+                                    variant="body2"
+                                    fontWeight="medium"
+                                >
+                                    {item.name}
+                                </StyledTypography>
+                            )}
                         </Stack>
                     </div>
                 </Tooltip>

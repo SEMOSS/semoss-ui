@@ -22,7 +22,10 @@ export interface DesignerMenuItem {
     name: string;
 
     /** Image of the item */
-    image: string;
+    image?: string;
+
+    /** Image to display when hovering */
+    hoverImage?: string;
 
     /** JSON of the block */
     json: BlockJSON;

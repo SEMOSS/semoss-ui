@@ -445,7 +445,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_ELEMENT,
         // image for html block from design team
-        image: HTML_BLOCK,
+        // image: HTML_BLOCK,
         name: 'HTML',
         json: {
             widget: 'html',
