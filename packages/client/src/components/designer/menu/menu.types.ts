@@ -26,4 +26,7 @@ export interface DesignerMenuItem {
 
     /** JSON of the block */
     json: BlockJSON;
+
+    /** Text to display on hover */
+    hoverText?: string;
 }

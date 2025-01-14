@@ -153,15 +153,21 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 {item.name}
             </StyledTypography>
             <StyledCard onMouseDown={handleMouseDown}>
-                <Tooltip title={`Add ${item.name}`}>
-                    <Stack paddingX={1} paddingY={1.5}>
-                        <img
-                            draggable={false}
-                            src={item.image || THEME.logo}
-                            width="133px"
-                            height="106px"
-                        />
-                    </Stack>
+                <Tooltip
+                    title={item?.hoverText ?? item.name}
+                    arrow
+                    placement="bottom"
+                >
+                    <div>
+                        <Stack paddingX={1} paddingY={1.5}>
+                            <img
+                                draggable={false}
+                                src={item.image || THEME.logo}
+                                width="133px"
+                                height="106px"
+                            />
+                        </Stack>
+                    </div>
                 </Tooltip>
             </StyledCard>
         </Stack>
