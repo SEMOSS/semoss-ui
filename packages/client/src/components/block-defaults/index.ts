@@ -60,6 +60,7 @@ import {
     config as PDFViewerBlockConfig,
     PDFViewerBlockDef,
 } from './pdfViewer-block';
+import { config as ThemeBlockConfig, ThemeBlockDef } from './theme-block';
 
 export type DefaultBlockDefinitions =
     | AudioBlockDef
@@ -94,7 +95,8 @@ export type DefaultBlockDefinitions =
     | LLMComparisonBlockDef
     | ModalBlockDef
     | RadioBlockDef
-    | PDFViewerBlockDef;
+    | PDFViewerBlockDef
+    | ThemeBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,
@@ -124,6 +126,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [RadioBlockConfig.widget]: RadioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
+    [ThemeBlockConfig.widget]: ThemeBlockConfig,
 };
 
 export {
@@ -150,4 +153,5 @@ export {
     ModalBlockConfig,
     RadioBlockConfig,
     PDFViewerBlockConfig,
+    ThemeBlockConfig,
 };
