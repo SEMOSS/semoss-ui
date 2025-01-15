@@ -23,6 +23,93 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 
 import { WorkspacePage } from './WorkspacePage';
 
+import { Bricks } from '@semoss/renderer';
+import { ActionMessages, SerializedState } from '@/stores';
+
+const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
+    queries: {},
+    blocks: {
+        'page-1': {
+            parent: null,
+            slots: {
+                content: {
+                    children: [],
+                    name: 'content',
+                },
+            },
+            widget: 'page',
+            data: {
+                style: {
+                    padding: '24px',
+                    fontFamily: 'roboto',
+                    flexDirection: 'column',
+                    display: 'flex',
+                    gap: '8px',
+                },
+            },
+            listeners: {
+                onPageLoad: [],
+            },
+            id: 'page-1',
+        },
+    },
+    variables: {},
+    executionOrder: [],
+    version: '1.0.0-alpha.3',
+};
+const TESTING_STATE_REMOVE_THIS: SerializedState = {
+    queries: {
+        'notebook-1': {
+            id: 'notebook-1',
+            cells: [
+                {
+                    id: '10840',
+                    widget: 'code',
+                    parameters: {
+                        code: '1+1',
+                        type: 'py',
+                    },
+                },
+            ],
+        },
+    },
+    blocks: {
+        'page-1': {
+            parent: null,
+            slots: {
+                content: {
+                    children: [],
+                    name: 'content',
+                },
+            },
+            widget: 'page',
+            data: {
+                style: {
+                    padding: '24px',
+                    fontFamily: 'roboto',
+                    flexDirection: 'column',
+                    display: 'flex',
+                    gap: '8px',
+                },
+            },
+            listeners: {
+                onPageLoad: [
+                    {
+                        message: ActionMessages.RUN_QUERY,
+                        payload: {
+                            queryId: 'notebook-1',
+                        },
+                    },
+                ],
+            },
+            id: 'page-1',
+        },
+    },
+    variables: {},
+    executionOrder: ['notebook-1'],
+    version: '1.0.0-alpha.3',
+};
+
 export const Router = observer(() => {
     const { configStore } = useRootStore();
 
@@ -36,7 +123,6 @@ export const Router = observer(() => {
         if (theme && theme['THEME_MAP']) {
             try {
                 const map = JSON.parse(theme['THEME_MAP'] as string);
-                console.log('THEME MAP', map);
 
                 return !!map['cookiePolicyNoticePage'];
             } catch {
@@ -61,6 +147,18 @@ export const Router = observer(() => {
                     <Route path="settings/*" element={<SettingsRouter />} />
                     <Route path="engine/*" element={<EngineRouter />} />
                     <Route path="app/*" element={<AppRouter />} />
+
+                    {/* Test route for blocks renderer as lib */}
+                    <Route
+                        path="bricks"
+                        element={
+                            <Bricks
+                                state={TESTING_STATE_REMOVE_THIS}
+                                MODULE={process.env.MODULE}
+                            />
+                        }
+                    />
+
                     {process.env.NODE_ENV == 'development' && (
                         <Route path="prompt/*" element={<PromptRouter />} />
                     )}

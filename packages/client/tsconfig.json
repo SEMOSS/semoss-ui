@@ -4,9 +4,8 @@
         "paths": {
             "@/*": ["./src/*"],
             "@semoss/ui": ["../../libs/ui/src/index.ts"],
-            "@semoss/blocks-renderer": [
-                "../../libs/blocks-renderer/src/index.ts"
-            ]
+            "@semoss/renderer": ["../../libs/renderer/src/index.ts"],
+            "@semoss/sdk-react": ["../../libs/sdk-react/src/index.ts"]
         },
         "target": "es6",
         "lib": ["dom", "dom.iterable", "esnext"],

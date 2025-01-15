@@ -143,6 +143,103 @@ export const runPixel = async <O extends unknown[] | []>(
 };
 
 /**
+ * Asyncronously run a pixel string
+ *
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
+ */
+export const runPixelAsync = async (pixel: string, insightId?: string) => {
+    if (!pixel) {
+        throw Error('No Pixel To Execute');
+    }
+
+    const body: Record<string, unknown> = {
+        expression: pixel,
+    };
+
+    if (insightId) {
+        body.insightId = insightId;
+    }
+
+    const response = await post<{ jobId: string }>(
+        `${Env.MODULE}/api/engine/runPixelAsync`,
+        body,
+        {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        },
+    ).catch((error) => {
+        // throw the message
+        throw Error(error.response.data.errorMessage);
+    });
+
+    if (!response) {
+        throw Error('No Pixel Response');
+    }
+
+    return {
+        jobId: response.data.jobId,
+    };
+};
+
+/**
+ * @name getPixelAsyncResult
+ * @description Gets results for async pixel calls
+ */
+export const getPixelAsyncResult = async <O extends unknown[] | []>(
+    jobId: string,
+) => {
+    if (!jobId) {
+        throw Error('No job id provided to get pixel response');
+    }
+
+    const body: Record<string, unknown> = {
+        jobId: jobId,
+    };
+
+    const response = await post<{
+        insightID: string;
+        pixelReturn: {
+            operationType: string[];
+            output: unknown;
+            pixelExpression: string;
+        }[];
+    }>(`${Env.MODULE}/api/engine/result`, body, {
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+        },
+    }).catch((error) => {
+        // throw the message
+        throw Error(error.response.data.errorMessage);
+    });
+
+    debugger;
+
+    // there was no response, that is an error
+    if (!response) {
+        throw Error('No Pixel Response');
+    }
+
+    const errors: string[] = [];
+
+    // collect the errors
+    for (const p of response.data.pixelReturn) {
+        const { output, operationType } = p;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            errors.push(output as string);
+        }
+    }
+
+    return {
+        errors: errors,
+        insightId: response.data.insightID,
+        results: response.data.pixelReturn,
+    };
+};
+
+/**
  * Allow the user to login
  *
  * @param username - username to login with
