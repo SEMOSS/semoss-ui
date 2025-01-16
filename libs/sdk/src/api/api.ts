@@ -153,34 +153,45 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
         throw Error("No Pixel To Execute");
     }
 
-    const body: Record<string, unknown> = {
-        expression: pixel,
-    };
+    debugger;
 
+    // build the expression
+    let postData = "";
+
+    postData += "expression=" + encodeURIComponent(pixel);
     if (insightId) {
-        body.insightId = insightId;
+        postData += "&insightId=" + encodeURIComponent(insightId);
     }
 
-    const response = await post<{ jobId: string }>(
-        `${Env.MODULE}/api/engine/runPixelAsync`,
-        body,
-        {
+    try {
+        const response = await fetch(`${Env.MODULE}/api/engine/runPixelAsync`, {
+            method: "POST",
             headers: {
-                "content-type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
-        },
-    ).catch((error) => {
-        // throw the message
-        throw Error(error.response.data.errorMessage);
-    });
+            body: postData,
+        });
 
-    if (!response) {
-        throw Error("No Pixel Response");
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw Error(errorData.errorMessage || "Failed to run pixel");
+        }
+
+        const data = await response.json();
+
+        if (!data) {
+            throw Error("No Pixel Response");
+        }
+
+        return {
+            jobId: data.jobId,
+        };
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw Error("An unknown error occurred");
     }
-
-    return {
-        jobId: response.data.jobId,
-    };
 };
 
 /**
@@ -194,49 +205,63 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
         throw Error("No job id provided to get pixel response");
     }
 
-    const body: Record<string, unknown> = {
-        jobId: jobId,
-    };
+    const body = new URLSearchParams();
+    body.append("jobId", jobId);
 
-    const response = await post<{
-        insightID: string;
-        pixelReturn: {
-            operationType: string[];
-            output: unknown;
-            pixelExpression: string;
-        }[];
-    }>(`${Env.MODULE}/api/engine/result`, body, {
-        headers: {
-            "content-type": "application/x-www-form-urlencoded",
-        },
-    }).catch((error) => {
-        // throw the message
-        throw Error(error.response.data.errorMessage);
-    });
+    try {
+        const response = await fetch(`${Env.MODULE}/api/engine/result`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: body,
+        });
 
-    debugger;
-
-    // there was no response, that is an error
-    if (!response) {
-        throw Error("No Pixel Response");
-    }
-
-    const errors: string[] = [];
-
-    // collect the errors
-    for (const p of response.data.pixelReturn) {
-        const { output, operationType } = p;
-
-        if (operationType.indexOf("ERROR") > -1) {
-            errors.push(output as string);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw Error(
+                errorData.errorMessage || "Failed to get pixel response",
+            );
         }
-    }
 
-    return {
-        errors: errors,
-        insightId: response.data.insightID,
-        results: response.data.pixelReturn,
-    };
+        const data = (await response.json()) as {
+            insightID: string;
+            pixelReturn: {
+                operationType: string[];
+                output: unknown;
+                pixelExpression: string;
+            }[];
+        };
+
+        debugger;
+
+        // there was no response, that is an error
+        if (!data) {
+            throw Error("No Pixel Response");
+        }
+
+        const errors: string[] = [];
+
+        // collect the errors
+        for (const p of data.pixelReturn) {
+            const { output, operationType } = p;
+
+            if (operationType.indexOf("ERROR") > -1) {
+                errors.push(output as string);
+            }
+        }
+
+        return {
+            errors: errors,
+            insightId: data.insightID,
+            results: data.pixelReturn,
+        };
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw Error("An unknown error occurred");
+    }
 };
 
 /**
@@ -470,6 +495,22 @@ export const partial = async (insightId: string) => {
 export const console = async (insightId: string) => {
     const response = await post<{
         message: string[];
+        status: string;
+    }>(`${Env.MODULE}/api/engine/console`, {
+        jobId: insightId,
+    });
+
+    return response.data;
+};
+
+/**
+ * Get the console message from an insight
+ * @param insightId - id of the insight to run
+ */
+export const getPixelConsole = async (insightId: string) => {
+    const response = await post<{
+        message: string[];
+        status: string;
     }>(`${Env.MODULE}/api/engine/console`, {
         jobId: insightId,
     });

@@ -307,7 +307,7 @@ export const HomePage = observer((): JSX.Element => {
                                 data-tour="app-library-title"
                                 variant={'h4'}
                             >
-                                Appsssssss
+                                Apps
                             </Typography>
 
                             <TextField

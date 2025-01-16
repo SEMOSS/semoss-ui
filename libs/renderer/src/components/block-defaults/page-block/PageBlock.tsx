@@ -60,19 +60,12 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 HELL YEAH ITS RENDERING THE PAGE BLOCK AND TRYING TO EXECUTE
                 SHEET ON LOAD OF PAGE.
             </Typography>
-            <Typography variant={"body1"}>
-                1. FIX THE API RUNNER - Look at cell.state and possibly run our
-                react sdk and useInsight hook, we might have to move the console
-                and runPixelAsync into the sdk as well. and how we call api,
-                MOVE THE SDK into the package.json of this lib and run pixel
-                that way. You can just go off the npm package version for now,
-                and then move sdk to lib after
-            </Typography>
+            <Typography variant={"body1"}>1. FIX THE API RUNNER - X</Typography>
             <Typography variant={"body1"}>
                 1a. sdk and sdk-react move into a single lib - X
             </Typography>
             <Typography variant={"body1"}>
-                1b. sdk move pixelAsync and pixelResult
+                1b. sdk move pixelAsync and pixelResult - X
             </Typography>
             <Typography variant={"body1"}>
                 2. Bring the rest of the block-defaults back

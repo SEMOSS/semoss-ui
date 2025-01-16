@@ -70,6 +70,14 @@ const TESTING_STATE_REMOVE_THIS: SerializedState = {
                         type: 'py',
                     },
                 },
+                {
+                    id: '10841',
+                    widget: 'code',
+                    parameters: {
+                        code: '4+4',
+                        type: 'pixel',
+                    },
+                },
             ],
         },
     },
