@@ -1,6 +1,7 @@
 import { CSSProperties, useState } from 'react';
 import { BlockConfig } from '@/stores';
 import { Close, FileCopyOutlined, OpenInNew } from '@mui/icons-material';
+import { useBlockSettings } from '@/hooks';
 import {
     Divider,
     IconButton,
@@ -10,12 +11,14 @@ import {
     Typography,
     lightTheme,
     Tabs,
+    Select,
+    darkTheme,
+    MenuItem,
 } from '@semoss/ui';
 import {
     BaseSettingSection,
     ColorSettings,
     JsonSettings,
-    SelectInputSettings,
     SizeSettings,
 } from '@/components/block-settings';
 
@@ -52,7 +55,6 @@ export const config: BlockConfig<ThemeBlockDef> = {
     type: BLOCK_TYPE_THEME,
     data: {
         theme: lightTheme,
-        themeType: 'light',
     },
     listeners: {},
     slots: {
@@ -62,27 +64,50 @@ export const config: BlockConfig<ThemeBlockDef> = {
     icon: FileCopyOutlined,
     contentMenu: [
         {
-            name: 'General',
+            name: 'Theme Type',
             children: [
                 {
                     description: 'Theme Type',
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            options={[
-                                {
-                                    value: 'light',
-                                    display: 'Light',
-                                },
-                                {
-                                    value: 'dark',
-                                    display: 'Dark',
-                                },
-                            ]}
-                            label="Theme Type"
-                            path="themeType"
-                        />
-                    ),
+                    render: ({ id }) => {
+                        const { setData } = useBlockSettings(id);
+                        const [themeType, setThemeType] =
+                            useState<string>('light');
+                        const options = [
+                            {
+                                value: 'light',
+                                display: 'Light',
+                            },
+                            {
+                                value: 'dark',
+                                display: 'Dark',
+                            },
+                        ];
+                        const onChange = (value: string) => {
+                            setThemeType(value);
+                            setData(
+                                'theme',
+                                value === 'light' ? lightTheme : darkTheme,
+                            );
+                        };
+                        return (
+                            <Select
+                                fullWidth
+                                size="small"
+                                value={themeType}
+                                onChange={(e) => {
+                                    onChange(e.target.value);
+                                }}
+                            >
+                                {Array.from(options, (option, i) => {
+                                    return (
+                                        <MenuItem key={i} value={option.value}>
+                                            {option.display}
+                                        </MenuItem>
+                                    );
+                                })}
+                            </Select>
+                        );
+                    },
                 },
             ],
         },

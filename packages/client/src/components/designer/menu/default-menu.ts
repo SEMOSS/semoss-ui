@@ -53,7 +53,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             widget: 'theme',
             data: {
                 theme: {},
-                themeType: 'light',
             },
             listeners: {},
             slots: {
