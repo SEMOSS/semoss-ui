@@ -3,11 +3,11 @@ import { Insights } from '@mui/icons-material';
 import { BLOCK_TYPE_CHART } from '../block-defaults.constants';
 import {
     VisualizationBlock,
-    VisualizationBlockDef,
+    EchartVisualizationBlockDef,
 } from './VisualizationBlock';
 import { VisualizationBlockMenu } from './VisualizationBlockMenu';
 
-export const config: BlockConfig<VisualizationBlockDef> = {
+export const config: BlockConfig<EchartVisualizationBlockDef> = {
     widget: 'e-chart',
     type: BLOCK_TYPE_CHART,
     data: {

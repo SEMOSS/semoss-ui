@@ -146,7 +146,6 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                 };
             });
         } else {
-            debugger;
             setYaxisState((prevXaxisState) => {
                 return {
                     ...prevXaxisState,
@@ -157,7 +156,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
     }
 
     const accordionDetails = (
-        <StyledAxisDiv>
+        <StyledAxisDiv style={{ padding: '0.95rem' }}>
             <StyledAxisDiv>
                 <label htmlFor="yaxis-title">Show Y-Axis Title</label>
                 <StyledTextField
@@ -322,12 +321,5 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             </StyledAxisDiv>
         </StyledAxisDiv>
     );
-    return (
-        <CustomAccordianBlock
-            accordianExpanded={false}
-            accordianSummaryProps={<ExpandMoreIcon />}
-            accordianSummary={'Edit Y Axis'}
-            accordianDetails={accordionDetails}
-        />
-    );
+    return <>{accordionDetails}</>;
 };

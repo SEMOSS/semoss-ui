@@ -233,7 +233,7 @@ export const Pie: BlockComponent = observer(({ id }) => {
         return (
             <StyledChartContainer {...attrs}>
                 {/* <Chart actions={false} /> */}
-                <EChartsReact option={option}> </EChartsReact>
+                <EChartsReact option={option} />
                 <CustomContextMenu
                     id={id}
                     frame={frame}

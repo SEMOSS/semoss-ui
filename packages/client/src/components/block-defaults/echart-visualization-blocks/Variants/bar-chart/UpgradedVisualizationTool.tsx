@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { EchartVisualizationBlockDef } from '../PieChart/echartblocks';
 import { List, styled } from '@semoss/ui';
 // import { ListItemButton } from "@semoss/ui/dist/components/List/ListItemButton";
 // import { ListItemIcon } from "@semoss/ui/dist/components/List/ListItemIcon";
@@ -14,6 +13,15 @@ import {
     ListItemText,
 } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
+import ColourByValue from './ColourByValue';
+import { EditXAxis } from './Edit-X-Axis';
+import { BAR_CHART_DATA } from '../../Visualization.constants';
+import { EditYAxis } from './Edit-Y-Axis';
+import { CustomizeValueLabels } from './CustomizeValueLabels';
+import { ChartStyling } from './ChartStyling';
+import { ToggleTrendline } from './ToggleTrendline';
+import { VisualizationStyles } from './VisualizationStyles';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -28,6 +36,7 @@ export const UpgradedVisualizationTool =
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [selectedList, setSelectedList] = useState('');
+        function updateChart() {}
         return (
             <>
                 <List style={{ width: '100%' }}>
@@ -81,7 +90,7 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'colourbyvalue' && (
-                            <p>Colour By Value Component</p>
+                            <ColourByValue id={id} updateChart={updateChart} />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -107,7 +116,11 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'editxaxis' && (
-                            <p>Edit X Axis Component</p>
+                            <EditXAxis
+                                option={data.option}
+                                updateChart={updateChart}
+                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -133,7 +146,11 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'edityaxis' && (
-                            <p>Edit Y Axis Component</p>
+                            <EditYAxis
+                                option={data.option}
+                                updateChart={updateChart}
+                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -161,7 +178,11 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'valuelabel' && (
-                            <p>Value Labels Component</p>
+                            <CustomizeValueLabels
+                                option={data.option}
+                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                updateChart={updateChart}
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -187,7 +208,12 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'barstyle' && (
-                            <p>Bar Chart Styles Component</p>
+                            <VisualizationStyles
+                                id={id}
+                                option={data.option}
+                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                                updateChart={updateChart}
+                            />
                         )}
                     </StyledListItem>
                     <StyledListItem disablePadding>
@@ -215,7 +241,11 @@ export const UpgradedVisualizationTool =
                             <InfoOutlined />
                         </ListItemButton>
                         {selectedList === 'trendlines' && (
-                            <p>Trendlines component</p>
+                            <ToggleTrendline
+                                options={data.option}
+                                updateChart={updateChart}
+                                chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                            />
                         )}
                     </StyledListItem>
                 </List>

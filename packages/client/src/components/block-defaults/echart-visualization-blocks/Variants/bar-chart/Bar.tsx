@@ -7,7 +7,7 @@ import { BarChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 import EChartsReact from 'echarts-for-react';
-import { VisualizationBlockDef } from '../../VisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { ChartContextMenu } from './ChartContextMenu';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
@@ -51,7 +51,7 @@ export const Bar: BlockComponent = observer(({ id }) => {
             timer = setTimeout(() => fn(...args), delay);
         };
     }
-    const { data } = useBlockSettings<VisualizationBlockDef>(id);
+    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
     const [echartState, setEchartState] = useState<any>({});
     const [selectedChart, setSelectedChart] = useState<any>({});
     const { state } = useBlocks();
@@ -275,6 +275,10 @@ export const Bar: BlockComponent = observer(({ id }) => {
                         'toggleTrendLineObject',
                     )
                 ) {
+                    console.log('frameData Values');
+                    frameData.data?.values?.forEach((item, index) => {
+                        console.log({ value: item[i] ?? null });
+                    });
                     resultData['series'][i - 1]['data'] =
                         frameData.data?.values?.map((item, index) => {
                             return { value: item[i] ?? null };

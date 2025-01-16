@@ -83,6 +83,7 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
     const [value, setValue] = useState(data.option);
     // track the ref to debounce the input
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+    let mountedRef = useRef({ componentMounted: false });
 
     const { state } = useBlocks();
     const context = useContext(BlocksContext);
@@ -114,6 +115,13 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
     useEffect(() => {
         updateToolsSection();
     }, [showToolsSection]);
+
+    useEffect(() => {
+        mountedRef.current.componentMounted = true;
+        return () => {
+            mountedRef.current.componentMounted = false;
+        };
+    }, []);
     //updating the state of Block with a debounce time
     function runStateUpdate(updatedOption: PathValue<any, typeof path>) {
         setTimeout(() => {
@@ -502,9 +510,11 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                     };
 
                     option['series'] = [
-                        ...option['series'].slice(0, displayPositionIndex + 1),
+                        // ...option['series'].slice(0, displayPositionIndex + 1),
+                        // toggleLineData,
+                        // ...option['series'].slice(displayPositionIndex + 1),
+                        ...option['series'],
                         toggleLineData,
-                        ...option['series'].slice(displayPositionIndex + 1),
                     ];
                     console.log(option['series'], 'line not exists');
                 }
@@ -863,7 +873,10 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                         />
                     </StyledSectionContainer>
                     <StyledSectionContainer>
-                        <BarChartProperties id={id} />
+                        <BarChartProperties
+                            id={id}
+                            mountedStatus={mountedRef.current.componentMounted}
+                        />
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <ChartAxis
@@ -887,6 +900,7 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <VisualizationStyles
+                            id={id}
                             updateChart={updateChartStyle}
                             chartType={chartType}
                             option={parsedOption}

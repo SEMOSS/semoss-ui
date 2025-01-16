@@ -429,7 +429,8 @@ export const ColorByValue = observer(
                                     style={{ marginRight: '10px' }}
                                     onChange={() => handleSelect(item)}
                                 />
-                                <label>{item}</label>
+                                {/*need to fix this <label>{item[0] ?? ''}</label> */}
+                                <label></label>
                             </div>
                         ))}
                     {!comparatorSection && (
@@ -440,9 +441,16 @@ export const ColorByValue = observer(
                                 marginBottom: '5px',
                             }}
                         >
-                            <label> Max: {frameValue.data.values[0]}</label>
+                            <label>
+                                {' '}
+                                Max: 0{/*frameValue?.data?.values[0]*/}
+                            </label>
                             <br />
-                            <label> Min: {frameValue.data.values[1]}</label>
+                            <label>
+                                {' '}
+                                Min: 0
+                                {/*need to fix this : frameValue?.data?.values[1]*/}
+                            </label>
                             <br />
                             <TextField
                                 variant={'outlined'}

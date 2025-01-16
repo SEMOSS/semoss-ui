@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { VisualizationBlockDef } from '../../VisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { useBlock, useFrame } from '@/hooks';
 import { Menu, MenuItem } from '@mui/material';
 import { PathValue } from 'react-hook-form';
@@ -24,7 +24,7 @@ export interface ChartContextMenuProps {
 //Open this contextmenu when right click event is triggered
 export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
     ({ id, frame, contextMenu, chartInstance, onClose }) => {
-        const { data, setData } = useBlock<VisualizationBlockDef>(id);
+        const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
         let currentOperation = useRef({
             unfilterActive: false,
             filterActive: false,
@@ -191,7 +191,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             : JSON.stringify(contextMenu.value)}
                     </MenuItem>
                 ) : null}
-                {contextMenu &&
+                {/* {contextMenu &&
                 !data.contextMenu?.hideExclude &&
                 contextMenu.value.length === 1 ? (
                     <MenuItem
@@ -215,12 +215,9 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                             onClose();
                         }}
                     >
-                        Exclude {contextMenu.column.name} !=
-                        {typeof contextMenu.value === 'string'
-                            ? contextMenu.value
-                            : contextMenu.value}
+                        Exclude {contextMenu.column.name} != {contextMenu?.value}
                     </MenuItem>
-                ) : null}
+                ) : null} */}
             </Menu>
         );
     },

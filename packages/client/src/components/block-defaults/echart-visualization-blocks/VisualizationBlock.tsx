@@ -22,7 +22,7 @@ export interface VisualizationColumns {
     width: string;
 }
 
-export interface VisualizationBlockDef {
+export interface EchartVisualizationBlockDef {
     widget: 'e-chart';
     data: {
         option: {};
@@ -42,7 +42,7 @@ export interface VisualizationBlockDef {
 }
 
 export const VisualizationBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock<VisualizationBlockDef>(id);
+    const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
 
     if (!data.option) {
         return (

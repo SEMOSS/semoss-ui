@@ -22,7 +22,7 @@ const StyledSelect = styled(Select)(() => ({
 
 const StyledMainSection = styled('div')(() => ({
     display: 'block',
-    border: '1px solid gray',
+    // border: '1px solid gray',
     padding: '0.5rem',
     width: '100%',
 }));
@@ -264,11 +264,12 @@ export const CustomizeValueLabels = ({ updateChart, option, chartType }) => {
     );
 
     return (
-        <CustomAccordianBlock
-            accordianExpanded={accordianExpanded}
-            accordianSummaryProps={<ExpandMoreIcon />}
-            accordianSummary="Customize Label Values"
-            accordianDetails={getAccordianDetails}
-        />
+        // <CustomAccordianBlock
+        //     accordianExpanded={accordianExpanded}
+        //     accordianSummaryProps={<ExpandMoreIcon />}
+        //     accordianSummary="Customize Label Values"
+        //     accordianDetails={getAccordianDetails}
+        // />
+        <>{getAccordianDetails}</>
     );
 };

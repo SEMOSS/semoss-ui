@@ -5,7 +5,7 @@ import {
     useFrameHeaders,
 } from '@/hooks';
 import { Autocomplete, Button, Select, styled, TextField } from '@semoss/ui';
-import { VisualizationBlockDef } from '../../VisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
@@ -20,13 +20,15 @@ export interface FrameOperationsProps {
 }
 
 const StyledSubSection = styled('div')(() => ({
-    display: 'inline-flex',
+    display: 'flex',
+    justifyContent: 'center',
     // border: '1px solid gray',
     padding: '0.5rem',
     width: '100%',
 }));
 const StyledDropDownSection = styled('div')(() => ({
-    display: 'block',
+    display: 'flex',
+    justifyContent: 'center',
     padding: '0.5rem',
 }));
 const StyledSelect = styled(Select)(() => ({
@@ -41,7 +43,8 @@ interface pixelColumn {
 
 export const FrameOperations = observer<FrameOperationsProps>(
     ({ id, updateFrame }) => {
-        const { data, setData } = useBlockSettings<VisualizationBlockDef>(id);
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
         const [columnsData, setColumnsData] = useState([]);
         const [fieldsData, setFieldsData] = useState({
             xaxis: [],

@@ -1,36 +1,85 @@
 import { BlockComponent } from '@/stores';
-import { Stack, styled } from '@semoss/ui';
+import { Stack, styled, ToggleTabsGroup } from '@semoss/ui';
 import {
     AIGenerationSettings,
     CodeEditorSettings,
     JsonSettings,
 } from '@/components/block-settings';
 import { useBlock } from '@/hooks';
-import VisualizationTool from './Variants/bar-chart/VisualizationTool';
-import { VisualizationBlockDef } from './VisualizationBlock';
+import { useState } from 'react';
+import { UpgradedVisualizationTool } from './Variants/bar-chart/UpgradedVisualizationTool';
+import { FrameOperations } from './Variants/bar-chart/FrameOperations';
 
 const StyledContainer = styled('div')(() => ({
     maxHeight: '50vh',
 }));
-import E_PieChart from './Variants/PieChart/pie-chart-feature';
+const StyledSubSection = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+}));
+const StyledToolsSection = styled('div')(() => ({
+    display: 'flex',
+    justifyContent: 'space-around',
+    width: '100%',
+}));
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    border: '1px',
+    minHeight: '42px',
+    color: theme.palette.secondary.light,
+    borderRadius: theme.shape.borderRadius,
+    alignItems: 'center',
+    padding: '0px 3px',
+}));
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+    height: '38px',
+    padding: '8px 11px',
+    '&.MuiTab-root': {
+        borderRadius: theme.shape.borderRadius,
+    },
+    '&.Mui-selected': {
+        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+    },
+}));
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
-    const { data } = useBlock<VisualizationBlockDef>(id);
+    const { data } = useBlock(id);
+    const [selectedTab, setSelectedTab] = useState('Tools');
+    function updateFrame() {}
     return (
         <Stack>
             {/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
             {/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
+            {/* <JsonSettings id={id} path="option" /> */}
+            {/* <CodeEditorSettings id={id} path="specJson" /> */}
+            <StyledToggleTabsGroup
+                value={selectedTab}
+                onChange={(e: React.SyntheticEvent, val: string) => {
+                    setSelectedTab(val);
+                }}
+            >
+                <StyledToggleTabsGroupItem label="Data" value={'Data'} />
+                <StyledToggleTabsGroupItem label="Tools" value={'Tools'} />
+                <StyledToggleTabsGroupItem label="JSON" value={'JSON'} />
+            </StyledToggleTabsGroup>
             <StyledContainer>
-                <JsonSettings id={id} path="option" height="50vh" />
-                {data.variation === 'echart-bar-graph' && (
-                    <VisualizationTool showTool={true} id={id} />
+                {selectedTab === 'Data' && (
+                    <StyledSubSection>
+                        <FrameOperations id={id} updateFrame={updateFrame} />
+                    </StyledSubSection>
                 )}
-                {data.variation === 'echart-pie-chart' && (
-                    <E_PieChart id={id}></E_PieChart>
+                {selectedTab === 'Tools' && (
+                    <StyledToolsSection>
+                        {/* <VisualizationTool id={id} showTool={true} /> */}
+                        <UpgradedVisualizationTool id={id} />
+                    </StyledToolsSection>
+                )}
+                {selectedTab === 'JSON' && (
+                    <StyledSubSection>
+                        <JsonSettings id={id} path="option" height="100vh" />
+                    </StyledSubSection>
                 )}
             </StyledContainer>
-
-            {/* <CodeEditorSettings id={id} path="specJson" /> */}
             {!data.variation && (
                 <AIGenerationSettings
                     id={id}

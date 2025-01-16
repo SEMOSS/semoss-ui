@@ -1,6 +1,6 @@
 import { useBlock, useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { VisualizationBlockDef } from '../../VisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Select, Stack, styled, Table, TextField } from '@semoss/ui';
 import CustomAccordianBlock from './CustomAccordianBlock';
@@ -51,7 +51,7 @@ const StyledSpan = styled('span')(() => ({
 }));
 
 const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
-    const { data, setData } = useBlockSettings<VisualizationBlockDef>(id);
+    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
     const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
 
@@ -182,7 +182,9 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                 ['appliedColourByValue']: appliedRules,
             };
             optionUpdated = option;
-            updateChart(optionUpdated);
+            console.log(optionUpdated, 'option updated');
+            runStateUpdateCustom(optionUpdated);
+            // updateChart(optionUpdated);
             functionCallReference.current.applyRulesToChart = false;
         }
         /*} else {
@@ -210,6 +212,16 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         }*/
     }, [appliedRules]);
 
+    function runStateUpdateCustom(updatedOption: PathValue<any, typeof path>) {
+        setTimeout(() => {
+            try {
+                setData('option', updatedOption as PathValue<any, typeof path>);
+            } catch (e) {
+                console.log(e);
+            }
+        }, 300);
+    }
+
     function updateFields(column, event) {
         setNewRules((prevRules) => {
             return {
@@ -231,7 +243,21 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                     };
                 });
                 if (option['xAxis']['pixelname'] === jsonPropName['name']) {
-                    setValuesToColour(option['xAxis']['data']);
+                    setValuesToColour(
+                        option['xAxis']['data'].map((item) => {
+                            return item.hasOwnProperty('value')
+                                ? item.value
+                                : item;
+                        }),
+                    );
+                    console.log(
+                        'valuestocolour',
+                        option['xAxis']['data'].map((item) => {
+                            return item.hasOwnProperty('value')
+                                ? item.value
+                                : item;
+                        }),
+                    );
                     let dataArray = option['xAxis']['data'].filter(
                         (item) => !isNaN(item),
                     );
@@ -252,6 +278,10 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                         option['series'][seriesIndex].hasOwnProperty('data')
                     ) {
                         setValuesToColour(
+                            option['series'][seriesIndex]['data'],
+                        );
+                        console.log(
+                            'valuestocolour',
                             option['series'][seriesIndex]['data'],
                         );
                         let dataArray = option['series'][seriesIndex][
@@ -284,7 +314,11 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             sourceObject.valuesToColour.forEach((item) => {
                 let xAxisPosition = [];
                 option['xAxis']['data'].forEach((itemAvailable, index) => {
-                    if (item === itemAvailable) {
+                    if (
+                        item === itemAvailable ||
+                        (itemAvailable.hasOwnProperty('value') &&
+                            itemAvailable.value === item)
+                    ) {
                         xAxisPosition.push(index);
                     }
                 });
@@ -297,7 +331,11 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             sourceObject.valuesToColour.forEach((item) => {
                 let xAxisPosition = [];
                 option['xAxis']['data'].forEach((itemAvailable, index) => {
-                    if (item === itemAvailable) {
+                    if (
+                        item === itemAvailable ||
+                        (itemAvailable.hasOwnProperty('value') &&
+                            itemAvailable.value === item)
+                    ) {
                         xAxisPosition.push(index);
                     }
                 });
@@ -315,7 +353,12 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             //less than comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item < sourceObject.filterValue) {
+                if (
+                    !isNaN(item) &&
+                    (item < sourceObject.filterValue ||
+                        (item.hasOwnProperty('value') &&
+                            item.value < sourceObject.filterValue))
+                ) {
                     positions.push(index);
                 }
             });
@@ -324,7 +367,12 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             //greater than comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item > sourceObject.filterValue) {
+                if (
+                    !isNaN(item) &&
+                    (item > sourceObject.filterValue ||
+                        (item.hasOwnProperty('value') &&
+                            item.value > sourceObject.filterValue))
+                ) {
                     positions.push(index);
                 }
             });
@@ -333,7 +381,12 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             //less than or equal to comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item <= sourceObject.filterValue) {
+                if (
+                    !isNaN(item) &&
+                    (item <= sourceObject.filterValue ||
+                        (item.hasOwnProperty('value') &&
+                            item.value <= sourceObject.filterValue))
+                ) {
                     positions.push(index);
                 }
             });
@@ -342,7 +395,12 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             //greater than or equal to comparision
             let dataVerify = option['xAxis']['data'];
             dataVerify.forEach((item, index) => {
-                if (!isNaN(item) && item >= sourceObject.filterValue) {
+                if (
+                    !isNaN(item) &&
+                    (item >= sourceObject.filterValue ||
+                        (item.hasOwnProperty('value') &&
+                            item.value >= sourceObject.filterValue))
+                ) {
                     positions.push(index);
                 }
             });
@@ -448,7 +506,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         newRules.columnComparision == '>=';
 
     const accordionDetails = (
-        <Stack width={'100%'}>
+        <Stack width={'100%'} style={{ padding: '0.95rem' }}>
             <StyledMainSection>
                 <h3>Applied Rules</h3>
             </StyledMainSection>
@@ -467,45 +525,46 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                                 <td colSpan={3}>No Records Found</td>
                             </tr>
                         )}
-                        {appliedRules.map((rule, index) => {
-                            return (
-                                <tr>
-                                    <td>{rule.column}</td>
-                                    <td>{`${rule.column} ${
-                                        rule.columnComparision
-                                    } ${
-                                        rule.columnComparision === '==' ||
-                                        rule.columnComparision === '!='
-                                            ? rule.valuesToColour.join(',')
-                                            : rule.filterValue
-                                    }`}</td>
-                                    <td>
-                                        <StyledSpan>
-                                            <span
-                                                onClick={() =>
-                                                    deleteAssignedRule(
-                                                        rule,
-                                                        index,
-                                                    )
-                                                }
-                                            >
-                                                <Delete />
-                                            </span>
-                                            <span
-                                                onClick={() =>
-                                                    editAssignedRule(
-                                                        rule,
-                                                        index,
-                                                    )
-                                                }
-                                            >
-                                                <Edit />
-                                            </span>
-                                        </StyledSpan>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                        {appliedRules.length > 0 &&
+                            appliedRules.map((rule, index) => {
+                                return (
+                                    <tr>
+                                        <td>{rule.column}</td>
+                                        <td>{`${rule.column} ${
+                                            rule.columnComparision
+                                        } ${
+                                            rule.columnComparision === '==' ||
+                                            rule.columnComparision === '!='
+                                                ? rule.valuesToColour.join(',')
+                                                : rule.filterValue
+                                        }`}</td>
+                                        <td>
+                                            <StyledSpan>
+                                                <span
+                                                    onClick={() =>
+                                                        deleteAssignedRule(
+                                                            rule,
+                                                            index,
+                                                        )
+                                                    }
+                                                >
+                                                    <Delete />
+                                                </span>
+                                                <span
+                                                    onClick={() =>
+                                                        editAssignedRule(
+                                                            rule,
+                                                            index,
+                                                        )
+                                                    }
+                                                >
+                                                    <Edit />
+                                                </span>
+                                            </StyledSpan>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                     </tbody>
                 </table>
             </StyledMainSection>
@@ -744,13 +803,6 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         setNewRules(assignedRules);
     }
 
-    return (
-        <CustomAccordianBlock
-            accordianDetails={accordionDetails}
-            accordianSummary={'Colour By Value'}
-            accordianSummaryProps={<ExpandMoreIcon />}
-            accordianExpanded={false}
-        />
-    );
+    return <>{accordionDetails}</>;
 });
 export default ColourByValue;

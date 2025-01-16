@@ -101,11 +101,12 @@ export const ToggleTrendline = ({ options, updateChart, chartType }) => {
         </div>
     );
     return (
-        <CustomAccordianBlock
-            accordianExpanded={false}
-            accordianSummaryProps={<ExpandMoreIcon />}
-            accordianSummary={'Toggle Trendline'}
-            accordianDetails={trendlineData}
-        />
+        // <CustomAccordianBlock
+        //     accordianExpanded={false}
+        //     accordianSummaryProps={<ExpandMoreIcon />}
+        //     accordianSummary={'Toggle Trendline'}
+        //     accordianDetails={trendlineData}
+        // />
+        <>{trendlineData}</>
     );
 };

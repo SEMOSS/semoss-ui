@@ -2,13 +2,14 @@ import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Button, styled, TextField } from '@semoss/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import { VisualizationBlockDef } from '../../VisualizationBlock';
+import { EchartVisualizationBlockDef } from '../../VisualizationBlock';
 import CustomAccordianBlock from './CustomAccordianBlock';
 
 interface BarChartPropertiesProps {
     id: string;
+    mountedStatus: boolean;
 }
 
 const StyledDataContainer = styled('div', {
@@ -25,8 +26,9 @@ const StyledDataSection = styled('div')(({}) => ({
 }));
 const workingPage = 'page-1';
 export const BarChartProperties = observer<BarChartPropertiesProps>(
-    ({ id }) => {
-        const { data, setData } = useBlockSettings<VisualizationBlockDef>(id);
+    ({ id, mountedStatus }) => {
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
         const selectedChartWidth = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
         ).clientWidth;
@@ -40,6 +42,23 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
             useState(selectedChartHeight);
 
         useEffect(() => {
+            if (mountedStatus) {
+                updateChartInstance();
+            }
+        }, [mountedStatus]);
+
+        function getAndUpdateWidth(e) {
+            setDataElementWidth((prevDataElementWidth) => {
+                return e.target.value ?? prevDataElementWidth;
+            });
+        }
+
+        function getAndUpdateHeight(e) {
+            setDataElementHeight((prevDataElementHeight) => {
+                return e.target.value ?? prevDataElementHeight;
+            });
+        }
+        function updateChartInstance(): any {
             let workingPageElement = document.getElementById(workingPage);
             let canvasElement: any =
                 workingPageElement.getElementsByTagName('CANVAS')[0] || null;
@@ -57,21 +76,26 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
                 canvasElement = canvasElement.parentElement;
             }
             echartInstance.current = instance;
-        }, []);
-
-        function getAndUpdateWidth(e) {
-            setDataElementWidth((prevDataElementWidth) => {
-                return e.target.value ?? prevDataElementWidth;
-            });
-        }
-
-        function getAndUpdateHeight(e) {
-            setDataElementHeight((prevDataElementHeight) => {
-                return e.target.value ?? prevDataElementHeight;
-            });
         }
 
         function updateChart() {
+            // let workingPageElement = document.getElementById(workingPage);
+            // let canvasElement: any =
+            //     workingPageElement.getElementsByTagName('CANVAS')[0] || null;
+            // if (canvasElement === null) return;
+            // let instance = null;
+            // while (instance == null) {
+            //     let instanceReceived = echarts.getInstanceByDom(canvasElement);
+            //     if (instanceReceived) {
+            //         instance = instanceReceived;
+            //         if (canvasElement.id === id) {
+            //             instance = null;
+            //         }
+            //         break;
+            //     }
+            //     canvasElement = canvasElement.parentElement;
+            // }
+            // echartInstance.current = instance;
             let dataBlockElement: any = document.querySelector(
                 `div#${workingPage} div[data-block="${id}"]`,
             );

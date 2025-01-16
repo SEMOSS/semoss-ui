@@ -159,7 +159,7 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
     }
 
     const accordionDetails = (
-        <StyledAxisDiv>
+        <StyledAxisDiv style={{ padding: '0.95rem' }}>
             <StyledAxisDiv>
                 <label htmlFor="xaxis-title">Show X-Axis Title</label>
                 <StyledTextField
@@ -353,11 +353,12 @@ export const EditXAxis = ({ updateChart, chartType, option }) => {
         </StyledAxisDiv>
     );
     return (
-        <CustomAccordianBlock
-            accordianExpanded={false}
-            accordianSummaryProps={<ExpandMoreIcon />}
-            accordianSummary={'Edit X Axis'}
-            accordianDetails={accordionDetails}
-        />
+        // <CustomAccordianBlock
+        //     accordianExpanded={false}
+        //     accordianSummaryProps={<ExpandMoreIcon />}
+        //     accordianSummary={'Edit X Axis'}
+        //     accordianDetails={accordionDetails}
+        // />
+        <>{accordionDetails}</>
     );
 };

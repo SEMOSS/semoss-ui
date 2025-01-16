@@ -62,7 +62,7 @@ import {
 } from './pdfViewer-block';
 import {
     config as EchartVisualizationBlockConfig,
-    VisualizationBlockDef,
+    EchartVisualizationBlockDef,
 } from './echart-visualization-blocks';
 
 export type DefaultBlockDefinitions =
@@ -99,7 +99,7 @@ export type DefaultBlockDefinitions =
     | ModalBlockDef
     | RadioBlockDef
     | PDFViewerBlockDef
-    | VisualizationBlockDef;
+    | EchartVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,
