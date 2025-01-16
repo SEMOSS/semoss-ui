@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
-import { EchartVisualizationBlockDef } from '../PieChart/echartblocks';
 import { List, styled } from '@semoss/ui';
 // import { ListItemButton } from "@semoss/ui/dist/components/List/ListItemButton";
 // import { ListItemIcon } from "@semoss/ui/dist/components/List/ListItemIcon";
@@ -14,6 +13,7 @@ import {
     ListItemText,
 } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
+import { EchartVisualizationBlockDef } from '../../EchartVisualizationBlock';
 
 interface UpgradedVisualizationToolProps {
     id: string;
