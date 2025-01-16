@@ -193,10 +193,10 @@ export const FrameOperations = observer<FrameOperationsProps>(
                     tempVal['series'][i] = {
                         ...tempVal['series'][i],
                         data: [],
-                        name:
-                            i === 0
-                                ? columns['xaxis'][0].name
-                                : columns['yaxis'][i].name,
+                        name: columns['yaxis'][i].name,
+                        // i === 0
+                        //     ? columns['xaxis'][0].name
+                        //     : columns['yaxis'][i].name,
                         type: 'bar',
                     };
                 }
