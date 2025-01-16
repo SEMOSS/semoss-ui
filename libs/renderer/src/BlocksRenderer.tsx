@@ -212,7 +212,24 @@ export const Bricks = (props) => {
     return (
         <InsightProvider>
             <Stack sx={{ border: "solid red" }}>
-                <Typography variant="h6">PEEKABOOssP</Typography>
+                <Stack sx={{ border: "solid blue" }}>
+                    <Typography variant={"h6"}>
+                        HELL YEAH ITS RENDERING THE PAGE BLOCK AND TRYING TO
+                        EXECUTE SHEET ON LOAD OF PAGE.
+                    </Typography>
+                    <Typography variant={"body1"}>
+                        1. FIX THE API RUNNER - X
+                    </Typography>
+                    <Typography variant={"body1"}>
+                        1a. sdk and sdk-react move into a single lib - X
+                    </Typography>
+                    <Typography variant={"body1"}>
+                        1b. sdk move pixelAsync and pixelResult - X
+                    </Typography>
+                    <Typography variant={"body1"}>
+                        2. Bring the rest of the block-defaults back
+                    </Typography>
+                </Stack>
                 <BlocksRenderer state={state} />
             </Stack>
         </InsightProvider>

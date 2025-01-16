@@ -16,19 +16,19 @@ import { Registry } from "../../store";
 // import { config as FooterBlockConfig, FooterBlockDef } from "./footer-block";
 // import { config as FormBlockConfig, FormBlockDef } from "./form-block";
 // import { config as HeaderBlockConfig, HeaderBlockDef } from "./header-block";
-// import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
+import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 // import {
 //     config as MarkdownBlockConfig,
 //     MarkdownBlockDef,
 // } from "./markdown-block";
-// import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
+import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 import { config as PageBlockConfig, PageBlockDef } from "./page-block";
 // import { config as SelectBlockConfig, SelectBlockDef } from "./select-block";
 // import { config as TextBlockConfig, TextBlockDef } from "./text-block";
 // import { config as InputBlockConfig, InputBlockDef } from "./input-block";
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as UploadBlockConfig, UploadBlockDef } from "./upload-block";
-// import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
+import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 // import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 // import {
 //     config as VegaVisualizationBlockConfig,
@@ -56,22 +56,23 @@ import { config as PageBlockConfig, PageBlockDef } from "./page-block";
 //     PDFViewerBlockDef,
 // } from "./pdfViewer-block";
 
-export type DefaultBlockDefinitions = PageBlockDef;
-// | AudioBlockDef
-// | AudioInputBlockDef
-// | BodyBlockDef
-// | ButtonBlockDef
-// | CheckboxBlockDef
-// | ContainerBlockDef
-// | DividerBlockDef
-// | FooterBlockDef
-// | FormBlockDef
-// | HeaderBlockDef
-// | IframeBlockDef
-// | ImageBlockDef
-// | LinkBlockDef
-// | MarkdownBlockDef
-// | HTMLBlockDef
+export type DefaultBlockDefinitions =
+    | PageBlockDef
+    // | AudioBlockDef
+    // | AudioInputBlockDef
+    // | BodyBlockDef
+    // | ButtonBlockDef
+    // | CheckboxBlockDef
+    // | ContainerBlockDef
+    // | DividerBlockDef
+    // | FooterBlockDef
+    // | FormBlockDef
+    // | HeaderBlockDef
+    | IframeBlockDef
+    | ImageBlockDef
+    // | LinkBlockDef
+    // | MarkdownBlockDef
+    | HTMLBlockDef;
 // | PageBlockDef
 // | ProgressBlockDef
 // | QueryBlockDef
@@ -94,13 +95,13 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     // [ButtonBlockConfig.widget]: ButtonBlockConfig,
     // [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     // [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    // [IframeBlockConfig.widget]: IframeBlockConfig,
-    // [ImageBlockConfig.widget]: ImageBlockConfig,
+    [IframeBlockConfig.widget]: IframeBlockConfig,
+    [ImageBlockConfig.widget]: ImageBlockConfig,
     // [InputBlockConfig.widget]: InputBlockConfig,
     // [LinkBlockConfig.widget]: LinkBlockConfig,
     // [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     // [ModalBlockConfig.widget]: ModalBlockConfig,
-    // [HTMLBlockConfig.widget]: HTMLBlockConfig,
+    [HTMLBlockConfig.widget]: HTMLBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     // [ProgressBlockConfig.widget]: ProgressBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
@@ -122,11 +123,11 @@ export {
     // ButtonBlockConfig,
     // ContainerBlockConfig,
     // CheckboxBlockConfig,
-    // IframeBlockConfig,
-    // ImageBlockConfig,
+    IframeBlockConfig,
+    ImageBlockConfig,
     // InputBlockConfig,
     // MarkdownBlockConfig,
-    // HTMLBlockConfig,
+    HTMLBlockConfig,
     PageBlockConfig,
     // QueryBlockConfig,
     // LogsBlockConfig,

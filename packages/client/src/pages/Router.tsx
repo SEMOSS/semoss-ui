@@ -27,13 +27,35 @@ import { Bricks } from '@semoss/renderer';
 import { ActionMessages, SerializedState } from '@/stores';
 
 const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
-    queries: {},
+    queries: {
+        nb: {
+            id: 'nb',
+            cells: [
+                {
+                    id: '53005',
+                    widget: 'code',
+                    parameters: {
+                        code: '1+1',
+                        type: 'py',
+                    },
+                },
+                {
+                    id: '17308',
+                    widget: 'code',
+                    parameters: {
+                        type: 'pixel',
+                        code: '4+4',
+                    },
+                },
+            ],
+        },
+    },
     blocks: {
         'page-1': {
             parent: null,
             slots: {
                 content: {
-                    children: [],
+                    children: ['html--8335', 'iframe--464', 'image--4929'],
                     name: 'content',
                 },
             },
@@ -48,13 +70,76 @@ const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
                 },
             },
             listeners: {
-                onPageLoad: [],
+                onPageLoad: [
+                    {
+                        message: 'RUN_QUERY',
+                        payload: {
+                            queryId: 'nb',
+                        },
+                    },
+                ],
             },
             id: 'page-1',
         },
+        'html--8335': {
+            id: 'html--8335',
+            widget: 'html',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
+            },
+            listeners: {},
+            slots: {},
+        },
+        'iframe--464': {
+            id: 'iframe--464',
+            widget: 'iframe',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {},
+                src: '',
+                title: '',
+                enableFrameInteractions: true,
+            },
+            listeners: {},
+            slots: {},
+        },
+        'image--4929': {
+            id: 'image--4929',
+            widget: 'image',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '200px',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center center',
+                },
+                src: '',
+                title: '',
+            },
+            listeners: {},
+            slots: {},
+        },
     },
     variables: {},
-    executionOrder: [],
+    executionOrder: ['nb'],
     version: '1.0.0-alpha.3',
 };
 const TESTING_STATE_REMOVE_THIS: SerializedState = {
@@ -161,7 +246,7 @@ export const Router = observer(() => {
                         path="bricks"
                         element={
                             <Bricks
-                                state={TESTING_STATE_REMOVE_THIS}
+                                state={TESTING_STATE_REMOVE_THIS_2}
                                 MODULE={process.env.MODULE}
                             />
                         }

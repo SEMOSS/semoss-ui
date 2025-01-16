@@ -1,7 +1,6 @@
 {
     "name": "@semoss/sdk",
-    "version": "1.0.0-beta.1",
-    "description": "",
+    "version": "1.0.0-beta.22",
     "type": "module",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
@@ -11,8 +10,8 @@
         "dist"
     ],
     "scripts": {
+        "dev": "rollup -w -c",
         "build": "rollup -c",
-        "build:dev": "rollup -w -c",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format": "prettier . --check --plugin-search-dir=.",

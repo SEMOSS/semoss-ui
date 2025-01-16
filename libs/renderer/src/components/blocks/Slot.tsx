@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 
-import { Block, BlockDef } from "@/stores";
+import { Block, BlockDef } from "../../store";
 
 import { Renderer } from "./Renderer";
 

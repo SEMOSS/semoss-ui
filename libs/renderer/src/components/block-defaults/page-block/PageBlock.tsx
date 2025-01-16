@@ -1,10 +1,9 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock, useBlocks } from "../../../hooks";
+import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
 import { Slot } from "../../../components/blocks";
-import { Typography } from "@mui/material";
 
 export interface PageBlockDef extends BlockDef<"page"> {
     widget: "page";
@@ -22,7 +21,6 @@ export interface PageBlockDef extends BlockDef<"page"> {
 
 export const PageBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, listeners } = useBlock<PageBlockDef>(id);
-    // debugger;
 
     // when the page is mounted, trigger the onPageLoad event
     useEffect(() => {
@@ -56,20 +54,7 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 {isLoading ? <LoadingScreen.Trigger /> : null}
                 <Slot slot={slots.content}></Slot>
             </LoadingScreen> */}
-            <Typography variant={"h6"}>
-                HELL YEAH ITS RENDERING THE PAGE BLOCK AND TRYING TO EXECUTE
-                SHEET ON LOAD OF PAGE.
-            </Typography>
-            <Typography variant={"body1"}>1. FIX THE API RUNNER - X</Typography>
-            <Typography variant={"body1"}>
-                1a. sdk and sdk-react move into a single lib - X
-            </Typography>
-            <Typography variant={"body1"}>
-                1b. sdk move pixelAsync and pixelResult - X
-            </Typography>
-            <Typography variant={"body1"}>
-                2. Bring the rest of the block-defaults back
-            </Typography>
+            <Slot slot={slots.content}></Slot>
         </div>
     );
 });
