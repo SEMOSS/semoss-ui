@@ -125,6 +125,7 @@ export const config: BlockConfig<ThemeBlockDef> = {
                             useState<string>('warning');
                         const firstTabSet = ['primary', 'secondary', 'error'];
                         const secondTabSet = ['warning', 'info', 'success'];
+                        const variants = ['main', 'dark', 'light'];
                         return (
                             <StyledTabBox gap={2}>
                                 <Tabs
@@ -143,21 +144,16 @@ export const config: BlockConfig<ThemeBlockDef> = {
                                     ))}
                                 </Tabs>
                                 <>
-                                    <ColorSettings
-                                        id={id}
-                                        label="Main Color"
-                                        path={`theme.palette.${selectedFirstTab}.main`}
-                                    />
-                                    <ColorSettings
-                                        id={id}
-                                        label="Dark Color"
-                                        path={`theme.palette.${selectedFirstTab}.dark`}
-                                    />
-                                    <ColorSettings
-                                        id={id}
-                                        label="Light Color"
-                                        path={`theme.palette.${selectedFirstTab}.light`}
-                                    />
+                                    {variants.map((variant, idx: number) => (
+                                        <ColorSettings
+                                            key={`${variant}-${idx}`}
+                                            id={id}
+                                            label={`${capitalize(
+                                                variant,
+                                            )} Color`}
+                                            path={`theme.palette.${selectedFirstTab}.${variant}`}
+                                        />
+                                    ))}
                                 </>
                                 <Tabs
                                     value={selectedSecondtTab}
@@ -175,21 +171,16 @@ export const config: BlockConfig<ThemeBlockDef> = {
                                     ))}
                                 </Tabs>
                                 <>
-                                    <ColorSettings
-                                        id={id}
-                                        label="Main Color"
-                                        path={`theme.palette.${selectedSecondtTab}.main`}
-                                    />
-                                    <ColorSettings
-                                        id={id}
-                                        label="Dark Color"
-                                        path={`theme.palette.${selectedSecondtTab}.dark`}
-                                    />
-                                    <ColorSettings
-                                        id={id}
-                                        label="Light Color"
-                                        path={`theme.palette.${selectedSecondtTab}.light`}
-                                    />
+                                    {variants.map((variant, idx: number) => (
+                                        <ColorSettings
+                                            key={`${variant}-${idx}`}
+                                            id={id}
+                                            label={`${capitalize(
+                                                variant,
+                                            )} Color`}
+                                            path={`theme.palette.${selectedSecondtTab}.${variant}`}
+                                        />
+                                    ))}
                                 </>
                             </StyledTabBox>
                         );
@@ -206,6 +197,13 @@ export const config: BlockConfig<ThemeBlockDef> = {
                         const [selectedFirstTab, setSelectedFirstTab] =
                             useState<string>('text');
                         const firstTabSet = ['text', 'background'];
+                        const paperVariants = ['paper', 'default'];
+                        const textVariants = [
+                            'primary',
+                            'secondary',
+                            'disabled',
+                            'main',
+                        ];
                         return (
                             <StyledTabBox gap={2}>
                                 <Tabs
@@ -225,40 +223,34 @@ export const config: BlockConfig<ThemeBlockDef> = {
                                 </Tabs>
                                 {selectedFirstTab == 'background' && (
                                     <>
-                                        <ColorSettings
-                                            id={id}
-                                            label="Default Color"
-                                            path={`theme.palette.${selectedFirstTab}.default`}
-                                        />
-                                        <ColorSettings
-                                            id={id}
-                                            label="Paper Color"
-                                            path={`theme.palette.${selectedFirstTab}.paper`}
-                                        />
+                                        {paperVariants.map(
+                                            (variant, idx: number) => (
+                                                <ColorSettings
+                                                    key={`${variant}-${idx}`}
+                                                    id={id}
+                                                    label={`${capitalize(
+                                                        variant,
+                                                    )} Color`}
+                                                    path={`theme.palette.${selectedFirstTab}.${variant}`}
+                                                />
+                                            ),
+                                        )}
                                     </>
                                 )}
                                 {selectedFirstTab == 'text' && (
                                     <>
-                                        <ColorSettings
-                                            id={id}
-                                            label="Primary Color"
-                                            path={`theme.palette.${selectedFirstTab}.primary`}
-                                        />
-                                        <ColorSettings
-                                            id={id}
-                                            label="Main Color"
-                                            path={`theme.palette.${selectedFirstTab}.main`}
-                                        />
-                                        <ColorSettings
-                                            id={id}
-                                            label="Secondary Color"
-                                            path={`theme.palette.${selectedFirstTab}.secondary`}
-                                        />
-                                        <ColorSettings
-                                            id={id}
-                                            label="Disabled Color"
-                                            path={`theme.palette.${selectedFirstTab}.disabled`}
-                                        />
+                                        {textVariants.map(
+                                            (variant, idx: number) => (
+                                                <ColorSettings
+                                                    key={`${variant}-${idx}`}
+                                                    id={id}
+                                                    label={`${capitalize(
+                                                        variant,
+                                                    )} Color`}
+                                                    path={`theme.palette.${selectedFirstTab}.${variant}`}
+                                                />
+                                            ),
+                                        )}
                                     </>
                                 )}
                             </StyledTabBox>
