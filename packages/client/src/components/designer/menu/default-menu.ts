@@ -1,5 +1,6 @@
 import { BlockJSON } from '@/stores';
 import { DesignerMenuItem } from './menu.types';
+import { lightTheme } from '@semoss/ui';
 
 import BLOCK_AUDIO_PLAYER from '@/assets/img/BLOCK_AUDIO_PLAYER.png';
 import BLOCK_AUDIO_INPUT from '@/assets/img/BLOCK_MIC.png';
@@ -52,7 +53,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         json: {
             widget: 'theme',
             data: {
-                theme: {},
+                theme: lightTheme,
             },
             listeners: {},
             slots: {
