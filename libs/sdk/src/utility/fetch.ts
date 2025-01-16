@@ -16,7 +16,7 @@ export const interceptors: {
  */
 export const get = async <O>(path: string, options: RequestInit = {}) => {
     options = {
-        method: 'GET',
+        method: "GET",
 
         ...options,
     };
@@ -68,19 +68,19 @@ export const post = async <O>(
 
     // add headers if not a form
     if (!isFormData) {
-        (headers as Record<string, string>)['Content-Type'] =
-            'application/x-www-form-urlencoded';
+        (headers as Record<string, string>)["Content-Type"] =
+            "application/x-www-form-urlencoded";
     }
 
     options = {
-        method: 'POST',
+        method: "POST",
         headers: headers,
         body: isFormData
             ? body
             : Object.keys(body)
                   .map((k) => {
                       let val = body[k];
-                      if (typeof val !== 'string') {
+                      if (typeof val !== "string") {
                           val = JSON.stringify(body[k]);
                       }
 
@@ -88,7 +88,7 @@ export const post = async <O>(
                           val as string,
                       )}`;
                   })
-                  .join('&'),
+                  .join("&"),
         ...options,
     };
 

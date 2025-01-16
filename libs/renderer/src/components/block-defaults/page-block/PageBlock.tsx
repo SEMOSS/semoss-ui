@@ -69,6 +69,12 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 and then move sdk to lib after
             </Typography>
             <Typography variant={"body1"}>
+                1a. sdk and sdk-react move into a single lib - X
+            </Typography>
+            <Typography variant={"body1"}>
+                1b. sdk move pixelAsync and pixelResult
+            </Typography>
+            <Typography variant={"body1"}>
                 2. Bring the rest of the block-defaults back
             </Typography>
         </div>

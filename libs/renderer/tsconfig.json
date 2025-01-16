@@ -31,7 +31,7 @@
         "paths": {
             "@/*": ["*"],
             "@semoss/ui": ["../ui/src/index.ts"],
-            "@semoss/sdk-react": ["../sdk-react/src/index.ts"]
+            "@semoss/sdk": ["../sdk/src/index.ts"]
         }
     },
     "include": ["src"],

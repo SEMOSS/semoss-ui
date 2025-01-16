@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useMemo } from "react";
 import { unstable_batchedUpdates } from "react-dom";
 
-import { Insight } from "@semoss/sdk";
+import { Insight } from "../..";
 
 /**
  * Context of the react data
@@ -36,6 +36,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 
     // create the new insight on load
     const insight = useMemo(() => {
+        debugger;
         return new Insight();
     }, []);
 
@@ -64,10 +65,8 @@ export const InsightProvider = (props: InsightProviderProps) => {
 
     const wrappedActions = useMemo(() => {
         return Object.keys(insight.actions).reduce((acc, val) => {
-            //@ts-expect-error TODO Fix Typing
             acc[val] = async (...args: unknown[]) => {
                 // wait for the action to complete
-                //@ts-expect-error TODO Fix Typing
                 const response = await insight.actions[val].apply(null, [
                     ...args,
                 ]);
@@ -87,6 +86,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
     useEffect(() => {
         // initialize the insight
         insight.initialize(options).finally(() => {
+            debugger;
             // update the state
             syncInsight();
         });

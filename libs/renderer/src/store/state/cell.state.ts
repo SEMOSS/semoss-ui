@@ -5,8 +5,11 @@ import { setValueByPath } from "@/utility";
 import { CellComponent, CellConfig, CellDef } from "./state.types";
 import { StateStore } from "./state.store";
 import { QueryState } from "./query.state";
-import { pixelResult, runPixelAsync } from "../../api";
-// import { console as pixelConsole, runPixel } from "@semoss/sdk";
+import {
+    console as getPixelConsole,
+    getPixelAsyncResult,
+    runPixelAsync,
+} from "@semoss/sdk";
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -263,10 +266,6 @@ export class CellState<D extends CellDef = CellDef> {
         this._store.operation = [];
         this._store.output = undefined;
 
-        // const { pixelReturn } = await runPixel(filled, this._state.insightId);
-
-        debugger;
-
         // start polling
         const { jobId } = await runPixelAsync(filled, this._state.insightId);
 
@@ -274,24 +273,26 @@ export class CellState<D extends CellDef = CellDef> {
         let isPolling = true;
         while (isPolling) {
             try {
-                // // get the reponse from the job id
-                // const data = await pixelConsole(jobId);
-                // const { message: messages, status } = data;
-                // // add the new messages
-                // runInAction(() => {
-                //     messages.forEach((mess) => {
-                //         this._store.messages.push(mess);
-                //     });
-                // });
-                // // Currently console does not get pass STREAMING
-                // if (status === "Complete") {
-                //     isPolling = false;
-                // } else if (status === "Streaming") {
-                //     isPolling = false;
-                // } else {
-                //     // poll
-                //     await new Promise((resolve) => setTimeout(resolve, 2000));
-                // }
+                // get the reponse from the job id
+                const data = await getPixelConsole(jobId);
+
+                const { message: messages, status } = data;
+
+                // add the new messages
+                runInAction(() => {
+                    messages.forEach((mess) => {
+                        this._store.messages.push(mess);
+                    });
+                });
+                // Currently console does not get pass STREAMING
+                if (status === "Complete") {
+                    isPolling = false;
+                } else if (status === "Streaming") {
+                    isPolling = false;
+                } else {
+                    // poll
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                }
             } catch (error) {
                 console.error("Error during polling:", error.message);
 
@@ -300,7 +301,7 @@ export class CellState<D extends CellDef = CellDef> {
             }
         }
 
-        const { errors, results } = await pixelResult(jobId);
+        const { errors, results } = await getPixelAsyncResult(jobId);
         if (errors.length > 0) {
             throw new Error(errors.join(""));
         }

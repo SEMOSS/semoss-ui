@@ -1,5 +1,5 @@
-import { Env } from '@/env';
-import { Space, Script } from '@/types';
+import { Env } from "../../env";
+import { Space, Script } from "../../types";
 import {
     getSystemConfig,
     login,
@@ -8,8 +8,8 @@ import {
     runPixel,
     upload,
     download,
-} from '@/api';
-import { UnauthorizedError } from '@/utility';
+} from "../../api";
+import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
     /** insightId of the app */
@@ -49,14 +49,14 @@ interface InsightStoreInterface {
 
 export class InsightStore {
     private _store: InsightStoreInterface = {
-        insightId: '',
+        insightId: "",
         isInitialized: false,
         isAuthorized: false,
         isReady: false,
         error: null,
         system: null,
         options: {
-            appId: '',
+            appId: "",
             python: null,
         },
     };
@@ -119,15 +119,15 @@ export class InsightStore {
          */
         python?:
             | {
-                  type: 'detect';
+                  type: "detect";
               }
             | {
-                  type: 'file';
+                  type: "file";
                   path: string;
                   alias: string;
               }
             | {
-                  type: 'script';
+                  type: "script";
                   script: string;
                   alias: string;
               }
@@ -139,17 +139,17 @@ export class InsightStore {
         this._store.isReady = false;
 
         const merged: NonNullable<typeof options> = {
-            app: options && options.app ? options.app : '',
+            app: options && options.app ? options.app : "",
             python:
-                options && typeof options.python !== 'undefined'
+                options && typeof options.python !== "undefined"
                     ? options.python
                     : {
-                          type: 'detect',
+                          type: "detect",
                       },
         };
 
         // save the initial appId
-        this._store.options.appId = '';
+        this._store.options.appId = "";
         if (merged.app) {
             this._store.options.appId = merged.app;
         }
@@ -157,13 +157,13 @@ export class InsightStore {
         // save the python
         this._store.options.python = null;
         if (merged.python) {
-            if (merged.python.type === 'detect') {
+            if (merged.python.type === "detect") {
                 this._store.options.python = await this.detectScript();
-            } else if (merged.python.type === 'file') {
+            } else if (merged.python.type === "file") {
                 this._store.options.python = await this.loadScript(
                     merged.python,
                 );
-            } else if (merged.python.type === 'script') {
+            } else if (merged.python.type === "script") {
                 this._store.options.python = {
                     script: merged.python.script,
                     alias: merged.python.alias,
@@ -178,7 +178,7 @@ export class InsightStore {
             }
 
             const env = JSON.parse(
-                document.getElementById('semoss-env')?.textContent || '',
+                document.getElementById("semoss-env")?.textContent || "",
             ) as {
                 APP: string;
                 MODULE: string;
@@ -196,6 +196,7 @@ export class InsightStore {
         }
 
         try {
+            debugger;
             // reset the id based on the Environment if set
             if (Env.APP) {
                 this._store.options.appId = Env.APP;
@@ -203,7 +204,7 @@ export class InsightStore {
 
             // validate that the module is available
             if (!Env.MODULE) {
-                throw new Error('module is required');
+                throw new Error("module is required");
             }
 
             // get the system information
@@ -211,7 +212,7 @@ export class InsightStore {
 
             // break if no system
             if (!this._store.isInitialized) {
-                throw new Error('Error loading system');
+                throw new Error("Error loading system");
             }
 
             // if security is not enabled or the user is logged in, load the app
@@ -273,7 +274,7 @@ export class InsightStore {
         // get the response
         const data = await getSystemConfig();
 
-        let system: InsightStoreInterface['system'] = null;
+        let system: InsightStoreInterface["system"] = null;
         if (data) {
             // create the system
             system = {
@@ -320,7 +321,7 @@ export class InsightStore {
         this._store.isReady = false;
 
         // load the app reactors (if they exist)
-        let pixel = '';
+        let pixel = "";
         if (this._store.options.appId) {
             pixel += `SetContext("${this._store.options.appId}");`;
         }
@@ -330,7 +331,7 @@ export class InsightStore {
             // validate the alias
             let alias = this._store.options.python.alias;
             if (!alias) {
-                alias = 'smss';
+                alias = "smss";
                 console.warn(`Alias not found. Loading python as ${alias}`);
             }
 
@@ -342,13 +343,13 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
         // default if there is no command to preload
         if (!pixel) {
-            pixel = '1+1;';
+            pixel = "1+1;";
         }
 
         // create the new insight
         const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
             pixel,
-            'new',
+            "new",
         );
 
         // log errors if it exists
@@ -382,7 +383,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         }
 
         // set the insight ID
-        this._store.insightId = '';
+        this._store.insightId = "";
     };
 
     /**
@@ -405,12 +406,12 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
      */
     private detectScript = async (): Promise<Script | null> => {
         const output = {
-            script: '',
-            alias: '',
+            script: "",
+            alias: "",
         };
 
         try {
-            const scriptEle = document.querySelector('[data-semoss-py]');
+            const scriptEle = document.querySelector("[data-semoss-py]");
             const content = scriptEle?.textContent;
             if (!content) {
                 return null;
@@ -420,7 +421,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             output.script = content;
 
             // get the alias
-            output.alias = scriptEle?.getAttribute('data-alias') || '';
+            output.alias = scriptEle?.getAttribute("data-alias") || "";
         } catch (e) {
             console.warn(e);
             return null;
@@ -437,7 +438,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         alias: string;
     }): Promise<Script | null> => {
         const output = {
-            script: '',
+            script: "",
             alias: config.alias,
         };
         try {
@@ -446,7 +447,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
             const text = await response.text();
             if (!text) {
-                throw new Error('No Text');
+                throw new Error("No Text");
             }
 
             // set the text if it exists
@@ -467,12 +468,12 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
      * @returns id of the space
      */
     private getSpaceId(space: Space) {
-        let id = '';
-        if (space === 'insight') {
+        let id = "";
+        if (space === "insight") {
             id = this._store.insightId;
-        } else if (space === 'app') {
+        } else if (space === "app") {
             if (!this._store.options.appId) {
-                throw new Error('An app is required to run in the app space');
+                throw new Error("An app is required to run in the app space");
             }
 
             // set it
@@ -493,19 +494,19 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         login: async (
             credentials:
                 | {
-                      type: 'native';
+                      type: "native";
                       username: string;
                       password: string;
                   }
                 | {
-                      type: 'oauth';
+                      type: "oauth";
                       provider: string;
                   },
         ): Promise<boolean> => {
             // try to login
             try {
                 let loggedIn = false;
-                if (credentials.type === 'native') {
+                if (credentials.type === "native") {
                     const response = await login(
                         credentials.username,
                         credentials.password,
@@ -514,7 +515,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                     if (response) {
                         loggedIn = true;
                     }
-                } else if (credentials.type === 'oauth') {
+                } else if (credentials.type === "oauth") {
                     const response = await oauth(credentials.provider);
                     if (response) {
                         loggedIn = true;
@@ -567,16 +568,16 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          */
         run: async <O extends unknown[] | []>(
             pixel: string,
-            space: Space = 'insight',
+            space: Space = "insight",
         ) => {
             try {
-                let id = '';
-                if (space === 'insight') {
+                let id = "";
+                if (space === "insight") {
                     id = this._store.insightId;
-                } else if (space === 'app') {
+                } else if (space === "app") {
                     if (!this._store.options.appId) {
                         throw new Error(
-                            'An app is required to run in the app space',
+                            "An app is required to run in the app space",
                         );
                     }
 
@@ -587,7 +588,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                 const { errors, pixelReturn } = await runPixel<O>(pixel, id);
 
                 if (errors.length) {
-                    throw new Error(errors.join(''));
+                    throw new Error(errors.join(""));
                 }
 
                 return { pixelReturn };
@@ -596,7 +597,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             }
 
             // throw an error
-            throw new Error('No response');
+            throw new Error("No response");
         },
 
         /**
@@ -604,7 +605,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          * @param pixel - pixel command to run
          * @param space - where to run it
          */
-        runPy: async <O>(python: string, space: Space = 'insight') => {
+        runPy: async <O>(python: string, space: Space = "insight") => {
             const { pixelReturn } = await this.actions.run<
                 [
                     [
@@ -629,7 +630,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         askModel: async (
             engineId: string,
             command: string,
-            space: Space = 'insight',
+            space: Space = "insight",
         ) => {
             const { pixelReturn } = await this.actions.run<
                 [{ response: string }]
@@ -658,7 +659,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             } = {
                 collect: -1,
             },
-            space: Space = 'insight',
+            space: Space = "insight",
         ) => {
             const { pixelReturn } = await this.actions.run<
                 [
@@ -671,7 +672,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                 ]
             >(
                 `Database(database=["${databaseId}"]) | Query("<encode>${query}</encode>") | Collect(${
-                    typeof options.collect === 'number' ? options.collect : -1
+                    typeof options.collect === "number" ? options.collect : -1
                 });;`,
                 space,
             );
@@ -691,7 +692,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         upload: async (
             files: File | File[],
             path: string,
-            space: Space = 'insight',
+            space: Space = "insight",
         ): Promise<
             {
                 fileName: string;
@@ -702,7 +703,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                 const response = await upload(
                     files,
                     this._store.insightId,
-                    space === 'app' ? this._store.options.appId : '',
+                    space === "app" ? this._store.options.appId : "",
                     path,
                 );
 
@@ -712,7 +713,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             }
 
             // throw an error
-            throw new Error('No upload');
+            throw new Error("No upload");
         },
 
         /**
@@ -723,13 +724,13 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          */
         download: async (
             path: string | null,
-            space: Space = 'insight',
+            space: Space = "insight",
         ): Promise<boolean> => {
             const id = this.getSpaceId(space);
 
             const { pixelReturn } = await this.actions.run<[string]>(
                 `DownloadAsset(filePath=["${path}"], space=["${id}"]);`,
-                'insight',
+                "insight",
             );
 
             // get the file key
@@ -744,7 +745,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             }
 
             // throw an error
-            throw new Error('No download');
+            throw new Error("No download");
         },
     };
 }

@@ -98,7 +98,6 @@
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
         "@mui/x-data-grid": "^7.1.0",
-        "@semoss/sdk-react": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@semoss/renderer": "workspace:*",
         "@xyflow/react": "^12.0.4",

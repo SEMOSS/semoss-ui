@@ -1,7 +1,7 @@
 {
-    "name": "@semoss/sdk-react",
+    "name": "@semoss/sdk",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "libs/sdk-react/src",
+    "sourceRoot": "libs/sdk/src",
     "projectType": "library",
     "tags": [],
     "targets": {
@@ -11,10 +11,10 @@
             "cache": true,
             "inputs": ["production", "^production"],
             "options": {
-                "main": "libs/sdk-react/src/index.ts",
-                "tsConfig": "libs/sdk-react/tsconfig.json",
-                "outputPath": "libs/sdk-react/dist",
-                "rollupConfig": "libs/sdk-react/rollup.config.js",
+                "main": "libs/sdk/src/index.ts",
+                "tsConfig": "libs/sdk/tsconfig.json",
+                "outputPath": "libs/sdk/dist",
+                "rollupConfig": "libs/sdk/rollup.config.js",
                 "format": ["esm", "cjs"]
             },
             "configurations": {}
@@ -22,8 +22,8 @@
         "dev": {
             "executor": "nx:run-commands",
             "options": {
-                "cwd": "libs/sdk-react",
-                "command": "rollup -w -c libs/sdk-react/rollup.config.js"
+                "cwd": "libs/sdk",
+                "command": "rollup -w -c"
             },
             "cache": true,
             "dependsOn": ["^rollup:build"],

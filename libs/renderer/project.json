@@ -23,7 +23,7 @@
             "executor": "nx:run-commands",
             "options": {
                 "cwd": "libs/renderer",
-                "command": "rollup -w -c libs/renderer/rollup.config.js"
+                "command": "rollup -w -c"
             },
             "cache": true,
             "dependsOn": ["^rollup:build"],

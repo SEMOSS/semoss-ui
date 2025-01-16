@@ -6,10 +6,10 @@ export class Env {
      * Variables that are loaded into the enviornment
      */
     private static _store = {
-        APP: '',
-        MODULE: '',
-        ACCESS_KEY: '',
-        SECRET_KEY: '',
+        APP: "",
+        MODULE: "",
+        ACCESS_KEY: "",
+        SECRET_KEY: "",
     };
 
     /**
@@ -44,7 +44,8 @@ export class Env {
      *
      * @param updated - updated variables
      */
-    static update = (updated: Partial<typeof Env['_store']> = {}) => {
+    static update = (updated: Partial<(typeof Env)["_store"]> = {}) => {
+        debugger;
         if (updated.APP) {
             this._store.APP = updated.APP;
         }

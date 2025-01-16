@@ -38,6 +38,7 @@ pnpm_build_dev:
         - pnpm -v
         - NX_HEAD=$CI_COMMIT_SHA
         - NX_BASE=${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}
+        # Likely need to add sdk as well
         - npx NX_REJECT_UNKNOWN_LOCAL_CACHE=0 nx run-many -t build -p @semoss/client @semoss/legacy --verbose
         - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${VERSION}-SNAPSHOT
         # So that the cache takes up less space
@@ -73,6 +74,7 @@ pnpm_build_deploy:
         - npm install -g pnpm@8
         - pnpm install
         - pnpm -v
+        # Likely need to add sdk as well
         - pnpm run build
         - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${VERSION}-SNAPSHOT
         # So that the cache takes up less space

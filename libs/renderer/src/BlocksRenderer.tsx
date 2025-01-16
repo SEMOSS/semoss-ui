@@ -19,12 +19,19 @@ import {
     STATE_VERSION,
     StateStore,
 } from "./store/state";
+
 import { Blocks, Renderer } from "./components/blocks";
 import { DefaultBlocks } from "./components/block-defaults";
 import { DefaultCells } from "./components/cell-defaults";
 
-import { Env, runPixel } from "@semoss/sdk";
-import { InsightProvider, useInsight } from "@semoss/sdk-react";
+import {
+    TestComponent,
+    Env,
+    runPixel,
+    Insight,
+    InsightProvider,
+    useInsight,
+} from "@semoss/sdk";
 
 const ACTIVE = "page-1";
 
@@ -54,7 +61,6 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     useEffect(() => {
         const test = async () => {
-            debugger;
             const { errors, pixelReturn } = await runPixel("MyEngines();");
         };
 
@@ -130,7 +136,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     }, [state, appId, isAuthorized]);
 
     if (!isAuthorized) {
-        return <>SDK not LOGGED IN</>;
+        return <>SDK NOT LOGGED IN</>;
     }
 
     if (!stateStore || (isLoading && !preview)) {
@@ -161,12 +167,10 @@ export const Bricks = (props) => {
         APP: process.env.APP || "",
     });
 
-    console.log("SUCCESSFULLY PASSED MODULE", MODULE);
-
     return (
         <InsightProvider>
             <Stack sx={{ border: "solid red" }}>
-                <Typography variant="h6">PEEKABOO</Typography>
+                <Typography variant="h6">PEEKABOOssP</Typography>
                 <BlocksRenderer state={state} />
             </Stack>
         </InsightProvider>

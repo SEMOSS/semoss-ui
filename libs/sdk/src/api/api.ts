@@ -1,9 +1,9 @@
-import { Env } from '@/env';
-import { get, post, interceptors, UnauthorizedError } from '@/utility';
+import { Env } from "../env";
+import { get, post, interceptors, UnauthorizedError } from "../utility";
 
 const CSRF = {
     isEnabled: false,
-    token: '',
+    token: "",
 };
 
 // set up the request interceptor
@@ -25,30 +25,30 @@ interceptors.request = async (options) => {
 
     // only set if enabled
     if (CSRF.isEnabled) {
-        if (options.method === 'POST') {
+        if (options.method === "POST") {
             // use the token if it is there
             if (!CSRF.token) {
                 const { response } = await get(
                     `${Env.MODULE}/api/config/fetchCsrf`,
                     {
                         headers: {
-                            'X-CSRF-Token': 'fetch',
+                            "X-CSRF-Token": "fetch",
                         },
                     },
                 );
 
                 // not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
                 CSRF.token =
-                    response.headers.get('X-CSRF-Token') ||
-                    response.headers.get('x-csrf-token') ||
-                    '';
+                    response.headers.get("X-CSRF-Token") ||
+                    response.headers.get("x-csrf-token") ||
+                    "";
             }
 
             // add the token
             if (options.headers) {
                 options.headers = {
                     ...options.headers,
-                    'X-CSRF-Token': CSRF.token,
+                    "X-CSRF-Token": CSRF.token,
                 };
             }
         }
@@ -60,7 +60,7 @@ interceptors.request = async (options) => {
 // setup the reseponse interceptor
 interceptors.response = async ({ response }) => {
     if (response.status === 302) {
-        throw new UnauthorizedError('Unauthorized');
+        throw new UnauthorizedError("Unauthorized");
     }
 };
 
@@ -80,7 +80,7 @@ export const getSystemConfig = async (): Promise<{
     }>(`${Env.MODULE}/api/config`);
 
     if (response.data && response.data.csrf) {
-        const token = response.data['X-CSRF-Token'] as string;
+        const token = response.data["X-CSRF-Token"] as string;
 
         // enable and store the token
         CSRF.isEnabled = true;
@@ -102,7 +102,7 @@ export const runPixel = async <O extends unknown[] | []>(
     insightId?: string,
 ) => {
     if (!pixel) {
-        throw new Error('Missing Pixel');
+        throw new Error("Missing Pixel");
     }
 
     const body: Record<string, unknown> = {
@@ -130,7 +130,7 @@ export const runPixel = async <O extends unknown[] | []>(
     for (const p of response.data.pixelReturn) {
         const { output, operationType } = p;
 
-        if (operationType.indexOf('ERROR') > -1) {
+        if (operationType.indexOf("ERROR") > -1) {
             errors.push(output as string);
         }
     }
@@ -150,7 +150,7 @@ export const runPixel = async <O extends unknown[] | []>(
  */
 export const runPixelAsync = async (pixel: string, insightId?: string) => {
     if (!pixel) {
-        throw Error('No Pixel To Execute');
+        throw Error("No Pixel To Execute");
     }
 
     const body: Record<string, unknown> = {
@@ -166,7 +166,7 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
         body,
         {
             headers: {
-                'content-type': 'application/x-www-form-urlencoded',
+                "content-type": "application/x-www-form-urlencoded",
             },
         },
     ).catch((error) => {
@@ -175,7 +175,7 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
     });
 
     if (!response) {
-        throw Error('No Pixel Response');
+        throw Error("No Pixel Response");
     }
 
     return {
@@ -191,7 +191,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
     jobId: string,
 ) => {
     if (!jobId) {
-        throw Error('No job id provided to get pixel response');
+        throw Error("No job id provided to get pixel response");
     }
 
     const body: Record<string, unknown> = {
@@ -207,7 +207,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
         }[];
     }>(`${Env.MODULE}/api/engine/result`, body, {
         headers: {
-            'content-type': 'application/x-www-form-urlencoded',
+            "content-type": "application/x-www-form-urlencoded",
         },
     }).catch((error) => {
         // throw the message
@@ -218,7 +218,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 
     // there was no response, that is an error
     if (!response) {
-        throw Error('No Pixel Response');
+        throw Error("No Pixel Response");
     }
 
     const errors: string[] = [];
@@ -227,7 +227,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
     for (const p of response.data.pixelReturn) {
         const { output, operationType } = p;
 
-        if (operationType.indexOf('ERROR') > -1) {
+        if (operationType.indexOf("ERROR") > -1) {
             errors.push(output as string);
         }
     }
@@ -282,20 +282,20 @@ export const oauth = async (
 
     // if called from the popup, throw an error as the user was unable to login
     if (isPopup) {
-        throw new Error('Unable to login');
+        throw new Error("Unable to login");
     }
 
     return new Promise((resolve, reject) => {
         if (!window || !window.top) {
-            reject('Unable to login');
+            reject("Unable to login");
             return;
         }
 
         const url = `${Env.MODULE}/api/auth/login/${provider}`;
         const popUpWindow = window.top.open(
             url,
-            '_blank',
-            'height=600,width=400,top=300,left=' + 600,
+            "_blank",
+            "height=600,width=400,top=300,left=" + 600,
         );
 
         // setup an interval to see if the popup window is closed or successful
@@ -362,27 +362,27 @@ export const upload = async (
         fileLocation: string;
     }[]
 > => {
-    let param = '';
+    let param = "";
 
-    path = path || '';
+    path = path || "";
     if (insightId || projectId || path) {
         if (insightId) {
             if (param.length > 0) {
-                param += '&';
+                param += "&";
             }
             param += `insightId=${insightId}`;
         }
 
         if (projectId) {
             if (param.length > 0) {
-                param += '&';
+                param += "&";
             }
             param += `projectId=${projectId}`;
         }
 
         if (path) {
             if (param.length > 0) {
-                param += '&';
+                param += "&";
             }
             param += `path=${path}`;
         }
@@ -395,11 +395,11 @@ export const upload = async (
     const fd: FormData = new FormData();
     if (Array.isArray(files)) {
         for (let i = 0; i < files.length; i++) {
-            fd.append('file', files[i]);
+            fd.append("file", files[i]);
         }
     } else {
         // pasted data
-        fd.append('file', files);
+        fd.append("file", files);
     }
 
     const response = await post<
@@ -421,7 +421,7 @@ export const upload = async (
 export const download = async (insightId: string, fileKey: string) => {
     return new Promise<void>((resolve) => {
         if (!insightId) {
-            throw Error('No Insight ID provided for download.');
+            throw Error("No Insight ID provided for download.");
         }
         // create the download url
         const url = `${
@@ -431,10 +431,10 @@ export const download = async (insightId: string, fileKey: string) => {
         )}`;
 
         // fake clicking a link
-        const link: HTMLAnchorElement = document.createElement('a');
+        const link: HTMLAnchorElement = document.createElement("a");
 
         link.href = url;
-        link.target = '_blank';
+        link.target = "_blank";
         document.body.appendChild(link);
         link.click();
 
