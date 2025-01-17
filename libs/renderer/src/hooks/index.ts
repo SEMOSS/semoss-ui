@@ -7,6 +7,7 @@ import { useDebounceValue } from "./useDebounceValue";
 import { useTypeWriter } from "./useTypeWriter";
 import { useFrame } from "./useFrame";
 import { useFrameHeaders } from "./useFrameHeaders";
+import { useLLMComparison } from "./useLLMComparison";
 
 // import { useAPI } from "./useAPI";
 // import { useCacheState } from "./useCacheState";
@@ -19,7 +20,6 @@ import { useFrameHeaders } from "./useFrameHeaders";
 // import { useDesigner } from "./useDesigner";
 // import { useStepper } from "./useStepper";
 // import { useWorkspace } from "./useWorkspace";
-// import { useLLMComparison } from "./useLLMCompare";
 
 export {
     useBlock,
@@ -31,6 +31,7 @@ export {
     useTypeWriter,
     useFrame,
     useFrameHeaders,
+    useLLMComparison,
     // useAPI,
     // useCacheState,
     // useEngine,
@@ -42,5 +43,4 @@ export {
     // useDesigner,
     // useStepper,
     // useWorkspace,
-    // useLLMComparison,
 };

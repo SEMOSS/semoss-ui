@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { ENGINE_IMAGES } from "../constants";
+import { useDebounced } from "./useDebounced";
+import BRAIN from "../assets/BRAIN.png";
+
+export { useDebounced as debounced };
+
 /**
  * Deep copy an object
  *
@@ -85,7 +90,7 @@ export const setValueByPath = <T extends object>(
     current[last] = value;
 };
 
-const debounce = (func, wait) => {
+export const debounce = (func, wait) => {
     let timeout;
 
     return function executedFunction(...args) {
@@ -100,22 +105,25 @@ const debounce = (func, wait) => {
 };
 
 /**
- * @desc useDebounce utility function returns a debounced function
+ * @name getEngineImage
+ * @params appType & appSubType
+ * @returns image link for associated engine
  */
-export const debounced = (callback, delay) => {
-    const ref = useRef(() => {});
+export const getEngineImage = (
+    appType: string,
+    appSubType: string,
+    ignoreNotFound: boolean = false,
+) => {
+    const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
-    useEffect(() => {
-        ref.current = callback;
-    }, [callback]);
+    if (!obj) {
+        if (ignoreNotFound) {
+            return null;
+        } else {
+            console.warn("No image found:", appType, appSubType);
+            return BRAIN;
+        }
+    }
 
-    const debouncedCallback = useMemo(() => {
-        const func = () => {
-            ref.current?.();
-        };
-
-        return debounce(func, delay);
-    }, []);
-
-    return debouncedCallback;
+    return obj.icon;
 };

@@ -27,34 +27,64 @@ import { ActionMessages, SerializedState } from '@/stores';
 
 const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
     queries: {
-        nb: {
-            id: 'nb',
+        'ask-llm': {
+            id: 'ask-llm',
             cells: [
                 {
-                    id: '53005',
+                    id: '42377',
                     widget: 'code',
                     parameters: {
-                        code: '1+1',
-                        type: 'py',
+                        code: 'LLM(engine = "001510f8-b86e-492e-a7f0-41299775e7d9", command = "<encode>What is the average home price in {{location}} with the latest data that you have.  REQUIRED: Just respond with a number nothing else</encode>", paramValues=[{}]);',
+                        type: 'pixel',
                     },
                 },
                 {
-                    id: '17308',
+                    id: '99842',
                     widget: 'code',
                     parameters: {
-                        type: 'pixel',
-                        code: '4+4',
+                        type: 'py',
+                        code: "{{unformatted-resp}}['response']",
                     },
                 },
             ],
         },
     },
     blocks: {
+        'welcome-container-block': {
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            slots: {
+                children: {
+                    children: ['input--2132'],
+                    name: 'children',
+                },
+            },
+            widget: 'container',
+            data: {
+                style: {
+                    padding: '4px',
+                    overflow: 'hidden',
+                    flexWrap: 'wrap',
+                    flexDirection: 'column',
+                    display: 'flex',
+                    gap: '8px',
+                },
+            },
+            listeners: {},
+            id: 'welcome-container-block',
+        },
         'page-1': {
             parent: null,
             slots: {
                 content: {
-                    children: ['grid--4402', 'vega--9074', 'vega--8556'],
+                    children: [
+                        'markdown--5580',
+                        'welcome-container-block',
+                        'button--1258',
+                        'markdown--1585',
+                    ],
                     name: 'content',
                 },
             },
@@ -69,69 +99,121 @@ const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
                 },
             },
             listeners: {
-                onPageLoad: [
+                onPageLoad: [],
+            },
+            id: 'page-1',
+        },
+        'input--2132': {
+            id: 'input--2132',
+            widget: 'input',
+            parent: {
+                id: 'welcome-container-block',
+                slot: 'children',
+            },
+            data: {
+                style: {
+                    width: '100%',
+                    padding: '4px',
+                },
+                value: 'DC',
+                label: 'Location',
+                hint: '',
+                type: 'text',
+                rows: 1,
+                multiline: false,
+                disabled: false,
+                required: false,
+                loading: false,
+            },
+            listeners: {
+                onChange: [],
+            },
+            slots: {
+                content: {
+                    name: 'content',
+                    children: [],
+                },
+            },
+        },
+        'markdown--5580': {
+            id: 'markdown--5580',
+            widget: 'markdown',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                markdown:
+                    '# Average Home Price Finder\n\n##### This App will use the LLM to get you the Average home price for a particular city/state',
+            },
+            listeners: {},
+            slots: {},
+        },
+        'markdown--1585': {
+            id: 'markdown--1585',
+            widget: 'markdown',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {
+                    padding: '4px',
+                },
+                markdown: '{{average-home-price}}',
+            },
+            listeners: {},
+            slots: {},
+        },
+        'button--1258': {
+            id: 'button--1258',
+            widget: 'button',
+            parent: {
+                id: 'page-1',
+                slot: 'content',
+            },
+            data: {
+                style: {},
+                label: 'Find Average Home Price',
+                loading: false,
+                disabled: false,
+                variant: 'contained',
+                color: 'primary',
+            },
+            listeners: {
+                onClick: [
                     {
-                        message: 'RUN_QUERY',
+                        message: ActionMessages.RUN_QUERY,
                         payload: {
-                            queryId: 'nb',
+                            queryId: 'ask-llm',
                         },
                     },
                 ],
             },
-            id: 'page-1',
-        },
-        'vega--9074': {
-            id: 'vega--9074',
-            widget: 'vega',
-            parent: {
-                id: 'page-1',
-                slot: 'content',
-            },
-            data: {
-                variation: 'area-chart',
-                specJson:
-                    '{\n  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",\n  "title": "Area Chart",\n  "width": 300,\n  "height": 300,\n  "data": {\n    "values": [\n      {\n        "a": "A",\n        "b": 28\n      },\n      {\n        "a": "B",\n        "b": 55\n      },\n      {\n        "a": "D",\n        "b": 91\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "G",\n        "b": 19\n      },\n      {\n        "a": "H",\n        "b": 87\n      }\n    ]\n  },\n  "mark": "area",\n  "encoding": {\n    "x": {\n      "field": "a"\n    },\n    "y": {\n      "aggregate": "sum",\n      "field": "b",\n      "title": "count"\n    }\n  }\n}',
-            },
-            listeners: {},
-            slots: {},
-        },
-        'vega--8556': {
-            id: 'vega--8556',
-            widget: 'vega',
-            parent: {
-                id: 'page-1',
-                slot: 'content',
-            },
-            data: {
-                variation: 'area-chart-with-gradient',
-                specJson:
-                    '{\n  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",\n  "title": "Area Chart with Gradient",\n  "width": 300,\n  "height": 300,\n  "description": "Simple area chart with gradient.",\n  "data": {\n    "values": [\n      {\n        "a": "A",\n        "b": 28\n      },\n      {\n        "a": "B",\n        "b": 55\n      },\n      {\n        "a": "D",\n        "b": 91\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "G",\n        "b": 19\n      },\n      {\n        "a": "H",\n        "b": 87\n      }\n    ]\n  },\n  "mark": {\n    "type": "area",\n    "line": {\n      "color": "darkgreen"\n    },\n    "color": {\n      "x1": 1,\n      "y1": 1,\n      "x2": 1,\n      "y2": 0,\n      "gradient": "linear",\n      "stops": [\n        {\n          "offset": 0,\n          "color": "white"\n        },\n        {\n          "offset": 1,\n          "color": "darkgreen"\n        }\n      ]\n    }\n  },\n  "encoding": {\n    "x": {\n      "field": "a"\n    },\n    "y": {\n      "aggregate": "sum",\n      "field": "b",\n      "title": "count"\n    }\n  }\n}',
-            },
-            listeners: {},
-            slots: {},
-        },
-        'grid--4402': {
-            id: 'grid--4402',
-            widget: 'grid',
-            parent: {
-                id: 'page-1',
-                slot: 'content',
-            },
-            data: {
-                frame: {
-                    name: '',
-                },
-                columns: [],
-                view: {
-                    pagination: true,
-                },
-            },
-            listeners: {},
             slots: {},
         },
     },
-    variables: {},
-    executionOrder: ['nb'],
+    variables: {
+        location: {
+            type: 'block',
+            to: 'input--2132',
+            isInput: true,
+        },
+        'unformatted-resp': {
+            type: 'cell',
+            to: 'ask-llm',
+            cellId: '42377',
+        },
+        'average-home-price': {
+            type: 'query',
+            to: 'ask-llm',
+            isOutput: true,
+        },
+    },
+    executionOrder: ['ask-llm'],
     version: '1.0.0-alpha.3',
 };
 
@@ -236,7 +318,7 @@ export const Router = observer(() => {
 
                     {/* Test route for blocks renderer as lib */}
                     <Route
-                        path="bricks"
+                        path="test-renderer"
                         element={
                             <Bricks
                                 state={TESTING_STATE_REMOVE_THIS_2}
