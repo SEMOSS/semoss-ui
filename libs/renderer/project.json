@@ -5,7 +5,7 @@
     "projectType": "library",
     "tags": [],
     "targets": {
-        "build": {
+        "build1": {
             "executor": "@nx/rollup:rollup",
             "outputs": ["{projectRoot}/dist"],
             "cache": true,
