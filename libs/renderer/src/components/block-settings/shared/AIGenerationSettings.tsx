@@ -1,12 +1,12 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Button, Stack, TextField, useNotification } from "@semoss/ui";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings, useBlocks, usePixel, useRootStore } from "@/hooks";
-import { Block, BlockDef } from "@/stores";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef } from "../../../store";
 import { AutoAwesome } from "@mui/icons-material";
 import { Autocomplete } from "@mui/material";
-import { runPixel } from "@/api";
+import { runPixel } from "@semoss/sdk";
 
 type CfgLibraryEngineState = {
     loading: boolean;

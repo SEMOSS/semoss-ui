@@ -8,8 +8,8 @@ import {
     styled,
 } from "@semoss/ui";
 
-import { useBlockSettings, useBlocks, useWorkspace } from "@/hooks";
-import { ACTIONS_DISPLAY, BlockDef, ListenerActions } from "@/stores";
+import { useBlockSettings, useBlocks } from "../../hooks";
+import { ACTIONS_DISPLAY, BlockDef, ListenerActions } from "../../store";
 import {
     Add,
     Delete,
@@ -61,7 +61,7 @@ export const ListenerSettings = observer(
     }: ListenerSettingsProps<D>) => {
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
-        const { workspace } = useWorkspace();
+        // const { workspace } = useWorkspace();
         const notification = useNotification();
 
         /**
@@ -108,16 +108,16 @@ export const ListenerSettings = observer(
          * @param actionIdx - index of the action to edit. Will create a new one if -1
          */
         const openActionOverlay = (actionIdx = -1) => {
-            workspace.openOverlay(() => {
-                return (
-                    <ListenerActionOverlay
-                        id={id}
-                        listener={listener}
-                        actionIdx={actionIdx}
-                        onClose={() => workspace.closeOverlay()}
-                    />
-                );
-            });
+            // workspace.openOverlay(() => {
+            //     return (
+            //         <ListenerActionOverlay
+            //             id={id}
+            //             listener={listener}
+            //             actionIdx={actionIdx}
+            //             onClose={() => workspace.closeOverlay()}
+            //         />
+            //     );
+            // });
         };
 
         /**

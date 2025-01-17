@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef } from "react";
 /**
  * Deep copy an object
  *
@@ -82,4 +83,39 @@ export const setValueByPath = <T extends object>(
 
     // set the value
     current[last] = value;
+};
+
+const debounce = (func, wait) => {
+    let timeout;
+
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
+/**
+ * @desc useDebounce utility function returns a debounced function
+ */
+export const debounced = (callback, delay) => {
+    const ref = useRef(() => {});
+
+    useEffect(() => {
+        ref.current = callback;
+    }, [callback]);
+
+    const debouncedCallback = useMemo(() => {
+        const func = () => {
+            ref.current?.();
+        };
+
+        return debounce(func, delay);
+    }, []);
+
+    return debouncedCallback;
 };

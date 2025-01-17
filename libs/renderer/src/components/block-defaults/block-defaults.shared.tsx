@@ -1,5 +1,5 @@
-import { BlockDef } from "@/stores";
-import { ListenerSettings } from "@/components/block-settings";
+import { BlockDef } from "../../store";
+import { ListenerSettings } from "../block-settings";
 import { FontSizeSettings } from "../block-settings/custom/FontSizeSettings";
 import { SizeSettings } from "../block-settings/shared/SizeSettings";
 import { ColorSettings } from "../block-settings/shared/ColorSettings";

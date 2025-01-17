@@ -4,13 +4,13 @@ import { observer } from "mobx-react-lite";
 import { styled, Stack, TextField, Modal, Button, Select } from "@semoss/ui";
 import { Controller, useForm } from "react-hook-form";
 
-import { useBlockSettings, useBlocks } from "@/hooks";
+import { useBlockSettings, useBlocks } from "../../hooks";
 import {
     ACTIONS_DISPLAY,
     ActionMessages,
     BlockDef,
     ListenerActions,
-} from "@/stores";
+} from "../../store";
 
 const StyledSpacer = styled("div")(() => ({
     flex: 1,

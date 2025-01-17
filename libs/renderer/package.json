@@ -57,7 +57,6 @@
         "remark-gfm": "^4.0.0",
         "dompurify": "^2.3.10",
         "react-hook-form": "^7.34.2",
-        "remark-gfm": "^4.0.0",
         "react-vega": "^7.6.0",
         "react-beautiful-dnd": "^13.1.1",
         "@monaco-editor/react": "^4.5.1",

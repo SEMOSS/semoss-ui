@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState } from 'react';
 
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -55,7 +54,7 @@ const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
             parent: null,
             slots: {
                 content: {
-                    children: ['html--8335', 'iframe--464', 'image--4929'],
+                    children: ['grid--4402', 'vega--9074', 'vega--8556'],
                     name: 'content',
                 },
             },
@@ -81,58 +80,51 @@ const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
             },
             id: 'page-1',
         },
-        'html--8335': {
-            id: 'html--8335',
-            widget: 'html',
+        'vega--9074': {
+            id: 'vega--9074',
+            widget: 'vega',
             parent: {
                 id: 'page-1',
                 slot: 'content',
             },
             data: {
-                style: {
-                    padding: '4px',
-                },
-                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
+                variation: 'area-chart',
+                specJson:
+                    '{\n  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",\n  "title": "Area Chart",\n  "width": 300,\n  "height": 300,\n  "data": {\n    "values": [\n      {\n        "a": "A",\n        "b": 28\n      },\n      {\n        "a": "B",\n        "b": 55\n      },\n      {\n        "a": "D",\n        "b": 91\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "G",\n        "b": 19\n      },\n      {\n        "a": "H",\n        "b": 87\n      }\n    ]\n  },\n  "mark": "area",\n  "encoding": {\n    "x": {\n      "field": "a"\n    },\n    "y": {\n      "aggregate": "sum",\n      "field": "b",\n      "title": "count"\n    }\n  }\n}',
             },
             listeners: {},
             slots: {},
         },
-        'iframe--464': {
-            id: 'iframe--464',
-            widget: 'iframe',
+        'vega--8556': {
+            id: 'vega--8556',
+            widget: 'vega',
             parent: {
                 id: 'page-1',
                 slot: 'content',
             },
             data: {
-                style: {},
-                src: '',
-                title: '',
-                enableFrameInteractions: true,
+                variation: 'area-chart-with-gradient',
+                specJson:
+                    '{\n  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",\n  "title": "Area Chart with Gradient",\n  "width": 300,\n  "height": 300,\n  "description": "Simple area chart with gradient.",\n  "data": {\n    "values": [\n      {\n        "a": "A",\n        "b": 28\n      },\n      {\n        "a": "B",\n        "b": 55\n      },\n      {\n        "a": "D",\n        "b": 91\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "E",\n        "b": 81\n      },\n      {\n        "a": "G",\n        "b": 19\n      },\n      {\n        "a": "H",\n        "b": 87\n      }\n    ]\n  },\n  "mark": {\n    "type": "area",\n    "line": {\n      "color": "darkgreen"\n    },\n    "color": {\n      "x1": 1,\n      "y1": 1,\n      "x2": 1,\n      "y2": 0,\n      "gradient": "linear",\n      "stops": [\n        {\n          "offset": 0,\n          "color": "white"\n        },\n        {\n          "offset": 1,\n          "color": "darkgreen"\n        }\n      ]\n    }\n  },\n  "encoding": {\n    "x": {\n      "field": "a"\n    },\n    "y": {\n      "aggregate": "sum",\n      "field": "b",\n      "title": "count"\n    }\n  }\n}',
             },
             listeners: {},
             slots: {},
         },
-        'image--4929': {
-            id: 'image--4929',
-            widget: 'image',
+        'grid--4402': {
+            id: 'grid--4402',
+            widget: 'grid',
             parent: {
                 id: 'page-1',
                 slot: 'content',
             },
             data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '200px',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center center',
+                frame: {
+                    name: '',
                 },
-                src: '',
-                title: '',
+                columns: [],
+                view: {
+                    pagination: true,
+                },
             },
             listeners: {},
             slots: {},
@@ -142,6 +134,7 @@ const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
     executionOrder: ['nb'],
     version: '1.0.0-alpha.3',
 };
+
 const TESTING_STATE_REMOVE_THIS: SerializedState = {
     queries: {
         'notebook-1': {
