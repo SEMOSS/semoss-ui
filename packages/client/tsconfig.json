@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "react": ["./node_modules/@types/react"]
+            "@semoss/ui": ["../../libs/ui/src/index.ts"]
         },
         "target": "es6",
         "lib": ["dom", "dom.iterable", "esnext"],

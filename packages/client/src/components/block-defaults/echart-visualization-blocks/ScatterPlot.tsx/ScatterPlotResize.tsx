@@ -31,10 +31,10 @@ export const ScatterPlotResize = observer<ScatterPlotPropertiesProps>(
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const selectedChartWidth = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
-        ).clientWidth;
+        )?.clientWidth;
         const selectedChartHeight = document.querySelector(
             `div#${workingPage} div[data-block="${id}"]`,
-        ).clientHeight;
+        )?.clientHeight;
         const echartInstance = useRef(null);
         const [dataElementWidth, setDataElementWidth] =
             useState(selectedChartWidth);
