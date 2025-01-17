@@ -22,7 +22,7 @@ import { PrivacyNotice } from './legal/PrivacyNotice';
 
 import { WorkspacePage } from './WorkspacePage';
 
-import { Bricks } from '@semoss/renderer';
+import { Renderer } from '@semoss/renderer';
 import { ActionMessages, SerializedState } from '@/stores';
 
 const TESTING_STATE_REMOVE_THIS_2: SerializedState = {
@@ -320,7 +320,7 @@ export const Router = observer(() => {
                     <Route
                         path="test-renderer"
                         element={
-                            <Bricks
+                            <Renderer
                                 state={TESTING_STATE_REMOVE_THIS_2}
                                 MODULE={process.env.MODULE}
                             />

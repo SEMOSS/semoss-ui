@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 
 import { Block, BlockDef } from "../../store";
 
-import { Renderer } from "./Renderer";
+import { RendererEngine } from "./RendererEngine";
 
 export interface SlotProps<W extends BlockDef> {
     /** Slot to Fill */
@@ -34,7 +34,7 @@ export const Slot = observer(<W extends BlockDef>({ slot }: SlotProps<W>) => {
                 </div>
             )}
             {slot.children.map((c) => (
-                <Renderer key={c} id={c} />
+                <RendererEngine key={c} id={c} />
             ))}
         </>
     );

@@ -1,34 +1,24 @@
-import React, { useEffect, useState } from "react";
-import {
-    Stack,
-    Typography,
-    Button,
-    styled,
-    ToggleTabsGroup,
-    TextField,
-    InputAdornment,
-    useNotification,
-} from "@semoss/ui";
-
-import { useSearchParams, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useSearchParams, useLocation } from "react-router-dom";
+
+import { runPixel, useInsight } from "@semoss/sdk";
+import { Typography, useNotification } from "@semoss/ui";
 
 import {
     MigrationManager,
     SerializedState,
     STATE_VERSION,
     StateStore,
-} from "./store/state";
+} from "../store/state";
 
-import { Blocks, Renderer } from "./components/blocks";
-import { DefaultBlocks } from "./components/block-defaults";
-import { DefaultCells } from "./components/cell-defaults";
-
-import { Env, runPixel, InsightProvider, useInsight } from "@semoss/sdk";
+import { Blocks, RendererEngine } from "./blocks";
+import { DefaultBlocks } from "./block-defaults";
+import { DefaultCells } from "./cell-defaults";
 
 const ACTIVE = "page-1";
 
-interface BlocksRendererProps {
+export interface BlocksRendererProps {
     /** App to render */
     appId?: string;
 
@@ -191,48 +181,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     return (
         <Blocks state={stateStore} registry={DefaultBlocks}>
-            <Renderer id={ACTIVE} />
+            <RendererEngine id={ACTIVE} />
         </Blocks>
     );
 });
-
-export const Bricks = (props) => {
-    const { state, MODULE } = props;
-
-    Env.update({
-        MODULE: MODULE || "",
-
-        ACCESS_KEY: process.env.ACCESS_KEY || "",
-
-        SECRET_KEY: process.env.SECRET_KEY || "",
-
-        APP: process.env.APP || "",
-    });
-
-    return (
-        <InsightProvider>
-            <Stack sx={{ border: "solid red" }}>
-                <BlocksRenderer state={state} />
-            </Stack>
-        </InsightProvider>
-    );
-};
-
-// <Stack sx={{ border: "solid blue" }}>
-//     <Typography variant={"h6"}>
-//         HELL YEAH ITS RENDERING THE PAGE BLOCK AND TRYING TO
-//         EXECUTE SHEET ON LOAD OF PAGE.
-//     </Typography>
-//     <Typography variant={"body1"}>
-//         1. FIX THE API RUNNER - X
-//     </Typography>
-//     <Typography variant={"body1"}>
-//         1a. sdk and sdk-react move into a single lib - X
-//     </Typography>
-//     <Typography variant={"body1"}>
-//         1b. sdk move pixelAsync and pixelResult - X
-//     </Typography>
-//     <Typography variant={"body1"}>
-//         2. Bring the rest of the block-defaults back
-//     </Typography>
-// </Stack>
