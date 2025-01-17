@@ -98,7 +98,8 @@ export type DefaultBlockDefinitions =
     | LLMComparisonBlockDef
     | ModalBlockDef
     | RadioBlockDef
-    | PDFViewerBlockDef;
+    | PDFViewerBlockDef
+    | EchartVisualizationBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AudioBlockConfig.widget]: AudioBlockConfig,

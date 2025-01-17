@@ -78,13 +78,10 @@ export const ScatterPlotBlockSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
         useEffect(() => {
-            console.log('frame change', data);
             // if (data) {
             const json = JSON.parse(computedValue);
             let state = json['_state'];
-            console.log(state, 'state');
             if (state && state.hasOwnProperty('fields')) {
-                console.log('test123');
                 reinitializeStates(state['fields']);
             }
             //else {
@@ -97,7 +94,6 @@ export const ScatterPlotBlockSettings = observer(
             // }
         }, [id]);
         const reinitializeStates = (state) => {
-            console.log(state, 'qsdcv');
             state.XAxis && setXAxisValue(state.XAxis);
             state.YAxis && setYAxisValue(state.YAxis);
             state.tooltip && setTooltip(state.tooltip ?? '');
@@ -105,16 +101,18 @@ export const ScatterPlotBlockSettings = observer(
             state.size && setSize(state.size ?? '');
             state.color && setColor(state.color ?? '');
         };
-
-        console.log(xAxisValue, '>>>1<<<<');
         // get headers associated with the selected frames
         const frameHeaders = useFrameHeaders(data?.frame?.name);
+        console.log(frameHeaders, 'FrameHeaders');
         const fields = frameHeaders.data.list.map((field) => field.alias) || [];
 
         const handleChangeLabel = (label) => {
-            // console.log('testecnmlcndl');
             let tempValue = JSON.parse(value);
-            console.log(tempValue);
+            const filteredArray = frameHeaders.data.list.find(
+                (item) => item.alias == label,
+            );
+            console.log(filteredArray, 'filteredArray');
+            const labelDataType = filteredArray.dataType;
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -123,6 +121,7 @@ export const ScatterPlotBlockSettings = observer(
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 label: label,
+                labelDataType: labelDataType,
             };
             tempValue['series'][0]['label']['name'] = label;
             // const spec = data.option;
@@ -133,9 +132,12 @@ export const ScatterPlotBlockSettings = observer(
         };
 
         const handleChangeXAxis = (xaxis) => {
-            console.log('testecnmlcndl');
             let tempValue = JSON.parse(value);
-            console.log(tempValue);
+            const filteredArray = frameHeaders.data.list.find(
+                (item) => item.alias == xaxis,
+            );
+            console.log(filteredArray, 'filteredArray');
+            const XAxisDataType = filteredArray.dataType;
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -144,6 +146,7 @@ export const ScatterPlotBlockSettings = observer(
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 XAxis: xaxis,
+                XAxisDataType: XAxisDataType,
             };
             setXAxisValue(xaxis);
             tempValue['xAxis']['name'] = xaxis;
@@ -152,10 +155,13 @@ export const ScatterPlotBlockSettings = observer(
             setData('option', tempValue);
         };
         const handleChangeYAxis = (yaxis) => {
-            console.log('testecnmlcndl');
             setYAxisValue(yaxis);
             let tempValue = JSON.parse(value);
-            console.log(tempValue);
+            const filteredArray = frameHeaders.data.list.find(
+                (item) => item.alias == yaxis,
+            );
+            console.log(filteredArray, 'filteredArray');
+            const YAxisDataType = filteredArray.dataType;
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -164,6 +170,7 @@ export const ScatterPlotBlockSettings = observer(
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 YAxis: yaxis,
+                YAxisDataType: YAxisDataType,
             };
             tempValue['yAxis']['name'] = yaxis;
             tempValue['yAxis']['pixelName'] = yaxis;
@@ -171,9 +178,12 @@ export const ScatterPlotBlockSettings = observer(
             setData('option', tempValue);
         };
         const handleChangeColor = (colors) => {
-            // console.log('testecnmlcndl');
             let tempValue = JSON.parse(value);
-            console.log(tempValue);
+            const filteredArray = frameHeaders.data.list.find(
+                (item) => item.alias == colors,
+            );
+            console.log(filteredArray, 'filteredArray');
+            const colorDataType = filteredArray.dataType;
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -182,6 +192,7 @@ export const ScatterPlotBlockSettings = observer(
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 color: colors,
+                colorDataType: colorDataType,
             };
             // const spec = data.option;
             // spec['series'][0]['label']['name'] = event.target.value;
@@ -190,9 +201,12 @@ export const ScatterPlotBlockSettings = observer(
             setData('option', tempValue);
         };
         const handleChangeSize = (size) => {
-            // console.log('testecnmlcndl');
             let tempValue = JSON.parse(value);
-            console.log(tempValue);
+            const filteredArray = frameHeaders.data.list.find(
+                (item) => item.alias == size,
+            );
+            console.log(filteredArray, 'filteredArray');
+            const sizeDataType = filteredArray.dataType;
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -201,15 +215,19 @@ export const ScatterPlotBlockSettings = observer(
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 size: size,
+                sizeDataType: sizeDataType,
             };
             setSize(size);
             setValue(JSON.stringify(tempValue));
             setData('option', tempValue);
         };
         const handleChangeTooltip = (tooltips) => {
-            // console.log('testecnmlcndl');
             let tempValue = JSON.parse(value);
-            console.log(tempValue);
+            const filteredArray = frameHeaders.data.list.find(
+                (item) => item.alias == tooltips,
+            );
+            console.log(filteredArray, 'filteredArray');
+            const tooltipDataType = filteredArray.dataType;
             tempValue['_state'] =
                 tempValue['_state'] &&
                 Object.keys(tempValue['_state']).length > 0
@@ -218,6 +236,7 @@ export const ScatterPlotBlockSettings = observer(
             tempValue['_state']['fields'] = {
                 ...tempValue['_state']['fields'],
                 tooltip: tooltips,
+                tooltipDataType: tooltipDataType,
             };
             // const spec = data.option;
             // spec['series'][0]['label']['name'] = event.target.value;
@@ -459,12 +478,12 @@ export const ScatterPlotBlockSettings = observer(
                             )}
                         />
                     </BaseSettingSection>
-                    {/* <BaseSettingSection label='Tooltip'>
+                    <BaseSettingSection label="Tooltip">
                         <Autocomplete
-                        size="small"
+                            size="small"
                             fullWidth
                             multiple={false}
-                            disabled = {data.frame.name ===""}
+                            disabled={data.frame.name === ''}
                             value={tooltip ? tooltip : ''}
                             options={fields}
                             getOptionLabel={(option) => {
@@ -474,19 +493,17 @@ export const ScatterPlotBlockSettings = observer(
                                 // update the frame
                                 handleChangeTooltip(value);
                             }}
-                            freeSolo={false} 
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                placeholder="Select tooltip"
-                                size="small"
-                                variant="outlined"
-                                
-                            />
-                        )}
-                            
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select tooltip"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
                         />
-                </BaseSettingSection> */}
+                    </BaseSettingSection>
                 </Stack>
                 {/* <Stack direction={'column'} width={'100%'} overflow={'hjdden'}>
                     <DragDropContext

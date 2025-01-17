@@ -51,7 +51,7 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
-    const { data, attrs } = useBlock<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -74,7 +74,28 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['color'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),Average(${data.option['_state']['fields']['size']}),(${data.option['_state']['fields']['color']}),Average(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['size']},${data.option['_state']['fields']['color']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let sizeSelector =
+                            data.option['_state']['fields']['sizeDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let tooltipSelector =
+                            data.option['_state']['fields'][
+                                'tooltipDataType'
+                            ] == 'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),${sizeSelector}(${data.option['_state']['fields']['size']}),(${data.option['_state']['fields']['color']}),${tooltipSelector}(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['size']},${data.option['_state']['fields']['color']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
                     }
                     if (
                         data.option['_state']['fields']['label'] &&
@@ -83,7 +104,22 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['size'] &&
                         data.option['_state']['fields']['color']
                     ) {
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),Average(${data.option['_state']['fields']['size']}),(${data.option['_state']['fields']['color']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['size']},${data.option['_state']['fields']['color']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let sizeSelector =
+                            data.option['_state']['fields']['sizeDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),${sizeSelector}(${data.option['_state']['fields']['size']}),(${data.option['_state']['fields']['color']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['size']},${data.option['_state']['fields']['color']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
                     }
                     if (
                         data.option['_state']['fields']['label'] &&
@@ -92,7 +128,23 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['color'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),(${data.option['_state']['fields']['color']}),Average(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['color']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let tooltipSelector =
+                            data.option['_state']['fields'][
+                                'tooltipDataType'
+                            ] == 'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),(${data.option['_state']['fields']['color']}),${tooltipSelector}(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['color']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
                     }
                     if (
                         data.option['_state']['fields']['label'] &&
@@ -101,7 +153,28 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['size'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),Average(${data.option['_state']['fields']['size']}),Average(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},(${data.option['_state']['fields']['size']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let sizeSelector =
+                            data.option['_state']['fields']['sizeDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let tooltipSelector =
+                            data.option['_state']['fields'][
+                                'tooltipDataType'
+                            ] == 'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),${sizeSelector}(${data.option['_state']['fields']['size']}),${tooltipSelector}(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},(${data.option['_state']['fields']['size']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']})`);
                     }
 
                     if (
@@ -110,8 +183,17 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['YAxis'] &&
                         data.option['_state']['fields']['color']
                     ) {
-                        console.log('test12');
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),(${data.option['_state']['fields']['color']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['color']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),(${data.option['_state']['fields']['color']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['color']}])|Group(${data.option['series'][0]['label']['name']},${data.option['_state']['fields']['color']})`);
                     }
                     if (
                         data.option['_state']['fields']['label'] &&
@@ -119,8 +201,22 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['YAxis'] &&
                         data.option['_state']['fields']['size']
                     ) {
-                        console.log('test12');
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),Average(${data.option['_state']['fields']['size']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['size']}])|Group(${data.option['series'][0]['label']['name']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let sizeSelector =
+                            data.option['_state']['fields']['sizeDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),${sizeSelector}(${data.option['_state']['fields']['size']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['size']}])|Group(${data.option['series'][0]['label']['name']})`);
                     }
                     if (
                         data.option['_state']['fields']['label'] &&
@@ -128,17 +224,48 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['YAxis'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        console.log('test12');
-                        return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']}),Average(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']})`);
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let tooltipSelector =
+                            data.option['_state']['fields'][
+                                'tooltipDataType'
+                            ] == 'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']}),${tooltipSelector}(${data.option['_state']['fields']['tooltip']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']},${data.option['_state']['fields']['tooltip']}])|Group(${data.option['series'][0]['label']['name']})`);
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis']
+                    ) {
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average'
+                                : 'Count';
+                        return (selector = `Select(${data.option['series'][0]['label']['name']},${xAxisSelector}(${data.option['xAxis']['pixelName']}),${yAxisSelector}(${data.option['yAxis']['pixelName']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']}])|Group(${data.option['series'][0]['label']['name']})`);
                     }
                 }
             }
-            return (selector = `Select(${data.option['series'][0]['label']['name']},Average(${data.option['xAxis']['pixelName']}),Average(${data.option['yAxis']['pixelName']})).as([${data.option['series'][0]['label']['name']}, ${data.option['xAxis']['pixelName']},${data.option['yAxis']['pixelName']}])|Group(${data.option['series'][0]['label']['name']})`);
+            return '';
         }
         return '';
     }
 
-    console.log(data, 'frame');
     function valueToHSL(value) {
         const hue = (parseInt(value, 10) * 37) % 360;
         return `hsl(${hue}, 70%, 50%)`;
@@ -146,7 +273,372 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     const frame = useFrame(data?.frame?.name, {
         selector: getSelector(),
     });
-    console.log(data, 'data.option');
+    function formatdatapoints(apiData) {
+        if (apiData['values']) {
+            if (data.option.hasOwnProperty('_state')) {
+                if (data.option['_state'].hasOwnProperty('fields')) {
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['size'] &&
+                        data.option['_state']['fields']['color'] &&
+                        data.option['_state']['fields']['tooltip']
+                    ) {
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        let sizeSelector =
+                            data.option['_state']['fields']['sizeDataType'] ==
+                            'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        let tooltipSelector =
+                            data.option['_state']['fields'][
+                                'tooltipDataType'
+                            ] == 'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        return function (params) {
+                            const { data, color } = params;
+                            console.log(data, params, apiData);
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    ${sizeSelector} ${apiData.headers[3]}: ${
+                                data.symbolSize
+                            }<br>
+                                    Unique Group Concat of ${
+                                        apiData.headers[4]
+                                    }: ${data.itemStyle.colorValue}<br>
+                                    ${tooltipSelector} ${apiData.headers[5]}: ${
+                                data.tooltipValue
+                            }<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['size'] &&
+                        data.option['_state']['fields']['color']
+                    ) {
+                        let xAxisSelector =
+                            data.option['_state']['fields']['XAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        let yAxisSelector =
+                            data.option['_state']['fields']['YAxisDataType'] ==
+                            'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        let sizeSelector =
+                            data.option['_state']['fields']['sizeDataType'] ==
+                            'NUMBER'
+                                ? 'Average of'
+                                : 'Count of';
+                        return function (params) {
+                            const { data, color } = params;
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    ${sizeSelector} ${apiData.headers[3]}: ${
+                                data.symbolSize
+                            }<br>
+                                    Unique Group Concat of ${
+                                        apiData.headers[4]
+                                    }: ${data.itemStyle.colorValue}<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['color'] &&
+                        data.option['_state']['fields']['tooltip']
+                    ) {
+                        return function (params) {
+                            const { data, color } = params;
+                            let xAxisSelector =
+                                data.option['_state']['fields'][
+                                    'XAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let yAxisSelector =
+                                data.option['_state']['fields'][
+                                    'YAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let tooltipSelector =
+                                data.option['_state']['fields'][
+                                    'tooltipDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    Unique Group Concat of ${
+                                        apiData.headers[3]
+                                    }: ${data.itemStyle.colorValue}<br>
+                                    ${tooltipSelector} ${apiData.headers[4]}: ${
+                                data.tooltipValue
+                            }<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['size'] &&
+                        data.option['_state']['fields']['tooltip']
+                    ) {
+                        return function (params) {
+                            const { data, color } = params;
+                            let xAxisSelector =
+                                data.option['_state']['fields'][
+                                    'XAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let yAxisSelector =
+                                data.option['_state']['fields'][
+                                    'YAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let sizeSelector =
+                                data.option['_state']['fields'][
+                                    'sizeDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let tooltipSelector =
+                                data.option['_state']['fields'][
+                                    'tooltipDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    ${sizeSelector} ${apiData.headers[3]}: ${
+                                data.symbolSize
+                            }<br>
+                                    ${tooltipSelector}${apiData.headers[4]}: ${
+                                data.tooltipValue
+                            }<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['color']
+                    ) {
+                        return function (params) {
+                            const { data, color } = params;
+                            let xAxisSelector =
+                                data.option['_state']['fields'][
+                                    'XAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let yAxisSelector =
+                                data.option['_state']['fields'][
+                                    'YAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    Unique Group Concat of ${
+                                        apiData.headers[3]
+                                    }: ${data.itemStyle.colorValue}<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['size']
+                    ) {
+                        return function (params) {
+                            const { data, color } = params;
+                            let xAxisSelector =
+                                data.option['_state']['fields'][
+                                    'XAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let yAxisSelector =
+                                data.option['_state']['fields'][
+                                    'YAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let sizeSelector =
+                                data.option['_state']['fields'][
+                                    'sizeDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    ${sizeSelector} ${apiData.headers[3]}: ${
+                                data.symbolSize
+                            }<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis'] &&
+                        data.option['_state']['fields']['tooltip']
+                    ) {
+                        return function (params) {
+                            const { data, color } = params;
+                            let xAxisSelector =
+                                data.option['_state']['fields'][
+                                    'XAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let yAxisSelector =
+                                data.option['_state']['fields'][
+                                    'YAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let tooltipSelector =
+                                data.option['_state']['fields'][
+                                    'tooltipDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                    ${tooltipSelector} ${apiData.headers[3]}: ${
+                                data.tooltipValue
+                            }<br>
+                                </div>
+                            `;
+                        };
+                    }
+                    if (
+                        data.option['_state']['fields']['label'] &&
+                        data.option['_state']['fields']['XAxis'] &&
+                        data.option['_state']['fields']['YAxis']
+                    ) {
+                        return function (params) {
+                            const { data, color } = params;
+                            let xAxisSelector =
+                                data.option['_state']['fields'][
+                                    'XAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            let yAxisSelector =
+                                data.option['_state']['fields'][
+                                    'YAxisDataType'
+                                ] == 'NUMBER'
+                                    ? 'Average of'
+                                    : 'Count of';
+                            return `
+                                <div>
+                                    <span style="color:${color}">\u25CF</span>
+                                    ${data.label.formatter.toString()}<br>
+                                    ${xAxisSelector} ${apiData.headers[1]}: ${
+                                data.value[0]
+                            }<br>
+                                    ${yAxisSelector} ${apiData.headers[2]}: ${
+                                data.value[1]
+                            }<br>
+                                </div>
+                            `;
+                        };
+                    }
+                }
+                return '';
+            }
+            return '';
+        }
+        return '';
+    }
     function processData(apiData) {
         if (apiData['values']) {
             if (data.option.hasOwnProperty('_state')) {
@@ -159,17 +651,15 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['color'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             symbolSize: item[3], // Individual symbol size
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             itemStyle: {
                                 color: item[4] ? valueToHSL(item[4]) : '#00000',
+                                colorValue: item[4],
                             },
                             tooltipValue: item[5],
                         }));
@@ -181,17 +671,15 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['size'] &&
                         data.option['_state']['fields']['color']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             symbolSize: item[3], // Individual symbol size
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             itemStyle: {
                                 color: item[4] ? valueToHSL(item[4]) : '#00000',
+                                colorValue: item[4],
                             },
                         }));
                     }
@@ -202,16 +690,14 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['color'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             itemStyle: {
                                 color: item[3] ? valueToHSL(item[3]) : '#00000',
+                                colorValue: item[3],
                             },
                             tooltipValue: item[4],
                         }));
@@ -223,13 +709,10 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['size'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             symbolSize: item[3], // Individual symbol size
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             tooltipValue: item[4],
@@ -241,17 +724,16 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['YAxis'] &&
                         data.option['_state']['fields']['color']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             //symbolSize: item[2] // Individual symbol size
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             itemStyle: {
                                 color: item[3] ? valueToHSL(item[3]) : '#00000',
+
+                                colorValue: item[3],
                             },
                         }));
                     }
@@ -261,13 +743,10 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['YAxis'] &&
                         data.option['_state']['fields']['size']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             symbolSize: item[3], // Individual symbol size
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             // itemStyle: {
@@ -281,13 +760,10 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                         data.option['_state']['fields']['YAxis'] &&
                         data.option['_state']['fields']['tooltip']
                     ) {
-                        console.log('test');
                         return apiData.values.map((item) => ({
                             value: [item[1], item[2]], // x and y values
                             //symbolSize: item[2] // Individual symbol size
                             label: {
-                                show: true,
-                                position: 'top',
                                 formatter: item[0].toString(), // Use array[0] as the label
                             },
                             itemStyle: {
@@ -302,8 +778,6 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                 value: [item[1], item[2]], // x and y values
                 //symbolSize: item[2]
                 label: {
-                    show: true,
-                    position: 'top',
                     formatter: item[0].toString(), // Use array[0] as the label
                 }, // Individual symbol size
             }));
@@ -319,17 +793,12 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     }
     const echartsLoaded = debounce((chart) => {
         chart.on('brushSelected', (params) => {
-            console.log('selecteddata', params, params.batch[0].selected);
             let selectedData = params.batch[0].selected[0].dataIndex;
-            console.log(selectedData, 'selectedData');
             const currentOption = chart.getOption();
             let labelData = currentOption.series[0].data;
-            console.log(labelData, 'labelData');
-            console.log(currentOption, 'currentOption');
             const filteredLabels = selectedData.map(
                 (index) => labelData[index].label.formatter,
             );
-            console.log(filteredLabels, 'filteredLabels');
             if (filteredLabels.length > 0) {
                 handleSelection(
                     filteredLabels,
@@ -346,12 +815,8 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     const onClickChart = {
         contextmenu: (params) => {
             //  let currentOption = chart.getOption();
-            // console.log(currentOption,"currentOption")
-            console.log(params, 'params');
             if (params.data) {
                 let labelName = data.option['series'][0]['label']['name'];
-                console.log(labelName, 'labelName');
-                console.log('Right-clicked data:', params.data);
                 setContextMenu(
                     contextMenu === null
                         ? {
@@ -370,14 +835,13 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
                 params.event.event.preventDefault();
             } else {
                 params.event.event.preventDefault();
-                console.log('test');
             }
         },
     };
 
     if (!data.option) {
         return (
-            <StyledNoDataContainer {...attrs}>
+            <StyledNoDataContainer>
                 Add JSON to render your visualization
             </StyledNoDataContainer>
         );
@@ -385,12 +849,17 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     if (typeof data.option === 'string') {
         try {
             let processedFrameData = processData(frame.data);
-            console.log(processedFrameData, 'processedFrameData');
             if (processedFrameData && processedFrameData.length > 0) {
                 data.option['series'][0]['data'] = processedFrameData;
             }
+            if (!data.option['tooltip'].hasOwnProperty('formatter')) {
+                data.option['tooltip'] = {
+                    ...data.option['tooltip'],
+                    formatter: formatdatapoints(frame.data),
+                };
+            }
             return (
-                <StyledNoDataContainer {...attrs}>
+                <StyledNoDataContainer>
                     <EChartsReact
                         option={data.option}
                         // onChartReady={echartsLoaded}
@@ -400,19 +869,28 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
             );
         } catch (e) {
             return (
-                <StyledNoDataContainer error {...attrs}>
+                <StyledNoDataContainer error>
                     There was an issue parsing your JSON.
                 </StyledNoDataContainer>
             );
         }
     } else {
         let processedFrameData = processData(frame.data);
-        console.log(processedFrameData, 'processedFrameData');
         if (processedFrameData && processedFrameData.length > 0) {
             data.option['series'][0]['data'] = processedFrameData;
+            // setData('option', data.option,true);
         }
+        if (!data.option['tooltip'].hasOwnProperty('formatter')) {
+            data.option['tooltip'] = {
+                ...data.option['tooltip'],
+                formatter: formatdatapoints(frame.data),
+            };
+        }
+        console.log(data.option, 'dataoption');
+
+        console.log(data.option, 'datatest');
         return (
-            <StyledNoDataContainer {...attrs}>
+            <StyledNoDataContainer>
                 <EChartsReact
                     option={data.option}
                     onChartReady={(chart) => {

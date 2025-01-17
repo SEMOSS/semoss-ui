@@ -810,6 +810,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         top: 'top',
                     },
                     tooltip: {
+                        show: true,
                         trigger: 'item',
                     },
                     xAxis: {
@@ -830,6 +831,8 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         },
                         axisLabel: {
                             rotate: 0,
+                            fontSize: 12,
+                            color: '#000000',
                         },
                     },
                     yAxis: {
@@ -849,14 +852,24 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         },
                         axisLabel: {
                             rotate: 0,
+                            fontSize: 12,
+                            color: '#000000',
                         },
                     },
                     series: [
                         {
                             data: [],
                             label: {
+                                show: true,
+                                rotate: 0,
                                 name: '',
-                                position: top,
+                                position: 'top',
+                                fontFamily: 'sans-serif',
+                                fontSize: 12,
+                                color: '#000000',
+                            },
+                            itemStyle: {
+                                color: '#000000',
                             },
                             symbolSize: 15,
                             symbol: 'circle',
@@ -866,13 +879,7 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                     toolbox: {
                         feature: {
                             brush: {
-                                type: [
-                                    'rect',
-                                    'polygon',
-                                    'lineX',
-                                    'lineY',
-                                    'clear',
-                                ],
+                                type: ['rect'],
                             },
                         },
                     },
