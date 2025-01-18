@@ -1,4 +1,4 @@
-import { ActionMessages } from "@/stores";
+import { ActionMessages } from "../../../store";
 import { Close } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import {
@@ -10,7 +10,7 @@ import {
     Slider,
     IconButton,
 } from "@semoss/ui";
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../../hooks";
 
 const StyledHeader = styled("div")(({ theme }) => ({
     display: "flex",

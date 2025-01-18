@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings, useBlocks } from "@/hooks";
-import { Block, BlockDef } from "@/stores";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef } from "../../../store";
 import { BaseSettingSection } from "../BaseSettingSection";
-import { copy, getValueByPath } from "@/utility";
+import { copy, getValueByPath } from "../../../utility";
 import { Autocomplete, TextField } from "@mui/material";
 import { QuerySelectionSettings } from "../custom";
 

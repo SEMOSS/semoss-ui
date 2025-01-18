@@ -1,8 +1,8 @@
 import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock, useBlocks } from "@/hooks";
-import { BlockDef, BlockComponent } from "@/stores";
+import { useBlock, useBlocks } from "../../../../hooks";
+import { BlockDef, BlockComponent } from "../../../../store";
 
 export interface QueryBlockDef extends BlockDef<"query"> {
     widget: "query";

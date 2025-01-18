@@ -1,4 +1,4 @@
-import { BlockConfig } from "@/stores";
+import { BlockConfig } from "../../../../store";
 import { BorderClear } from "@mui/icons-material";
 
 import {
@@ -6,12 +6,12 @@ import {
     buildColorSection,
     buildTypographySection,
     buildDimensionsSection,
-} from "../block-defaults.shared";
+} from "../../block-defaults.shared";
 
 import { BodyBlockDef, BodyBlock } from "./BodyBlock";
-import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import { SelectInputSettings } from "@/components/block-settings/shared/SelectInputSettings";
-import { BorderSettings, SizeSettings } from "@/components/block-settings";
+import { BLOCK_TYPE_LAYOUT } from "../../block-defaults.constants";
+import { SelectInputSettings } from "../../../block-settings/shared/SelectInputSettings";
+import { BorderSettings, SizeSettings } from "../../../block-settings";
 
 // export the config for the block
 export const config: BlockConfig<BodyBlockDef> = {

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState, Suspense, lazy } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings, useBlocks } from "@/hooks";
-import { Block, BlockDef, QueryState } from "@/stores";
-import { getValueByPath } from "@/utility";
-import { DefaultBlocks } from "@/components/block-defaults";
-import { BLOCK_TYPE_INPUT } from "@/components/block-defaults/block-defaults.constants";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef, QueryState } from "../../../store";
+import { getValueByPath } from "../../../utility";
+import { DefaultBlocks } from "../../block-defaults";
+import { BLOCK_TYPE_INPUT } from "../../block-defaults/block-defaults.constants";
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));

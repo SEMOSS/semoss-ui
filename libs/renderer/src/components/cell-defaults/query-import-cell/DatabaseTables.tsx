@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { usePixel } from "@/hooks";
+import { usePixel } from "@semoss/sdk";
 import {
     styled,
     List,

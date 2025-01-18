@@ -3,8 +3,8 @@ import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import { Checkbox, Stack, TextField, Typography, styled } from "@semoss/ui";
 
-import { useBlocks } from "@/hooks";
-import { CellComponent, ActionMessages, CellState } from "@/stores";
+import { useBlocks } from "../../../hooks";
+import { CellComponent, ActionMessages, CellState } from "../../../store";
 
 import {
     Transformation,

@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../../hooks";
 import { computed } from "mobx";
-import { CellComponent, ActionMessages, CellState } from "@/stores";
+import { CellComponent, ActionMessages, CellState } from "../../../store";
 import { Stack, TextField, Typography } from "@semoss/ui";
 import { Autocomplete } from "@mui/material";
 import {

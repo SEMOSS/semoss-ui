@@ -1,17 +1,17 @@
-import { BlockConfig } from "@/stores";
+import { BlockConfig } from "../../../../store";
 import {
     InputSettings,
     QuerySelectionSettings,
     SelectOptionsSettings,
-} from "@/components/block-settings";
+} from "../../../block-settings";
 
 import { StepperBlockDef, StepperBlock } from "./StepperBlock";
 import { ViewList } from "@mui/icons-material";
 
-import { buildListener } from "../block-defaults.shared";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { SelectInputValueSettings } from "@/components/block-settings/custom/SelectInputValueSettings";
-import { SwitchSettings } from "@/components/block-settings/shared/SwitchSettings";
+import { buildListener } from "../../block-defaults.shared";
+import { BLOCK_TYPE_INPUT } from "../../block-defaults.constants";
+import { SelectInputValueSettings } from "../../../block-settings/custom/SelectInputValueSettings";
+import { SwitchSettings } from "../../../block-settings/shared/SwitchSettings";
 
 // export the config for the block
 export const config: BlockConfig<StepperBlockDef> = {

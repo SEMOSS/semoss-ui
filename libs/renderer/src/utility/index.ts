@@ -127,3 +127,37 @@ export const getEngineImage = (
 
     return obj.icon;
 };
+
+/**
+ * Get a value from an object based on the path
+ *
+ * @param target - target object to get the value from
+ * @param path - path to the attribute
+ *
+ * @returns path to the attribute
+ */
+export const getValueByPath = <T extends object>(target: T, path: string) => {
+    if (!(target instanceof Object)) {
+        return target;
+    }
+
+    if (path.length === 0) {
+        return target;
+    }
+
+    const pathArr = path.split(".");
+    for (const p of pathArr) {
+        // skip if it isn't an object or the property does not exist
+        if (
+            !(target instanceof Object) ||
+            !Object.prototype.hasOwnProperty.call(target, p)
+        ) {
+            return undefined;
+        }
+
+        // move forward
+        target = target[p];
+    }
+
+    return target;
+};

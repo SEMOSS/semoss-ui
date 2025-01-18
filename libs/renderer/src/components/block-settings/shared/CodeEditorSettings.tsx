@@ -2,15 +2,15 @@
 import { useEffect, useMemo, useRef, useState, Suspense, lazy } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "@/types";
-import { getValueByPath } from "@/utility";
-import { useBlockSettings, useBlocks, usePixel } from "@/hooks";
-import { Block, BlockDef, QueryState } from "@/stores";
-import { DefaultBlocks } from "@/components/block-defaults";
-import { BLOCK_TYPE_INPUT } from "@/components/block-defaults/block-defaults.constants";
-import { LoadingScreen } from "@/components/ui";
-import { runPixel } from "@/api";
+import { Paths, PathValue } from "../../../types";
+import { getValueByPath } from "../../../utility";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef, QueryState } from "../../../store";
+import { DefaultBlocks } from "../../block-defaults";
+import { BLOCK_TYPE_INPUT } from "../../block-defaults/block-defaults.constants";
+// import { LoadingScreen } from "@/components/ui";
 import { useNotification } from "@semoss/ui";
+import { runPixel, usePixel } from "@semoss/sdk";
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -375,7 +375,8 @@ export const CodeEditorSettings = observer(
         return (
             <>
                 {LLMLoading && (
-                    <LoadingScreen.Trigger description="Generating..." />
+                    // <LoadingScreen.Trigger description="Generating..." />
+                    <>Loading...</>
                 )}
                 <Suspense fallback={<>...</>}>
                     <Editor

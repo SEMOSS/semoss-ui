@@ -1,4 +1,4 @@
-import { CellConfig } from "@/stores";
+import { CellConfig } from "../../../store";
 import { CodeCell, CodeCellDef } from "./CodeCell";
 
 export const CodeCellConfig: CellConfig<CodeCellDef> = {

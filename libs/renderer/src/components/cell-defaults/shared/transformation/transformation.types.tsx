@@ -1,4 +1,4 @@
-import { CellDef } from "@/stores";
+import { CellDef } from "../../../../store";
 
 export type operation = "==" | "<" | ">" | "!=" | "<=" | ">=" | "?like";
 

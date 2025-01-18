@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Autocomplete, TextField } from "@mui/material";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings, useBlocks } from "@/hooks";
-import { Block, BlockDef } from "@/stores";
-import { getValueByPath } from "@/utility";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef } from "../../../store";
+import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface QueryNameDropdownSettingsProps<D extends BlockDef = BlockDef> {

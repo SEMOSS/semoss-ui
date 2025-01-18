@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Stack, Typography } from "@semoss/ui";
-import { CellComponent, ActionMessages, CellState } from "@/stores";
-import { useBlocks } from "@/hooks";
+import { CellComponent, ActionMessages, CellState } from "../../../store";
+import { useBlocks } from "../../../hooks";
 
 import {
     Transformation,

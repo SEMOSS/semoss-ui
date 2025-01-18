@@ -1,5 +1,5 @@
-import { BlockConfig } from "@/stores";
-import { InputSettings } from "@/components/block-settings";
+import { BlockConfig } from "../../../../store";
+import { InputSettings } from "../../../block-settings";
 
 import {
     buildLayoutSection,
@@ -8,11 +8,11 @@ import {
     buildColorSection,
     buildTypographySection,
     buildBorderSection,
-} from "../block-defaults.shared";
+} from "../../block-defaults.shared";
 
 import { FormBlockDef, FormBlock } from "./FormBlock";
 import { DynamicForm } from "@mui/icons-material";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
+import { BLOCK_TYPE_INPUT } from "../../block-defaults.constants";
 
 // export the config for the block
 export const config: BlockConfig<FormBlockDef> = {

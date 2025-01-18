@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings, useBlocks } from "@/hooks";
-import { Block, BlockDef, CellState, QueryState, Variable } from "@/stores";
-import { getValueByPath } from "@/utility";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import {
+    Block,
+    BlockDef,
+    CellState,
+    QueryState,
+    Variable,
+} from "../../../store";
+import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
 import {
     Stack,
@@ -29,8 +35,8 @@ import {
     SwitchAccessShortcutOutlined,
     TokenOutlined,
 } from "@mui/icons-material";
-import { ModelBrain } from "@/assets/img/ModelBrain";
-import { Database } from "@/assets/img/Database";
+import { ModelBrain } from "../../../assets/ModelBrain";
+import { Database } from "../../../assets/Database";
 
 interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
     /**

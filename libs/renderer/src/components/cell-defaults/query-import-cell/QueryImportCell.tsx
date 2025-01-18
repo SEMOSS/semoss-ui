@@ -10,8 +10,9 @@ import {
 } from "@mui/icons-material";
 import { DatabaseTables } from "./DatabaseTables";
 
-import { ActionMessages, CellComponent, CellDef } from "@/stores";
-import { useBlocks, usePixel } from "@/hooks";
+import { ActionMessages, CellComponent, CellDef } from "../../../store";
+import { useBlocks } from "../../../hooks";
+import { usePixel } from "@semoss/sdk";
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));

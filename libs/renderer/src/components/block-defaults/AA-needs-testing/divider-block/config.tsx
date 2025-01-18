@@ -1,15 +1,15 @@
-import { BlockConfig } from "@/stores";
-import { ButtonGroupSettings } from "@/components/block-settings";
+import { BlockConfig } from "../../../../store";
+import { ButtonGroupSettings } from "../../../block-settings";
 
 import {
     buildSpacingSection,
     buildDimensionsSection,
     buildColorSection,
-} from "../block-defaults.shared";
+} from "../../block-defaults.shared";
 
 import { DividerBlockDef, DividerBlock } from "./DividerBlock";
 import { HorizontalRule } from "@mui/icons-material";
-import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
+import { BLOCK_TYPE_LAYOUT } from "../../block-defaults.constants";
 import { VerticalDividerIcon } from "./VerticalDividerIcon";
 
 // export the config for the block

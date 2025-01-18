@@ -1,4 +1,4 @@
-import { CellConfig } from "@/stores";
+import { CellConfig } from "../../../store";
 import {
     TimestampTransformationCell,
     TimestampTransformationCellDef,

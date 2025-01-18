@@ -1,9 +1,9 @@
 import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock } from "@/hooks";
-import { BlockDef, BlockComponent } from "@/stores";
-import { Slot } from "@/components/blocks";
+import { useBlock } from "../../../../hooks";
+import { BlockDef, BlockComponent } from "../../../../store";
+import { Slot } from "../../../blocks";
 
 export interface BodyBlockDef extends BlockDef<"body"> {
     widget: "body";

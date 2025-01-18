@@ -1,4 +1,4 @@
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "../../../hooks";
 import { observer } from "mobx-react-lite";
 
 interface ConditionalVariationSettingsProps {

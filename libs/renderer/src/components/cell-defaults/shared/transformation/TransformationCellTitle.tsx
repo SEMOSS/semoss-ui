@@ -6,8 +6,8 @@ import {
     CellState,
     CellStateConfig,
     NewCellAction,
-} from "@/stores";
-import { useBlocks } from "@/hooks";
+} from "../../../../store";
+import { useBlocks } from "../../../../hooks";
 import {
     FilterFrames,
     Transform,

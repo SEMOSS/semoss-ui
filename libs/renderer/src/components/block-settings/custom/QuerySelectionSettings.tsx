@@ -3,10 +3,10 @@ import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { TextField } from "@semoss/ui";
 import { Autocomplete } from "@mui/material";
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings, useBlocks } from "@/hooks";
-import { Block, BlockDef, Variable } from "@/stores";
-import { getValueByPath } from "@/utility";
+import { Paths, PathValue } from "../../../types";
+import { useBlockSettings, useBlocks } from "../../../hooks";
+import { Block, BlockDef, Variable } from "../../../store";
+import { getValueByPath } from "../../../utility";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {

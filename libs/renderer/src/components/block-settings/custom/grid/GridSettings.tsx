@@ -3,10 +3,10 @@ import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { MenuItem, Select, Stack, Typography } from "@semoss/ui";
 
-import { Paths, PathValue } from "@/types";
-import { useBlockSettings } from "@/hooks";
-import { Block, BlockDef } from "@/stores";
-import { getValueByPath } from "@/utility";
+import { Paths, PathValue } from "../../../../types";
+import { useBlockSettings } from "../../../../hooks";
+import { Block, BlockDef } from "../../../../store";
+import { getValueByPath } from "../../../../utility";
 import { BaseSettingSection } from "../../BaseSettingSection";
 import {
     FourByFourIcon,

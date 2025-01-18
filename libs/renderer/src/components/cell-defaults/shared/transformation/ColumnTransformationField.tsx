@@ -3,11 +3,10 @@ import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import { TextField } from "@semoss/ui";
 import { Autocomplete } from "@mui/material";
-import { runPixel } from "@/api";
-import { CellState } from "@/stores";
+import { CellState } from "../../../../store";
 import { TransformationTargetCell, ColumnInfo } from "./transformation.types";
 import { useBlocksPixel } from "@/hooks/useBlocksPixel";
-
+import { runPixel } from "@semoss/sdk";
 interface FrameHeaderInfo {
     headers: {
         alias: string;

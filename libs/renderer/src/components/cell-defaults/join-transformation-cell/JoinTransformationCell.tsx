@@ -1,6 +1,6 @@
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../../hooks";
 import { computed } from "mobx";
-import { CellComponent, ActionMessages, CellState } from "@/stores";
+import { CellComponent, ActionMessages, CellState } from "../../../store";
 import { TextField, Stack, Typography, styled } from "@semoss/ui";
 import { Autocomplete, Box } from "@mui/material";
 import {

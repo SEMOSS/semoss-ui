@@ -7,18 +7,17 @@ import {
     Typography,
     styled,
 } from "@semoss/ui";
-import { THEME } from "@/constants";
 import { green } from "@mui/material/colors";
-import { ActionMessages } from "@/stores";
+import { ActionMessages } from "../../../../store";
 import { AccountTree, KeyboardArrowDown } from "@mui/icons-material";
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../../../hooks";
 import React from "react";
 
-export const TransformationChip = styled(Chip)(({ theme }) => ({
+const TransformationChip = styled(Chip)(({ theme }) => ({
     paddingLeft: theme.spacing(0.5),
 }));
 
-export const TransformationChipAvatar = styled(Avatar, {
+const TransformationChipAvatar = styled(Avatar, {
     shouldForwardProp: (prop) => prop !== "color",
 })<{ color: string }>(({ theme, color }) => ({
     borderRadius: "4px",
@@ -33,7 +32,7 @@ export const TransformationChipAvatar = styled(Avatar, {
     }),
 }));
 
-export const StyledTypography = styled(Typography)(({ theme }) => ({
+const StyledTypography = styled(Typography)(({ theme }) => ({
     lineHeight: "24px",
     fontWeight: theme.typography.fontWeightBold,
 }));
@@ -68,15 +67,11 @@ export const TransformationCellInput: TransformationCellInputComponent = (
                 <div>
                     <TransformationChip
                         size="small"
-                        color={THEME.name === "SEMOSS" ? "primary" : "green"}
+                        color={"primary"}
                         label={display}
                         avatar={
                             <TransformationChipAvatar
-                                color={
-                                    THEME.name === "SEMOSS"
-                                        ? "primary"
-                                        : "green"
-                                }
+                                color={"primary"}
                                 variant="rounded"
                             >
                                 <Icon />

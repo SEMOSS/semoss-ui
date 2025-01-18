@@ -1,9 +1,9 @@
-import { BlockConfig } from "@/stores";
+import { BlockConfig } from "../../../../store";
 
 import { QueryBlockDef, QueryBlock } from "./QueryBlock";
 import { HighlightAlt } from "@mui/icons-material";
-import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import { InputSettings } from "@/components/block-settings";
+import { BLOCK_TYPE_LAYOUT } from "../../block-defaults.constants";
+import { InputSettings } from "../../../block-settings";
 
 // export the config for the block
 export const config: BlockConfig<QueryBlockDef> = {

@@ -8,13 +8,18 @@ import {
     Typography,
     useNotification,
 } from "@semoss/ui";
-import { ActionMessages, CellComponent, CellDef, Variant } from "@/stores";
-import { useBlocks, useRootStore } from "@/hooks";
+import {
+    ActionMessages,
+    CellComponent,
+    CellDef,
+    Variant,
+} from "../../../store";
+import { useBlocks } from "../../../hooks";
 import { LLMCellVariant } from "./LLMCellVariant";
 import { toJS } from "mobx";
 import { Add } from "@mui/icons-material";
 import { generateVariantName } from "@/components/block-defaults/llm-comparison-block/LlmComparison.utility";
-
+import { runPixel } from "@semoss/sdk";
 export interface LLMCellDef extends CellDef<"llm"> {
     widget: "llm";
     parameters: {
@@ -47,7 +52,7 @@ const StyledActionButtons = styled("div")(({ theme }) => ({
 
 export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     const { state } = useBlocks();
-    const { monolithStore } = useRootStore();
+    // const { monolithStore } = useRootStore();
     const notification = useNotification();
     const [allModels, setAllModels] = useState<{ name: string; id: string }[]>(
         [],
@@ -57,7 +62,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     const command = cell.parameters.command;
 
     useEffect(() => {
-        fetchAllModels();
+        // fetchAllModels();
 
         if (Object.keys(variants).length === 0) {
             // Create a 'default variant' for the user to configure
@@ -84,18 +89,18 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
         }
     }, []);
 
-    const fetchAllModels = async () => {
-        const pixel = `MyEngines(engineTypes=["MODEL"])`;
-        const res = await monolithStore.runQuery(pixel);
+    // const fetchAllModels = async () => {
+    //     const pixel = `MyEngines(engineTypes=["MODEL"])`;
+    //     const res = await runPixel(pixel);
 
-        const modelled = res.pixelReturn[0].output.map((model) => {
-            return {
-                name: model.database_name,
-                id: model.database_id,
-            };
-        });
-        setAllModels(modelled);
-    };
+    //     const modelled = res.pixelReturn[0].output.map((model) => {
+    //         return {
+    //             name: model.database_name,
+    //             id: model.database_id,
+    //         };
+    //     });
+    //     setAllModels(modelled);
+    // };
 
     const handleChange = (newValue, path) => {
         if (cell.isLoading) {

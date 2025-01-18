@@ -1,6 +1,6 @@
 import { computed } from "mobx";
-import { ActionMessages, CellState } from "@/stores";
-import { useBlocks } from "@/hooks";
+import { ActionMessages, CellState } from "../../../../store";
+import { useBlocks } from "../../../../hooks";
 import { IconButton } from "@semoss/ui";
 import { PlayCircle } from "@mui/icons-material";
 import { QueryImportCellDef } from "../../query-import-cell";

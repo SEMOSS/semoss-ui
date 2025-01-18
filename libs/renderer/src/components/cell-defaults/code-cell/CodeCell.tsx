@@ -2,11 +2,21 @@ import { useRef, useState, Suspense, lazy } from "react";
 import { observer } from "mobx-react-lite";
 import { styled, Button, Stack } from "@semoss/ui";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
-import { CellDef, Variable } from "@/stores";
-import { runPixel } from "@/api";
-import { ActionMessages, CellComponent } from "@/stores";
-import { useBlocks, useLLM, useRootStore, useWorkspace } from "@/hooks";
-import { LoadingScreen } from "@/components/ui";
+import {
+    ActionMessages,
+    CellComponent,
+    CellDef,
+    Variable,
+} from "../../../store";
+// import { runPixel } from "@/api";
+import { runPixel } from "@semoss/sdk";
+import {
+    useBlocks,
+    // useLLM,
+    // useRootStore,
+    // useWorkspace
+} from "@/hooks";
+// import { LoadingScreen } from "@/components/ui";
 import { StyledSelect, StyledSelectItem } from "../shared";
 
 import { PythonIcon, RIcon } from "./icons";
@@ -85,7 +95,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const { cell, isExpanded } = props;
     const { state } = useBlocks();
-    const { configStore } = useRootStore();
+    // const { configStore } = useRootStore();
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
@@ -98,41 +108,41 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
-    const { workspace } = useWorkspace();
+    // const { workspace } = useWorkspace();
 
     /**
      * Ask a LLM a question to generate a response
      * @param prompt - prompt passed to the LLM
      * @returns LLM Response
      */
-    const promptLLM = async (prompt: string) => {
-        try {
-            setLLMLoading(true);
+    // const promptLLM = async (prompt: string) => {
+    //     try {
+    //         setLLMLoading(true);
 
-            if (!workspace.agentModelEngine) {
-                throw new Error("No Agent Model Engine");
-            }
+    //         if (!workspace.agentModelEngine) {
+    //             throw new Error("No Agent Model Engine");
+    //         }
 
-            const res = await runPixel(
-                `LLM(engine = "${workspace.agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
-            );
+    //         const res = await runPixel(
+    //             `LLM(engine = "${workspace.agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+    //         );
 
-            const LLMResponse = res.pixelReturn[0].output["response"];
-            let trimmedStarterCode = LLMResponse;
-            trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
+    //         const LLMResponse = res.pixelReturn[0].output["response"];
+    //         let trimmedStarterCode = LLMResponse;
+    //         trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
-            trimmedStarterCode = trimmedStarterCode.substring(
-                trimmedStarterCode.indexOf("\n") + 1,
-            );
+    //         trimmedStarterCode = trimmedStarterCode.substring(
+    //             trimmedStarterCode.indexOf("\n") + 1,
+    //         );
 
-            return trimmedStarterCode;
-        } catch {
-            console.error("Failed response from AI Code Generator");
-            return "";
-        } finally {
-            setLLMLoading(false);
-        }
-    };
+    //         return trimmedStarterCode;
+    //     } catch {
+    //         console.error("Failed response from AI Code Generator");
+    //         return "";
+    //     } finally {
+    //         setLLMLoading(false);
+    //     }
+    // };
 
     /**
      * Handle mounting of the diff editor
@@ -255,36 +265,32 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
             ],
 
             run: async (editor) => {
-                const selection = editor.getSelection();
-                selectionRef.current = selection;
-                const selectedText = editor
-                    .getModel()
-                    .getValueInRange(selection);
-
-                const LLMReturnText = await promptLLM(
-                    `Create code for a .${
-                        EditorLanguages[cell.parameters.type]
-                    } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-                );
-                LLMReturnRef.current = LLMReturnText;
-
-                setOldContentDiffEdit(editor.getModel().getValue());
-
-                editor.executeEdits("custom-action", [
-                    {
-                        range: new monaco.Range(
-                            selection.endLineNumber + 2,
-                            1,
-                            selection.endLineNumber + 2,
-                            1,
-                        ),
-                        text: `\n\n${LLMReturnText}\n`,
-                        forceMoveMarkers: true,
-                    },
-                ]);
-
-                setNewContentDiffEdit(editor.getModel().getValue());
-                setDiffEditMode(true);
+                // const selection = editor.getSelection();
+                // selectionRef.current = selection;
+                // const selectedText = editor
+                //     .getModel()
+                //     .getValueInRange(selection);
+                // const LLMReturnText = await promptLLM(
+                //     `Create code for a .${
+                //         EditorLanguages[cell.parameters.type]
+                //     } file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+                // );
+                // LLMReturnRef.current = LLMReturnText;
+                // setOldContentDiffEdit(editor.getModel().getValue());
+                // editor.executeEdits("custom-action", [
+                //     {
+                //         range: new monaco.Range(
+                //             selection.endLineNumber + 2,
+                //             1,
+                //             selection.endLineNumber + 2,
+                //             1,
+                //         ),
+                //         text: `\n\n${LLMReturnText}\n`,
+                //         forceMoveMarkers: true,
+                //     },
+                // ]);
+                // setNewContentDiffEdit(editor.getModel().getValue());
+                // setDiffEditMode(true);
             },
         });
 
@@ -375,33 +381,32 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
                                 //trigger reactor suggestions
                                 if (word.word !== "") {
-                                    const suggestions =
-                                        configStore.generalReactors.map(
-                                            (reactor) => ({
-                                                label: {
-                                                    label: reactor,
-                                                    description:
-                                                        "General Reactor",
-                                                },
-                                                kind: monaco.languages
-                                                    .CompletionItemKind
-                                                    .Function,
-                                                insertText: reactor,
-                                                range: {
-                                                    startLineNumber:
-                                                        position.lineNumber,
-                                                    endLineNumber:
-                                                        position.lineNumber,
-                                                    startColumn:
-                                                        word.startColumn,
-                                                    endColumn: word.startColumn,
-                                                },
-                                            }),
-                                        );
-
-                                    return {
-                                        suggestions: suggestions,
-                                    };
+                                    // const suggestions =
+                                    //     configStore.generalReactors.map(
+                                    //         (reactor) => ({
+                                    //             label: {
+                                    //                 label: reactor,
+                                    //                 description:
+                                    //                     "General Reactor",
+                                    //             },
+                                    //             kind: monaco.languages
+                                    //                 .CompletionItemKind
+                                    //                 .Function,
+                                    //             insertText: reactor,
+                                    //             range: {
+                                    //                 startLineNumber:
+                                    //                     position.lineNumber,
+                                    //                 endLineNumber:
+                                    //                     position.lineNumber,
+                                    //                 startColumn:
+                                    //                     word.startColumn,
+                                    //                 endColumn: word.startColumn,
+                                    //             },
+                                    //         }),
+                                    //     );
+                                    // return {
+                                    //     suggestions: suggestions,
+                                    // };
                                 }
 
                                 // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
@@ -578,7 +583,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     return (
         <StyledContent>
             {LLMLoading && (
-                <LoadingScreen.Trigger description="Generating..." />
+                <>Loading...</>
+                // <LoadingScreen.Trigger description="Generating..." />
             )}
 
             <Stack direction="row" spacing={1}>

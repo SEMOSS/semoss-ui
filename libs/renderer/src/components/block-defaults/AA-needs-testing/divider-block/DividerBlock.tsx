@@ -1,8 +1,8 @@
 import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock } from "@/hooks";
-import { BlockDef, BlockComponent } from "@/stores";
+import { useBlock } from "../../../../hooks";
+import { BlockDef, BlockComponent } from "../../../../store";
 import { Divider } from "@semoss/ui";
 
 export interface DividerBlockDef extends BlockDef<"divider"> {

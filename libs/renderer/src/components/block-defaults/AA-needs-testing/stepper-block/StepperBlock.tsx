@@ -1,6 +1,6 @@
 import React from "react";
-import { useBlock, useDebounce } from "@/hooks";
-import { BlockComponent, BlockDef } from "@/stores";
+import { useBlock, useDebounce } from "../../../../hooks";
+import { BlockComponent, BlockDef } from "../../../../store";
 import { observer } from "mobx-react-lite";
 import { Step, StepLabel, Stepper } from "@mui/material";
 
