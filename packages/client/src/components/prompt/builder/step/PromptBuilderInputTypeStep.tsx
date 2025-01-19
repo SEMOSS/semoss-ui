@@ -156,6 +156,7 @@ export const PromptBuilderInputTypeStep = (props: {
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection
                         inputToken={inputToken}
+                        builder={props.builder}
                         // optional chaining prevents crash after step 2 changes
                         inputType={inputTypes[inputToken.index]?.type}
                         inputTypeMeta={inputTypes[inputToken.index]?.meta}

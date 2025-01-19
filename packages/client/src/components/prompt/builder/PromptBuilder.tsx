@@ -210,6 +210,19 @@ export const PromptBuilder = () => {
             },
         );
         switch (step) {
+            case PROMPT_BUILDER_CONTEXT_STEP:
+                return stepItems.every((builderStepItem: BuilderStepItem) => {
+                    if (!builderStepItem.required) {
+                        return true;
+                    }
+                    if (builderStepItem.display === 'LLM') {
+                        const useDefaultLLM = builder.useDefaultLLM?.value;
+                        if (!useDefaultLLM) {
+                            return true;
+                        }
+                    }
+                    return !!builderStepItem.value;
+                });
             case PROMPT_BUILDER_INPUT_TYPES_STEP:
                 // input type step - required only if there are inputs
                 if (stepItems[0].value === undefined) {
@@ -289,7 +302,7 @@ export const PromptBuilder = () => {
                 )}
                 <Button
                     color="primary"
-                    // disabled={!isBuilderStepComplete(currentBuilderStep)}
+                    disabled={!isBuilderStepComplete(currentBuilderStep)}
                     variant="contained"
                     onClick={nextButtonAction}
                     loading={createAppLoading}

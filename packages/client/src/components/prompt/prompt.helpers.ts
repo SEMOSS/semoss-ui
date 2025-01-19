@@ -30,7 +30,8 @@ export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
 export const MODEL_ID = 'Model';
 export const MODELS_ID = 'Models';
 export const VECTORS_ID = 'Vectors';
-export const PROMPT_MY_ENGINES_ID = 'My Engines';
+export const PROMPT_MY_ENGINES_MODELS_ID = 'My Engines Models';
+export const PROMPT_MY_ENGINES_VECTORS_ID = 'My Engines Vectors';
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -348,16 +349,24 @@ export function getQueryForPrompt(
         },
     ];
 
-    const myEnginesCells = [];
+    const myEnginesModels = [];
+    const myEnginesVectors = [];
+
+    const needsModels = Object.values(inputTypes ?? {}).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_MODELS,
+    );
+
+    const needsVectors = Object.values(inputTypes ?? {}).some(
+        (inputType) =>
+            inputType.type === INPUT_TYPE_SELECT &&
+            inputType.meta === SELECT_TYPE_VECTORS,
+    );
+
     // Add Models cell if needed
-    if (
-        Object.values(inputTypes ?? {}).some(
-            (inputType) =>
-                inputType.type === INPUT_TYPE_SELECT &&
-                inputType.meta === SELECT_TYPE_MODELS,
-        )
-    ) {
-        myEnginesCells.push(
+    if (needsModels) {
+        myEnginesModels.push(
             ...[
                 {
                     id: 'models-query',
@@ -372,14 +381,8 @@ export function getQueryForPrompt(
     }
 
     // Add Vectors cell if needed
-    if (
-        Object.values(inputTypes ?? {}).some(
-            (inputType) =>
-                inputType.type === INPUT_TYPE_SELECT &&
-                inputType.meta === SELECT_TYPE_VECTORS,
-        )
-    ) {
-        myEnginesCells.push(
+    if (needsVectors) {
+        myEnginesVectors.push(
             ...[
                 {
                     id: 'vectors-query',
@@ -456,10 +459,18 @@ export function getQueryForPrompt(
                 },
             ],
         },
-        [PROMPT_MY_ENGINES_ID]: {
-            id: PROMPT_MY_ENGINES_ID,
-            cells: myEnginesCells,
-        },
+        ...(needsModels && {
+            [PROMPT_MY_ENGINES_MODELS_ID]: {
+                id: PROMPT_MY_ENGINES_MODELS_ID,
+                cells: myEnginesModels,
+            },
+        }),
+        ...(needsVectors && {
+            [PROMPT_MY_ENGINES_VECTORS_ID]: {
+                id: PROMPT_MY_ENGINES_VECTORS_ID,
+                cells: myEnginesVectors,
+            },
+        }),
     };
 
     return queryJson;
@@ -507,13 +518,13 @@ export async function setBlocksAndOpenUIBuilder(
             ...(needsModels && {
                 [MODELS_ID]: {
                     type: 'query',
-                    to: PROMPT_MY_ENGINES_ID,
+                    to: PROMPT_MY_ENGINES_MODELS_ID,
                 },
             }),
             ...(needsVectors && {
                 [VECTORS_ID]: {
                     type: 'query',
-                    to: PROMPT_MY_ENGINES_ID,
+                    to: PROMPT_MY_ENGINES_VECTORS_ID,
                 },
             }),
         },
@@ -547,7 +558,7 @@ export async function setBlocksAndOpenUIBuilder(
                                       message:
                                           ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
                                       payload: {
-                                          queryId: PROMPT_MY_ENGINES_ID,
+                                          queryId: PROMPT_MY_ENGINES_MODELS_ID,
                                       },
                                   },
                               ]
@@ -558,7 +569,7 @@ export async function setBlocksAndOpenUIBuilder(
                                       message:
                                           ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
                                       payload: {
-                                          queryId: PROMPT_MY_ENGINES_ID,
+                                          queryId: PROMPT_MY_ENGINES_VECTORS_ID,
                                       },
                                   },
                               ]

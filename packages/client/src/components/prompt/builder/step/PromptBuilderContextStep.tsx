@@ -78,6 +78,15 @@ export const PromptBuilderContextStep = (props: {
         }
     };
 
+    const handleUseDefaultLLMChange = (checked: boolean) => {
+        props.setBuilderValue('useDefaultLLM', checked);
+        // Reset model and temperature when unchecking
+        if (!checked) {
+            props.setBuilderValue('model', undefined);
+            props.setBuilderValue('temperature', '0.7');
+        }
+    };
+
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
@@ -137,8 +146,7 @@ export const PromptBuilderContextStep = (props: {
                                 <Checkbox
                                     checked={showLLMSettings}
                                     onChange={(e) =>
-                                        props.setBuilderValue(
-                                            'useDefaultLLM',
+                                        handleUseDefaultLLMChange(
                                             e.target.checked,
                                         )
                                     }

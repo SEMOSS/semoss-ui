@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Token } from '../../prompt.types';
+import { Builder, Token } from '../../prompt.types';
 import { Autocomplete } from '@mui/material';
 import { usePixel } from '@/hooks';
 import {
@@ -35,6 +35,7 @@ export const PromptBuilderInputTypeSelection = (props: {
     inputToken: Token;
     inputType: string | null;
     inputTypeMeta: string | null;
+    builder: Builder; // Add builder to props to check useDefaultLLM
     cfgLibraryVectorDbs: {
         loading: boolean;
         ids: Array<string>;
@@ -52,53 +53,6 @@ export const PromptBuilderInputTypeSelection = (props: {
         options?: string[] | null,
     ) => void;
 }) => {
-    // Fetch models only when Models type is selected
-    const myModels = usePixel<
-        { app_id: string; app_name: string; tag: string }[]
-    >(
-        props.inputTypeMeta === SELECT_TYPE_MODELS
-            ? `MyEngines(engineTypes=['MODEL']);`
-            : null,
-    );
-
-    // Fetch vectors only when Vectors type is selected
-    const myVectors = usePixel<{ app_id: string; app_name: string }[]>(
-        props.inputTypeMeta === SELECT_TYPE_VECTORS
-            ? `MyEngines(engineTypes=['VECTOR']);`
-            : null,
-    );
-
-    // Auto-populate options when Models/Vectors are selected
-    useEffect(() => {
-        if (
-            props.inputTypeMeta === SELECT_TYPE_MODELS &&
-            myModels.status === 'SUCCESS'
-        ) {
-            const modelOptions = myModels.data
-                .filter((model) => model.tag !== 'embeddings')
-                .map((model) => model.app_name);
-            props.setInputType(
-                props.inputToken.index,
-                INPUT_TYPE_SELECT,
-                SELECT_TYPE_MODELS,
-                modelOptions,
-            );
-        } else if (
-            props.inputTypeMeta === SELECT_TYPE_VECTORS &&
-            myVectors.status === 'SUCCESS'
-        ) {
-            const vectorOptions = myVectors.data.map(
-                (vector) => vector.app_name,
-            );
-            props.setInputType(
-                props.inputToken.index,
-                INPUT_TYPE_SELECT,
-                SELECT_TYPE_VECTORS,
-                vectorOptions,
-            );
-        }
-    }, [myModels.status, myVectors.status, props.inputTypeMeta]);
-
     const showMetaAutocomplete =
         props.inputType === INPUT_TYPE_VECTOR ||
         props.inputType === INPUT_TYPE_DATABASE ||
@@ -110,25 +64,23 @@ export const PromptBuilderInputTypeSelection = (props: {
                 return props.cfgLibraryVectorDbs.loading;
             case INPUT_TYPE_DATABASE:
                 return props.cfgLibraryDatabases.loading;
-            case INPUT_TYPE_SELECT:
-                return props.inputTypeMeta === SELECT_TYPE_MODELS
-                    ? myModels.status === 'LOADING'
-                    : props.inputTypeMeta === SELECT_TYPE_VECTORS
-                    ? myVectors.status === 'LOADING'
-                    : false;
             default:
                 return false;
         }
     };
 
     const getMetaSelectorOptions = (): Array<string> => {
+        const useDefaultLLM = props.builder.useDefaultLLM?.value as boolean;
         switch (props.inputType) {
             case INPUT_TYPE_VECTOR:
                 return props.cfgLibraryVectorDbs.ids;
             case INPUT_TYPE_DATABASE:
                 return props.cfgLibraryDatabases.ids;
             case INPUT_TYPE_SELECT:
-                return ['User Input', 'Models', 'Vectors'];
+                // Filter out Models option if default LLM is set
+                return useDefaultLLM
+                    ? ['User Input', 'Vectors'] // Remove Models option if default LLM is set
+                    : ['User Input', 'Models', 'Vectors'];
             default:
                 return [];
         }
