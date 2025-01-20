@@ -100,6 +100,7 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
                 `div#${workingPage} div[data-block="${id}"]`,
             );
             let dataBlockIdElement: any = dataBlockElement.children[0];
+            let dataBlockInstanceElement: any = dataBlockIdElement.children[0];
             echartInstance.current.resize({
                 width: dataElementWidth,
                 height: dataElementHeight,
@@ -113,6 +114,9 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
                 dataBlockIdElement.style.width = dataElementWidth + 'px';
                 dataBlockElement.style.height = dataElementHeight + 'px';
                 dataBlockIdElement.style.height = dataElementHeight + 'px';
+                dataBlockInstanceElement.style.width = dataElementWidth + 'px';
+                dataBlockInstanceElement.style.height =
+                    dataElementHeight + 'px';
             }, 100);
         }
 
@@ -143,12 +147,13 @@ export const BarChartProperties = observer<BarChartPropertiesProps>(
         );
 
         return (
-            <CustomAccordianBlock
-                accordianExpanded={false}
-                accordianSummaryProps={<ExpandMoreIcon />}
-                accordianSummary={'Chart Properties'}
-                accordianDetails={accordionDetails}
-            />
+            // <CustomAccordianBlock
+            //     accordianExpanded={false}
+            //     accordianSummaryProps={<ExpandMoreIcon />}
+            //     accordianSummary={'Chart Properties'}
+            //     accordianDetails={accordionDetails}
+            // />
+            <>{accordionDetails}</>
         );
     },
 );

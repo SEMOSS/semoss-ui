@@ -66,6 +66,7 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
         applyRulesToChart: false,
     });
     const path = 'option';
+    const columnData = data.columns || [];
     // get the value of the input (wrapped in usememo because of path prop)
     const computedValue = useMemo(() => {
         return computed(() => {
@@ -132,9 +133,24 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
             let optionUpdated = option;
             appliedRules.forEach((appliedItem, index) => {
                 let xAxisPosition = getXAxisPositions(appliedItem);
+                let columnsName = columnData.find(
+                    (colitem) =>
+                        colitem.selector === appliedItem.columnToColour,
+                );
+                console.log(
+                    columnData,
+                    columnsName.name,
+                    appliedItem,
+                    'columnsName',
+                );
+                let seriesIndexData = option['series'].findIndex(
+                    (opt) =>
+                        BAR_CHART_DATA.JSONVALUE.includes(opt.type) &&
+                        opt.name === columnsName.name,
+                );
                 if (xAxisPosition.length) {
-                    if (seriesIndex > -1) {
-                        let data = option['series'][seriesIndex]['data'];
+                    if (seriesIndexData > -1) {
+                        let data = option['series'][seriesIndexData]['data'];
                         data.forEach((item, dataindex) => {
                             colourObj = {
                                 ...colourObj,
@@ -152,20 +168,22 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                             };
                         });
                         if (
-                            option['series'][seriesIndex].hasOwnProperty(
+                            option['series'][seriesIndexData].hasOwnProperty(
                                 'itemStyle',
                             )
                         ) {
-                            option['series'][seriesIndex]['itemStyle'] = {
-                                ...option['series'][seriesIndex]['itemStyle'],
+                            option['series'][seriesIndexData]['itemStyle'] = {
+                                ...option['series'][seriesIndexData][
+                                    'itemStyle'
+                                ],
                                 ['color']: (seriesData) =>
                                     updateColorData(seriesData, colourObj),
                             };
                         } else {
-                            option['series'][seriesIndex] = {
-                                ...option['series'][seriesIndex],
+                            option['series'][seriesIndexData] = {
+                                ...option['series'][seriesIndexData],
                                 ['itemStyle']: {
-                                    ...option['series'][seriesIndex][
+                                    ...option['series'][seriesIndexData][
                                         'itemStyle'
                                     ],
                                     ['color']: (seriesData) =>
@@ -529,7 +547,9 @@ const ColourByValue = observer<ColourByValueProps>(({ id, updateChart }) => {
                             appliedRules.map((rule, index) => {
                                 return (
                                     <tr>
-                                        <td>{rule.column}</td>
+                                        <td>
+                                            {rule.column} {rule.columnToColour}
+                                        </td>
                                         <td>{`${rule.column} ${
                                             rule.columnComparision
                                         } ${

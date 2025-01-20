@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBlockSettings } from '@/hooks';
 import { observer } from 'mobx-react-lite';
 import { List, styled } from '@semoss/ui';
@@ -22,6 +22,7 @@ import { CustomizeValueLabels } from './CustomizeValueLabels';
 import { ChartStyling } from './ChartStyling';
 import { ToggleTrendline } from './ToggleTrendline';
 import { VisualizationStyles } from './VisualizationStyles';
+import { BarChartProperties } from './BarChartProperties';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -36,6 +37,13 @@ export const UpgradedVisualizationTool =
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [selectedList, setSelectedList] = useState('');
+        let mountedRef = useRef({ componentMounted: false });
+        useEffect(() => {
+            mountedRef.current.componentMounted = true;
+            return () => {
+                mountedRef.current.componentMounted = false;
+            };
+        }, []);
         function updateChart() {}
         return (
             <>
@@ -117,6 +125,7 @@ export const UpgradedVisualizationTool =
                         </ListItemButton>
                         {selectedList === 'editxaxis' && (
                             <EditXAxis
+                                id={id}
                                 option={data.option}
                                 updateChart={updateChart}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
@@ -147,6 +156,7 @@ export const UpgradedVisualizationTool =
                         </ListItemButton>
                         {selectedList === 'edityaxis' && (
                             <EditYAxis
+                                id={id}
                                 option={data.option}
                                 updateChart={updateChart}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
@@ -179,6 +189,7 @@ export const UpgradedVisualizationTool =
                         </ListItemButton>
                         {selectedList === 'valuelabel' && (
                             <CustomizeValueLabels
+                                id={id}
                                 option={data.option}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
                                 updateChart={updateChart}
@@ -245,6 +256,37 @@ export const UpgradedVisualizationTool =
                                 options={data.option}
                                 updateChart={updateChart}
                                 chartType={BAR_CHART_DATA.JSONVALUE[0]}
+                            />
+                        )}
+                    </StyledListItem>
+                    <StyledListItem disablePadding>
+                        <ListItemButton
+                            onClick={(e) =>
+                                setSelectedList((prevList) =>
+                                    prevList === 'sizing' ? '' : 'sizing',
+                                )
+                            }
+                            selected={selectedList === 'sizing'}
+                        >
+                            <ListItemIcon>
+                                <ImageIcon
+                                    fontSize="large"
+                                    color={
+                                        selectedList === 'sizing'
+                                            ? 'primary'
+                                            : 'disabled'
+                                    }
+                                />
+                            </ListItemIcon>
+                            <ListItemText primary="Sizing" />
+                            <InfoOutlined />
+                        </ListItemButton>
+                        {selectedList === 'sizing' && (
+                            <BarChartProperties
+                                id={id}
+                                mountedStatus={
+                                    mountedRef.current.componentMounted
+                                }
                             />
                         )}
                     </StyledListItem>

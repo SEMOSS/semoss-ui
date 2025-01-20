@@ -886,6 +886,7 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <CustomizeValueLabels
+                            id={id}
                             updateChart={updateCustomizeValueLabels}
                             option={parsedOption}
                             chartType={chartType}
@@ -915,6 +916,7 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <EditXAxis
+                            id={id}
                             updateChart={updateAxis}
                             chartType={chartType}
                             option={parsedOption}
@@ -922,6 +924,7 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <EditYAxis
+                            id={id}
                             updateChart={updateAxis}
                             chartType={chartType}
                             option={parsedOption}

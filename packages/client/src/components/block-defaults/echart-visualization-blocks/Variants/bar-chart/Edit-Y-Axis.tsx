@@ -1,7 +1,24 @@
-import { useState, useEffect, SyntheticEvent, ChangeEvent } from 'react';
+import {
+    useState,
+    useEffect,
+    SyntheticEvent,
+    ChangeEvent,
+    useMemo,
+} from 'react';
 import CustomAccordianBlock from './CustomAccordianBlock';
-import { Button, Checkbox, Slider, styled, TextField } from '@semoss/ui';
+import {
+    Button,
+    Checkbox,
+    Slider,
+    styled,
+    TextField,
+    Switch,
+} from '@semoss/ui';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useBlockSettings } from '@/hooks';
+import { PathValue } from '@/types';
+import { computed } from 'mobx';
+import { getValueByPath } from '@/utility';
 
 const StyledAxisDiv = styled('div')<{
     display?: string;
@@ -9,6 +26,18 @@ const StyledAxisDiv = styled('div')<{
 }>(({ theme, display, justifyContent }) => ({
     display: display ?? undefined,
     justifyContent: justifyContent ?? undefined,
+    flexDirection: 'row',
+    padding: '0.5rem',
+}));
+
+const StyledAxisColDiv = styled('div')<{
+    display?: string;
+    justifyContent: string;
+}>(({ theme, display, justifyContent }) => ({
+    display: display ?? undefined,
+    justifyContent: justifyContent ?? undefined,
+    flexDirection: 'column',
+    padding: '0.5rem',
 }));
 
 const StyledAxisSpan = styled('span')<{
@@ -25,9 +54,12 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     width: '100%',
 }));
 //Changing the Y axis styling like title, rotate and changing the labels
-export const EditYAxis = ({ updateChart, chartType, option }) => {
+export const EditYAxis = ({ updateChart, chartType, option, id }) => {
+    const { data, setData } = useBlockSettings<any>(id);
     const [yaxisState, setYaxisState] = useState({
+        showAxis: true,
         yaxistitle: '',
+        yaxisTitleFontSize: 18,
         centerAlignText: false,
         titleGapValue: 15,
         titleGapMinValue: 1,
@@ -35,23 +67,46 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
         showYAxisLine: true,
         showYAxisLineTicks: false,
         showYAxisValues: true,
+        showYAxisLabels: true,
         showYAxisAllLabels: false,
         showAllLabels: false,
         labelFontSize: 12,
         rotate: 0,
         rotateLabelMinValue: 0,
         rotateLabelMaxValue: 360,
-        prependLabelValue: '',
-        appendLabelValue: '',
+        // prependLabelValue: '',
+        // appendLabelValue: '',
         format: '',
         numberDelimiter: '',
     });
     let axisValue = 'yAxis';
+    const [value, setValue] = useState(data.option);
+    const path = 'option';
+    // get the value of the input (wrapped in usememo because of path prop)
+    const computedValue = useMemo(() => {
+        return computed(() => {
+            if (!data) {
+                return '';
+            }
+            const v = getValueByPath(data, path);
+            if (typeof v === 'undefined') {
+                return '';
+            } else if (typeof v === 'string') {
+                return v;
+            }
+            return JSON.stringify(v, null, 2);
+        });
+    }, [data, path]).get();
+    useEffect(() => {
+        setValue(computedValue);
+    }, [computedValue]);
 
     useEffect(() => {
         let axis = 'yAxis';
         let yAxisStateData = {
+            showAxis: true,
             yaxistitle: '',
+            yaxisTitleFontSize: 18,
             centerAlignText: false,
             titleGapValue: 15,
             titleGapMinValue: 1,
@@ -59,14 +114,15 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             showYAxisLine: true,
             showYAxisLineTicks: false,
             showYAxisValues: true,
+            showYAxisLabels: true,
             showYAxisAllLabels: false,
             showAllLabels: false,
             labelFontSize: 12,
             rotate: 0,
             rotateLabelMinValue: 0,
             rotateLabelMaxValue: 360,
-            prependLabelValue: '',
-            appendLabelValue: '',
+            // prependLabelValue: '',
+            // appendLabelValue: '',
             format: '',
             numberDelimiter: '',
         };
@@ -96,7 +152,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                 yAxisStateData.showYAxisLineTicks = option[axis][
                     'axisTick'
                 ].hasOwnProperty('show')
-                    ? option[axis]['axisLine'].show
+                    ? option[axis]['axisTick'].show
                     : false;
             }
             if (option[axis].hasOwnProperty('axisLabel')) {
@@ -116,7 +172,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                 ].hasOwnProperty('rotate')
                     ? option[axis]['axisLabel']['rotate']
                     : 0;
-                yAxisStateData.prependLabelValue = option[axis][
+                /*yAxisStateData.prependLabelValue = option[axis][
                     'axisLabel'
                 ].hasOwnProperty('prependValue')
                     ? option[axis]['axisLabel']['prependValue']
@@ -125,7 +181,7 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                     'axisLabel'
                 ].hasOwnProperty('appendValue')
                     ? option[axis]['axisLabel']['appendValue']
-                    : '';
+                    : '';*/
             }
         }
         setYaxisState((prevState) => {
@@ -135,6 +191,99 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
             };
         });
     }, []);
+
+    function updateChartData() {
+        let axis = 'yAxis';
+        let axisData = {
+            showAxis: yaxisState.showAxis,
+            yaxistitle: yaxisState.yaxistitle,
+            yaxisTitleFontSize: yaxisState.yaxisTitleFontSize,
+            showYAxisLabels: yaxisState.showYAxisLabels,
+            labelFontSize: yaxisState.labelFontSize,
+            rotate: yaxisState.rotate,
+            showYAxisLineTicks: yaxisState.showYAxisLineTicks,
+        };
+        let option = typeof value === 'string' ? JSON.parse(value) : value;
+        let optionUpdated = option;
+        if (option.hasOwnProperty(axis) && option[axis]) {
+            if (axisData.hasOwnProperty('showAxis')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['show']: axisData.showAxis,
+                };
+            }
+            if (axisData.hasOwnProperty('yaxistitle')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['name']: axisData.yaxistitle,
+                };
+            }
+            if (axisData.hasOwnProperty('yaxisTitleFontSize')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['nameTextStyle']: {
+                        ...option[axis]['nameTextStyle'],
+                        ['fontSize']:
+                            Number(axisData.yaxisTitleFontSize) || undefined,
+                    },
+                };
+            }
+
+            if (axisData.hasOwnProperty('showYAxisLineTicks')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['axisTick']: {
+                        ...option[axis]['axisTick'],
+                        ['show']: axisData.showYAxisLineTicks,
+                        ['alignWithLabel']: axisData.showYAxisLineTicks,
+                    },
+                };
+            }
+
+            if (axisData.hasOwnProperty('showYAxisLabels')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['axisLabel']: {
+                        ...option[axis]['axisLabel'],
+                        ['show']: axisData.showYAxisLabels,
+                    },
+                };
+            }
+
+            if (axisData.hasOwnProperty('labelFontSize')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['axisLabel']: {
+                        ...option[axis]['axisLabel'],
+                        ['show']: option[axis]['axisLabel']['show'],
+                        ['fontSize']:
+                            Number(axisData.labelFontSize) || undefined,
+                    },
+                };
+            }
+            if (axisData.hasOwnProperty('rotate')) {
+                option[axis] = {
+                    ...option[axis],
+                    ['axisLabel']: {
+                        ...option[axis]['axisLabel'],
+                        ['show']: option[axis]['axisLabel']['show'],
+                        ['rotate']: axisData.rotate,
+                    },
+                };
+            }
+            optionUpdated = option;
+            runStateUpdateCustom(optionUpdated);
+        }
+    }
+    function runStateUpdateCustom(optionUpdated: any) {
+        setTimeout(() => {
+            try {
+                setData('option', optionUpdated as PathValue<any, typeof path>);
+            } catch (e) {
+                console.log(e);
+            }
+        }, 300);
+    }
 
     function handleInputChange(e, title, directVal = undefined) {
         console.log(e, 'event');
@@ -157,84 +306,94 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
 
     const accordionDetails = (
         <StyledAxisDiv style={{ padding: '0.95rem' }}>
-            <StyledAxisDiv>
-                <label htmlFor="yaxis-title">Show Y-Axis Title</label>
-                <StyledTextField
-                    id="yaxis-title"
-                    value={yaxisState.yaxistitle}
-                    onChange={(e) => handleInputChange(e, 'yaxistitle')}
+            <StyledAxisDiv display="flex" justifyContent="space-around">
+                <Switch
+                    defaultChecked={yaxisState.showAxis ?? undefined}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(e, 'showAxis', e.target.checked)
+                    }
+                    title="Show Axis Title"
                 />
+                <label>Show Axis Title</label>
             </StyledAxisDiv>
-            <StyledAxisDiv>
-                <Checkbox
-                    id="yaxis-center-align-text"
-                    checked={yaxisState.centerAlignText}
+            {yaxisState.showAxis && (
+                <StyledAxisDiv>
+                    <label htmlFor="yaxis-title">Set Axis Title</label>
+                    <StyledTextField
+                        id="yaxis-title"
+                        value={yaxisState.yaxistitle}
+                        onChange={(e) => handleInputChange(e, 'yaxistitle')}
+                    />
+                </StyledAxisDiv>
+            )}
+            {yaxisState.showAxis && (
+                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                    <label htmlFor="xaxis-edit-title-font-size">
+                        Edit Axis Title Font Size
+                    </label>
+                    <TextField
+                        id="xaxis-edit-title-font-size"
+                        type="number"
+                        value={yaxisState.yaxisTitleFontSize}
+                        onChange={(e) =>
+                            handleInputChange(e, 'yaxisTitleFontSize')
+                        }
+                    />
+                </StyledAxisColDiv>
+            )}
+
+            <StyledAxisDiv display="flex" justifyContent="space-around">
+                <Switch
+                    defaultChecked={yaxisState.showYAxisLabels ?? undefined}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         handleInputChange(
                             e,
-                            'centerAlignText',
+                            'showYAxisLabels',
                             e.target.checked,
                         )
                     }
+                    title="Show XAxis Labels"
                 />
-                <label htmlFor="yaxis-center-align-text">
-                    Center Align Text{' '}
-                    {yaxisState.centerAlignText ? 'true' : 'false'}
-                </label>
+                <label htmlFor="show-xaxis-labels">Show YAxis Labels</label>
             </StyledAxisDiv>
-            <StyledAxisDiv>
-                <label>Y Axis Title Gap</label>
-                <Slider
-                    aria-label="Always visible"
-                    value={yaxisState.titleGapValue}
-                    min={yaxisState.titleGapMinValue}
-                    max={yaxisState.titleGapMaxValue}
-                    valueLabelDisplay="on"
-                    onChange={(event, newValue) =>
-                        handleInputChange(event, 'titleGapValue', newValue)
-                    }
-                />
-                <StyledAxisSpan
-                    display="flex"
-                    justifyContent="space-between"
-                    width="100%"
-                >
-                    <span>{yaxisState.titleGapMinValue}</span>
-                    <span>{yaxisState.titleGapMaxValue}</span>
-                </StyledAxisSpan>
-            </StyledAxisDiv>
+            {yaxisState.showYAxisLabels && (
+                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                    <label htmlFor="set-font-size">Edit Label Font Size:</label>
+                    <StyledTextField
+                        id="set-font-size"
+                        value={yaxisState.labelFontSize}
+                        type="number"
+                        onChange={(e) => handleInputChange(e, 'labelFontSize')}
+                    />
+                </StyledAxisColDiv>
+            )}
+            {yaxisState.showYAxisLabels && (
+                <StyledAxisColDiv display="flex" justifyContent="space-around">
+                    <label htmlFor="rotate-label">Rotate X-Axis Values:</label>
+                    <Slider
+                        aria-label="Always visible"
+                        value={yaxisState.rotate}
+                        min={yaxisState.rotateLabelMinValue}
+                        max={yaxisState.rotateLabelMaxValue}
+                        valueLabelDisplay="on"
+                        onChange={(event, newValue) =>
+                            handleInputChange(event, 'rotate', newValue)
+                        }
+                    />
+                    <StyledAxisSpan
+                        display="flex"
+                        width="100%"
+                        justifyContent="space-between"
+                    >
+                        <span>{yaxisState.rotateLabelMinValue}</span>
+                        <span>{yaxisState.rotateLabelMaxValue}</span>
+                    </StyledAxisSpan>
+                </StyledAxisColDiv>
+            )}
 
             <StyledAxisDiv>
-                <Checkbox
-                    id="show-yaxis-line"
-                    checked={yaxisState.showYAxisLine}
-                    // onChange={(e) =>
-                    //     handleInputChange(
-                    //         e,
-                    //         'showYAxisLine',
-                    //         !yaxisState.showYAxisLine,
-                    //     )
-                    // }
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        handleInputChange(e, 'showYAxisLine', e.target.checked)
-                    }
-                />
-                <label htmlFor="show-yaxis-line">
-                    Show YAxis Line{' '}
-                    {yaxisState.showYAxisLine ? 'true' : 'false'}
-                </label>
-            </StyledAxisDiv>
-            <StyledAxisDiv>
-                <Checkbox
-                    id="show-yaxis-line-ticks"
-                    checked={yaxisState.showYAxisLineTicks}
-                    // onChange={(e) =>
-                    //     handleInputChange(
-                    //         e,
-                    //         'showYAxisLineTicks',
-                    //         !yaxisState.showYAxisLineTicks,
-                    //     )
-                    // }
+                <Switch
+                    defaultChecked={yaxisState.showYAxisLineTicks}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         handleInputChange(
                             e,
@@ -242,80 +401,13 @@ export const EditYAxis = ({ updateChart, chartType, option }) => {
                             e.target.checked,
                         )
                     }
+                    title="Show YAxis Line Ticks"
                 />
                 <label htmlFor="show-yaxis-line">Show YAxis Line Ticks</label>
             </StyledAxisDiv>
-            <StyledAxisDiv>
-                <Checkbox
-                    id="show-yaxis-values"
-                    checked={yaxisState.showYAxisValues}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        handleInputChange(
-                            e,
-                            'showYAxisValues',
-                            e.target.checked,
-                        )
-                    }
-                />
-                <label htmlFor="show-yaxis-values">Show YAxis Values</label>
-            </StyledAxisDiv>
-            {yaxisState.showYAxisValues && (
-                <StyledAxisDiv>
-                    <StyledAxisDiv>
-                        <label htmlFor="rotate-label">
-                            Rotate Y-Axis Values:
-                        </label>
-                        <Slider
-                            aria-label="Always visible"
-                            value={yaxisState.rotate}
-                            min={yaxisState.rotateLabelMinValue}
-                            max={yaxisState.rotateLabelMaxValue}
-                            valueLabelDisplay="on"
-                            onChange={(event, newValue) =>
-                                handleInputChange(event, 'rotate', newValue)
-                            }
-                        />
-                        <StyledAxisSpan
-                            display="flex"
-                            width="100%"
-                            justifyContent="space-between"
-                        >
-                            <span>{yaxisState.rotateLabelMinValue}</span>
-                            <span>{yaxisState.rotateLabelMaxValue}</span>
-                        </StyledAxisSpan>
-                    </StyledAxisDiv>
-                    <StyledAxisDiv>
-                        <label htmlFor="prepend-label-value">
-                            Prepend Label Value :
-                        </label>
-                        <StyledTextField
-                            id="prepend-label-value"
-                            value={yaxisState.prependLabelValue}
-                            onChange={(e) =>
-                                handleInputChange(e, 'prependLabelValue')
-                            }
-                        />
-                    </StyledAxisDiv>
-                    <StyledAxisDiv>
-                        <label htmlFor="append-label-value">
-                            Append Label Value :
-                        </label>
-                        <StyledTextField
-                            id="append-label-value"
-                            value={yaxisState.appendLabelValue}
-                            onChange={(e) =>
-                                handleInputChange(e, 'appendLabelValue')
-                            }
-                        />
-                    </StyledAxisDiv>
-                </StyledAxisDiv>
-            )}
 
             <StyledAxisDiv display="flex" justifyContent="center">
-                <Button
-                    type="button"
-                    onClick={(e) => updateChart(yaxisState, 'yAxis')}
-                >
+                <Button type="button" onClick={(e) => updateChartData()}>
                     Execute
                 </Button>
             </StyledAxisDiv>
