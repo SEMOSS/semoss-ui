@@ -101,9 +101,8 @@ export const SaveAppModal = (props: SaveAppProps) => {
     const createApp = handleSubmit(async (data) => {
         // turn on loading
         setIsLoading(true);
-
         try {
-            handleFormSubmit(data);
+            await handleFormSubmit(data);
         } catch (e) {
             console.error(e);
             setShowErrorMessage(true);
