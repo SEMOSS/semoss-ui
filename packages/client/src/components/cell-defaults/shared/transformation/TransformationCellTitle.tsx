@@ -311,10 +311,7 @@ export const TransformationCellTitle = (props: {
                                     }}
                                 >
                                     <List.ItemText
-                                        primary={
-                                            frameCell.parameters
-                                                .frameVariableName
-                                        }
+                                        primary={`${frameCell.parameters.frameVariableName}`}
                                     />
                                 </List.ItemButton>
                             </List.Item>

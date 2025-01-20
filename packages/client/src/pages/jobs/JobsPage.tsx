@@ -28,8 +28,13 @@ import {
     JobBuilder,
     JobUIState,
     PixelReturnJob,
+    SendEmailJob,
 } from './job.types';
-import { convertDeltaToRuntimeString, convertTimetoDate } from './job.utils';
+import {
+    convertDeltaToRuntimeString,
+    convertSendEmailRecipeToJob,
+    convertTimetoDate,
+} from './job.utils';
 import { JobsTable } from './JobsTable';
 import { runPixel } from '@/api';
 import { JobBuilderModal } from './JobBuilderModal';
@@ -83,6 +88,22 @@ export function JobsPage() {
                     const pixelJobs: Record<string, PixelReturnJob> =
                         response.pixelReturn[0].output;
                     const jobs: Job[] = Object.values(pixelJobs).map((job) => {
+                        // ui state is a legacy construct, this may not exist
+                        let uiState: JobUIState;
+                        try {
+                            if (job.uiState) {
+                                uiState = JSON.parse(job.uiState);
+                            }
+                        } catch (e) {
+                            console.log(e);
+                        }
+
+                        let sendEmailJob: SendEmailJob;
+                        if (job.recipe) {
+                            sendEmailJob = convertSendEmailRecipeToJob(
+                                job.recipe,
+                            );
+                        }
                         return {
                             id: job.jobId,
                             name: job.jobName,
@@ -98,6 +119,23 @@ export function JobsPage() {
                             isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
                             group: job.jobGroup,
                             pixel: job.recipe,
+                            smtpHost: sendEmailJob?.smtpHost,
+                            smtpPort: sendEmailJob?.smtpPort,
+                            subject: sendEmailJob?.subject,
+                            jobType: uiState?.jobType,
+                            to: (sendEmailJob?.to ?? '')
+                                .split(',')
+                                .filter((to) => !!to),
+                            cc: (sendEmailJob?.cc ?? '')
+                                .split(',')
+                                .filter((cc) => !!cc),
+                            bcc: (sendEmailJob?.bcc ?? '')
+                                .split(',')
+                                .filter((bcc) => !!bcc),
+                            from: sendEmailJob?.from,
+                            message: sendEmailJob?.message,
+                            username: sendEmailJob?.username,
+                            password: sendEmailJob?.password,
                         };
                     });
 
@@ -134,7 +172,7 @@ export function JobsPage() {
 
     const pauseJobs = async () => {
         let pixel = ``;
-        selectedPausedJobs.forEach((job) => {
+        selectedActiveJobs.forEach((job) => {
             pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
@@ -142,7 +180,24 @@ export function JobsPage() {
         } catch (e) {
             notification.add({
                 color: 'error',
-                message: 'Unable to paused jobs.',
+                message: 'Unable to pause jobs.',
+            });
+        } finally {
+            getJobs();
+        }
+    };
+
+    const resumeJobs = async () => {
+        let pixel = ``;
+        selectedPausedJobs.forEach((job) => {
+            pixel += `ResumeJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
+        });
+        try {
+            await runPixel(pixel);
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to resume jobs.',
             });
         } finally {
             getJobs();
@@ -510,6 +565,7 @@ export function JobsPage() {
                             variant="outlined"
                             startIcon={<NotStartedOutlined />}
                             size="medium"
+                            onClick={() => resumeJobs()}
                         >
                             Resume
                         </Button>
@@ -527,6 +583,17 @@ export function JobsPage() {
                                     tags: [],
                                     cronExpression: '0 0 12 * * *',
                                     cronTz: 'Eastern Standard Time',
+                                    smtpHost: '',
+                                    smtpPort: '',
+                                    subject: '',
+                                    jobType: '',
+                                    to: [],
+                                    cc: [],
+                                    bcc: [],
+                                    from: '',
+                                    message: '',
+                                    username: '',
+                                    password: '',
                                 })
                             }
                         >

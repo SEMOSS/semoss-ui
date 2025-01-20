@@ -30,7 +30,7 @@ export const DataFormTable = (props) => {
                                         width: '50%',
                                     }}
                                 >
-                                    {dataTypes[idx]}
+                                    {(dataTypes[idx] as string) || null}
                                     <IconButton>
                                         <EditRounded />
                                     </IconButton>

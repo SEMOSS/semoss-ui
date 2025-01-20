@@ -1,5 +1,5 @@
 import { Close } from '@mui/icons-material';
-import { Autocomplete, createFilterOptions } from '@mui/material';
+import { Autocomplete } from '@mui/material';
 import {
     Button,
     IconButton,
@@ -11,11 +11,13 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { useEffect, useMemo, useState } from 'react';
-import { timezones } from './job.constants';
+import { JobTypeCustomJob, JobTypeSendEmail, timezones } from './job.constants';
 import { JobStandardFrequencyBuilder } from './JobStandardFrequencyBuilder';
 import { JobCustomFrequencyBuilder } from './JobCustomFrequencyBuilder';
 import { JobBuilder } from './job.types';
 import { runPixel } from '@/api';
+import { JobTypesBuilder } from './JobTypesBuilder';
+import { getEncodeByJobType } from './job.utils';
 
 const emptyBuilder: JobBuilder = {
     id: null,
@@ -24,6 +26,17 @@ const emptyBuilder: JobBuilder = {
     tags: [],
     cronExpression: '0 0 12 * * ?',
     cronTz: 'US/Eastern',
+    smtpHost: '',
+    smtpPort: '',
+    subject: '',
+    jobType: 'Custom Job',
+    to: [],
+    cc: [],
+    bcc: [],
+    from: '',
+    message: '',
+    username: '',
+    password: '',
 };
 
 export const JobBuilderModal = (props: {
@@ -46,7 +59,6 @@ export const JobBuilderModal = (props: {
             [field]: value,
         }));
     };
-    const filter = createFilterOptions<string>();
 
     const isEditMode = useMemo(() => {
         return !!builder.id;
@@ -148,8 +160,38 @@ export const JobBuilderModal = (props: {
     }, [builder.cronExpression]);
 
     const isBaseFormValid: boolean = useMemo(() => {
-        return !!builder.name && !!builder.pixel && !!builder.cronTz;
-    }, [builder.name, builder.pixel, builder.cronTz]);
+        switch (builder.jobType) {
+            case JobTypeSendEmail:
+                return (
+                    !!builder.name &&
+                    !!builder.smtpHost &&
+                    !!builder.smtpPort &&
+                    !!builder.subject &&
+                    !!builder.jobType &&
+                    !!builder.to &&
+                    !!builder.from &&
+                    !!builder.message &&
+                    !!builder.username &&
+                    !!builder.password &&
+                    !!builder.cronTz
+                );
+            case JobTypeCustomJob:
+                return !!builder.name && !!builder.pixel && !!builder.cronTz;
+        }
+    }, [
+        builder.name,
+        builder.pixel,
+        builder.cronTz,
+        builder.smtpHost,
+        builder.smtpPort,
+        builder.subject,
+        builder.jobType,
+        builder.to,
+        builder.from,
+        builder.message,
+        builder.username,
+        builder.password,
+    ]);
 
     const hasChanges: boolean = useMemo(() => {
         if (builder.id == null) {
@@ -162,7 +204,19 @@ export const JobBuilderModal = (props: {
             JSON.stringify(builder.tags) !==
                 JSON.stringify(initialBuilder.tags) ||
             builder.cronTz !== initialBuilder.cronTz ||
-            builder.cronExpression !== initialBuilder.cronExpression
+            builder.cronExpression !== initialBuilder.cronExpression ||
+            builder.smtpHost !== initialBuilder.smtpHost ||
+            builder.smtpPort !== initialBuilder.smtpPort ||
+            builder.subject !== initialBuilder.subject ||
+            builder.jobType !== initialBuilder.jobType ||
+            JSON.stringify(builder.to) !== JSON.stringify(initialBuilder.to) ||
+            JSON.stringify(builder.cc) !== JSON.stringify(initialBuilder.cc) ||
+            JSON.stringify(builder.bcc) !==
+                JSON.stringify(initialBuilder.bcc) ||
+            builder.from !== initialBuilder.from ||
+            builder.message !== initialBuilder.message ||
+            builder.username !== initialBuilder.username ||
+            builder.password !== initialBuilder.password
         );
     }, [
         builder.name,
@@ -170,21 +224,37 @@ export const JobBuilderModal = (props: {
         builder.tags,
         builder.cronTz,
         builder.cronExpression,
+        builder.smtpHost,
+        builder.smtpPort,
+        builder.subject,
+        builder.jobType,
+        builder.to,
+        builder.from,
+        builder.message,
+        builder.username,
+        builder.password,
     ]);
 
     const addJob = async () => {
         setIsLoading(true);
         try {
+            const encode = getEncodeByJobType(builder);
             const response = await runPixel(
-                `META|ScheduleJob(jobName="${builder.name}",${
+                `META|ScheduleJob(jobName=["${builder.name}"],${
                     builder.tags.length
-                        ? `jobTags=${JSON.stringify(builder.tags)},`
+                        ? ` jobTags=${JSON.stringify(builder.tags)},`
                         : ''
-                }jobGroup=["defaultGroup"],cronExpression="${
+                } jobGroup=["defaultGroup"], cronExpression=["${
                     builder.cronExpression
-                } *",cronTz="${builder.cronTz}",recipe="<encode>${
+                }"], cronTz=["${
+                    builder.cronTz
+                }"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${
+                    builder.jobType
+                }","jobName":"${builder.name}", "cronExpression":"${
+                    builder.cronExpression
+                }","cronTimeZone":"${builder.cronTz}","recipe":"${
                     builder.pixel
-                }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
+                }","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
             );
             if (response.errors.length) {
                 notification.add({
@@ -199,27 +269,40 @@ export const JobBuilderModal = (props: {
             });
         }
         getJobs();
-        close();
+        closeModal();
         setIsLoading(false);
     };
 
     const updateJob = async () => {
         setIsLoading(true);
+        const encode = getEncodeByJobType(builder);
         await runPixel(
             `META|EditScheduledJob(jobId="${builder.id}",jobName="${
                 builder.name
             }",${
                 builder.tags.length
-                    ? `jobTags="${JSON.stringify(builder.tags)}",`
+                    ? `jobTags=${JSON.stringify(builder.tags)},`
                     : ''
             }jobGroup=["defaultGroup"],cronExpression="${
                 builder.cronExpression
-            } *",cronTz="${builder.cronTz}",recipe="<encode>${
-                builder.pixel
-            }</encode>",uiState="",triggerOnLoad=[false],triggerNow=[false]);`,
+            } *",cronTz="${
+                builder.cronTz
+            }",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
+                builder.jobType
+            }", "jobName":"${builder.name}", "cronExpression":"${
+                builder.cronExpression
+            }", "cronTimeZone":"${
+                builder.cronTz
+            }"}',triggerOnLoad=[false],triggerNow=[false]);`,
         );
-        close();
+        getJobs();
+        closeModal();
         setIsLoading(false);
+    };
+
+    const closeModal = () => {
+        setBuilder(emptyBuilder);
+        close();
     };
 
     return (
@@ -231,7 +314,7 @@ export const JobBuilderModal = (props: {
                     alignItems="center"
                 >
                     <span>{isEditMode ? 'Edit' : 'Add'} Job</span>
-                    <IconButton aria-label="close" onClick={close}>
+                    <IconButton aria-label="close" onClick={closeModal}>
                         <Close />
                     </IconButton>
                 </Stack>
@@ -246,45 +329,9 @@ export const JobBuilderModal = (props: {
                             setBuilderField('name', e.target.value)
                         }
                     />
-                    <TextField
-                        label="Pixel"
-                        size="small"
-                        value={builder.pixel}
-                        onChange={(e) =>
-                            setBuilderField('pixel', e.target.value)
-                        }
-                        multiline
-                        rows={3}
-                    />
-                    <Autocomplete
-                        value={(builder.tags as string[]) ?? []}
-                        fullWidth
-                        multiple
-                        size="small"
-                        onChange={(_, newValue) => {
-                            setBuilderField('tags', newValue);
-                        }}
-                        filterOptions={(options, params) => {
-                            const filtered = filter(options, params);
-
-                            const { inputValue } = params;
-                            const isExisting = options.some(
-                                (option) => inputValue === option,
-                            );
-                            if (inputValue !== '' && !isExisting) {
-                                filtered.push(inputValue);
-                            }
-
-                            return filtered;
-                        }}
-                        options={[]}
-                        renderOption={(props, option) => (
-                            <li {...props}>{option}</li>
-                        )}
-                        freeSolo
-                        renderInput={(params) => (
-                            <TextField {...params} label="Tags" />
-                        )}
+                    <JobTypesBuilder
+                        builder={builder}
+                        setBuilderField={setBuilderField}
                     />
                     <ToggleButtonGroup value={frequencyType} size="small">
                         <ToggleButton
@@ -338,7 +385,11 @@ export const JobBuilderModal = (props: {
                     paddingX={2}
                     paddingBottom={2}
                 >
-                    <Button type="button" disabled={isLoading} onClick={close}>
+                    <Button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={closeModal}
+                    >
                         Cancel
                     </Button>
                     <Button

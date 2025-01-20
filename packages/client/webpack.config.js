@@ -1,3 +1,8 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { NxReactWebpackPlugin } = require('@nx/react/webpack-plugin');
+
 /* eslint-disable @typescript-eslint/no-var-requires */
 const webpack = require('webpack');
 const path = require('path');
@@ -16,7 +21,6 @@ dotenv.config({ path: '../../.env' });
 
 const isProduction = process.env.NODE_ENV == 'production';
 
-console.log('isProduction', isProduction);
 const config = {
     entry: './src/main.tsx',
     performance: {
@@ -42,11 +46,28 @@ const config = {
         },
     },
     plugins: [
+        new NxAppWebpackPlugin({
+            tsConfig: './tsconfig.json',
+            compiler: 'babel',
+            main: './src/main.tsx',
+            babelConfig: 'packages/client/.babelrc',
+            // index: './src/template.html',
+            baseHref: '/',
+            outputHashing:
+                process.env['NODE_ENV'] == 'production' ? 'all' : 'none',
+            watch: process.env['NODE_ENV'] == 'production' ? false : true,
+            memoryLimit: 8192,
+        }),
+        new NxReactWebpackPlugin({
+            // Uncomment this line if you don't want to use SVGR
+            // See: https://react-svgr.com/
+            svgr: false,
+        }),
         new HtmlWebpackPlugin({
-            title: '',
-            favicon: '',
+            title: process.env.THEME_TITLE,
+            favicon: path.resolve(__dirname, process.env.THEME_FAVICON),
             scriptLoading: 'module',
-            template: './src/template.html',
+            template: path.resolve(__dirname, './src/template.html'),
             filename: 'index.html',
         }),
 
@@ -85,16 +106,7 @@ const config = {
             },
             {
                 test: /\.css$/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: MiniCssExtractPlugin.loader,
-                        options: {
-                            esModule: false,
-                        },
-                    },
-                    'css-loader',
-                ],
+                use: ['style-loader', 'css-loader'],
             },
 
             {
@@ -118,11 +130,12 @@ const config = {
         alias: {
             '@': path.resolve(__dirname, './src'),
             react: path.resolve('./node_modules/react'),
+            '@semoss/ui': path.resolve(__dirname, '../../libs/ui/src/index.ts'),
         },
     },
 };
 
-module.exports = () => {
+module.exports = (_, context) => {
     if (isProduction) {
         config.mode = 'production';
     } else {

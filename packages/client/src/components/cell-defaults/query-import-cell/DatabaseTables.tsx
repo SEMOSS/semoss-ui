@@ -126,7 +126,7 @@ export const DatabaseTables = (props: { databaseId: string }) => {
                                                         )}
                                                     </List.Icon>
                                                     <List.ItemText
-                                                        primary={columnName}
+                                                        primary={`${columnName}`}
                                                     />
                                                 </List.Item>
                                             );

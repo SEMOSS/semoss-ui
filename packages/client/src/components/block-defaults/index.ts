@@ -50,6 +50,7 @@ import {
 } from './llm-comparison-block';
 import { config as ModalBlockConfig, ModalBlockDef } from './modal-block';
 import { config as StepperBlockConfig, StepperBlockDef } from './stepper-block';
+import { config as RadioBlockConfig, RadioBlockDef } from './radio-block';
 import {
     config as AudioInputBlockConfig,
     AudioInputBlockDef,
@@ -96,6 +97,7 @@ export type DefaultBlockDefinitions =
     | MermaidBlockDef
     | LLMComparisonBlockDef
     | ModalBlockDef
+    | RadioBlockDef
     | PDFViewerBlockDef
     | EchartVisualizationBlockDef;
 
@@ -124,6 +126,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [MermaidBlockConfig.widget]: MermaidBlockConfig,
+    [RadioBlockConfig.widget]: RadioBlockConfig,
     [AudioInputBlockConfig.widget]: AudioInputBlockConfig,
     [PDFViewerBlockConfig.widget]: PDFViewerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
@@ -151,6 +154,7 @@ export {
     MermaidBlockConfig,
     CompareLLMBlockConfig,
     ModalBlockConfig,
+    RadioBlockConfig,
     PDFViewerBlockConfig,
     EchartVisualizationBlockConfig,
 };

@@ -42,150 +42,155 @@ interface VariablePreviewProps {
     id: string;
 }
 
-export const VariablePreview = observer((props: VariablePreviewProps) => {
-    const { variable, id } = props;
-    const { state } = useBlocks();
+export const VariablePreview = observer(
+    (props: VariablePreviewProps): JSX.Element => {
+        const { variable, id } = props;
+        const { state } = useBlocks();
 
-    /**
-     * To show Preview of Block
-     * @param to what block to render
-     * @returns Serialized State
-     */
-    const getStateWithBlock = (to: string) => {
-        try {
-            const block = state.getBlock(to);
-            const s: SerializedState = {
-                version: '1.0.0-alpha.1',
-                executionOrder: [],
-                dependencies: {},
-                variables: {},
-                queries: {},
-                blocks: {
-                    'page-1': {
-                        id: 'page-1',
-                        widget: 'page',
-                        parent: null,
-                        data: {
-                            style: {
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                backgroundColor: '#FAFAFA',
-                            },
-                        },
-                        listeners: {
-                            onPageLoad: [],
-                        },
-                        slots: {
-                            content: {
-                                name: 'content',
-                                children: [to],
-                            },
-                        },
-                    },
-                    [to]: {
-                        id: block.id,
-                        widget: block.widget,
-                        data: block.data,
-                        parent: null,
-                        listeners: block.listeners,
-                        slots: block.slots,
-                    },
-                },
-            };
-
-            return s;
-        } catch {
-            return null;
-        }
-    };
-
-    const preview = useMemo(() => {
-        if (variable.type === 'block') {
-            const config = getStateWithBlock(variable.to);
-            if (config) {
-                return (
-                    <StyledBlocksBox>
-                        <BlocksRenderer state={config} preview={true} />
-                    </StyledBlocksBox>
-                );
-            } else {
-                return (
-                    <Typography variant="body2" fontWeight="bold" color="error">
-                        Block is no longer available
-                    </Typography>
-                );
-            }
-        } else {
-            const found = state.parseVariable(`{{${id}}}`);
-            const value = isOutputJSON(found);
-            if (value != null) {
-                return (
-                    <JsonViewer
-                        value={value}
-                        displayComma={true}
-                        rootName={false}
-                    />
-                );
-            } else {
-                return (
-                    <Typography variant="body2" fontWeight="bold">
-                        {found}
-                    </Typography>
-                );
-            }
-        }
-    }, [variable, id]);
-
-    const previewValue = useMemo(() => {
-        let val;
-
-        if (variable.type === 'block') {
+        /**
+         * To show Preview of Block
+         * @param to what block to render
+         * @returns Serialized State
+         */
+        const getStateWithBlock = (to: string) => {
             try {
-                val = state.getBlock(variable.to).data?.value;
+                const block = state.getBlock(to);
+                const s: SerializedState = {
+                    version: '1.0.0-alpha.3',
+                    executionOrder: [],
+                    variables: {},
+                    queries: {},
+                    blocks: {
+                        'page-1': {
+                            id: 'page-1',
+                            widget: 'page',
+                            parent: null,
+                            data: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    backgroundColor: '#FAFAFA',
+                                },
+                            },
+                            listeners: {
+                                onPageLoad: [],
+                            },
+                            slots: {
+                                content: {
+                                    name: 'content',
+                                    children: [to],
+                                },
+                            },
+                        },
+                        [to]: {
+                            id: block.id,
+                            widget: block.widget,
+                            data: block.data,
+                            parent: null,
+                            listeners: block.listeners,
+                            slots: block.slots,
+                        },
+                    },
+                };
+
+                return s;
             } catch {
-                val = 'undefined';
+                return null;
             }
-        } else {
-            const found = state.parseVariable(`{{${id}}}`);
+        };
 
-            if (typeof found !== 'string') {
-                val = JSON.stringify(found);
+        const preview = useMemo(() => {
+            if (variable.type === 'block') {
+                const config = getStateWithBlock(variable.to);
+                if (config) {
+                    return (
+                        <StyledBlocksBox>
+                            <BlocksRenderer state={config} preview={true} />
+                        </StyledBlocksBox>
+                    );
+                } else {
+                    return (
+                        <Typography
+                            variant="body2"
+                            fontWeight="bold"
+                            color="error"
+                        >
+                            Block is no longer available
+                        </Typography>
+                    );
+                }
             } else {
-                val = found;
+                const found = state.parseVariable(`{{${id}}}`);
+                const value = isOutputJSON(found);
+                if (value != null) {
+                    return (
+                        <JsonViewer
+                            value={value}
+                            displayComma={true}
+                            rootName={false}
+                        />
+                    );
+                } else {
+                    return (
+                        <Typography variant="body2" fontWeight="bold">
+                            {found as string}
+                        </Typography>
+                    );
+                }
             }
-        }
-        return (
-            <>
-                <Stack direction="row">
-                    <Typography variant="body2" fontWeight="bold">
-                        Type:{' '}
-                    </Typography>
-                    <Typography variant="body2">{variable.type}</Typography>
-                </Stack>
-                <Stack direction="row">
-                    <Typography variant="body2" fontWeight="bold">
-                        Value:{' '}
-                    </Typography>
-                    <Typography variant="body2">{val}</Typography>
-                </Stack>
-            </>
-        );
-    }, [variable, id]);
+        }, [variable, id]);
 
-    return (
-        <StyledStack spacing={0}>
-            <StyledBox>
-                <Typography variant={'body2'} fontWeight="medium">
-                    Preview
-                </Typography>
-            </StyledBox>
-            <Divider />
-            <StyledPreviewBox>{preview}</StyledPreviewBox>
-            <Divider />
-            <StyledBox>
-                <Stack direction={'column'}>{previewValue}</Stack>
-            </StyledBox>
-        </StyledStack>
-    );
-});
+        const previewValue = useMemo(() => {
+            let val;
+
+            if (variable.type === 'block') {
+                try {
+                    val = state.getBlock(variable.to).data?.value;
+                } catch {
+                    val = 'undefined';
+                }
+            } else {
+                const found = state.parseVariable(`{{${id}}}`);
+
+                if (typeof found !== 'string') {
+                    val = JSON.stringify(found);
+                } else {
+                    val = found;
+                }
+            }
+            return (
+                <>
+                    <Stack direction="row">
+                        <Typography variant="body2" fontWeight="bold">
+                            Type:{' '}
+                        </Typography>
+                        <Typography variant="body2">{variable.type}</Typography>
+                    </Stack>
+                    <Stack direction="row">
+                        <Typography variant="body2" fontWeight="bold">
+                            Value:{' '}
+                        </Typography>
+                        <Typography variant="body2">{val}</Typography>
+                    </Stack>
+                </>
+            );
+        }, [variable, id]);
+
+        return (
+            <StyledStack spacing={0}>
+                <StyledBox>
+                    <Typography variant={'body2'} fontWeight="medium">
+                        Preview
+                    </Typography>
+                </StyledBox>
+                <Divider />
+                <StyledPreviewBox>{preview}</StyledPreviewBox>
+                <Divider />
+                <StyledBox>
+                    <Stack direction={'column'}>{previewValue}</Stack>
+                </StyledBox>
+            </StyledStack>
+        );
+    },
+);

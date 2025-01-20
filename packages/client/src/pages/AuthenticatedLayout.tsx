@@ -16,28 +16,35 @@ export const AuthenticatedLayout = observer(() => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const TERMS = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        try {
-            if (theme && theme['THEME_MAP']) {
-                const themeMap = JSON.parse(theme['THEME_MAP'] as string);
+        if (!sessionStorage.getItem('attention-message')) {
+            const theme = configStore.store.config['theme'];
+            try {
+                if (theme && theme['THEME_MAP']) {
+                    const themeMap = JSON.parse(theme['THEME_MAP'] as string);
+                    return {
+                        header: themeMap['termsHeaderReact']
+                            ? themeMap['termsHeaderReact']
+                            : 'Attention',
+                        text: themeMap['termsReact']
+                            ? themeMap['termsReact']
+                            : '',
+                    };
+                }
                 return {
-                    header: themeMap['termsHeaderReact']
-                        ? themeMap['termsHeaderReact']
-                        : 'Attention',
-                    text: themeMap['termsReact'] ? themeMap['termsReact'] : '',
+                    header: '',
+                    text: '',
+                };
+            } catch {
+                return {
+                    header: '',
+                    text: '',
                 };
             }
-            return {
-                header: '',
-                text: '',
-            };
-        } catch {
-            return {
-                header: '',
-                text: '',
-            };
         }
+        return {
+            header: '',
+            text: '',
+        };
     }, []);
 
     // wait till the config is authenticated to load the view
@@ -70,7 +77,13 @@ export const AuthenticatedLayout = observer(() => {
                     <Modal.Actions>
                         <Button
                             variant="contained"
-                            onClick={() => setAcceptedTerms(true)}
+                            onClick={() => {
+                                setAcceptedTerms(true);
+                                sessionStorage.setItem(
+                                    'attention-message',
+                                    'true',
+                                );
+                            }}
                         >
                             Accept
                         </Button>

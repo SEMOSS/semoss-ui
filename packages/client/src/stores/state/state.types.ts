@@ -16,9 +16,6 @@ export type SerializedState = {
     /** Variables used in notebook */
     variables: Record<string, Variable>;
 
-    /** TODO: Remove, Dependencies in app */
-    dependencies: Record<string, unknown>;
-
     /** Order of how we consume app as api */
     executionOrder: string[];
 };
@@ -47,10 +44,10 @@ export type VariableType =
  */
 export type Variable =
     | {
-          to: string;
           type: Exclude<VariableType, 'cell'>; // Exclude 'cell' from VariableType for this case
+          to?: string;
           cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
-          value?: string;
+          value?: any;
           isInput?: boolean;
           isOutput?: boolean;
       }
@@ -64,16 +61,16 @@ export type Variable =
 
 export type VariableWithId =
     | ({
-          to: string;
           type: Exclude<VariableType, 'cell'>;
-          value?: string;
+          to?: string;
+          value?: any;
           isInput?: boolean;
           isOutput?: boolean;
           cellId?: string;
       } & { id: string })
     | ({
-          to: string;
           type: 'cell';
+          to: string;
           cellId: string;
           isInput?: boolean;
           isOutput?: boolean;
