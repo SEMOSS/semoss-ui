@@ -287,6 +287,7 @@ export const config: BlockConfig<ThemeBlockDef> = {
                                     <IconButton
                                         size="small"
                                         onClick={() => setOpen(true)}
+                                        disabled={true}
                                     >
                                         <OpenInNew />
                                     </IconButton>
