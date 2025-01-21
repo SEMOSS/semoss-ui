@@ -121,6 +121,18 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
                 }
             }
         }, []);
+
+        function getFilteredSeriesIndex() {
+            let index = [];
+            let seriesAvailable: any[] = data.option['series'].filter((item) =>
+                BAR_CHART_DATA.JSONVALUE.includes(item.type),
+            );
+            seriesAvailable.forEach((item, seriesIndex) => {
+                index.push(seriesIndex);
+            });
+            return index;
+        }
+
         //handles bar width changes and updates the value to state
         function handleInputChange(event, newValue) {
             setStyleData((prevStyleData) => {
@@ -146,37 +158,40 @@ export const VisualizationStyles = observer<EChartVisualizationColumns>(
             let option = typeof value === 'string' ? JSON.parse(value) : value;
             let optionUpdated = option;
             if (option['series']) {
-                const barChartDataIndex = option['series'].findIndex((opt) =>
-                    BAR_CHART_DATA.JSONVALUE.includes(opt.type),
-                );
-                if (barChartDataIndex > -1) {
-                    if (barWidth !== undefined && barWidth > 0) {
-                        option['series'][barChartDataIndex] = {
-                            ...option['series'][barChartDataIndex],
-                            ['barWidth']: barWidth,
-                        };
-                    }
-                    if (barColour !== undefined) {
-                        if (option['series'][barChartDataIndex]['itemStyle']) {
+                let seriesDataIndex = getFilteredSeriesIndex();
+                seriesDataIndex.forEach((index) => {
+                    const barChartDataIndex = index;
+                    if (barChartDataIndex > -1) {
+                        if (barWidth !== undefined && barWidth > 0) {
                             option['series'][barChartDataIndex] = {
                                 ...option['series'][barChartDataIndex],
-                                ['itemStyle']: {
-                                    ...option['series'][barChartDataIndex][
-                                        'itemStyle'
-                                    ],
-                                    ['color']: barColour,
-                                },
-                            };
-                        } else {
-                            option['series'][barChartDataIndex] = {
-                                ...option['series'][barChartDataIndex],
-                                ['itemStyle']: {
-                                    ['color']: barColour,
-                                },
+                                ['barWidth']: barWidth,
                             };
                         }
+                        if (barColour !== undefined) {
+                            if (
+                                option['series'][barChartDataIndex]['itemStyle']
+                            ) {
+                                option['series'][barChartDataIndex] = {
+                                    ...option['series'][barChartDataIndex],
+                                    ['itemStyle']: {
+                                        ...option['series'][barChartDataIndex][
+                                            'itemStyle'
+                                        ],
+                                        ['color']: barColour,
+                                    },
+                                };
+                            } else {
+                                option['series'][barChartDataIndex] = {
+                                    ...option['series'][barChartDataIndex],
+                                    ['itemStyle']: {
+                                        ['color']: barColour,
+                                    },
+                                };
+                            }
+                        }
                     }
-                }
+                });
             }
             runStateUpdateCustom(option);
         }
