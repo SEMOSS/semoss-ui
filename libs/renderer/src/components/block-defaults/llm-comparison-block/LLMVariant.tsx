@@ -1,11 +1,11 @@
 import { styled, Typography, Stack, IconButton } from "@semoss/ui";
 import { Close } from "@mui/icons-material";
-import { TypeVariant } from "../../workspace/workspace.types";
+import { TypeVariant } from "./compare.types";
 import { useState } from "react";
 import { LlmCard } from "./LlmCard";
-import { useBlock, useBlocks, useLLMComparison } from "@/hooks";
+import { useBlock, useBlocks, useLLMComparison } from "../../../hooks";
 import { LLMComparisonBlockDef } from "./LLMComparisonBlock";
-import { ActionMessages, CellState } from "@/stores";
+import { ActionMessages, CellState } from "../../../store";
 import { observer } from "mobx-react-lite";
 
 const StyledVariantHeader = styled("div")(({ theme }) => ({

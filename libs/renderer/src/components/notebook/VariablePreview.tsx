@@ -1,12 +1,11 @@
 import React, { useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { Box, Divider, styled, Typography, Stack } from "@semoss/ui";
-import { Variable } from "@/stores";
-import { BlocksRenderer } from "../blocks-workspace";
+import { BlocksRenderer } from "../";
 
-import { SerializedState } from "@/stores";
-import { useBlocks } from "@/hooks";
-import { isOutputJSON } from "@/utility";
+import { SerializedState, Variable } from "../../store";
+import { useBlocks } from "../../hooks";
+import { isOutputJSON } from "../../utility";
 import { JsonViewer } from "@textea/json-viewer";
 
 const StyledStack = styled(Stack)(({ theme }) => ({

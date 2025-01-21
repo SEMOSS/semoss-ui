@@ -7,7 +7,7 @@ import {
     TextField,
     Slider,
 } from "@semoss/ui";
-import { useLLMComparison } from "@/hooks";
+import { useLLMComparison } from "../../../hooks";
 import { Controller } from "react-hook-form";
 import { VariantDragAndDrop } from "./VariantDragAndDrop";
 

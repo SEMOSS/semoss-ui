@@ -16,13 +16,14 @@ import {
     Table,
     styled,
 } from "@semoss/ui";
-import { useBlocks, usePixel, useRootStore } from "@/hooks";
+import { useBlocks } from "../../hooks";
+import { runPixel, usePixel } from "@semoss/sdk";
 import {
     ActionMessages,
     CellStateConfig,
     NewCellAction,
     QueryState,
-} from "@/stores";
+} from "../../store";
 import {
     ControlPointDuplicateRounded,
     CalendarViewMonth,
@@ -35,12 +36,11 @@ import {
     JoinFull,
     Warning,
 } from "@mui/icons-material";
-import { DefaultCells } from "@/components/cell-defaults";
+import { DefaultCells } from "../cell-defaults";
 import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
 import { TableContainer } from "@mui/material";
-import { LoadingScreen } from "@/components/ui";
 
 const StyledDivSecondaryKeyLabel = styled("div")(() => ({
     backgroundColor: "#EBEBEB",
@@ -337,7 +337,6 @@ export const DataImportFormModal = observer(
         const [showEditColumns, setShowEditColumns] = useState<boolean>(true);
         const [tableEdgesObject, setTableEdgesObject] = useState(null);
         const [aliasesCountObj, setAliasesCountObj] = useState({});
-        const { monolithStore } = useRootStore();
         const aliasesCountObjRef = useRef({});
         const [tableEdges, setTableEdges] = useState({}); //
         const [rootTable, setRootTable] = useState(
@@ -627,7 +626,7 @@ export const DataImportFormModal = observer(
             setIsDatabaseLoading(true);
             const pixelString = `META|GetDatabaseTableStructure(database=[ \"${databaseId}\" ]);META|GetDatabaseMetamodel( database=[ \"${databaseId}\" ], options=["dataTypes","positions"]);`;
 
-            monolithStore.runQuery(pixelString).then((pixelResponse) => {
+            runPixel(pixelString).then((pixelResponse) => {
                 const responseTableStructure =
                     pixelResponse.pixelReturn[0].output;
                 const isResponseTableStructureGood =
@@ -996,7 +995,7 @@ export const DataImportFormModal = observer(
                 pixelStringRef.current = reactorPixel;
                 pixelPartialRef.current = pixelStringPart1 + ";";
 
-                await monolithStore.runQuery(reactorPixel).then((response) => {
+                await runPixel(reactorPixel).then((response) => {
                     const type = response.pixelReturn[0]?.operationType;
                     const tableHeadersData =
                         response.pixelReturn[1]?.output?.data?.headers;
@@ -1308,7 +1307,8 @@ export const DataImportFormModal = observer(
                         </StyledModalTitleWrapper>
 
                         {isDatabaseLoading && (
-                            <LoadingScreen.Trigger description="Awaiting database response..." />
+                            <div>Awaiting db response</div>
+                            // <LoadingScreen.Trigger description="Awaiting database response..." />
                         )}
 
                         {!selectedDatabaseId && (

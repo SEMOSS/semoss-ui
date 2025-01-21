@@ -1,9 +1,9 @@
-import { BlockConfig } from "@/stores";
+import { BlockConfig } from "../../../store";
 import { buildDimensionsSection } from "../block-defaults.shared";
 import { ImageBlockDef, ImageBlock } from "./ImageBlock";
 import { PanoramaOutlined } from "@mui/icons-material";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { InputSettings } from "@/components/block-settings";
+import { InputSettings } from "../../block-settings";
 import { ButtonGroupSettings, SelectInputSettings } from "../../block-settings";
 import { AspectRatio, FitScreen, ImageAspectRatio } from "@mui/icons-material";
 // export the config for the block

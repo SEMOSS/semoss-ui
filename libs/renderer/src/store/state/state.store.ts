@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { download, runPixel } from "@/api";
-import { cancellablePromise, getValueByPath } from "@/utility";
+import { runPixel, download } from "@semoss/sdk";
+import { cancellablePromise, getValueByPath } from "../../utility";
 
 import {
     ActionMessages,

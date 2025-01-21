@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { setValueByPath } from "@/utility";
+import { setValueByPath } from "../../utility";
 
 import { CellComponent, CellConfig, CellDef } from "./state.types";
 import { StateStore } from "./state.store";

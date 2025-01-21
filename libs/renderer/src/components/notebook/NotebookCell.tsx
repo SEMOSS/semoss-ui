@@ -31,12 +31,12 @@ import {
     LowPriority,
     LibraryAdd,
 } from "@mui/icons-material";
-import { ActionMessages } from "@/stores";
+import { ActionMessages } from "../../store";
 import { useBlocks } from "@/hooks";
 import { NotebookAddCell } from "./NotebookAddCell";
 import { NotebookCellConsole } from "./NotebookCellConsole";
 import { Operation } from "./operations";
-import { copyTextToClipboard } from "@/utility";
+import { copyTextToClipboard } from "../../utility";
 import { AddVariableModal } from "./AddVariableModal";
 
 const StyledStack = styled(Stack)(({ theme }) => ({

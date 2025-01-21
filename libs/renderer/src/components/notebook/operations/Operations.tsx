@@ -1,7 +1,7 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 
-import { CellState } from "@/stores";
+import { CellState } from "../../../store";
 import { ErrorOperation } from "./ErrorOperation";
 import { FrameOperation } from "./FrameOperation";
 import { WarningOperation } from "./WarningOperation";

@@ -1,11 +1,11 @@
-import { BaseSettingSection } from "@/components/block-settings/BaseSettingSection";
-import { useBlocks, useBlockSettings } from "@/hooks";
+import { BaseSettingSection } from "../../block-settings/BaseSettingSection";
+import { useBlocks, useBlockSettings } from "../../../hooks";
 import { Autocomplete, TextField } from "@mui/material";
 import { styled } from "@semoss/ui";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useRef, useState, useEffect, useMemo } from "react";
-import { getValueByPath } from "@/utility";
+import { getValueByPath } from "../../../utility";
 
 const GroupHeader = styled("div")(({ theme }) => ({
     position: "sticky",

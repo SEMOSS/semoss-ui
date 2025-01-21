@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLLMComparison } from "@/hooks";
+import { useLLMComparison } from "../../../hooks";
 import { styled, Stack, Typography } from "@semoss/ui";
 import { LLMEditor } from "./LLMEditor";
 

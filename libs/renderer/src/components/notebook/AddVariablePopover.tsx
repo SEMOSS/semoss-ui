@@ -21,14 +21,15 @@ import {
     Grid,
     Checkbox,
 } from "@semoss/ui";
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../hooks";
 import {
     ActionMessages,
     SerializedState,
     STATE_VERSION,
     VariableType,
     VariableWithId,
-} from "@/stores";
+    VARIABLE_TYPES,
+} from "../../store";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import { DefaultBlocks } from "../block-defaults";
@@ -36,18 +37,15 @@ import {
     BLOCK_TYPE_COMPARE,
     BLOCK_TYPE_INPUT,
 } from "../block-defaults/block-defaults.constants";
-import { BlocksRenderer } from "../blocks-workspace";
-import { VARIABLE_TYPES } from "@/stores";
+import { BlocksRenderer } from "../";
 import {
     capitalizeFirstLetter,
     getEngineImage,
     isOutputJSON,
     splitAtPeriod,
-} from "@/utility";
+} from "../../utility";
 import { MoreSharp, WarningRounded } from "@mui/icons-material";
 import { JsonViewer } from "@textea/json-viewer";
-
-import { ENGINE_ROUTES } from "@/pages/engine";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
@@ -532,20 +530,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         engine.app_subtype,
                         true,
                     );
-                    const engineDisplay = ENGINE_ROUTES.find(
-                        (engineValue) => engineValue.type === engine.app_type,
-                    );
+
                     return (
                         <Stack direction="row" alignItems="center">
                             {image ? (
                                 <StyledImg src={image} />
                             ) : (
                                 <Icon>
-                                    {engineDisplay ? (
-                                        createElement(engineDisplay.icon)
-                                    ) : (
-                                        <MoreSharp />
-                                    )}
+                                    <MoreSharp />
                                 </Icon>
                             )}
                             <Stack direction="column">

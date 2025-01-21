@@ -6,11 +6,12 @@ import {
     IconButton,
     Tooltip,
 } from "@semoss/ui";
-import { TypeLlmConfig } from "../../workspace/workspace.types";
+import { TypeLlmConfig } from "./compare.types";
 import { Edit } from "@mui/icons-material";
-import { getEngineImage } from "@/utility";
-import { useLLMComparison } from "@/hooks";
-import ImageSkeleton from "@/assets/img/ImageSkeleton.png";
+import { getEngineImage } from "../../../utility";
+import { useLLMComparison } from "../../../hooks";
+import ImageSkeleton from "../../../assets/ImageSkeleton.pn";
+
 import { observer } from "mobx-react-lite";
 
 const StyledCard = styled(Card)(({ theme }) => ({

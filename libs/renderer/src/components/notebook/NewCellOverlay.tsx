@@ -3,8 +3,8 @@ import { observer } from "mobx-react-lite";
 import { Stack, TextField, Modal, Button } from "@semoss/ui";
 import { Controller, useForm } from "react-hook-form";
 
-import { useBlocks } from "@/hooks";
-import { ActionMessages, NewCellAction } from "@/stores";
+import { useBlocks } from "../../hooks";
+import { ActionMessages, NewCellAction } from "../../store";
 import { DefaultCells } from "../cell-defaults";
 
 type NewCellForm = {

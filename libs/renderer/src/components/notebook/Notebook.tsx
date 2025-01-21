@@ -2,9 +2,9 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled, Stack, Container, Button, CircularProgress } from "@semoss/ui";
 
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../hooks";
 import { NotebookCell } from "./NotebookCell";
-import { ActionMessages } from "@/stores";
+import { ActionMessages } from "../../store";
 import { PlayArrowRounded } from "@mui/icons-material";
 
 const StyledSheet = styled("div")(({ theme }) => ({

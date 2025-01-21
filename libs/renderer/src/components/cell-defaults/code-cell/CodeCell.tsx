@@ -13,7 +13,6 @@ import { runPixel } from "@semoss/sdk";
 import {
     useBlocks,
     // useLLM,
-    // useRootStore,
     // useWorkspace
 } from "@/hooks";
 // import { LoadingScreen } from "@/components/ui";
@@ -95,7 +94,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const { cell, isExpanded } = props;
     const { state } = useBlocks();
-    // const { configStore } = useRootStore();
 
     const [editorHeight, setEditorHeight] = useState<number>(null);
 

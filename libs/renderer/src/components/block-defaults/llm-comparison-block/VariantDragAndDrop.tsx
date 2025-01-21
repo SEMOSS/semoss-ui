@@ -1,8 +1,8 @@
 import { Stack, Typography, styled, IconButton } from "@semoss/ui";
-import { VariantWithName, TypeLlmConfig } from "@/components/workspace";
+import { VariantWithName, TypeLlmConfig } from "./compare.types";
 import { useEffect, useState } from "react";
 import { DragIndicatorOutlined } from "@mui/icons-material";
-import { useDesigner, useLLMComparison } from "@/hooks";
+import { useLLMComparison } from "../../../hooks";
 
 const StyledVariantOrderBox = styled(Stack)(({ theme }) => ({
     border: `1px soid ${theme.palette.primary.border}`,
@@ -12,7 +12,6 @@ const StyledVariantOrderBox = styled(Stack)(({ theme }) => ({
 export const VariantDragAndDrop = () => {
     const [orderedVars, setOrderedVars] = useState<VariantWithName[]>([]);
     const { getValues } = useLLMComparison();
-    const { designer } = useDesigner();
 
     useEffect(() => {
         const defaultVar = {

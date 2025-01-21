@@ -2,13 +2,13 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled, Button, Divider, MenuProps, Menu, Stack } from "@semoss/ui";
 
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../hooks";
 import {
     ActionMessages,
     CellStateConfig,
     NewCellAction,
     QueryState,
-} from "@/stores";
+} from "../../store";
 import {
     ChangeCircleOutlined,
     Code,
@@ -21,10 +21,10 @@ import {
     DefaultCellDefinitions,
     DefaultCells,
     TransformationCells,
-} from "@/components/cell-defaults";
+} from "../cell-defaults";
 import { QueryImportCellConfig } from "../cell-defaults/query-import-cell";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
-import { ModelBrain } from "@/assets/img/ModelBrain";
+import { ModelBrain } from "../../assets/ModelBrain";
 import { DataImportFormModal } from "./DataImportFormModal";
 
 const StyledButton = styled(Button)(({ theme }) => ({

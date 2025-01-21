@@ -1,4 +1,4 @@
-import { BlockConfig } from "@/stores";
+import { BlockConfig } from "../../../store";
 import {
     buildSpacingSection,
     buildDimensionsSection,
@@ -6,9 +6,9 @@ import {
 import { IframeBlockDef, IframeBlock } from "./IframeBlock";
 import { AspectRatio } from "@mui/icons-material";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { InputModalSettings } from "@/components/block-settings/shared/InputModalSettings";
-import { BorderSettings, InputSettings } from "@/components/block-settings";
-import { SwitchSettings } from "@/components/block-settings/shared/SwitchSettings";
+import { InputModalSettings } from "../../block-settings/shared/InputModalSettings";
+import { BorderSettings, InputSettings } from "../../block-settings";
+import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 
 // export the config for the block
 export const config: BlockConfig<IframeBlockDef> = {

@@ -1,4 +1,4 @@
-import { TypeLlmConfig, TypeLlmComparisonForm } from "@/components/workspace";
+import { TypeLlmConfig, TypeLlmComparisonForm } from "./compare.types";
 
 /**
  * METHODS ==================================================================

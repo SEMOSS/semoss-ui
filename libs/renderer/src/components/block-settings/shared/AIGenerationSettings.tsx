@@ -6,7 +6,7 @@ import { useBlockSettings, useBlocks } from "../../../hooks";
 import { Block, BlockDef } from "../../../store";
 import { AutoAwesome } from "@mui/icons-material";
 import { Autocomplete } from "@mui/material";
-import { runPixel } from "@semoss/sdk";
+import { runPixel, usePixel } from "@semoss/sdk";
 
 type CfgLibraryEngineState = {
     loading: boolean;
@@ -57,7 +57,6 @@ export const AIGenerationSettings = observer(
     }: AIGenerationSettingsProps<D>) => {
         const { setData } = useBlockSettings<D>(id);
         const { state } = useBlocks();
-        const { monolithStore } = useRootStore();
         const notification = useNotification();
 
         const [prompt, setPrompt] = useState("");
@@ -207,7 +206,7 @@ export const AIGenerationSettings = observer(
         };
 
         return (
-            <Stack spacing={1} padding={2} width="100%">
+            <Stack spacing={1} width="100%">
                 <TextField
                     disabled={!cfgLibraryModels.ids.length || responseLoading}
                     fullWidth

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Modal, Button, Typography } from "@semoss/ui";
 
-import { useBlocks } from "@/hooks";
-import { ActionMessages } from "@/stores";
+import { useBlocks } from "../../hooks";
+import { ActionMessages } from "../../store";
 
 interface DeleteNotebookOverlayProps {
     /** id of the deleted notebok */

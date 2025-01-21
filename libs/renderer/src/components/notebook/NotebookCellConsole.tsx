@@ -1,7 +1,7 @@
 import React from "react";
 import { JsonViewer } from "@textea/json-viewer";
 import { Typography, styled } from "@semoss/ui";
-import { isOutputJSON } from "@/utility/general";
+import { isOutputJSON } from "../../utility";
 
 const StyledConsole = styled("div")({
     display: "flex",

@@ -1,6 +1,8 @@
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
+import image from "@rollup/plugin-image";
+import url from "@rollup/plugin-url";
 
 import bundleSize from "rollup-plugin-bundle-size";
 import postcss from "rollup-plugin-postcss";
@@ -30,6 +32,11 @@ export default defineConfig({
         del({ targets: "dist" }),
         resolve(),
         commonjs(),
+        image(),
+        url({
+            include: ["**/*.png", "**/*.jpg", "**/*.svg"],
+            limit: 8192,
+        }),
         typescript({
             tsconfig: "./tsconfig.json",
             outputToFilesystem: true,

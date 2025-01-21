@@ -1,5 +1,5 @@
-import { BlockComponent, Variant } from "@/stores";
-import { useBlock, useBlocks, useRootStore } from "@/hooks";
+import { BlockComponent, Variant } from "../../../store";
+import { useBlock, useBlocks } from "../../../hooks";
 import { styled, ToggleTabsGroup, useNotification } from "@semoss/ui";
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
@@ -9,8 +9,8 @@ import {
     TypeLlmComparisonForm,
     TypeLlmConfig,
     TypeVariants,
-} from "@/components/workspace";
-import { LLMComparisonContext } from "@/contexts";
+} from "./compare.types";
+import { LLMComparisonContext } from "../../../hooks/useLLMComparison";
 import {
     LlmComparisonFormDefaultValues,
     modelEngineOutput,
@@ -43,7 +43,6 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
     const { data } = useBlock(id);
     const { state } = useBlocks();
     const notification = useNotification();
-    const { monolithStore } = useRootStore();
     const [mode, setMode] = useState<Mode>("configure");
     const [allModels, setAllModels] = useState<TypeLlmConfig[]>([]);
 
@@ -130,7 +129,7 @@ export const LLMComparisonMenu: BlockComponent = observer(({ id }) => {
 
     const fetchAllModels = async () => {
         const pixel = `MyEngines(engineTypes=["MODEL"])`;
-        const res = await monolithStore.runQuery(pixel);
+        const res = await runPixel(pixel);
 
         const modelled = modelEngineOutput(res.pixelReturn[0].output);
         setAllModels(modelled);

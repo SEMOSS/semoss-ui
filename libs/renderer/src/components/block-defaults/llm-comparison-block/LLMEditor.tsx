@@ -1,4 +1,4 @@
-import { TypeLlmConfig } from "@/components/workspace";
+import { TypeLlmConfig } from "./compare.types";
 import { Controller } from "react-hook-form";
 import {
     styled,
@@ -10,7 +10,7 @@ import {
     TextField,
     FormControl,
 } from "@semoss/ui";
-import { useLLMComparison } from "@/hooks";
+import { useLLMComparison } from "../../../hooks";
 import { FormHelperText } from "@mui/material";
 import { useEffect } from "react";
 

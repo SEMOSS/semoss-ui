@@ -1,7 +1,7 @@
 import { styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
 import { JsonViewer } from "@textea/json-viewer";
-import { isOutputJSON } from "@/utility";
+import { isOutputJSON } from "../../../utility";
 
 const StyledJson = styled("pre")(({ theme }) => ({
     ...theme.typography.body2,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useBlock, useBlocks } from "@/hooks";
-import { BlockComponent, BlockDef, CellState } from "@/stores";
+import { useBlock, useBlocks } from "../../../hooks";
+import { BlockComponent, BlockDef, CellState } from "../../../store";
 import {
     IconButton,
     Stack,

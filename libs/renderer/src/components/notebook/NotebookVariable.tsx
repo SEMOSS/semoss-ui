@@ -13,11 +13,10 @@ import {
     TextField,
     LinearProgress,
 } from "@semoss/ui";
-import { Variable } from "@/stores";
+import { Variable, ActionMessages } from "../../store";
 import { ContentCopy, MoreVert, Delete, Edit } from "@mui/icons-material";
 
-import { ActionMessages } from "@/stores";
-import { useBlocks } from "@/hooks";
+import { useBlocks } from "../../hooks";
 import { VariablePreview } from "./VariablePreview";
 import { AddVariablePopover } from "./AddVariablePopover";
 

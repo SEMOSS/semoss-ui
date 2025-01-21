@@ -3,6 +3,116 @@ import { useDebounced } from "./useDebounced";
 import BRAIN from "../assets/BRAIN.png";
 
 export { useDebounced as debounced };
+/**
+ * @desc Checks if output and verify if its a JSON object
+ */
+export const isOutputJSON = (output: unknown) => {
+    if (typeof output === "object" && output !== null) {
+        return output;
+    }
+    if (typeof output === "string") {
+        try {
+            return JSON.parse(output);
+        } catch (e) {
+            const validateJsonString = output.replace(/'/g, '"');
+            try {
+                return JSON.parse(validateJsonString);
+            } catch (InnerError) {
+                return null;
+            }
+        }
+    }
+    return null;
+};
+
+/**
+ * @desc Copies string to clipboard
+ */
+export const copyTextToClipboard = (text: string, notificationService) => {
+    try {
+        navigator.clipboard.writeText(text);
+
+        notificationService.add({
+            color: "success",
+            message: "Succesfully copied to clipboard",
+        });
+    } catch (e) {
+        notificationService.add({
+            color: "error",
+            message: e.message,
+        });
+    }
+};
+
+export const capitalizeFirstLetter = (str) => {
+    return str.replace(/\w{1}/, (match) => match.toUpperCase());
+};
+
+/**
+ * @desc splits a string at the period
+ * Used in the UI Builder and notebook
+ */
+export const splitAtPeriod = (str, side = "left") => {
+    const indexOfPeriod = str.indexOf(".");
+    if (indexOfPeriod === -1) {
+        return str; // No period found, return the entire string
+    }
+
+    if (side === "left") {
+        return str.substring(0, indexOfPeriod);
+    } else if (side === "right") {
+        return str.substring(indexOfPeriod + 1);
+    } else {
+        throw new Error("Invalid side argument. Choose 'left' or 'right'");
+    }
+};
+
+/**
+ * Ignore the result of a promise
+ * @param executor - function that returns a promise
+ * @returns
+ */
+export const cancellablePromise = <R>(
+    executor: () => Promise<R>,
+): {
+    promise: Promise<R>;
+    cancel: () => void;
+} => {
+    // track if it is cancelled or not
+    let cancelled = false;
+
+    // track a timeout to delay execution
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    return {
+        promise: new Promise<R>((resolve, reject) => {
+            // wrap in a timeout to execute after the current thread is done
+            timeout = setTimeout(async () => {
+                try {
+                    const response = await executor();
+
+                    // ignore if cancelled
+                    if (cancelled) {
+                        return;
+                    }
+
+                    return resolve(response);
+                } catch (err) {
+                    return reject(err);
+                }
+            }, 0);
+        }),
+        cancel: () => {
+            // clear the timeout if it's there
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+
+            // mark as cancelled
+            cancelled = true;
+        },
+    };
+};
 
 /**
  * Deep copy an object

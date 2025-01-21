@@ -52,7 +52,6 @@ const StyledActionButtons = styled("div")(({ theme }) => ({
 
 export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
     const { state } = useBlocks();
-    // const { monolithStore } = useRootStore();
     const notification = useNotification();
     const [allModels, setAllModels] = useState<{ name: string; id: string }[]>(
         [],

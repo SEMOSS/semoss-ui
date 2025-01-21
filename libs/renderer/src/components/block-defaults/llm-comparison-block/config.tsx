@@ -1,4 +1,4 @@
-import { BlockConfig } from "@/stores";
+import { BlockConfig } from "../../../store";
 import {
     LLMComparisonBlock,
     LLMComparisonBlockDef,
