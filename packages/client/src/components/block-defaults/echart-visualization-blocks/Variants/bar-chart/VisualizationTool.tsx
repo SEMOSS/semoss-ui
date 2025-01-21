@@ -894,6 +894,7 @@ const VisualizationTool = observer<VisualizationToolDef>(({ showTool, id }) => {
                     </StyledSectionContainer>
                     <StyledSectionContainer>
                         <ToggleTrendline
+                            id={id}
                             options={parsedOption}
                             updateChart={updateTrendLines}
                             chartType={chartType}
