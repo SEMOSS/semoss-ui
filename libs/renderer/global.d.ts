@@ -1,30 +1,30 @@
 declare module "*.png" {
-    const value: unknown;
+    const value: any;
     export = value;
 }
 
 declare module "*.svg" {
-    const value: unknown;
+    const value: any;
     export = value;
 }
 
 declare module "*.jpg" {
-    const value: unknown;
+    const value: any;
     export = value;
 }
 
 declare module "*.jpeg" {
-    const value: unknown;
+    const value: any;
     export = value;
 }
 
 declare module "*.gif" {
-    const value: unknown;
+    const value: any;
     export = value;
 }
 
 declare module "!!raw-loader!*" {
-    const contents: string;
+    const contents: any;
     export = contents;
 }
 

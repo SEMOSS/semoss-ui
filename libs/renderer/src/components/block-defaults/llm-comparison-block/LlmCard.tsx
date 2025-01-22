@@ -8,9 +8,9 @@ import {
 } from "@semoss/ui";
 import { TypeLlmConfig } from "./compare.types";
 import { Edit } from "@mui/icons-material";
-import { getEngineImage } from "../../../utility";
+// import { getEngineImage } from "../../../utility";
 import { useLLMComparison } from "../../../hooks";
-import ImageSkeleton from "../../../assets/ImageSkeleton.pn";
+// import ImageSkeleton from "../../../assets/ImageSkeleton.pn";
 
 import { observer } from "mobx-react-lite";
 
@@ -96,7 +96,7 @@ export const LlmCard = observer((props: LlmCardProps) => {
             <StyledCard>
                 <StyledCardHeader>
                     <Stack direction={"row"} gap={2} alignItems="center">
-                        <StyledCardImg
+                        {/* <StyledCardImg
                             src="img"
                             image={
                                 database_type
@@ -106,7 +106,7 @@ export const LlmCard = observer((props: LlmCardProps) => {
                                       )
                                     : ImageSkeleton
                             }
-                        />
+                        /> */}
                         <StyledTypography variant="body1">
                             {database_name || "Model"}
                         </StyledTypography>

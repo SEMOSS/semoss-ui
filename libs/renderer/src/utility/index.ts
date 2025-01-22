@@ -1,6 +1,6 @@
-import { ENGINE_IMAGES } from "../constants";
 import { useDebounced } from "./useDebounced";
-import BRAIN from "../assets/BRAIN.png";
+// import BRAIN from "../assets/BRAIN.png";
+// import { ENGINE_IMAGES } from "../constants";
 
 export { useDebounced as debounced };
 /**
@@ -214,30 +214,30 @@ export const debounce = (func, wait) => {
     };
 };
 
-/**
- * @name getEngineImage
- * @params appType & appSubType
- * @returns image link for associated engine
- */
-export const getEngineImage = (
-    appType: string,
-    appSubType: string,
-    ignoreNotFound: boolean = false,
-) => {
-    const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
+// /**
+//  * @name getEngineImage
+//  * @params appType & appSubType
+//  * @returns image link for associated engine
+//  */
+// export const getEngineImage = (
+//     appType: string,
+//     appSubType: string,
+//     ignoreNotFound: boolean = false,
+// ) => {
+//     const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
-    if (!obj) {
-        if (ignoreNotFound) {
-            return null;
-        } else {
-            console.warn("No image found:", appType, appSubType);
-            return BRAIN;
-        }
-    }
+//     if (!obj) {
+//         if (ignoreNotFound) {
+//             return null;
+//         } else {
+//             console.warn("No image found:", appType, appSubType);
+//             return BRAIN;
+//         }
+//     }
 
-    debugger;
-    return obj.icon;
-};
+//     debugger;
+//     return obj.icon;
+// };
 
 /**
  * Get a value from an object based on the path

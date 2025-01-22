@@ -40,7 +40,7 @@ import {
 import { BlocksRenderer } from "../";
 import {
     capitalizeFirstLetter,
-    getEngineImage,
+    // getEngineImage,
     isOutputJSON,
     splitAtPeriod,
 } from "../../utility";
@@ -525,21 +525,11 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                         />
                     );
                 } else {
-                    const image = getEngineImage(
-                        engine.app_type,
-                        engine.app_subtype,
-                        true,
-                    );
-
                     return (
                         <Stack direction="row" alignItems="center">
-                            {image ? (
-                                <StyledImg src={image} />
-                            ) : (
-                                <Icon>
-                                    <MoreSharp />
-                                </Icon>
-                            )}
+                            <Icon>
+                                <MoreSharp />
+                            </Icon>
                             <Stack direction="column">
                                 <Typography variant="body2">
                                     {engine.app_name}

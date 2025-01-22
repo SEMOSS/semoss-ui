@@ -2,7 +2,7 @@ import { CSSProperties } from "react";
 import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent } from "../../../store";
-import ImageSkeleton from "../../../assets/ImageSkeleton.png";
+// import ImageSkeleton from "../../../assets/ImageSkeleton.png";
 
 export interface ImageBlockDef extends BlockDef<"image"> {
     widget: "image";
@@ -21,7 +21,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
         <div
             style={{
                 ...data.style,
-                backgroundImage: `url(${!data.src ? ImageSkeleton : data.src})`,
+                backgroundImage: `url(${!data.src ? "" : data.src})`,
             }}
             {...attrs}
         />
