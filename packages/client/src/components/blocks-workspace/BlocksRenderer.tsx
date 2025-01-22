@@ -4,6 +4,7 @@ import { useNotification } from '@semoss/ui';
 
 import { runPixel } from '@/api';
 import {
+    Block,
     SerializedState,
     StateStore,
     MigrationManager,
@@ -14,7 +15,13 @@ import { DefaultBlocks } from '@/components/block-defaults';
 import { Blocks, Renderer } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 import { Typography } from '@semoss/ui';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import {
+    Routes,
+    Route,
+    useSearchParams,
+    useLocation,
+    useNavigate,
+} from 'react-router-dom';
 
 const ACTIVE = 'page-1';
 
@@ -34,9 +41,11 @@ interface BlocksRendererProps {
  */
 export const BlocksRenderer = observer((props: BlocksRendererProps) => {
     const { appId, state, preview } = props;
+    const naviagte = useNavigate();
     const notification = useNotification();
     const [searchParams, setSearchParams] = useSearchParams();
 
+    const [allPages, setAllPages] = useState<Block[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [stateStore, setStateStore] = useState<StateStore | null>();
     const queryStringParams = new URLSearchParams(useLocation().search);
@@ -117,6 +126,8 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
                 // set it
                 setStateStore(store);
+                const allBlocks = Object.values(store.blocks);
+                setAllPages(allBlocks.filter((b) => b.widget == 'page'));
 
                 if (appId) {
                     const { errors: errs } = await runPixel(
@@ -154,6 +165,13 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
             });
     }, [state, appId]);
 
+    useEffect(() => {
+        const firstPage = allPages[0];
+        if (firstPage) {
+            naviagte(`${firstPage.data.route}`);
+        }
+    }, [allPages.length]);
+
     if (!stateStore || (isLoading && !preview)) {
         if (!preview) {
             return <LoadingScreen.Trigger />;
@@ -162,9 +180,29 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
         }
     }
 
-    return (
+    const getPage = (pageId: string) => {
+        return (
+            <Blocks state={stateStore} registry={DefaultBlocks}>
+                <Renderer id={pageId} />
+            </Blocks>
+        );
+    };
+
+    return preview ? (
         <Blocks state={stateStore} registry={DefaultBlocks}>
             <Renderer id={ACTIVE} />
         </Blocks>
+    ) : allPages.length ? (
+        <Routes>
+            {allPages.map((page) => (
+                <Route
+                    path={page.data.route as string}
+                    element={getPage(page.id)}
+                    key={page.id}
+                />
+            ))}
+        </Routes>
+    ) : (
+        <></>
     );
 });

@@ -88,10 +88,16 @@ export function JobsPage() {
                     const pixelJobs: Record<string, PixelReturnJob> =
                         response.pixelReturn[0].output;
                     const jobs: Job[] = Object.values(pixelJobs).map((job) => {
+                        // ui state is a legacy construct, this may not exist
                         let uiState: JobUIState;
-                        if (job.uiState) {
-                            uiState = JSON.parse(job.uiState);
+                        try {
+                            if (job.uiState) {
+                                uiState = JSON.parse(job.uiState);
+                            }
+                        } catch (e) {
+                            console.log(e);
                         }
+
                         let sendEmailJob: SendEmailJob;
                         if (job.recipe) {
                             sendEmailJob = convertSendEmailRecipeToJob(

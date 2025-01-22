@@ -72,12 +72,25 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'MODEL') {
             /** Model: START */
-            const pixel = `CreateModelEngine(
-                model=["${values.name}"], 
-                modelDetails=[${JSON.stringify(values.fields)}]
-            )`;
+            var pixel;
+            if (values.secondaryFields['FILE']) {
+                const upload = await monolithStore.uploadFile(
+                    [values.secondaryFields['FILE']],
+                    configStore.store.insightID,
+                );
+                pixel = `CreateModelEngine(
+                    model=["${values.name}"], 
+                    modelDetails=[${JSON.stringify(values.fields)}],
+                    filePaths=["${upload[0].fileLocation}"]
+                )`;
+            } else {
+                pixel = `CreateModelEngine(
+                    model=["${values.name}"], 
+                    modelDetails=[${JSON.stringify(values.fields)}]
+                )`;
+            }
 
-            monolithStore.runQuery(pixel).then((response) => {
+            monolithStore.runQuery(pixel).then(async (response) => {
                 const output = response.pixelReturn[0].output,
                     operationType = response.pixelReturn[0].operationType;
 
@@ -95,7 +108,6 @@ export const ImportConnectionPage = () => {
                     color: 'success',
                     message: `Successfully added LLM to catalog`,
                 });
-
                 navigate(`/engine/model/${output.database_id}`);
             });
             return;
@@ -164,10 +176,23 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
-            const pixel = `
-            CreateRestFunctionEngine(function=["${
-                values.name
-            }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
+            var pixel;
+            if (values.secondaryFields['FILE']) {
+                const upload = await monolithStore.uploadFile(
+                    [values.secondaryFields['FILE']],
+                    configStore.store.insightID,
+                );
+                pixel = `
+                    CreateRestFunctionEngine(function=["${
+                        values.name
+                    }"],functionDetails=[${JSON.stringify(values.fields)}],
+                    filePaths=["${upload[0].fileLocation}"]);`;
+            } else {
+                pixel = `
+                    CreateRestFunctionEngine(function=["${
+                        values.name
+                    }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
+            }
 
             monolithStore.runQuery(pixel).then((response) => {
                 const output = response.pixelReturn[0].output,

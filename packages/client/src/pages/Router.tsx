@@ -326,13 +326,10 @@ export const Router = observer(() => {
                             />
                         }
                     />
-
-                    {process.env.NODE_ENV == 'development' && (
-                        <Route path="prompt/*" element={<PromptRouter />} />
-                    )}
+                    <Route path="prompt/*" element={<PromptRouter />} />
                 </Route>
-                <Route path="workspace/:appId" element={<WorkspacePage />} />
-                <Route path="s/:appId" element={<SharePage />} />
+                <Route path="workspace/:appId/*" element={<WorkspacePage />} />
+                <Route path="s/:appId/*" element={<SharePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             {showCookieNotice && (

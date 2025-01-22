@@ -22,7 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
+    // padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -40,7 +40,7 @@ const StyledContent = styled('div', {
 }));
 
 const StyledContentOuter = styled('div')(({ theme }) => ({
-    padding: theme.spacing(1),
+    // padding: theme.spacing(1),
     display: 'flex',
     flex: 1,
     minWidth: '100%',
@@ -116,19 +116,6 @@ export const Screen = observer((props: ScreenProps) => {
     };
 
     /**
-     * Handle the mouseleave on the page. This will deselect hovered widgets
-     */
-    const handleMouseLeave = (event: React.MouseEvent) => {
-        designer.setHovered('');
-
-        // reset the placeholder / clear the ghost if is its off the screen
-        if (designer.drag.active) {
-            designer.resetPlaceholder();
-            designer.updateGhostPosition(null);
-        }
-    };
-
-    /**
      * Handle the mousemove event on the document. This will render the placeholder based on the target block.
      */
     const handleDocumentMouseMove = useCallback(
@@ -177,6 +164,9 @@ export const Screen = observer((props: ScreenProps) => {
                     return;
                 }
 
+                // check if the block is in the root
+                if (!rootRef.current.contains(nearestElement)) return;
+
                 // update
                 designer.updatePlaceholder(
                     {
@@ -194,7 +184,7 @@ export const Screen = observer((props: ScreenProps) => {
             const block = state.getBlock(id);
 
             // if there is no parent, we cannot add
-            if (!block.parent) {
+            if (!block?.parent) {
                 return;
             }
 
@@ -210,6 +200,9 @@ export const Screen = observer((props: ScreenProps) => {
                     widgetClientRect.height) *
                     100,
             );
+
+            // check if the block is in the root
+            if (!rootRef.current.contains(nearestElement)) return;
 
             if (percent <= 30) {
                 designer.updatePlaceholder(
@@ -245,12 +238,16 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
+    useEffect(() => {
+        designer.setSelected('');
+    }, [props]);
+
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
     return (
-        <StyledContainer data-block="root" ref={rootRef}>
+        <StyledContainer data-block="root" ref={rootRef} className="dnd-screen">
             {designer.selected && <SelectedMask />}
             {designer.hovered && <HoveredMask />}
             {designer.selected && !designer.drag.active && (
@@ -260,7 +257,7 @@ export const Screen = observer((props: ScreenProps) => {
             {designer.drag.active && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
-                <StyledContentOuter onMouseLeave={handleMouseLeave}>
+                <StyledContentOuter>
                     <StyledContentInner
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}

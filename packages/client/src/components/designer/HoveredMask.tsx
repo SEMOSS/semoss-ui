@@ -71,7 +71,7 @@ export const HoveredMask = observer(() => {
     // get the store
     const { designer } = useDesigner();
     const { registry, state } = useBlocks();
-
+    const block = state.getBlock(designer.hovered);
     const variableName = state.getAlias(designer.hovered);
 
     // get the root, watch changes, and reposition the mask
@@ -122,11 +122,13 @@ export const HoveredMask = observer(() => {
                 designer.hovered === designer.selected || designer.drag.active
             }
         >
-            <StyledTitle>
-                <Typography variant={'body2'}>
-                    {variableName ? variableName : designer.hovered}
-                </Typography>
-            </StyledTitle>
+            {block?.widget !== 'page' && (
+                <StyledTitle>
+                    <Typography variant={'body2'}>
+                        {variableName ? variableName : designer.hovered}
+                    </Typography>
+                </StyledTitle>
+            )}
         </StyledContainer>
     );
 });

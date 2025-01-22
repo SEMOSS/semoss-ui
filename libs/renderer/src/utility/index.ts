@@ -235,6 +235,7 @@ export const getEngineImage = (
         }
     }
 
+    debugger;
     return obj.icon;
 };
 
