@@ -5,7 +5,7 @@ import { Code, KeyboardArrowDown } from '@mui/icons-material';
 import { CellDef, Variable } from '@/stores';
 import { runPixel } from '@/api';
 import { ActionMessages, CellComponent } from '@/stores';
-import { useBlocks, useLLM, useRootStore } from '@/hooks';
+import { useBlocks, useLLM, useRootStore, useWorkspace } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { StyledSelect, StyledSelectItem } from '../shared';
 
@@ -98,7 +98,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const [isLLMRejected, setIsLLMRejected] = useState(false);
     const [count, setCount] = useState(0);
-    const { modelId } = useLLM();
+    const { workspace } = useWorkspace();
 
     /**
      * Ask a LLM a question to generate a response
@@ -106,11 +106,16 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
      * @returns LLM Response
      */
     const promptLLM = async (prompt: string) => {
-        setLLMLoading(true);
-        const pixel = `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {} ] );`;
-
         try {
-            const res = await runPixel(pixel);
+            setLLMLoading(true);
+
+            if (!workspace.agentModelEngine) {
+                throw new Error('No Agent Model Engine');
+            }
+
+            const res = await runPixel(
+                `LLM(engine = "${workspace.agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+            );
 
             const LLMResponse = res.pixelReturn[0].output['response'];
             let trimmedStarterCode = LLMResponse;
@@ -738,7 +743,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                         color="inherit"
                                         fontSize="small"
                                     />
-                                    {language.name}
                                 </StyledSelectItem>
                             ),
                         )}

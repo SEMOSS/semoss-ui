@@ -138,6 +138,22 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 
             <StyledModalContent>
                 <Controller
+                    name="detailsForm.description"
+                    control={control}
+                    render={({ field }) => {
+                        return (
+                            <TextField
+                                value={field.value}
+                                onChange={(val) => field.onChange(val)}
+                                fullWidth
+                                multiline
+                                label="Description"
+                                rows={3}
+                            />
+                        );
+                    }}
+                />
+                <Controller
                     name="detailsForm.markdown"
                     control={control}
                     render={({ field }) => {

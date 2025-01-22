@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import {
-    DataGrid,
-    GridColDef,
-    GridRowSelectionModel,
-    GridSlots,
-} from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import {
     Chip,
     IconButton,
@@ -198,6 +193,17 @@ export const JobsTable = (props: {
                                     cronExpression:
                                         job.cronExpression.replaceAll('?', '*'),
                                     cronTz: job.timeZone,
+                                    smtpHost: job.smtpHost,
+                                    smtpPort: job.smtpPort,
+                                    subject: job.subject,
+                                    jobType: job.jobType,
+                                    to: job.to,
+                                    cc: job.cc,
+                                    bcc: job.bcc,
+                                    from: job.from,
+                                    message: job.message,
+                                    username: job.username,
+                                    password: job.password,
                                 });
                             }}
                         >
@@ -233,7 +239,8 @@ export const JobsTable = (props: {
             rowSelectionModel={rowSelectionModel}
             onRowSelectionModelChange={(value) => setRowSelectionModel(value)}
             slots={{
-                loadingOverlay: LinearProgress as GridSlots['loadingOverlay'],
+                loadingOverlay: LinearProgress as any,
+                // loadingOverlay: LinearProgress as GridSlots['loadingOverlay'],
                 noRowsOverlay: () => (
                     <Stack
                         height="100%"

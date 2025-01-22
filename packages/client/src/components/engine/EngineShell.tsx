@@ -116,6 +116,7 @@ export const EngineShell = (props: EngineShellProps) => {
         database_date_created?: string;
         last_updated?: string;
         description?: string;
+        database_type?: string;
     }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
@@ -179,6 +180,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                         <EditEngineDetails
                                             values={metaVals}
                                             open={edit}
+                                            engineData={data}
                                             onClose={(success) => {
                                                 // reload if successfully submitted
                                                 if (success) {
@@ -241,7 +243,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 <StyledInfoLeft>
                     <StyledInfoDescription variant={'subtitle1'}>
                         {metaVals.description
-                            ? metaVals.description
+                            ? (metaVals.description as string)
                             : canEdit
                             ? `Please use the Edit button to provide a description for this ${name}. A description will help other's find the ${name} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
                             : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}

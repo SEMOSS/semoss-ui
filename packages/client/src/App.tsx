@@ -71,6 +71,13 @@ export const App = () => {
         _store.configStore.initialize();
     }, []);
 
+    //  NCRT ASK - (https://play.semoss.org/ncrt/SemossWeb/packages/client/dist/#!/)
+    if (window.location.href.includes('client/dist/#!/')) {
+        window.location.href = window.location.href.replace(
+            /(client\/dist\/)#!/,
+            '$1#',
+        );
+    }
     return (
         <RootStoreContext.Provider value={_store}>
             <AppWrapper />

@@ -796,7 +796,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     <StyledModalContentText>
                         <Autocomplete
                             label="Select App"
-                            placeholder="App Name"
                             multiple={true}
                             options={nonCredentialedProjects}
                             limitTags={2}

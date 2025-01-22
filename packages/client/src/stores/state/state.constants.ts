@@ -1,11 +1,13 @@
 import { ActionMessages } from './state.actions';
 
 export const INPUT_BLOCK_TYPES = [
+    'audio-input',
     'input',
     'select',
     'upload',
     'checkbox',
     'toggle-button',
+    'radio',
 ];
 
 export const VARIABLE_TYPES = [

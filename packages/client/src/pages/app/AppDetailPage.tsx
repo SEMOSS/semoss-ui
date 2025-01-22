@@ -35,7 +35,7 @@ import {
     DetailsForm,
     AppDetailsRef,
 } from '@/components/app';
-import { ShareOverlay } from '@/components/workspace';
+import { ShareOverlay } from '@/components/ui';
 import { SettingsContext } from '@/contexts';
 import { Env } from '@/env';
 import { useRootStore } from '@/hooks';
@@ -719,7 +719,9 @@ export const AppDetailPage = () => {
                                                     })}
                                                 </Stack>
                                             ) : (
-                                                detailsForm[k.metakey]
+                                                (detailsForm[
+                                                    k.metakey
+                                                ] as string)
                                             )}
                                         </TagsBodyWrapper>
                                     </StyledSection>

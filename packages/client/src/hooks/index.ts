@@ -1,8 +1,12 @@
 import { useAPI } from './useAPI';
 import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
+import { useBlocksPixel } from './useBlocksPixel';
 import { useBlockSettings } from './useBlockSettings';
+import { useCacheState } from './useCacheState';
 import { useEngine } from './useEngine';
+import { useFrame } from './useFrame';
+import { useFrameHeaders } from './useFrameHeaders';
 import { useLLM } from './useLLM';
 import { useMetamodel } from './useMetamodel';
 import { useRootStore } from './useRootStore';
@@ -20,8 +24,12 @@ export {
     useAPI,
     useBlock,
     useBlocks,
+    useBlocksPixel,
     useBlockSettings,
+    useCacheState,
     useEngine,
+    useFrame,
+    useFrameHeaders,
     useLLM,
     useMetamodel,
     useRootStore,

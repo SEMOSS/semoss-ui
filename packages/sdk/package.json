@@ -1,6 +1,6 @@
 {
     "name": "@semoss/sdk",
-    "version": "1.0.0-beta.20",
+    "version": "1.0.0-beta.22",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -11,8 +11,8 @@
     "scripts": {
         "dev": "rollup --config rollup.config.js --watch",
         "build": "rollup --config rollup.config.js",
-        "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-        "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+        "lint": "nx eslint:lint --ext .js,.jsx,.ts,.tsx",
+        "lint:fix": "nx eslint:lint --ext .js,.jsx,.ts,.tsx --fix",
         "format": "prettier . --check --plugin-search-dir=.",
         "format:fix": "prettier . --write --plugin-search-dir=.",
         "fix": "run-s format:fix lint:fix",

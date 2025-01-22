@@ -11,6 +11,10 @@ const StyledPage = styled('div')(() => ({
     zIndex: '0',
 }));
 
+const StyledMarkdownContainer = styled(Stack)(() => ({
+    overflow: 'scroll',
+}));
+
 export const EngineIndexPage = observer(() => {
     const { type, id, metaVals } = useEngine();
     const { configStore } = useRootStore();
@@ -34,7 +38,9 @@ export const EngineIndexPage = observer(() => {
                     <Typography variant={'h6'}>Details</Typography>
                 </Section.Header>
                 {metaVals.markdown ? (
-                    <Markdown content={metaVals.markdown as string} />
+                    <StyledMarkdownContainer>
+                        <Markdown content={metaVals.markdown as string} />
+                    </StyledMarkdownContainer>
                 ) : (
                     <div> No Markdown available</div>
                 )}

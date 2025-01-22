@@ -23,6 +23,9 @@ export type EngineContextType = {
 
     /** metavals to show on detail pages */
     metaVals: Record<string, unknown>;
+
+    /** LLM models for the engine */
+    llmModels: Record<string, unknown>[];
 };
 
 /**
