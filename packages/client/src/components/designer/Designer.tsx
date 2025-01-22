@@ -1,9 +1,14 @@
 import { observer } from 'mobx-react-lite';
-import { Stack } from '@semoss/ui';
+import { styled } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { ErrorBoundary } from '@/components/common';
 import { Renderer } from '@/components/blocks';
+
+const StyledDiv = styled('div')(({ theme }) => ({
+    height: '100%',
+    position: 'relative',
+}));
 
 interface DesignerPanelProps {
     /** Id of the designer */
@@ -18,9 +23,24 @@ export const Designer = observer((props: DesignerPanelProps): JSX.Element => {
         return null;
     }
 
+    /**
+     * Handle the mouseleave on the page. This will deselect hovered widgets
+     */
+    const handleMouseLeave = (event: React.MouseEvent) => {
+        designer.setHovered('');
+
+        // reset the placeholder / clear the ghost if is its off the screen
+        if (designer.drag.active) {
+            designer.resetPlaceholder();
+            designer.updateGhostPosition(null);
+        }
+    };
+
     return (
-        <ErrorBoundary title={'Something went wrong!'}>
-            <Renderer id={id || designer.rendered} />
-        </ErrorBoundary>
+        <StyledDiv onMouseLeave={handleMouseLeave}>
+            <ErrorBoundary title={'Something went wrong!'}>
+                <Renderer id={id || designer.rendered} />
+            </ErrorBoundary>
+        </StyledDiv>
     );
 });
