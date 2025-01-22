@@ -7,6 +7,12 @@ import {
     Autocomplete,
     useNotification,
     styled,
+    IconButton,
+    Select,
+    Box,
+    Typography,
+    CircularProgress,
+    Tooltip,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
@@ -14,9 +20,21 @@ import { observer } from 'mobx-react-lite';
 import { usePixel, useRootStore, useEngine } from '@/hooks';
 import { MarkdownEditor } from '@/components/common';
 import { toTitleCase } from '@/utility';
+import {
+    AutoAwesome,
+    Cancel,
+    CheckCircle,
+    InfoOutlined,
+} from '@mui/icons-material';
 
 const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
+}));
+
+const StyledModalHeader = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
 }));
 
 interface EditEngineDetailsProps {
@@ -28,13 +46,21 @@ interface EditEngineDetailsProps {
 
     /** Values to show in the fields */
     values: Record<string, unknown>;
+
+    /** The engine data */
+    engineData: Record<string, unknown>;
 }
 
 /**
  * Wrap the Engine routes and provide styling/functionality
  */
 export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
-    const { open = false, onClose = () => null, values = {} } = props;
+    const {
+        open = false,
+        onClose = () => null,
+        values = {},
+        engineData = {},
+    } = props;
 
     // get the notification
     const notification = useNotification();
@@ -51,7 +77,7 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
     );
 
     // get the engine information
-    const { id, type } = useEngine();
+    const { id, type, llmModels } = useEngine();
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
@@ -63,6 +89,15 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
             return prev;
         }, {});
     });
+
+    // selectedmodel to be used for text generation
+    const [selectedModel, setSelectedModel] = useState<string>('');
+
+    // show hide model selection
+    const [canShowModels, setCanShowModels] = useState<boolean>(false);
+
+    // track model generation state
+    const [generateLoading, setGenerateLoading] = useState<boolean>(false);
 
     // get the values
     const getEngineMetaValues = usePixel<
@@ -109,9 +144,37 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
         setFilterOptions(updated);
     }, [getEngineMetaValues.status, getEngineMetaValues.data]);
 
-    const { handleSubmit, control } = useForm<Record<string, unknown>>({
+    const { handleSubmit, control, setValue } = useForm<
+        Record<string, unknown>
+    >({
         defaultValues: values,
     });
+
+    const generateUsingLLM = async (queryType: string) => {
+        // generate the query based on the query type
+        const query =
+            queryType === 'markdown'
+                ? `Create me some markdown in the 600 character range for my ${engineData.database_type} that is named ${engineData.database_name}`
+                : `Create me a description in the 150 character range, for my ${engineData.database_type} that is named ${engineData.database_name}`;
+
+        // query the LLM model
+        const LLMresponse = await monolithStore.runQuery(
+            `LLM(engine="${selectedModel}", command=["<encode>${query}</encode>"])`,
+        );
+
+        const { output: LLMOutput } = LLMresponse.pixelReturn[0];
+
+        // update the value
+        setValue(queryType, LLMOutput.response);
+    };
+
+    const handleGenerate = async () => {
+        setGenerateLoading(true);
+        // generate the markdown and description
+        await generateUsingLLM('markdown');
+        await generateUsingLLM('description');
+        setGenerateLoading(false);
+    };
 
     /**
      * @name onSubmit
@@ -182,9 +245,92 @@ export const EditEngineDetails = observer((props: EditEngineDetailsProps) => {
                 onClose(false);
             }}
         >
-            <Modal.Title>Edit {toTitleCase(type)} Details</Modal.Title>
+            <Modal.Title>
+                <StyledModalHeader>
+                    <>Edit {toTitleCase(type)} Details</>
+                    {!canShowModels && (
+                        <Tooltip title="Generate">
+                            <IconButton
+                                onClick={() => setCanShowModels(!canShowModels)}
+                                color="primary"
+                                sx={{ marginLeft: 'auto' }}
+                            >
+                                <AutoAwesome />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </StyledModalHeader>
+            </Modal.Title>
+
+            {canShowModels && (
+                <Stack>
+                    <Stack direction="row" paddingX={3} alignItems={'center'}>
+                        <Select
+                            size="small"
+                            sx={{
+                                width: '90%',
+                                '.MuiInputBase-root': { borderRadius: '4px' },
+                            }}
+                            name="Select LLM"
+                            id="llm"
+                            variant="outlined"
+                            label="Select LLM"
+                            onChange={(e) => setSelectedModel(e.target.value)}
+                            value={selectedModel}
+                            disabled={generateLoading}
+                        >
+                            {llmModels.map((model) => {
+                                return (
+                                    <Select.Item
+                                        value={model.app_id}
+                                        key={model.app_id + '_modId'}
+                                    >
+                                        <>{model.app_name}</>
+                                    </Select.Item>
+                                );
+                            })}
+                        </Select>
+                        <Tooltip title="Cancel">
+                            <IconButton
+                                onClick={() => {
+                                    setCanShowModels(!canShowModels);
+                                    setSelectedModel('');
+                                }}
+                                disabled={generateLoading}
+                                sx={{ color: '#a9a9a9', padding: 0 }}
+                            >
+                                <Cancel sx={{ fontSize: '28px' }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Apply">
+                            <IconButton
+                                onClick={handleGenerate}
+                                disabled={!selectedModel}
+                                color="primary"
+                            >
+                                {generateLoading ? (
+                                    <CircularProgress size={24} />
+                                ) : (
+                                    <CheckCircle sx={{ fontSize: '28px' }} />
+                                )}
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
+                    <Stack paddingX={3} direction="row" alignItems="flex-start">
+                        <InfoOutlined color="error" sx={{ fontSize: '16px' }} />
+                        <Typography
+                            variant="body2"
+                            sx={{ fontSize: '12px', color: 'red' }}
+                        >
+                            The existing content of the fields 'Markdown' and
+                            'Description' will be replaced once you click
+                            'Apply'.
+                        </Typography>
+                    </Stack>
+                </Stack>
+            )}
             <Modal.Content>
-                <Stack spacing={4}>
+                <Stack spacing={3}>
                     {engineMetaKeys.map((key) => {
                         const { metakey, display_options } = key;
                         const label =

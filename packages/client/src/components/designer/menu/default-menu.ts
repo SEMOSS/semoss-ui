@@ -1,5 +1,6 @@
 import { BlockJSON } from '@/stores';
 import { DesignerMenuItem } from './menu.types';
+import { lightTheme } from '@semoss/ui';
 
 import BLOCK_AUDIO_PLAYER from '@/assets/img/BLOCK_AUDIO_PLAYER.png';
 import BLOCK_AUDIO_INPUT from '@/assets/img/BLOCK_MIC.png';
@@ -30,6 +31,7 @@ import BLOCK_PDF_VIEWER from '@/assets/img/BLOCK_PDF.png';
 import BLOCK_RADIO from '@/assets/img/BLOCK_RADIO.png';
 import HTML_BLOCK from '@/assets/img/HTML_BLOCK_SM.png';
 import BLOCK_MODAL from '@/assets/img/BLOCK_MODAL.png';
+import BLOCK_THEME from '@/assets/img/BLOCK_THEME.png';
 
 const SECTION_ELEMENT = 'Element';
 const SECTION_INPUT = 'Input';
@@ -38,11 +40,27 @@ const SECTION_PROGRESS = 'Progress';
 const SECTION_TEXT = 'Text';
 const SECTION_COMPARE_LLMS = 'Compare LLMs';
 const SECTION_MERMAID = 'Mermaid';
+const SECTION_THEME = 'Theme';
 
 /**
  * Show the default blocks menu
  */
 export const DEFAULT_MENU: DesignerMenuItem[] = [
+    {
+        section: SECTION_THEME,
+        image: BLOCK_THEME,
+        name: 'Theme Block',
+        json: {
+            widget: 'theme',
+            data: {
+                theme: lightTheme,
+            },
+            listeners: {},
+            slots: {
+                children: [],
+            },
+        },
+    },
     {
         section: SECTION_INPUT,
         image: BLOCK_AUDIO_PLAYER,
