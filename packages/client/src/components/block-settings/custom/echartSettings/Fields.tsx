@@ -68,7 +68,6 @@ export const Fields = observer(
         }, [computedValue]);
 
         useEffect(() => {
-            console.log('frame change', data);
             // if (data) {
             const json: PathValue<D['data'], typeof path> =
                 JSON.parse(computedValue);
@@ -121,6 +120,17 @@ export const Fields = observer(
                         ...tempValue['series'][i],
                         name: newValue[i],
                         type: 'line',
+                        lineStyle: {
+                            type: 'solid',
+                            width: 1,
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            rotate: 45,
+                            fontSize: 12,
+                            color: '#000000',
+                        },
                     };
                 }
             }

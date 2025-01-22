@@ -32,6 +32,7 @@ export interface EchartVisualizationBlockDef {
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
+            hideExclude: boolean;
         };
     };
     listeners: {};

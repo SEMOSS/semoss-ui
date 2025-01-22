@@ -20,6 +20,7 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
         contextMenu: {
             hideFilter: false,
             hideUnfilter: false,
+            hideExclude: false,
         },
     },
     listeners: {},

@@ -809,9 +809,17 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         text: 'ECharts Line Chart',
                         left: 'center',
                         top: 20,
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'normal',
+                            color: '#000000',
+                        },
                     },
                     tooltip: {
                         trigger: 'axis',
+                    },
+                    legend: {
+                        show: true,
                     },
                     xAxis: {
                         type: 'category',
@@ -819,36 +827,124 @@ export const VISUALIZATION_MENU: DesignerMenuItem[] = [
                         nameLocation: 'middle',
                         nameGap: 30,
                         axisTick: {
-                            alignWithLabel: true,
+                            show: true,
+                        },
+                        axisLabel: {
+                            rotate: 0,
+                        },
+                        nameTextStyle: {
+                            fontSize: 10,
                         },
                         data: ['A', 'B', 'C', 'D', 'E'],
+                    },
+                    axisTick: {
+                        show: true,
                     },
                     yAxis: {
                         type: 'value',
                         name: 'b',
                         nameLocation: 'middle',
                         nameGap: 40,
+                        axisLabel: {
+                            rotate: 0,
+                        },
                         axisLine: {
                             show: true,
                         },
                         axisTick: {
                             show: true,
                         },
+                        legend: {
+                            show: true,
+                        },
+                        tooltip: {
+                            show: true,
+                        },
+                        nameTextStyle: {
+                            fontSize: 10,
+                        },
                     },
+                    color: [
+                        '#ff6f61',
+                        '#6b5b95',
+                        '#88b04b',
+                        '#f7cac9',
+                        '#92a8d1',
+                        '#034f84',
+                        '#f7786b',
+                        '#deeaee',
+                    ],
                     series: [
                         {
-                            name: 'b',
+                            name: 'a',
                             type: 'line',
                             data: [28, 30, 22, 35, 30],
+                            lineStyle: {
+                                type: 'solid',
+                                width: 1,
+                            },
+                            label: {
+                                show: true,
+                                position: 'top',
+                                rotate: 45,
+                                fontSize: 12,
+                                color: '#000000',
+                            },
                         },
+                        // {
+                        //     name: 'b',
+                        //     type: 'line',
+                        //     data: [28, 30, 22, 35, 30],
+                        //     lineStyle: {
+                        //         type: 'solid',
+                        //         width: 1,
+                        //     },
+                        //     label: { show: true, position: 'top', rotate: 45, fontSize: 12, color: '#000000' }
+                        // },
+                        // {
+                        //     name: 'c',
+                        //     type: 'line',
+                        //     data: [28, 30, 22, 35, 30],
+                        //     lineStyle: {
+                        //         type: 'solid',
+                        //         width: 1,
+                        //     },
+                        //     label: { show: true, position: 'top', rotate: 45, fontSize: 12, color: '#000000' }
+                        // },
+                        // {
+                        //     name: 'd',
+                        //     type: 'line',
+                        //     data: [28, 30, 22, 35, 30],
+                        //     lineStyle: {
+                        //         type: 'solid',
+                        //         width: 1,
+                        //     },
+                        //     label: { show: true, position: 'top', rotate: 45, fontSize: 12, color: '#000000' }
+                        // },
                     ],
+                    toolbox: {
+                        feature: {
+                            brush: {
+                                type: [
+                                    'rect',
+                                    'polygon',
+                                    'lineX',
+                                    'lineY',
+                                    'clear',
+                                ],
+                            },
+                        },
+                    },
                     brush: {
-                        xAxisIndex: 'all',
-                        brushMode: 'single',
-                        brushStyle: {
-                            borderWidth: 1,
-                            color: 'rgba(120,140,180,0.3)',
-                            borderColor: 'rgba(120,140,180,0.8)',
+                        // Brush configuration
+                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
+                        throttleType: 'debounce', // Throttle brush events
+                        throttleDelay: 300, // Delay for throttle (in ms)
+                        inBrush: {
+                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
+                        },
+                        outBrush: {
+                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
                         },
                     },
                 },

@@ -57,7 +57,7 @@ export const EchartVisualizationBlockMenu: BlockComponent = ({ id }) => {
     const SelectVariant = () => {
         switch (data.variation) {
             case 'echart-line-chart':
-                return <LineSettings id={id} />;
+                return <LineSettings id={id} path={'option'} />;
             default:
                 return <></>;
         }
