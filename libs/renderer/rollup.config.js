@@ -9,6 +9,7 @@ import postcss from "rollup-plugin-postcss";
 import del from "rollup-plugin-delete";
 import { defineConfig } from "rollup";
 import { terser } from "rollup-plugin-terser";
+import json from "@rollup/plugin-json";
 
 import packageJson from "./package.json";
 
@@ -30,16 +31,17 @@ export default defineConfig({
     ],
     plugins: [
         del({ targets: "dist" }),
+        typescript({
+            tsconfig: "./tsconfig.json",
+            outputToFilesystem: true,
+        }),
+        json(),
         resolve(),
         commonjs(),
         image(),
         url({
             include: ["**/*.png", "**/*.jpg", "**/*.svg"],
             limit: 8192,
-        }),
-        typescript({
-            tsconfig: "./tsconfig.json",
-            outputToFilesystem: true,
         }),
         postcss(),
         bundleSize(),

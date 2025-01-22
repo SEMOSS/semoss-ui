@@ -10,8 +10,9 @@
         "dev:client": "nx run @semoss/client:dev",
         "dev:legacy": "nx run @semoss/legacy:dev",
         "build": "npx nx run-many -t build -p @semoss/client @semoss/legacy",
-        "build2": "npx nx run-many -t build -p @semoss/sdk --verbose",
-        "dev2": "npx nx run-many -t dev -p @semoss/sdk",
+
+        "build-test:client": "nx run-many -t build -p @semoss/client --verbose",
+        "build-dev:sdk": "npx nx run-many -t dev -p @semoss/sdk",
         "nx:dep-graph": "nx dep-graph",
         "nx:reset": "nx reset",
         "nx:generate-react-lib": "nx reset"
