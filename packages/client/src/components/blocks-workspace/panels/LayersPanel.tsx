@@ -489,25 +489,7 @@ export const LayersPanel = observer((): JSX.Element => {
                 throw new Error('Missing model');
             }
 
-            // visit the notes, and see if it exists
-            model.visitNodes((node) => {
-                // check if it is a tabNode
-                if (node instanceof TabNode) {
-                    // it needs to be a notebook-viewer
-                    const component = node.getComponent();
-                    if (component !== 'designer') {
-                        return;
-                    }
-
-                    // path and space need to match
-                    const config = node.getConfig();
-                    if (config.id !== id) {
-                        return;
-                    }
-
-                    selectedNode = node;
-                }
-            });
+            selectedNode = getNodeInfo(id, model);
 
             // create a new panel if there is no node
             if (!selectedNode) {
@@ -528,8 +510,33 @@ export const LayersPanel = observer((): JSX.Element => {
         return true;
     };
 
+    const getNodeInfo = (id, model) => {
+        let returnedNode: TabNode | null = null;
+        // visit the notes, and see if it exists
+        model.visitNodes((node) => {
+            // check if it is a tabNode
+            if (node instanceof TabNode) {
+                // it needs to be a notebook-viewer
+                const component = node.getComponent();
+                if (component !== 'designer') {
+                    return;
+                }
+
+                // path and space need to match
+                const config = node.getConfig();
+                if (config.id !== id) {
+                    return;
+                }
+
+                returnedNode = node;
+            }
+        });
+
+        return returnedNode;
+    };
+
     /**
-     * Select a panel if it is there. Return false if not selected.
+     * Remove a panel if it is there. Return false if not selected.
      *
      * id - id of the layer
      */
@@ -547,25 +554,7 @@ export const LayersPanel = observer((): JSX.Element => {
                 throw new Error('Missing model');
             }
 
-            // visit the notes, and see if it exists
-            model.visitNodes((node) => {
-                // check if it is a tabNode
-                if (node instanceof TabNode) {
-                    // it needs to be a notebook-viewer
-                    const component = node.getComponent();
-                    if (component !== 'designer') {
-                        return;
-                    }
-
-                    // path and space need to match
-                    const config = node.getConfig();
-                    if (config.id !== id) {
-                        return;
-                    }
-
-                    selectedNode = node;
-                }
-            });
+            selectedNode = getNodeInfo(id, model);
 
             // create a new panel if there is no node
             if (!selectedNode) {
